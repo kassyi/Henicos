@@ -59,7 +59,7 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
         if (carryOut)
         {
             var expr = normSig >> 1;
-            normSig = expr.Node.Evaluate(normSig.Context);
+            normSig = expr.Node.Evaluate(normSig.Workspace);
             checked
             {
                 normExp = Exponent + 1;
@@ -68,7 +68,7 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
         else if (leadingZeros > 0)
         {
             var expr = normSig << leadingZeros;
-            normSig = expr.Node.Evaluate(normSig.Context);
+            normSig = expr.Node.Evaluate(normSig.Workspace);
             checked
             {
                 normExp = Exponent - leadingZeros;
@@ -80,14 +80,14 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
 
     public (GpuBigUFloat Quotient, uint Remainder) DivideByUInt32(uint divisor)
     {
-        var resultSig = new GpuUIntBigInteger(Significand.Context, Significand.NumWords);
+        var resultSig = new GpuUIntBigInteger(Significand.Workspace, Significand.NumWords);
         var execContext = new BigIntExecutionContext(
-            Significand.Context,
-            Significand.Context.MemoryManager,
+            Significand.Workspace,
+            Significand.Workspace.MemoryManager,
             new LegacyProviderArithmeticAdapter(),
-            Significand.Context.Stream);
+            Significand.Workspace.Stream);
 
-        IGpuBigFloatArithmetic arithmetic = Significand.Context.Engine == GpuExecutionEngine.GSharpAot
+        IGpuBigFloatArithmetic arithmetic = Significand.Workspace.Engine == GpuExecutionEngine.GSharpAot
             ? Providers.GSharpAotFloatProvider.Instance
             : Providers.CSharpBigFloatArithmetic.Instance;
 
@@ -119,13 +119,13 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
 
     public static implicit operator GpuBigUFloat(GpuBigUFloatAddExpr expr)
     {
-        var visitor = new BigFloatExpressionVisitor(expr.Left.Significand.Context);
+        var visitor = new BigFloatExpressionVisitor(expr.Left.Significand.Workspace);
         return expr.Accept(ref visitor);
     }
 
     public static implicit operator GpuBigUFloat(GpuBigUFloatSubExpr expr)
     {
-        var visitor = new BigFloatExpressionVisitor(expr.Left.Significand.Context);
+        var visitor = new BigFloatExpressionVisitor(expr.Left.Significand.Workspace);
         return expr.Accept(ref visitor);
     }
 

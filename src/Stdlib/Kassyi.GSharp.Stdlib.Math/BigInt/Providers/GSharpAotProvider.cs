@@ -61,7 +61,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
 
     /// <inheritdoc/>
-    public void Add(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand,
+    public void Add(GpuWorkspace context, GpuUIntBigInteger leftOperand, uint rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
         var blockDim = System.Math.Min(1024, leftOperand.NumWords);
@@ -72,7 +72,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void Sub(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand,
+    public void Sub(GpuWorkspace context, GpuUIntBigInteger leftOperand, uint rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
         var blockDim = System.Math.Min(1024, leftOperand.NumWords);
@@ -83,7 +83,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void Mul(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand,
+    public void Mul(GpuWorkspace context, GpuUIntBigInteger leftOperand, uint rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
         var blockDim = System.Math.Min(1024, leftOperand.NumWords);
@@ -94,7 +94,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void BitwiseOr(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void BitwiseOr(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
@@ -105,7 +105,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void BitwiseXor(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void BitwiseXor(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
@@ -116,7 +116,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void BitwiseNot(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger resultBuffer)
+    public void BitwiseNot(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger resultBuffer)
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
 
@@ -126,7 +126,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void Gcd(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void Gcd(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
         var numWords = leftOperand.NumWords;
@@ -177,7 +177,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public unsafe bool IsZero(GpuContext context, GpuUIntBigInteger leftOperand)
+    public unsafe bool IsZero(GpuWorkspace context, GpuUIntBigInteger leftOperand)
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
         using var resultBuf = context.RentTemp(1);
@@ -194,7 +194,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public unsafe bool IsOne(GpuContext context, GpuUIntBigInteger leftOperand)
+    public unsafe bool IsOne(GpuWorkspace context, GpuUIntBigInteger leftOperand)
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
         using var resultBuf = context.RentTemp(1);
@@ -211,7 +211,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public unsafe int CompareTo(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand)
+    public unsafe int CompareTo(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand)
     {
         var numWords = System.Math.Max(leftOperand.NumWords, rightOperand.NumWords);
         var dims = CalculateGridDim(numWords);
@@ -263,7 +263,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
 
 
     /// <inheritdoc/>
-    public unsafe int GetBitLength(GpuContext context, GpuUIntBigInteger leftOperand)
+    public unsafe int GetBitLength(GpuWorkspace context, GpuUIntBigInteger leftOperand)
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
         using var resultBuf = context.RentTemp(1);
@@ -353,7 +353,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoDAsync_v2(destPointer, srcPointer, numWords * 4, stream));
     }
 
-    public void Add(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void Add(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
         // DeviceAddSubParallel requires single block execution for warp-scan carry propagation
@@ -367,7 +367,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             gridDimX: 1, blockDimX: blockSize, hStream: context.Stream);
     }
 
-    public void Sub(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void Sub(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
         // DeviceAddSubParallel requires single block execution for warp-scan carry propagation
@@ -382,7 +382,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void BitwiseAnd(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void BitwiseAnd(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
         var dims = CalculateGridDim(leftOperand.NumWords);
@@ -393,7 +393,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void InverseSqrtMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer,
+    public void InverseSqrtMega(GpuWorkspace context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer,
         int marginWords, int actualBits, int iterations)
     {
         var n = targetOperand.NumWords;
@@ -475,7 +475,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer,
+    public void ReciprocalMega(GpuWorkspace context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer,
         int marginWords, int numBits, int marginBits, int iterations, int targetBits)
     {
         var n = targetOperand.NumWords;
@@ -555,7 +555,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void Mul(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void Mul(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer)
     {
         var outWords = leftOperand.NumWords + rightOperand.NumWords;
@@ -649,7 +649,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             , hStream: context.Stream);
     }
 
-    private void LaunchNttHost(GpuContext context, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m, int n1,
+    private void LaunchNttHost(GpuWorkspace context, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m, int n1,
         int n2, uint p,
         ulong pm, bool isInverse)
     {
@@ -690,7 +690,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         }
     }
 
-    private void LaunchSharedRow(GpuContext context, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m, int n1,
+    private void LaunchSharedRow(GpuWorkspace context, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m, int n1,
         int n2, uint p,
         ulong pm, bool applyTwiddleBefore, bool applyTwiddleAfter, int maxBlocks, int currentL)
     {
@@ -706,7 +706,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
             , hStream: context.Stream);
     }
 
-    private void LaunchTranspose(GpuContext context, IntPtr input, IntPtr output, int width, int height)
+    private void LaunchTranspose(GpuWorkspace context, IntPtr input, IntPtr output, int width, int height)
     {
         var gridDimX = (uint)((width + 31) / 32);
         var gridDimY = (uint)((height + 31) / 32);
@@ -735,7 +735,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         return (uint)res;
     }
 
-    private TwiddleCache GetOrCreateTwiddleFactors(GpuContext context, int m)
+    private TwiddleCache GetOrCreateTwiddleFactors(GpuWorkspace context, int m)
     {
         return _twiddleCache.GetOrAdd(m, key => new Lazy<TwiddleCache>(() =>
         {
@@ -792,7 +792,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void ShiftLeft(GpuContext context, GpuUIntBigInteger leftOperand, int shiftBits,
+    public void ShiftLeft(GpuWorkspace context, GpuUIntBigInteger leftOperand, int shiftBits,
         GpuUIntBigInteger resultBuffer)
     {
         var wordShift = shiftBits / 32;
@@ -805,7 +805,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void ShiftRight(GpuContext context, GpuUIntBigInteger leftOperand, int shiftBits,
+    public void ShiftRight(GpuWorkspace context, GpuUIntBigInteger leftOperand, int shiftBits,
         GpuUIntBigInteger resultBuffer)
     {
         var wordShift = shiftBits / 32;
@@ -818,7 +818,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public bool Square(GpuContext context, IntPtr devicePointer, int logicalWords)
+    public bool Square(GpuWorkspace context, IntPtr devicePointer, int logicalWords)
     {
         using var tempA = new GpuUIntBigInteger(context, logicalWords);
         context.Provider.CopyDeviceToDevice(tempA.DevicePointer, devicePointer, logicalWords, context.Stream);

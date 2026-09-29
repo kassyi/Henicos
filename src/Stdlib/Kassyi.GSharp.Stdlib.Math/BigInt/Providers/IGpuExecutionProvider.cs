@@ -54,128 +54,128 @@ public interface IGpuExecutionProvider
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void Add(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+    void Add(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes subtraction on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void Sub(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+    void Sub(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes multiplication on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void Mul(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+    void Mul(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes inverse square root via Newton-Raphson on GPU.</summary>
-    void InverseSqrtMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int actualBits, int iterations);
+    void InverseSqrtMega(GpuWorkspace context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int actualBits, int iterations);
 
     /// <summary>Computes reciprocal via Newton-Raphson on GPU.</summary>
-    void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations, int targetBits);
+    void ReciprocalMega(GpuWorkspace context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations, int targetBits);
 
     /// <summary>Computes scalar addition on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The scalar second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void Add(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
+    void Add(GpuWorkspace context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes scalar subtraction on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The scalar second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void Sub(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
+    void Sub(GpuWorkspace context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes scalar multiplication on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The scalar second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void Mul(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
+    void Mul(GpuWorkspace context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes bitwise AND on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void BitwiseAnd(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+    void BitwiseAnd(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes bitwise OR on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void BitwiseOr(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+    void BitwiseOr(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes bitwise XOR on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void BitwiseXor(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+    void BitwiseXor(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes bitwise NOT on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void BitwiseNot(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger resultBuffer);
+    void BitwiseNot(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes left bit shift on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The operand to shift.</param>
     /// <param name="shiftBits">The number of bits to shift.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void ShiftLeft(GpuContext context, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer);
+    void ShiftLeft(GpuWorkspace context, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes right bit shift on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The operand to shift.</param>
     /// <param name="shiftBits">The number of bits to shift.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void ShiftRight(GpuContext context, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer);
+    void ShiftRight(GpuWorkspace context, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Computes in-place self squaring on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="devicePointer">The pointer to the device memory containing the operand.</param>
     /// <param name="logicalWords">The logical number of words of the operand.</param>
     /// <returns><c>true</c> if successful; otherwise, <c>false</c>.</returns>
-    bool Square(GpuContext context, IntPtr devicePointer, int logicalWords);
+    bool Square(GpuWorkspace context, IntPtr devicePointer, int logicalWords);
 
     /// <summary>Computes Greatest Common Divisor on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <param name="resultBuffer">The buffer to store the result.</param>
-    void Gcd(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+    void Gcd(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
 
     /// <summary>Checks whether operand equals zero on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The operand to check.</param>
     /// <returns><c>true</c> if the operand is zero; otherwise, <c>false</c>.</returns>
-    bool IsZero(GpuContext context, GpuUIntBigInteger leftOperand);
+    bool IsZero(GpuWorkspace context, GpuUIntBigInteger leftOperand);
 
     /// <summary>Checks whether operand equals one on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The operand to check.</param>
     /// <returns><c>true</c> if the operand is one; otherwise, <c>false</c>.</returns>
-    bool IsOne(GpuContext context, GpuUIntBigInteger leftOperand);
+    bool IsOne(GpuWorkspace context, GpuUIntBigInteger leftOperand);
 
     /// <summary>Gets the bit length of the operand on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The operand.</param>
     /// <returns>The bit length.</returns>
-    int GetBitLength(GpuContext context, GpuUIntBigInteger leftOperand);
+    int GetBitLength(GpuWorkspace context, GpuUIntBigInteger leftOperand);
 
     /// <summary>Compares two operands on GPU.</summary>
     /// <param name="context">The GPU execution context.</param>
     /// <param name="leftOperand">The first operand.</param>
     /// <param name="rightOperand">The second operand.</param>
     /// <returns>A signed integer that indicates the relative values of the operands.</returns>
-    int CompareTo(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand);
+    int CompareTo(GpuWorkspace context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand);
 
     /// <summary>Begins capturing CUDA commands into a graph via the specified stream.</summary>
     void BeginCapture(IntPtr stream);

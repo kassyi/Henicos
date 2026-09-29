@@ -72,9 +72,9 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
     public static bool operator !=(GpuBigFloat left, GpuBigFloat right) => !left.Equals(right);
     public static bool operator <(GpuBigFloat left, GpuBigFloat right) => left.CompareTo(right) < 0;
     public static bool operator >(GpuBigFloat left, GpuBigFloat right) => left.CompareTo(right) > 0;
-        public static implicit operator GpuBigFloat(GpuBigFloatAddExpr expr) { var visitor = new BigFloatExpressionVisitor(expr.Left.UFloat.Significand.Context); return expr.Accept(ref visitor); }
-    public static implicit operator GpuBigFloat(GpuBigFloatSubExpr expr) { var visitor = new BigFloatExpressionVisitor(expr.Left.UFloat.Significand.Context); return expr.Accept(ref visitor); }
-    public static implicit operator GpuBigFloat(GpuBigFloatMulExpr expr) { var visitor = new BigFloatExpressionVisitor(expr.Left.UFloat.Significand.Context); return expr.Accept(ref visitor); }
+        public static implicit operator GpuBigFloat(GpuBigFloatAddExpr expr) { var visitor = new BigFloatExpressionVisitor(expr.Left.UFloat.Significand.Workspace); return expr.Accept(ref visitor); }
+    public static implicit operator GpuBigFloat(GpuBigFloatSubExpr expr) { var visitor = new BigFloatExpressionVisitor(expr.Left.UFloat.Significand.Workspace); return expr.Accept(ref visitor); }
+    public static implicit operator GpuBigFloat(GpuBigFloatMulExpr expr) { var visitor = new BigFloatExpressionVisitor(expr.Left.UFloat.Significand.Workspace); return expr.Accept(ref visitor); }
     public static bool operator <=(GpuBigFloat left, GpuBigFloat right) => left.CompareTo(right) <= 0;
     public static bool operator >=(GpuBigFloat left, GpuBigFloat right) => left.CompareTo(right) >= 0;
 }

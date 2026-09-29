@@ -30,7 +30,7 @@ public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInteger p, [T
     /// Q = Ql * Qr
     /// T = Tl * Qr + Pl * Tr
     /// </summary>
-    public static GpuHypergeometricPqt Merge(GpuContext context, GpuHypergeometricPqt left, GpuHypergeometricPqt right)
+    public static GpuHypergeometricPqt Merge(GpuWorkspace context, GpuHypergeometricPqt left, GpuHypergeometricPqt right)
     {
         // P = Pl * Pr
         var pWords = left.P.Value.NumWords + right.P.Value.NumWords;

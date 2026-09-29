@@ -19,5 +19,5 @@ public interface IGpuBigIntExpression
     /// <param name="context">The GPU context for evaluation.</param>
     /// <param name="targetResult">An optional pre-allocated buffer for the absolute magnitude. If null, a temporary buffer is rented.</param>
     /// <returns>The evaluated result with its sign.</returns>
-    GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null);
+    GpuBigInteger Evaluate(GpuWorkspace context, GpuUIntBigInteger? targetResult = null);
 }

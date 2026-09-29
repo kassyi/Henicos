@@ -4,7 +4,7 @@ internal class GpuBigIntLeafExpression(GpuBigInteger value) : IGpuBigIntExpressi
 {
     public int NumWords => value.Value.NumWords;
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
+    public GpuBigInteger Evaluate(GpuWorkspace context, GpuUIntBigInteger? targetResult = null)
     {
         if (!targetResult.HasValue)
         {
@@ -35,7 +35,7 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         }
     }
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
+    public GpuBigInteger Evaluate(GpuWorkspace context, GpuUIntBigInteger? targetResult = null)
     {
         if (targetResult.HasValue && targetResult.Value.NumWords != NumWords)
         {
@@ -154,7 +154,7 @@ internal class SignedNegateExpression(IGpuBigIntExpression target) : IGpuBigIntE
     private IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public int NumWords => Target.NumWords;
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
+    public GpuBigInteger Evaluate(GpuWorkspace context, GpuUIntBigInteger? targetResult = null)
     {
         var innerResult = Target.Evaluate(context, targetResult);
         return new GpuBigInteger(innerResult.Value, !innerResult.IsNegative);
@@ -166,7 +166,7 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
     protected IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public virtual int NumWords => Target.NumWords;
 
-    public GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
+    public GpuBigInteger Evaluate(GpuWorkspace context, GpuUIntBigInteger? targetResult = null)
     {
         if (targetResult.HasValue && targetResult.Value.NumWords != NumWords)
         {

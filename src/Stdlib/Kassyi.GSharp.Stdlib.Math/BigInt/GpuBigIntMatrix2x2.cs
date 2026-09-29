@@ -75,12 +75,12 @@ public class GpuBigIntMatrix2x2 : IDisposable
     }
 
     /// <summary>
-    /// Gets the parent <see cref="GpuContext"/> managing the GPU device memory and execution provider for this matrix.
+    /// Gets the parent <see cref="GpuWorkspace"/> managing the GPU device memory and execution provider for this matrix.
     /// </summary>
     /// <value>
     /// The active GPU context associated with this matrix and all its constituent elements.
     /// </value>
-    public GpuContext Context
+    public GpuWorkspace Context
     {
         get;
     }
@@ -94,7 +94,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="numWords"/> is less than or equal to zero.</exception>
     /// <exception cref="OutOfMemoryException">Thrown when GPU global memory allocation fails for any of the matrix elements.</exception>
-    public GpuBigIntMatrix2x2(GpuContext context, int numWords, bool isOddStep)
+    public GpuBigIntMatrix2x2(GpuWorkspace context, int numWords, bool isOddStep)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(numWords);
@@ -133,7 +133,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <remarks>
     /// <para><b>Lifecycle:</b> The caller is responsible for disposing the returned matrix to release allocated GPU device memory.</para>
     /// </remarks>
-    public static GpuBigIntMatrix2x2 Identity(GpuContext context, int numWords)
+    public static GpuBigIntMatrix2x2 Identity(GpuWorkspace context, int numWords)
     {
         var mat = new GpuBigIntMatrix2x2(context, numWords, false);
 
@@ -160,7 +160,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// The word count of each element in the resulting matrix equals the sum of the operand limb lengths (<c>v.M00.NumWords + u.M00.NumWords</c>).
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="v"/> or <paramref name="u"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="v"/> and <paramref name="u"/> belong to different <see cref="GpuContext"/> instances.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="v"/> and <paramref name="u"/> belong to different <see cref="GpuWorkspace"/> instances.</exception>
     /// <remarks>
     /// <para>
     /// Computes the 2x2 matrix product using GPU arithmetic kernels:
@@ -224,7 +224,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <param name="outA">The destination <see cref="GpuUIntBigInteger"/> to receive the transformed first element $A'$. Cannot be <see langword="null"/>.</param>
     /// <param name="outB">The destination <see cref="GpuUIntBigInteger"/> to receive the transformed second element $B'$. Cannot be <see langword="null"/>.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="a"/>, <paramref name="b"/>, <paramref name="outA"/>, or <paramref name="outB"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException">Thrown when any argument does not belong to the same <see cref="GpuContext"/> as this matrix.</exception>
+    /// <exception cref="ArgumentException">Thrown when any argument does not belong to the same <see cref="GpuWorkspace"/> as this matrix.</exception>
     /// <remarks>
     /// <para>
     /// The linear transformation applied depends on <see cref="IsOddStep"/>:
@@ -252,7 +252,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     public void Apply(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger outA, GpuUIntBigInteger outB)
     {
 
-        if (a.Context != Context || b.Context != Context || outA.Context != Context || outB.Context != Context)
+        if (a.Workspace != Context || b.Workspace != Context || outA.Workspace != Context || outB.Workspace != Context)
         {
             throw new ArgumentException("All operands must belong to the same GPU context as the matrix.");
         }

@@ -10,7 +10,7 @@ public static class GpuBigUIntExpressionExtensions
     /// <summary>
     /// Evaluates this expression on the GPU into the specified target buffer using the Visitor pattern.
     /// </summary>
-    public static GpuUIntBigInteger Evaluate(this IGpuBigUIntExpression expr, GpuContext context, GpuUIntBigInteger? targetResult = null)
+    public static GpuUIntBigInteger Evaluate(this IGpuBigUIntExpression expr, GpuWorkspace context, GpuUIntBigInteger? targetResult = null)
     {
         var execContext = new BigIntExecutionContext(context, context.MemoryManager, new LegacyProviderArithmeticAdapter(), context.Stream);
         

@@ -20,7 +20,7 @@ public static class GpuRadixConverter
     /// <param name="writer">The output stream writer.</param>
     /// <param name="isMostSignificant">True if formatting the integer part with a decimal point (e.g. "3.1415...").</param>
     public static void ConvertAndWrite(
-        GpuContext context,
+        GpuWorkspace context,
         GpuUIntBigInteger value,
         int targetDigits,
         TextWriter writer,
@@ -47,7 +47,7 @@ public static class GpuRadixConverter
     }
 
     private static void ConvertAndWriteInternal(
-        GpuContext context,
+        GpuWorkspace context,
         GpuUIntBigInteger value,
         int targetDigits,
         TextWriter writer,
