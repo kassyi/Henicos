@@ -39,8 +39,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
     }
 
     [Fact]
-    [Trait("FeatureId", "GEN-55")]
-    public async Task Test_GEN_55_NativeAssets_ShouldFlowTransitivelyToConsumer()
+    public async Task Test_55_NativeAssets_ShouldFlowTransitivelyToConsumer()
     {
         var producerDir = Path.Combine(_testRoot, "Producer");
         var consumerDir = Path.Combine(_testRoot, "Consumer");
@@ -139,8 +138,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
     }
 
     [Fact]
-    [Trait("FeatureId", "GEN-55")]
-    public async Task Test_GEN_55_MockCompilationFailure_ShouldFailBuild()
+    public async Task Test_55_MockCompilationFailure_ShouldFailBuild()
     {
         var producerDir = Path.Combine(_testRoot, "ProducerFail");
         Directory.CreateDirectory(producerDir);
