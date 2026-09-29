@@ -27,9 +27,9 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
         }
     }
 
-    protected GpuKernelLoader.CudaContextScope _scope;
-    protected GpuWorkspace _ctx = null!;
-    protected IntPtr _stream;
+    protected GpuKernelLoader.CudaContextScope Scope;
+    protected GpuWorkspace Ctx = null!;
+    protected IntPtr Stream;
 
     // 精度（ビット幅）のパラメータ
     [Params(2048)]
@@ -42,10 +42,10 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     [GlobalSetup]
     public void Setup()
     {
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _ctx = new GpuWorkspace(16);
+        Scope = new GpuKernelLoader.CudaContextScope();
+        Ctx = new GpuWorkspace(16);
         
-        _stream = _ctx.Stream;
+        Stream = Ctx.Stream;
 
         // 1. 全バッファを事前に確保（Pinned Memory / Device Memory Arena）
         // 2. テスト入力データの初期化とGPUへの一括転送
@@ -60,8 +60,8 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     {
         OnCleanup();
 
-        _ctx.Dispose();
-        _scope.Dispose();
+        Ctx.Dispose();
+        Scope.Dispose();
     }
 
     protected abstract void OnSetup();
@@ -72,21 +72,21 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
     {
         // ホスト-デバイス間の同期を明示的に行い、非同期完了抜けを防止
         ExecuteBatchMultiply();
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(_stream));
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
     }
 
     [Benchmark]
     public void Divide()
     {
         ExecuteBatchDivide();
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(_stream));
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
     }
 
     [Benchmark]
     public void Sqrt()
     {
         ExecuteBatchSqrt();
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(_stream));
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Stream));
     }
 
     protected abstract void ExecuteBatchMultiply();
