@@ -58,14 +58,6 @@ public class GpuBigIntBenchmark : IDisposable
     [GlobalCleanup]
     public void Cleanup()
     {
-        _gpuAJit.Dispose();
-        _gpuBJit.Dispose();
-        _gpuResultJit.Dispose();
-
-        _gpuALegacy.Dispose();
-        _gpuBLegacy.Dispose();
-        _gpuResultLegacy.Dispose();
-
         _contextJit.Dispose();
         _contextLegacy.Dispose();
         _scope.Dispose();
