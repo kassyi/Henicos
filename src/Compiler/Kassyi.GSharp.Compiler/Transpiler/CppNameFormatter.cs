@@ -73,4 +73,64 @@ internal static class CppNameFormatter
 
         appendName(ref state, symbol.Name);
     }
+
+    public static ref readonly SourceWriter AppendNestedCppName(this in SourceWriter writer, ISymbol symbol)
+    {
+        AppendNestedSymbolPath(symbol,
+            appendName: static (ref SourceWriter w, string name) => w.Append(name),
+            appendSeparator: static (ref SourceWriter w) => w.Append('_'),
+            appendParent: static (ref SourceWriter w, ISymbol parent) => w.AppendNestedCppName(parent),
+            ref System.Runtime.CompilerServices.Unsafe.AsRef(in writer));
+        return ref writer;
+    }
+
+    private static void AppendNestedSymbolPath<TState>(
+        ISymbol symbol,
+        AppendNameDelegate<TState> appendName,
+        AppendSeparatorDelegate<TState> appendSeparator,
+        AppendParentDelegate<TState> appendParent,
+        ref TState state)
+    {
+        if (symbol.ContainingType is { } parentType)
+        {
+            appendParent(ref state, parentType);
+            appendSeparator(ref state);
+        }
+
+        appendName(ref state, symbol.Name);
+    }
+
+    public static ref readonly SourceWriter AppendAotStructPath(this in SourceWriter writer, ISymbol symbol)
+    {
+        AppendAotStructPathRecursive(symbol,
+            appendName: static (ref SourceWriter w, string name) => w.Append(name),
+            appendSeparator: static (ref SourceWriter w) => w.Append('.'),
+            appendParent: static (ref SourceWriter w, ISymbol parent) => w.AppendAotStructPath(parent),
+            ref System.Runtime.CompilerServices.Unsafe.AsRef(in writer));
+        return ref writer;
+    }
+
+    private static void AppendAotStructPathRecursive<TState>(
+        ISymbol symbol,
+        AppendNameDelegate<TState> appendName,
+        AppendSeparatorDelegate<TState> appendSeparator,
+        AppendParentDelegate<TState> appendParent,
+        ref TState state)
+    {
+        if (symbol.ContainingType is { } parentType && Kassyi.GSharp.Compiler.Marshaling.CudaLayoutRules.IsCustomStruct(parentType))
+        {
+            appendParent(ref state, parentType);
+            appendSeparator(ref state);
+            appendName(ref state, TrimContextSuffix(symbol.Name));
+        }
+        else
+        {
+            appendName(ref state, "AotContexts." + TrimContextSuffix(symbol.Name));
+        }
+    }
+
+    public static string TrimContextSuffix(string name)
+    {
+        return name.EndsWith("Context") ? name.Substring(0, name.Length - 7) : name;
+    }
 }

@@ -1,17 +1,17 @@
-// ReSharper disable All
-
-#pragma warning disable GSH0014
-
-using Kassyi.GSharp.Stdlib.Math.Contexts;
-
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
-[Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
+[SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntSqrtKernels
 {
+    // Dummy kernel to force the generator to emit the DualNtt struct definition before we use it
+    [GpuDeviceFunction]
+    private static void ForceEmitDualNtt_Sqrt(DualNtt args)
+    {
+    }
+
     [GpuDeviceFunction]
     private static void ExecuteNttMultiplyMacro(
-        SqrtNewtonRaphsonContext ctx,
+        SqrtNewtonRaphson ctx,
         uint[] opA, uint[] opB, uint[] resultDest,
         int numWordsA, int numWordsB, int numWordsResult)
     {
@@ -30,25 +30,39 @@ public static class GpuBigIntSqrtKernels
         GpuBigIntFermatKernels.DeviceUnpack16(opB, ctx.Workspace.NttBuf1B, ctx.Workspace.NttBuf2B, m, numWordsB, true);
         Gpu.SyncGrid();
 
-        // 2. Forward NTT A (Prime 1 & 2)
-        GpuBigIntNttKernels.ExecuteDualForwardNtt(
-            ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A, ctx.Workspace.TmpBuf,
-            ctx.Ntt.TwiddleFactors.Forward1, ctx.Ntt.TwiddleFactors.Forward2, m, n1, n2);
+        // 2. Base NTT Context
+        var baseNtt = new DualNtt
+        {
+            TemporaryBuffer = ctx.Workspace.TmpBuf,
+            M = m, N1 = n1, N2 = n2
+        };
 
-        // 3. Forward NTT B (Prime 1 & 2)
-        GpuBigIntNttKernels.ExecuteDualForwardNtt(
-            ctx.Workspace.NttBuf1B, ctx.Workspace.NttBuf2B, ctx.Workspace.TmpBuf,
-            ctx.Ntt.TwiddleFactors.Forward1, ctx.Ntt.TwiddleFactors.Forward2, m, n1, n2);
+        // 3. Forward NTT A (Prime 1 & 2)
+        var forwardA = baseNtt;
+        forwardA.Buffer1 = ctx.Workspace.NttBuf1A;
+        forwardA.Buffer2 = ctx.Workspace.NttBuf2A;
+        forwardA.Twiddle1 = ctx.Ntt.TwiddleFactors.Forward1;
+        forwardA.Twiddle2 = ctx.Ntt.TwiddleFactors.Forward2;
+        GpuBigIntNttKernels.ExecuteDualForwardNtt(forwardA);
 
-        // 4. Pointwise Multiply
+        // 4. Forward NTT B (Prime 1 & 2)
+        var forwardB = forwardA; // Twiddles are the same, just update buffers
+        forwardB.Buffer1 = ctx.Workspace.NttBuf1B;
+        forwardB.Buffer2 = ctx.Workspace.NttBuf2B;
+        GpuBigIntNttKernels.ExecuteDualForwardNtt(forwardB);
+
+        // 5. Pointwise Multiply
         GpuBigIntNttKernels.ExecuteNttPointwiseMultiply(ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A,
             ctx.Workspace.NttBuf1B, ctx.Workspace.NttBuf2B, m);
         Gpu.SyncGrid();
 
-        // 5. Inverse NTT (Prime 1 & 2)
-        GpuBigIntNttKernels.ExecuteDualInverseNtt(
-            ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A, ctx.Workspace.TmpBuf,
-            ctx.Ntt.TwiddleFactors.Inverse1, ctx.Ntt.TwiddleFactors.Inverse2, m, n1, n2);
+        // 6. Inverse NTT (Prime 1 & 2)
+        var inverseA = baseNtt;
+        inverseA.Buffer1 = ctx.Workspace.NttBuf1A;
+        inverseA.Buffer2 = ctx.Workspace.NttBuf2A;
+        inverseA.Twiddle1 = ctx.Ntt.TwiddleFactors.Inverse1;
+        inverseA.Twiddle2 = ctx.Ntt.TwiddleFactors.Inverse2;
+        GpuBigIntNttKernels.ExecuteDualInverseNtt(inverseA);
 
         // 6. Compute CRT
         GpuBigIntNttKernels.ExecuteCrtComputeCoefficients(ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A,
@@ -61,92 +75,39 @@ public static class GpuBigIntSqrtKernels
         {
             GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(ctx.Workspace.UncarriedLow, ctx.Workspace.UncarriedHigh,
                 resultDest, ctx.Workspace.BlockCarries, m, numWordsResult, 1024);
-            GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, ctx.Workspace.BlockCarries, numWordsResult, 1024,
+            GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, ctx.Workspace.BlockCarries, numWordsResult,
+                1024,
                 numBlocks);
         });
         Gpu.SyncGrid();
     }
 
     /// <summary>
-    /// メガカーネルによる Newton-Raphson法 (Inverse Sqrt)
+    ///Newton-Raphson Mega Kernel (Inverse Sqrt)
     /// </summary>
     [GpuKernel(Cooperative = true)]
-    public static void InverseSqrtNewtonRaphsonMegaKernel(
-        uint[] targetOperand, uint[] resultBuffer, uint[] constant3,
-        uint[] xSquared, uint[] axSquared, uint[] diff,
-        uint[] nextXUnshifted, uint[] nextXShifted,
-        uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B, uint[] tmpBuf,
-        uint[] uncarriedLow, uint[] uncarriedHigh, uint[] blockCarries,
-        long[] carryBuffer,
-        uint[] twiddleF1, uint[] twiddleF2, uint[] twiddleI1, uint[] twiddleI2,
-        int numWords, int marginWords, int actualBits, int marginBits, int iterations, int transformLength)
+    public static void InverseSqrtNewtonRaphsonMegaKernel(SqrtNewtonRaphson ctx)
     {
-        var ctx = new SqrtNewtonRaphsonContext
-        {
-            Operands = new SqrtNewtonRaphsonContext.OperandsContext
-            {
-                TargetOperand = targetOperand,
-                ResultBuffer = resultBuffer,
-                Constant3 = constant3
-            },
-            Dimensions = new SqrtNewtonRaphsonContext.DimensionsContext
-            {
-                NumberOfWords = numWords,
-                MarginWords = marginWords,
-                ActualBits = actualBits,
-                MarginBits = marginBits,
-                Iterations = iterations
-            },
-            Ntt = new NttContext
-            {
-                TransformLength = transformLength,
-                TwiddleFactors = new NttContext.TwiddleFactorsContext
-                {
-                    Forward1 = twiddleF1,
-                    Forward2 = twiddleF2,
-                    Inverse1 = twiddleI1,
-                    Inverse2 = twiddleI2
-                }
-            },
-            Workspace = new SqrtNewtonRaphsonContext.WorkspaceContext
-            {
-                XSquared = xSquared,
-                AxSquared = axSquared,
-                Diff = diff,
-                NextXUnshifted = nextXUnshifted,
-                NextXShifted = nextXShifted,
-                NttBuf1A = nttBuf1A,
-                NttBuf2A = nttBuf2A,
-                NttBuf1B = nttBuf1B,
-                NttBuf2B = nttBuf2B,
-                TmpBuf = tmpBuf,
-                UncarriedLow = uncarriedLow,
-                UncarriedHigh = uncarriedHigh,
-                BlockCarries = blockCarries
-            },
-            CarryBuffer = carryBuffer
-        };
+        int n = ctx.Dimensions.NumberOfWords;
 
-        int n = numWords;
-
-        // ニュートン・ラフソン法のメインループ
-        for (int i = 0; i < iterations; i++)
+        // main loop
+        for (int i = 0; i < ctx.Dimensions.Iterations; i++)
         {
             // 1. xSquared = resultBuffer * resultBuffer
             ExecuteNttMultiplyMacro(ctx, ctx.Operands.ResultBuffer, ctx.Operands.ResultBuffer, ctx.Workspace.XSquared,
-                n + marginWords, n + marginWords, 2 * n + 2 * marginWords);
+                n + ctx.Dimensions.MarginWords, n + ctx.Dimensions.MarginWords, 2 * n + 2 * ctx.Dimensions.MarginWords);
 
             // 2. axSquared = targetOperand * xSquared
             ExecuteNttMultiplyMacro(ctx, ctx.Operands.TargetOperand, ctx.Workspace.XSquared, ctx.Workspace.AxSquared, n,
-                2 * n + 2 * marginWords, 3 * n + 2 * marginWords);
+                2 * n + 2 * ctx.Dimensions.MarginWords, 3 * n + 2 * ctx.Dimensions.MarginWords);
 
             // 3. diff = constant3 - axSquared
             Gpu.SingleThread(() =>
             {
-                var subCtx = new BigIntKernelContext
+                var subCtx = new Contexts.BigInt
                 {
-                    Operands = new BigIntKernelContext.OperandsContext { CarryBuffer = ctx.CarryBuffer },
-                    NumberOfWords = 3 * n + 2 * marginWords
+                    Operands = new Contexts.BigInt.OperandContext { CarryBuffer = ctx.CarryBuffer },
+                    NumberOfWords = 3 * n + 2 * ctx.Dimensions.MarginWords
                 };
                 GpuBigIntKernels.ExecuteSub(ref subCtx, ctx.Workspace.Diff, ctx.Operands.Constant3,
                     ctx.Workspace.AxSquared);
@@ -155,14 +116,15 @@ public static class GpuBigIntSqrtKernels
 
             // 4. nextXUnshifted = resultBuffer * diff
             ExecuteNttMultiplyMacro(ctx, ctx.Operands.ResultBuffer, ctx.Workspace.Diff, ctx.Workspace.NextXUnshifted,
-                n + marginWords, 3 * n + 2 * marginWords, 4 * n + 3 * marginWords);
+                n + ctx.Dimensions.MarginWords, 3 * n + 2 * ctx.Dimensions.MarginWords,
+                4 * n + 3 * ctx.Dimensions.MarginWords);
 
             // 5. resultBuffer = nextXUnshifted >> (2 * n * 32 + 2 * marginBits + 1)
             int shiftTotal = 2 * n * 32 + 2 * ctx.Dimensions.MarginBits + 1;
             int wordShift = shiftTotal / 32;
             int bitShift = shiftTotal % 32;
-            int destWords = n + marginWords;
-            int srcMaxWords = 4 * n + 3 * marginWords;
+            int destWords = n + ctx.Dimensions.MarginWords;
+            int srcMaxWords = 4 * n + 3 * ctx.Dimensions.MarginWords;
 
             Gpu.GridStrideLoop(destWords, idx =>
             {

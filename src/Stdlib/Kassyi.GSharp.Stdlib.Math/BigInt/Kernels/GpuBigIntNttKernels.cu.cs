@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntNttKernels
 {
+
+
     // NTT Primes and primitive roots
     // We use two 32-bit primes for CRT to support convolution values up to 2^55
     // Primes of the form k * 2^25 + 1 to support NTT sizes up to 2^25 (33 million elements)
@@ -104,7 +106,7 @@ public static class GpuBigIntNttKernels
 
 
     [GpuDeviceFunction]
-    public static void ExecuteNttSharedRow(NumberTheoreticTransformKernelArgs args)
+    public static void ExecuteNttSharedRow(NumberTheoreticTransform args)
     {
         var deviceData = args.Buffer;
         var deviceTwiddle = args.Twiddle;
@@ -319,7 +321,8 @@ public static class GpuBigIntNttKernels
 
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong ComputeNttLocalSum(uint[] uncarriedLow, uint[] uncarriedHigh, int i, int maxWordCount, int transformLength)
+    private static ulong ComputeNttLocalSum(uint[] uncarriedLow, uint[] uncarriedHigh, int i, int maxWordCount,
+        int transformLength)
     {
         ulong localSum = 0;
         if (i < maxWordCount)
@@ -343,6 +346,7 @@ public static class GpuBigIntNttKernels
                 }
             });
         }
+
         return localSum;
     }
 
@@ -377,7 +381,8 @@ public static class GpuBigIntNttKernels
             uint g = (uint)(sum >> 32);
             uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
-            ComputeBlockCarryScan(g, p, sharedCarry, laneId, warpId, bDim, out uint scanG, out uint scanP, out uint carryIn);
+            ComputeBlockCarryScan(g, p, sharedCarry, laneId, warpId, bDim, out uint scanG, out uint scanP,
+                out uint carryIn);
 
             if (i < maxWordCount)
             {
@@ -387,7 +392,9 @@ public static class GpuBigIntNttKernels
             if (tIdx == 0)
             {
                 uint lastH = sharedH[((bDim + 31) / 32) - 1];
-                uint waveCarry = GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[((bDim + 31) / 32) - 1]), 0u);
+                uint waveCarry =
+                    GpuBigIntKernels.ApplyCarry(GpuBigIntKernels.UnpackCarryState(sharedCarry[((bDim + 31) / 32) - 1]),
+                        0u);
                 blockCarries[bIdx] = lastH + waveCarry;
             }
 
@@ -404,6 +411,7 @@ public static class GpuBigIntNttKernels
         {
             sharedH[warpId] = h;
         }
+
         Gpu.SyncThreads();
 
         if (laneId == 0)
@@ -422,7 +430,8 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    private static void ComputeBlockCarryScan(uint g, uint p, SharedMemory<uint> sharedCarry, int laneId, int warpId, int bDim, out uint scanG, out uint scanP, out uint carryIn)
+    private static void ComputeBlockCarryScan(uint g, uint p, SharedMemory<uint> sharedCarry, int laneId, int warpId,
+        int bDim, out uint scanG, out uint scanP, out uint carryIn)
     {
         var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
         scanG = warpScan.Generate;
@@ -438,7 +447,9 @@ public static class GpuBigIntNttKernels
         if (warpId == 0)
         {
             int numWarps = (bDim + 31) / 32;
-            var valState = laneId < numWarps ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId]) : new GpuBigIntKernels.CarryState(0, 0);
+            var valState = laneId < numWarps
+                ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId])
+                : new GpuBigIntKernels.CarryState(0, 0);
             var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
 
             if (laneId < numWarps)
@@ -468,7 +479,8 @@ public static class GpuBigIntNttKernels
     public static void ResolveNttCarriesBlockedKernel(uint[] uncarriedLow, uint[] uncarriedHigh,
         uint[] outputBuffer, uint[] blockCarries, int transformLength, int maxWordCount, int chunkSize)
     {
-        ExecuteResolveNttCarriesBlocked(uncarriedLow, uncarriedHigh, outputBuffer, blockCarries, transformLength, maxWordCount, chunkSize);
+        ExecuteResolveNttCarriesBlocked(uncarriedLow, uncarriedHigh, outputBuffer, blockCarries, transformLength,
+            maxWordCount, chunkSize);
     }
 
     [GpuDeviceFunction]
@@ -519,7 +531,7 @@ public static class GpuBigIntNttKernels
 
 
     [GpuDeviceFunction]
-    public static void ExecuteForwardNtt(NumberTheoreticTransformKernelArgs args)
+    public static void ExecuteForwardNtt(NumberTheoreticTransform args)
     {
         var buffer = args.Buffer;
         var temporaryBuffer = args.TemporaryBuffer;
@@ -562,7 +574,7 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteInverseNtt(NumberTheoreticTransformKernelArgs args)
+    public static void ExecuteInverseNtt(NumberTheoreticTransform args)
     {
         var buffer = args.Buffer;
         var temporaryBuffer = args.TemporaryBuffer;
@@ -605,44 +617,38 @@ public static class GpuBigIntNttKernels
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteDualForwardNtt(
-        uint[] buffer1, uint[] buffer2, uint[] temporaryBuffer,
-        [GpuReadOnly] uint[] twiddle1, [GpuReadOnly] uint[] twiddle2,
-        int m, int n1, int n2)
+    public static void ExecuteDualForwardNtt(DualNtt ctx)
     {
-        var args1 = new NumberTheoreticTransformKernelArgs
+        var args1 = new NumberTheoreticTransform
         {
-            Buffer = buffer1, TemporaryBuffer = temporaryBuffer,
-            Twiddle = twiddle1, M = m, N1 = n1, N2 = n2, P = Prime1, Pm = BarrettMagic1
+            Buffer = ctx.Buffer1, TemporaryBuffer = ctx.TemporaryBuffer,
+            Twiddle = ctx.Twiddle1, M = ctx.M, N1 = ctx.N1, N2 = ctx.N2, P = Prime1, Pm = BarrettMagic1
         };
         ExecuteForwardNtt(args1);
 
-        var args2 = new NumberTheoreticTransformKernelArgs
+        var args2 = new NumberTheoreticTransform
         {
-            Buffer = buffer2, TemporaryBuffer = temporaryBuffer,
-            Twiddle = twiddle2, M = m, N1 = n1, N2 = n2, P = Prime2, Pm = BarrettMagic2
+            Buffer = ctx.Buffer2, TemporaryBuffer = ctx.TemporaryBuffer,
+            Twiddle = ctx.Twiddle2, M = ctx.M, N1 = ctx.N1, N2 = ctx.N2, P = Prime2, Pm = BarrettMagic2
         };
         ExecuteForwardNtt(args2);
     }
 
     [GpuDeviceFunction]
-    public static void ExecuteDualInverseNtt(
-        uint[] buffer1, uint[] buffer2, uint[] temporaryBuffer,
-        [GpuReadOnly] uint[] twiddle1, [GpuReadOnly] uint[] twiddle2,
-        int m, int n1, int n2)
+    public static void ExecuteDualInverseNtt(DualNtt ctx)
     {
-        var args1 = new NumberTheoreticTransformKernelArgs
+        var args1 = new NumberTheoreticTransform
         {
-            Buffer = buffer1, TemporaryBuffer = temporaryBuffer,
-            Twiddle = twiddle1, M = m, N1 = n1, N2 = n2, P = Prime1, Pm = BarrettMagic1,
+            Buffer = ctx.Buffer1, TemporaryBuffer = ctx.TemporaryBuffer,
+            Twiddle = ctx.Twiddle1, M = ctx.M, N1 = ctx.N1, N2 = ctx.N2, P = Prime1, Pm = BarrettMagic1,
             IsInverse = true
         };
         ExecuteInverseNtt(args1);
 
-        var args2 = new NumberTheoreticTransformKernelArgs
+        var args2 = new NumberTheoreticTransform
         {
-            Buffer = buffer2, TemporaryBuffer = temporaryBuffer,
-            Twiddle = twiddle2, M = m, N1 = n1, N2 = n2, P = Prime2, Pm = BarrettMagic2,
+            Buffer = ctx.Buffer2, TemporaryBuffer = ctx.TemporaryBuffer,
+            Twiddle = ctx.Twiddle2, M = ctx.M, N1 = ctx.N1, N2 = ctx.N2, P = Prime2, Pm = BarrettMagic2,
             IsInverse = true
         };
         ExecuteInverseNtt(args2);
@@ -654,7 +660,7 @@ public static class GpuBigIntNttKernels
     {
         // This is a dummy kernel wrapper that exists solely to force the compilation of
         // the [GpuDeviceFunction] methods in this file for snapshot testing.
-        NumberTheoreticTransformKernelArgs args = default;
+        NumberTheoreticTransform args = default;
         args.Buffer = data;
         ExecuteForwardNtt(args);
     }

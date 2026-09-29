@@ -28,9 +28,9 @@ public class GEN_35_AotConfigurationTests
         var generatedTrees = outputCompilation.SyntaxTrees.Where(t => t.FilePath.EndsWith(".g.cs")).ToList();
 
         // Ensure wrapper is generated
-        Assert.Contains(generatedTrees, t => t.FilePath.Contains("MyKernel_Run_Wrapper.g.cs"));
+        Assert.Contains(generatedTrees, t => t.FilePath.Contains("MyKernel_Wrapper.g.cs"));
 
-        var wrapperSource = generatedTrees.First(t => t.FilePath.Contains("MyKernel_Run_Wrapper.g.cs")).ToString();
+        var wrapperSource = generatedTrees.First(t => t.FilePath.Contains("MyKernel_Wrapper.g.cs")).ToString();
 
         // We unified naming, so it should expect GetFunction with mangled name
         Assert.Contains("GetFunction", wrapperSource);

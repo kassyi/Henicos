@@ -9,6 +9,21 @@ using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigFloatKernels
 {
+    public static class AotContexts
+    {
+        public struct BigFloatAdd
+        {
+            [GpuReadOnly] public uint[] LargerSig;
+            public int LargerWords;
+            [GpuReadOnly] public uint[] SmallerSig;
+            public int SmallerWords;
+            public uint[] ResultSig;
+            public int NumWords;
+            public int WordShift;
+            public int BitShift;
+            public int SignScale;
+        }
+    }
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static uint GetShiftedRightWord([GpuReadOnly] uint[] data, int numWords, int destIdx, int wordShift,
@@ -38,11 +53,7 @@ public static class GpuBigFloatKernels
     }
 
     [GpuKernel]
-    public static void FloatAddAlignedKernel(
-        [GpuReadOnly] uint[] largerSig, int largerWords,
-        [GpuReadOnly] uint[] smallerSig, int smallerWords,
-        uint[] resultSig, int numWords,
-        int wordShift, int bitShift, int signScale)
+    public static void FloatAddAlignedKernel(AotContexts.BigFloatAdd ctx)
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
@@ -51,21 +62,21 @@ public static class GpuBigFloatKernels
 
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
 
-        uint blockCarryIn = signScale == 1 ? 0u : 1u;
+        uint blockCarryIn = ctx.SignScale == 1 ? 0u : 1u;
 
-        for (int offset = 0; offset < numWords; offset += bDim)
+        for (int offset = 0; offset < ctx.NumWords; offset += bDim)
         {
             int idx = offset + tid;
-            bool valid = idx < numWords;
+            bool valid = idx < ctx.NumWords;
 
-            uint valA = (valid && idx < largerWords) ? largerSig[idx] : 0u;
+            uint valA = (valid && idx < ctx.LargerWords) ? ctx.LargerSig[idx] : 0u;
             uint valB = 0u;
             if (valid)
             {
-                valB = GetShiftedRightWord(smallerSig, smallerWords, idx, wordShift, bitShift);
+                valB = GetShiftedRightWord(ctx.SmallerSig, ctx.SmallerWords, idx, ctx.WordShift, ctx.BitShift);
             }
 
-            if (signScale == -1)
+            if (ctx.SignScale == -1)
             {
                 valB = ~valB;
             }
@@ -118,7 +129,7 @@ public static class GpuBigFloatKernels
 
             if (valid)
             {
-                resultSig[idx] = (uint)sum + carryIn;
+                ctx.ResultSig[idx] = (uint)sum + carryIn;
             }
 
             blockCarryIn =

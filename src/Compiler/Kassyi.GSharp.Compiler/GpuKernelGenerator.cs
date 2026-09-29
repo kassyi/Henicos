@@ -271,14 +271,27 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var seenKernelMethods = new HashSet<TranspiledKernelResult>();
         var distinctKernelMethods = new List<TranspiledKernelResult>();
 
+        var methodsByClass = new System.Collections.Generic.Dictionary<INamedTypeSymbol, System.Collections.Generic.List<TranspiledKernelResult>>(SymbolEqualityComparer.Default);
         foreach (var method in kernelMethods)
         {
             if (seenKernelMethods.Add(method))
             {
                 distinctKernelMethods.Add(method);
-                var kernelSource = ProcessKernelMethod(method, config, context, isCuda);
-                allKernelsSource.AppendLine(kernelSource);
+                string source = isCuda ? method.CudaSource : method.CppSource;
+                allKernelsSource.AppendLine(source);
+
+                if (!methodsByClass.TryGetValue(method.MethodSymbol.ContainingType, out var list))
+                {
+                    list = new System.Collections.Generic.List<TranspiledKernelResult>();
+                    methodsByClass[method.MethodSymbol.ContainingType] = list;
+                }
+                list.Add(method);
             }
+        }
+
+        foreach (var kvp in methodsByClass)
+        {
+            ProcessKernelClass((INamedTypeSymbol)kvp.Key, kvp.Value, config, context, isCuda);
         }
 
         var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
@@ -336,21 +349,23 @@ public class GpuKernelGenerator : IIncrementalGenerator
             SourceText.From(deviceWriter.ToString(), Encoding.UTF8));
     }
 
-    private static string ProcessKernelMethod(TranspiledKernelResult method, GeneratorConfig config,
+    private static void ProcessKernelClass(INamedTypeSymbol classSymbol, System.Collections.Generic.List<TranspiledKernelResult> methods, GeneratorConfig config,
         SourceProductionContext context, bool isCuda)
     {
-        foreach (var diag in method.Diagnostics)
+        var methodsData = new System.Collections.Generic.List<(IMethodSymbol Method, string Source)>();
+        foreach (var method in methods)
         {
-            context.ReportDiagnostic(diag.Diagnostic);
+            foreach (var diag in method.Diagnostics)
+            {
+                context.ReportDiagnostic(diag.Diagnostic);
+            }
+            string source = isCuda ? method.CudaSource : method.CppSource;
+            methodsData.Add((method.MethodSymbol, source));
         }
 
-        string source = isCuda ? method.CudaSource : method.CppSource;
-
-        var wrapperSource = WrapperEmitter.GenerateWrapperClass(method.MethodSymbol, source, config);
-        context.AddSource(method.ClassName + "_" + method.MethodName + "_Wrapper.g.cs",
+        var wrapperSource = WrapperEmitter.GenerateWrapperClass(classSymbol, methodsData, config);
+        context.AddSource(classSymbol.Name + "_Wrapper.g.cs",
             SourceText.From(wrapperSource, Encoding.UTF8));
-
-        return source;
     }
 
 

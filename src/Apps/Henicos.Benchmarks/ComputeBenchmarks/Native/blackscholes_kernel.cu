@@ -1,17 +1,28 @@
 #include <cuda_runtime.h>
 #include <math_constants.h>
 
+struct BlackScholesContext {
+    float* __restrict__ S;
+    float* __restrict__ X;
+    float* __restrict__ T;
+    float R;
+    float V;
+    float* __restrict__ CallResult;
+    float* __restrict__ PutResult;
+    int N;
+};
+
 // Native CUDA reference implementation for Black-Scholes benchmark
-extern "C" __global__ void BlackScholesKernel_Native(float* __restrict__ s, float* __restrict__ x, float* __restrict__ t, float r, float v, float* __restrict__ callResult, float* __restrict__ putResult, int n)
+extern "C" __global__ void BlackScholesKernel_Native(BlackScholesContext ctx)
 {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
-    if (tid >= n) return;
-        float s_val = s[tid];
-        float x_val = x[tid];
-        float t_val = t[tid];
+    if (tid >= ctx.N) return;
+        float s_val = ctx.S[tid];
+        float x_val = ctx.X[tid];
+        float t_val = ctx.T[tid];
 
-        float d1 = (__logf(s_val / x_val) + (r + v * v / 2.0f) * t_val) / (v * __fsqrt_rn(t_val));
-        float d2 = d1 - v * __fsqrt_rn(t_val);
+        float d1 = (__logf(s_val / x_val) + (ctx.R + ctx.V * ctx.V / 2.0f) * t_val) / (ctx.V * __fsqrt_rn(t_val));
+        float d2 = d1 - ctx.V * __fsqrt_rn(t_val);
 
         // CND approximation inline for Native CUDA
         auto cnd = [](float d) {
@@ -25,8 +36,8 @@ extern "C" __global__ void BlackScholesKernel_Native(float* __restrict__ s, floa
         float cndD1 = cnd(d1);
         float cndD2 = cnd(d2);
 
-        float expRT = __expf(-r * t_val);
+        float expRT = __expf(-ctx.R * t_val);
         
-        callResult[tid] = s_val * cndD1 - x_val * expRT * cndD2;
-        putResult[tid] = x_val * expRT * (1.0f - cndD2) - s_val * (1.0f - cndD1);
+        ctx.CallResult[tid] = s_val * cndD1 - x_val * expRT * cndD2;
+        ctx.PutResult[tid] = x_val * expRT * (1.0f - cndD2) - s_val * (1.0f - cndD1);
 }

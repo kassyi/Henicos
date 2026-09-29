@@ -1462,9 +1462,6 @@ int CurrentL;
 }
 ;
 #endif
-extern "C" __global__ void Kernel_MultiplyNtt_SharedRow(unsigned int* __restrict__ buffer, unsigned int* __restrict__ temporaryBuffer, unsigned int* __restrict__ twiddle, int m, int n1, int n2, unsigned int p, unsigned long long pm, bool applyTwiddleBefore, bool applyTwiddleAfter, int maxBlocks, int currentL){
-auto args=([&]() {
-Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs _tmp{}; _tmp.Buffer = buffer; _tmp.TemporaryBuffer = temporaryBuffer; _tmp.Twiddle = twiddle; _tmp.M = m; _tmp.N1 = n1; _tmp.N2 = n2; _tmp.P = p; _tmp.Pm = pm; _tmp.ApplyTwiddleBefore = applyTwiddleBefore; _tmp.ApplyTwiddleAfter = applyTwiddleAfter; _tmp.MaxBlocks = maxBlocks; _tmp.CurrentL = currentL; return _tmp; }
-());
-Device_NTT_Shared_Row(args);
+extern "C" __global__ void Kernel_MultiplyNtt_SharedRow(Kassyi_GSharp_Stdlib_Math_Contexts_NumberTheoreticTransformKernelArgs args){
+    Device_NTT_Shared_Row(args);
 }

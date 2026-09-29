@@ -32,6 +32,8 @@ Writing high-performance GPU code requires shifting from a CPU-centric mental mo
   Mapping 2D/3D matrix and image coordinates to GPU thread grids with boundary guards.
 - **[4.10 AI Agent Coding Guidelines](10_ai_agent_coding_guidelines.md)**
   Best practices and common hallucination guards for AI coding assistants writing G# code.
+- **[4.11 Deep Struct Marshaling and Argument Hell Elimination Guide](11_deep_struct_marshaling_guide.md)**
+  A comprehensive guide to eliminating Argument Hell using deep struct marshaling, AOT Contexts, named arguments, and default parameters.
 
 ## See also
 

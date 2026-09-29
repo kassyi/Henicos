@@ -9,12 +9,22 @@ internal static class NativeStructEmitter
     {
         var layout = CudaLayoutRules.GetCudaLayout(s);
 
-        // We strictly use LayoutKind.Explicit to match CUDA ABI alignment rules perfectly.
-        // This also bypasses a known CLR TypeLoadException bug that occurs when nesting
-        // structs containing explicit layouts or arrays if LayoutKind.Sequential is used.
+        var parents = new System.Collections.Generic.Stack<INamedTypeSymbol>();
+        var parent = s.ContainingType;
+        while (parent != null && CudaLayoutRules.IsCustomStruct(parent))
+        {
+            parents.Push(parent);
+            parent = parent.ContainingType;
+        }
+
+        foreach (var p in parents)
+        {
+            writer.AppendLine($"public unsafe partial struct {Transpiler.CppNameFormatter.TrimContextSuffix(p.Name)}");
+            writer.AppendLine("{");
+        }
+
         writer.AppendLine($"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = {layout.Size})]");
-        writer.Append("public unsafe struct __Native_");
-        writer.AppendFullyQualifiedCppName(s);
+        writer.Append($"public unsafe partial struct {Transpiler.CppNameFormatter.TrimContextSuffix(s.Name)}");
         writer.AppendLine();
 
         using (writer.Scope())
@@ -39,10 +49,16 @@ internal static class NativeStructEmitter
             }
         }
 
+        foreach (var p in parents)
+        {
+            writer.AppendLine("}");
+        }
+
         writer.AppendLine();
     }
 
     private static void MapToNativeField(SourceWriter writer, IFieldSymbol field, int fieldSize)
+    
     {
         if (field.Type is IArrayTypeSymbol)
         {
@@ -50,8 +66,8 @@ internal static class NativeStructEmitter
         }
         else if (CudaLayoutRules.IsCustomStruct(field.Type))
         {
-            writer.Append("public __Native_");
-            writer.AppendFullyQualifiedCppName(field.Type);
+            writer.Append("public ");
+            writer.AppendAotStructPath(field.Type);
             writer.AppendLine($" {field.Name};");
         }
         else if (field.Type.IsReferenceType)

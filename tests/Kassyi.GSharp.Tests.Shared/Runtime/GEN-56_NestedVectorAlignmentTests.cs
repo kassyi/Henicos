@@ -29,11 +29,11 @@ public class GEN56_NestedVectorAlignmentTests
         Type type = null;
         try
         {
-            type = assembly.GetTypes().FirstOrDefault(t => t.Name.Contains("__Native_") && t.Name.Contains("GEN56_AlignmentTestStruct"));
+            type = assembly.GetTypes().FirstOrDefault(t => t.Name == "GEN56_AlignmentTestStruct" && t.DeclaringType != null && t.DeclaringType.Name == "AotContexts");
         }
         catch (System.Reflection.ReflectionTypeLoadException ex)
         {
-            type = ex.Types.FirstOrDefault(t => t != null && t.Name.Contains("__Native_") && t.Name.Contains("GEN56_AlignmentTestStruct"));
+            type = ex.Types.FirstOrDefault(t => t != null && t.Name == "GEN56_AlignmentTestStruct" && t.DeclaringType != null && t.DeclaringType.Name == "AotContexts");
         }
         Assert.NotNull(type);
 

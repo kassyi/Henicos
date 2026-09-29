@@ -4,30 +4,21 @@ using Kassyi.GSharp.Compiler.Marshaling;
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>Generates host-side C# wrapper classes that JIT-compile and invoke GPU kernels.</summary>
-/// <remarks><para>Implements: <b>GEN-35</b></para></remarks>
+// <remarks><para>Implements: <b>GEN-35</b></para></remarks>
 internal static class WrapperEmitter
 {
-    private readonly struct InteropParameterInfo(string modifier, ITypeSymbol? type, bool isIntPtr, string? defaultValue = null)
+    private readonly struct InteropParameterInfo(
+        string modifier,
+        ITypeSymbol? type,
+        bool isIntPtr,
+        string? defaultValue = null,
+        string? rawTypeName = null)
     {
-        private string Modifier
-        {
-            get;
-        } = modifier;
-
-        private ITypeSymbol? Type
-        {
-            get;
-        } = type;
-
-        private bool IsIntPtr
-        {
-            get;
-        } = isIntPtr;
-
-        private string? DefaultValue
-        {
-            get;
-        } = defaultValue;
+        private string Modifier { get; } = modifier;
+        private ITypeSymbol? Type { get; } = type;
+        private bool IsIntPtr { get; } = isIntPtr;
+        private string? DefaultValue { get; } = defaultValue;
+        private string? RawTypeName { get; } = rawTypeName;
 
         public void WriteTo(SourceWriter writer, string name)
         {
@@ -43,7 +34,12 @@ internal static class WrapperEmitter
                     writer.AppendSpace();
                 }
 
-                if (Type != null)
+                if (RawTypeName != null)
+                {
+                    writer.Append(RawTypeName);
+                    writer.AppendSpace();
+                }
+                else if (Type != null)
                 {
                     writer.AppendFullyQualifiedCsharpName(Type);
                     writer.AppendSpace();
@@ -67,53 +63,97 @@ internal static class WrapperEmitter
         string? defaultValue = null;
         if (p.HasExplicitDefaultValue)
         {
-            if (p.DeclaringSyntaxReferences.Length > 0)
+            var val = p.ExplicitDefaultValue;
+            defaultValue = val switch
             {
-                var syntax = p.DeclaringSyntaxReferences[0].GetSyntax();
-                if (syntax is ParameterSyntax { Default: { } defaultExpr })
+                null => "default",
+                bool b => b ? "true" : "false",
+                float f => f.ToString(System.Globalization.CultureInfo.InvariantCulture) + "f",
+                double d => d.ToString(System.Globalization.CultureInfo.InvariantCulture) + "d",
+                string s => SymbolDisplay.FormatLiteral(s, true),
+                _ => val.ToString()
+            };
+        }
+
+        switch (isDevicePtr)
+        {
+            case true when (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out):
+            {
+                if (p.HasExplicitDefaultValue)
                 {
-                    defaultValue = defaultExpr.ToString();
+                    defaultValue = "default";
                 }
+
+                return new InteropParameterInfo(string.Empty, null, true, defaultValue);
             }
-            
-            if (defaultValue == null)
+            case true when CudaLayoutRules.IsCustomStruct(p.Type):
             {
-                var val = p.ExplicitDefaultValue;
-                defaultValue = val switch
+                var tempWriter = new SourceWriter();
+                tempWriter.AppendAotStructPath(p.Type);
+                var rawTypeName = tempWriter.ToString();
+                return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
+            }
+            default:
+            {
+                var modifier = p.RefKind switch
                 {
-                    null => "default",
-                    bool b => b ? "true" : "false",
-                    float f => f.ToString(System.Globalization.CultureInfo.InvariantCulture) + "f",
-                    double d => d.ToString(System.Globalization.CultureInfo.InvariantCulture) + "d",
-                    string s => "\"" + s.Replace("\"", "\\\"") + "\"",
-                    _ => val.ToString()
+                    RefKind.Ref => "ref",
+                    RefKind.Out => "out",
+                    _ => string.Empty
                 };
+
+                return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
             }
         }
-
-        if (isDevicePtr && (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out))
-        {
-            if (p.HasExplicitDefaultValue)
-            {
-                defaultValue = "default";
-            }
-
-            return new InteropParameterInfo(string.Empty, null, true, defaultValue);
-        }
-
-        var modifier = p.RefKind switch
-        {
-            RefKind.Ref => "ref",
-            RefKind.Out => "out",
-            _ => string.Empty
-        };
-
-        return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
     }
 
-    public static string GenerateWrapperClass(IMethodSymbol method, string source, GeneratorConfig config)
+    private static unsafe string GetFlatTypeName(ITypeSymbol typeSymbol)
     {
-        var className = method.ContainingType.Name + "Wrapper";
+        var length = 0;
+        var partsCount = 0;
+
+        var currentType = typeSymbol;
+        while (currentType != null)
+        {
+            length += currentType.Name.Length;
+            partsCount++;
+            currentType = currentType.ContainingType;
+        }
+
+        if (partsCount > 1)
+        {
+            length += partsCount - 1; // underscores
+        }
+
+        var buffer = stackalloc char[length];
+        var currentIndex = length;
+
+        currentType = typeSymbol;
+        while (currentType != null)
+        {
+            var name = currentType.Name;
+            currentIndex -= name.Length;
+            for (var i = 0; i < name.Length; i++)
+            {
+                buffer[currentIndex + i] = name[i];
+            }
+
+            currentType = currentType.ContainingType;
+            if (currentType == null)
+            {
+                continue;
+            }
+
+            currentIndex--;
+            buffer[currentIndex] = '_';
+        }
+
+        return new string(buffer, 0, length);
+    }
+
+    public static string GenerateWrapperClass(INamedTypeSymbol classSymbol, System.Collections.Generic.IEnumerable<(IMethodSymbol Method, string Source)> methods, GeneratorConfig config)
+    {
+        var className = classSymbol.Name + "Wrapper";
 
         var writer = new SourceWriter();
         writer.AppendLine("""
@@ -131,36 +171,44 @@ internal static class WrapperEmitter
 
         writer.AppendLine();
         writer.Append("namespace ");
-        if (method.ContainingNamespace.IsGlobalNamespace)
+        if (classSymbol.ContainingNamespace.IsGlobalNamespace)
         {
             writer.AppendLine("Kassyi.GSharp.Generated");
         }
         else
         {
-            WriteNamespace(writer, method.ContainingNamespace);
+            WriteNamespace(writer, classSymbol.ContainingNamespace);
             writer.AppendLine();
         }
 
         using (writer.Scope())
         {
-            writer.Append("public static partial class ");
+            writer.Append("public partial class ");
             writer.AppendLine(className);
             using (writer.Scope())
             {
-                WriteKernelSource(writer, method, source, config);
-                StructMarshalingEmitter.WriteStructMarshaling(writer, method);
-
-                if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
+                writer.AppendLine("public static partial class AotContexts");
+                using (writer.Scope())
                 {
-                    writer.AppendLine($"private static IntPtr? s_hfunc_{method.Name};");
-                    WriteWarmupFunctionPointerMethod(writer, method);
-                    WriteLaunchMethod(writer, method, false);
-                    WriteLaunchMethod(writer, method, true);
+                    StructMarshalingEmitter.WriteStructMarshaling(writer, methods);
                 }
-                else
+
+                foreach (var (method, source) in methods)
                 {
-                    WriteCpuDelegateDeclaration(writer, method);
-                    WriteLaunchMethodCpu(writer, method);
+                    WriteKernelSource(writer, method, source, config);
+
+                    if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
+                    {
+                        writer.AppendLine($"private static IntPtr? s_hfunc_{method.Name};");
+                        WriteWarmupFunctionPointerMethod(writer, method);
+                        WriteLaunchMethod(writer, method, false);
+                        WriteLaunchMethod(writer, method, true);
+                    }
+                    else
+                    {
+                        WriteCpuDelegateDeclaration(writer, method);
+                        WriteLaunchMethodCpu(writer, method);
+                    }
                 }
             }
         }
@@ -171,17 +219,19 @@ internal static class WrapperEmitter
     private static void WriteKernelSource(SourceWriter writer, IMethodSymbol method, string source,
         GeneratorConfig config)
     {
-        if (config.EmitSource)
+        if (!config.EmitSource)
         {
-            var escapedSource = source.Replace("\"", "\"\"");
-            writer.AppendLine($"public const string {method.Name}_Source = @\"{escapedSource}\";");
-            writer.AppendLine(
-                $"public static readonly string {method.Name}_FullSource=" +
-                $"global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}Prelude.Source +" +
-                $"global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}DeviceCode.Source +" +
-                $"{method.Name}_Source;");
-            writer.AppendLine();
+            return;
         }
+
+        var escapedSource = source.Replace("\"", "\"\"");
+        writer.AppendLine($"public const string {method.Name}_Source = @\"{escapedSource}\";");
+        writer.AppendLine(
+            $"public static readonly string {method.Name}_FullSource=" +
+            $"global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}Prelude.Source +" +
+            $"global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}DeviceCode.Source +" +
+            $"{method.Name}_Source;");
+        writer.AppendLine();
     }
 
     private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
@@ -530,7 +580,7 @@ internal static class WrapperEmitter
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
     {
-        bool hasFixed = false;
+        var hasFixed = false;
 
         foreach (var p in method.Parameters)
         {

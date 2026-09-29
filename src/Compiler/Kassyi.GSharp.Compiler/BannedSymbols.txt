@@ -15,3 +15,9 @@ M:System.Type.GetType(System.String);Dynamic type resolution via string is stric
 P:System.DateTime.Now;DateTime.Now is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
 P:System.DateTime.UtcNow;DateTime.UtcNow is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
 M:System.Guid.NewGuid;Guid.NewGuid is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based naming instead.
+
+M:System.String.Replace(System.String,System.String);String replacement is prohibited. Use AST/Symbol formatting or builder instead.
+M:System.String.Replace(System.Char,System.Char);String replacement is prohibited. Use AST/Symbol formatting or builder instead.
+M:Microsoft.CodeAnalysis.ISymbol.ToString;Converting symbols to string via ToString is prohibited. Use ToDisplayString with an explicit SymbolDisplayFormat.
+
+T:System.Collections.Generic.List`1;Dynamic lists are prohibited in the compiler for performance and allocation reasons. Use ImmutableArray, Array, ArrayPool, or recursion with StringBuilder instead.
