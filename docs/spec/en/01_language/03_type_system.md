@@ -98,6 +98,14 @@ public static void VectorLoadStore(Float4* input, Float4* output)
 }
 ```
 
+### 2.2.6 Kernel Argument Contexts and Deep Struct Marshaling
+
+To combat "Argument Hell" (kernels with dozens of parameters), G# supports packing kernel arguments into context structures containing managed arrays (`T[]`).
+
+When a custom struct containing arrays is passed to a `Launch` wrapper, the G# generator applies **Deep Struct Marshaling** natively. It automatically creates zero-allocation `stackalloc` blocks on the host to pin and resolve all managed arrays into valid CUDA device pointers (`T*`) within a native shadow struct (`Aot_...`), without requiring developer boilerplate or intermediate classes.
+
+For an in-depth explanation and code examples, see the [Deep Struct Marshaling and Argument Hell Elimination Guide](../04_guides/11_deep_struct_marshaling_guide.md).
+
 ## 2.3 Memory Model and Pointers
 
 G# enforces strict rules on memory access to ensure valid device pointer dereferencing and thread safety.
