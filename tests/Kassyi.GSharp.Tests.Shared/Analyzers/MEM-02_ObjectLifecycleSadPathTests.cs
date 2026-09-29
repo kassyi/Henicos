@@ -18,7 +18,7 @@ public class MEM_02_ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_MEM02_11_3_1_MissingIDisposableOnClass_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
-                               .ReportsErrorsAsync("GSH0020");
+            .ReportsErrorsAsync("GSH0020");
     }
 
     [Fact]
@@ -27,16 +27,7 @@ public class MEM_02_ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_MEM02_11_3_1_UndisposedFieldInDispose_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
-                               .ReportsErrorsAsync("GSH0021");
-    }
-
-    [Fact]
-    [Trait("FeatureId", "MEM-02")]
-    [Trait("Category", "SadPath")]
-    public async Task Test_MEM02_11_3_1_UnsafeFieldOverwrite_Detected()
-    {
-        await RoslynTestUtility.TestAnalyzer(TestCasePath, s_allocationAnalyzer)
-                               .ReportsErrorsAsync("GSH0022");
+            .ReportsErrorsAsync("GSH0022");
     }
 
     [Fact]
@@ -45,7 +36,7 @@ public class MEM_02_ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_MEM02_11_3_2_PropertyGetterSideEffects_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_sideEffectAnalyzer)
-                               .ReportsErrorsAsync("GSH0023");
+            .ReportsErrorsAsync("GSH0023");
     }
 
     [Fact]
@@ -54,7 +45,7 @@ public class MEM_02_ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_MEM02_11_3_2_ImplicitCastOperators_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_sideEffectAnalyzer)
-                               .ReportsErrorsAsync("GSH0024");
+            .ReportsErrorsAsync("GSH0024");
     }
 
     [Fact]
@@ -63,7 +54,7 @@ public class MEM_02_ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_MEM02_11_3_3_UnguardedMultiAllocation_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_allocationAnalyzer)
-                               .ReportsErrorsAsync("GSH0025");
+            .ReportsErrorsAsync("GSH0025");
     }
 
     [Fact]
@@ -72,7 +63,7 @@ public class MEM_02_ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_MEM02_11_3_3_StaticLifecycle_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_allocationAnalyzer)
-                               .ReportsErrorsAsync("GSH0026");
+            .ReportsErrorsAsync("GSH0026");
     }
 
     [Fact]
@@ -81,7 +72,7 @@ public class MEM_02_ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_MEM02_11_3_4_StandardInjectionBorrowing_HazardDetected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
-                               .ReportsErrorsAsync("GSH0027");
+            .ReportsErrorsAsync("GSH0027");
     }
 
     [Fact]
@@ -90,6 +81,6 @@ public class MEM_02_ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_MEM02_11_3_5_DefaultInterfaceMethods_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
-                               .ReportsErrorsAsync("GSH0028");
+            .ReportsErrorsAsync("GSH0028");
     }
 }

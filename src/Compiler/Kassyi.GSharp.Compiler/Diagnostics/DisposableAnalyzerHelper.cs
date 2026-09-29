@@ -43,4 +43,44 @@ internal static class DisposableAnalyzerHelper
 
         return false;
     }
+
+    public static bool IsGpuResourceScope(ITypeSymbol? type)
+    {
+        if (type == null)
+        {
+            return false;
+        }
+
+        if (type.Name == "IGpuResourceScope")
+        {
+            return true;
+        }
+
+        foreach (var i in type.AllInterfaces)
+        {
+            if (i.Name == "IGpuResourceScope")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static bool HasGpuResourceAttribute(ITypeSymbol? type)
+    {
+        if (type == null)
+        {
+            return false;
+        }
+
+        foreach (var a in type.GetAttributes())
+        {
+            if (a.AttributeClass?.Name is "GpuResourceAttribute" or "GpuResource")
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }

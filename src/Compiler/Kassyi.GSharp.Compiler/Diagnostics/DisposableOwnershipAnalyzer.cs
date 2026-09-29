@@ -6,7 +6,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
             GSharpDiagnostics.MissingIDisposable,
-            GSharpDiagnostics.UndisposedField,
+            GSharpDiagnostics.UndisposedGpuScope,
             GSharpDiagnostics.DisposingBorrowedResource,
             GSharpDiagnostics.DisposableInDim
         );
@@ -21,16 +21,16 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     }
 
     [ThreadStatic]
-    private static List<ISymbol>? t_disposableMembers;
+    private static List<ISymbol>? s_tDisposableMembers;
 
     [ThreadStatic]
-    private static HashSet<string>? t_borrowedParamNames;
+    private static HashSet<string>? s_tBorrowedParamNames;
 
     [ThreadStatic]
-    private static HashSet<string>? t_borrowedFields;
+    private static HashSet<string>? s_tBorrowedFields;
 
     [ThreadStatic]
-    private static HashSet<string>? t_disposedMemberNames;
+    private static HashSet<string>? s_tDisposedMemberNames;
 
     private static void AnalyzeNamedType(SymbolAnalysisContext context)
     {
@@ -40,14 +40,20 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var disposableMembers = t_disposableMembers ??= new List<ISymbol>();
+        var disposableMembers = s_tDisposableMembers ??= [];
         disposableMembers.Clear();
 
         foreach (var m in namedType.GetMembers())
         {
-            if ((m is IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } f &&
-                 DisposableAnalyzerHelper.IsDisposable(f.Type)) ||
-                (m is IPropertySymbol { IsStatic: false } p && DisposableAnalyzerHelper.IsDisposable(p.Type)))
+            var type = m switch
+            {
+                IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } f => f.Type,
+                IPropertySymbol { IsStatic: false } p => p.Type,
+                _ => null
+            };
+
+            if (type != null && (DisposableAnalyzerHelper.IsGpuResourceScope(type) ||
+                                 DisposableAnalyzerHelper.HasGpuResourceAttribute(type)))
             {
                 disposableMembers.Add(m);
             }
@@ -60,11 +66,11 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
         var implementsIDisposable = DisposableAnalyzerHelper.IsDisposable(namedType);
 
-        var borrowedParamNames = t_borrowedParamNames ??= new HashSet<string>(StringComparer.Ordinal);
+        var borrowedParamNames = s_tBorrowedParamNames ??= new HashSet<string>(StringComparer.Ordinal);
         borrowedParamNames.Clear();
         CollectBorrowedParameterNames(namedType, borrowedParamNames);
 
-        var borrowedFields = t_borrowedFields ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var borrowedFields = s_tBorrowedFields ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         borrowedFields.Clear();
         CollectBorrowedFieldNames(namedType, borrowedParamNames, borrowedFields);
 
@@ -72,7 +78,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
         if (implementsIDisposable)
         {
-            var disposedMemberNames = t_disposedMemberNames ??= new HashSet<string>(StringComparer.Ordinal);
+            var disposedMemberNames = s_tDisposedMemberNames ??= new HashSet<string>(StringComparer.Ordinal);
             disposedMemberNames.Clear();
             ValidateDisposeImplementation(context, namedType, disposableMembers, borrowedFields, disposedMemberNames);
         }
@@ -84,7 +90,8 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         {
             foreach (var p in ctor.Parameters)
             {
-                if (DisposableAnalyzerHelper.IsDisposable(p.Type) && !HasTakesOwnershipAttribute(p))
+                if ((DisposableAnalyzerHelper.IsGpuResourceScope(p.Type) ||
+                     DisposableAnalyzerHelper.HasGpuResourceAttribute(p.Type)) && !HasTakesOwnershipAttribute(p))
                 {
                     borrowedParamNames.Add(p.Name);
                 }
@@ -216,7 +223,8 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             }
             else if (!isBorrowed && !isDisposed && parameterlessDispose != null)
             {
-                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UndisposedField, locationForDispose));
+                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UndisposedGpuScope, locationForDispose,
+                    member.Name));
             }
         }
     }

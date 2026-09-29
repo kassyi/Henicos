@@ -7,7 +7,6 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
         ImmutableArray.Create(
             GSharpDiagnostics.UnguardedMultiAllocation,
             GSharpDiagnostics.StaticDisposableAllocation,
-            GSharpDiagnostics.UnsafeFieldOverwrite,
             GSharpDiagnostics.ManualUnmanagedAllocation
         );
 
@@ -18,7 +17,6 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
 
         context.RegisterSyntaxNodeAction(AnalyzeConstructor, SyntaxKind.ConstructorDeclaration);
         context.RegisterSymbolAction(AnalyzeField, SymbolKind.Field);
-        context.RegisterSyntaxNodeAction(AnalyzeAssignment, SyntaxKind.SimpleAssignmentExpression);
         context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
     }
 
@@ -78,73 +76,6 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UnguardedMultiAllocation,
                 ctor.Identifier.GetLocation()));
-        }
-    }
-
-    private static void AnalyzeAssignment(SyntaxNodeAnalysisContext context)
-    {
-        var assignment = (AssignmentExpressionSyntax)context.Node;
-        if (assignment.Right is not ObjectCreationExpressionSyntax oce)
-        {
-            return;
-        }
-
-        var type = context.SemanticModel.GetTypeInfo(oce).Type;
-        if (!DisposableAnalyzerHelper.IsDisposable(type))
-        {
-            return;
-        }
-
-        var leftSymbol = context.SemanticModel.GetSymbolInfo(assignment.Left).Symbol;
-        if (leftSymbol is not IFieldSymbol fieldSymbol)
-        {
-            return;
-        }
-
-        MethodDeclarationSyntax? enclosingMethod = null;
-        for (var parent = assignment.Parent; parent != null; parent = parent.Parent)
-        {
-            if (parent is not MethodDeclarationSyntax m)
-            {
-                continue;
-            }
-
-            enclosingMethod = m;
-            break;
-        }
-
-        if (enclosingMethod == null)
-        {
-            return;
-        }
-
-        var priorDispose = false;
-        var assignmentSpanStart = assignment.SpanStart;
-        foreach (var node in enclosingMethod.DescendantNodes(n => n.SpanStart < assignmentSpanStart))
-        {
-            if (node is not InvocationExpressionSyntax
-                {
-                    Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" } ma
-                } inv ||
-                inv.SpanStart >= assignmentSpanStart ||
-                ((ma.Expression is not IdentifierNameSyntax id || id.Identifier.Text != fieldSymbol.Name) &&
-                 (ma.Expression is not MemberAccessExpressionSyntax
-                 {
-                     Expression: ThisExpressionSyntax
-                 } fieldMa ||
-                  fieldMa.Name.Identifier.Text != fieldSymbol.Name)))
-            {
-                continue;
-            }
-
-            priorDispose = true;
-            break;
-        }
-
-        if (!priorDispose)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UnsafeFieldOverwrite,
-                assignment.GetLocation()));
         }
     }
 

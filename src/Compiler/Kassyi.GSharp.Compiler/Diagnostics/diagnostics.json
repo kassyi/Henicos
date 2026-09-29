@@ -174,7 +174,7 @@
     "name": "MissingIDisposable",
     "id": "GSH0020",
     "title": "Missing IDisposable implementation",
-    "messageFormat": "A class holds a disposable GPU resource (e.g., GpuContext) but does not implement IDisposable",
+    "messageFormat": "A class holds a disposable GPU resource (e.g., GpuWorkspace) but does not implement IDisposable",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -182,17 +182,17 @@
   {
     "name": "UndisposedField",
     "id": "GSH0021",
-    "title": "Undisposed GPU resource",
-    "messageFormat": "The Dispose() method does not explicitly invoke .Dispose() on all owned GPU resources",
+    "title": "Undisposed GPU resource (Deprecated)",
+    "messageFormat": "The Dispose() method does not explicitly invoke .Dispose() on all owned GPU resources (Deprecated, replaced by composite scopes)",
     "category": "GSharpTranspiler",
-    "defaultSeverity": "Error",
-    "isEnabledByDefault": true
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": false
   },
   {
-    "name": "UnsafeFieldOverwrite",
+    "name": "UndisposedGpuScope",
     "id": "GSH0022",
-    "title": "Unsafe field overwrite",
-    "messageFormat": "A disposable field is overwritten without prior disposal",
+    "title": "Undisposed GPU scope",
+    "messageFormat": "The Dispose() method must explicitly invoke .Dispose() on the owned IGpuResourceScope '{0}'",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
