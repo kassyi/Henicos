@@ -10,6 +10,7 @@ description: ガイドライン: C#およびGPU向けのテストコードを作
 ## 0. 【必須】テスト先行AIバイブコーディング (Phase 1)
 
 実装を開始する際は、**いかなるプロダクションコード（実装）を書くよりも先に、必ずテストコードを生成**してください（トランスパイラ関連タスクにおいては Golden Master / Snapshot Test を必須とし、それ以外は適切な Unit Test を記述します）。
+
 - ロードマップタスクに着手する際の「共通の第1フェーズ」です。
 - 正常系だけでなく、後述の「異常系テスト（Sad Path）」やQAの品質基準に基づき、**どのような例外がスローされるべきかまでを設計**してから実装をスタートさせます。
 
@@ -43,20 +44,21 @@ description: ガイドライン: C#およびGPU向けのテストコードを作
 - **静的解析 (Analyzer) / Source Generator**: サポートされていない構文や無効な型を使用した場合、コンパイルを通すのではなく、適切な `Diagnostic` (例: `GSH0001` 等) が発出されてビルドが中断されること。
 - **実行時 (Runtime)**: 無効な引数（例: 存在しない関数名、壊れたPTX文字列、無効なアーキテクチャ指定 `sm_999`）を渡した際に、サイレントに無視するのではなく、明確な例外（`CudaException` など）がスローされること。
 
-## 5. Feature ID とロードマップのトレーサビリティ
+## 5. テスト命名規則とドメイン自然言語の徹底
 
-すべてのテストは `docs/roadmap-index.md` および各ロードマップ（`docs/roadmaps/*.md`）のタスク・仕様と厳密に紐付いている必要があります。
+コードベースが大規模化したため、**C# コード内への機能ID（Feature ID / チケット番号）のハードコードは廃止**されました。
+テストコードは C# Framework Design Guidelines に準拠し、ドメインの意図を直接表現する自然言語で命名してください。なお、Jules やロードマップとのタスク連携はコード側ではなく外部メタデータ（JSON / `roadmap.json`）側で紐付けを管理します。
 
-- **`[Trait("FeatureId", "XXX-00")]` の付与**:
-    - テストメソッド（`[Fact]` や `[Theory]`）には、必ず対応する Feature ID を Trait として付与してください。
+- **`[Trait("FeatureId", "...")]` の廃止**:
+    - テストメソッドやクラスに `[Trait("FeatureId", "...")]` を付与しては**いけません**。
+    - 分類が必要な場合は、カテゴリ Trait（例: `[Trait("Category", "HappyPath")]`, `[Trait("Category", "SadPath")]`, `[Trait("Category", "GpuExecution")]`）を使用してください。
     ```csharp
     [Theory]
-    [Trait("FeatureId", "GEN-08")]
     [Trait("Category", "SadPath")]
-    public async Task GeneratorSnapshots(string fileName)
+    public async Task GeneratorSnapshots_ThrowsOnInvalidSyntax(string fileName)
     ```
-- **テストメソッド命名規則**:
-    - メソッド名にも Feature ID を含め、対象機能を即座に特定できるようにしてください（例: `Test_GBI01_MemoryPoolAllocation`、`Test_SYN01_SwitchExpression_Transpilation`、`Test_GSH07_JitDiskCache_RecoversFromCorruptedCache`）。
+- **テストメソッド・クラス・ファイル命名規則**:
+    - ファイル名、クラス名、メソッド名に `GEN-08_` や `GBI-06_` などの機能IDプレフィックスを含めず、テスト対象の振る舞いを表す自然言語名を使用してください（例: `KernelFusionTests.cs`、`GpuBigIntegerTests.cs`、`Test_MemoryPoolAllocation`、`Test_SwitchExpression_Transpilation`）。
 
 ## 6. GPUカーネルファイルの配置戦略 (Colocation vs Centralization)
 
@@ -69,17 +71,3 @@ description: ガイドライン: C#およびGPU向けのテストコードを作
 - **静的解析・メタテスト（Analyzer / Generator）: TestCasesへの隔離 (Centralization)**
     - 解析対象の文字列（SyntaxTree）として読み込ませるコードや、意図的にコンパイルエラー・警告を発生させるコード（Sad Path）は、メインのテストアセンブリやビルドツリーを汚染しないよう、必ず **`TestCases/` ディレクトリ配下に隔離（Source Separation）** してください。
     - 配置先: `tests/Kassyi.GSharp.Tests/TestCases/Analyzers/` 等。
-
-## 7. テスト関連ファイル名の命名規則 (Naming Convention)
-
-`TestCases/` 配下に隔離したファイルやテスト用の `.cu.cs` ファイルはもちろんのこと、**すべてのテストファイル（`Tests.cs` 等）**にも、ロードマップとのトレーサビリティを担保するため、必ず対応する ID を付与してください。
-
-- **Feature ID または Diagnostic ID の付与**:
-    - ファイル名の先頭には必ず **Feature ID (例: `GEN-08_`, `GBI-26_`)** または **Diagnostic / Issue ID (例: `GSH-01_`)** のプレフィックスを付けます。
-    - 複数の機能をまとめてテストする場合は、**範囲プレフィックス（例: `SYN-01-09_`）** の使用も許可されます。
-    - **良い例**: `GEN-08_AddKernel.cu.cs`, `GBI-26_LocalDeclaration.cs`, `SYN-01-09_ControlFlowTests.cs`
-    - **悪い例**: `Foreach_InGpuKernel.cs`, `Test1.cs`, `SourceGeneratorTests.cs` (プレフィックス欠落)、03_05と範囲プレフィックス指定があるのに01が混ざるなどの範囲指定の破綻や連続しない連番が入ること。
-
-## エージェントへの指示
-
-テストの作成・修正を求められた際は、常に上記の要素（Edge Case, Stress, Alignment, Sad Path, Feature ID Trait, File Placement & Naming）をチェックリストとして用い、要件に関連するものを**プロンプトで指示されなくても自律的に追加・適用**してください。
