@@ -45,6 +45,7 @@ Variables in G# are strictly translated to native C++ variables.
 * **Arrays (`T[]`) and Collections:** Explicit local instantiation on the managed heap (`new int[10]`) is prohibited. Implicit stack arrays (`stackalloc[]`) and C# 12 collection expressions (`[]`) are fully supported and optimized into C++ local stack arrays. However, **zero-length arrays** (e.g., `stackalloc int[0]`) are explicitly unsupported due to C++ compilation constraints.
 * **Array `.Length` Property:** The `.Length` property of local constant-sized arrays (or `[InlineArray]`) is aggressively optimized; it is folded into a compile-time constant or evaluated as `.size()` without generating runtime field accesses.
 * **Default Literal (`default`):** Fully supported. Transpiles to zero-initialization or C++ default constructors (e.g., `{}`).
+* **Default Parameters and Named Arguments:** Fully supported. Call-site named arguments are automatically normalized to declaration order in CUDA C++, and omitted optional parameters are populated with compile-time default constant literals.
 * **Extension Methods:** Supported. Invocation via `this` arguments (e.g., `obj.Method()`) correctly transpiles to standard static C++ function calls.
 
 ## 2.3 Operators
@@ -141,6 +142,73 @@ public static void ProcessPointer(int* ptr)
     {
         return;
     }
+}
+```
+
+### 2.5.4 Default Parameters and Named Arguments
+
+> [!NOTE]
+> **Static Determinism & NVCC Compatibility**  
+> CUDA C++ does not natively support C#-style named argument syntax (`param: expr`). Furthermore, relying purely on C++ default parameter values can lead to compilation errors or unexpected signature mismatches across compilation boundaries. The G# AOT transpiler guarantees 100% static determinism by resolving parameter bindings at compile-time via Roslyn Semantic Models and synthesizing the exact declaration order and default constant literals into generated CUDA C++ call sites.
+
+G# fully supports C# optional parameters (default values) and named arguments across device functions (`[GpuDeviceFunction]`), local methods, and kernel call sites.
+
+* **Named Argument Reordering**: Callers can specify arguments in any order using C# named syntax (`name: expr`). The transpiler inspects the semantic symbol and normalizes arguments to strictly match the parameter declaration sequence expected by C++.
+* **Default Argument Synthesis**: When optional parameters are omitted at call sites, the transpiler extracts their compile-time default values (from declaration syntax or constant symbols) and injects them directly into the generated C++ invocation arguments.
+* **Kernel Signature Preservation**: For `[GpuKernel]` entry points, explicit default parameter values are preserved in the generated host launcher extensions (`WrapperEmitter`), providing a natural and idiomatic C# experience on the CPU.
+
+**Example: Named and Default Arguments on Device Methods**
+```csharp
+// Execution Context: G# Kernel (GPU)
+public static class MathDeviceHelpers
+{
+    [GpuDeviceFunction]
+    public static int ComputeStep(int input, int offset = 0, int scale = 1)
+    {
+        return (input + offset) * scale;
+    }
+
+    [GpuKernel]
+    public static void SampleKernel(int[] data)
+    {
+        int tid = ThreadIndex.X;
+
+        // 1. Standard call: offset (= 0) and scale (= 1) are omitted and synthesized
+        int r1 = ComputeStep(data[tid]);
+
+        // 2. Named arguments: reordered to match parameter signature (offset: 5, scale: 2)
+        int r2 = ComputeStep(data[tid], scale: 2, offset: 5);
+
+        // 3. Partial omission: offset is synthesized with default 0, scale is explicitly 4
+        int r3 = ComputeStep(data[tid], scale: 4);
+
+        data[tid] = r1 + r2 + r3;
+    }
+}
+```
+
+Transpiled CUDA C++ equivalent:
+```cpp
+// Execution Context: Generated CUDA C++ (Device)
+__device__ int ComputeStep(int input, int offset, int scale)
+{
+    return (input + offset) * scale;
+}
+
+extern "C" __global__ void SampleKernel(int* __restrict__ data)
+{
+    int tid = threadIdx.x;
+
+    // Call site 1: Default arguments synthesized
+    int r1 = ComputeStep(data[tid], 0, 1);
+
+    // Call site 2: Named arguments reordered to parameter order
+    int r2 = ComputeStep(data[tid], 5, 2);
+
+    // Call site 3: Partially omitted arguments synthesized
+    int r3 = ComputeStep(data[tid], 0, 4);
+
+    data[tid] = r1 + r2 + r3;
 }
 ```
 
