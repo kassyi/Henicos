@@ -35,7 +35,7 @@ internal readonly ref struct TranspilationSession
             throw new ArgumentNullException(nameof(semanticModel));
         }
 
-        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
+        var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
         if (methodSymbol != null && !GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
         {
 #pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path).

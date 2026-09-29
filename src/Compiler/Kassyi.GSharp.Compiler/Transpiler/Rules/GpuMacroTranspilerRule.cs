@@ -48,8 +48,7 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
             return;
         }
 
-        context.ReportDiagnostic?.Invoke(
-            Diagnostic.Create(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node.GetLocation()));
+        context.Report(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node);
     }
 
     private static void TranspileInterpolatedInlinePtx(InterpolatedStringExpressionSyntax interpolated,

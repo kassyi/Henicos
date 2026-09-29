@@ -118,8 +118,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
         var byteSize = elementCount * elemSize;
         if (byteSize > 32768)
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ExcessiveSharedMemoryWarning,
-                sizeArg.GetLocation(), byteSize, 32768));
+            context.Report(GSharpDiagnostics.ExcessiveSharedMemoryWarning, sizeArg, byteSize, 32768);
         }
     }
 

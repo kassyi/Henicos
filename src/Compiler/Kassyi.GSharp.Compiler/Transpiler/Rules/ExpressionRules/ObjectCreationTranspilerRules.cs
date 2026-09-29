@@ -75,8 +75,7 @@ internal static class ObjectCreationHelper
             return;
         }
 
-        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported,
-            node.GetLocation()));
+        context.Report(GSharpDiagnostics.ObjectCreationNotSupported, node);
         context.Visitor.DefaultVisit(node);
     }
 

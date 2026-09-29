@@ -109,8 +109,7 @@ internal static class StructTranspiler
         var size = context.Dialect.GetApproximateSize(typeSymbol);
         if (size >= 32)
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.LargeStructByValueWarning,
-                p.GetLocation(), p.Identifier.Text, size));
+            context.Report(GSharpDiagnostics.LargeStructByValueWarning, p, p.Identifier.Text, size);
         }
     }
 

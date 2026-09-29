@@ -119,8 +119,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// <inheritdoc />
     public override void DefaultVisit(SyntaxNode node)
     {
-        Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(),
-            node.Kind().ToString()));
+        Context.Report(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
         base.DefaultVisit(node);
     }
 
@@ -129,8 +128,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         if (node.Keyword.IsKind(SyntaxKind.StringKeyword))
         {
-            Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported,
-                node.GetLocation()));
+            Context.Report(GSharpDiagnostics.StringNotSupported, node);
         }
 
         var typeSymbol = Context.SemanticModel.GetTypeSymbol(node);

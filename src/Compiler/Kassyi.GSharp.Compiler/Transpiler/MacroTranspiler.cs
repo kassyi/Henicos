@@ -57,9 +57,7 @@ internal static class MacroTranspiler
     {
         if (GpuMacroArgumentRule.GetSupportedLoop(statement) == null)
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.UnrollHintMustPrecedeLoop,
-                invocation.GetLocation()));
+            context.Report(GSharpDiagnostics.UnrollHintMustPrecedeLoop, invocation);
             return true;
         }
 
@@ -71,9 +69,7 @@ internal static class MacroTranspiler
             var constantValue = context.SemanticModel.GetConstantValue(factorExpr);
             if (!constantValue.HasValue || constantValue.Value is not int intVal || intVal < 0)
             {
-                context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                    GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
-                    factorExpr.GetLocation()));
+                context.Report(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
                 return true;
             }
 
@@ -107,10 +103,7 @@ internal static class MacroTranspiler
         if (!TryGetConstantInt(args[offset].Expression, context.SemanticModel, out var start) ||
             !TryGetConstantInt(args[offset + 1].Expression, context.SemanticModel, out var count))
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.UnsupportedSyntax,
-                invocation.GetLocation(),
-                "ForUnroll arguments must be constants"));
+            context.Report(GSharpDiagnostics.UnsupportedSyntax, invocation, "ForUnroll arguments must be constants");
             return false;
         }
 
@@ -214,10 +207,7 @@ internal static class MacroTranspiler
         var paramName = ExtractUnrollLoopParameterName(lambdaExpr, hasContext);
         if (string.IsNullOrEmpty(paramName))
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.MacroLambdaRequiresParameter,
-                invocation.GetLocation(),
-                macroName));
+            context.Report(GSharpDiagnostics.MacroLambdaRequiresParameter, invocation, macroName);
             return false;
         }
 
@@ -269,10 +259,7 @@ internal static class MacroTranspiler
         var args = invocation.ArgumentList.Arguments;
         if (args.Count != 1 || args[0].Expression is not LambdaExpressionSyntax lambdaExpr)
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.UnsupportedSyntax,
-                invocation.GetLocation(),
-                "Gpu.SyncGrid requires a single lambda expression argument"));
+            context.Report(GSharpDiagnostics.UnsupportedSyntax, invocation, "Gpu.SyncGrid requires a single lambda expression argument");
             return false;
         }
 
@@ -486,10 +473,10 @@ internal static class MacroTranspiler
         {
             if (targetType != null && targetMethodName != null)
             {
-                context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                context.Report(
                     GSharpDiagnostics.UnsupportedSyntax,
-                    assignment.GetLocation(),
-                    $"Macro target method '{targetType.Name}.{targetMethodName}' is missing or incompatible."));
+                    assignment,
+                    $"Macro target method '{targetType.Name}.{targetMethodName}' is missing or incompatible.");
             }
 
             return false;

@@ -121,7 +121,7 @@ public static class MethodTranspiler
     private static void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice,
         ref TranspileContext context)
     {
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
 
         if (isDevice)
         {
@@ -245,7 +245,7 @@ public static class MethodTranspiler
     {
         using (context.Writer.Scope())
         {
-            var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
+            var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
             var isKernelWithReturn = methodSymbol != null && methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
                                      methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
 
@@ -295,7 +295,7 @@ public static class MethodTranspiler
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 
-            var paramSymbol = context.SemanticModel.GetDeclaredSymbol(p);
+            var paramSymbol = context.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
             if (paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuReadOnly))
             {
                 context.Writer.Append("const ");
@@ -319,7 +319,7 @@ public static class MethodTranspiler
 
     private static void WriteCpuLauncher(MethodDeclarationSyntax method, ref TranspileContext context)
     {
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
         if (methodSymbol == null)
         {
             return;
