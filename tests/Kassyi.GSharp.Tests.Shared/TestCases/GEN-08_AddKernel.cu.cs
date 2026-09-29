@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace TestNamespace
 {
-    public static class TestKernels
+    public static partial class TestKernels
     {
         [GpuKernel]
         public static void AddKernel(int[] a, int[] b, int[] c)

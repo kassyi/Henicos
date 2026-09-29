@@ -23,7 +23,7 @@ public class MEM_02_ObjectLifecycleTests
             new LifecycleObjectState { Id = 1, Value = initialVal, Status = 0 }
         ];
 
-        MEM_02_ObjectLifecycleKernelsWrapper.LaunchKernel_LifecycleUpdate(states, 1, multiplier, blockDimX: 1);
+        MEM_02_ObjectLifecycleKernels.LaunchKernel_LifecycleUpdate(states, 1, multiplier, blockDimX: 1);
 
         Assert.Single(states);
         Assert.Equal(expectedVal, states[0].Value);
@@ -36,7 +36,7 @@ public class MEM_02_ObjectLifecycleTests
     public void Test_MEM02_LifecycleUpdateKernel_EmptyArrayEdgeCase()
     {
         LifecycleObjectState[] emptyStates = [];
-        MEM_02_ObjectLifecycleKernelsWrapper.LaunchKernel_LifecycleUpdate(emptyStates, 0, 2, blockDimX: 1);
+        MEM_02_ObjectLifecycleKernels.LaunchKernel_LifecycleUpdate(emptyStates, 0, 2, blockDimX: 1);
         Assert.Empty(emptyStates);
     }
 
@@ -47,7 +47,7 @@ public class MEM_02_ObjectLifecycleTests
     {
         int[] inputs = [];
         LifecycleObjectState[] outputs = [];
-        MEM_02_ObjectLifecycleKernelsWrapper.LaunchKernel_FactoryInitialization(inputs, outputs, 0, blockDimX: 1);
+        MEM_02_ObjectLifecycleKernels.LaunchKernel_FactoryInitialization(inputs, outputs, 0, blockDimX: 1);
         Assert.Empty(outputs);
     }
 
@@ -58,7 +58,7 @@ public class MEM_02_ObjectLifecycleTests
     {
         int[] inputs = [42];
         LifecycleObjectState[] outputs = new LifecycleObjectState[1];
-        MEM_02_ObjectLifecycleKernelsWrapper.LaunchKernel_FactoryInitialization(inputs, outputs, 1, blockDimX: 1);
+        MEM_02_ObjectLifecycleKernels.LaunchKernel_FactoryInitialization(inputs, outputs, 1, blockDimX: 1);
         Assert.Single(outputs);
         Assert.Equal(1, outputs[0].Id);
         Assert.Equal(42, outputs[0].Value);
@@ -73,7 +73,7 @@ public class MEM_02_ObjectLifecycleTests
         int[] inputs = [-5, 0, 42, 150];
         LifecycleObjectState[] outputs = new LifecycleObjectState[4];
 
-        MEM_02_ObjectLifecycleKernelsWrapper.LaunchKernel_FactoryInitialization(inputs, outputs, 4, blockDimX: 4);
+        MEM_02_ObjectLifecycleKernels.LaunchKernel_FactoryInitialization(inputs, outputs, 4, blockDimX: 4);
 
         Assert.Equal(1, outputs[0].Id);
         Assert.Equal(-5, outputs[0].Value);

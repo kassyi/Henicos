@@ -31,7 +31,7 @@ public class GEN_43_HeavyGpuStressTests
 
         for (int iter = 0; iter < iterations; iter++)
         {
-            GEN_43_HeavyGpuStressKernelsWrapper.LaunchMatrixMultiplyStressKernel(
+            GEN_43_HeavyGpuStressKernels.LaunchMatrixMultiplyStressKernel(
                 a, b, c, n,
                 gridDimX: 1, gridDimY: 1,
                 blockDimX: (uint)n, blockDimY: (uint)n
@@ -71,7 +71,7 @@ public class GEN_43_HeavyGpuStressTests
 
             for (int iter = 0; iter < iterationsPerWorker; iter++)
             {
-                GEN_43_HeavyGpuStressKernelsWrapper.LaunchMatrixMultiplyStressKernel(
+                GEN_43_HeavyGpuStressKernels.LaunchMatrixMultiplyStressKernel(
                     a, b, c, n,
                     gridDimX: 1, gridDimY: 1,
                     blockDimX: (uint)n, blockDimY: (uint)n

@@ -8,7 +8,7 @@ public struct MyCustomStruct
     public float B;
 }
 
-public static class WrapperOptimizationKernels
+public static partial class WrapperOptimizationKernels
 {
     [GpuKernel]
     public static void ComplexSignatureKernel(

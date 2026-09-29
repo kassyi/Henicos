@@ -4,7 +4,7 @@ using System.Numerics;
 
 namespace Kassyi.GSharp.Tests
 {
-    public static class BitOpsTestKernels
+    public static partial class BitOpsTestKernels
     {
         [GpuKernel]
         public static void BitOpsKernel(uint[] u32Data, ulong[] u64Data)

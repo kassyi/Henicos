@@ -17,7 +17,7 @@ public class SYN_11_16_CollectionsAndMemoryTests
     public void Test_SYN12_ForeachCollectionExpression_Execution()
     {
         int[] output = [0];
-        SYN_70_72_LoopsAndJumpsKernelsWrapper.LaunchForeachCollectionExpressionKernel(output, blockDimX: 1);
+        SYN_70_72_LoopsAndJumpsKernels.LaunchForeachCollectionExpressionKernel(output, blockDimX: 1);
         Assert.Equal(100, output[0]);
     }
 
@@ -27,7 +27,7 @@ public class SYN_11_16_CollectionsAndMemoryTests
     public void Test_SYN13_ForeachStackAlloc_Execution()
     {
         int[] output = [0];
-        SYN_70_72_LoopsAndJumpsKernelsWrapper.LaunchForeachStackAllocKernel(output, blockDimX: 1);
+        SYN_70_72_LoopsAndJumpsKernels.LaunchForeachStackAllocKernel(output, blockDimX: 1);
         Assert.Equal(100, output[0]);
     }
 

@@ -16,7 +16,7 @@ public class SYN_03_InlineOutVarTests
         int[] output = [0];
         int[] success = [0];
 
-        SYN_03_InlineOutVarKernelsWrapper.LaunchHappyPathKernel(input, output, success);
+        SYN_03_InlineOutVarKernels.LaunchHappyPathKernel(input, output, success);
 
         Assert.Equal(expectedOutput, output[0]);
         Assert.Equal(expectedSuccess, success[0]);
@@ -35,7 +35,7 @@ public class SYN_03_InlineOutVarTests
         int[] input = [val];
         int[] output = [0];
 
-        SYN_03_InlineOutVarKernelsWrapper.LaunchIfConditionKernel(input, output);
+        SYN_03_InlineOutVarKernels.LaunchIfConditionKernel(input, output);
 
         Assert.Equal(expectedOutput, output[0]);
     }
@@ -51,7 +51,7 @@ public class SYN_03_InlineOutVarTests
         int[] input = [val];
         int[] output = [0];
 
-        SYN_03_InlineOutVarKernelsWrapper.LaunchWhileConditionKernel(input, output);
+        SYN_03_InlineOutVarKernels.LaunchWhileConditionKernel(input, output);
 
         Assert.Equal(expectedOutput, output[0]);
     }

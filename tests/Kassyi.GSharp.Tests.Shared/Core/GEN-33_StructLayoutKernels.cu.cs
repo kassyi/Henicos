@@ -40,7 +40,7 @@ namespace Kassyi.GSharp.Tests.Core
         public int B;
     }
 
-    public class GEN_33_StructLayoutKernels
+    public partial class GEN_33_StructLayoutKernels
     {
         [GpuKernel]
         public static void ModifyStructLayoutKernel(CustomLayoutStruct[] data)

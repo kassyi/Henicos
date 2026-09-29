@@ -151,9 +151,10 @@ internal static class WrapperEmitter
         return new string(buffer, 0, length);
     }
 
-    public static string GenerateWrapperClass(INamedTypeSymbol classSymbol, System.Collections.Generic.IEnumerable<(IMethodSymbol Method, string Source)> methods, GeneratorConfig config)
+    public static string GenerateKernelExtensions(INamedTypeSymbol classSymbol,
+        IEnumerable<(IMethodSymbol Method, string Source)> methods, GeneratorConfig config)
     {
-        var className = classSymbol.Name + "Wrapper";
+        var className = classSymbol.Name;
 
         var writer = new SourceWriter();
         writer.AppendLine("""
@@ -170,47 +171,48 @@ internal static class WrapperEmitter
             """);
 
         writer.AppendLine();
-        writer.Append("namespace ");
-        if (classSymbol.ContainingNamespace.IsGlobalNamespace)
+
+        bool isGlobalNamespace = classSymbol.ContainingNamespace.IsGlobalNamespace;
+        if (!isGlobalNamespace)
         {
-            writer.AppendLine("Kassyi.GSharp.Generated");
-        }
-        else
-        {
+            writer.Append("namespace ");
             WriteNamespace(writer, classSymbol.ContainingNamespace);
             writer.AppendLine();
+            writer.AppendLine("{");
         }
 
+        writer.Append("public partial class ");
+        writer.AppendLine(className);
         using (writer.Scope())
         {
-            writer.Append("public partial class ");
-            writer.AppendLine(className);
+            writer.AppendLine("public static partial class AotContexts");
             using (writer.Scope())
             {
-                writer.AppendLine("public static partial class AotContexts");
-                using (writer.Scope())
+                StructMarshalingEmitter.WriteStructMarshaling(writer, methods);
+            }
+
+            foreach (var (method, source) in methods)
+            {
+                WriteKernelSource(writer, method, source, config);
+
+                if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
                 {
-                    StructMarshalingEmitter.WriteStructMarshaling(writer, methods);
+                    writer.AppendLine($"private static IntPtr? s_hfunc_{method.Name};");
+                    WriteWarmupFunctionPointerMethod(writer, method);
+                    WriteLaunchMethod(writer, method, false);
+                    WriteLaunchMethod(writer, method, true);
                 }
-
-                foreach (var (method, source) in methods)
+                else
                 {
-                    WriteKernelSource(writer, method, source, config);
-
-                    if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
-                    {
-                        writer.AppendLine($"private static IntPtr? s_hfunc_{method.Name};");
-                        WriteWarmupFunctionPointerMethod(writer, method);
-                        WriteLaunchMethod(writer, method, false);
-                        WriteLaunchMethod(writer, method, true);
-                    }
-                    else
-                    {
-                        WriteCpuDelegateDeclaration(writer, method);
-                        WriteLaunchMethodCpu(writer, method);
-                    }
+                    WriteCpuDelegateDeclaration(writer, method);
+                    WriteLaunchMethodCpu(writer, method);
                 }
             }
+        }
+
+        if (!isGlobalNamespace)
+        {
+            writer.AppendLine("}");
         }
 
         return writer.ToString();
@@ -501,7 +503,7 @@ internal static class WrapperEmitter
             var method = methodResult.MethodSymbol;
             var ns = method.ContainingNamespace.IsGlobalNamespace ? "" : method.ContainingNamespace + ".";
             var typeName = method.ContainingType.Name;
-            writer.AppendLine($"global::{ns}{typeName}Wrapper.WarmupFunctionPointer{method.Name}();");
+            writer.AppendLine($"global::{ns}{typeName}.WarmupFunctionPointer{method.Name}();");
         }
 
         writer.AppendLine("}}}");

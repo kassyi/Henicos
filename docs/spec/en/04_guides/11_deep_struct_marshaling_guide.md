@@ -30,7 +30,7 @@ Without struct marshaling and parameter defaults, call chains become unreadable 
 
 ```csharp
 // Host launch: 18 loose arguments with high risk of positional swapping bugs
-GpuBigIntMegaKernelsWrapper.LaunchFermatMegaKernel(
+GpuBigIntMegaKernels.LaunchFermatMegaKernel(
     d_x, d_y, d_result,
     xLength, yLength, resultLength,
     d_twiddles1, d_twiddles2, d_scratchA, d_scratchB, d_tmp,
@@ -147,36 +147,36 @@ When a kernel accepts a custom struct containing arrays, the G# Source Generator
 sequenceDiagram
     autonumber
     participant Host as C# Host Caller
-    participant Wrapper as G# Generated Wrapper
+    participant Launcher as G# Host Launcher (partial class)
     participant Driver as CUDA Driver API
     participant GPU as Device Kernel
 
-    Host->>Wrapper: LaunchKernel(new MyContext { Input = hostIn, Output = hostOut })
-    activate Wrapper
+    Host->>Launcher: LaunchKernel(new MyContext { Input = hostIn, Output = hostOut })
+    activate Launcher
     
-    Note over Wrapper,Driver: Phase 1: Pre-Launch Marshaling (HtoD)
-    Wrapper->>Driver: cuMemAlloc_v2(out native.Input, sizeIn)
-    Wrapper->>Driver: cuMemcpyHtoD_v2(native.Input, pinnedHostIn, sizeIn)
-    Wrapper->>Driver: cuMemAlloc_v2(out native.Output, sizeOut)
-    Wrapper->>Driver: cuMemcpyHtoD_v2(native.Output, pinnedHostOut, sizeOut)
+    Note over Launcher,Driver: Phase 1: Pre-Launch Marshaling (HtoD)
+    Launcher->>Driver: cuMemAlloc_v2(out native.Input, sizeIn)
+    Launcher->>Driver: cuMemcpyHtoD_v2(native.Input, pinnedHostIn, sizeIn)
+    Launcher->>Driver: cuMemAlloc_v2(out native.Output, sizeOut)
+    Launcher->>Driver: cuMemcpyHtoD_v2(native.Output, pinnedHostOut, sizeOut)
     
-    Note over Wrapper,GPU: Phase 2: Kernel Execution
-    Wrapper->>GPU: cuLaunchKernel(native_ctx by value)
+    Note over Launcher,GPU: Phase 2: Kernel Execution
+    Launcher->>GPU: cuLaunchKernel(native_ctx by value)
     activate GPU
     GPU-->>GPU: Access ctx.Input[i] & write ctx.Output[i]
-    GPU-->>Wrapper: Kernel Execution Complete
+    GPU-->>Launcher: Kernel Execution Complete
     deactivate GPU
     
-    Note over Wrapper,Driver: Phase 3: Post-Launch Unmarshaling (DtoH)
-    Wrapper->>Driver: cuMemcpyDtoH_v2(pinnedHostOut, native.Output, sizeOut)
-    Note over Wrapper,Host: hostOut now contains kernel results!
+    Note over Launcher,Driver: Phase 3: Post-Launch Unmarshaling (DtoH)
+    Launcher->>Driver: cuMemcpyDtoH_v2(pinnedHostOut, native.Output, sizeOut)
+    Note over Launcher,Host: hostOut now contains kernel results!
     
-    Note over Wrapper,Driver: Phase 4: Automatic Resource Cleanup (finally)
-    Wrapper->>Driver: cuMemFree_v2(native.Input)
-    Wrapper->>Driver: cuMemFree_v2(native.Output)
+    Note over Launcher,Driver: Phase 4: Automatic Resource Cleanup (finally)
+    Launcher->>Driver: cuMemFree_v2(native.Input)
+    Launcher->>Driver: cuMemFree_v2(native.Output)
     
-    Wrapper-->>Host: Return to Caller
-    deactivate Wrapper
+    Launcher-->>Host: Return to Caller
+    deactivate Launcher
 ```
 
 ---
@@ -500,7 +500,7 @@ public static partial class VectorMathKernels
         for (int i = 0; i < count; i++) hostIn[i] = i * 1.5f;
 
         // Launch directly using Context struct & named launch arguments!
-        VectorMathKernelsWrapper.LaunchProcessVectorKernel(
+        VectorMathKernels.LaunchProcessVectorKernel(
             new AotContexts.VectorProcessContext
             {
                 Input = hostIn,

@@ -13,7 +13,7 @@ public struct GEN56_AlignmentTestStruct
     public Double2 Field5_Double2;
 }
 
-public static class GEN56_NestedVectorAlignmentKernels
+public static partial class GEN56_NestedVectorAlignmentKernels
 {
     [GpuKernel]
     public static void WriteExpectedOffsetsKernel(int[] offsets)

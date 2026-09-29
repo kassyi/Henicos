@@ -1,7 +1,7 @@
 // ReSharper disable All
 using Kassyi.GSharp.Core;
 
-public class TestClass
+public partial class TestClass
 {
     [GpuKernel]
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]

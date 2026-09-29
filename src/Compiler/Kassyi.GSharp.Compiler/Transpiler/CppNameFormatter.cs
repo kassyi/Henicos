@@ -80,7 +80,7 @@ internal static class CppNameFormatter
             appendName: static (ref SourceWriter w, string name) => w.Append(name),
             appendSeparator: static (ref SourceWriter w) => w.Append('_'),
             appendParent: static (ref SourceWriter w, ISymbol parent) => w.AppendNestedCppName(parent),
-            ref System.Runtime.CompilerServices.Unsafe.AsRef(in writer));
+            ref Unsafe.AsRef(in writer));
         return ref writer;
     }
 
@@ -106,7 +106,7 @@ internal static class CppNameFormatter
             appendName: static (ref SourceWriter w, string name) => w.Append(name),
             appendSeparator: static (ref SourceWriter w) => w.Append('.'),
             appendParent: static (ref SourceWriter w, ISymbol parent) => w.AppendAotStructPath(parent),
-            ref System.Runtime.CompilerServices.Unsafe.AsRef(in writer));
+            ref Unsafe.AsRef(in writer));
         return ref writer;
     }
 
@@ -117,7 +117,7 @@ internal static class CppNameFormatter
         AppendParentDelegate<TState> appendParent,
         ref TState state)
     {
-        if (symbol.ContainingType is { } parentType && Kassyi.GSharp.Compiler.Marshaling.CudaLayoutRules.IsCustomStruct(parentType))
+        if (symbol.ContainingType is { } parentType && Marshaling.CudaLayoutRules.IsCustomStruct(parentType))
         {
             appendParent(ref state, parentType);
             appendSeparator(ref state);

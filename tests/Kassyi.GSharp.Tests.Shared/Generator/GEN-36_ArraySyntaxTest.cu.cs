@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Generator.Kernels;
 
-public class ArraySyntaxTestKernels
+public partial class ArraySyntaxTestKernels
 {
     [GpuKernel]
     public static void ImplicitArrayFormsKernel()

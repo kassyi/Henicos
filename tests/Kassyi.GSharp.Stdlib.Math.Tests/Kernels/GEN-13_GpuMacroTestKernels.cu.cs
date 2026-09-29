@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests.Kernels;
 
-public static class GpuMacroTestKernels
+public static partial class GpuMacroTestKernels
 {
     [GpuKernel(Cooperative = true)]
     public static void Kernel_MacroTest_FillAndSingle(uint[] outputBuffer, int length, uint fillValue, uint singleValue)

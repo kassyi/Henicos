@@ -36,7 +36,7 @@ public class SYN_73_78_ContractsAndPtxTests
     public void TestInlinePtxKernel()
     {
         uint[] data = [0];
-        SYN_73_78_ContractsAndPtxKernelsWrapper.LaunchInlinePtxKernel(data);
+        SYN_73_78_ContractsAndPtxKernels.LaunchInlinePtxKernel(data);
         Assert.Equal(999u, data[0]);
     }
 

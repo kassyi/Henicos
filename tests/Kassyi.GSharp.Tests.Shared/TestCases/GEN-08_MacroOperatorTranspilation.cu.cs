@@ -4,7 +4,7 @@ using System;
 
 namespace TestNamespace
 {
-    public static class DummyKernels
+    public static partial class DummyKernels
     {
         [GpuDeviceFunction]
         public static void DummyOp(ref DummyContext ctx, uint[] result, uint[] left, uint[] right) { }
@@ -40,7 +40,7 @@ namespace TestNamespace
         public static implicit operator uint[](DummyRef data) => data.Data;
     }
 
-    public static class TestKernels
+    public static partial class TestKernels
     {
         [GpuKernel]
         public static void MacroKernel(DummyContext ctx, uint[] dA, uint[] dB, uint[] dResult)

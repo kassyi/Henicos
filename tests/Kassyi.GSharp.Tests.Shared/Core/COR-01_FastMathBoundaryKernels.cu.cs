@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.FastMathTests;
 
-public static class COR_01_FastMathBoundaryKernels
+public static partial class COR_01_FastMathBoundaryKernels
 {
     [GpuKernel]
     public static void Kernel_COR01_FastMath_Exp(float[] input, float[] output)

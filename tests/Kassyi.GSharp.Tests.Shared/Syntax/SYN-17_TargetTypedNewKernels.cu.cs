@@ -14,7 +14,7 @@ public struct NestedParentStruct
     public NestedChildStruct Child;
 }
 
-public static class SYN_17_TargetTypedNewKernels
+public static partial class SYN_17_TargetTypedNewKernels
 {
     [GpuDeviceFunction]
     public static NestedChildStruct CreateChild(NestedChildStruct child)

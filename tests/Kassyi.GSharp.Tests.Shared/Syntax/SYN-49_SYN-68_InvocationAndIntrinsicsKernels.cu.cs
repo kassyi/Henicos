@@ -15,7 +15,7 @@ public struct AtomicTestStruct
     public long ValueL;
 }
 
-public static class SYN_49_SYN_68_InvocationAndIntrinsicsKernels
+public static partial class SYN_49_SYN_68_InvocationAndIntrinsicsKernels
 {
     // SYN-49: Interlocked アトミック演算マッピング
     [GpuKernel]

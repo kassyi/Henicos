@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
 [SkipSnapshotConsistency("New Feature WIP")]
-public static class FermatTrialFactoringKernels
+public static partial class FermatTrialFactoringKernels
 {
     [GpuDeviceFunction, GpuInline]
     public static ulong Device_ModPow64_Under32Bit(ulong baseVal, ulong exp, ulong m)

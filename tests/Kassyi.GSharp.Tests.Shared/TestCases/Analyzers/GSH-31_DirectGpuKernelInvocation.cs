@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 
-public class MathKernels
+public partial class MathKernels
 {
     [GpuKernel]
     public static void ProcessHeavySimulation(float[] data, float[] result, int length)

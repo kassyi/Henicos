@@ -21,12 +21,6 @@ public class GpuChudnovskyPiTests
         // Assert
         var result = sw.ToString().Trim();
         
-        // We know the first 50 digits of Pi:
-        // 3.14159265358979323846264338327950288419716939937510
-        // Wait, GpuRadixConverter might not output the decimal point directly if it's just raw digits,
-        // but let's check how WriteDecimalPiOutput works. GpuRadixConverter.ConvertAndWrite usually writes the digits.
-        // Actually, let's just assert that it starts with "314159265358979323846264338327950288419716939937510".
-        // Wait, does it output the decimal point? Let's check GpuRadixConverter or just assert it contains the sequence.
         
         Assert.False(string.IsNullOrWhiteSpace(result));
         

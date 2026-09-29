@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Providers.Handlers;
@@ -13,7 +12,7 @@ public sealed class AotBasicMathHandler
     {
         var blockDim = System.Math.Min(1024, leftOperand.NumWords);
 
-        GpuBigIntScalarKernelsWrapper.LaunchScalarAddKernelPtr(
+        GpuBigIntScalarKernels.LaunchScalarAddKernelPtr(
             leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
             gridDimX: 1, blockDimX: (uint)blockDim, hStream: workspace.Stream);
     }
@@ -25,7 +24,7 @@ public sealed class AotBasicMathHandler
     {
         var blockDim = System.Math.Min(1024, leftOperand.NumWords);
 
-        GpuBigIntScalarKernelsWrapper.LaunchScalarSubKernelPtr(
+        GpuBigIntScalarKernels.LaunchScalarSubKernelPtr(
             leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
             gridDimX: 1, blockDimX: (uint)blockDim, hStream: workspace.Stream);
     }
@@ -37,7 +36,7 @@ public sealed class AotBasicMathHandler
     {
         var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
-        GpuBigIntKernelsWrapper.LaunchBitwiseOrKernelPtr(
+        GpuBigIntKernels.LaunchBitwiseOrKernelPtr(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
@@ -49,7 +48,7 @@ public sealed class AotBasicMathHandler
     {
         var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
-        GpuBigIntKernelsWrapper.LaunchBitwiseXorKernelPtr(
+        GpuBigIntKernels.LaunchBitwiseXorKernelPtr(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
@@ -60,7 +59,7 @@ public sealed class AotBasicMathHandler
     {
         var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
-        GpuBigIntKernelsWrapper.LaunchBitwiseNotKernelPtr(
+        GpuBigIntKernels.LaunchBitwiseNotKernelPtr(
             leftOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
@@ -74,7 +73,7 @@ public sealed class AotBasicMathHandler
         using var scopeMemset1 = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
 
-        GpuBigIntCmpKernelsWrapper.LaunchIsZeroKernelPtr(
+        GpuBigIntCmpKernels.LaunchIsZeroKernelPtr(
             leftOperand.DevicePointer, resultBuf.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
 
@@ -92,7 +91,7 @@ public sealed class AotBasicMathHandler
         using var scopeMemset2 = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
 
-        GpuBigIntCmpKernelsWrapper.LaunchIsOneKernelPtr(
+        GpuBigIntCmpKernels.LaunchIsOneKernelPtr(
             leftOperand.DevicePointer, resultBuf.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
 
@@ -130,7 +129,7 @@ public sealed class AotBasicMathHandler
             using var scopeMemset3 = new GpuKernelLoader.CudaContextScope();
             CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 8));
 
-            GpuBigIntCmpKernelsWrapper.LaunchCompareToKernelPtr(
+            GpuBigIntCmpKernels.LaunchCompareToKernelPtr(
                 leftPtr, rightPtr, resultBuf.DevicePointer, numWords,
                 gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
 
@@ -163,7 +162,7 @@ public sealed class AotBasicMathHandler
         using var scopeMemset4 = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
 
-        GpuBigIntCmpKernelsWrapper.LaunchGetBitLengthKernelPtr(
+        GpuBigIntCmpKernels.LaunchGetBitLengthKernelPtr(
             leftOperand.DevicePointer, resultBuf.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
 
@@ -181,7 +180,7 @@ public sealed class AotBasicMathHandler
         // Round up to nearest warp
         blockSize = (blockSize + 31) / 32 * 32;
 
-        GpuBigIntKernelsWrapper.LaunchParallelAddKernelPtr(
+        GpuBigIntKernels.LaunchParallelAddKernelPtr(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
             leftOperand.NumWords,
             gridDimX: 1, blockDimX: blockSize, hStream: workspace.Stream);
@@ -196,7 +195,7 @@ public sealed class AotBasicMathHandler
         // Round up to nearest warp
         blockSize = (blockSize + 31) / 32 * 32;
 
-        GpuBigIntKernelsWrapper.LaunchParallelSubKernelPtr(
+        GpuBigIntKernels.LaunchParallelSubKernelPtr(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer,
             leftOperand.NumWords,
             gridDimX: 1, blockDimX: blockSize, hStream: workspace.Stream);
@@ -209,7 +208,7 @@ public sealed class AotBasicMathHandler
     {
         var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
-        GpuBigIntKernelsWrapper.LaunchBitwiseAndKernelPtr(
+        GpuBigIntKernels.LaunchBitwiseAndKernelPtr(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
@@ -223,7 +222,7 @@ public sealed class AotBasicMathHandler
         var bitShift = shiftBits % 32;
         var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
-        GpuBigIntKernelsWrapper.LaunchShiftLeftKernelPtr(
+        GpuBigIntKernels.LaunchShiftLeftKernelPtr(
             leftOperand.DevicePointer, wordShift, bitShift, resultBuffer.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }
@@ -237,7 +236,7 @@ public sealed class AotBasicMathHandler
         var bitShift = shiftBits % 32;
         var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
-        GpuBigIntKernelsWrapper.LaunchShiftRightKernelPtr(
+        GpuBigIntKernels.LaunchShiftRightKernelPtr(
             leftOperand.DevicePointer, wordShift, bitShift, resultBuffer.DevicePointer, leftOperand.NumWords,
             gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
     }

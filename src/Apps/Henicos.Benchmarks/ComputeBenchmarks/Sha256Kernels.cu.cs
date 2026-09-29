@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
-public static class Sha256Kernels
+public static partial class Sha256Kernels
 {
     // Right Rotate & SHA-256 primitives
     [GpuDeviceFunction]

@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class WrapperAllocationKernels
+public static partial class WrapperAllocationKernels
 {
     [GpuKernel]
     public static void AllocationTestKernel(

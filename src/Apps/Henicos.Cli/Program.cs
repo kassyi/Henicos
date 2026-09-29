@@ -105,7 +105,6 @@ internal class Program
             var sw = Stopwatch.StartNew();
             runner.RunBenchmarkChunk(chunkSize);
 
-            // Wait for GPU sync since the wrapper might only queue the launch
             GpuKernelLoader.SynchronizeDevice();
             sw.Stop();
 
@@ -146,10 +145,7 @@ internal class Program
 public class FermatBenchmarks
 {
     [Params(1000, 5000, 10000)]
-    public int E
-    {
-        get; set;
-    }
+    public int E { get; set; }
 
     private BigInteger _n;
     private BigInteger _a;

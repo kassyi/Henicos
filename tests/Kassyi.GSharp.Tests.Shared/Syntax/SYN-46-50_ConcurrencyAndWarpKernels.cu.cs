@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_46_50_ConcurrencyAndWarpKernels
+public static partial class SYN_46_50_ConcurrencyAndWarpKernels
 {
     // SYN-47: 共有メモリ (Static / Dynamic)
     [GpuKernel]

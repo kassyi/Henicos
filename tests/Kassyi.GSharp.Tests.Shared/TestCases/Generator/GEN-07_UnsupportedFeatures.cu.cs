@@ -4,7 +4,7 @@ namespace TestSpace
 {
     public class ManagedClass {}
 
-    public static class ErrorKernels
+    public static partial class ErrorKernels
     {
         [GpuKernel]
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]

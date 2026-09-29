@@ -62,8 +62,6 @@ public class GBI_31_CudaGraphExecutionTests
                 Assert.NotEqual(IntPtr.Zero, graphExec);
 
                 ctx.Provider.LaunchGraph(graphExec, ctx.Stream);
-                
-                // Wait for the stream to finish execution before reading back
                 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
 
                 ctx.Provider.CopyDeviceToHost(hostC, d.DevicePointer, numWords, ctx.Stream);
@@ -109,8 +107,10 @@ public class GBI_31_CudaGraphExecutionTests
                 using var c = new GpuUIntBigInteger(ctx, numWords);
 
                 // Simple initialization
-                uint[] hostA = new uint[numWords]; hostA[0] = 1;
-                uint[] hostB = new uint[numWords]; hostB[0] = 1;
+                uint[] hostA = new uint[numWords];
+                hostA[0] = 1;
+                uint[] hostB = new uint[numWords];
+                hostB[0] = 1;
                 ctx.Provider.CopyHostToDevice(a.DevicePointer, hostA, numWords, ctx.Stream);
                 ctx.Provider.CopyHostToDevice(b.DevicePointer, hostB, numWords, ctx.Stream);
 
@@ -135,7 +135,7 @@ public class GBI_31_CudaGraphExecutionTests
                 {
                     ctx.Provider.LaunchGraph(graphExec, ctx.Stream);
                 }
-                
+
                 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
 
                 uint[] hostC = new uint[numWords];
@@ -162,7 +162,7 @@ public class GBI_31_CudaGraphExecutionTests
 
     [Trait("FeatureId", "GBI-31")]
     [Trait("Category", "SadPath")]
-    [Fact(Skip="Corrupts global device context in sequential test execution")]
+    [Fact(Skip = "Corrupts global device context in sequential test execution")]
     public void Test_GBI31_CudaGraph_SadPath_ImplicitSyncFails()
     {
         CudaCapability.EnsureGpuAvailable();

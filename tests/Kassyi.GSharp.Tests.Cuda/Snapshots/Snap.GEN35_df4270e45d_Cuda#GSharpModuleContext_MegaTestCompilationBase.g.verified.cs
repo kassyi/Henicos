@@ -41,5 +41,5 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.TestCases.Transpiler.GEN_35_MacroTranspiler_InGpuKernelWrapper.WarmupFunctionPointerMyKernel();
+global::Kassyi.GSharp.Tests.TestCases.Transpiler.GEN_35_MacroTranspiler_InGpuKernel.WarmupFunctionPointerMyKernel();
 }}}

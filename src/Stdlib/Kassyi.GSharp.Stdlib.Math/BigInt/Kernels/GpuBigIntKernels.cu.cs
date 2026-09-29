@@ -6,7 +6,7 @@ using Contexts;
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 #pragma warning disable GSH0014 // Justification: Lambda capture limitations in source generation prevent passing context by reference.
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntKernels
+public static partial class GpuBigIntKernels
 {
     /// <summary>
     /// Represents the carry generation and propagation bits for prefix sum operations.

@@ -4,7 +4,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_64_69_NumericsAndHwMathKernels
+public static partial class SYN_64_69_NumericsAndHwMathKernels
 {
     [GpuKernel]
     public static void BitOperationsTestKernel(uint[] u32Data, ulong[] u64Data)

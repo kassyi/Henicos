@@ -20,7 +20,8 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         GSharpDiagnostics.ManualEnumeratorNotSupported,
         GSharpDiagnostics.UnsupportedSyntax,
         GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
-        GSharpDiagnostics.ParamsModifierNotSupported);
+        GSharpDiagnostics.ParamsModifierNotSupported,
+        GSharpDiagnostics.KernelClassMustBePartial);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -45,6 +46,18 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         if (!isGpuKernel)
         {
             return;
+        }
+
+        // Check if the containing class is partial
+        if (methodDeclaration.Parent is ClassDeclarationSyntax classDecl)
+        {
+            if (!classDecl.Modifiers.Any(SyntaxKind.PartialKeyword))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    GSharpDiagnostics.KernelClassMustBePartial,
+                    classDecl.Identifier.GetLocation(),
+                    classDecl.Identifier.Text));
+            }
         }
 
         // Single-pass traversal of the AST to minimize time complexity and zero allocations

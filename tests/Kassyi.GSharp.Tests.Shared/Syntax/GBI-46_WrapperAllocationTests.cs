@@ -23,7 +23,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
         uint constantVal = 10;
         
         // Ensure kernel is JIT compiled and static caches are initialized first
-        WrapperAllocationKernelsWrapper.LaunchAllocationTestKernel(ref ioVal, out outVal, arrayVal, constantVal);
+        WrapperAllocationKernels.LaunchAllocationTestKernel(ref ioVal, out outVal, arrayVal, constantVal);
         
         // Allocate device memory manually for _Device call
         int scalarSize = sizeof(int);
@@ -40,7 +40,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
             // all methods in the hot path are fully JIT compiled (Tier 1).
             for (int i = 0; i < 100; i++)
             {
-                WrapperAllocationKernelsWrapper.LaunchAllocationTestKernelPtr(d_ioVal, d_outVal, d_arrayVal, constantVal);
+                WrapperAllocationKernels.LaunchAllocationTestKernelPtr(d_ioVal, d_outVal, d_arrayVal, constantVal);
             }
             
             // Measure allocations on hot path
@@ -48,7 +48,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
             
             for (int i = 0; i < 100; i++)
             {
-                WrapperAllocationKernelsWrapper.LaunchAllocationTestKernelPtr(d_ioVal, d_outVal, d_arrayVal, constantVal: 10, gridDimX: 1, blockDimX: 1);
+                WrapperAllocationKernels.LaunchAllocationTestKernelPtr(d_ioVal, d_outVal, d_arrayVal, constantVal: 10, gridDimX: 1, blockDimX: 1);
             }
             
             long bytesAfter = GC.GetAllocatedBytesForCurrentThread();
@@ -80,7 +80,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
         uint constantVal = 10;
 
         // Launch with empty array - should early-return without executing GPU kernel
-        WrapperAllocationKernelsWrapper.LaunchAllocationTestKernel(ref ioVal, out outVal, emptyArray, constantVal);
+        WrapperAllocationKernels.LaunchAllocationTestKernel(ref ioVal, out outVal, emptyArray, constantVal);
 
         // Verification: ioVal is untouched, outVal gets C# default(float) = 0f
         Assert.Equal(42, ioVal);
@@ -95,7 +95,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
         using (var _initCtx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
         {
             int io = 5;
-            WrapperAllocationKernelsWrapper.LaunchAllocationTestKernel(ref io, out _, [42], 10);
+            WrapperAllocationKernels.LaunchAllocationTestKernel(ref io, out _, [42], 10);
         }
 
         // Stress test concurrent invocation across multiple worker threads, each binding CUDA context
@@ -108,7 +108,7 @@ public class GBI_46_WrapperAllocationTests : TranspilerTestBase
             int[] arrayVal = [42];
             uint constantVal = (uint)(10 + (i % 3));
 
-            WrapperAllocationKernelsWrapper.LaunchAllocationTestKernel(ref ioVal, out outVal, arrayVal, constantVal);
+            WrapperAllocationKernels.LaunchAllocationTestKernel(ref ioVal, out outVal, arrayVal, constantVal);
 
             // 5 is not > constantVal (10, 11, 12), so outVal should be 0
             Assert.Equal(0f, outVal);

@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public unsafe class GEN_08_AutoAllocateReturnArraysKernels
+public unsafe partial class GEN_08_AutoAllocateReturnArraysKernels
 {
     [GpuKernel]
     public static float NormalReturnKernel(int someValue)

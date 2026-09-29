@@ -9,7 +9,7 @@ public class SYN_17_TargetTypedNewTests
     {
         int[] output = [0];
 
-        SYN_17_TargetTypedNewKernelsWrapper.LaunchHappyPathKernel(output, blockDimX: 1);
+        SYN_17_TargetTypedNewKernels.LaunchHappyPathKernel(output, blockDimX: 1);
 
         // tid 0: c1.Value = 100, c2.Value = 200 -> output[0] = 300
         Assert.Equal(300, output[0]);
@@ -25,7 +25,7 @@ public class SYN_17_TargetTypedNewTests
     {
         int[] output = new int[3];
 
-        SYN_17_TargetTypedNewKernelsWrapper.LaunchNestedInitializerKernel(output, blockDimX: 3);
+        SYN_17_TargetTypedNewKernels.LaunchNestedInitializerKernel(output, blockDimX: 3);
 
         Assert.Equal(expectedOutput, output[tid]);
     }

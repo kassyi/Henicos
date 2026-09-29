@@ -8,7 +8,7 @@ using Kassyi.GSharp.Stdlib.Math.Contexts;
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntDivRemKernels
+public static partial class GpuBigIntDivRemKernels
 {
     // Dummy kernel to force the generator to emit the DualNtt struct definition before we use it
     [GpuDeviceFunction]

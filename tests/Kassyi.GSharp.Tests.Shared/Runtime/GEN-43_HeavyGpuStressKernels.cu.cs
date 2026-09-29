@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-public class GEN_43_HeavyGpuStressKernels
+public partial class GEN_43_HeavyGpuStressKernels
 {
     [GpuKernel]
     public static void MatrixMultiplyStressKernel(float[] a, float[] b, float[] c, int n)

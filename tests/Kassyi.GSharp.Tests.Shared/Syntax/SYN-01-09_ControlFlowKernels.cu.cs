@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_01_09_ControlFlowKernels
+public static partial class SYN_01_09_ControlFlowKernels
 {
     // GSH-01 / SYN-05: Simple ternary with implicit type conversion
     [GpuKernel]

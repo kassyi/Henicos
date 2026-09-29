@@ -24,7 +24,7 @@ public sealed class AotAdvancedMathHandler
     {
         var blockDim = System.Math.Min(1024, leftOperand.NumWords);
 
-        GpuBigIntScalarKernelsWrapper.LaunchScalarMulKernelPtr(
+        GpuBigIntScalarKernels.LaunchScalarMulKernelPtr(
             leftOperand.DevicePointer, rightOperand, resultBuffer.DevicePointer, leftOperand.NumWords,
             gridDimX: 1, blockDimX: (uint)blockDim, hStream: workspace.Stream);
     }
@@ -59,7 +59,7 @@ public sealed class AotAdvancedMathHandler
             workspace.Provider.CopyHostToDevice(statusBuf.DevicePointer, statusArray, 1, workspace.Stream);
 
             // Execute Lehmer GCD loop entirely on GPU up to 1000 iterations per launch
-            GpuBigIntGcdKernelsWrapper.LaunchExecuteLehmerGcdMacroKernelPtr(
+            GpuBigIntGcdKernels.LaunchExecuteLehmerGcdMacroKernelPtr(
                 a.DevicePointer, b.DevicePointer, newA.DevicePointer, newB.DevicePointer, statusBuf.DevicePointer,
                 numWords,
                 gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
@@ -149,15 +149,15 @@ public sealed class AotAdvancedMathHandler
         uint sharedMemBytesTranspose = 4224; // 33 * 32 * 4
         var sharedMemBytes = System.Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
 
-        var ctx = new GpuBigIntSqrtKernelsWrapper.AotContexts.SqrtNewtonRaphson
+        var ctx = new GpuBigIntSqrtKernels.AotContexts.SqrtNewtonRaphson
         {
-            Operands = new GpuBigIntSqrtKernelsWrapper.AotContexts.SqrtNewtonRaphson.Operand
+            Operands = new GpuBigIntSqrtKernels.AotContexts.SqrtNewtonRaphson.Operand
             {
                 TargetOperand = targetOperand.DevicePointer,
                 ResultBuffer = resultBuffer.DevicePointer,
                 Constant3 = constant3.DevicePointer
             },
-            Dimensions = new GpuBigIntSqrtKernelsWrapper.AotContexts.SqrtNewtonRaphson.Dimension
+            Dimensions = new GpuBigIntSqrtKernels.AotContexts.SqrtNewtonRaphson.Dimension
             {
                 NumberOfWords = n,
                 MarginWords = marginWords,
@@ -165,10 +165,10 @@ public sealed class AotAdvancedMathHandler
                 MarginBits = marginBits,
                 Iterations = iterations
             },
-            Ntt = new GpuBigIntSqrtKernelsWrapper.AotContexts.Ntt
+            Ntt = new GpuBigIntSqrtKernels.AotContexts.Ntt
             {
                 TransformLength = m,
-                TwiddleFactors = new GpuBigIntSqrtKernelsWrapper.AotContexts.Ntt.TwiddleFactor
+                TwiddleFactors = new GpuBigIntSqrtKernels.AotContexts.Ntt.TwiddleFactor
                 {
                     Forward1 = twiddle.Forward1,
                     Forward2 = twiddle.Forward2,
@@ -176,7 +176,7 @@ public sealed class AotAdvancedMathHandler
                     Inverse2 = twiddle.Inverse2
                 }
             },
-            Workspace = new GpuBigIntSqrtKernelsWrapper.AotContexts.SqrtNewtonRaphson.WorkspaceState
+            Workspace = new GpuBigIntSqrtKernels.AotContexts.SqrtNewtonRaphson.WorkspaceState
             {
                 XSquared = xSquared.DevicePointer,
                 AxSquared = axSquared.DevicePointer,
@@ -195,7 +195,7 @@ public sealed class AotAdvancedMathHandler
             CarryBuffer = carryBuffer.DevicePointer
         };
 
-        GpuBigIntSqrtKernelsWrapper.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
+        GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
             ctx,
             gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes, hStream: workspace.Stream);
     }
@@ -267,15 +267,15 @@ public sealed class AotAdvancedMathHandler
         uint sharedMemBytesTranspose = 4224; // 33 * 32 * 4
         var sharedMemBytes = System.Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
 
-        var ctx = new GpuBigIntDivRemKernelsWrapper.AotContexts.ReciprocalNewtonRaphson
+        var ctx = new GpuBigIntDivRemKernels.AotContexts.ReciprocalNewtonRaphson
         {
-            Operands = new GpuBigIntDivRemKernelsWrapper.AotContexts.ReciprocalNewtonRaphson.Operand
+            Operands = new GpuBigIntDivRemKernels.AotContexts.ReciprocalNewtonRaphson.Operand
             {
                 TargetOperand = targetOperand.DevicePointer,
                 ResultBuffer = resultBuffer.DevicePointer,
                 Constant = constant.DevicePointer
             },
-            Dimensions = new GpuBigIntDivRemKernelsWrapper.AotContexts.ReciprocalNewtonRaphson.Dimension
+            Dimensions = new GpuBigIntDivRemKernels.AotContexts.ReciprocalNewtonRaphson.Dimension
             {
                 NumberOfWords = n,
                 MarginWords = marginWords,
@@ -284,10 +284,10 @@ public sealed class AotAdvancedMathHandler
                 TargetBits = targetBits,
                 Iterations = iterations
             },
-            Ntt = new GpuBigIntDivRemKernelsWrapper.AotContexts.Ntt
+            Ntt = new GpuBigIntDivRemKernels.AotContexts.Ntt
             {
                 TransformLength = m,
-                TwiddleFactors = new GpuBigIntDivRemKernelsWrapper.AotContexts.Ntt.TwiddleFactor
+                TwiddleFactors = new GpuBigIntDivRemKernels.AotContexts.Ntt.TwiddleFactor
                 {
                     Forward1 = twiddle.Forward1,
                     Forward2 = twiddle.Forward2,
@@ -295,7 +295,7 @@ public sealed class AotAdvancedMathHandler
                     Inverse2 = twiddle.Inverse2
                 }
             },
-            Workspace = new GpuBigIntDivRemKernelsWrapper.AotContexts.ReciprocalNewtonRaphson.WorkspaceState
+            Workspace = new GpuBigIntDivRemKernels.AotContexts.ReciprocalNewtonRaphson.WorkspaceState
             {
                 CurrentProduct = currentProduct.DevicePointer,
                 Diff = diff.DevicePointer,
@@ -312,7 +312,7 @@ public sealed class AotAdvancedMathHandler
             CarryBuffer = carryBuffer.DevicePointer
         };
 
-        GpuBigIntDivRemKernelsWrapper.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
+        GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
             ctx,
             gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes
             , hStream: workspace.Stream);
@@ -356,8 +356,8 @@ public sealed class AotAdvancedMathHandler
         // Global NTT (Non-Cooperative) Launch
 
         // 1. Unpack
-        GpuBigIntMulKernelsWrapper.LaunchMultiplyNttUnpackKernelPtr(
-            new GpuBigIntMulKernelsWrapper.AotContexts.NttUnpackKernelArgs
+        GpuBigIntMulKernels.LaunchMultiplyNttUnpackKernelPtr(
+            new GpuBigIntMulKernels.AotContexts.NttUnpack
             {
                 OpA = leftOperand.DevicePointer,
                 OpB = rightOperand.DevicePointer,
@@ -383,7 +383,7 @@ public sealed class AotAdvancedMathHandler
             GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
 
         // 3. Pointwise Multiply
-        GpuBigIntMulKernelsWrapper.LaunchMultiplyNttPointwiseMultiplyKernelPtr(
+        GpuBigIntMulKernels.LaunchMultiplyNttPointwiseMultiplyKernelPtr(
             buf1A.DevicePointer, buf2A.DevicePointer, buf1B.DevicePointer, buf2B.DevicePointer, m,
             gridDimX: gridDim, blockDimX: blockDim
             , hStream: workspace.Stream);
@@ -395,7 +395,7 @@ public sealed class AotAdvancedMathHandler
             GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, true);
 
         // 5. CRT Coefficients
-        GpuBigIntMulKernelsWrapper.LaunchMultiplyNttComputeCrtKernelPtr(
+        GpuBigIntMulKernels.LaunchMultiplyNttComputeCrtKernelPtr(
             buf1A.DevicePointer, buf2A.DevicePointer, uncarriedLow.DevicePointer, uncarriedHigh.DevicePointer, m,
             gridDimX: gridDim, blockDimX: blockDim
             , hStream: workspace.Stream);
@@ -406,7 +406,7 @@ public sealed class AotAdvancedMathHandler
         using var blockCarries = workspace.RentTemp(numBlocks);
 
         var writeWords = System.Math.Min(outWords, resultBuffer.NumWords);
-        GpuBigIntNttKernelsWrapper.LaunchResolveNttCarriesBlockedKernelPtr(
+        GpuBigIntNttKernels.LaunchResolveNttCarriesBlockedKernelPtr(
             uncarriedLow: uncarriedLow.DevicePointer,
             uncarriedHigh: uncarriedHigh.DevicePointer,
             outputBuffer: resultBuffer.DevicePointer,
@@ -419,7 +419,7 @@ public sealed class AotAdvancedMathHandler
         var applyBlockDim = (uint)System.Math.Min(1024, System.Math.Max(256, numBlocks));
         var applyGridDim = (uint)((numBlocks + applyBlockDim - 1) / applyBlockDim);
 
-        GpuBigIntNttKernelsWrapper.LaunchResolveNttCarriesApplyKernelPtr(
+        GpuBigIntNttKernels.LaunchResolveNttCarriesApplyKernelPtr(
             resultBuffer.DevicePointer, blockCarries.DevicePointer, writeWords, ChunkSize, numBlocks,
             gridDimX: applyGridDim, blockDimX: applyBlockDim
             , hStream: workspace.Stream);
@@ -488,8 +488,8 @@ public sealed class AotAdvancedMathHandler
         if (m <= 512)
         {
             var threads = m / 2;
-            GpuBigIntMulKernelsWrapper.LaunchMultiplyNttSharedRowKernelPtr(
-                new GpuBigIntMulKernelsWrapper.AotContexts.NumberTheoreticTransform
+            GpuBigIntMulKernels.LaunchMultiplyNttSharedRowKernelPtr(
+                new GpuBigIntMulKernels.AotContexts.NumberTheoreticTransform
                 {
                     Buffer = buffer,
                     TemporaryBuffer = tempBuffer,
@@ -563,8 +563,8 @@ public sealed class AotAdvancedMathHandler
         var blockDim = (uint)System.Math.Min(1024, System.Math.Max(256, threadsNeeded));
         var gridDim = (uint)System.Math.Min(65535, maxBlocks);
 
-        GpuBigIntMulKernelsWrapper.LaunchMultiplyNttSharedRowKernelPtr(
-            new GpuBigIntMulKernelsWrapper.AotContexts.NumberTheoreticTransform
+        GpuBigIntMulKernels.LaunchMultiplyNttSharedRowKernelPtr(
+            new GpuBigIntMulKernels.AotContexts.NumberTheoreticTransform
             {
                 Buffer = buffer,
                 TemporaryBuffer = tempBuffer,
@@ -589,7 +589,7 @@ public sealed class AotAdvancedMathHandler
         var gridDimX = (uint)((width + 31) / 32);
         var gridDimY = (uint)((height + 31) / 32);
         var totalGrid = gridDimX * gridDimY;
-        GpuBigIntMulKernelsWrapper.LaunchMultiplyNttTransposeKernelPtr(
+        GpuBigIntMulKernels.LaunchMultiplyNttTransposeKernelPtr(
             input, output, width, height,
             gridDimX: totalGrid, gridDimY: 1, blockDimX: 256, blockDimY: 1,
             sharedMemBytes: 32 * 33 * 4, hStream: workspace.Stream);

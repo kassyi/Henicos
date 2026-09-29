@@ -9,7 +9,7 @@ internal static class NativeStructEmitter
     {
         var layout = CudaLayoutRules.GetCudaLayout(s);
 
-        var parents = new System.Collections.Generic.Stack<INamedTypeSymbol>();
+        var parents = new Stack<INamedTypeSymbol>();
         var parent = s.ContainingType;
         while (parent != null && CudaLayoutRules.IsCustomStruct(parent))
         {
@@ -19,12 +19,12 @@ internal static class NativeStructEmitter
 
         foreach (var p in parents)
         {
-            writer.AppendLine($"public unsafe partial struct {Transpiler.CppNameFormatter.TrimContextSuffix(p.Name)}");
+            writer.AppendLine($"public unsafe partial struct {CppNameFormatter.TrimContextSuffix(p.Name)}");
             writer.AppendLine("{");
         }
 
         writer.AppendLine($"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = {layout.Size})]");
-        writer.Append($"public unsafe partial struct {Transpiler.CppNameFormatter.TrimContextSuffix(s.Name)}");
+        writer.Append($"public unsafe partial struct {CppNameFormatter.TrimContextSuffix(s.Name)}");
         writer.AppendLine();
 
         using (writer.Scope())

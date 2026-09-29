@@ -15,7 +15,8 @@ public class TestKernelReturnTypesSadPath
 
     // Pointer type
     public unsafe static float* PointerKernel() => null;
-    // Wait, GpuKernel on pointers
+
+    // GpuKernel on pointers
     [GpuKernel]
     public unsafe static float* PointerKernel2() => null;
 
@@ -24,6 +25,7 @@ public class TestKernelReturnTypesSadPath
     {
         public string S;
     }
+
     [GpuKernel]
     public static ManagedStruct ManagedStructKernel() => default;
 

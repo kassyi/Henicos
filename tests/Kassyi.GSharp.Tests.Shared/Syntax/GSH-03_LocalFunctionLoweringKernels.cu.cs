@@ -4,7 +4,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class GSH_03_LocalFunctionLoweringKernels
+public static partial class GSH_03_LocalFunctionLoweringKernels
 {
     [GpuKernel]
     public static void LocalFunctionVoidKernel(int[] data)

@@ -271,7 +271,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var seenKernelMethods = new HashSet<TranspiledKernelResult>();
         var distinctKernelMethods = new List<TranspiledKernelResult>();
 
-        var methodsByClass = new System.Collections.Generic.Dictionary<INamedTypeSymbol, System.Collections.Generic.List<TranspiledKernelResult>>(SymbolEqualityComparer.Default);
+        var methodsByClass = new Dictionary<INamedTypeSymbol, List<TranspiledKernelResult>>(SymbolEqualityComparer.Default);
         foreach (var method in kernelMethods)
         {
             if (seenKernelMethods.Add(method))
@@ -282,7 +282,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
                 if (!methodsByClass.TryGetValue(method.MethodSymbol.ContainingType, out var list))
                 {
-                    list = new System.Collections.Generic.List<TranspiledKernelResult>();
+                    list = [];
                     methodsByClass[method.MethodSymbol.ContainingType] = list;
                 }
                 list.Add(method);
@@ -291,7 +291,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         foreach (var kvp in methodsByClass)
         {
-            ProcessKernelClass((INamedTypeSymbol)kvp.Key, kvp.Value, config, context, isCuda);
+            ProcessKernelClass(kvp.Key, kvp.Value, config, context, isCuda);
         }
 
         var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
@@ -349,10 +349,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
             SourceText.From(deviceWriter.ToString(), Encoding.UTF8));
     }
 
-    private static void ProcessKernelClass(INamedTypeSymbol classSymbol, System.Collections.Generic.List<TranspiledKernelResult> methods, GeneratorConfig config,
+    private static void ProcessKernelClass(INamedTypeSymbol classSymbol, List<TranspiledKernelResult> methods, GeneratorConfig config,
         SourceProductionContext context, bool isCuda)
     {
-        var methodsData = new System.Collections.Generic.List<(IMethodSymbol Method, string Source)>();
+        var methodsData = new List<(IMethodSymbol Method, string Source)>();
         foreach (var method in methods)
         {
             foreach (var diag in method.Diagnostics)
@@ -363,8 +363,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             methodsData.Add((method.MethodSymbol, source));
         }
 
-        var wrapperSource = WrapperEmitter.GenerateWrapperClass(classSymbol, methodsData, config);
-        context.AddSource(classSymbol.Name + "_Wrapper.g.cs",
+        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(classSymbol, methodsData, config);
+        context.AddSource(classSymbol.Name + ".g.cs",
             SourceText.From(wrapperSource, Encoding.UTF8));
     }
 

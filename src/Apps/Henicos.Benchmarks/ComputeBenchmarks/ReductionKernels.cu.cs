@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
-public static class ReductionKernels
+public static partial class ReductionKernels
 {
     [GpuKernel]
     public static void ReductionKernel([In] Float4[] input, [Out] float[] output, int n)

@@ -57,8 +57,8 @@ public class BlackScholesBenchmark : IComputeBenchmark
     {
         uint blockSize = 256;
         var numBlocks = (N + blockSize - 1) / blockSize;
-        BlackScholesKernelsWrapper.LaunchBlackScholesKernel(
-            new BlackScholesKernels.AotContexts.BlackScholes
+        BlackScholesKernels.LaunchBlackScholesKernel(
+            new BlackScholesKernels.BlackScholesContext
             {
                 S = _s,
                 X = _x,

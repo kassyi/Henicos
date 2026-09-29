@@ -27,7 +27,7 @@ public struct PackedShadowStruct
     public byte Flag;
 }
 
-public static class GEN_33_TestKernels
+public static partial class GEN_33_TestKernels
 {
     [GpuKernel]
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]

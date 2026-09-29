@@ -50,10 +50,10 @@ public class COR_01_FastMathBoundaryTests
         float[] outputAbs = new float[1];
 
         // 2. Act
-        COR_01_FastMathBoundaryKernelsWrapper.LaunchKernel_COR01_FastMath_Exp(input, outputExp);
-        COR_01_FastMathBoundaryKernelsWrapper.LaunchKernel_COR01_FastMath_Log(input, outputLog);
-        COR_01_FastMathBoundaryKernelsWrapper.LaunchKernel_COR01_FastMath_Sqrt(input, outputSqrt);
-        COR_01_FastMathBoundaryKernelsWrapper.LaunchKernel_COR01_FastMath_Abs(input, outputAbs);
+        COR_01_FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Exp(input, outputExp);
+        COR_01_FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Log(input, outputLog);
+        COR_01_FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Sqrt(input, outputSqrt);
+        COR_01_FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Abs(input, outputAbs);
 
         // 3. Assert
         // In boundary test we primarily care that it doesn't crash the GPU/Runtime
@@ -77,10 +77,10 @@ public class COR_01_FastMathBoundaryTests
     {
         float[] empty = [];
         // Should not throw or crash
-        COR_01_FastMathBoundaryKernelsWrapper.LaunchKernel_COR01_FastMath_Exp(empty, empty);
-        COR_01_FastMathBoundaryKernelsWrapper.LaunchKernel_COR01_FastMath_Log(empty, empty);
-        COR_01_FastMathBoundaryKernelsWrapper.LaunchKernel_COR01_FastMath_Sqrt(empty, empty);
-        COR_01_FastMathBoundaryKernelsWrapper.LaunchKernel_COR01_FastMath_Abs(empty, empty);
+        COR_01_FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Exp(empty, empty);
+        COR_01_FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Log(empty, empty);
+        COR_01_FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Sqrt(empty, empty);
+        COR_01_FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Abs(empty, empty);
     }
 
     [SkippableFact]
@@ -96,7 +96,7 @@ public class COR_01_FastMathBoundaryTests
             float[] output = new float[1];
 
             // JIT Engine should handle parallel concurrent launches cleanly
-            COR_01_FastMathBoundaryKernelsWrapper.LaunchKernel_COR01_FastMath_Exp(input, output);
+            COR_01_FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Exp(input, output);
 
             Assert.True(output[0] >= 1.0f); // e^x (x>=0) is always >= 1.0
         });

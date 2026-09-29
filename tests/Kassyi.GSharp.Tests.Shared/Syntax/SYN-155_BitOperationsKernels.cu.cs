@@ -4,7 +4,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_155_BitOperationsKernels
+public static partial class SYN_155_BitOperationsKernels
 {
     [GpuKernel]
     public static void Rotate32Kernel(uint[] val, int[] shift, uint[] rotLeftRes, uint[] rotRightRes)

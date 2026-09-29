@@ -9,7 +9,7 @@ public class SYN_70_72_LoopsAndJumpsTests
     public void Test_SYN70_ForeachInlineArray_Execution()
     {
         int[] output = [0];
-        SYN_70_72_LoopsAndJumpsKernelsWrapper.LaunchForeachInlineArrayKernel(output, blockDimX: 1);
+        SYN_70_72_LoopsAndJumpsKernels.LaunchForeachInlineArrayKernel(output, blockDimX: 1);
         Assert.Equal(100, output[0]);
     }
 

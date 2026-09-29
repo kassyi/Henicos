@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_156_LoopUnrollKernels
+public static partial class SYN_156_LoopUnrollKernels
 {
     // Happy Path: Standard for loop with [GpuLoopUnroll]
     [GpuKernel]

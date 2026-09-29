@@ -90,7 +90,7 @@ public class Program
         Console.WriteLine("Processing complex mathematical transformations...");
 
         // The Roslyn Source Generator automatically emits this companion 'Launch...' method!
-        MathKernelsWrapper.LaunchProcessHeavySimulation(
+        MathKernels.LaunchProcessHeavySimulation(
             data: data,
             result: result,
             length: length,
@@ -187,7 +187,7 @@ On the host side, you simply call the `Launch` method. G# automatically allocate
 ```csharp
 // Execution Context: Host (CPU)
 // The generated Launch method returns a float[] sized exactly to the total thread count!
-float[] magnitudes = MathKernelsWrapper.LaunchComputeMagnitude(
+float[] magnitudes = MathKernels.LaunchComputeMagnitude(
     particles: particlesArray,
     gridDimX: 100,
     blockDimX: 256  // Returns a float[25600]
@@ -206,8 +206,8 @@ For peak performance, allocate persistent device memory upfront using `GpuBuffer
 // 1. Allocate a persistent device buffer once (e.g., during initialization)
 using GpuBuffer<float> gpuMagnitudes = new GpuBuffer<float>(25600);
 
-// 2. In your hot loop, launch using the _Device suffix method and pass the pointer
-MathKernelsWrapper.LaunchComputeMagnitude_Device(
+// 2. In your hot loop, launch using the Ptr suffix method and pass the pointer
+MathKernels.LaunchComputeMagnitudePtr(
     particles: particlesArray,
     magnitudes: gpuMagnitudes.DevicePointer, // Pass the native device pointer
     gridDimX: 100,

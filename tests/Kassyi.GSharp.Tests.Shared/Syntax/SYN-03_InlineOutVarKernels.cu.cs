@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_03_InlineOutVarKernels
+public static partial class SYN_03_InlineOutVarKernels
 {
     [GpuDeviceFunction]
     public static bool TrySquare(int input, out int output)

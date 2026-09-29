@@ -413,10 +413,6 @@ __global__ void Kernel_StaticFermatLoop(
     cg::grid_group grid = cg::this_grid();
     int bit2E1 = 2 * E + 1;
     
-    // Remaining exponent bits: 1010 ... 
-    // Wait, the standard Fermat PRP sequence iterates E times.
-    // E.g., square and multiply-by-2, etc.
-    
     for (int iter = 0; iter < E; iter++) {
         // --- SquareAndReduce(T) ---
         Device_MultiplySquare(T, numWords, grid, M, ntt_buf1, ntt_buf2, ntt_tmp, twiddle1_fwd, twiddle2_fwd, twiddle1_inv, twiddle2_inv);
