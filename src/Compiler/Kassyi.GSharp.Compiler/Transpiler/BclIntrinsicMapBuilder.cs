@@ -75,7 +75,7 @@ internal static class BclIntrinsicMapBuilder
     {
         data = default;
 
-        if (!SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, attributeSymbol) ||
+        if (!attribute.AttributeClass.IsEqualTo(attributeSymbol) ||
             attribute.ConstructorArguments.Length != 4 ||
             attribute.ConstructorArguments[0].Value is not string bclTypeFullName ||
             attribute.ConstructorArguments[1].Value is not string methodName ||
@@ -148,11 +148,16 @@ internal static class BclIntrinsicMapBuilder
             var is32Bit = compilation.Options.Platform is Platform.X86 or Platform.Arm;
             if (is32Bit)
             {
-                cudaIntrinsicName = cudaIntrinsicName.Replace("_64", "_32");
-                if (cudaIntrinsicName == "__popcll")
+                cudaIntrinsicName = cudaIntrinsicName switch
                 {
-                    cudaIntrinsicName = "__popc";
-                }
+                    "__gsharp_rotate_left_64" => "__gsharp_rotate_left_32",
+                    "__gsharp_rotate_right_64" => "__gsharp_rotate_right_32",
+                    "__gsharp_trailing_zero_count_64" => "__gsharp_trailing_zero_count_32",
+                    "__gsharp_log2_64" => "__gsharp_log2_32",
+                    "__gsharp_leading_zero_count_64" => "__gsharp_leading_zero_count_32",
+                    "__popcll" => "__popc",
+                    _ => cudaIntrinsicName
+                };
 
                 castFirstArgTo = "unsigned int";
             }
@@ -225,7 +230,7 @@ internal static class BclIntrinsicMapBuilder
                 return false;
             }
 
-            if (!SymbolEqualityComparer.Default.Equals(method.Parameters[i].Type, expectedType))
+            if (!method.Parameters[i].Type.IsEqualTo(expectedType))
             {
                 return false;
             }

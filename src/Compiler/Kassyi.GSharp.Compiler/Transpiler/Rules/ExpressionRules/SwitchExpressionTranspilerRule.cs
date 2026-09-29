@@ -34,9 +34,9 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
                 {
                     if (arm.WhenClause != null)
                     {
-                        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax,
-                            arm.WhenClause.GetLocation(),
-                            "Switch expression arms with 'when' clauses are not supported"));
+                        context.Report(GSharpDiagnostics.UnsupportedSyntax,
+                            arm.WhenClause,
+                            "Switch expression arms with 'when' clauses are not supported");
                         return;
                     }
 
@@ -51,9 +51,9 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
                             context.Writer.Append("default:");
                             break;
                         default:
-                            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax,
-                                arm.Pattern.GetLocation(),
-                                "Switch expression patterns other than constant and discard are not supported"));
+                            context.Report(GSharpDiagnostics.UnsupportedSyntax,
+                                arm.Pattern,
+                                "Switch expression patterns other than constant and discard are not supported");
                             context.Writer.Append("default:");
                             break;
                     }

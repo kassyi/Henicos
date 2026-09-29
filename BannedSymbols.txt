@@ -1,21 +1,57 @@
-M:Microsoft.CodeAnalysis.ISymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ITypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.INamedTypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IMethodSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IPropertySymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IFieldSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IEventSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IParameterSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ILocalSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ITypeParameterSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.INamespaceSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IAliasSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ILabelSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IDynamicTypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IArrayTypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IPointerTypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.IFunctionPointerTypeSymbol.ToString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
-M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString();Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+# ==============================================================================
+# BannedSymbols Specification & Guidelines (Microsoft.CodeAnalysis.BannedApiAnalyzers)
+# ==============================================================================
+# Format: {Prefix}:{DocumentationCommentId}[;Description]
+#
+# Prefixes:
+#   #  - Comment line (ignored by analyzer)
+#   T: - Type (class, struct, interface, delegate, etc.)
+#   N: - Namespace
+#   M: - Method (regular method, extension method, operator, constructor, etc.)
+#   P: - Property
+#   F: - Field
+#   E: - Event
+#
+# Critical Gotchas & Pitfalls (4 Must-Know Rules):
+#   1. Parameterless methods must NOT include parentheses '()' (DocId Specification):
+#      Roslyn's DocumentationCommentId format omits parentheses for parameterless methods.
+#      ❌ M:Microsoft.CodeAnalysis.ISymbol.ToString() (Does not match DocId format and is silently ignored)
+#      ✅ M:Microsoft.CodeAnalysis.ISymbol.ToString
+#
+#   2. 'T:' does NOT capture extension method invocations:
+#      Specifying 'T:System.Linq.Enumerable' only detects direct type references (e.g., typeof(Enumerable)).
+#      Extension method calls on instances (e.g., list.FirstOrDefault(), source.Where(...)) are NOT caught.
+#      To ban extension methods like LINQ, ban specific methods explicitly using 'M:' (e.g., M:System.Linq.Enumerable.FirstOrDefault...)
+#      or remove implicit usings via <Using Remove="System.Linq" /> in Directory.Build.props.
+#
+#   3. Interface .ToString() statically binds to System.Object.ToString:
+#      ISymbol and INamespaceSymbol are interfaces and do not declare ToString().
+#      In C#, calling symbol.ToString() statically resolves to System.Object.ToString at compile-time.
+#      Therefore, banning only M:Microsoft.CodeAnalysis.ISymbol.ToString will NOT catch invocations on interface instances.
+#
+#   4. Backtick syntax for generics (DocId specification):
+#      - Generic Types: Single backtick with arity count (e.g., List`1, Dictionary`2).
+#      - Generic Methods: Double backticks for method type parameters in signature (e.g., IEnumerable{``0}, Func{``0,System.Boolean}).
+# ==============================================================================
+
+M:Microsoft.CodeAnalysis.ISymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ITypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.INamedTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IMethodSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IPropertySymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IFieldSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IEventSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IParameterSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ILocalSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ITypeParameterSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.INamespaceSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IAliasSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ILabelSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IDynamicTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IArrayTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IPointerTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.IFunctionPointerTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
+M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
 M:Microsoft.CodeAnalysis.ISymbol.ToDisplayString(Microsoft.CodeAnalysis.SymbolDisplayFormat);Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
 T:System.Reflection.MethodInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
 T:System.Reflection.PropertyInfo;Reflection is strictly prohibited in G# (YES Static Determinism)
@@ -24,8 +60,54 @@ M:System.Type.GetMethod(System.String);Reflection is strictly prohibited in G# (
 M:System.Type.GetProperty(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
 M:System.Type.GetField(System.String);Reflection is strictly prohibited in G# (YES Static Determinism)
 M:System.Activator.CreateInstance(System.Type);Dynamic instantiation is prohibited. Use direct AST/Symbol resolution.
+# AST stringification prohibition (Enforces YES AST)
+M:Microsoft.CodeAnalysis.SyntaxNode.ToString;Converting AST nodes to string is strictly prohibited (Violates YES AST). Inspect and transform code using SyntaxKind, SyntaxNode, IOperation, or ISymbol directly.
+M:Microsoft.CodeAnalysis.SyntaxNode.ToFullString;Converting AST nodes to string is strictly prohibited (Violates YES AST). Inspect and transform code using SyntaxKind, SyntaxNode, IOperation, or ISymbol directly.
+
+# LINQ & Functional iteration prohibitions (Enforces Static Determinism and Zero-Allocation)
 N:System.Linq;LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
 T:System.Linq.Enumerable;LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
 T:System.Linq.Queryable;LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
 T:System.Linq.ParallelEnumerable;PLINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
 T:System.Linq.Expressions.Expression;Expression trees are prohibited in G# (YES Static Determinism)
+
+# System.Linq.Enumerable extension methods
+M:System.Linq.Enumerable.Where``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Where``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Int32,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Select``2(System.Collections.Generic.IEnumerable{``0},System.Func{``0,``1});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Select``2(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Int32,``1});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.SelectMany``2(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Collections.Generic.IEnumerable{``1}});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.FirstOrDefault``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.FirstOrDefault``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.First``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.First``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.SingleOrDefault``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.SingleOrDefault``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Single``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Single``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.All``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.ToList``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.ToArray``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.OfType``1(System.Collections.IEnumerable);LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Cast``1(System.Collections.IEnumerable);LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+
+# System.Collections.Immutable.ImmutableArrayExtensions LINQ-like methods
+M:System.Collections.Immutable.ImmutableArrayExtensions.FirstOrDefault``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.FirstOrDefault``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.First``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.First``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.SingleOrDefault``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.SingleOrDefault``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.Single``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.Single``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.Any``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.Any``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.All``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.Where``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.Select``2(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,``1});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.ToArray``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+

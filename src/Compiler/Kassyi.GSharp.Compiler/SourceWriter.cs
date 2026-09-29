@@ -228,6 +228,29 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     }
 
     [UnscopedRef]
+    public ref readonly SourceWriter AppendVerbatimLiteral(string? text)
+    {
+        if (text is null)
+        {
+            return ref this;
+        }
+
+        foreach (var c in text)
+        {
+            if (c == '"')
+            {
+                Builder.Append("\"\"");
+            }
+            else
+            {
+                Builder.Append(c);
+            }
+        }
+
+        return ref this;
+    }
+
+    [UnscopedRef]
     public ref readonly SourceWriter LineIf(bool condition, string? value)
     {
         AppendLineIf(condition, value);

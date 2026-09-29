@@ -11,17 +11,9 @@ internal sealed class ImplicitVarNeedsSuffixRule
 
     public void Analyze(VariableDeclaratorSyntax variable, ref ValidationContext context)
     {
-        if (variable.Parent is not VariableDeclarationSyntax { Type.IsVar: true })
-        {
-            return;
-        }
-
-        if (variable.Initializer?.Value is not LiteralExpressionSyntax literal)
-        {
-            return;
-        }
-
-        if (!literal.IsKind(SyntaxKind.NumericLiteralExpression))
+        if (variable.Parent is not VariableDeclarationSyntax { Type.IsVar: true } ||
+            variable.Initializer?.Value is not LiteralExpressionSyntax literal ||
+            !literal.IsKind(SyntaxKind.NumericLiteralExpression))
         {
             return;
         }
@@ -38,11 +30,9 @@ internal sealed class ImplicitVarNeedsSuffixRule
             return;
         }
 
-        var diagnostic = Diagnostic.Create(
+        context.Report(
             GSharpDiagnostics.ImplicitVarNeedsSuffix,
-            variable.GetLocation(),
+            variable,
             variable.Identifier.Text);
-
-        context.ReportDiagnostic(diagnostic);
     }
 }

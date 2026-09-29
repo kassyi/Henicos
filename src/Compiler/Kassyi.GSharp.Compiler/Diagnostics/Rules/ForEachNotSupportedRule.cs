@@ -16,8 +16,7 @@ internal sealed class ForEachNotSupportedRule
         {
             try
             {
-                var typeInfo = context.SemanticModel.GetTypeInfo(node.Expression);
-                type = typeInfo.Type;
+                type = context.SemanticModel.GetTypeSymbol(node.Expression);
             }
             catch
             {
@@ -36,11 +35,9 @@ internal sealed class ForEachNotSupportedRule
             }
         }
 
-        var diagnostic = Diagnostic.Create(
+        context.Report(
             GSharpDiagnostics.ForeachNotSupported,
-            node.GetLocation(),
+            node,
             context.MethodSymbol.Name);
-
-        context.ReportDiagnostic(diagnostic);
     }
 }

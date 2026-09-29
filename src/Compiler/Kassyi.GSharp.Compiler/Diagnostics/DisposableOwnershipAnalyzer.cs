@@ -21,9 +21,6 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     }
 
     [ThreadStatic]
-    private static List<ISymbol>? s_tDisposableMembers;
-
-    [ThreadStatic]
     private static HashSet<string>? s_tBorrowedParamNames;
 
     [ThreadStatic]
@@ -40,8 +37,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var disposableMembers = s_tDisposableMembers ??= [];
-        disposableMembers.Clear();
+        var disposableMembers = ImmutableArray.CreateBuilder<ISymbol>();
 
         foreach (var m in namedType.GetMembers())
         {
@@ -99,18 +95,8 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool HasTakesOwnershipAttribute(IParameterSymbol param)
-    {
-        foreach (var a in param.GetAttributes())
-        {
-            if (a.AttributeClass?.Name == "TakesOwnershipAttribute")
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool HasTakesOwnershipAttribute(IParameterSymbol param) =>
+        param.HasAttribute("TakesOwnership");
 
     private static void CollectBorrowedFieldNames(
         INamedTypeSymbol namedType,
@@ -171,7 +157,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     private static void ValidateMissingIDisposable(
         SymbolAnalysisContext context,
         INamedTypeSymbol namedType,
-        List<ISymbol> disposableMembers,
+        IReadOnlyList<ISymbol> disposableMembers,
         HashSet<string> borrowedFields,
         bool implementsIDisposable)
     {
@@ -196,13 +182,13 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         }
 
         var location = namedType.Locations.Length > 0 ? namedType.Locations[0] : null;
-        context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.MissingIDisposable, location));
+        context.Report(GSharpDiagnostics.MissingIDisposable, location);
     }
 
     private static void ValidateDisposeImplementation(
         SymbolAnalysisContext context,
         INamedTypeSymbol namedType,
-        List<ISymbol> disposableMembers,
+        IReadOnlyList<ISymbol> disposableMembers,
         HashSet<string> borrowedFields,
         HashSet<string> disposedMemberNames)
     {
@@ -218,13 +204,11 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
             if (isBorrowed && isDisposed)
             {
-                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.DisposingBorrowedResource,
-                    locationForDispose));
+                context.Report(GSharpDiagnostics.DisposingBorrowedResource, locationForDispose);
             }
             else if (!isBorrowed && !isDisposed && parameterlessDispose != null)
             {
-                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UndisposedGpuScope, locationForDispose,
-                    member.Name));
+                context.Report(GSharpDiagnostics.UndisposedGpuScope, locationForDispose, member.Name);
             }
         }
     }
@@ -285,7 +269,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
     {
         var method = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(method);
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
         if (methodSymbol == null)
         {
             return;
@@ -318,8 +302,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
         if (disposes)
         {
-            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.DisposableInDim,
-                method.Identifier.GetLocation()));
+            context.Report(GSharpDiagnostics.DisposableInDim, method.Identifier.GetLocation());
         }
     }
 }

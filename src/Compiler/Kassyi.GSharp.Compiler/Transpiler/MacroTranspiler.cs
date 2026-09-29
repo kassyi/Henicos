@@ -25,7 +25,7 @@ internal static class MacroTranspiler
     private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation,
         ExpressionStatementSyntax statement, ref TranspileContext context)
     {
-        if (context.SemanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol symbol ||
+        if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol symbol ||
             !symbol.ContainingNamespace.IsCoreNamespace())
         {
             return false;
@@ -57,9 +57,7 @@ internal static class MacroTranspiler
     {
         if (GpuMacroArgumentRule.GetSupportedLoop(statement) == null)
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.UnrollHintMustPrecedeLoop,
-                invocation.GetLocation()));
+            context.Report(GSharpDiagnostics.UnrollHintMustPrecedeLoop, invocation);
             return true;
         }
 
@@ -71,9 +69,7 @@ internal static class MacroTranspiler
             var constantValue = context.SemanticModel.GetConstantValue(factorExpr);
             if (!constantValue.HasValue || constantValue.Value is not int intVal || intVal < 0)
             {
-                context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                    GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
-                    factorExpr.GetLocation()));
+                context.Report(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
                 return true;
             }
 
@@ -107,10 +103,7 @@ internal static class MacroTranspiler
         if (!TryGetConstantInt(args[offset].Expression, context.SemanticModel, out var start) ||
             !TryGetConstantInt(args[offset + 1].Expression, context.SemanticModel, out var count))
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.UnsupportedSyntax,
-                invocation.GetLocation(),
-                "ForUnroll arguments must be constants"));
+            context.Report(GSharpDiagnostics.UnsupportedSyntax, invocation, "ForUnroll arguments must be constants");
             return false;
         }
 
@@ -178,16 +171,16 @@ internal static class MacroTranspiler
 
     private readonly ref struct MacroScope
     {
-        private readonly List<(string Name, OverrideValue Value)> _overrides;
+        private readonly OverrideScopeStack _stack;
         public readonly string ParamName;
         private readonly int _cookie;
 
         public MacroScope(ref TranspileContext context, string paramName, string? contextParamName,
             ExpressionSyntax? contextArgExpr)
         {
-            _overrides = context.LocalVariableOverrides;
+            _stack = context.LocalVariableOverrides;
             ParamName = paramName;
-            _cookie = _overrides.Count;
+            _cookie = _stack.Count;
 
             if (contextParamName != null && contextArgExpr != null)
             {
@@ -197,11 +190,7 @@ internal static class MacroTranspiler
 
         public void Dispose()
         {
-            var removeCount = _overrides.Count - _cookie;
-            if (removeCount > 0)
-            {
-                _overrides.RemoveRange(_cookie, removeCount);
-            }
+            _stack.Pop(_cookie);
         }
     }
 
@@ -218,10 +207,7 @@ internal static class MacroTranspiler
         var paramName = ExtractUnrollLoopParameterName(lambdaExpr, hasContext);
         if (string.IsNullOrEmpty(paramName))
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.MacroLambdaRequiresParameter,
-                invocation.GetLocation(),
-                macroName));
+            context.Report(GSharpDiagnostics.MacroLambdaRequiresParameter, invocation, macroName);
             return false;
         }
 
@@ -273,10 +259,7 @@ internal static class MacroTranspiler
         var args = invocation.ArgumentList.Arguments;
         if (args.Count != 1 || args[0].Expression is not LambdaExpressionSyntax lambdaExpr)
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.UnsupportedSyntax,
-                invocation.GetLocation(),
-                "Gpu.SyncGrid requires a single lambda expression argument"));
+            context.Report(GSharpDiagnostics.UnsupportedSyntax, invocation, "Gpu.SyncGrid requires a single lambda expression argument");
             return false;
         }
 
@@ -433,16 +416,21 @@ internal static class MacroTranspiler
     {
         var rightNode = UnwrapExpression(assignment.Right, context.SemanticModel);
 
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(rightNode);
-        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
+        if (context.SemanticModel.GetSymbol(rightNode) is not IMethodSymbol methodSymbol)
         {
             return false;
         }
 
-        var macroAttr = methodSymbol.GetAttributes()
-            .FirstOrDefault(a =>
-                a.AttributeClass?.Name == "GpuOperatorMacroAttribute" &&
-                a.AttributeClass.ContainingNamespace.IsCoreNamespace());
+        AttributeData? macroAttr = null;
+        foreach (var a in methodSymbol.GetAttributes())
+        {
+            if (a.IsAttribute("GpuOperatorMacro") &&
+                a.AttributeClass?.ContainingNamespace.IsCoreNamespace() == true)
+            {
+                macroAttr = a;
+                break;
+            }
+        }
 
         if (macroAttr == null || macroAttr.ConstructorArguments.Length < 2)
         {
@@ -485,10 +473,10 @@ internal static class MacroTranspiler
         {
             if (targetType != null && targetMethodName != null)
             {
-                context.ReportDiagnostic?.Invoke(Diagnostic.Create(
+                context.Report(
                     GSharpDiagnostics.UnsupportedSyntax,
-                    assignment.GetLocation(),
-                    $"Macro target method '{targetType.Name}.{targetMethodName}' is missing or incompatible."));
+                    assignment,
+                    $"Macro target method '{targetType.Name}.{targetMethodName}' is missing or incompatible.");
             }
 
             return false;

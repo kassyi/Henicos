@@ -11,31 +11,25 @@ internal sealed class LinqNotSupportedRule
 
     public void Analyze(QueryExpressionSyntax node, ref ValidationContext context)
     {
-        var diagnostic = Diagnostic.Create(
+        context.Report(
             GSharpDiagnostics.LinqNotSupported,
-            node.GetLocation(),
+            node,
             context.MethodSymbol.Name);
-
-        context.ReportDiagnostic(diagnostic);
     }
 
     public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)
     {
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(node);
-        if (symbolInfo.Symbol is IMethodSymbol methodSymbol)
+        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol methodSymbol)
         {
-            var isLinqMethod = methodSymbol.ContainingNamespace?.ToString() == "System.Linq" ||
-                               methodSymbol.ContainingType?.ToString() == "System.Linq.Enumerable" ||
-                               methodSymbol.ContainingType?.ToString() == "System.Linq.Queryable";
+            var isLinqMethod = methodSymbol.ContainingNamespace.IsSystemLinq() ||
+                               methodSymbol.ContainingType?.ContainingNamespace.IsSystemLinq() == true;
 
             if (isLinqMethod)
             {
-                var diagnostic = Diagnostic.Create(
+                context.Report(
                     GSharpDiagnostics.LinqNotSupported,
-                    node.GetLocation(),
+                    node,
                     context.MethodSymbol.Name);
-
-                context.ReportDiagnostic(diagnostic);
             }
         }
     }

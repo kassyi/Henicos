@@ -1,2 +1,42 @@
+# ==============================================================================
+# BannedSymbols Specification & Guidelines (Tests Project)
+# ==============================================================================
+# Format: {Prefix}:{DocumentationCommentId}[;Description]
+#
+# Prefixes:
+#   #  - Comment line (ignored by analyzer)
+#   T: - Type (class, struct, interface, delegate, etc.)
+#   N: - Namespace
+#   M: - Method (regular method, extension method, operator, constructor, etc.)
+#   P: - Property
+#   F: - Field
+#   E: - Event
+#
+# Critical Gotchas & Pitfalls (4 Must-Know Rules):
+#   1. Parameterless methods must NOT include parentheses '()' (DocId Specification):
+#      Roslyn's DocumentationCommentId format omits parentheses for parameterless methods.
+#      ❌ M:Microsoft.CodeAnalysis.ISymbol.ToString() (Does not match DocId format and is silently ignored)
+#      ✅ M:Microsoft.CodeAnalysis.ISymbol.ToString
+#
+#   2. 'T:' does NOT capture extension method invocations:
+#      Specifying 'T:System.Linq.Enumerable' only detects direct type references (e.g., typeof(Enumerable)).
+#      Extension method calls on instances (e.g., list.FirstOrDefault(), source.Where(...)) are NOT caught.
+#      To ban extension methods like LINQ, ban specific methods explicitly using 'M:' (e.g., M:System.Linq.Enumerable.FirstOrDefault...)
+#      or remove implicit usings via <Using Remove="System.Linq" /> in Directory.Build.props.
+#
+#   3. Interface .ToString() statically binds to System.Object.ToString:
+#      ISymbol and INamespaceSymbol are interfaces and do not declare ToString().
+#      In C#, calling symbol.ToString() statically resolves to System.Object.ToString at compile-time.
+#      Therefore, banning only M:Microsoft.CodeAnalysis.ISymbol.ToString will NOT catch invocations on interface instances.
+#
+#   4. Backtick syntax for generics (DocId specification):
+#      - Generic Types: Single backtick with arity count (e.g., List`1, Dictionary`2).
+#      - Generic Methods: Double backticks for method type parameters in signature (e.g., IEnumerable{``0}, Func{``0,System.Boolean}).
+#
+# Note:
+#   Registered into analyzer via <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.csv" />
+#   in tests/Directory.Build.props.
+# ==============================================================================
+
 M:Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(System.String,Microsoft.CodeAnalysis.CSharp.CSharpParseOptions,System.String,System.Text.Encoding,System.Threading.CancellationToken);Don't use ParseText directly in tests. Use MegaCompilationCache.GetDynamicCompilation() instead.
 M:Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(Microsoft.CodeAnalysis.Text.SourceText,Microsoft.CodeAnalysis.CSharp.CSharpParseOptions,System.String,System.Threading.CancellationToken);Don't use ParseText directly in tests. Use MegaCompilationCache.GetDynamicCompilation() instead.

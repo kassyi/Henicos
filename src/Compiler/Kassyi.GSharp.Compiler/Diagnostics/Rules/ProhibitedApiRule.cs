@@ -13,11 +13,11 @@ internal sealed class ProhibitedApiRule
 
     public void Analyze(MemberAccessExpressionSyntax node, ref ValidationContext context)
     {
-        var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol;
+        var symbol = context.SemanticModel.GetSymbol(node);
 
         if (symbol == null && node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node)
         {
-            symbol = context.SemanticModel.GetSymbolInfo(invocation).Symbol;
+            symbol = context.SemanticModel.GetSymbol(invocation);
         }
 
         if (symbol is
@@ -28,10 +28,10 @@ internal sealed class ProhibitedApiRule
             (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading() ||
              symbol.ContainingNamespace.IsSystemOrNumerics()))
         {
-            context.ReportDiagnostic(Diagnostic.Create(
+            context.Report(
                 GSharpDiagnostics.UnsupportedSyntax,
-                node.GetLocation(),
-                $"{symbol.ContainingType.Name}.{symbol.Name}"));
+                node,
+                $"{symbol.ContainingType.Name}.{symbol.Name}");
         }
     }
 }

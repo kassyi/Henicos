@@ -34,7 +34,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
     /// <inheritdoc />
     public override void Transpile(LocalDeclarationStatementSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.SemanticModel.GetTypeInfo(node.Declaration.Type).Type;
+        var typeSymbol = context.SemanticModel.GetTypeSymbol(node.Declaration.Type);
         if (typeSymbol?.Name == TypeConstants.SharedMemoryType &&
             typeSymbol.ContainingNamespace.IsCoreNamespace())
         {
@@ -118,8 +118,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
         var byteSize = elementCount * elemSize;
         if (byteSize > 32768)
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ExcessiveSharedMemoryWarning,
-                sizeArg.GetLocation(), byteSize, 32768));
+            context.Report(GSharpDiagnostics.ExcessiveSharedMemoryWarning, sizeArg, byteSize, 32768);
         }
     }
 

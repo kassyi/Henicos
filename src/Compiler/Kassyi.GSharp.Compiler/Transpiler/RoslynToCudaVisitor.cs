@@ -20,7 +20,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     // [WHY] Reusable collections pooled per visitor instance to ensure zero-allocation during generation.
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
-    private readonly List<(string Name, OverrideValue Value)> _localVariableOverrides = [];
+    private readonly OverrideScopeStack _localVariableOverrides = new();
 
     internal TranspileContext Context;
     private int _isRented;
@@ -119,8 +119,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// <inheritdoc />
     public override void DefaultVisit(SyntaxNode node)
     {
-        Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.UnsupportedSyntax, node.GetLocation(),
-            node.Kind().ToString()));
+        Context.Report(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
         base.DefaultVisit(node);
     }
 
@@ -129,11 +128,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         if (node.Keyword.IsKind(SyntaxKind.StringKeyword))
         {
-            Context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported,
-                node.GetLocation()));
+            Context.Report(GSharpDiagnostics.StringNotSupported, node);
         }
 
-        var typeSymbol = Context.SemanticModel.GetTypeInfo(node).Type;
+        var typeSymbol = Context.SemanticModel.GetTypeSymbol(node);
         if (typeSymbol != null)
         {
             Context.AppendType(typeSymbol);
@@ -172,7 +170,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         if (node.Type != null)
         {
-            var typeSymbol = Context.SemanticModel.GetTypeInfo(node.Type).Type;
+            var typeSymbol = Context.SemanticModel.GetTypeSymbol(node.Type);
             if (typeSymbol != null)
             {
                 Context.AppendType(typeSymbol);
@@ -290,7 +288,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return false;
         }
 
-        return Context.SemanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol
+        return Context.SemanticModel.GetSymbol(invocation) is IMethodSymbol
                {
                    Name: TypeConstants.GpuMacros.SyncGrid,
                    ContainingType.Name: TypeConstants.GpuType,
@@ -303,15 +301,15 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         IReadOnlyList<StatementSyntax> statements,
         SemanticModel semanticModel)
     {
-        var result = new List<StatementSyntax>(statements.Count);
+        var result = System.Collections.Immutable.ImmutableArray.CreateBuilder<StatementSyntax>(statements.Count);
         FlattenInto(statements, semanticModel, result);
-        return result;
+        return result.ToImmutable();
     }
 
     private static void FlattenInto(
         IEnumerable<StatementSyntax> statements,
         SemanticModel semanticModel,
-        List<StatementSyntax> result)
+        ImmutableArray<StatementSyntax>.Builder result)
     {
         foreach (var stmt in statements)
         {
@@ -344,7 +342,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return false;
         }
 
-        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol
+        if (semanticModel.GetSymbol(invocation) is not IMethodSymbol
             {
                 Name: TypeConstants.GpuMacros.SyncGrid
             } symbol ||
@@ -454,7 +452,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        var symbol = Context.SemanticModel.GetSymbolInfo(node).Symbol;
+        var symbol = Context.SemanticModel.GetSymbol(node);
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
             Context.Writer.AppendConstantField(field);

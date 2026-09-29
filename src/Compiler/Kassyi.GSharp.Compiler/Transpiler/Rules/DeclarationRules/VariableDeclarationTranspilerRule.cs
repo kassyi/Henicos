@@ -34,7 +34,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
     /// <inheritdoc />
     public override void Transpile(VariableDeclarationSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.SemanticModel.GetTypeInfo(node.Type).Type;
+        var typeSymbol = context.SemanticModel.GetTypeSymbol(node.Type);
         ValidateAndTrackVariableType(typeSymbol, node.Type, ref context);
 
         var mapping = AnalyzeVariableMapping(node, typeSymbol);
@@ -64,8 +64,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
     {
         if (typeSymbol is { SpecialType: SpecialType.System_String })
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.StringNotSupported,
-                typeSyntax.GetLocation()));
+            context.Report(GSharpDiagnostics.StringNotSupported, typeSyntax);
         }
 
         StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
@@ -169,10 +168,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
         var constVal = context.SemanticModel.GetConstantValue(sizeExpr);
         if (!constVal.HasValue)
         {
-            context.ReportDiagnostic?.Invoke(Diagnostic.Create(
-                GSharpDiagnostics.UnsupportedSyntax,
-                sizeExpr.GetLocation(),
-                errorLabel));
+            context.Report(GSharpDiagnostics.UnsupportedSyntax, sizeExpr, errorLabel);
             return true;
         }
 

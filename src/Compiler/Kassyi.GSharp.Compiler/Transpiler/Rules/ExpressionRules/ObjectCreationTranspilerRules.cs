@@ -19,7 +19,7 @@ public sealed class ObjectCreationExpressionTranspilerRule : SyntaxNodeTranspile
     /// <inheritdoc />
     public override void Transpile(ObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
+        var typeSymbol = context.SemanticModel.GetTypeSymbol(node);
         ObjectCreationHelper.TryTranspileObjectCreationHelper(typeSymbol, node, node.Initializer, node.ArgumentList,
             ref context);
     }
@@ -44,7 +44,7 @@ public sealed class ImplicitObjectCreationExpressionTranspilerRule : SyntaxNodeT
     /// <inheritdoc />
     public override void Transpile(ImplicitObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.SemanticModel.GetTypeInfo(node).Type;
+        var typeSymbol = context.SemanticModel.GetTypeSymbol(node);
         ObjectCreationHelper.TryTranspileObjectCreationHelper(typeSymbol, node, node.Initializer, node.ArgumentList,
             ref context);
     }
@@ -75,8 +75,7 @@ internal static class ObjectCreationHelper
             return;
         }
 
-        context.ReportDiagnostic?.Invoke(Diagnostic.Create(GSharpDiagnostics.ObjectCreationNotSupported,
-            node.GetLocation()));
+        context.Report(GSharpDiagnostics.ObjectCreationNotSupported, node);
         context.Visitor.DefaultVisit(node);
     }
 

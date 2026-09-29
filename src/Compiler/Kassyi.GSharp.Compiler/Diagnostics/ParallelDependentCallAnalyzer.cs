@@ -29,7 +29,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ConcurrentDictionary<IMethodSymbol, bool> inferenceCache)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
         if (methodSymbol == null)
         {
             return;
@@ -57,13 +57,13 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
 
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
+            var symbol = context.SemanticModel.GetSymbol(node) as IMethodSymbol;
             bool isSingleThreadMacro = false;
 
             if (symbol != null && 
                 (symbol.Name == TypeConstants.GpuMacros.SingleThread || symbol.Name == TypeConstants.GpuMacros.SyncGrid) && 
                 symbol.ContainingType?.Name == TypeConstants.GpuType && 
-                symbol.ContainingType?.ContainingNamespace?.ToString() == TypeConstants.CoreNamespace)
+                symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() == true)
             {
                 // For SyncGrid, it's only a single thread macro if it has arguments (a delegate)
                 if (symbol.Name == TypeConstants.GpuMacros.SyncGrid && node.ArgumentList.Arguments.Count == 0)
@@ -96,7 +96,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             if (_singleThreadDepth > 0)
             {
-                if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
+                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol symbol)
                 {
                     CheckAndReportIfParallelDependent(node, symbol);
                 }
@@ -108,7 +108,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             if (_singleThreadDepth > 0)
             {
-                if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
+                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
                 {
                     CheckAndReportIfParallelDependent(node, symbol);
                 }
@@ -120,13 +120,13 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             if (_singleThreadDepth > 0)
             {
-                if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
+                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
                 {
                     CheckAndReportIfParallelDependent(node, symbol);
                 }
 
                 // Check property setter
-                if (context.SemanticModel.GetSymbolInfo(node.Left).Symbol is IPropertySymbol { SetMethod: not null } propertySymbol)
+                if (context.SemanticModel.GetSymbol(node.Left) is IPropertySymbol { SetMethod: not null } propertySymbol)
                 {
                     CheckAndReportIfParallelDependent(node, propertySymbol.SetMethod);
                 }
@@ -139,7 +139,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
             if (_singleThreadDepth > 0)
             {
                 // Check property getter
-                if (context.SemanticModel.GetSymbolInfo(node).Symbol is IPropertySymbol { GetMethod: not null } propertySymbol)
+                if (context.SemanticModel.GetSymbol(node) is IPropertySymbol { GetMethod: not null } propertySymbol)
                 {
                     CheckAndReportIfParallelDependent(node, propertySymbol.GetMethod);
                 }
@@ -166,21 +166,48 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
 
         private bool IsSingleThreadDivergentCondition(ExpressionSyntax condition)
         {
-            // Simple heuristic to detect single thread divergence (e.g., if (Gpu.ThreadIndex.X == 0))
-            var text = condition.ToString();
-            return (text.Contains("ThreadIndex") || text.Contains("GlobalThreadIndex") || text.Contains("BlockIndex")) && 
-                   text.Contains("==") && text.Contains("0");
+            if (condition is not BinaryExpressionSyntax binary || !binary.IsKind(SyntaxKind.EqualsExpression))
+            {
+                return false;
+            }
+
+            ExpressionSyntax targetExpr;
+            if (IsZeroLiteral(binary.Left))
+            {
+                targetExpr = binary.Right;
+            }
+            else if (IsZeroLiteral(binary.Right))
+            {
+                targetExpr = binary.Left;
+            }
+            else
+            {
+                return false;
+            }
+
+            foreach (var node in targetExpr.DescendantNodesAndSelf())
+            {
+                if (node is IdentifierNameSyntax identifier &&
+                    identifier.Identifier.ValueText is "ThreadIndex" or "GlobalThreadIndex" or "BlockIndex")
+                {
+                    return true;
+                }
+            }
+
+            return false;
+
+            static bool IsZeroLiteral(ExpressionSyntax expr) =>
+                expr is LiteralExpressionSyntax { Token.ValueText: "0" };
         }
 
         private void CheckAndReportIfParallelDependent(SyntaxNode node, IMethodSymbol methodSymbol)
         {
             if (ContextInferenceEngine.IsParallelDependent(methodSymbol, inferenceCache, context.Compilation))
             {
-                var diagnostic = Diagnostic.Create(
+                context.Report(
                     GSharpDiagnostics.ParallelDependentCallFromSingleThreadContext,
-                    node.GetLocation(),
+                    node,
                     methodSymbol.Name);
-                context.ReportDiagnostic(diagnostic);
             }
         }
     }

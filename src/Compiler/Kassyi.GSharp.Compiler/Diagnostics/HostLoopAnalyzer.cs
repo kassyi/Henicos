@@ -33,8 +33,7 @@ public class HostLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
-        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
+        if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol methodSymbol)
         {
             return;
         }
@@ -67,9 +66,7 @@ public class HostLoopAnalyzer : DiagnosticAnalyzer
 
         if (isInsideLoop)
         {
-            var diagnostic = Diagnostic.Create(GSharpDiagnostics.AutoAllocateReturnInLoopWarning,
-                invocation.GetLocation(), identifier.Identifier.Text);
-            context.ReportDiagnostic(diagnostic);
+            context.Report(GSharpDiagnostics.AutoAllocateReturnInLoopWarning, invocation, identifier.Identifier.Text);
         }
     }
 }

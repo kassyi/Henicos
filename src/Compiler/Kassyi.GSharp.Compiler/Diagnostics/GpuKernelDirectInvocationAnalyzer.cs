@@ -17,16 +17,13 @@ public class GpuKernelDirectInvocationAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken);
-
         // Use OriginalDefinition to ensure we get attributes from the generic definition if applicable
-        if (symbolInfo.Symbol?.OriginalDefinition is not IMethodSymbol methodSymbol)
+        if (context.SemanticModel.GetSymbol(invocation, context.CancellationToken)?.OriginalDefinition is not IMethodSymbol methodSymbol)
         {
             return;
         }
 
-        var isGpuKernel = methodSymbol.GetAttributes().Any(a =>
-            a.AttributeClass?.Name is "GpuKernelAttribute" or "GpuKernel");
+        var isGpuKernel = methodSymbol.HasAttribute(KnownAttributes.GpuKernel);
 
         if (!isGpuKernel)
         {
@@ -37,9 +34,8 @@ public class GpuKernelDirectInvocationAnalyzer : DiagnosticAnalyzer
         var enclosingSymbol = context.SemanticModel.GetEnclosingSymbol(invocation.SpanStart, context.CancellationToken);
         while (enclosingSymbol != null)
         {
-            var isEnclosingGpuFunction = enclosingSymbol.GetAttributes().Any(a =>
-                a.AttributeClass?.Name is "GpuKernelAttribute" or "GpuKernel" or "GpuDeviceFunctionAttribute"
-                    or "GpuDeviceFunction");
+            var isEnclosingGpuFunction = enclosingSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
+                                         enclosingSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction);
 
             if (isEnclosingGpuFunction)
             {
@@ -50,9 +46,9 @@ public class GpuKernelDirectInvocationAnalyzer : DiagnosticAnalyzer
             enclosingSymbol = enclosingSymbol.ContainingSymbol;
         }
 
-        context.ReportDiagnostic(Diagnostic.Create(
+        context.Report(
             GSharpDiagnostics.DirectGpuKernelInvocation,
-            invocation.GetLocation(),
-            methodSymbol.Name));
+            invocation,
+            methodSymbol.Name);
     }
 }
