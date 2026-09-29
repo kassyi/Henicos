@@ -6,6 +6,23 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntFermatKernels
 {
+    public static class AotContexts
+    {
+        public struct FermatReduceKernelArgs
+        {
+            public uint[] ValueT;
+            public uint[] MulResult;
+            public uint[] Quotient;
+            public uint[] Remainder;
+            public uint[] Temp;
+            [GpuReadOnly] public uint[] RemainderMask;
+            public int NumWords;
+            public int OutNumWords;
+            public int TotalShiftBits;
+            public int Exponent;
+        }
+    }
+
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceUnpack16([GpuReadOnly] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords,
@@ -134,8 +151,6 @@ public static class GpuBigIntFermatKernels
     }
 
 
-
-
     [GpuKernel]
     public static void KernelTestBlockAddSubParallel(
         [GpuReadOnly] uint[] a,
@@ -148,70 +163,61 @@ public static class GpuBigIntFermatKernels
     }
 
     [GpuKernel]
-    public static void KernelFermatReduceMega(
-        [GpuReadOnly] uint[] valueT,
-        uint[] mulResult,
-        uint[] quotient,
-        uint[] remainder,
-        uint[] temp,
-        [GpuReadOnly] uint[] remainderMask,
-        int numWords,
-        int outNumWords,
-        int totalShiftBits,
-        int exponent)
+    public static void KernelFermatReduceMega(AotContexts.FermatReduceKernelArgs ctx)
     {
-        var wordShift = totalShiftBits / 32;
-        var bitShift = totalShiftBits % 32;
+        var wordShift = ctx.TotalShiftBits / 32;
+        var bitShift = ctx.TotalShiftBits % 32;
 
         Gpu.ForUnroll(0, 3, iter =>
         {
-            Gpu.GridStrideLoop(outNumWords, i =>
+            Gpu.GridStrideLoop(ctx.OutNumWords, i =>
             {
                 var srcIdx0 = i + wordShift;
                 var srcIdx1 = srcIdx0 + 1;
 
-                var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords * 2 ? numWords * 2 - 1 : srcIdx0);
-                var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords * 2 ? numWords * 2 - 1 : srcIdx1);
+                var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumWords * 2 ? ctx.NumWords * 2 - 1 : srcIdx0);
+                var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumWords * 2 ? ctx.NumWords * 2 - 1 : srcIdx1);
 
-                uint w0 = mulResult[safeIdx0];
-                uint w1 = mulResult[safeIdx1];
+                uint w0 = ctx.MulResult[safeIdx0];
+                uint w1 = ctx.MulResult[safeIdx1];
 
-                uint mask0 = srcIdx0 >= 0 && srcIdx0 < numWords * 2 ? 0xFFFFFFFFu : 0u;
-                uint mask1 = srcIdx1 >= 0 && srcIdx1 < numWords * 2 ? 0xFFFFFFFFu : 0u;
+                uint mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumWords * 2 ? 0xFFFFFFFFu : 0u;
+                uint mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumWords * 2 ? 0xFFFFFFFFu : 0u;
 
                 w0 &= mask0;
                 w1 &= mask1;
 
                 uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
-                quotient[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
+                ctx.Quotient[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
 
-                remainder[i] = mulResult[i] & remainderMask[i];
+                ctx.Remainder[i] = ctx.MulResult[i] & ctx.RemainderMask[i];
             });
 
             Gpu.SyncThreads();
 
-            DeviceShiftLeftParallel(quotient, temp, exponent, outNumWords, true);
-            GpuBigIntKernels.DeviceAddSubParallel(remainder, temp, remainder, outNumWords, 1, true);
+            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, ctx.Exponent, ctx.OutNumWords, true);
+            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords, 1, true);
 
             // Subtract Q * 8
-            DeviceShiftLeftParallel(quotient, temp, 3, outNumWords, true);
-            GpuBigIntKernels.DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1, true);
+            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, 3, ctx.OutNumWords, true);
+            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords, -1, true);
 
             // Subtract Q * 2
-            DeviceShiftLeftParallel(quotient, temp, 1, outNumWords, true);
-            GpuBigIntKernels.DeviceAddSubParallel(remainder, temp, remainder, outNumWords, -1, true);
+            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, 1, ctx.OutNumWords, true);
+            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords, -1, true);
 
             // Subtract Q * 1
-            GpuBigIntKernels.DeviceAddSubParallel(remainder, quotient, remainder, outNumWords, -1, true);
+            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Quotient, ctx.Remainder, ctx.OutNumWords, -1,
+                true);
 
             if (iter >= 2)
             {
                 return;
             }
 
-            Gpu.GridStrideLoop(outNumWords, i =>
+            Gpu.GridStrideLoop(ctx.OutNumWords, i =>
             {
-                mulResult[i] = remainder[i];
+                ctx.MulResult[i] = ctx.Remainder[i];
             });
             Gpu.SyncThreads();
         });

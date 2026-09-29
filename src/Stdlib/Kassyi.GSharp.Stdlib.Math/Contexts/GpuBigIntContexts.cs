@@ -165,6 +165,7 @@ public struct ReciprocalNewtonRaphsonContext
         public int NumberOfWords;
         public int MarginWords;
         public int Iterations;
+        public int TargetBits;
         public int NumBits;
         public int MarginBits;
     }

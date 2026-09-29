@@ -6,7 +6,7 @@ using Kassyi.GSharp.Stdlib.Math.Contexts;
 
 namespace Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 
-[Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
+[SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static class GpuBigIntDivRemKernels
 {
     [GpuDeviceFunction]
@@ -67,63 +67,12 @@ public static class GpuBigIntDivRemKernels
     }
 
     [GpuKernel(Cooperative = true)]
-    public static void ReciprocalNewtonRaphsonMegaKernel(
-        uint[] targetOperand, uint[] resultBuffer, uint[] constant,
-        uint[] currentProduct, uint[] diff, uint[] nextIter,
-        uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B, uint[] tmpBuf,
-        uint[] uncarriedLow, uint[] uncarriedHigh, uint[] blockCarries,
-        long[] carryBuffer,
-        uint[] twiddleF1, uint[] twiddleF2, uint[] twiddleI1, uint[] twiddleI2,
-        int numWords, int marginWords, int targetBits, int iterations, int transformLength)
+    public static void ReciprocalNewtonRaphsonMegaKernel(ReciprocalNewtonRaphsonContext ctx)
     {
-        var ctx = new ReciprocalNewtonRaphsonContext
-        {
-            Operands = new ReciprocalNewtonRaphsonContext.OperandContext
-            {
-                TargetOperand = targetOperand,
-                ResultBuffer = resultBuffer,
-                Constant = constant
-            },
-            Dimensions = new ReciprocalNewtonRaphsonContext.DimensionContext
-            {
-                NumberOfWords = numWords,
-                MarginWords = marginWords,
-                NumBits = numWords * 32,
-                MarginBits = marginWords * 32,
-                Iterations = iterations
-            },
-            Ntt = new NttContext
-            {
-                TransformLength = transformLength,
-                TwiddleFactors = new NttContext.TwiddleFactorContext
-                {
-                    Forward1 = twiddleF1,
-                    Forward2 = twiddleF2,
-                    Inverse1 = twiddleI1,
-                    Inverse2 = twiddleI2
-                }
-            },
-            Workspace = new ReciprocalNewtonRaphsonContext.WorkspaceStateContext
-            {
-                CurrentProduct = currentProduct,
-                Diff = diff,
-                NextIter = nextIter,
-                NttBuf1A = nttBuf1A,
-                NttBuf2A = nttBuf2A,
-                NttBuf1B = nttBuf1B,
-                NttBuf2B = nttBuf2B,
-                TmpBuf = tmpBuf,
-                UncarriedLow = uncarriedLow,
-                UncarriedHigh = uncarriedHigh,
-                BlockCarries = blockCarries
-            },
-            CarryBuffer = carryBuffer
-        };
+        int n = ctx.Dimensions.NumberOfWords;
+        int resultWords = (ctx.Dimensions.TargetBits + 31) / 32;
 
-        int n = numWords;
-        int resultWords = (targetBits + 31) / 32;
-
-        for (int i = 0; i < iterations; i++)
+        for (int i = 0; i < ctx.Dimensions.Iterations; i++)
         {
             // 1. currentProduct = targetOperand * resultBuffer (n, resultWords -> n + resultWords)
             ExecuteNttMultiplyMacro(ctx, ctx.Operands.TargetOperand, ctx.Operands.ResultBuffer,
@@ -145,7 +94,7 @@ public static class GpuBigIntDivRemKernels
                 resultWords, n + resultWords, n + 2 * resultWords);
 
             // 4. copy resultBuffer = nextIter >> (2 * numBits + marginBits)
-            int shiftTotal = targetBits;
+            int shiftTotal = ctx.Dimensions.TargetBits;
             int wordShift = shiftTotal / 32;
             int bitShift = shiftTotal % 32;
             int destWords = resultWords;
