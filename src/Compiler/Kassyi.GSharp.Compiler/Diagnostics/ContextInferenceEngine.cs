@@ -37,7 +37,7 @@ public static class ContextInferenceEngine
 
         // Direct check: Does the method symbol belong to Gpu.GridStrideLoop or Gpu.SyncGrid?
         if (methodSymbol.ContainingType?.Name == TypeConstants.GpuType && 
-            methodSymbol.ContainingType?.ContainingNamespace?.ToString() == TypeConstants.CoreNamespace)
+            methodSymbol.ContainingType?.ContainingNamespace.IsCoreNamespace() == true)
         {
             if (methodSymbol.Name == TypeConstants.GpuMacros.GridStrideLoop || methodSymbol.Name == TypeConstants.GpuMacros.SyncGrid)
             {
@@ -83,11 +83,11 @@ public static class ContextInferenceEngine
                 return;
             }
 
-            var symbol = semanticModel.GetSymbolInfo(node).Symbol;
+            var symbol = semanticModel.GetSymbol(node);
             
             // Check for thread intrinsics usage
             if (symbol is { ContainingType.Name: TypeConstants.GpuType } && 
-                symbol.ContainingType?.ContainingNamespace?.ToString() == TypeConstants.CoreNamespace)
+                symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() == true)
             {
                 if (symbol.Name == "ThreadIndex" || symbol.Name == "GlobalThreadIndex" || symbol.Name == "BlockIndex")
                 {
@@ -116,7 +116,7 @@ public static class ContextInferenceEngine
                 return;
             }
 
-            if (semanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
+            if (semanticModel.GetSymbol(node) is IMethodSymbol symbol)
             {
                 if (EvaluateParallelDependency(symbol, cache, compilation, visiting))
                 {
@@ -134,7 +134,7 @@ public static class ContextInferenceEngine
                 return;
             }
 
-            if (semanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
+            if (semanticModel.GetSymbol(node) is IMethodSymbol symbol)
             {
                 if (EvaluateParallelDependency(symbol, cache, compilation, visiting))
                 {
@@ -152,7 +152,7 @@ public static class ContextInferenceEngine
                 return;
             }
 
-            if (semanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
+            if (semanticModel.GetSymbol(node) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
             {
                 if (EvaluateParallelDependency(symbol, cache, compilation, visiting))
                 {
@@ -170,7 +170,7 @@ public static class ContextInferenceEngine
                 return;
             }
 
-            if (semanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
+            if (semanticModel.GetSymbol(node) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
             {
                 if (EvaluateParallelDependency(symbol, cache, compilation, visiting))
                 {
@@ -179,7 +179,7 @@ public static class ContextInferenceEngine
                 }
             }
             
-            if (semanticModel.GetSymbolInfo(node.Left).Symbol is IPropertySymbol { SetMethod: not null } propertySymbol)
+            if (semanticModel.GetSymbol(node.Left) is IPropertySymbol { SetMethod: not null } propertySymbol)
             {
                 if (EvaluateParallelDependency(propertySymbol.SetMethod, cache, compilation, visiting))
                 {

@@ -52,10 +52,10 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         INamedTypeSymbol? t3)
     {
         var assignment = (AssignmentExpressionSyntax)context.Node;
-        var typeInfo = context.SemanticModel.GetTypeInfo(assignment.Left);
+        var targetType = context.SemanticModel.GetTypeSymbol(assignment.Left);
 
         // Prevent assignments where the target evaluates to GpuBigIntExpr
-        if (typeInfo.Type != null && IsGpuBigIntExpr(typeInfo.Type, t1, t2, t3))
+        if (targetType != null && IsGpuBigIntExpr(targetType, t1, t2, t3))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 GSharpDiagnostics.GpuBigIntExprDirectAssignment,
@@ -72,8 +72,8 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         }
 
         var originalDef = namedType.OriginalDefinition;
-        return SymbolEqualityComparer.Default.Equals(originalDef, t1) ||
-               SymbolEqualityComparer.Default.Equals(originalDef, t2) ||
-               SymbolEqualityComparer.Default.Equals(originalDef, t3);
+        return originalDef.IsEqualTo(t1) ||
+               originalDef.IsEqualTo(t2) ||
+               originalDef.IsEqualTo(t3);
     }
 }

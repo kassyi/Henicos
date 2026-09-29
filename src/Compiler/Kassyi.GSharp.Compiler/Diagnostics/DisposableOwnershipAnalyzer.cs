@@ -95,18 +95,8 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool HasTakesOwnershipAttribute(IParameterSymbol param)
-    {
-        foreach (var a in param.GetAttributes())
-        {
-            if (a.AttributeClass?.Name == "TakesOwnershipAttribute")
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool HasTakesOwnershipAttribute(IParameterSymbol param) =>
+        param.HasAttribute("TakesOwnership");
 
     private static void CollectBorrowedFieldNames(
         INamedTypeSymbol namedType,

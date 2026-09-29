@@ -33,8 +33,7 @@ public class HostLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
-        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
+        if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol methodSymbol)
         {
             return;
         }

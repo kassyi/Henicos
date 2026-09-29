@@ -78,7 +78,7 @@ public class SideEffectAnalyzer : DiagnosticAnalyzer
         foreach (var node in expression.DescendantNodesAndSelf())
         {
             if (node is ObjectCreationExpressionSyntax oce &&
-                DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeInfo(oce).Type))
+                DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeSymbol(oce)))
             {
                 context.ReportDiagnostic(Diagnostic.Create(descriptor, oce.GetLocation()));
             }
@@ -91,7 +91,7 @@ public class SideEffectAnalyzer : DiagnosticAnalyzer
         foreach (var node in block.DescendantNodes())
         {
             if (node is ObjectCreationExpressionSyntax oce &&
-                DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeInfo(oce).Type))
+                DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeSymbol(oce)))
             {
                 context.ReportDiagnostic(Diagnostic.Create(descriptor, oce.GetLocation()));
             }

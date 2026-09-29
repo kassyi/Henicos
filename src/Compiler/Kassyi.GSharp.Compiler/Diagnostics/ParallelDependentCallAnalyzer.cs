@@ -57,13 +57,13 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
 
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            var symbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
+            var symbol = context.SemanticModel.GetSymbol(node) as IMethodSymbol;
             bool isSingleThreadMacro = false;
 
             if (symbol != null && 
                 (symbol.Name == TypeConstants.GpuMacros.SingleThread || symbol.Name == TypeConstants.GpuMacros.SyncGrid) && 
                 symbol.ContainingType?.Name == TypeConstants.GpuType && 
-                symbol.ContainingType?.ContainingNamespace?.ToString() == TypeConstants.CoreNamespace)
+                symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() == true)
             {
                 // For SyncGrid, it's only a single thread macro if it has arguments (a delegate)
                 if (symbol.Name == TypeConstants.GpuMacros.SyncGrid && node.ArgumentList.Arguments.Count == 0)
@@ -96,7 +96,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             if (_singleThreadDepth > 0)
             {
-                if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol symbol)
+                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol symbol)
                 {
                     CheckAndReportIfParallelDependent(node, symbol);
                 }
@@ -108,7 +108,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             if (_singleThreadDepth > 0)
             {
-                if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
+                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
                 {
                     CheckAndReportIfParallelDependent(node, symbol);
                 }
@@ -120,13 +120,13 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             if (_singleThreadDepth > 0)
             {
-                if (context.SemanticModel.GetSymbolInfo(node).Symbol is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
+                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
                 {
                     CheckAndReportIfParallelDependent(node, symbol);
                 }
 
                 // Check property setter
-                if (context.SemanticModel.GetSymbolInfo(node.Left).Symbol is IPropertySymbol { SetMethod: not null } propertySymbol)
+                if (context.SemanticModel.GetSymbol(node.Left) is IPropertySymbol { SetMethod: not null } propertySymbol)
                 {
                     CheckAndReportIfParallelDependent(node, propertySymbol.SetMethod);
                 }
@@ -139,7 +139,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
             if (_singleThreadDepth > 0)
             {
                 // Check property getter
-                if (context.SemanticModel.GetSymbolInfo(node).Symbol is IPropertySymbol { GetMethod: not null } propertySymbol)
+                if (context.SemanticModel.GetSymbol(node) is IPropertySymbol { GetMethod: not null } propertySymbol)
                 {
                     CheckAndReportIfParallelDependent(node, propertySymbol.GetMethod);
                 }

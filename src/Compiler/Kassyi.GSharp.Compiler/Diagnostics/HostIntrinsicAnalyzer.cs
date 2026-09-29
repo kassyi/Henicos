@@ -16,14 +16,12 @@ public class HostIntrinsicAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
-        if (symbolInfo.Symbol is not IMethodSymbol methodSymbol)
+        if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol methodSymbol)
         {
             return;
         }
 
-        bool isIntrinsic = methodSymbol.GetAttributes().Any(a =>
-            a.AttributeClass?.Name == "CudaIntrinsicAttribute" || a.AttributeClass?.Name == "CudaIntrinsic");
+        bool isIntrinsic = methodSymbol.HasAttribute(KnownAttributes.CudaIntrinsic);
         if (!isIntrinsic)
         {
             return;
@@ -32,11 +30,8 @@ public class HostIntrinsicAnalyzer : DiagnosticAnalyzer
         var enclosingSymbol = context.SemanticModel.GetEnclosingSymbol(invocation.SpanStart);
         while (enclosingSymbol != null)
         {
-            var isGpuKernelOrDevice = enclosingSymbol.GetAttributes().Any(a =>
-                a.AttributeClass?.Name == "GpuKernelAttribute" ||
-                a.AttributeClass?.Name == "GpuKernel" ||
-                a.AttributeClass?.Name == "GpuDeviceFunctionAttribute" ||
-                a.AttributeClass?.Name == "GpuDeviceFunction");
+            var isGpuKernelOrDevice = enclosingSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
+                                      enclosingSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction);
             if (isGpuKernelOrDevice)
             {
                 return;

@@ -62,7 +62,7 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
             }
             else if (allocationCount < 2 &&
                      node is ObjectCreationExpressionSyntax oce &&
-                     DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeInfo(oce).Type))
+                     DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeSymbol(oce)))
             {
                 allocationCount++;
                 if (allocationCount >= 2 && hasTry)
@@ -82,8 +82,7 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
     {
         var invocation = (InvocationExpressionSyntax)context.Node;
-        var symbolInfo = context.SemanticModel.GetSymbolInfo(invocation);
-        if (symbolInfo.Symbol is IMethodSymbol
+        if (context.SemanticModel.GetSymbol(invocation) is IMethodSymbol
             {
                 Name: "Malloc",
                 ContainingType: { Name: "Unsafe", ContainingType.Name: TypeConstants.GpuType }

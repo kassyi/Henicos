@@ -12,7 +12,7 @@ internal sealed class GpuMacroArgumentRule
     public void Analyze(InvocationExpressionSyntax invocation, ref ValidationContext context)
     {
         var semanticModel = context.SemanticModel;
-        if (semanticModel.GetSymbolInfo(invocation).Symbol is not IMethodSymbol invocationSymbol)
+        if (semanticModel.GetSymbol(invocation) is not IMethodSymbol invocationSymbol)
         {
             return;
         }
@@ -220,7 +220,7 @@ internal sealed class GpuMacroArgumentRule
         {
             case IdentifierNameSyntax idName:
                 {
-                    var symbol = context.SemanticModel.GetSymbolInfo(idName).Symbol;
+                    var symbol = context.SemanticModel.GetSymbol(idName);
                     if (symbol is IParameterSymbol paramSymbol && paramSymbol.HasAttribute(KnownAttributes.Constant))
                     {
                         return true;
