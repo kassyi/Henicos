@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </summary>
 internal static class StructMarshalingEmitter
 {
-    internal static void WriteStructMarshaling(SourceWriter writer, System.Collections.Generic.IEnumerable<(IMethodSymbol Method, string Source)> methods)
+    internal static void WriteStructMarshaling(SourceWriter writer, IEnumerable<(IMethodSymbol Method, string Source)> methods)
     {
         var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         foreach (var (method, _) in methods)
