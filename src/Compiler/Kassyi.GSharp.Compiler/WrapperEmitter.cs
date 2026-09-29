@@ -7,22 +7,27 @@ namespace Kassyi.GSharp.Compiler;
 /// <remarks><para>Implements: <b>GEN-35</b></para></remarks>
 internal static class WrapperEmitter
 {
-    private readonly struct InteropParameterInfo(string modifier, ITypeSymbol? type, bool isIntPtr)
+    private readonly struct InteropParameterInfo(string modifier, ITypeSymbol? type, bool isIntPtr, string? defaultValue = null)
     {
-        public string Modifier
+        private string Modifier
         {
             get;
         } = modifier;
 
-        public ITypeSymbol? Type
+        private ITypeSymbol? Type
         {
             get;
         } = type;
 
-        public bool IsIntPtr
+        private bool IsIntPtr
         {
             get;
         } = isIntPtr;
+
+        private string? DefaultValue
+        {
+            get;
+        } = defaultValue;
 
         public void WriteTo(SourceWriter writer, string name)
         {
@@ -46,14 +51,54 @@ internal static class WrapperEmitter
             }
 
             writer.Append(name);
+
+            if (DefaultValue == null)
+            {
+                return;
+            }
+
+            writer.Append(" = ");
+            writer.Append(DefaultValue);
         }
     }
 
     private static InteropParameterInfo GetInteropParameterInfo(IParameterSymbol p, bool isDevicePtr)
     {
+        string? defaultValue = null;
+        if (p.HasExplicitDefaultValue)
+        {
+            if (p.DeclaringSyntaxReferences.Length > 0)
+            {
+                var syntax = p.DeclaringSyntaxReferences[0].GetSyntax();
+                if (syntax is ParameterSyntax { Default: { } defaultExpr })
+                {
+                    defaultValue = defaultExpr.ToString();
+                }
+            }
+            
+            if (defaultValue == null)
+            {
+                var val = p.ExplicitDefaultValue;
+                defaultValue = val switch
+                {
+                    null => "default",
+                    bool b => b ? "true" : "false",
+                    float f => f.ToString(System.Globalization.CultureInfo.InvariantCulture) + "f",
+                    double d => d.ToString(System.Globalization.CultureInfo.InvariantCulture) + "d",
+                    string s => "\"" + s.Replace("\"", "\\\"") + "\"",
+                    _ => val.ToString()
+                };
+            }
+        }
+
         if (isDevicePtr && (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out))
         {
-            return new InteropParameterInfo(string.Empty, null, true);
+            if (p.HasExplicitDefaultValue)
+            {
+                defaultValue = "default";
+            }
+
+            return new InteropParameterInfo(string.Empty, null, true, defaultValue);
         }
 
         var modifier = p.RefKind switch
@@ -63,7 +108,7 @@ internal static class WrapperEmitter
             _ => string.Empty
         };
 
-        return new InteropParameterInfo(modifier, p.Type, false);
+        return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
     }
 
     public static string GenerateWrapperClass(IMethodSymbol method, string source, GeneratorConfig config)
@@ -321,10 +366,7 @@ internal static class WrapperEmitter
     }
 
 
-    private static string GetMangledKernelName(IMethodSymbol method)
-    {
-        return $"{method.ContainingType.Name}_{method.Name}";
-    }
+    private static string GetMangledKernelName(IMethodSymbol method) => $"{method.ContainingType.Name}_{method.Name}";
 
     private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, IMethodSymbol method)
     {
