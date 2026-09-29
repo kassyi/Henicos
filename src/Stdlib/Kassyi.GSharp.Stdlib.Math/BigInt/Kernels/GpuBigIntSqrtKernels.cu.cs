@@ -71,61 +71,35 @@ public static class GpuBigIntSqrtKernels
     /// メガカーネルによる Newton-Raphson法 (Inverse Sqrt)
     /// </summary>
     [GpuKernel(Cooperative = true)]
-    public static void InverseSqrtNewtonRaphsonMegaKernel(
-        uint[] targetOperand, uint[] resultBuffer, uint[] constant3,
-        uint[] xSquared, uint[] axSquared, uint[] diff,
-        uint[] nextXUnshifted, uint[] nextXShifted,
-        uint[] nttBuf1A, uint[] nttBuf2A, uint[] nttBuf1B, uint[] nttBuf2B, uint[] tmpBuf,
-        uint[] uncarriedLow, uint[] uncarriedHigh, uint[] blockCarries,
-        long[] carryBuffer,
-        uint[] twiddleF1, uint[] twiddleF2, uint[] twiddleI1, uint[] twiddleI2,
-        int numWords, int marginWords, int actualBits, int marginBits, int iterations, int transformLength)
+    public static void InverseSqrtNewtonRaphsonMegaKernel(SqrtNewtonRaphsonContext ctx)
     {
-        var ctx = new SqrtNewtonRaphsonContext
-        {
-            Operands = new SqrtNewtonRaphsonContext.OperandsContext
-            {
-                TargetOperand = targetOperand,
-                ResultBuffer = resultBuffer,
-                Constant3 = constant3
-            },
-            Dimensions = new SqrtNewtonRaphsonContext.DimensionsContext
-            {
-                NumberOfWords = numWords,
-                MarginWords = marginWords,
-                ActualBits = actualBits,
-                MarginBits = marginBits,
-                Iterations = iterations
-            },
-            Ntt = new NttContext
-            {
-                TransformLength = transformLength,
-                TwiddleFactors = new NttContext.TwiddleFactorsContext
-                {
-                    Forward1 = twiddleF1,
-                    Forward2 = twiddleF2,
-                    Inverse1 = twiddleI1,
-                    Inverse2 = twiddleI2
-                }
-            },
-            Workspace = new SqrtNewtonRaphsonContext.WorkspaceContext
-            {
-                XSquared = xSquared,
-                AxSquared = axSquared,
-                Diff = diff,
-                NextXUnshifted = nextXUnshifted,
-                NextXShifted = nextXShifted,
-                NttBuf1A = nttBuf1A,
-                NttBuf2A = nttBuf2A,
-                NttBuf1B = nttBuf1B,
-                NttBuf2B = nttBuf2B,
-                TmpBuf = tmpBuf,
-                UncarriedLow = uncarriedLow,
-                UncarriedHigh = uncarriedHigh,
-                BlockCarries = blockCarries
-            },
-            CarryBuffer = carryBuffer
-        };
+        var targetOperand = ctx.Operands.TargetOperand;
+        var resultBuffer = ctx.Operands.ResultBuffer;
+        var constant3 = ctx.Operands.Constant3;
+        var numWords = ctx.Dimensions.NumberOfWords;
+        var marginWords = ctx.Dimensions.MarginWords;
+        var actualBits = ctx.Dimensions.ActualBits;
+        var marginBits = ctx.Dimensions.MarginBits;
+        var iterations = ctx.Dimensions.Iterations;
+        var xSquared = ctx.Workspace.XSquared;
+        var axSquared = ctx.Workspace.AxSquared;
+        var diff = ctx.Workspace.Diff;
+        var nextXUnshifted = ctx.Workspace.NextXUnshifted;
+        var nextXShifted = ctx.Workspace.NextXShifted;
+        var nttBuf1A = ctx.Workspace.NttBuf1A;
+        var nttBuf2A = ctx.Workspace.NttBuf2A;
+        var nttBuf1B = ctx.Workspace.NttBuf1B;
+        var nttBuf2B = ctx.Workspace.NttBuf2B;
+        var tmpBuf = ctx.Workspace.TmpBuf;
+        var uncarriedLow = ctx.Workspace.UncarriedLow;
+        var uncarriedHigh = ctx.Workspace.UncarriedHigh;
+        var blockCarries = ctx.Workspace.BlockCarries;
+        var carryBuffer = ctx.CarryBuffer;
+        var twiddleF1 = ctx.Ntt.TwiddleFactors.Forward1;
+        var twiddleF2 = ctx.Ntt.TwiddleFactors.Forward2;
+        var twiddleI1 = ctx.Ntt.TwiddleFactors.Inverse1;
+        var twiddleI2 = ctx.Ntt.TwiddleFactors.Inverse2;
+        var transformLength = ctx.Ntt.TransformLength;
 
         int n = numWords;
 

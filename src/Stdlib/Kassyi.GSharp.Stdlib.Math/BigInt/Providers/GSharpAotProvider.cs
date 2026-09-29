@@ -461,17 +461,55 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         uint sharedMemBytesTranspose = 4224; // 33 * 32 * 4
         var sharedMemBytes = System.Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
 
+        var ctx = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_SqrtNewtonRaphsonContext
+        {
+            Operands = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_SqrtNewtonRaphsonContext_OperandsContext
+            {
+                TargetOperand = targetOperand.DevicePointer,
+                ResultBuffer = resultBuffer.DevicePointer,
+                Constant3 = constant3.DevicePointer
+            },
+            Dimensions = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_SqrtNewtonRaphsonContext_DimensionsContext
+            {
+                NumberOfWords = n,
+                MarginWords = marginWords,
+                ActualBits = actualBits,
+                MarginBits = marginBits,
+                Iterations = iterations
+            },
+            Ntt = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext
+            {
+                TransformLength = m,
+                TwiddleFactors = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_NttContext_TwiddleFactorsContext
+                {
+                    Forward1 = twiddle.Forward1,
+                    Forward2 = twiddle.Forward2,
+                    Inverse1 = twiddle.Inverse1,
+                    Inverse2 = twiddle.Inverse2
+                }
+            },
+            Workspace = new GpuBigIntSqrtKernelsWrapper.Aot_Kassyi_GSharp_Stdlib_Math_Contexts_SqrtNewtonRaphsonContext_WorkspaceContext
+            {
+                XSquared = xSquared.DevicePointer,
+                AxSquared = axSquared.DevicePointer,
+                Diff = diff.DevicePointer,
+                NextXUnshifted = nextXUnshifted.DevicePointer,
+                NextXShifted = nextXShifted.DevicePointer,
+                NttBuf1A = buf1A.DevicePointer,
+                NttBuf2A = buf2A.DevicePointer,
+                NttBuf1B = buf1B.DevicePointer,
+                NttBuf2B = buf2B.DevicePointer,
+                TmpBuf = tmpBuf.DevicePointer,
+                UncarriedLow = uncarriedLow.DevicePointer,
+                UncarriedHigh = uncarriedHigh.DevicePointer,
+                BlockCarries = blockCarries.DevicePointer
+            },
+            CarryBuffer = carryBuffer.DevicePointer
+        };
+
         GpuBigIntSqrtKernelsWrapper.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
-            targetOperand.DevicePointer, resultBuffer.DevicePointer, constant3.DevicePointer,
-            xSquared.DevicePointer, axSquared.DevicePointer, diff.DevicePointer,
-            nextXUnshifted.DevicePointer, nextXShifted.DevicePointer,
-            buf1A.DevicePointer, buf2A.DevicePointer, buf1B.DevicePointer, buf2B.DevicePointer, tmpBuf.DevicePointer,
-            uncarriedLow.DevicePointer, uncarriedHigh.DevicePointer, blockCarries.DevicePointer,
-            carryBuffer.DevicePointer,
-            twiddle.Forward1, twiddle.Forward2, twiddle.Inverse1, twiddle.Inverse2,
-            n, marginWords, actualBits, marginBits, iterations, m,
-            gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes
-            , hStream: workspace.Stream);
+            ctx,
+            gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes, hStream: workspace.Stream);
     }
 
     /// <inheritdoc/>
