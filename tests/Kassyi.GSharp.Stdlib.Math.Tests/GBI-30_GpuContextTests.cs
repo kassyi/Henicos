@@ -64,10 +64,14 @@ public class GBI30_GpuContextTests
         var c = new GpuUIntBigInteger(context, new uint[6]);
         provider.Mul(context, a, b, c);
 
-        var twiddleCacheField = typeof(GSharpAotProvider).GetField(
+        var advancedMathField = typeof(GSharpAotProvider).GetField(
+            "_advancedMath", BindingFlags.NonPublic | BindingFlags.Instance);
+        var advancedMath = advancedMathField!.GetValue(provider)!;
+
+        var twiddleCacheField = advancedMath.GetType().GetField(
             "_twiddleCache",
             BindingFlags.NonPublic | BindingFlags.Instance);
-        var twiddleCache = (System.Collections.IDictionary)twiddleCacheField!.GetValue(provider)!;
+        var twiddleCache = (System.Collections.IDictionary)twiddleCacheField!.GetValue(advancedMath)!;
 
         Assert.True(twiddleCache.Count > 0, "Cache should be populated after multiplication.");
         int cachedCountBefore = twiddleCache.Count;
