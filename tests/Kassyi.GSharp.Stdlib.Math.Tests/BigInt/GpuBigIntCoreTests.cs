@@ -6,12 +6,11 @@ using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 namespace Kassyi.GSharp.Stdlib.Math.Tests
 {
     [Trait("Category", "GpuExecution")]
-    public class GBI_01_25_GpuBigIntTests
+    public class GpuBigIntCoreTests
     {
         [SkippableFact]
-        [Trait("FeatureId", "GBI-01")]
         [Trait("Category", "Memory")]
-        public void Test_GBI01_MemoryPoolAllocation()
+        public void Test_MemoryPoolAllocation()
         {
         CudaCapability.EnsureGpuAvailable();
             // Stress test the internal pools (e.g. _carryBufferPool, _tempPool) to expose concurrency issues
@@ -41,9 +40,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [SkippableFact]
-        [Trait("FeatureId", "GBI-03")]
         [Trait("Category", "Performance")]
-        public void Test_GBI03_GpuReductionCompareAndFlags()
+        public void Test_GpuReductionCompareAndFlags()
         {
             CudaCapability.EnsureGpuAvailable();
             using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -80,9 +78,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         private const int TestSizeWords = 256; // 8192 bits
 
         [SkippableFact]
-        [Trait("FeatureId", "GBI-04")]
         [Trait("Category", "Optimization")]
-        public void Test_GBI04_DirectSquarePointwiseKernel()
+        public void Test_DirectSquarePointwiseKernel()
         {
             CudaCapability.EnsureGpuAvailable();
             using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
@@ -97,9 +94,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [SkippableFact]
-        [Trait("FeatureId", "GBI-05")]
         [Trait("Category", "Algorithm")]
-        public void Test_GBI05_ParallelGcdLargeDigits()
+        public void Test_ParallelGcdLargeDigits()
         {
         CudaCapability.EnsureGpuAvailable();
             // Issue #112 & #117: Test large GCD to trigger pipeline stalls / TDR issues.
@@ -121,9 +117,8 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
         [SkippableFact]
-        [Trait("FeatureId", "GBI-06")]
         [Trait("Category", "Runtime")]
-        public void Test_GBI06_ExpressionKernelFusion()
+        public void Test_ExpressionKernelFusion()
         {
         CudaCapability.EnsureGpuAvailable();
             // Expose missing kernel fusion & temporary memory leaks in ExpressionEvaluator.
@@ -212,7 +207,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         }
 
 
-        public GBI_01_25_GpuBigIntTests()
+        public GpuBigIntCoreTests()
         {
         CudaCapability.EnsureGpuAvailable();
             // CUDA context is initialized automatically upon first kernel launch if supported.
@@ -589,7 +584,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Fact(Skip = "未実装: GBI-16 (インクリメント/デクリメント演算子 ++, --)")]
         [Trait("RoadmapId", "GBI-16")]
         [Trait("Category", "Operator")]
-        public void Test_GBI_Operator_IncrementDecrement()
+        public void Test_Operator_IncrementDecrement()
         {
         }
 
@@ -787,7 +782,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Trait("RoadmapId", "GBI-20")]
         [SkippableTheory]
         [InlineData(GpuExecutionEngine.GSharpAot)]
-        public void Test_GBI20_Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
+        public void Test_Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
             using var context = new GpuWorkspace(10, engine);
@@ -819,7 +814,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot, uint.MaxValue, uint.MaxValue)]
         [InlineData(GpuExecutionEngine.GSharpAot, uint.MaxValue, 1u)]
         [InlineData(GpuExecutionEngine.GSharpAot, 0x80000000u, 0x55555555u)]
-        public void Test_GBI20_Gcd_SingleElement_ReturnsCorrectGcd(GpuExecutionEngine engine, uint valA, uint valB)
+        public void Test_Gcd_SingleElement_ReturnsCorrectGcd(GpuExecutionEngine engine, uint valA, uint valB)
         {
         CudaCapability.EnsureGpuAvailable();
             using var context = new GpuWorkspace(10, engine);
@@ -843,7 +838,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [Fact(Skip = "未実装: GBI-21 (GpuUIntBigInteger.ModInverse モジュラ逆数)")]
         [Trait("RoadmapId", "GBI-21")]
         [Trait("Category", "Function")]
-        public void Test_GBI_Function_ModInverse()
+        public void Test_Function_ModInverse()
         {
         }
 
@@ -905,7 +900,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [SkippableTheory]
         [InlineData(GpuExecutionEngine.GSharpAot)]
         [Trait("RoadmapId", "GBI-23")]
-        public void Test_GBI23_GetBitLength_AtomicStress(GpuExecutionEngine engine)
+        public void Test_GetBitLength_AtomicStress(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
             const int stressWords = 65536;

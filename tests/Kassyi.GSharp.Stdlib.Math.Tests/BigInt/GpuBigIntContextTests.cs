@@ -2,14 +2,13 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
-namespace Kassyi.GSharp.Stdlib.Math.Tests;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
 [Trait("Category", "GpuExecution")]
-public class GBI30_GpuContextTests
+public class GpuBigIntContextTests
 {
     [SkippableFact]
-    [Trait("FeatureId", "GBI-30")]
-    public void Test_GBI30_Dispose_WhenCalledMultipleTimes_ShouldNotThrow()
+    public void Test_Dispose_WhenCalledMultipleTimes_ShouldNotThrow()
     {
         CudaCapability.EnsureGpuAvailable();
         // Arrange
@@ -26,8 +25,7 @@ public class GBI30_GpuContextTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-30")]
-    public void Test_GBI30_Finalizer_ShouldNotCrash()
+    public void Test_Finalizer_ShouldNotCrash()
     {
         CudaCapability.EnsureGpuAvailable();
         // Arrange & Act
@@ -50,8 +48,7 @@ public class GBI30_GpuContextTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-30")]
-    public void Test_GBI30_Dispose_WhenUsingGSharpAot_ShouldNotClearSharedProviderCaches()
+    public void Test_Dispose_WhenUsingGSharpAot_ShouldNotClearSharedProviderCaches()
     {
         CudaCapability.EnsureGpuAvailable();
         // Arrange
@@ -84,8 +81,7 @@ public class GBI30_GpuContextTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-30")]
-    public void Test_GBI30_ParallelContextDisposal_ShouldNotCorruptCaches()
+    public void Test_ParallelContextDisposal_ShouldNotCorruptCaches()
     {
         CudaCapability.EnsureGpuAvailable();
         Parallel.For(0, 8, i =>

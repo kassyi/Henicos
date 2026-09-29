@@ -1,12 +1,11 @@
 using Kassyi.GSharp.Stdlib.Math.Tests.Kernels;
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
 [Trait("Category", "GpuExecution")]
-public class GEN_13_GpuMacroTests
+public class GpuMacroTests
 {
     [SkippableTheory]
-    [Trait("FeatureId", "GEN-13")] // Or another appropriate ID
     [InlineData(int.MinValue)]
     [InlineData(-1)]
     [InlineData(0)]
@@ -15,7 +14,7 @@ public class GEN_13_GpuMacroTests
     [InlineData(1024)]
     [InlineData(1025)]
     [InlineData(2048)]
-    public void Test_GEN13_MacroKernel_GridStrideLoop_And_SingleThread(int length)
+    public void Test_MacroKernel_GridStrideLoop_And_SingleThread(int length)
     {
         CudaCapability.EnsureGpuAvailable();
         // Edge cases and stress testing for macro kernels

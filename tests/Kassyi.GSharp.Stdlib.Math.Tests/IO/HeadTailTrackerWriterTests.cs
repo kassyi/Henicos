@@ -2,15 +2,14 @@ using Kassyi.GSharp.Stdlib.Math.IO;
 
 namespace Kassyi.GSharp.Stdlib.Math.Tests.IO;
 
-public class GBI27_HeadTailTrackerWriterTests
+public class HeadTailTrackerWriterTests
 {
     [SkippableTheory]
-    [Trait("FeatureId", "GBI-27")]
     [Trait("Category", "HappyPath")]
     [InlineData("12345", 5, 5, "12345", "12345", "12345")]
     [InlineData("1234567890", 5, 5, "12345", "67890", "1234567890")]
     [InlineData("1234567890123", 5, 5, "12345", "90123", "12345...90123")]
-    public void Test_GBI27_Write_String_TracksHeadAndTailCorrectly(string input, int headCap, int tailCap, string expectedHead, string expectedTail, string expectedPreview)
+    public void Test_Write_String_TracksHeadAndTailCorrectly(string input, int headCap, int tailCap, string expectedHead, string expectedTail, string expectedPreview)
     {
         CudaCapability.EnsureGpuAvailable();
         using var writer = new HeadTailTrackerWriter(headCap, tailCap);
@@ -23,9 +22,8 @@ public class GBI27_HeadTailTrackerWriterTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-27")]
     [Trait("Category", "EdgeCase")]
-    public void Test_GBI27_Write_ZeroCapacity_DoesNotThrowAndTracksLength()
+    public void Test_Write_ZeroCapacity_DoesNotThrowAndTracksLength()
     {
         CudaCapability.EnsureGpuAvailable();
         using var writer = new HeadTailTrackerWriter(0, 0);
@@ -38,9 +36,8 @@ public class GBI27_HeadTailTrackerWriterTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-27")]
     [Trait("Category", "EdgeCase")]
-    public void Test_GBI27_Write_CharByChar_MatchesStringOutput()
+    public void Test_Write_CharByChar_MatchesStringOutput()
     {
         CudaCapability.EnsureGpuAvailable();
         using var writer = new HeadTailTrackerWriter(3, 3);

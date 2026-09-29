@@ -4,9 +4,9 @@ using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
 using Xunit;
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
-public class GBI_31_BlockAddSubParallelTests
+public class BlockAddSubParallelTests
 {
     private static void RunTest(int numWords, int sign)
     {
@@ -78,29 +78,25 @@ public class GBI_31_BlockAddSubParallelTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-31")]
-    public void Test_GBI31_BlockAddSubParallel_Add_Small()
+    public void Test_BlockAddSubParallel_Add_Small()
     {
         RunTest(128, 1);
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-31")]
-    public void Test_GBI31_BlockAddSubParallel_Add_ExactBlock()
+    public void Test_BlockAddSubParallel_Add_ExactBlock()
     {
         RunTest(256, 1);
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-31")]
-    public void Test_GBI31_BlockAddSubParallel_Add_Large()
+    public void Test_BlockAddSubParallel_Add_Large()
     {
         RunTest(5000, 1);
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-31")]
-    public void Test_GBI31_BlockAddSubParallel_Sub_Large()
+    public void Test_BlockAddSubParallel_Sub_Large()
     {
         RunTest(5000, -1);
     }

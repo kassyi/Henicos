@@ -6,10 +6,9 @@ using Xunit;
 namespace Kassyi.GSharp.Stdlib.Math.Tests
 {
     [Trait("Category", "GpuExecution")]
-    public class GBI_32_MegaKernelCooperativeLaunchTests
+    public class MegaKernelCooperativeLaunchTests
     {
         [SkippableFact]
-        [Trait("FeatureId", "GBI-32")]
         public void Test_CooperativeMegaKernel_ClampsToMockedSmCount()
         {
             CudaCapability.EnsureGpuAvailable();

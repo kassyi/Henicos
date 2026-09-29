@@ -11,9 +11,9 @@ using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Xunit;
 using VerifyXunit;
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.BigFloat;
 
-public class GBF01_GpuBigFloatArithmeticTests
+public class GpuBigFloatArithmeticTests
 {
     private BigIntExecutionContext CreateContext(GpuWorkspace ctx)
     {
@@ -21,7 +21,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Divide()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -54,7 +53,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Divide()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -87,7 +85,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Divide_Mega()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -132,7 +129,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Divide_Mega()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -177,7 +173,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Multiply()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -212,7 +207,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Multiply()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -245,7 +239,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Add()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -278,7 +271,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Add()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -311,7 +303,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Reciprocal()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -339,7 +330,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Reciprocal()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -368,7 +358,6 @@ public class GBF01_GpuBigFloatArithmeticTests
 
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Sqrt()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -401,7 +390,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Sqrt()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -433,7 +421,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Rsqrt()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -466,7 +453,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Rsqrt()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -498,7 +484,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Normalize()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -527,7 +512,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Normalize()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -556,7 +540,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Exp()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -589,7 +572,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Exp()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -621,7 +603,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Log()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -654,7 +635,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Log()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -686,7 +666,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_Pow()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -725,7 +704,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_Pow()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -763,7 +741,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_DivideByUInt32_Basic()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -793,7 +770,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_DivideByUInt32_Basic()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -823,7 +799,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_CpuReference_DivideByUInt32_Boundary()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -853,7 +828,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public Task Test_GBF01_GpuReference_DivideByUInt32_Boundary()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -883,7 +857,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public void Test_GBF01_CpuReference_DivideByUInt32_Zero()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -903,7 +876,6 @@ public class GBF01_GpuBigFloatArithmeticTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBF-01")]
     public void Test_GBF01_GpuReference_DivideByUInt32_Zero()
     {
         CudaCapability.EnsureGpuAvailable();

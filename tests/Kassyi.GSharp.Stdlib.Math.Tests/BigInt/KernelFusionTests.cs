@@ -4,12 +4,12 @@ using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
 [Trait("Category", "GpuExecution")]
-public class GBI06_KernelFusionTests : IDisposable
+public class KernelFusionTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;
     private readonly GpuWorkspace _context;
 
-    public GBI06_KernelFusionTests()
+    public KernelFusionTests()
     {
         CudaCapability.EnsureGpuAvailable();
         _scope = new GpuKernelLoader.CudaContextScope();
@@ -23,9 +23,8 @@ public class GBI06_KernelFusionTests : IDisposable
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-06")]
     [Trait("Category", "HappyPath")]
-    public void Test_GBI06_ComplexExpressionTreeFusion_AdditionAndMultiplication()
+    public void Test_ComplexExpressionTreeFusion_AdditionAndMultiplication()
     {
         CudaCapability.EnsureGpuAvailable();
         // (a + b) * c
@@ -49,9 +48,8 @@ public class GBI06_KernelFusionTests : IDisposable
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-06")]
     [Trait("Category", "HappyPath")]
-    public void Test_GBI06_ChainedAddSubMulExpressionFusion()
+    public void Test_ChainedAddSubMulExpressionFusion()
     {
         CudaCapability.EnsureGpuAvailable();
         // (a + b) * (c - d)
@@ -76,7 +74,6 @@ public class GBI06_KernelFusionTests : IDisposable
     }
 
     [SkippableTheory]
-    [Trait("FeatureId", "GBI-06")]
     [Trait("Category", "EdgeCases")]
     [InlineData(0u, 0u, 10u, 0u)]
     [InlineData(1u, 1u, 1u, 2u)]
@@ -85,7 +82,7 @@ public class GBI06_KernelFusionTests : IDisposable
     [InlineData(0x80000000u, 0x80000000u, 2u, 0u)]
     [InlineData(0x55555555u, 0xAAAAAAAAu, 3u, 0u)]
     [InlineData(uint.MaxValue, uint.MaxValue, uint.MaxValue, 0u)]
-    public void Test_GBI06_Fusion_BoundaryValues(uint valA, uint valB, uint valC, uint dummy)
+    public void Test_Fusion_BoundaryValues(uint valA, uint valB, uint valC, uint dummy)
     {
         CudaCapability.EnsureGpuAvailable();
         using var a = new GpuUIntBigInteger(_context, new uint[] { valA, 0, 0, 0 });

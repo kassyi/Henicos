@@ -2,12 +2,12 @@
 namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
 [Trait("Category", "GpuExecution")]
-public class GBI28_GpuBigIntegerTests : IDisposable
+public class GpuBigIntegerTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;
     private readonly GpuWorkspace _context;
 
-    public GBI28_GpuBigIntegerTests()
+    public GpuBigIntegerTests()
     {
         CudaCapability.EnsureGpuAvailable();
         _scope = new GpuKernelLoader.CudaContextScope();
@@ -21,9 +21,8 @@ public class GBI28_GpuBigIntegerTests : IDisposable
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-28")]
     [Trait("Category", "HappyPath")]
-    public void Test_GBI28_ConstructAndDispose_WorksCorrectly()
+    public void Test_ConstructAndDispose_WorksCorrectly()
     {
         CudaCapability.EnsureGpuAvailable();
         var gpuBigInt = new GpuUIntBigInteger(_context, 4);

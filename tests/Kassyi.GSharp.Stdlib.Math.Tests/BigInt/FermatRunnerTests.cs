@@ -5,11 +5,11 @@ using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Xunit;
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
 [Collection("GpuWorkspace")]
 [Trait("Category", "GpuExecution")]
-public class GEN_51_FermatRunnerTests
+public class FermatRunnerTests
 {
     [Fact]
     public void FermatRunner_RunFermatPrp_MatchesCpuBigInteger_E10()

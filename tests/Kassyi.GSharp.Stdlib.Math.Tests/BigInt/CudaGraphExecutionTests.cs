@@ -6,14 +6,13 @@ using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Xunit;
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
 [Trait("Category", "GpuExecution")]
-public class GBI_31_CudaGraphExecutionTests
+public class CudaGraphExecutionTests
 {
     [SkippableFact]
-    [Trait("FeatureId", "GBI-31")]
-    public void Test_GBI31_CudaGraph_Add_Execution()
+    public void Test_CudaGraph_Add_Execution()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -89,9 +88,8 @@ public class GBI_31_CudaGraphExecutionTests
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-31")]
     [Trait("Category", "Stress")]
-    public void Test_GBI31_CudaGraph_StressLaunch()
+    public void Test_CudaGraph_StressLaunch()
     {
         CudaCapability.EnsureGpuAvailable();
 
@@ -159,11 +157,9 @@ public class GBI_31_CudaGraphExecutionTests
             System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(threadEx).Throw();
         }
     }
-
-    [Trait("FeatureId", "GBI-31")]
     [Trait("Category", "SadPath")]
     [Fact(Skip = "Corrupts global device context in sequential test execution")]
-    public void Test_GBI31_CudaGraph_SadPath_ImplicitSyncFails()
+    public void Test_CudaGraph_SadPath_ImplicitSyncFails()
     {
         CudaCapability.EnsureGpuAvailable();
 

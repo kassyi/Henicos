@@ -3,12 +3,12 @@ using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 
 [Trait("Category", "GpuExecution")]
-public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
+public class GpuUIntBigIntegerCoreTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;
     private readonly GpuWorkspace _context;
 
-    public GBI26_GpuUIntBigIntegerCoreTests()
+    public GpuUIntBigIntegerCoreTests()
     {
         CudaCapability.EnsureGpuAvailable();
         _scope = new GpuKernelLoader.CudaContextScope();
@@ -22,12 +22,11 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
     }
 
     [SkippableTheory]
-    [Trait("FeatureId", "GBI-26")]
     [Trait("Category", "HappyPath")]
     [InlineData("0", 1)]
     [InlineData("123456789012345678901234567890", 4)]
     [InlineData("-123456789012345678901234567890", 4)] // Should take absolute value
-    public void Test_GBI26_FromBigInteger_ToBigInteger_RoundTripsCorrectly(string valueStr, int minWords)
+    public void Test_FromBigInteger_ToBigInteger_RoundTripsCorrectly(string valueStr, int minWords)
     {
         CudaCapability.EnsureGpuAvailable();
         var original = BigInteger.Parse(valueStr);
@@ -40,9 +39,8 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-26")]
     [Trait("Category", "EdgeCase")]
-    public void Test_GBI26_PadTo_LargerSize_ZeroPadsCorrectly()
+    public void Test_PadTo_LargerSize_ZeroPadsCorrectly()
     {
         CudaCapability.EnsureGpuAvailable();
         var original = new BigInteger(0xDEADBEEF);
@@ -61,8 +59,7 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
     }
 
     [SkippableFact]
-    [Trait("FeatureId", "GBI-26")]
-    public void Test_GBI26_PadTo_SmallerSize_ReturnsTruncatedValue()
+    public void Test_PadTo_SmallerSize_ReturnsTruncatedValue()
     {
         CudaCapability.EnsureGpuAvailable();
         var originalData = new uint[] { 1, 2, 3, 4, 5 };
@@ -81,9 +78,8 @@ public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
         Assert.Equal(3u, resultData[2]);
     }
     [SkippableFact]
-    [Trait("FeatureId", "GBI-26")]
     [Trait("Category", "HappyPath")]
-    public void Test_GBI26_Addition_EvaluatesCorrectly()
+    public void Test_Addition_EvaluatesCorrectly()
     {
         CudaCapability.EnsureGpuAvailable();
         var originalA = BigInteger.Parse("1234567890123456789012345678901234567890");
