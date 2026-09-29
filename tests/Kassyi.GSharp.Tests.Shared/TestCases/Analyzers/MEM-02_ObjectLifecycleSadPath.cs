@@ -4,9 +4,11 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 
-// Dummy GpuContext for Roslyn AST & SemanticModel analysis
-public class GpuContext : IDisposable
+// Dummy GpuWorkspace for Roslyn AST & SemanticModel analysis
+public class GpuWorkspace : IGpuResourceScope
 {
+    public void Track(IDisposable resource) {}
+    public IGpuResourceScope CreateScope() => throw new NotImplementedException();
     public void Compute() { }
     public void Dispose() { }
 }
@@ -14,19 +16,19 @@ public class GpuContext : IDisposable
 public class MyWrapper
 {
     // 11.3.2 Implicit Cast Operator allocating disposable resource
-    public static implicit operator GpuContext(MyWrapper w) => new GpuContext();
+    public static implicit operator GpuWorkspace(MyWrapper w) => new GpuWorkspace();
 }
 
 // 11.3.1 Missing IDisposable on Class
 public class ClassMissingIDisposable
 {
-    private GpuContext _c = new GpuContext(); // Error: GSH0020
+    private GpuWorkspace _c = new GpuWorkspace(); // Error: GSH0020
 }
 
 // 11.3.1 Undisposed Field in Dispose()
 public class ClassUndisposedField : IDisposable
 {
-    private GpuContext _c = new GpuContext();
+    private GpuWorkspace _c = new GpuWorkspace();
 
     public void Dispose()
     {
@@ -37,7 +39,7 @@ public class ClassUndisposedField : IDisposable
 // 11.3.1 Safe: Clean Chained Disposal
 public class ClassCleanChainedDisposal : IDisposable
 {
-    private GpuContext _c = new GpuContext();
+    private GpuWorkspace _c = new GpuWorkspace();
 
     public void Dispose()
     {
@@ -48,11 +50,11 @@ public class ClassCleanChainedDisposal : IDisposable
 // 11.3.1 Unsafe Field Overwrite
 public class ClassUnsafeFieldOverwrite : IDisposable
 {
-    private GpuContext _c = new GpuContext();
+    private GpuWorkspace _c = new GpuWorkspace();
 
     public void Update()
     {
-        _c = new GpuContext(); // Error: GSH0022
+        _c = new GpuWorkspace(); // Error: GSH0022
     }
 
     public void Dispose()
@@ -64,7 +66,7 @@ public class ClassUnsafeFieldOverwrite : IDisposable
 // 11.3.2 Property Getter Side-Effects
 public class ClassPropertyGetterSideEffect
 {
-    public GpuContext Context => new GpuContext(); // Error: GSH0023
+    public GpuWorkspace Context => new GpuWorkspace(); // Error: GSH0023
 
     public void Execute()
     {
@@ -77,30 +79,30 @@ public class ClassImplicitCastInvocation
 {
     public void TestImplicitCast(MyWrapper wrapper)
     {
-        GpuContext ctx = wrapper; // Error: GSH0024
+        GpuWorkspace ctx = wrapper; // Error: GSH0024
     }
 }
 
 // 11.3.3 Unguarded Multi-Allocation
 public class ClassUnguardedMultiAllocation
 {
-    private GpuContext _c1;
-    private GpuContext _c2;
+    private GpuWorkspace _c1;
+    private GpuWorkspace _c2;
 
     public ClassUnguardedMultiAllocation()
     {
-        _c1 = new GpuContext();
-        _c2 = new GpuContext(); // Error: GSH0025
+        _c1 = new GpuWorkspace();
+        _c2 = new GpuWorkspace(); // Error: GSH0025
     }
 }
 
 // 11.3.3 Safe: Factory Pattern
 public class ClassFactoryPattern : IDisposable
 {
-    private readonly GpuContext _c1;
-    private readonly GpuContext _c2;
+    private readonly GpuWorkspace _c1;
+    private readonly GpuWorkspace _c2;
 
-    public ClassFactoryPattern(GpuContext c1, GpuContext c2)
+    public ClassFactoryPattern(GpuWorkspace c1, GpuWorkspace c2)
     {
         _c1 = c1;
         _c2 = c2;
@@ -108,10 +110,10 @@ public class ClassFactoryPattern : IDisposable
 
     public static ClassFactoryPattern Create()
     {
-        var c1 = new GpuContext();
+        var c1 = new GpuWorkspace();
         try
         {
-            var c2 = new GpuContext();
+            var c2 = new GpuWorkspace();
             return new ClassFactoryPattern(c1, c2);
         }
         catch
@@ -131,15 +133,15 @@ public class ClassFactoryPattern : IDisposable
 // 11.3.3 Static Lifecycle
 public static class GpuCache
 {
-    public static readonly GpuContext GlobalCtx = new GpuContext(); // Error: GSH0026
+    public static readonly GpuWorkspace GlobalCtx = new GpuWorkspace(); // Error: GSH0026
 }
 
 // 11.3.4 Standard Injection (Borrowing)
 public class BorrowedResourceClass : IDisposable
 {
-    private GpuContext _c;
+    private GpuWorkspace _c;
 
-    public BorrowedResourceClass(GpuContext c)
+    public BorrowedResourceClass(GpuWorkspace c)
     {
         _c = c; // Borrowed
     }
@@ -153,9 +155,9 @@ public class BorrowedResourceClass : IDisposable
 // 11.3.4 Explicit Ownership Transfer
 public class OwnedResourceClass : IDisposable
 {
-    private GpuContext _c;
+    private GpuWorkspace _c;
 
-    public OwnedResourceClass([TakesOwnership] GpuContext c)
+    public OwnedResourceClass([TakesOwnership] GpuWorkspace c)
     {
         _c = c; // Owned
     }
@@ -169,7 +171,7 @@ public class OwnedResourceClass : IDisposable
 // 11.3.5 Default Interface Methods (DIM)
 public interface IResourceBlackbox
 {
-    void Process(GpuContext ctx)
+    void Process(GpuWorkspace ctx)
     {
         ctx.Dispose(); // Error: GSH0028
     }

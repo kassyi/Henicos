@@ -46,7 +46,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
         var valueWords = new uint[valueSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(valueWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(valueWords,
             IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
 
         var vValue = ToBigInteger(valueWords, valueSig.NumWords);
@@ -56,7 +56,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             resultExp = 0;
             resultSign = false;
             var zeros = new uint[resultSig.NumWords];
-            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+            context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
                 zeros, resultSig.NumWords, context.Stream);
             return;
         }
@@ -72,7 +72,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
 
         var resultWords = new uint[resultSig.NumWords];
         ToWords(vNormalized, resultWords, resultSig.NumWords);
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+        context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
             resultWords, resultSig.NumWords, context.Stream);
     }
 
@@ -92,11 +92,11 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         resultExp = leftLarger ? leftExp : rightExp;
 
         var largerWords = new uint[largerSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(largerWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(largerWords,
             IntPtr.Add(largerSig.Buffer.Pointer, largerSig.WordOffset * 4), largerSig.NumWords, context.Stream);
 
         var smallerWords = new uint[smallerSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(smallerWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(smallerWords,
             IntPtr.Add(smallerSig.Buffer.Pointer, smallerSig.WordOffset * 4), smallerSig.NumWords, context.Stream);
 
         var vLarger = ToBigInteger(largerWords, largerSig.NumWords);
@@ -130,7 +130,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             resultSign = false;
             resultExp = 0;
             var zeros = new uint[resultSig.NumWords];
-            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+            context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
                 zeros, resultSig.NumWords, context.Stream);
             return;
         }
@@ -146,7 +146,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
 
         var resultWords = new uint[resultSig.NumWords];
         ToWords(vNormalized, resultWords, resultSig.NumWords);
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+        context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
             resultWords, resultSig.NumWords, context.Stream);
     }
 
@@ -156,11 +156,11 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
         var leftWords = new uint[leftSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(leftWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(leftWords,
             IntPtr.Add(leftSig.Buffer.Pointer, leftSig.WordOffset * 4), leftSig.NumWords, context.Stream);
 
         var rightWords = new uint[rightSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(rightWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(rightWords,
             IntPtr.Add(rightSig.Buffer.Pointer, rightSig.WordOffset * 4), rightSig.NumWords, context.Stream);
 
         var vLeft = ToBigInteger(leftWords, leftSig.NumWords);
@@ -175,7 +175,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             resultExp = 0;
             resultSign = false;
             var zeros = new uint[resultSig.NumWords];
-            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+            context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
                 zeros, resultSig.NumWords, context.Stream);
             return;
         }
@@ -191,7 +191,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
 
         var resultWords = new uint[resultSig.NumWords];
         ToWords(vNormalized, resultWords, resultSig.NumWords);
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+        context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
             resultWords, resultSig.NumWords, context.Stream);
     }
 
@@ -201,11 +201,11 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
         var leftWords = new uint[leftSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(leftWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(leftWords,
             IntPtr.Add(leftSig.Buffer.Pointer, leftSig.WordOffset * 4), leftSig.NumWords, context.Stream);
 
         var rightWords = new uint[rightSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(rightWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(rightWords,
             IntPtr.Add(rightSig.Buffer.Pointer, rightSig.WordOffset * 4), rightSig.NumWords, context.Stream);
 
         var vLeft = ToBigInteger(leftWords, leftSig.NumWords);
@@ -228,13 +228,13 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             quotientWords = 1;
         }
 
-        using var tempResult = context.GpuContext.RentTemp(quotientWords);
+        using var tempResult = context.GpuWorkspace.RentTemp(quotientWords);
         var tempHandle =
             new BigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempResult.NumWords);
 
         var tempWords = new uint[tempResult.NumWords];
         ToWords(vQuotient, tempWords, tempResult.NumWords);
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(tempHandle.Buffer.Pointer, tempHandle.WordOffset * 4),
+        context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(tempHandle.Buffer.Pointer, tempHandle.WordOffset * 4),
             tempWords, tempResult.NumWords, context.Stream);
 
         Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
@@ -245,7 +245,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
         var valueWords = new uint[valueSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(valueWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(valueWords,
             IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
 
         var vValue = ToBigInteger(valueWords, valueSig.NumWords);
@@ -262,13 +262,13 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         var tempExp = -valueExp - shiftBits;
         resultSign = valueSign;
 
-        using var tempResult = context.GpuContext.RentTemp(resultSig.NumWords * 2);
+        using var tempResult = context.GpuWorkspace.RentTemp(resultSig.NumWords * 2);
         var tempHandle =
             new BigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempResult.NumWords);
 
         var tempWords = new uint[tempResult.NumWords];
         ToWords(vQuotient, tempWords, tempResult.NumWords);
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(tempHandle.Buffer.Pointer, tempHandle.WordOffset * 4),
+        context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(tempHandle.Buffer.Pointer, tempHandle.WordOffset * 4),
             tempWords, tempResult.NumWords, context.Stream);
 
         Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
@@ -284,7 +284,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         }
 
         var valueWords = new uint[valueSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(valueWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(valueWords,
             IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
 
         var vValue = ToBigInteger(valueWords, valueSig.NumWords);
@@ -294,7 +294,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             resultExp = 0;
             resultSign = false;
             var zeros = new uint[resultSig.NumWords];
-            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+            context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
                 zeros, resultSig.NumWords, context.Stream);
             return;
         }
@@ -323,7 +323,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
 
         var resultWords = new uint[resultSig.NumWords];
         ToWords(vNormalized, resultWords, resultSig.NumWords);
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+        context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
             resultWords, resultSig.NumWords, context.Stream);
     }
 
@@ -337,7 +337,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         }
 
         var tempWords = resultSig.NumWords;
-        using var sqrtResult = context.GpuContext.RentTemp(tempWords);
+        using var sqrtResult = context.GpuWorkspace.RentTemp(tempWords);
         var sqrtHandle = new BigIntMemoryHandle(sqrtResult.Handle.Buffer, sqrtResult.Handle.WordOffset, tempWords);
 
         Sqrt(ref context, valueSig, valueExp, valueSign, sqrtHandle, out var sqrtExp, out var sqrtSign);
@@ -350,7 +350,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
         var valueWords = new uint[valueSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(valueWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(valueWords,
             IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
         var vValue = ToBigInteger(valueWords, valueSig.NumWords);
 
@@ -361,7 +361,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
             resultSign = false;
             var tempWords = new uint[resultSig.NumWords];
             tempWords[0] = 1;
-            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+            context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
                 tempWords, resultSig.NumWords, context.Stream);
             return;
         }
@@ -408,12 +408,12 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
 
         var tempExpFixed = -shiftBits;
 
-        using var tempResult = context.GpuContext.RentTemp(resultSig.NumWords + 2);
+        using var tempResult = context.GpuWorkspace.RentTemp(resultSig.NumWords + 2);
         var tempHandle =
             new BigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempResult.NumWords);
         var tempWordsArr = new uint[tempResult.NumWords];
         ToWords(sum, tempWordsArr, tempResult.NumWords);
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(tempHandle.Buffer.Pointer, tempHandle.WordOffset * 4),
+        context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(tempHandle.Buffer.Pointer, tempHandle.WordOffset * 4),
             tempWordsArr, tempResult.NumWords, context.Stream);
 
         Normalize(ref context, tempHandle, tempExpFixed, resultSign, resultSig, out resultExp, out resultSign);
@@ -429,7 +429,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         }
 
         var valueWords = new uint[valueSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(valueWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(valueWords,
             IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
         var vValue = ToBigInteger(valueWords, valueSig.NumWords);
 
@@ -489,12 +489,12 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
 
         var tempExpFixed = -shiftBits;
 
-        using var tempResult = context.GpuContext.RentTemp(resultSig.NumWords + 2);
+        using var tempResult = context.GpuWorkspace.RentTemp(resultSig.NumWords + 2);
         var tempHandle =
             new BigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempResult.NumWords);
         var tempWordsArr = new uint[tempResult.NumWords];
         ToWords(sum, tempWordsArr, tempResult.NumWords);
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(tempHandle.Buffer.Pointer, tempHandle.WordOffset * 4),
+        context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(tempHandle.Buffer.Pointer, tempHandle.WordOffset * 4),
             tempWordsArr, tempResult.NumWords, context.Stream);
 
         Normalize(ref context, tempHandle, tempExpFixed, resultSign, resultSig, out resultExp, out resultSign);
@@ -512,11 +512,11 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
 
         var tempWords = resultSig.NumWords;
 
-        using var logResult = context.GpuContext.RentTemp(tempWords);
+        using var logResult = context.GpuWorkspace.RentTemp(tempWords);
         var logHandle = new BigIntMemoryHandle(logResult.Handle.Buffer, logResult.Handle.WordOffset, tempWords);
         Log(ref context, baseSig, baseExp, baseSign, logHandle, out var logExp, out var logSign);
 
-        using var mulResult = context.GpuContext.RentTemp(tempWords);
+        using var mulResult = context.GpuWorkspace.RentTemp(tempWords);
         var mulHandle = new BigIntMemoryHandle(mulResult.Handle.Buffer, mulResult.Handle.WordOffset, tempWords);
         Multiply(ref context, expSig, exponentExp, exponentSign, logHandle, logExp, logSign, mulHandle, out var mulExp,
             out var mulSign);
@@ -538,7 +538,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         resultSign = valueSign;
 
         var valueWords = new uint[valueSig.NumWords];
-        context.GpuContext.Provider.CopyDeviceToHost(valueWords,
+        context.GpuWorkspace.Provider.CopyDeviceToHost(valueWords,
             IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
 
         var vValue = ToBigInteger(valueWords, valueSig.NumWords);
@@ -550,7 +550,7 @@ public sealed class CSharpBigFloatArithmetic : IGpuBigFloatArithmetic
         var resultWords = new uint[resultSig.NumWords];
         ToWords(vQuotient, resultWords, resultSig.NumWords);
 
-        context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+        context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
             resultWords, resultSig.NumWords, context.Stream);
     }
 }

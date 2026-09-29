@@ -12,8 +12,8 @@ public class GpuBigIntBenchmark : IDisposable
         get; set;
     }
 
-    private GpuContext _contextJit = null!;
-    private GpuContext _contextLegacy = null!;
+    private GpuWorkspace _contextJit = null!;
+    private GpuWorkspace _contextLegacy = null!;
 
     private GpuUIntBigInteger _gpuAJit;
     private GpuUIntBigInteger _gpuBJit;
@@ -30,8 +30,8 @@ public class GpuBigIntBenchmark : IDisposable
     {
         _scope = new GpuKernelLoader.CudaContextScope();
 
-        _contextJit = new GpuContext(NumWords * 2);
-        _contextLegacy = new GpuContext(NumWords * 2, GpuExecutionEngine.LegacyNative);
+        _contextJit = new GpuWorkspace(NumWords * 2);
+        _contextLegacy = new GpuWorkspace(NumWords * 2, GpuExecutionEngine.LegacyNative);
 
         var rnd = new Random(42);
         var hostA = new uint[NumWords];
@@ -58,14 +58,6 @@ public class GpuBigIntBenchmark : IDisposable
     [GlobalCleanup]
     public void Cleanup()
     {
-        _gpuAJit.Dispose();
-        _gpuBJit.Dispose();
-        _gpuResultJit.Dispose();
-
-        _gpuALegacy.Dispose();
-        _gpuBLegacy.Dispose();
-        _gpuResultLegacy.Dispose();
-
         _contextJit.Dispose();
         _contextLegacy.Dispose();
         _scope.Dispose();

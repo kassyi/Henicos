@@ -55,7 +55,7 @@ _bool_<br>
 
 ### Running a Native GPU PRP Test
 
-This example demonstrates how to orchestrate a Fermat test across the GPU. The runner manages its own internal `GpuContext` and executes all iterations internally.
+This example demonstrates how to orchestrate a Fermat test across the GPU. The runner manages its own internal `GpuWorkspace` and executes all iterations internally.
 
 ```csharp
 // Execution Context: Host (CPU)

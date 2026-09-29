@@ -51,7 +51,7 @@ public class BigMathTests : TranspilerTestBase
     {
         SkipIfCpuDialect();
         
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         var uInt = new GpuUIntBigInteger(context, 4); // 4 words
         var uFloat = new GpuBigUFloat(uInt, 0);
         using var bigFloat = new GpuBigFloat(uFloat, false);
@@ -66,7 +66,7 @@ public class BigMathTests : TranspilerTestBase
     {
         SkipIfCpuDialect();
         
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         using var mat = GpuBigIntMatrix2x2.Identity(context, 4);
         
         Assert.NotNull(mat);
@@ -78,7 +78,7 @@ public class BigMathTests : TranspilerTestBase
     {
         SkipIfCpuDialect();
         
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         Assert.ThrowsAny<Exception>(() => GpuBigIntMatrix2x2.Identity(context, 0));
         Assert.ThrowsAny<Exception>(() => GpuBigIntMatrix2x2.Identity(context, -1));
     }

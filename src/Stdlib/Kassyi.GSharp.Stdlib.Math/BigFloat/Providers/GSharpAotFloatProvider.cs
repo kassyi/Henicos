@@ -23,10 +23,10 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var dA = IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4);
         var dResult = IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4);
 
-        if (context.GpuContext.Provider is NativeProvider)
+        if (context.GpuWorkspace.Provider is NativeProvider)
         {
             if (!NativeMethods.GpuBigFloat_Normalize(
-                    context.GpuContext.WorkspacePointer,
+                    context.GpuWorkspace.WorkspacePointer,
                     dA, valueSig.NumWords,
                     dResult, maxWords,
                     valueExp,
@@ -56,14 +56,14 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var shiftWords = expDiff / 32 + 1;
         var maxSize = System.Math.Max(leftSig.NumWords, rightSig.NumWords) + shiftWords + 1;
 
-        if (context.GpuContext.Provider is NativeProvider)
+        if (context.GpuWorkspace.Provider is NativeProvider)
         {
             // Allocate workspace buffers
-            using var shiftedBuffer = context.GpuContext.RentTemp(maxSize);
-            using var tempResult = context.GpuContext.RentTemp(maxSize);
+            using var shiftedBuffer = context.GpuWorkspace.RentTemp(maxSize);
+            using var tempResult = context.GpuWorkspace.RentTemp(maxSize);
 
             if (!NativeMethods.GpuBigFloat_AddSub(
-                    context.GpuContext.WorkspacePointer,
+                    context.GpuWorkspace.WorkspacePointer,
                     IntPtr.Add(leftSig.Buffer.Pointer, leftSig.WordOffset * 4), leftSig.NumWords, leftExp, leftSign ? 1 : 0,
                     IntPtr.Add(rightSig.Buffer.Pointer, rightSig.WordOffset * 4), rightSig.NumWords, rightExp, rightSign ? 1 : 0,
                     0, // isSubtract is 0 since subtraction is handled via sign flip
@@ -89,14 +89,14 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         BigIntMemoryHandle rightSig, int rightExp, bool rightSign,
         BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
-        if (context.GpuContext.Provider is NativeProvider)
+        if (context.GpuWorkspace.Provider is NativeProvider)
         {
             var stream = context.Stream;
             var tempExp = leftExp + rightExp;
             var tempSign = (leftSign != rightSign) ? 1 : 0;
 
             if (!NativeMethods.GpuBigFloat_Multiply(
-                context.GpuContext.WorkspacePointer,
+                context.GpuWorkspace.WorkspacePointer,
                 IntPtr.Add(leftSig.Buffer.Pointer, leftSig.WordOffset * 4), leftSig.NumWords,
                 IntPtr.Add(rightSig.Buffer.Pointer, rightSig.WordOffset * 4), rightSig.NumWords,
                 IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultSig.NumWords,
@@ -123,12 +123,12 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var stream = context.Stream;
 
         // Create rightOperand for zero-check and fallback path
-        using var rightOperand = new GpuUIntBigInteger(context.GpuContext, rightSig.NumWords);
-        context.GpuContext.Provider.CopyDeviceToDevice(rightOperand.DevicePointer,
+        using var rightOperand = new GpuUIntBigInteger(context.GpuWorkspace, rightSig.NumWords);
+        context.GpuWorkspace.Provider.CopyDeviceToDevice(rightOperand.DevicePointer,
             IntPtr.Add(rightSig.Buffer.Pointer, rightSig.WordOffset * 4), rightSig.NumWords, stream);
 
         // 1. Zero Division Check
-        var isRightZero = context.GpuContext.Provider.IsZero(context.GpuContext, rightOperand);
+        var isRightZero = context.GpuWorkspace.Provider.IsZero(context.GpuWorkspace, rightOperand);
         if (isRightZero)
         {
             throw new DivideByZeroException("GBF Division by Zero.");
@@ -137,11 +137,11 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         // 2. Hybrid Routing
         // Fast Path: A / B = A * Reciprocal(B)
         // Only if NativeProvider is available and size is within Comba multiplication limits (<= 1024)
-        if (context.GpuContext.Provider is NativeProvider && resultSig.NumWords <= 1024)
+        if (context.GpuWorkspace.Provider is NativeProvider && resultSig.NumWords <= 1024)
         {
             var marginWords = 2;
             var reciprocalWords = 2 * rightSig.NumWords + marginWords;
-            using var reciprocalBuffer = context.GpuContext.RentTemp(reciprocalWords);
+            using var reciprocalBuffer = context.GpuWorkspace.RentTemp(reciprocalWords);
             var reciprocalHandle = new BigIntMemoryHandle(reciprocalBuffer.Handle.Buffer, reciprocalBuffer.Handle.WordOffset, reciprocalWords);
 
             Reciprocal(ref context, rightSig, rightExp, rightSign, reciprocalHandle, out var reciprocalExp, out var reciprocalSign);
@@ -153,24 +153,24 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         // ----------------------------------------------------
         // Fallback Path: Existing GpuBigIntDivRem based processing for Mega Division
         // ----------------------------------------------------
-        using var leftOperand = new GpuUIntBigInteger(context.GpuContext, leftSig.NumWords);
-        context.GpuContext.Provider.CopyDeviceToDevice(leftOperand.DevicePointer,
+        using var leftOperand = new GpuUIntBigInteger(context.GpuWorkspace, leftSig.NumWords);
+        context.GpuWorkspace.Provider.CopyDeviceToDevice(leftOperand.DevicePointer,
             IntPtr.Add(leftSig.Buffer.Pointer, leftSig.WordOffset * 4), leftSig.NumWords, stream);
 
         var shiftBits = resultSig.NumWords * 32 * 2;
         var shiftedWords = leftSig.NumWords + resultSig.NumWords * 2;
-        using var shiftedLeft = context.GpuContext.RentTemp(shiftedWords);
-        context.GpuContext.Provider.ClearMemoryAsync(shiftedLeft.DevicePointer, shiftedWords, stream);
+        using var shiftedLeft = context.GpuWorkspace.RentTemp(shiftedWords);
+        context.GpuWorkspace.Provider.ClearMemoryAsync(shiftedLeft.DevicePointer, shiftedWords, stream);
 
-        using var paddedLeft = context.GpuContext.RentTemp(shiftedWords);
-        context.GpuContext.Provider.ClearMemoryAsync(paddedLeft.DevicePointer, shiftedWords, stream);
-        context.GpuContext.Provider.CopyDeviceToDevice(paddedLeft.DevicePointer, leftOperand.DevicePointer, leftOperand.NumWords, stream);
+        using var paddedLeft = context.GpuWorkspace.RentTemp(shiftedWords);
+        context.GpuWorkspace.Provider.ClearMemoryAsync(paddedLeft.DevicePointer, shiftedWords, stream);
+        context.GpuWorkspace.Provider.CopyDeviceToDevice(paddedLeft.DevicePointer, leftOperand.DevicePointer, leftOperand.NumWords, stream);
 
-        context.GpuContext.Provider.ShiftLeft(context.GpuContext, paddedLeft, shiftBits, shiftedLeft);
+        context.GpuWorkspace.Provider.ShiftLeft(context.GpuWorkspace, paddedLeft, shiftBits, shiftedLeft);
 
         var quotWords = shiftedWords - rightOperand.NumWords + 1;
-        using var quotientBuffer = context.GpuContext.RentTemp(quotWords);
-        using var remainderBuffer = context.GpuContext.RentTemp(rightOperand.NumWords);
+        using var quotientBuffer = context.GpuWorkspace.RentTemp(quotWords);
+        using var remainderBuffer = context.GpuWorkspace.RentTemp(rightOperand.NumWords);
 
         GpuBigIntDivRem.DivRem(shiftedLeft, rightOperand, quotientBuffer, remainderBuffer);
 
@@ -181,7 +181,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var tempExp = leftExp - rightExp - shiftBits;
 
         // Check if zero
-        var isZero = context.GpuContext.Provider.IsZero(context.GpuContext, quotientBuffer);
+        var isZero = context.GpuWorkspace.Provider.IsZero(context.GpuWorkspace, quotientBuffer);
         if (isZero)
         {
             tempSign = false;
@@ -194,7 +194,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         BigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         BigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
-        if (context.GpuContext.Provider is not GSharpAotProvider && context.GpuContext.Provider is not NativeProvider)
+        if (context.GpuWorkspace.Provider is not GSharpAotProvider && context.GpuWorkspace.Provider is not NativeProvider)
         {
             CSharpBigFloatArithmetic.Instance.Reciprocal(ref context, valueSig, valueExp, valueSign, resultSig, out resultExp, out resultSign);
             return;
@@ -202,18 +202,18 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
 
         var stream = context.Stream;
 
-        using var valueOperand = new GpuUIntBigInteger(context.GpuContext, valueSig.NumWords);
-        context.GpuContext.Provider.CopyDeviceToDevice(valueOperand.DevicePointer,
+        using var valueOperand = new GpuUIntBigInteger(context.GpuWorkspace, valueSig.NumWords);
+        context.GpuWorkspace.Provider.CopyDeviceToDevice(valueOperand.DevicePointer,
             IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, stream);
 
         var marginWords = 2; // Provide a small margin
         var reciprocalWords = 2 * valueSig.NumWords + marginWords;
-        using var reciprocalResult = context.GpuContext.RentTemp(reciprocalWords);
-        context.GpuContext.Provider.ClearMemoryAsync(reciprocalResult.DevicePointer, reciprocalWords, stream);
+        using var reciprocalResult = context.GpuWorkspace.RentTemp(reciprocalWords);
+        context.GpuWorkspace.Provider.ClearMemoryAsync(reciprocalResult.DevicePointer, reciprocalWords, stream);
 
-        if (context.GpuContext.Provider is NativeProvider)
+        if (context.GpuWorkspace.Provider is NativeProvider)
         {
-            NativeMethods.GpuBigFloat_Reciprocal(context.GpuContext.WorkspacePointer, valueOperand.DevicePointer,
+            NativeMethods.GpuBigFloat_Reciprocal(context.GpuWorkspace.WorkspacePointer, valueOperand.DevicePointer,
                 reciprocalResult.DevicePointer, valueSig.NumWords, marginWords, stream);
         }
         else
@@ -242,7 +242,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
             throw new InvalidOperationException("Cannot compute square root of a negative number.");
         }
 
-        if (context.GpuContext.Provider is not GSharpAotProvider && context.GpuContext.Provider is not NativeProvider)
+        if (context.GpuWorkspace.Provider is not GSharpAotProvider && context.GpuWorkspace.Provider is not NativeProvider)
         {
             CSharpBigFloatArithmetic.Instance.Sqrt(ref context, valueSig, valueExp, valueSign, resultSig, out resultExp, out resultSign);
             return;
@@ -251,17 +251,17 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var stream = context.Stream;
         var e = valueExp;
 
-        using var valueOperand = new GpuUIntBigInteger(context.GpuContext, valueSig.NumWords);
-        context.GpuContext.Provider.CopyDeviceToDevice(valueOperand.DevicePointer,
+        using var valueOperand = new GpuUIntBigInteger(context.GpuWorkspace, valueSig.NumWords);
+        context.GpuWorkspace.Provider.CopyDeviceToDevice(valueOperand.DevicePointer,
             IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, stream);
 
-        var isZero = context.GpuContext.Provider.IsZero(context.GpuContext, valueOperand);
+        var isZero = context.GpuWorkspace.Provider.IsZero(context.GpuWorkspace, valueOperand);
         if (isZero)
         {
             resultExp = 0;
             resultSign = false;
             var zeros = new uint[resultSig.NumWords];
-            context.GpuContext.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+            context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
                 zeros, resultSig.NumWords, stream);
             return;
         }
@@ -275,18 +275,18 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         }
 
         var shiftedWords = valueSig.NumWords + (totalShift / 32) + 1;
-        using var largeOperand = context.GpuContext.RentTemp(shiftedWords);
-        context.GpuContext.Provider.ClearMemoryAsync(largeOperand.DevicePointer, shiftedWords, stream);
-        context.GpuContext.Provider.CopyDeviceToDevice(largeOperand.DevicePointer, valueOperand.DevicePointer,
+        using var largeOperand = context.GpuWorkspace.RentTemp(shiftedWords);
+        context.GpuWorkspace.Provider.ClearMemoryAsync(largeOperand.DevicePointer, shiftedWords, stream);
+        context.GpuWorkspace.Provider.CopyDeviceToDevice(largeOperand.DevicePointer, valueOperand.DevicePointer,
             valueSig.NumWords, stream);
 
-        using var shiftedOperand = context.GpuContext.RentTemp(shiftedWords);
-        context.GpuContext.Provider.ClearMemoryAsync(shiftedOperand.DevicePointer, shiftedWords, stream);
+        using var shiftedOperand = context.GpuWorkspace.RentTemp(shiftedWords);
+        context.GpuWorkspace.Provider.ClearMemoryAsync(shiftedOperand.DevicePointer, shiftedWords, stream);
 
-        context.GpuContext.Provider.ShiftLeft(context.GpuContext, largeOperand, totalShift, shiftedOperand);
+        context.GpuWorkspace.Provider.ShiftLeft(context.GpuWorkspace, largeOperand, totalShift, shiftedOperand);
 
-        using var sqrtResult = context.GpuContext.RentTemp(shiftedWords);
-        context.GpuContext.Provider.ClearMemoryAsync(sqrtResult.DevicePointer, shiftedWords, stream);
+        using var sqrtResult = context.GpuWorkspace.RentTemp(shiftedWords);
+        context.GpuWorkspace.Provider.ClearMemoryAsync(sqrtResult.DevicePointer, shiftedWords, stream);
 
         GpuBigIntDivRem.Sqrt(shiftedOperand, sqrtResult);
 
@@ -308,7 +308,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         }
 
         var tempWords = resultSig.NumWords;
-        using var sqrtResult = context.GpuContext.RentTemp(tempWords);
+        using var sqrtResult = context.GpuWorkspace.RentTemp(tempWords);
         var sqrtHandle = new BigIntMemoryHandle(sqrtResult.Handle.Buffer, sqrtResult.Handle.WordOffset, tempWords);
 
         Sqrt(ref context, valueSig, valueExp, valueSign, sqrtHandle, out var sqrtExp, out var sqrtSign);
@@ -357,7 +357,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var deviceResult = IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4);
 
         var success = NativeMethods.GpuBigFloat_DivideByUInt32(
-            context.GpuContext.WorkspacePointer, deviceA, deviceResult, valueSig.NumWords, divisor, out remainder,
+            context.GpuWorkspace.WorkspacePointer, deviceA, deviceResult, valueSig.NumWords, divisor, out remainder,
             context.Stream);
 
         if (!success)

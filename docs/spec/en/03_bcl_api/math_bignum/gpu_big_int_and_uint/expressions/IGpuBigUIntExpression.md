@@ -33,19 +33,19 @@ int NumWords { get; }
 
 | Name                                                                              | Description                                                            |
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| [Evaluate(GpuContext, GpuUIntBigInteger?)](#evaluategpucontext-gpuuintbiginteger) | Evaluates this expression on the GPU into the specified target buffer. |
+| [Evaluate(GpuWorkspace, GpuUIntBigInteger?)](#evaluategpuworkspace-gpuuintbiginteger) | Evaluates this expression on the GPU into the specified target buffer. |
 
-## Evaluate(GpuContext, GpuUIntBigInteger?)
+## Evaluate(GpuWorkspace, GpuUIntBigInteger?)
 
 Evaluates this expression on the GPU into the specified target buffer.
 
 ```csharp
-GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null);
+GpuUIntBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
+`workspace` _GpuWorkspace_<br>
 The active GPU execution context.
 
 `targetResult` _GpuUIntBigInteger?_<br>
@@ -77,15 +77,15 @@ using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
-using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
-using var left = new GpuUIntBigInteger(context, new uint[] { 500 });
-using var right = new GpuUIntBigInteger(context, new uint[] { 700 });
+using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+using var left = new GpuUIntBigInteger(workspace, new uint[] { 500 });
+using var right = new GpuUIntBigInteger(workspace, new uint[] { 700 });
 
 IGpuBigUIntExpression expression = new CustomAddNode(left, right);
-using var result = expression.Evaluate(context);
+using var result = expression.Evaluate(workspace);
 
 var resultData = new uint[1];
-context.Provider.CopyDeviceToHost(resultData, result.DevicePointer, 1);
+workspace.Provider.CopyDeviceToHost(resultData, result.DevicePointer, 1);
 
 Console.WriteLine($"500 + 700 = {resultData[0]}");
 
@@ -102,10 +102,10 @@ public class CustomAddNode : IGpuBigUIntExpression
 
     public int NumWords => System.Math.Max(_left.NumWords, _right.NumWords) + 1;
 
-    public GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null)
+    public GpuUIntBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null)
     {
-        var resultBuf = targetResult ?? new GpuUIntBigInteger(context, NumWords);
-        context.Provider.Add(context, _left, _right, resultBuf);
+        var resultBuf = targetResult ?? new GpuUIntBigInteger(workspace, NumWords);
+        workspace.Provider.Add(workspace, _left, _right, resultBuf);
         return resultBuf;
     }
 }

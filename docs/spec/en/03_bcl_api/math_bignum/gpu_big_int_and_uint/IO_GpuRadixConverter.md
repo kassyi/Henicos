@@ -23,20 +23,20 @@ public static class GpuRadixConverter
 
 | Name | Description |
 | --- | --- |
-| [ConvertAndWrite(GpuContext, GpuUIntBigInteger, int, TextWriter, bool)](#convertandwritegpucontext-gpuuintbiginteger-int-textwriter-bool) | Converts a `GpuUIntBigInteger` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`. |
+| [ConvertAndWrite(GpuWorkspace, GpuUIntBigInteger, int, TextWriter, bool)](#convertandwritegpuworkspace-gpuuintbiginteger-int-textwriter-bool) | Converts a `GpuUIntBigInteger` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`. |
 
-## ConvertAndWrite(GpuContext, GpuUIntBigInteger, int, TextWriter, bool)
+## ConvertAndWrite(GpuWorkspace, GpuUIntBigInteger, int, TextWriter, bool)
 
 Converts a `GpuUIntBigInteger` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`.
 
 ```csharp
-public static void ConvertAndWrite(GpuContext context, GpuUIntBigInteger value, int targetDigits, TextWriter writer, bool isMostSignificant = false);
+public static void ConvertAndWrite(GpuWorkspace workspace, GpuUIntBigInteger value, int targetDigits, TextWriter writer, bool isMostSignificant = false);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU computation context.
+`workspace` _GpuWorkspace_<br>
+The GPU computation workspace.
 
 `value` _GpuUIntBigInteger_<br>
 The integer to convert.
@@ -53,7 +53,7 @@ True if formatting the integer part with a decimal point (e.g. "3.1415...").
 #### Exceptions
 
 `ArgumentNullException`<br>
-Thrown when `context`, `value`, or `writer` is `null`.
+Thrown when `workspace`, `value`, or `writer` is `null`.
 
 `ArgumentOutOfRangeException`<br>
 Thrown when `targetDigits` is negative or zero.
@@ -73,10 +73,10 @@ using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.IO;
 
-using var context = new GpuContext(2048, GpuExecutionEngine.GSharpAot);
+using var workspace = new GpuWorkspace(2048, GpuExecutionEngine.GSharpAot);
 
 // Assume we just finished calculating a massive factorial or Pi
-GpuUIntBigInteger resultGpu = GpuUIntBigInteger.FromBigInteger(context, System.Numerics.BigInteger.Parse("12345678901234567890"), minWords: 2);
+GpuUIntBigInteger resultGpu = GpuUIntBigInteger.FromBigInteger(workspace, System.Numerics.BigInteger.Parse("12345678901234567890"), minWords: 2);
 
 Console.WriteLine("Starting base-10 conversion...");
 
@@ -84,7 +84,7 @@ Console.WriteLine("Starting base-10 conversion...");
 // and streams the result directly to a file without allocating a massive string.
 using (var writer = new StreamWriter("result.txt"))
 {
-    GpuRadixConverter.ConvertAndWrite(context, resultGpu, targetDigits: 20, writer);
+    GpuRadixConverter.ConvertAndWrite(workspace, resultGpu, targetDigits: 20, writer);
 }
 
 string output = File.ReadAllText("result.txt");
@@ -93,7 +93,7 @@ Console.WriteLine($"Conversion complete. Output: {output}");
 
 ## Remarks
 
-Because the conversion involves hundreds of recursive Division and Remainder (`DivRem`) operations, it requires a significant amount of temporary memory. The converter automatically utilizes the `GpuContext` memory pool.
+Because the conversion involves hundreds of recursive Division and Remainder (`DivRem`) operations, it requires a significant amount of temporary memory. The converter automatically utilizes the `GpuWorkspace` memory pool.
 
 ## See also
 
@@ -101,5 +101,5 @@ Because the conversion involves hundreds of recursive Division and Remainder (`D
 
 - [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuContext](../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+- [GpuWorkspace](../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
 - [GpuUIntBigInteger](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuUIntBigInteger.md)

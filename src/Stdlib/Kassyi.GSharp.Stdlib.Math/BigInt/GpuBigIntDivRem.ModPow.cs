@@ -11,33 +11,33 @@ public static partial class GpuBigIntDivRem
         var n = baseVal.NumWords;
         var expWords = exp.NumWords;
 
-        using var mod2N = new GpuUIntBigInteger(baseVal.Context, 2 * n);
+        using var mod2N = new GpuUIntBigInteger(baseVal.Workspace, 2 * n);
         mod2N.CopyFrom(mod, numWords: n);
 
-        using var tempResult = new GpuUIntBigInteger(baseVal.Context, 2 * n);
+        using var tempResult = new GpuUIntBigInteger(baseVal.Workspace, 2 * n);
         tempResult.Clear();
-        tempResult.Context.Provider.CopyHostToDevice(tempResult.DevicePointer, [1u], 1, tempResult.Context.Stream);
+        tempResult.Workspace.Provider.CopyHostToDevice(tempResult.DevicePointer, [1u], 1, tempResult.Workspace.Stream);
 
-        using var tempBase = new GpuUIntBigInteger(baseVal.Context, 2 * n);
+        using var tempBase = new GpuUIntBigInteger(baseVal.Workspace, 2 * n);
         tempBase.CopyFrom(baseVal, numWords: n);
 
         // Initial reduction of base
-        using var tempBaseQ = new GpuUIntBigInteger(baseVal.Context, 2 * n);
-        using var tempBaseR = new GpuUIntBigInteger(baseVal.Context, 2 * n);
+        using var tempBaseQ = new GpuUIntBigInteger(baseVal.Workspace, 2 * n);
+        using var tempBaseR = new GpuUIntBigInteger(baseVal.Workspace, 2 * n);
         DivRem(tempBase, mod2N, tempBaseQ, tempBaseR);
         tempBase.CopyFrom(tempBaseR);
 
-        using var tempMul = new GpuUIntBigInteger(baseVal.Context, 4 * n);
-        using var tempQ = new GpuUIntBigInteger(baseVal.Context, 4 * n);
-        using var tempR = new GpuUIntBigInteger(baseVal.Context, 4 * n);
+        using var tempMul = new GpuUIntBigInteger(baseVal.Workspace, 4 * n);
+        using var tempQ = new GpuUIntBigInteger(baseVal.Workspace, 4 * n);
+        using var tempR = new GpuUIntBigInteger(baseVal.Workspace, 4 * n);
 
-        using var mod4N = new GpuUIntBigInteger(baseVal.Context, 4 * n);
+        using var mod4N = new GpuUIntBigInteger(baseVal.Workspace, 4 * n);
         mod4N.CopyFrom(mod, numWords: n);
 
         var hostExp = ArrayPool<uint>.Shared.Rent(expWords);
         try
         {
-            exp.Context.Provider.CopyDeviceToHost(hostExp, exp.DevicePointer, expWords, exp.Context.Stream);
+            exp.Workspace.Provider.CopyDeviceToHost(hostExp, exp.DevicePointer, expWords, exp.Workspace.Stream);
 
             for (var i = 0; i < expWords; i++)
             {

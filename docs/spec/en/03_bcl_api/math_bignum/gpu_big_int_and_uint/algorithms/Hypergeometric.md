@@ -50,16 +50,16 @@ using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 // Execution Context: Host (CPU)
 
-using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
 // Initialize some placeholder values
-var pLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
-var qLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
-var tLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+var pLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
+var qLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
+var tLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
 
-var pRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
-var qRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
-var tRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+var pRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
+var qRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
+var tRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
 
 // The binary splitting combination formula:
 // P_new = P_left * P_right
@@ -72,13 +72,13 @@ var qNewExpr = qLeft * qRight;
 var tNewExpr = (tLeft * qRight) + (pLeft * tRight);
 
 // 2. Evaluate concurrently using the Context pool
-using var pNewDest = new GpuUIntBigInteger(context, 8);
+using var pNewDest = new GpuUIntBigInteger(workspace, 8);
 var pNew = pNewExpr.Evaluate(pNewDest);
 
-using var qNewDest = new GpuUIntBigInteger(context, 8);
+using var qNewDest = new GpuUIntBigInteger(workspace, 8);
 var qNew = qNewExpr.Evaluate(qNewDest);
 
-using var tNewDest = new GpuUIntBigInteger(context, 8);
+using var tNewDest = new GpuUIntBigInteger(workspace, 8);
 var tNew = tNewExpr.Evaluate(tNewDest);
 
 Console.WriteLine($"pNew = {pNew.Value.ToBigInteger(pNew.IsNegative)}");

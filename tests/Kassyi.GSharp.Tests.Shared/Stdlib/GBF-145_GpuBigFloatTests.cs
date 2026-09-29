@@ -19,7 +19,7 @@ public class GBF145_GpuBigFloatTests
     public void Test_GBF145_SignRules_Addition(bool isNegA, bool isNegB, bool expectedIsNeg)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var sigA = new GpuUIntBigInteger(context, new uint[] { 10, 0, 0, 0 });
         using var sigB = new GpuUIntBigInteger(context, new uint[] { 2, 0, 0, 0 });
@@ -42,7 +42,7 @@ public class GBF145_GpuBigFloatTests
     public void Test_GBF145_ExponentArithmetic_BoundaryValues(int exp)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var sig = new GpuUIntBigInteger(context, new uint[] { 0xAAAAAAAA, 0x55555555, 0xFFFFFFFF, 0x80000000 });
         var floatVal = new GpuBigFloat(sig, exp, isNegative: false);
@@ -58,7 +58,7 @@ public class GBF145_GpuBigFloatTests
     public void Test_GBF145_ZeroSignificandNormalization_FlushesToZeroExponent()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var zeroSig = new GpuUIntBigInteger(context, new uint[] { 0, 0, 0, 0 });
         using var valSig = new GpuUIntBigInteger(context, new uint[] { 42, 0, 0, 0 });
@@ -80,7 +80,7 @@ public class GBF145_GpuBigFloatTests
     public void Test_GBF145_DivisionByZeroSignificand_ThrowsOrDetectsZeroDivisor()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var zeroSig = new GpuUIntBigInteger(context, new uint[] { 0, 0, 0, 0 });
         var floatZero = new GpuBigFloat(zeroSig, 0, isNegative: false);

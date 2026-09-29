@@ -15,7 +15,7 @@ public class GBI146_GpuBigIntegerTests
     public void Test_GBI146_ConstructorAndProperties_StoreCorrectValues()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var uintVal = new GpuUIntBigInteger(context, 4);
         var posBigInt = new GpuBigInteger(uintVal, isNegative: false);
@@ -50,7 +50,7 @@ public class GBI146_GpuBigIntegerTests
         uint valA, bool negA, uint valB, bool negB, int expectedCmp)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var uA = valA == 0 ? new GpuUIntBigInteger(context, 4) : GpuUIntBigInteger.FromBigInteger(context, valA, 4);
         using var uB = valB == 0 ? new GpuUIntBigInteger(context, 4) : GpuUIntBigInteger.FromBigInteger(context, valB, 4);
@@ -103,7 +103,7 @@ public class GBI146_GpuBigIntegerTests
     public void Test_GBI146_SignedMultiplicationAndDivisionExpressions_SignRules(bool negA, bool negB, bool expectedNeg)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var uA = GpuUIntBigInteger.FromBigInteger(context, 100, 4);
         using var uB = GpuUIntBigInteger.FromBigInteger(context, 20, 4);
@@ -131,7 +131,7 @@ public class GBI146_GpuBigIntegerTests
     public void Test_GBI146_SignedAdditionExpression_SameSigns_Succeeds(bool negA, bool negB, bool expectedNeg)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var uA = GpuUIntBigInteger.FromBigInteger(context, 10, 4);
         using var uB = GpuUIntBigInteger.FromBigInteger(context, 5, 4);
@@ -162,7 +162,7 @@ public class GBI146_GpuBigIntegerTests
     public void Test_GBI146_SignedAdditionExpression_DifferentSigns_Succeeds(uint valA, bool negA, uint valB, bool negB, uint expectedVal, bool expectedNeg)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var uA = valA == 0 ? new GpuUIntBigInteger(context, 4) : GpuUIntBigInteger.FromBigInteger(context, valA, 4);
         using var uB = valB == 0 ? new GpuUIntBigInteger(context, 4) : GpuUIntBigInteger.FromBigInteger(context, valB, 4);
@@ -190,7 +190,7 @@ public class GBI146_GpuBigIntegerTests
     public void Test_GBI146_SignedSubtractionExpression_DifferentSigns_Succeeds(bool negA, bool negB, bool expectedNeg)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var uA = GpuUIntBigInteger.FromBigInteger(context, 10, 4);
         using var uB = GpuUIntBigInteger.FromBigInteger(context, 5, 4);
@@ -222,7 +222,7 @@ public class GBI146_GpuBigIntegerTests
     public void Test_GBI146_SignedSubtractionExpression_SameSigns_Succeeds(uint valA, bool negA, uint valB, bool negB, uint expectedVal, bool expectedNeg)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var uA = valA == 0 ? new GpuUIntBigInteger(context, 4) : GpuUIntBigInteger.FromBigInteger(context, valA, 4);
         using var uB = valB == 0 ? new GpuUIntBigInteger(context, 4) : GpuUIntBigInteger.FromBigInteger(context, valB, 4);
@@ -247,7 +247,7 @@ public class GBI146_GpuBigIntegerTests
     public void Test_GBI146_UnaryOperators_NegationAndBitwiseNot()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var uA = new GpuUIntBigInteger(context, 4);
         var a = new GpuBigInteger(uA, isNegative: false);
@@ -271,7 +271,7 @@ public class GBI146_GpuBigIntegerTests
     public void Test_GBI146_Evaluate_SadPaths_ThrowsAndReleasesBuffers()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
         using var uA_4 = GpuUIntBigInteger.FromBigInteger(context, 10, 4);
         using var uB_4 = GpuUIntBigInteger.FromBigInteger(context, 0, 4); // For division by zero

@@ -18,7 +18,7 @@ Because of the **Lazy Evaluation** architecture, these operators **do not execut
 
 > [!WARNING]
 > **Host-Side Allocations Occur Here**
-> Although GSharp enforces a strict zero-allocation policy on the GPU device and avoids `cudaMalloc` by using `GpuContext` pooling, constructing this Abstract Syntax Tree (AST) via operator overloads _does_ allocate lightweight `class` nodes on the managed .NET heap. If you are operating in an extreme high-frequency loop on the CPU, building the expression tree itself will generate garbage.
+> Although GSharp enforces a strict zero-allocation policy on the GPU device and avoids `cudaMalloc` by using `GpuWorkspace` pooling, constructing this Abstract Syntax Tree (AST) via operator overloads _does_ allocate lightweight `class` nodes on the managed .NET heap. If you are operating in an extreme high-frequency loop on the CPU, building the expression tree itself will generate garbage.
 
 > [!NOTE]
 > **Behavioral Differences**
@@ -132,7 +132,7 @@ An expression tree node that computes the quotient when evaluated.
 ```csharp
 // Execution Context: Host (CPU)
 
-using var context = new GpuContext(maxWords: 1024);
+using var workspace = new GpuWorkspace(maxWords: 1024);
 
 var a = new GpuBigInteger(...);
 var b = new GpuBigInteger(...);
@@ -142,7 +142,7 @@ var c = new GpuBigInteger(...);
 var expr = (a + b) * c;
 
 // Evaluate the entire tree in one shot
-using var result = expr.Node.Evaluate(context, null);
+using var result = expr.Node.Evaluate(workspace, null);
 
 Console.WriteLine(result.ToBigInteger());
 ```

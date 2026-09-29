@@ -62,13 +62,13 @@ using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 // Execution Context: Host (CPU)
-using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
-using var uintA = GpuUIntBigInteger.FromBigInteger(context, new System.Numerics.BigInteger(150), 4);
-using var uintB = GpuUIntBigInteger.FromBigInteger(context, new System.Numerics.BigInteger(50), 4);
+using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+using var uintA = GpuUIntBigInteger.FromBigInteger(workspace, new System.Numerics.BigInteger(150), 4);
+using var uintB = GpuUIntBigInteger.FromBigInteger(workspace, new System.Numerics.BigInteger(50), 4);
 
 // GpuBigIntRef operators throw on CPU. We use AST expression evaluation to simulate the result.
 var sumExpr = uintA + uintB;
-using var sumResult = (GpuUIntBigInteger)sumExpr.Node.Evaluate(context, null);
+using var sumResult = (GpuUIntBigInteger)sumExpr.Node.Evaluate(workspace, null);
 
 Console.WriteLine($"Conceptually computes on GPU: 150 + 50 = {sumResult.ToBigInteger()}");
 ```
@@ -114,7 +114,7 @@ Overloads C# arithmetic operators to permit expressions like `a = b + c` inside 
 
 - [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuContext](../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+- [GpuWorkspace](../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
 
 ### Guides
 

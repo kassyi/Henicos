@@ -23,21 +23,21 @@ public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
 
 | Name                                                                       | Description                                                                                              |
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| [GpuUIntBigInteger(GpuContext, int)](#gpuuintbigintegergpucontext-int)     | Allocates uninitialized GPU device memory for an integer of the specified limb length.                   |
-| [GpuUIntBigInteger(GpuContext, uint[])](#gpuuintbigintegergpucontext-uint) | Allocates GPU device memory and initializes it with the provided host array in little-endian limb order. |
+| [GpuUIntBigInteger(GpuWorkspace, int)](#gpuuintbigintegergpuworkspace-int)     | Allocates uninitialized GPU device memory for an integer of the specified limb length.                   |
+| [GpuUIntBigInteger(GpuWorkspace, uint[])](#gpuuintbigintegergpuworkspace-uint) | Allocates GPU device memory and initializes it with the provided host array in little-endian limb order. |
 
-## GpuUIntBigInteger(GpuContext, int)
+## GpuUIntBigInteger(GpuWorkspace, int)
 
 Allocates uninitialized GPU device memory for an integer of the specified limb length.
 
 ```csharp
-public GpuUIntBigInteger(GpuContext context, int numWords);
+public GpuUIntBigInteger(GpuWorkspace workspace, int numWords);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The parent GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The parent GPU execution workspace.
 
 `numWords` _int_<br>
 The number of 32-bit limbs to allocate.
@@ -45,7 +45,7 @@ The number of 32-bit limbs to allocate.
 #### Exceptions
 
 `ArgumentNullException`<br>
-Thrown when `context` is `null`.
+Thrown when `workspace` is `null`.
 
 `OutOfMemoryException`<br>
 Thrown when device memory allocation fails.
@@ -53,18 +53,18 @@ Thrown when device memory allocation fails.
 `CudaException`<br>
 Thrown by the default backend when CUDA driver memory allocation fails.
 
-## GpuUIntBigInteger(GpuContext, uint[])
+## GpuUIntBigInteger(GpuWorkspace, uint[])
 
 Allocates GPU device memory and initializes it with the provided host array in little-endian limb order.
 
 ```csharp
-public GpuUIntBigInteger(GpuContext context, uint[] hostData);
+public GpuUIntBigInteger(GpuWorkspace workspace, uint[] hostData);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The parent GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The parent GPU execution workspace.
 
 `hostData` _uint[]_<br>
 The host data array containing 32-bit limbs in little-endian order.
@@ -72,7 +72,7 @@ The host data array containing 32-bit limbs in little-endian order.
 #### Exceptions
 
 `ArgumentNullException`<br>
-Thrown when `context` or `hostData` is `null`.
+Thrown when `workspace` or `hostData` is `null`.
 
 `OutOfMemoryException`<br>
 Thrown when device memory allocation fails.
@@ -84,19 +84,19 @@ Thrown when CUDA driver memory allocation or host-to-device memory copy fails.
 
 | Name                            | Description                                                                        |
 | ------------------------------- | ---------------------------------------------------------------------------------- |
-| [Context](#context)             | Gets the parent `GpuContext` associated with this instance.                        |
+| [Workspace](#workspace)             | Gets the parent `GpuWorkspace` associated with this instance.                        |
 | [DevicePointer](#devicepointer) | Gets the native GPU global device memory pointer holding the integer limb data.    |
 | [IsEven](#iseven)               | Gets a value indicating whether this big integer is an even number.                |
 | [IsNegative](#isnegative)       | Gets or sets the sign bit of this integer (stored in the MSB of the highest word). |
 | [NumWords](#numwords)           | Gets the total number of 32-bit words (limbs) allocated for this big integer.      |
 | [Value](#value)                 | Gets or sets the lazy expression wrapper assigned to this big integer buffer.      |
 
-## Context
+## Workspace
 
-Gets the parent `GpuContext` associated with this instance.
+Gets the parent `GpuWorkspace` associated with this instance.
 
 ```csharp
-public GpuContext Context { get; }
+public GpuWorkspace Context { get; }
 ```
 
 ## DevicePointer
@@ -147,11 +147,11 @@ public GpuBigUIntExpr Value { get; set; }
 | [ClearWord(int)](#clearwordint)                                                         | Clears the single word at the specified index to zero on the GPU.                                    |
 | [CompareTo(GpuUIntBigInteger)](#comparetogpuuintbiginteger)                             | Compares this big integer with another `GpuUIntBigInteger` buffer.                                   |
 | [CopyFrom(GpuUIntBigInteger, int, int, int?)](#copyfromgpuuintbiginteger-int-int-int)   | Copies words from a source `GpuUIntBigInteger` to this buffer on the GPU device.                     |
-| [CreatePowerOfTwo(GpuContext, int, int)](#createpoweroftwogpucontext-int-int)           | Creates a new `GpuUIntBigInteger` on the GPU representing `2^bitIndex`.                              |
-| [Dispose()](#dispose)                                                                   | Releases the allocated GPU device memory or returns the buffer to the context memory pool if pooled. |
+| [CreatePowerOfTwo(GpuWorkspace, int, int)](#createpoweroftwogpuworkspace-int-int)           | Creates a new `GpuUIntBigInteger` on the GPU representing `2^bitIndex`.                              |
+| [Dispose()](#dispose)                                                                   | Releases the allocated GPU device memory or returns the buffer to the workspace memory pool if pooled. |
 | [Equals(object?)](#equalsobject)                                                        | Determines whether this instance and a specified object have equivalent numerical value.             |
-| [Evaluate(GpuContext, GpuUIntBigInteger?)](#evaluategpucontext-gpuuintbiginteger)       | Evaluates the underlying GPU expression tree into the target buffer.                                 |
-| [FromBigInteger(GpuContext, BigInteger, int)](#frombigintegergpucontext-biginteger-int) | Creates a `GpuUIntBigInteger` by uploading a BCL `BigInteger` to the GPU.                            |
+| [Evaluate(GpuWorkspace, GpuUIntBigInteger?)](#evaluategpuworkspace-gpuuintbiginteger)       | Evaluates the underlying GPU expression tree into the target buffer.                                 |
+| [FromBigInteger(GpuWorkspace, BigInteger, int)](#frombigintegergpuworkspace-biginteger-int) | Creates a `GpuUIntBigInteger` by uploading a BCL `BigInteger` to the GPU.                            |
 | [GetBitLength()](#getbitlength)                                                         | Computes the total number of significant bits used to represent this integer on the GPU.             |
 | [GetByteCount()](#getbytecount)                                                         | Computes the total number of bytes required to hold this integer.                                    |
 | [GetHashCode()](#gethashcode)                                                           | Returns the hash code for this instance based on its GPU device memory address.                      |
@@ -233,18 +233,18 @@ The starting word offset in the source buffer.
 `numWords` _int?_<br>
 The number of 32-bit limbs to copy, or `null` to copy maximum available.
 
-## CreatePowerOfTwo(GpuContext, int, int)
+## CreatePowerOfTwo(GpuWorkspace, int, int)
 
 Creates a new `GpuUIntBigInteger` on the GPU representing `2^bitIndex`.
 
 ```csharp
-public static GpuUIntBigInteger CreatePowerOfTwo(GpuContext context, int numWords, int bitIndex);
+public static GpuUIntBigInteger CreatePowerOfTwo(GpuWorkspace workspace, int numWords, int bitIndex);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU context.
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
 
 `numWords` _int_<br>
 The allocated word count.
@@ -259,7 +259,7 @@ A new `GpuUIntBigInteger` holding the power of two value.
 
 ## Dispose()
 
-Releases the allocated GPU device memory or returns the buffer to the context memory pool if pooled.
+Releases the allocated GPU device memory or returns the buffer to the workspace memory pool if pooled.
 
 ```csharp
 public void Dispose();
@@ -283,18 +283,18 @@ The object to compare with the current object.
 _bool_<br>
 `true` if the specified object is equal to the current object; otherwise, `false`.
 
-## Evaluate(GpuContext, GpuUIntBigInteger?)
+## Evaluate(GpuWorkspace, GpuUIntBigInteger?)
 
 Evaluates the underlying GPU expression tree into the target buffer.
 
 ```csharp
-public GpuUIntBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null);
+public GpuUIntBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU execution context.
+`workspace` _GpuWorkspace_<br>
+The GPU execution workspace.
 
 `targetResult` _GpuUIntBigInteger?_<br>
 Optional destination buffer. If `null`, returns this instance.
@@ -304,18 +304,18 @@ Optional destination buffer. If `null`, returns this instance.
 _GpuUIntBigInteger_<br>
 The evaluated `GpuUIntBigInteger` result buffer.
 
-## FromBigInteger(GpuContext, BigInteger, int)
+## FromBigInteger(GpuWorkspace, BigInteger, int)
 
 Creates a `GpuUIntBigInteger` by uploading a BCL `BigInteger` to the GPU.
 
 ```csharp
-public static GpuUIntBigInteger FromBigInteger(GpuContext context, BigInteger val, int minWords = 0);
+public static GpuUIntBigInteger FromBigInteger(GpuWorkspace workspace, BigInteger val, int minWords = 0);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU context.
+`workspace` _GpuWorkspace_<br>
+The GPU workspace.
 
 `val` _BigInteger_<br>
 The BCL `BigInteger` to upload.
@@ -527,12 +527,12 @@ using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 // Execution Context: Host (CPU)
-using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-using var a = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(150), minWords: 4);
-using var b = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(50), minWords: 4);
-using var c = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(25), minWords: 4);
-using var result = new GpuUIntBigInteger(context, 8);
+using var a = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(150), minWords: 4);
+using var b = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(50), minWords: 4);
+using var c = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(25), minWords: 4);
+using var result = new GpuUIntBigInteger(workspace, 8);
 
 // Construct lazy expression tree: (a + b) * c
 result.Value = (a + b) * c;
@@ -584,7 +584,7 @@ All arithmetic and bitwise operations are executed on the GPU using SIMD/warp-le
 
 - [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuContext](../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+- [GpuWorkspace](../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
 
 ### Guides
 

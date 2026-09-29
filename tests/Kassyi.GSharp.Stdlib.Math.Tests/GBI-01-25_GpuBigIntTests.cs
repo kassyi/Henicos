@@ -15,9 +15,9 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
         CudaCapability.EnsureGpuAvailable();
             // Stress test the internal pools (e.g. _carryBufferPool, _tempPool) to expose concurrency issues
-            // across multiple concurrent threads sharing the same GpuContext instance.
+            // across multiple concurrent threads sharing the same GpuWorkspace instance.
             var exceptions = new ConcurrentBag<Exception>();
-            using var sharedCtx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+            using var sharedCtx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
 
             Parallel.For(0, 100, i =>
             {
@@ -46,7 +46,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_GBI03_GpuReductionCompareAndFlags()
         {
             CudaCapability.EnsureGpuAvailable();
-            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+            using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
             
             // Typical case
             using var a = new GpuUIntBigInteger(ctx, new uint[] { 100, 200, 300, 400 });
@@ -85,7 +85,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_GBI04_DirectSquarePointwiseKernel()
         {
             CudaCapability.EnsureGpuAvailable();
-            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+            using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
             using var a = new GpuUIntBigInteger(ctx, new uint[] { 123456789, 0, 0, 0 });
             using var result = new GpuUIntBigInteger(ctx, 8);
             
@@ -103,7 +103,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
         CudaCapability.EnsureGpuAvailable();
             // Issue #112 & #117: Test large GCD to trigger pipeline stalls / TDR issues.
-            using var ctx = new GpuContext(128, GpuExecutionEngine.GSharpAot);
+            using var ctx = new GpuWorkspace(128, GpuExecutionEngine.GSharpAot);
             
             var arrA = GenerateRandomArray(128, 42); // 4096-bit number
             var arrB = GenerateRandomArray(128, 43);
@@ -127,7 +127,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
         CudaCapability.EnsureGpuAvailable();
             // Expose missing kernel fusion & temporary memory leaks in ExpressionEvaluator.
-            using var ctx = new GpuContext(16, GpuExecutionEngine.GSharpAot);
+            using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
             using var a = new GpuUIntBigInteger(ctx, new uint[] { 100, 0, 0, 0 });
             using var b = new GpuUIntBigInteger(ctx, new uint[] { 200, 0, 0, 0 });
             using var c = new GpuUIntBigInteger(ctx, new uint[] { 300, 0, 0, 0 });
@@ -164,7 +164,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_Add_CarryPropagation_AllOnes(GpuExecutionEngine engine)
         {
             CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 2 + 8, engine); // Extra capacity just in case
+            using var context = new GpuWorkspace(TestSizeWords * 2 + 8, engine); // Extra capacity just in case
             
             // Create an array with all bits set to 1, except the highest bit of the highest word
             // to ensure it is treated as a positive number by BigInteger.
@@ -255,7 +255,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_Scalar_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 2, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 40);
 
             // To test carry propagation in Add, we can force the first word to be 0xFFFFFFFF
@@ -401,7 +401,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_ModuloOperator_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 3, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 3, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 62);
             var arrB = GenerateRandomArray(TestSizeWords, 63);
             arrB[TestSizeWords - 1] &= 0x7FFFFFFF;
@@ -424,7 +424,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_Bitwise_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 2, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 22);
             var arrB = GenerateRandomArray(TestSizeWords, 23);
 
@@ -459,7 +459,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_ShiftLeft_Correctness(GpuExecutionEngine engine, int shiftBits)
         {
             CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 2, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 5);
 
             var bigA = ToBigInteger(arrA);
@@ -487,7 +487,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_ShiftRight_Correctness(GpuExecutionEngine engine, int shiftBits)
         {
             CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 2, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 6);
 
             var bigA = ToBigInteger(arrA);
@@ -507,7 +507,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_ComparisonOperators_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 2, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 70);
             var arrB = GenerateRandomArray(TestSizeWords, 70); // Same for equal tests
             var arrC = GenerateRandomArray(TestSizeWords, 71);
@@ -544,7 +544,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_ComparisonOperators_ReductionEdgeCases(GpuExecutionEngine engine)
         {
             CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 2, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 2, engine);
 
             // Edge Case: All zeros
             var arrZero1 = new uint[TestSizeWords];
@@ -600,7 +600,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_DivRem_Mod_ModPow_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 3, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 3, engine);
 
             var arrA = GenerateRandomArray(TestSizeWords, 60);
             var arrB = GenerateRandomArray(TestSizeWords, 61);
@@ -635,7 +635,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_DivRem_EdgeCases(GpuExecutionEngine engine)
         {
             CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 3, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 3, engine);
 
             var arrA = new uint[TestSizeWords];
             var arrB = new uint[TestSizeWords];
@@ -708,7 +708,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_Square_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 4, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 4, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 90);
             var bigA = ToBigInteger(arrA);
 
@@ -761,7 +761,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_Gcd_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 2, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 2, engine);
 
             // Generate two random big integers
             var arrA = GenerateRandomArray(TestSizeWords, 50);
@@ -790,7 +790,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_GBI20_Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(10, engine);
+            using var context = new GpuWorkspace(10, engine);
             var arrEmpty = Array.Empty<uint>();
 
             Assert.ThrowsAny<Exception>(() =>
@@ -822,7 +822,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_GBI20_Gcd_SingleElement_ReturnsCorrectGcd(GpuExecutionEngine engine, uint valA, uint valB)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(10, engine);
+            using var context = new GpuWorkspace(10, engine);
             var arrA = new uint[] { valA };
             var arrB = new uint[] { valB };
 
@@ -853,7 +853,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_CompareTo_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 2, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 2, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 20);
             var arrB = GenerateRandomArray(TestSizeWords, 20); // Same array
 
@@ -877,7 +877,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_LengthProperties_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords, engine);
+            using var context = new GpuWorkspace(TestSizeWords, engine);
             var arrA = GenerateRandomArray(TestSizeWords, 80);
 
             // To make testing exact sizes easier, set specific top bit
@@ -909,7 +909,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
         CudaCapability.EnsureGpuAvailable();
             const int stressWords = 65536;
-            using var context = new GpuContext(stressWords, engine);
+            using var context = new GpuWorkspace(stressWords, engine);
             var arr = new uint[stressWords];
             var rnd = new Random(42);
             for (int i = 0; i < stressWords / 2; i++)
@@ -936,7 +936,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_State_Correctness(GpuExecutionEngine engine)
         {
         CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 2, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 2, engine);
             var zeroArr = new uint[TestSizeWords];
             var oneArr = new uint[TestSizeWords];
             oneArr[0] = 1;
@@ -977,7 +977,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         {
         CudaCapability.EnsureGpuAvailable();
             var sizeWords = 16;
-            using var context = new GpuContext(sizeWords * 8, engine);
+            using var context = new GpuWorkspace(sizeWords * 8, engine);
 
             var arrA = GenerateRandomArray(sizeWords, 123);
             // Ensure A is fairly large so we can test convergence well
@@ -1003,7 +1003,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_Sqrt_EdgeCases(GpuExecutionEngine engine)
         {
             CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 4, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 4, engine);
             var arrA = new uint[TestSizeWords];
 
             // Case 1: a = 0
@@ -1040,7 +1040,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         [InlineData(GpuExecutionEngine.GSharpAot)]
         public void Test_ModPow_Correctness(GpuExecutionEngine engine)
         {
-            using var context = new GpuContext(TestSizeWords * 13, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 13, engine);
 
             var arrBase = GenerateRandomArray(TestSizeWords, 800);
             var arrExp = GenerateRandomArray(1, 801); // Very small exponent for testing speed
@@ -1074,7 +1074,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
         public void Test_ModPow_EdgeCases(GpuExecutionEngine engine)
         {
             CudaCapability.EnsureGpuAvailable();
-            using var context = new GpuContext(TestSizeWords * 13, engine);
+            using var context = new GpuWorkspace(TestSizeWords * 13, engine);
             var arrBase = new uint[TestSizeWords];
             var arrExp = new uint[TestSizeWords];
             var arrMod = new uint[TestSizeWords];
@@ -1158,7 +1158,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             int inputWords = -1)
         {
             var size = inputWords > 0 ? inputWords : TestSizeWords;
-            using var context = new GpuContext(contextWords, engine);
+            using var context = new GpuWorkspace(contextWords, engine);
             var arrA = GenerateRandomArray(size, 100);
             var arrB = GenerateRandomArray(size, 101);
 
@@ -1238,7 +1238,7 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             CudaCapability.EnsureGpuAvailable();
             using var scope = new GpuKernelLoader.CudaContextScope();
             var engine = GpuExecutionEngine.GSharpAot;
-            using var context = new GpuContext(1024, engine);
+            using var context = new GpuWorkspace(1024, engine);
 
             var arrA = GenerateRandomArray(256, 42);
             var arrB = GenerateRandomArray(256, 43);

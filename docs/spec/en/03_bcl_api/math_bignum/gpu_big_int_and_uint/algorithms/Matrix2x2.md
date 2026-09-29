@@ -32,7 +32,7 @@ $$
 Initializes a new instance of the 2x2 matrix.
 
 ```csharp
-public GpuBigIntMatrix2x2(GpuContext context, int wordCount, bool oddStep);
+public GpuBigIntMatrix2x2(GpuWorkspace workspace, int wordCount, bool oddStep);
 ```
 
 #### Parameters
@@ -83,11 +83,11 @@ A struct holding AST nodes for the resulting multiplication.
 ```csharp
 // Execution Context: Host (CPU)
 
-using var context = new GpuContext(maxWords: 1024);
+using var workspace = new GpuWorkspace(maxWords: 1024);
 
 // Initial transition matrix for Fibonacci: [[1, 1], [1, 0]]
-var gpuOne = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1));
-var gpuZero = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 0));
+var gpuOne = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1));
+var gpuZero = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 0));
 
 var transitionMatrix = new GpuBigIntMatrix2x2(
     m00: gpuOne, m01: gpuOne,
@@ -99,7 +99,7 @@ var transitionMatrix = new GpuBigIntMatrix2x2(
 var resultMatrix = MatrixModPow(transitionMatrix, N); // Custom host loop calling Matrix.Multiply
 
 // Evaluate the final element (M10 contains F_N)
-using var fibN = resultMatrix.M10.Node.Evaluate(context, null);
+using var fibN = resultMatrix.M10.Node.Evaluate(workspace, null);
 Console.WriteLine($"Fibonacci({N}): {fibN.ToBigInteger()}");
 ```
 

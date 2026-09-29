@@ -6161,8 +6161,8 @@
     },
     "details": {
       "current_behavior": "Achieved deterministic zero-allocation, cleanups, and memory leak elimination by introducing ScopedGpuMemory (including addressing Qodo feedback).",
-      "strategy": "Implemented thread-safe pooling using Lazy<ConcurrentBag<T>> in GpuContext and GSharpJitProvider to prevent race conditions and allocation overhead during initialization.",
-      "csharp_example": "// CPU side: Scoped memory management using GpuContext\nusing var context = new GpuContext();\nvar bigInt = new GpuBigInteger(context, \"12345678901234567890\");\n\n// Internally, GSharpJitProvider manages ScopedGpuMemory allocation from a ConcurrentBag pool",
+      "strategy": "Implemented thread-safe pooling using Lazy<ConcurrentBag<T>> in GpuWorkspace and GSharpJitProvider to prevent race conditions and allocation overhead during initialization.",
+      "csharp_example": "// CPU side: Scoped memory management using GpuWorkspace\nusing var context = new GpuWorkspace();\nvar bigInt = new GpuBigInteger(context, \"12345678901234567890\");\n\n// Internally, GSharpJitProvider manages ScopedGpuMemory allocation from a ConcurrentBag pool",
       "cpp_example": "/* Memory Pool context operates on the Host (C#) to safely reuse device memory blocks */\n// (C++ diagnostic representation: No direct transpilation for this host-side logic)"
     },
     "score": 28,
@@ -6250,7 +6250,7 @@
     "details": {
       "current_behavior": "CPU transfers for checks like CompareTo, GetBitLength, IsZero, IsOne, IsEven have been abolished and successfully migrated to parallel reduction and dedicated kernel processing on the GPU side.",
       "strategy": "Executes parallel reduction kernels on the GPU side, eliminating host transfer overhead. Implementation complete.",
-      "csharp_example": "// CPU Host code invoking GpuBigInteger methods\nusing var context = new GpuContext();\nvar a = new GpuBigInteger(context, \"9999\");\n\n// IsZero check is fully executed via parallel reduction on GPU, eliminating fallback CPU data transfers\nbool isZero = a.IsZero();\nint bitLength = a.GetBitLength();",
+      "csharp_example": "// CPU Host code invoking GpuBigInteger methods\nusing var context = new GpuWorkspace();\nvar a = new GpuBigInteger(context, \"9999\");\n\n// IsZero check is fully executed via parallel reduction on GPU, eliminating fallback CPU data transfers\nbool isZero = a.IsZero();\nint bitLength = a.GetBitLength();",
       "cpp_example": "/* Parallel reduction kernels launched internally by the provider */\n// e.g. Launch -> __global__ void IsZeroKernel(uint32_t* data, bool* result)"
     },
     "score": 29,
@@ -6291,7 +6291,7 @@
     "details": {
       "current_behavior": "Currently GSharpAotProvider.Square is substituting it by calling the generic Mul(A, A, Result). The dedicated squaring routine (Device_NTT_PointwiseSquare) existing on the Native side is bypassed on the JIT side.",
       "strategy": "On the JIT side, directly dispatches a Pointwise kernel dedicated for squaring, cutting the number of NTT transforms and multiplication complexity in half.",
-      "csharp_example": "using var context = new GpuContext();\nvar a = new GpuBigInteger(context, \"999999999999\");\n\n// Dispatches a dedicated squaring NTT kernel instead of general Mul(A, A)\nvar squared = GpuBigInteger.Square(a);",
+      "csharp_example": "using var context = new GpuWorkspace();\nvar a = new GpuBigInteger(context, \"999999999999\");\n\n// Dispatches a dedicated squaring NTT kernel instead of general Mul(A, A)\nvar squared = GpuBigInteger.Square(a);",
       "cpp_example": "/* Dispatches Device_NTT_PointwiseSquare kernel cutting the number of transforms in half */\n// Launch -> __global__ void Device_NTT_PointwiseSquare(...)"
     },
     "score": 28,
@@ -6345,7 +6345,7 @@
     "details": {
       "current_behavior": "The current GCD implementation relies on sequential quotient estimation with a single block / few threads, limiting scalability for extremely large digits (tens to hundreds of thousands of words).",
       "strategy": "Considering parallel GPU implementation of Half-GCD / Matrix-based GCD.",
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\nusing var context = new GpuContext();\nvar a = new GpuBigInteger(context, \"999999999999\");\nvar b = new GpuBigInteger(context, \"123456789012\");\n\n// Calculates GCD utilizing parallel GPU kernels for extremely large integers\nvar gcd = GpuBigInteger.GreatestCommonDivisor(a, b);",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\nusing var context = new GpuWorkspace();\nvar a = new GpuBigInteger(context, \"999999999999\");\nvar b = new GpuBigInteger(context, \"123456789012\");\n\n// Calculates GCD utilizing parallel GPU kernels for extremely large integers\nvar gcd = GpuBigInteger.GreatestCommonDivisor(a, b);",
       "cpp_example": "/* Dispatches parallel Half-GCD / Matrix-based GCD kernels to avoid sequential bottlenecks on large digits */\n// Launch -> __global__ void Device_HalfGcd_Parallel(...)"
     },
     "score": 11,
@@ -6402,7 +6402,7 @@
     "details": {
       "current_behavior": "Current expression trees sequentially dispatch individual kernels (Add, Sub, Bitwise, etc.), consuming VRAM read/write bandwidth for intermediate buffers.",
       "strategy": "JIT廃止に伴い、実行時動的フュージョンから、Roslyn Source Generator (AOT) によるコンパイル時の構文解析と融合カーネルの事前生成へと移行する計画。",
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\nusing var context = new GpuContext();\nvar a = new GpuBigInteger(context, \"100\");\nvar b = new GpuBigInteger(context, \"200\");\nvar c = new GpuBigInteger(context, \"300\");\n\n// The AOT Compiler (Source Generator) analyzes this expression tree at compile-time and emits a fused kernel\nvar result = (a + b) * c;",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\nusing var context = new GpuWorkspace();\nvar a = new GpuBigInteger(context, \"100\");\nvar b = new GpuBigInteger(context, \"200\");\nvar c = new GpuBigInteger(context, \"300\");\n\n// The AOT Compiler (Source Generator) analyzes this expression tree at compile-time and emits a fused kernel\nvar result = (a + b) * c;",
       "cpp_example": "/* Planned: AOT Compiler emits a fused kernel for the compound expression tree ahead of time */\n// extern \"C\" __global__ void FusedKernel_Add_Mul(uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* out)"
     },
     "score": 15,
@@ -8487,7 +8487,7 @@
     },
     "details": {
       "current_behavior": "Using ref struct ScopedGpuMemory and IDisposable, temporary VRAM allocation on the GPU is synchronously freed (cuMemFree) the moment it exits the using block.",
-      "strategy": "Introduced ScopedGpuMemory and IDisposable patterns in GpuContext to guarantee deterministic, zero-leak memory management.",
+      "strategy": "Introduced ScopedGpuMemory and IDisposable patterns in GpuWorkspace to guarantee deterministic, zero-leak memory management.",
       "csharp_example": "public ref struct ScopedGpuMemory\n{"
     },
     "score": 35,

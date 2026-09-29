@@ -100,17 +100,17 @@ public class NativeProvider : IGpuExecutionProvider
 
     /// <inheritdoc/>
 
-    public void Add(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void Add(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) =>
-        NativeMethods.GpuBigInt_Add(context.WorkspacePointer, leftOperand.DevicePointer, rightOperand.DevicePointer,
+        NativeMethods.GpuBigInt_Add(workspace.WorkspacePointer, leftOperand.DevicePointer, rightOperand.DevicePointer,
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
     /// <inheritdoc/>
 
-    public void Sub(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void Sub(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) =>
-        NativeMethods.GpuBigInt_Sub(context.WorkspacePointer, leftOperand.DevicePointer, rightOperand.DevicePointer,
+        NativeMethods.GpuBigInt_Sub(workspace.WorkspacePointer, leftOperand.DevicePointer, rightOperand.DevicePointer,
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
@@ -128,81 +128,81 @@ public class NativeProvider : IGpuExecutionProvider
      * of host-orchestrated chunked execution is an intentional, architectural decision to scale beyond physical VRAM limits.
      */
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public void Mul(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void Mul(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public void InverseSqrtMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int actualBits, int iterations) =>
+    public void InverseSqrtMega(GpuWorkspace workspace, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int actualBits, int iterations) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public void ReciprocalMega(GpuContext context, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations, int targetBits) =>
+    public void ReciprocalMega(GpuWorkspace workspace, GpuUIntBigInteger targetOperand, GpuUIntBigInteger resultBuffer, int marginWords, int numBits, int marginBits, int iterations, int targetBits) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public void Add(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer) =>
+    public void Add(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public void Sub(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer) =>
+    public void Sub(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public void Mul(GpuContext context, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer) =>
+    public void Mul(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, uint rightOperand, GpuUIntBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <inheritdoc/>
 
-    public void BitwiseAnd(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void BitwiseAnd(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer)
-        => NativeMethods.GpuBigInt_BitwiseAnd(context.WorkspacePointer, leftOperand.DevicePointer,
+        => NativeMethods.GpuBigInt_BitwiseAnd(workspace.WorkspacePointer, leftOperand.DevicePointer,
             rightOperand.DevicePointer,
             resultBuffer.DevicePointer, leftOperand.NumWords);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public void BitwiseOr(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void BitwiseOr(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public void BitwiseXor(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void BitwiseXor(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public void BitwiseNot(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger resultBuffer) =>
+    public void BitwiseNot(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <inheritdoc/>
 
-    public void ShiftLeft(GpuContext context, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer) =>
-        NativeMethods.GpuBigInt_ShiftLeft(context.WorkspacePointer, leftOperand.DevicePointer, shiftBits,
+    public void ShiftLeft(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer) =>
+        NativeMethods.GpuBigInt_ShiftLeft(workspace.WorkspacePointer, leftOperand.DevicePointer, shiftBits,
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
     /// <inheritdoc/>
 
-    public void ShiftRight(GpuContext context, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer) =>
-        NativeMethods.GpuBigInt_ShiftRight(context.WorkspacePointer, leftOperand.DevicePointer, shiftBits,
+    public void ShiftRight(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, int shiftBits, GpuUIntBigInteger resultBuffer) =>
+        NativeMethods.GpuBigInt_ShiftRight(workspace.WorkspacePointer, leftOperand.DevicePointer, shiftBits,
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
     /// <inheritdoc/>
 
-    public bool Square(GpuContext context, IntPtr devicePointer, int logicalWords) =>
-        NativeMethods.GpuBigInt_Square(context.WorkspacePointer, devicePointer, logicalWords);
+    public bool Square(GpuWorkspace workspace, IntPtr devicePointer, int logicalWords) =>
+        NativeMethods.GpuBigInt_Square(workspace.WorkspacePointer, devicePointer, logicalWords);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public bool IsZero(GpuContext context, GpuUIntBigInteger leftOperand) =>
+    public bool IsZero(GpuWorkspace workspace, GpuUIntBigInteger leftOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public bool IsOne(GpuContext context, GpuUIntBigInteger leftOperand) => throw new NotImplementedException();
+    public bool IsOne(GpuWorkspace workspace, GpuUIntBigInteger leftOperand) => throw new NotImplementedException();
 
     /// <inheritdoc/>
 
-    public int GetBitLength(GpuContext context, GpuUIntBigInteger leftOperand)
+    public int GetBitLength(GpuWorkspace workspace, GpuUIntBigInteger leftOperand)
     {
         var words = new uint[leftOperand.NumWords];
         CopyDeviceToHost(words, leftOperand.DevicePointer, leftOperand.NumWords);
@@ -218,11 +218,11 @@ public class NativeProvider : IGpuExecutionProvider
     }
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public int CompareTo(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
+    public int CompareTo(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
-    public void Gcd(GpuContext context, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
+    public void Gcd(GpuWorkspace workspace, GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);
 
     public void BeginCapture(IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);

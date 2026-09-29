@@ -57,8 +57,8 @@ A concrete example demonstrating how `ModPow` is used to orchestrate RSA decrypt
 ```csharp
 // Execution Context: Host (CPU)
 
-// Allocate a context large enough for 2048-bit RSA keys
-using var context = new GpuContext(maxWords: 64); // 64 words * 32 bits = 2048 bits
+// Allocate a workspace large enough for 2048-bit RSA keys
+using var workspace = new GpuWorkspace(maxWords: 64); // 64 words * 32 bits = 2048 bits
 
 // 1. Prepare RSA Parameters (Modulus 'n', Private Exponent 'd')
 byte[] modulusN = GetRsaModulus();
@@ -66,12 +66,12 @@ byte[] privateKeyD = GetRsaPrivateKey();
 byte[] ciphertextBytes = GetIncomingCiphertext();
 
 // 2. Upload to GPU VRAM
-using var gpuModulus = GpuUIntBigInteger.FromByteArray(context, modulusN);
-using var gpuPrivateKey = GpuUIntBigInteger.FromByteArray(context, privateKeyD);
-using var gpuCiphertext = GpuUIntBigInteger.FromByteArray(context, ciphertextBytes);
+using var gpuModulus = GpuUIntBigInteger.FromByteArray(workspace, modulusN);
+using var gpuPrivateKey = GpuUIntBigInteger.FromByteArray(workspace, privateKeyD);
+using var gpuCiphertext = GpuUIntBigInteger.FromByteArray(workspace, ciphertextBytes);
 
 // 3. Eagerly evaluate: c^d mod n
-using var decryptedResult = new GpuUIntBigInteger(context, 64);
+using var decryptedResult = new GpuUIntBigInteger(workspace, 64);
 GpuBigIntDivRem.ModPow(gpuCiphertext, gpuPrivateKey, gpuModulus, decryptedResult);
 
 // 5. Download the decrypted message back to the CPU

@@ -81,7 +81,7 @@ public GpuBigInteger T { get; }
 | Name | Description |
 | --- | --- |
 | [Dispose()](#dispose) | Disposes the underlying GPU buffers for the P, Q, and T states. |
-| [Merge(GpuContext, GpuHypergeometricPqt, GpuHypergeometricPqt)](#mergegpucontext-gpuhypergeometricpqt-gpuhypergeometricpqt) | Merges two adjacent `GpuHypergeometricPqt` states on the GPU. |
+| [Merge(GpuWorkspace, GpuHypergeometricPqt, GpuHypergeometricPqt)](#mergegpuworkspace-gpuhypergeometricpqt-gpuhypergeometricpqt) | Merges two adjacent `GpuHypergeometricPqt` states on the GPU. |
 
 ## Dispose()
 
@@ -91,18 +91,18 @@ Disposes the underlying GPU buffers for the P, Q, and T states.
 public void Dispose();
 ```
 
-## Merge(GpuContext, GpuHypergeometricPqt, GpuHypergeometricPqt)
+## Merge(GpuWorkspace, GpuHypergeometricPqt, GpuHypergeometricPqt)
 
 Merges two adjacent `GpuHypergeometricPqt` states on the GPU.
 
 ```csharp
-public static GpuHypergeometricPqt Merge(GpuContext context, GpuHypergeometricPqt left, GpuHypergeometricPqt right);
+public static GpuHypergeometricPqt Merge(GpuWorkspace workspace, GpuHypergeometricPqt left, GpuHypergeometricPqt right);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU context for temporary allocations.
+`workspace` _GpuWorkspace_<br>
+The GPU workspace for temporary allocations.
 
 `left` _GpuHypergeometricPqt_<br>
 The left state to merge.
@@ -130,24 +130,24 @@ using Kassyi.GSharp.Stdlib.Math.BigInt;
 
 // Execution Context: Host (CPU) or G# Kernel (GPU)
 
-using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
 // Initialize two adjacent states for binary splitting (P=1, Q=1, T=1)
-var pLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
-var qLeft = GpuUIntBigInteger.FromBigInteger(context, 1, 4);
-var tLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+var pLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
+var qLeft = GpuUIntBigInteger.FromBigInteger(workspace, 1, 4);
+var tLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
 using var stateLeft = new GpuHypergeometricPqt(pLeft, qLeft, tLeft);
 
-var pRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
-var qRight = GpuUIntBigInteger.FromBigInteger(context, 1, 4);
-var tRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 1, 4), false);
+var pRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
+var qRight = GpuUIntBigInteger.FromBigInteger(workspace, 1, 4);
+var tRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
 using var stateRight = new GpuHypergeometricPqt(pRight, qRight, tRight);
 
 // Merge the two states
 // P = Pl * Pr
 // Q = Ql * Qr
 // T = Tl * Qr + Pl * Tr
-using var merged = GpuHypergeometricPqt.Merge(context, stateLeft, stateRight);
+using var merged = GpuHypergeometricPqt.Merge(workspace, stateLeft, stateRight);
 
 Console.WriteLine($"Merged P = {merged.P.Value.ToBigInteger(merged.P.IsNegative)}");
 Console.WriteLine($"Merged Q = {merged.Q.ToBigInteger(false)}");
@@ -172,7 +172,7 @@ The merge operation is computed as:
 
 - [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuContext](../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+- [GpuWorkspace](../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
 
 ### Guides
 

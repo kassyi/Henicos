@@ -53,12 +53,12 @@ public readonly struct GpuBigIntExpr
     /// </summary>
     /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude.</param>
     /// <returns>A new <see cref="GpuBigInteger"/> instance wrapping the destination buffer with the evaluated sign.</returns>
-    public GpuBigInteger Evaluate(GpuUIntBigInteger destination) => Node.Evaluate(destination.Context, destination);
+    public GpuBigInteger Evaluate(GpuUIntBigInteger destination) => Node.Evaluate(destination.Workspace, destination);
 
     /// <summary>
     /// Evaluates this signed expression into a newly allocated temporary GPU buffer.
     /// </summary>
-    /// <param name="context">The GPU context used for temporary buffer allocation.</param>
+    /// <param name="workspace">The GPU workspace used for temporary buffer allocation.</param>
     /// <returns>A new <see cref="GpuBigInteger"/> instance wrapping the temporary buffer with the evaluated sign.</returns>
-    public GpuBigInteger Evaluate(GpuContext context) => Node.Evaluate(context);
+    public GpuBigInteger Evaluate(GpuWorkspace workspace) => Node.Evaluate(workspace);
 }

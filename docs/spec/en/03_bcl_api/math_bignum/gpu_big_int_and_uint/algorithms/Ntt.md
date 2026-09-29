@@ -43,15 +43,15 @@ using System.Numerics;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 
-// Allocate a context capable of handling 2-Megabyte numbers
-using var context = new GpuContext(maxWords: 524288); // ~16.7 million bits!
+// Allocate a workspace capable of handling 2-Megabyte numbers
+using var workspace = new GpuWorkspace(maxWords: 524288); // ~16.7 million bits!
 
 // Assume these are massive arrays loaded from disk or previous stages
 byte[] massiveDataA = new byte[1024]; // dummy implementation for test
 byte[] massiveDataB = new byte[1024]; // dummy implementation for test
 
-using var gpuDataA = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(massiveDataA));
-using var gpuDataB = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(massiveDataB));
+using var gpuDataA = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(massiveDataA));
+using var gpuDataB = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(massiveDataB));
 
 var a = new GpuBigInteger(gpuDataA, false);
 var b = new GpuBigInteger(gpuDataB, false);
@@ -61,7 +61,7 @@ var expr = a * b;
 
 // Evaluate the AST node to perform the multiplication natively on the GPU
 // (Internally routes to the NTT implementation for massive numbers)
-using var result = expr.Node.Evaluate(context, null);
+using var result = expr.Node.Evaluate(workspace, null);
 
 Console.WriteLine($"Result Size: {result.Value.NumWords} words.");
 ```

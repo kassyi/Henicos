@@ -122,7 +122,7 @@ Console.WriteLine($"fromLimbs.Value.Limbs[0] = {fromLimbs.Value.Limbs[0]}");
 
 - [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuContext](../../../03_bcl_api/math_bignum/gpu_context/GpuContext.md)
+- [GpuWorkspace](../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
 
 ### Guides
 

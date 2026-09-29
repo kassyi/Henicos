@@ -2,13 +2,18 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 
 public ref struct ScopedBigIntMemory(IGpuMemoryManager? manager, BigIntMemoryHandle handle)
 {
-    public BigIntMemoryHandle Handle { get; } = handle;
+    private IGpuMemoryManager? _manager = manager;
+    private BigIntMemoryHandle _handle = handle;
+
+    public BigIntMemoryHandle Handle => _handle;
 
     public void Dispose()
     {
-        if (manager != null && !Handle.IsDefault)
+        if (_manager != null && !_handle.IsDefault)
         {
-            manager.Free(Handle);
+            _manager.Free(_handle);
+            _manager = null;
+            _handle = default;
         }
     }
 

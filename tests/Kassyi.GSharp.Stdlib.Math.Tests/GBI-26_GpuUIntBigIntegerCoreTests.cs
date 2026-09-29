@@ -6,13 +6,13 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
 public class GBI26_GpuUIntBigIntegerCoreTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuContext _context;
+    private readonly GpuWorkspace _context;
 
     public GBI26_GpuUIntBigIntegerCoreTests()
     {
         CudaCapability.EnsureGpuAvailable();
         _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+        _context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
     public void Dispose()

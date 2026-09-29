@@ -43,9 +43,9 @@ public static partial class GpuBigIntDivRem
         var currentBits = 63; // Initial guess has ~63 bits of precision
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 
-        if (targetOperand.Context.Provider is { } provider)
+        if (targetOperand.Workspace.Provider is { } provider)
         {
-            provider.ReciprocalMega(targetOperand.Context, targetOperand, resultBuffer, marginWords, numBits,
+            provider.ReciprocalMega(targetOperand.Workspace, targetOperand, resultBuffer, marginWords, numBits,
                 marginBits, iterations, targetBits);
         }
         else
@@ -88,7 +88,7 @@ public static partial class GpuBigIntDivRem
 
         var lz = n * 32 - bActualBits;
 
-        using var bNorm = new GpuUIntBigInteger(rightOperand.Context, n);
+        using var bNorm = new GpuUIntBigInteger(rightOperand.Workspace, n);
         GpuBigIntMath.ShiftLeft(rightOperand, lz, bNorm);
 
         var marginBits = 512;
@@ -97,33 +97,33 @@ public static partial class GpuBigIntDivRem
         var targetBits = aActualWords * 32 + marginBits;
         var targetWords = (targetBits + 31) / 32;
 
-        using var reciprocalNorm = new GpuUIntBigInteger(rightOperand.Context, targetWords);
+        using var reciprocalNorm = new GpuUIntBigInteger(rightOperand.Workspace, targetWords);
         reciprocalNorm.Clear();
         Reciprocal(bNorm, reciprocalNorm, targetBits, marginWords);
 
-        using var reciprocalOfB = new GpuUIntBigInteger(rightOperand.Context, targetWords);
+        using var reciprocalOfB = new GpuUIntBigInteger(rightOperand.Workspace, targetWords);
         GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
 
-        using var productWithReciprocal = new GpuUIntBigInteger(rightOperand.Context, nA + targetWords);
+        using var productWithReciprocal = new GpuUIntBigInteger(rightOperand.Workspace, nA + targetWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
 
         quotientBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: targetBits / 32,
             numWords: System.Math.Min(quotientBuffer.NumWords, nA));
 
-        using var qb = new GpuUIntBigInteger(rightOperand.Context, quotientBuffer.NumWords + n);
+        using var qb = new GpuUIntBigInteger(rightOperand.Workspace, quotientBuffer.NumWords + n);
         GpuBigIntMath.Mul(quotientBuffer, rightOperand, qb);
 
         var qbActualWords = (GetActualBits(qb) + 31) / 32;
         var evalWords = System.Math.Max(aActualWords, qbActualWords) + 1; // +1 to allow borrow logic
 
-        using var qbTrunc = new GpuUIntBigInteger(rightOperand.Context, evalWords);
+        using var qbTrunc = new GpuUIntBigInteger(rightOperand.Workspace, evalWords);
         qbTrunc.CopyFrom(qb, numWords: System.Math.Min(quotientBuffer.NumWords + n, evalWords));
 
-        using var leftOperandExtended = new GpuUIntBigInteger(rightOperand.Context, evalWords);
+        using var leftOperandExtended = new GpuUIntBigInteger(rightOperand.Workspace, evalWords);
         leftOperandExtended.Clear();
         leftOperandExtended.CopyFrom(leftOperand, numWords: System.Math.Min(nA, evalWords));
 
-        using var remainderExtended = new GpuUIntBigInteger(rightOperand.Context, evalWords);
+        using var remainderExtended = new GpuUIntBigInteger(rightOperand.Workspace, evalWords);
         GpuBigIntMath.Sub(leftOperandExtended, qbTrunc, remainderExtended);
 
         var topWord = remainderExtended.GetTopWords(1)[0];
@@ -131,33 +131,33 @@ public static partial class GpuBigIntDivRem
 
         if (underflow)
         {
-            using var bPaddedExtended = new GpuUIntBigInteger(rightOperand.Context, evalWords);
+            using var bPaddedExtended = new GpuUIntBigInteger(rightOperand.Workspace, evalWords);
             bPaddedExtended.Clear();
             bPaddedExtended.Clear();
             bPaddedExtended.CopyFrom(rightOperand, numWords: System.Math.Min(n, evalWords));
 
-            CorrectUnderflow(rightOperand.Context, evalWords, quotientBuffer, remainderExtended, bPaddedExtended);
+            CorrectUnderflow(rightOperand.Workspace, evalWords, quotientBuffer, remainderExtended, bPaddedExtended);
         }
         else
         {
-            using var bPaddedExtended = new GpuUIntBigInteger(rightOperand.Context, evalWords);
+            using var bPaddedExtended = new GpuUIntBigInteger(rightOperand.Workspace, evalWords);
             bPaddedExtended.Clear();
             bPaddedExtended.CopyFrom(rightOperand, numWords: System.Math.Min(rightOperand.NumWords, evalWords));
 
-            CorrectRemainder(rightOperand.Context, evalWords, quotientBuffer, remainderExtended, bPaddedExtended);
+            CorrectRemainder(rightOperand.Workspace, evalWords, quotientBuffer, remainderExtended, bPaddedExtended);
         }
 
         remainderBuffer.Clear();
         remainderBuffer.CopyFrom(remainderExtended, numWords: System.Math.Min(remainderBuffer.NumWords, evalWords));
     }
 
-    private static void CorrectUnderflow(GpuContext context, int evalWords, GpuUIntBigInteger quotientBuffer,
+    private static void CorrectUnderflow(GpuWorkspace workspace, int evalWords, GpuUIntBigInteger quotientBuffer,
         GpuUIntBigInteger remainderExtended, GpuUIntBigInteger bPaddedExtended)
     {
         var loopCount = 0;
-        using var one = GpuUIntBigInteger.CreatePowerOfTwo(context, quotientBuffer.NumWords, 0);
-        using var tempQuot = new GpuUIntBigInteger(context, quotientBuffer.NumWords);
-        using var tempRem = new GpuUIntBigInteger(context, evalWords);
+        using var one = GpuUIntBigInteger.CreatePowerOfTwo(workspace, quotientBuffer.NumWords, 0);
+        using var tempQuot = new GpuUIntBigInteger(workspace, quotientBuffer.NumWords);
+        using var tempRem = new GpuUIntBigInteger(workspace, evalWords);
 
         var underflow = true;
         while (underflow)
@@ -179,14 +179,14 @@ public static partial class GpuBigIntDivRem
         }
     }
 
-    private static void CorrectRemainder(GpuContext context, int evalWords, GpuUIntBigInteger quotientBuffer,
+    private static void CorrectRemainder(GpuWorkspace workspace, int evalWords, GpuUIntBigInteger quotientBuffer,
         GpuUIntBigInteger remainderExtended, GpuUIntBigInteger bPaddedExtended)
     {
         var loopCount = 0;
-        using var tempQuot = new GpuUIntBigInteger(context, quotientBuffer.NumWords);
-        using var tempRem = new GpuUIntBigInteger(context, evalWords);
-        using var shiftedB = new GpuUIntBigInteger(context, evalWords);
-        using var oneFallback = GpuUIntBigInteger.CreatePowerOfTwo(context, quotientBuffer.NumWords, 0);
+        using var tempQuot = new GpuUIntBigInteger(workspace, quotientBuffer.NumWords);
+        using var tempRem = new GpuUIntBigInteger(workspace, evalWords);
+        using var shiftedB = new GpuUIntBigInteger(workspace, evalWords);
+        using var oneFallback = GpuUIntBigInteger.CreatePowerOfTwo(workspace, quotientBuffer.NumWords, 0);
 
         while (!GpuBigIntMath.IsLessThan(remainderExtended, bPaddedExtended))
         {
@@ -213,7 +213,7 @@ public static partial class GpuBigIntDivRem
                 GpuBigIntMath.Sub(remainderExtended, shiftedB, tempRem);
                 remainderExtended.CopyFrom(tempRem, numWords: evalWords);
 
-                using var correction = GpuUIntBigInteger.CreatePowerOfTwo(context, quotientBuffer.NumWords, shift);
+                using var correction = GpuUIntBigInteger.CreatePowerOfTwo(workspace, quotientBuffer.NumWords, shift);
                 GpuBigIntMath.Add(quotientBuffer, correction, tempQuot);
                 quotientBuffer.CopyFrom(tempQuot, numWords: quotientBuffer.NumWords);
 
@@ -235,9 +235,9 @@ public static partial class GpuBigIntDivRem
         var hostData = ArrayPool<uint>.Shared.Rent(n);
         try
         {
-            gpuBigInt.Context.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n, gpuBigInt.Context.Stream);
+            gpuBigInt.Workspace.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n, gpuBigInt.Workspace.Stream);
             CudaException.ThrowIfError(
-                CudaDriverApi.cuStreamSynchronize(gpuBigInt.Context.Stream));
+                CudaDriverApi.cuStreamSynchronize(gpuBigInt.Workspace.Stream));
             for (var i = n - 1; i >= 0; i--)
             {
                 if (hostData[i] == 0)
@@ -273,10 +273,10 @@ public static partial class GpuBigIntDivRem
 
         var marginWords = 16;
         var targetBits = 2 * n * 32 + marginWords * 32;
-        using var reciprocalOfB = new GpuUIntBigInteger(rightOperand.Context, 2 * n + marginWords);
+        using var reciprocalOfB = new GpuUIntBigInteger(rightOperand.Workspace, 2 * n + marginWords);
         Reciprocal(rightOperand, reciprocalOfB, targetBits, marginWords);
 
-        using var productWithReciprocal = new GpuUIntBigInteger(rightOperand.Context, 3 * n + marginWords);
+        using var productWithReciprocal = new GpuUIntBigInteger(rightOperand.Workspace, 3 * n + marginWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
 
         resultBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: 2 * n + marginWords,
@@ -288,7 +288,7 @@ public static partial class GpuBigIntDivRem
         GpuUIntBigInteger resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-        using var tempQ = new GpuUIntBigInteger(leftOperand.Context, leftOperand.NumWords);
+        using var tempQ = new GpuUIntBigInteger(leftOperand.Workspace, leftOperand.NumWords);
         DivRem(leftOperand, rightOperand, tempQ, resultBuffer);
     }
 
@@ -306,8 +306,8 @@ public static partial class GpuBigIntDivRem
         var hostData = ArrayPool<uint>.Shared.Rent(n);
         try
         {
-            operand.Context.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n, operand.Context.Stream);
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(operand.Context.Stream));
+            operand.Workspace.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n, operand.Workspace.Stream);
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(operand.Workspace.Stream));
             var topIndex = (actualBits - 1) / 32;
 
             var wordsToExtract = System.Math.Min(4, topIndex + 1);
@@ -378,10 +378,10 @@ public static partial class GpuBigIntDivRem
             Array.Clear(xData, 0, numWords);
             var xBytes = shiftedApproximation.ToByteArray(isUnsigned: true, isBigEndian: false);
             Buffer.BlockCopy(xBytes, 0, xData, 0, System.Math.Min(xBytes.Length, numWords * 4));
-            targetOperand.Context.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords,
-                targetOperand.Context.Stream);
+            targetOperand.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords,
+                targetOperand.Workspace.Stream);
             CudaException.ThrowIfError(
-                CudaDriverApi.cuStreamSynchronize(targetOperand.Context.Stream));
+                CudaDriverApi.cuStreamSynchronize(targetOperand.Workspace.Stream));
         }
         finally
         {

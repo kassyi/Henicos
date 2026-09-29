@@ -25,7 +25,7 @@ public class GBI29_GpuBigIntMathPow10Tests
     {
         CudaCapability.EnsureGpuAvailable();
         var engine = CreateTestEngine();
-        using var context = new GpuContext(1024, engine);
+        using var context = new GpuWorkspace(1024, engine);
 
         using var resultGpu = GpuBigIntMath.Pow10(context, exponent);
         var expected = BigInteger.Pow(10, exponent);
@@ -43,7 +43,7 @@ public class GBI29_GpuBigIntMathPow10Tests
     {
         CudaCapability.EnsureGpuAvailable();
         var engine = CreateTestEngine();
-        using var context = new GpuContext(1024, engine);
+        using var context = new GpuWorkspace(1024, engine);
 
         Assert.Throws<ArgumentOutOfRangeException>(() =>
         {

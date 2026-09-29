@@ -74,12 +74,12 @@ When you write the following code on the Host (CPU):
 
 ```csharp
 // Execution Context: Host (CPU)
-using var context = new GpuContext(maxWords: 1024);
+using var workspace = new GpuWorkspace(maxWords: 1024);
 
 // A is positive, B is negative, C is positive
-var A = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 100), isNegative: false);
-var B = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 50), isNegative: true);
-var C = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(context, 2), isNegative: false);
+var A = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 100), isNegative: false);
+var B = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 50), isNegative: true);
+var C = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 2), isNegative: false);
 
 // We write an addition, but since B is negative, the CPU evaluates the signs
 // and swaps the node into a Subtraction behind the scenes!
@@ -101,19 +101,19 @@ The variable `expr` is of type `GpuBigIntExpr`. It simply represents the *intent
 
 ### The `Evaluate` Step and Memory Pooling
 
-To actually compute the result, you must call `.Evaluate()` and provide a `GpuContext`:
+To actually compute the result, you must call `.Evaluate()` and provide a `GpuWorkspace`:
 
 ```csharp
 // Execution Context: Host (CPU)
-using var result = expr.Node.Evaluate(context, null);
+using var result = expr.Node.Evaluate(workspace, null);
 ```
 
 When you call `Evaluate`, the GSharp Runtime does something magical:
 1. It analyzes the Expression Tree to determine exactly how much intermediate memory is needed.
-2. It "checks out" temporary buffers from the `GpuContext`'s pre-allocated memory pool.
+2. It "checks out" temporary buffers from the `GpuWorkspace`'s pre-allocated memory pool.
 3. It dispatches a highly optimized CUDA kernel to compute `A + B`, writing the result directly into the checked-out temporary buffer.
 4. It immediately dispatches the next CUDA kernel to multiply that temporary buffer by `C`, writing into the final result buffer.
-5. It returns the temporary buffer back to the `GpuContext` pool.
+5. It returns the temporary buffer back to the `GpuWorkspace` pool.
 
 By deferring the execution (Lazy Evaluation), the runtime avoids redundant `cudaMalloc` calls, completely eliminates inside-kernel allocations, and keeps register pressure at absolute zero.
 
@@ -182,7 +182,7 @@ public static void FastMathKernel(float[] data, int index) {
 
 If you truly need *arbitrary-precision* math (millions of bits), **do not compute it inside a monolithic kernel using standard variables**. 
 Instead, you have two options:
-1. **Host-Side Orchestration**: Let the Host (CPU) build the Expression Tree (`expr = A + B * C;`) and dispatch the computation across the grid collectively using `GpuContext`. The GPU excels at massively parallel orchestration, not at running massive, monolithic scalar calculations within a single thread.
+1. **Host-Side Orchestration**: Let the Host (CPU) build the Expression Tree (`expr = A + B * C;`) and dispatch the computation across the grid collectively using `GpuWorkspace`. The GPU excels at massively parallel orchestration, not at running massive, monolithic scalar calculations within a single thread.
 2. **Advanced Custom Kernels**: If you are implementing a novel arbitrary-precision algorithm (e.g., custom cryptography), you must write a custom `[GpuKernel]` that operates directly on `uint[]` arrays using PTX intrinsics like `Gpu.AddWithCarry`. For a detailed tutorial on this, see [Advanced: Writing Custom Math Kernels](08_advanced_custom_math_kernels.md).
 
 ---
@@ -191,7 +191,7 @@ Instead, you have two options:
 
 When working with `Stdlib.Math`, always remember:
 1. **You are a conductor**: You build the mathematical symphony (Expression Trees) on the CPU.
-2. **Context is King**: The `GpuContext` manages the VRAM memory pools required to execute the symphony without allocation overhead.
+2. **Context is King**: The `GpuWorkspace` manages the VRAM memory pools required to execute the symphony without allocation overhead.
 3. **Kernels are Unsigned**: The GPU executes pure, branchless unsigned math. The CPU handles the signed logic.
 
 ## See also

@@ -22,10 +22,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the top-left element of the matrix.
     /// </value>
-    public GpuUIntBigInteger M00
-    {
-        get;
-    }
+    public GpuUIntBigInteger M00 { get; }
 
     /// <summary>
     /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 0, column 1 ($M_{01}$) in GPU device memory.
@@ -33,10 +30,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the top-right element of the matrix.
     /// </value>
-    public GpuUIntBigInteger M01
-    {
-        get;
-    }
+    public GpuUIntBigInteger M01 { get; }
 
     /// <summary>
     /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 1, column 0 ($M_{10}$) in GPU device memory.
@@ -44,10 +38,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the bottom-left element of the matrix.
     /// </value>
-    public GpuUIntBigInteger M10
-    {
-        get;
-    }
+    public GpuUIntBigInteger M10 { get; }
 
     /// <summary>
     /// Gets the <see cref="GpuUIntBigInteger"/> element located at row 1, column 1 ($M_{11}$) in GPU device memory.
@@ -55,10 +46,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <value>
     /// The arbitrary-precision integer representing the bottom-right element of the matrix.
     /// </value>
-    public GpuUIntBigInteger M11
-    {
-        get;
-    }
+    public GpuUIntBigInteger M11 { get; }
 
     /// <summary>
     /// Gets a value indicating whether this matrix represents an odd number of reduction steps in the Euclidean algorithm.
@@ -69,52 +57,45 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <remarks>
     /// In Half-GCD computations, step parity determines the sign and operand ordering when applying the matrix to reduce operand pairs.
     /// </remarks>
-    public bool IsOddStep
-    {
-        get;
-    }
+    public bool IsOddStep { get; }
 
     /// <summary>
-    /// Gets the parent <see cref="GpuContext"/> managing the GPU device memory and execution provider for this matrix.
+    /// Gets the parent <see cref="GpuWorkspace"/> managing the GPU device memory and execution provider for this matrix.
     /// </summary>
     /// <value>
     /// The active GPU context associated with this matrix and all its constituent elements.
     /// </value>
-    public GpuContext Context
-    {
-        get;
-    }
+    public GpuWorkspace Workspace { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuBigIntMatrix2x2"/> class with uninitialized memory for each matrix element.
     /// </summary>
-    /// <param name="context">The parent GPU execution context. Cannot be <see langword="null"/>.</param>
+    /// <param name="workspace">The parent GPU execution context. Cannot be <see langword="null"/>.</param>
     /// <param name="numWords">The number of 32-bit limbs (words) to allocate for each matrix element. Must be greater than zero.</param>
     /// <param name="isOddStep">A value indicating whether this transition matrix represents an odd number of reduction steps.</param>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="numWords"/> is less than or equal to zero.</exception>
     /// <exception cref="OutOfMemoryException">Thrown when GPU global memory allocation fails for any of the matrix elements.</exception>
-    public GpuBigIntMatrix2x2(GpuContext context, int numWords, bool isOddStep)
+    public GpuBigIntMatrix2x2(GpuWorkspace workspace, int numWords, bool isOddStep)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(workspace);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(numWords);
 
-        Context = context;
+        Workspace = workspace;
         IsOddStep = isOddStep;
 
         try
         {
-            M00 = new GpuUIntBigInteger(context, numWords);
-            M01 = new GpuUIntBigInteger(context, numWords);
-            M10 = new GpuUIntBigInteger(context, numWords);
-            M11 = new GpuUIntBigInteger(context, numWords);
+            M00 = new GpuUIntBigInteger(workspace, numWords);
+            M01 = new GpuUIntBigInteger(workspace, numWords);
+            M10 = new GpuUIntBigInteger(workspace, numWords);
+            M11 = new GpuUIntBigInteger(workspace, numWords);
+
+            workspace.Track(this);
         }
         catch
         {
-            M00.Dispose();
-            M01.Dispose();
-            M10.Dispose();
-            M11.Dispose();
+            // [WHY] Constituent limbs are tracked by GpuWorkspace and released upon workspace disposal.
             throw;
         }
     }
@@ -122,26 +103,26 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <summary>
     /// Creates and initializes a 2x2 identity matrix ($I = \begin{pmatrix} 1 &amp; 0 \\ 0 &amp; 1 \end{pmatrix}$) in GPU device memory.
     /// </summary>
-    /// <param name="context">The parent GPU execution context. Cannot be <see langword="null"/>.</param>
+    /// <param name="workspace">The parent GPU execution context. Cannot be <see langword="null"/>.</param>
     /// <param name="numWords">The number of 32-bit limbs (words) to allocate for each matrix element. Must be greater than zero.</param>
     /// <returns>
     /// A new <see cref="GpuBigIntMatrix2x2"/> instance representing the identity matrix, where <see cref="M00"/> and <see cref="M11"/> are set to 1, and <see cref="M01"/> and <see cref="M10"/> are set to 0.
     /// </returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="context"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="numWords"/> is less than or equal to zero.</exception>
     /// <exception cref="OutOfMemoryException">Thrown when GPU global memory allocation fails.</exception>
     /// <remarks>
     /// <para><b>Lifecycle:</b> The caller is responsible for disposing the returned matrix to release allocated GPU device memory.</para>
     /// </remarks>
-    public static GpuBigIntMatrix2x2 Identity(GpuContext context, int numWords)
+    public static GpuBigIntMatrix2x2 Identity(GpuWorkspace workspace, int numWords)
     {
-        var mat = new GpuBigIntMatrix2x2(context, numWords, false);
+        var mat = new GpuBigIntMatrix2x2(workspace, numWords, false);
 
         mat.M00.Clear();
-        context.Provider.CopyHostToDevice(mat.M00.DevicePointer, [1u], 1, context.Stream);
+        workspace.Provider.CopyHostToDevice(mat.M00.DevicePointer, [1u], 1, workspace.Stream);
 
         mat.M11.Clear();
-        context.Provider.CopyHostToDevice(mat.M11.DevicePointer, [1u], 1, context.Stream);
+        workspace.Provider.CopyHostToDevice(mat.M11.DevicePointer, [1u], 1, workspace.Stream);
 
         // [WHY] Explicitly initialize off-diagonal elements to 0 on the GPU to ensure deterministic state regardless of driver-level allocation zeroing.
         mat.M01.Clear();
@@ -160,7 +141,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// The word count of each element in the resulting matrix equals the sum of the operand limb lengths (<c>v.M00.NumWords + u.M00.NumWords</c>).
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="v"/> or <paramref name="u"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="v"/> and <paramref name="u"/> belong to different <see cref="GpuContext"/> instances.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="v"/> and <paramref name="u"/> belong to different <see cref="GpuWorkspace"/> instances.</exception>
     /// <remarks>
     /// <para>
     /// Computes the 2x2 matrix product using GPU arithmetic kernels:
@@ -181,17 +162,17 @@ public class GpuBigIntMatrix2x2 : IDisposable
         ArgumentNullException.ThrowIfNull(v);
         ArgumentNullException.ThrowIfNull(u);
 
-        if (v.Context != u.Context)
+        if (v.Workspace != u.Workspace)
         {
-            throw new ArgumentException("Matrices must belong to the same GPU context.", nameof(u));
+            throw new ArgumentException("Matrices must belong to the same GPU workspace.", nameof(u));
         }
 
-        var ctx = v.Context;
+        var workspace = v.Workspace;
         var outWords = v.M00.NumWords + u.M00.NumWords;
-        var result = new GpuBigIntMatrix2x2(ctx, outWords, v.IsOddStep ^ u.IsOddStep);
+        var result = new GpuBigIntMatrix2x2(workspace, outWords, v.IsOddStep ^ u.IsOddStep);
 
-        using var temp1 = new GpuUIntBigInteger(ctx, outWords);
-        using var temp2 = new GpuUIntBigInteger(ctx, outWords);
+        using var temp1 = new GpuUIntBigInteger(workspace, outWords);
+        using var temp2 = new GpuUIntBigInteger(workspace, outWords);
 
         // M00 = v00 * u00 + v01 * u10
         GpuBigIntMath.Mul(v.M00, u.M00, temp1);
@@ -224,7 +205,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <param name="outA">The destination <see cref="GpuUIntBigInteger"/> to receive the transformed first element $A'$. Cannot be <see langword="null"/>.</param>
     /// <param name="outB">The destination <see cref="GpuUIntBigInteger"/> to receive the transformed second element $B'$. Cannot be <see langword="null"/>.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="a"/>, <paramref name="b"/>, <paramref name="outA"/>, or <paramref name="outB"/> is <see langword="null"/>.</exception>
-    /// <exception cref="ArgumentException">Thrown when any argument does not belong to the same <see cref="GpuContext"/> as this matrix.</exception>
+    /// <exception cref="ArgumentException">Thrown when any argument does not belong to the same <see cref="GpuWorkspace"/> as this matrix.</exception>
     /// <remarks>
     /// <para>
     /// The linear transformation applied depends on <see cref="IsOddStep"/>:
@@ -251,19 +232,19 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// </remarks>
     public void Apply(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger outA, GpuUIntBigInteger outB)
     {
-
-        if (a.Context != Context || b.Context != Context || outA.Context != Context || outB.Context != Context)
+        if (a.Workspace != Workspace || b.Workspace != Workspace || outA.Workspace != Workspace ||
+            outB.Workspace != Workspace)
         {
-            throw new ArgumentException("All operands must belong to the same GPU context as the matrix.");
+            throw new ArgumentException("All operands must belong to the same GPU workspace as the matrix.");
         }
 
-        var ctx = Context;
+        var workspace = Workspace;
         var tempWords = M00.NumWords + System.Math.Max(a.NumWords, b.NumWords);
 
-        using var tempA1 = new GpuUIntBigInteger(ctx, tempWords);
-        using var tempA2 = new GpuUIntBigInteger(ctx, tempWords);
-        using var tempB1 = new GpuUIntBigInteger(ctx, tempWords);
-        using var tempB2 = new GpuUIntBigInteger(ctx, tempWords);
+        using var tempA1 = new GpuUIntBigInteger(workspace, tempWords);
+        using var tempA2 = new GpuUIntBigInteger(workspace, tempWords);
+        using var tempB1 = new GpuUIntBigInteger(workspace, tempWords);
+        using var tempB2 = new GpuUIntBigInteger(workspace, tempWords);
 
         GpuBigIntMath.Mul(M00, a, tempA1);
         GpuBigIntMath.Mul(M01, b, tempA2);
@@ -271,8 +252,8 @@ public class GpuBigIntMatrix2x2 : IDisposable
         GpuBigIntMath.Mul(M10, a, tempB1);
         GpuBigIntMath.Mul(M11, b, tempB2);
 
-        using var resA = new GpuUIntBigInteger(ctx, tempWords);
-        using var resB = new GpuUIntBigInteger(ctx, tempWords);
+        using var resA = new GpuUIntBigInteger(workspace, tempWords);
+        using var resB = new GpuUIntBigInteger(workspace, tempWords);
 
         if (!IsOddStep)
         {

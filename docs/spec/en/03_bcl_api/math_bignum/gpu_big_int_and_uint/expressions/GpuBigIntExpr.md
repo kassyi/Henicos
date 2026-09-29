@@ -34,7 +34,7 @@ public IGpuBigIntExpression Node { get; }
 | Name                                                      | Description                                                                   |
 | --------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | [Evaluate(GpuUIntBigInteger)](#evaluategpuuintbiginteger) | Evaluates this signed expression into the provided destination buffer.        |
-| [Evaluate(GpuContext)](#evaluategpucontext)               | Evaluates this signed expression into a newly allocated temporary GPU buffer. |
+| [Evaluate(GpuWorkspace)](#evaluategpuworkspace)               | Evaluates this signed expression into a newly allocated temporary GPU buffer. |
 
 ## Evaluate(GpuUIntBigInteger)
 
@@ -54,18 +54,18 @@ The pre-allocated GPU buffer to store the evaluated magnitude.
 _GpuBigInteger_<br>
 A new `GpuBigInteger` instance wrapping the destination buffer with the evaluated sign.
 
-## Evaluate(GpuContext)
+## Evaluate(GpuWorkspace)
 
 Evaluates this signed expression into a newly allocated temporary GPU buffer.
 
 ```csharp
-public GpuBigInteger Evaluate(GpuContext context);
+public GpuBigInteger Evaluate(GpuWorkspace workspace);
 ```
 
 #### Parameters
 
-`context` _GpuContext_<br>
-The GPU context used for temporary buffer allocation.
+`workspace` _GpuWorkspace_<br>
+The GPU workspace used for temporary buffer allocation.
 
 #### Returns
 
@@ -102,12 +102,12 @@ using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 
 // Execution Context: Host (CPU)
-// Allocate a GPU execution context with 1024 words (4KB) of memory pool.
-using var context = new GpuContext(1024, GpuExecutionEngine.GSharpAot);
+// Allocate a GPU workspace with 1024 words (4KB) of memory pool.
+using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
 // Upload initial buffers to the GPU device
-using var uintA = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(100), minWords: 4);
-using var uintB = GpuUIntBigInteger.FromBigInteger(context, new BigInteger(200), minWords: 4);
+using var uintA = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(100), minWords: 4);
+using var uintB = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(200), minWords: 4);
 
 var a = new GpuBigInteger(uintA, isNegative: false);
 var b = new GpuBigInteger(uintB, isNegative: true);
@@ -121,7 +121,7 @@ var sumExpr = exprA + exprB;
 var prodExpr = sumExpr * exprA;
 
 // Evaluate AST back to a magnitude buffer
-using var dest = new GpuUIntBigInteger(context, 8);
+using var dest = new GpuUIntBigInteger(workspace, 8);
 var finalResult = prodExpr.Evaluate(dest);
 
 Console.WriteLine($"Result={finalResult.Value.ToBigInteger(finalResult.IsNegative)}");

@@ -22,12 +22,11 @@ public class FermatRunner : IDisposable
     }
 
     /// <summary>Gets the number of 32-bit words in the output buffer.</summary>
-    public int OutNumWords => _outNumWords;
+    public int OutNumWords { get; }
 
     private int _numWords;
-    private int _outNumWords;
 
-    private GpuContext _gpuContext;
+    private GpuWorkspace _gpuWorkspace;
 
     // GpuUIntBigInteger buffers for Host-side orchestration
     private GpuUIntBigInteger _valueT;
@@ -39,7 +38,6 @@ public class FermatRunner : IDisposable
     private GpuUIntBigInteger _remainderMask;
     private GpuUIntBigInteger _temp;
 
-    private int _bitOffset2E1;
     private int _exponent;
 
     /// <summary>Initializes a new instance of the <see cref="FermatRunner"/> class for exponent <paramref name="e"/>.</summary>
@@ -48,45 +46,37 @@ public class FermatRunner : IDisposable
         E = e;
 
         _numWords = (2 * E + 1 + 31) / 32;
-        _outNumWords = _numWords * 2 + 16;
-        _bitOffset2E1 = (2 * E + 1) % 32;
+        OutNumWords = _numWords * 2 + 16;
         _exponent = E;
 
         try
         {
-            _gpuContext = new GpuContext(_outNumWords);
-            _valueT = new GpuUIntBigInteger(_gpuContext, _outNumWords);
-            _valueTReduced = new GpuUIntBigInteger(_gpuContext, _numWords);
-            _mulResult = new GpuUIntBigInteger(_gpuContext, _numWords * 2);
+            _gpuWorkspace = new GpuWorkspace(OutNumWords);
+            _valueT = new GpuUIntBigInteger(_gpuWorkspace, OutNumWords);
+            _valueTReduced = new GpuUIntBigInteger(_gpuWorkspace, _numWords);
+            _mulResult = new GpuUIntBigInteger(_gpuWorkspace, _numWords * 2);
 
-            _quotient = new GpuUIntBigInteger(_gpuContext, _outNumWords);
-            _remainder = new GpuUIntBigInteger(_gpuContext, _outNumWords);
-            _remainderMask = new GpuUIntBigInteger(_gpuContext, _outNumWords);
-            _temp = new GpuUIntBigInteger(_gpuContext, _outNumWords);
+            _quotient = new GpuUIntBigInteger(_gpuWorkspace, OutNumWords);
+            _remainder = new GpuUIntBigInteger(_gpuWorkspace, OutNumWords);
+            _remainderMask = new GpuUIntBigInteger(_gpuWorkspace, OutNumWords);
+            _temp = new GpuUIntBigInteger(_gpuWorkspace, OutNumWords);
         }
         catch
         {
-            _gpuContext?.Dispose();
-            _valueT.Dispose();
-            _valueTReduced.Dispose();
-            _mulResult.Dispose();
-            _quotient.Dispose();
-            _remainder.Dispose();
-            _remainderMask.Dispose();
-            _temp.Dispose();
+            _gpuWorkspace?.Dispose();
             throw;
         }
 
         // Init ValueT = 2
-        var initArray = new uint[_outNumWords];
+        var initArray = new uint[OutNumWords];
         initArray[0] = 2;
-        _gpuContext.Provider.CopyHostToDevice(_valueT.DevicePointer, initArray, _outNumWords, _gpuContext.Stream);
+        _gpuWorkspace.Provider.CopyHostToDevice(_valueT.DevicePointer, initArray, OutNumWords, _gpuWorkspace.Stream);
 
         // Init MaskR
         var bit2E1 = 2 * E + 1;
         var word2E1 = bit2E1 / 32;
         var rem2E1 = bit2E1 % 32;
-        var maskArray = new uint[_outNumWords];
+        var maskArray = new uint[OutNumWords];
         for (var i = 0; i < word2E1; i++)
         {
             maskArray[i] = 0xFFFFFFFF;
@@ -97,32 +87,32 @@ public class FermatRunner : IDisposable
             maskArray[word2E1] = (1U << rem2E1) - 1;
         }
 
-        _gpuContext.Provider.CopyHostToDevice(_remainderMask.DevicePointer, maskArray, _outNumWords, _gpuContext.Stream);
+        _gpuWorkspace.Provider.CopyHostToDevice(_remainderMask.DevicePointer, maskArray, OutNumWords, _gpuWorkspace.Stream);
     }
 
     /// <summary>Gets a copy of the current state buffer (ValueT).</summary>
     public uint[] GetState()
     {
-        var copy = new uint[_outNumWords];
-        _gpuContext.Provider.CopyDeviceToHost(copy, _valueT.DevicePointer, _outNumWords, _gpuContext.Stream);
+        var copy = new uint[OutNumWords];
+        _gpuWorkspace.Provider.CopyDeviceToHost(copy, _valueT.DevicePointer, OutNumWords, _gpuWorkspace.Stream);
         return copy;
     }
 
     /// <summary>Loads a previously saved state buffer (ValueT) into the context.</summary>
     public void LoadState(uint[] valueT)
     {
-        if (valueT.Length != _outNumWords)
+        if (valueT.Length != OutNumWords)
         {
-            throw new ArgumentException($"Invalid state buffer size. Expected {_outNumWords}, got {valueT.Length}.");
+            throw new ArgumentException($"Invalid state buffer size. Expected {OutNumWords}, got {valueT.Length}.");
         }
 
-        _gpuContext.Provider.CopyHostToDevice(_valueT.DevicePointer, valueT, _outNumWords, _gpuContext.Stream);
+        _gpuWorkspace.Provider.CopyHostToDevice(_valueT.DevicePointer, valueT, OutNumWords, _gpuWorkspace.Stream);
     }
 
     private void MultiplySquareAndReduceHost()
     {
         // Copy the lower _numWords of _valueT into _valueTReduced
-        _gpuContext.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, _valueT.DevicePointer, _numWords, _gpuContext.Stream);
+        _gpuWorkspace.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, _valueT.DevicePointer, _numWords, _gpuWorkspace.Stream);
 
         // Square it using host-side NTT multiplication orchestration
         GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
@@ -132,7 +122,7 @@ public class FermatRunner : IDisposable
         GpuBigIntFermatKernelsWrapper.LaunchKernelFermatReduceMegaPtr(
             _valueT.DevicePointer, _mulResult.DevicePointer, _quotient.DevicePointer, _remainder.DevicePointer,
             _temp.DevicePointer, _remainderMask.DevicePointer,
-            _numWords, _outNumWords, 2 * E + 1, _exponent,
+            _numWords, OutNumWords, 2 * E + 1, _exponent,
             gridDimX: 1, blockDimX: 256
         );
 
@@ -178,14 +168,7 @@ public class FermatRunner : IDisposable
 
         if (disposing)
         {
-            _valueT.Dispose();
-            _valueTReduced.Dispose();
-            _mulResult.Dispose();
-            _quotient.Dispose();
-            _remainder.Dispose();
-            _remainderMask.Dispose();
-            _temp.Dispose();
-            _gpuContext.Dispose();
+            _gpuWorkspace.Dispose();
         }
 
         _disposed = true;

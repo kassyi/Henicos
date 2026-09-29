@@ -7,11 +7,13 @@ using Providers;
 internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, IntPtr stream) : IGpuMemoryManager, IDisposable
 {
     private readonly ConcurrentDictionary<int, Lazy<ConcurrentBag<BigIntMemoryHandle>>> _tempPool = new();
+    private readonly ConcurrentDictionary<IntPtr, byte> _activeAllocations = new();
     private int _disposed;
 
     public BigIntMemoryHandle Allocate(int numWords)
     {
         var ptr = provider.AllocateMemory(numWords);
+        _activeAllocations.TryAdd(ptr, 0);
         provider.ClearMemoryAsync(ptr, numWords, stream);
         var buffer = new BigIntDeviceBuffer(ptr, numWords);
         return new BigIntMemoryHandle(buffer, 0, numWords);
@@ -24,6 +26,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated &&
             lazyBag.Value.TryTake(out var temp))
         {
+            _activeAllocations.TryAdd(temp.Buffer.Pointer, 0);
             return new ScopedBigIntMemory(this, temp);
         }
 
@@ -39,14 +42,22 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
             return;
         }
 
+        // Prevent double frees which cause InvalidValue and Access Violation on CUDA
+        if (handle.Buffer.Pointer != IntPtr.Zero && !_activeAllocations.TryRemove(handle.Buffer.Pointer, out _))
+        {
+            return;
+        }
+
         if (Volatile.Read(ref _disposed) == 1)
         {
             // Already disposed, actually free it
-            if (handle.Buffer.Pointer != IntPtr.Zero)
+            if (handle.Buffer.Pointer == IntPtr.Zero)
             {
-                provider.FreeMemory(handle.Buffer.Pointer);
-                handle.Buffer.Dispose();
+                return;
             }
+
+            provider.FreeMemory(handle.Buffer.Pointer);
+            handle.Buffer.Dispose();
             return;
         }
 
@@ -76,11 +87,13 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
             while (lazyBag.Value.TryTake(out var handle))
             {
-                if (handle.Buffer.Pointer != IntPtr.Zero)
+                if (handle.Buffer.Pointer == IntPtr.Zero)
                 {
-                    provider.FreeMemory(handle.Buffer.Pointer);
-                    handle.Buffer.Dispose();
+                    continue;
                 }
+
+                provider.FreeMemory(handle.Buffer.Pointer);
+                handle.Buffer.Dispose();
             }
         }
         _tempPool.Clear();

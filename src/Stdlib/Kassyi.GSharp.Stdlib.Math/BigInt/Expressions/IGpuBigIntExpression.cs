@@ -16,8 +16,8 @@ public interface IGpuBigIntExpression
     /// <summary>
     /// Evaluates this AST node into a new or provided GPU buffer, returning a signed <see cref="GpuBigInteger"/>.
     /// </summary>
-    /// <param name="context">The GPU context for evaluation.</param>
+    /// <param name="workspace">The GPU workspace for evaluation.</param>
     /// <param name="targetResult">An optional pre-allocated buffer for the absolute magnitude. If null, a temporary buffer is rented.</param>
     /// <returns>The evaluated result with its sign.</returns>
-    GpuBigInteger Evaluate(GpuContext context, GpuUIntBigInteger? targetResult = null);
+    GpuBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null);
 }

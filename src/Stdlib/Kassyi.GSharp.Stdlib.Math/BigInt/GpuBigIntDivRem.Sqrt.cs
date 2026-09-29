@@ -25,9 +25,9 @@ public static partial class GpuBigIntDivRem
 
         var iterations = CalculateNewtonRaphsonIterationCount(currentBits, targetBits);
 
-        if (targetOperand.Context.Provider is { } provider)
+        if (targetOperand.Workspace.Provider is { } provider)
         {
-            provider.InverseSqrtMega(targetOperand.Context, targetOperand, resultBuffer, marginWords, actualBits, iterations);
+            provider.InverseSqrtMega(targetOperand.Workspace, targetOperand, resultBuffer, marginWords, actualBits, iterations);
         }
         else
         {
@@ -95,13 +95,13 @@ public static partial class GpuBigIntDivRem
         var hostDataSingle = ArrayPool<uint>.Shared.Rent(n);
         try
         {
-            leftOperand.Context.Provider.CopyDeviceToHost(hostDataSingle, leftOperand.DevicePointer, n, leftOperand.Context.Stream);
+            leftOperand.Workspace.Provider.CopyDeviceToHost(hostDataSingle, leftOperand.DevicePointer, n, leftOperand.Workspace.Stream);
             var val = hostDataSingle[0];
             var sqrtVal = (uint)System.Math.Sqrt(val);
             resultBuffer.Clear();
             if (sqrtVal > 0)
             {
-                resultBuffer.Context.Provider.CopyHostToDevice(resultBuffer.DevicePointer, [sqrtVal], 1, resultBuffer.Context.Stream);
+                resultBuffer.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, [sqrtVal], 1, resultBuffer.Workspace.Stream);
             }
             return true;
         }
@@ -121,32 +121,32 @@ public static partial class GpuBigIntDivRem
             lz--;
         }
 
-        using var aNorm = new GpuUIntBigInteger(leftOperand.Context, n);
+        using var aNorm = new GpuUIntBigInteger(leftOperand.Workspace, n);
         aNorm.Clear();
         GpuBigIntMath.ShiftLeft(leftOperand, lz, aNorm);
 
         var marginWords = 16;
-        using var xResult = new GpuUIntBigInteger(leftOperand.Context, n + marginWords);
+        using var xResult = new GpuUIntBigInteger(leftOperand.Workspace, n + marginWords);
         xResult.Clear();
         InverseSqrt(aNorm, xResult, marginWords);
 
-        using var rNorm = new GpuUIntBigInteger(leftOperand.Context, 2 * n + marginWords);
+        using var rNorm = new GpuUIntBigInteger(leftOperand.Workspace, 2 * n + marginWords);
         GpuBigIntMath.Mul(aNorm, xResult, rNorm);
 
         var bBits = actualBits + lz;
         var marginBits = marginWords * 32;
         var totalShift = bBits + marginBits + (lz / 2);
 
-        using var shiftedRNorm = new GpuUIntBigInteger(leftOperand.Context, 2 * n + marginWords);
+        using var shiftedRNorm = new GpuUIntBigInteger(leftOperand.Workspace, 2 * n + marginWords);
         shiftedRNorm.Clear();
         GpuBigIntMath.ShiftRight(rNorm, totalShift, shiftedRNorm);
 
-        var currentRoot = new GpuUIntBigInteger(leftOperand.Context, n);
+        var currentRoot = new GpuUIntBigInteger(leftOperand.Workspace, n);
         currentRoot.CopyFrom(shiftedRNorm, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);
         
         if (GetActualBits(currentRoot) == 0)
         {
-            currentRoot.Context.Provider.CopyHostToDevice(currentRoot.DevicePointer, [1u], 1, currentRoot.Context.Stream);
+            currentRoot.Workspace.Provider.CopyHostToDevice(currentRoot.DevicePointer, [1u], 1, currentRoot.Workspace.Stream);
         }
 
         return currentRoot;
@@ -155,9 +155,9 @@ public static partial class GpuBigIntDivRem
     private static void RefineSqrtWithHeronMethod(GpuUIntBigInteger leftOperand, GpuUIntBigInteger currentRoot, GpuUIntBigInteger resultBuffer)
     {
         var n = leftOperand.NumWords;
-        using var divisionResult = new GpuUIntBigInteger(leftOperand.Context, n);
-        using var sumWithDivision = new GpuUIntBigInteger(leftOperand.Context, n);
-        using var prevRoot = new GpuUIntBigInteger(leftOperand.Context, n);
+        using var divisionResult = new GpuUIntBigInteger(leftOperand.Workspace, n);
+        using var sumWithDivision = new GpuUIntBigInteger(leftOperand.Workspace, n);
+        using var prevRoot = new GpuUIntBigInteger(leftOperand.Workspace, n);
 
         var maxIterations = 30;
         var iter = 0;
@@ -170,7 +170,7 @@ public static partial class GpuBigIntDivRem
             currentRoot.Clear();
             GpuBigIntMath.ShiftRight(sumWithDivision, 1, currentRoot);
 
-            using var diff = new GpuUIntBigInteger(leftOperand.Context, n);
+            using var diff = new GpuUIntBigInteger(leftOperand.Workspace, n);
             GpuBigIntMath.BitwiseXor(currentRoot, prevRoot, diff);
             if (GetActualBits(diff) == 0)
             {
@@ -182,9 +182,9 @@ public static partial class GpuBigIntDivRem
                 break;
             }
 
-            using var plusOne = new GpuUIntBigInteger(leftOperand.Context, n);
-            plusOne.Context.Provider.CopyHostToDevice(plusOne.DevicePointer, [1u], 1, plusOne.Context.Stream);
-            using var prevPlusOne = new GpuUIntBigInteger(leftOperand.Context, n);
+            using var plusOne = new GpuUIntBigInteger(leftOperand.Workspace, n);
+            plusOne.Workspace.Provider.CopyHostToDevice(plusOne.DevicePointer, [1u], 1, plusOne.Workspace.Stream);
+            using var prevPlusOne = new GpuUIntBigInteger(leftOperand.Workspace, n);
             GpuBigIntMath.Add(prevRoot, plusOne, prevPlusOne);
 
             GpuBigIntMath.BitwiseXor(currentRoot, prevPlusOne, diff);
@@ -195,11 +195,11 @@ public static partial class GpuBigIntDivRem
             }
         }
 
-        using var squaredRoot = new GpuUIntBigInteger(leftOperand.Context, 2 * n);
+        using var squaredRoot = new GpuUIntBigInteger(leftOperand.Workspace, 2 * n);
         GpuBigIntMath.Mul(currentRoot, currentRoot, squaredRoot);
 
         var topHalf = new uint[n];
-        leftOperand.Context.Provider.CopyDeviceToHost(topHalf, IntPtr.Add(squaredRoot.DevicePointer, n * 4), n, leftOperand.Context.Stream);
+        leftOperand.Workspace.Provider.CopyDeviceToHost(topHalf, IntPtr.Add(squaredRoot.DevicePointer, n * 4), n, leftOperand.Workspace.Stream);
         var isGreater = false;
         for (var i = 0; i < n; i++)
         {
@@ -213,15 +213,15 @@ public static partial class GpuBigIntDivRem
 
         if (!isGreater)
         {
-            using var lowerSquaredRoot = new GpuUIntBigInteger(leftOperand.Context, n);
+            using var lowerSquaredRoot = new GpuUIntBigInteger(leftOperand.Workspace, n);
             lowerSquaredRoot.CopyFrom(squaredRoot, numWords: n);
             isGreater = GpuBigIntMath.IsLessThan(leftOperand, lowerSquaredRoot);
         }
 
         if (isGreater)
         {
-            using var one = new GpuUIntBigInteger(leftOperand.Context, n);
-            one.Context.Provider.CopyHostToDevice(one.DevicePointer, [1u], 1, one.Context.Stream);
+            using var one = new GpuUIntBigInteger(leftOperand.Workspace, n);
+            one.Workspace.Provider.CopyHostToDevice(one.DevicePointer, [1u], 1, one.Workspace.Stream);
             GpuBigIntMath.Sub(currentRoot, one, resultBuffer);
         }
         else
