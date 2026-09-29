@@ -164,10 +164,10 @@ public static class GpuBigIntMath
     /// <summary>
     /// Computes 10 raised to the specified exponent on the GPU using exponentiation by squaring.
     /// </summary>
-    /// <param name="context">The GPU execution context.</param>
+    /// <param name="workspace">The GPU execution workspace.</param>
     /// <param name="exponent">The exponent.</param>
     /// <returns>A new <see cref="GpuUIntBigInteger"/> containing the result.</returns>
-    public static GpuUIntBigInteger Pow10(GpuWorkspace context, int exponent)
+    public static GpuUIntBigInteger Pow10(GpuWorkspace workspace, int exponent)
     {
         const int MaxPow10Exponent = 50_000_000;
         if (exponent < 0 || exponent > MaxPow10Exponent)
@@ -178,15 +178,15 @@ public static class GpuBigIntMath
 
         if (exponent <= 9)
         {
-            return GpuUIntBigInteger.FromBigInteger(context, BigInteger.Pow(10, exponent));
+            return GpuUIntBigInteger.FromBigInteger(workspace, BigInteger.Pow(10, exponent));
         }
 
-        var resultGpu = GpuUIntBigInteger.FromBigInteger(context, 1);
+        var resultGpu = GpuUIntBigInteger.FromBigInteger(workspace, 1);
         GpuUIntBigInteger? currentGpu = null;
         var success = false;
         try
         {
-            currentGpu = GpuUIntBigInteger.FromBigInteger(context, 10);
+            currentGpu = GpuUIntBigInteger.FromBigInteger(workspace, 10);
             var exp = exponent;
 
             while (exp > 0)
@@ -226,8 +226,8 @@ public static class GpuBigIntMath
 
     private static GpuUIntBigInteger MulAndTrim(GpuUIntBigInteger left, GpuUIntBigInteger right)
     {
-        var context = left.Workspace;
-        var nextBuffer = new GpuUIntBigInteger(context, left.NumWords + right.NumWords);
+        var workspace = left.Workspace;
+        var nextBuffer = new GpuUIntBigInteger(workspace, left.NumWords + right.NumWords);
         GpuUIntBigInteger? trimmed = null;
         try
         {

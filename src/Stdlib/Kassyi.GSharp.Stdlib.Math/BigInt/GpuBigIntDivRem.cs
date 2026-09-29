@@ -151,13 +151,13 @@ public static partial class GpuBigIntDivRem
         remainderBuffer.CopyFrom(remainderExtended, numWords: System.Math.Min(remainderBuffer.NumWords, evalWords));
     }
 
-    private static void CorrectUnderflow(GpuWorkspace context, int evalWords, GpuUIntBigInteger quotientBuffer,
+    private static void CorrectUnderflow(GpuWorkspace workspace, int evalWords, GpuUIntBigInteger quotientBuffer,
         GpuUIntBigInteger remainderExtended, GpuUIntBigInteger bPaddedExtended)
     {
         var loopCount = 0;
-        using var one = GpuUIntBigInteger.CreatePowerOfTwo(context, quotientBuffer.NumWords, 0);
-        using var tempQuot = new GpuUIntBigInteger(context, quotientBuffer.NumWords);
-        using var tempRem = new GpuUIntBigInteger(context, evalWords);
+        using var one = GpuUIntBigInteger.CreatePowerOfTwo(workspace, quotientBuffer.NumWords, 0);
+        using var tempQuot = new GpuUIntBigInteger(workspace, quotientBuffer.NumWords);
+        using var tempRem = new GpuUIntBigInteger(workspace, evalWords);
 
         var underflow = true;
         while (underflow)
@@ -179,14 +179,14 @@ public static partial class GpuBigIntDivRem
         }
     }
 
-    private static void CorrectRemainder(GpuWorkspace context, int evalWords, GpuUIntBigInteger quotientBuffer,
+    private static void CorrectRemainder(GpuWorkspace workspace, int evalWords, GpuUIntBigInteger quotientBuffer,
         GpuUIntBigInteger remainderExtended, GpuUIntBigInteger bPaddedExtended)
     {
         var loopCount = 0;
-        using var tempQuot = new GpuUIntBigInteger(context, quotientBuffer.NumWords);
-        using var tempRem = new GpuUIntBigInteger(context, evalWords);
-        using var shiftedB = new GpuUIntBigInteger(context, evalWords);
-        using var oneFallback = GpuUIntBigInteger.CreatePowerOfTwo(context, quotientBuffer.NumWords, 0);
+        using var tempQuot = new GpuUIntBigInteger(workspace, quotientBuffer.NumWords);
+        using var tempRem = new GpuUIntBigInteger(workspace, evalWords);
+        using var shiftedB = new GpuUIntBigInteger(workspace, evalWords);
+        using var oneFallback = GpuUIntBigInteger.CreatePowerOfTwo(workspace, quotientBuffer.NumWords, 0);
 
         while (!GpuBigIntMath.IsLessThan(remainderExtended, bPaddedExtended))
         {
@@ -213,7 +213,7 @@ public static partial class GpuBigIntDivRem
                 GpuBigIntMath.Sub(remainderExtended, shiftedB, tempRem);
                 remainderExtended.CopyFrom(tempRem, numWords: evalWords);
 
-                using var correction = GpuUIntBigInteger.CreatePowerOfTwo(context, quotientBuffer.NumWords, shift);
+                using var correction = GpuUIntBigInteger.CreatePowerOfTwo(workspace, quotientBuffer.NumWords, shift);
                 GpuBigIntMath.Add(quotientBuffer, correction, tempQuot);
                 quotientBuffer.CopyFrom(tempQuot, numWords: quotientBuffer.NumWords);
 

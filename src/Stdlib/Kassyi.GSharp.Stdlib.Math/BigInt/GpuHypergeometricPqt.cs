@@ -30,34 +30,34 @@ public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInteger p, [T
     /// Q = Ql * Qr
     /// T = Tl * Qr + Pl * Tr
     /// </summary>
-    public static GpuHypergeometricPqt Merge(GpuWorkspace context, GpuHypergeometricPqt left, GpuHypergeometricPqt right)
+    public static GpuHypergeometricPqt Merge(GpuWorkspace workspace, GpuHypergeometricPqt left, GpuHypergeometricPqt right)
     {
         // P = Pl * Pr
         var pWords = left.P.Value.NumWords + right.P.Value.NumWords;
-        var resultP = new GpuUIntBigInteger(context, pWords);
+        var resultP = new GpuUIntBigInteger(workspace, pWords);
         GpuBigIntMath.Mul(left.P.Value, right.P.Value, resultP);
         var pNegative = left.P.IsNegative ^ right.P.IsNegative;
 
         // Q = Ql * Qr
         var qWords = left.Q.NumWords + right.Q.NumWords;
-        var resultQ = new GpuUIntBigInteger(context, qWords);
+        var resultQ = new GpuUIntBigInteger(workspace, qWords);
         GpuBigIntMath.Mul(left.Q, right.Q, resultQ);
 
         // T = Tl * Qr + Pl * Tr
         var wordsA = left.T.Value.NumWords + right.Q.NumWords;
-        using var rawTermA = new GpuUIntBigInteger(context, wordsA);
+        using var rawTermA = new GpuUIntBigInteger(workspace, wordsA);
         GpuBigIntMath.Mul(left.T.Value, right.Q, rawTermA);
         var signA = left.T.IsNegative;
 
         var wordsB = left.P.Value.NumWords + right.T.Value.NumWords;
-        using var rawTermB = new GpuUIntBigInteger(context, wordsB);
+        using var rawTermB = new GpuUIntBigInteger(workspace, wordsB);
         GpuBigIntMath.Mul(left.P.Value, right.T.Value, rawTermB);
         var signB = left.P.IsNegative ^ right.T.IsNegative;
 
         var maxTWords = System.Math.Max(wordsA, wordsB);
         using var termA = rawTermA.PadTo(maxTWords);
         using var termB = rawTermB.PadTo(maxTWords);
-        var resultT = new GpuUIntBigInteger(context, maxTWords);
+        var resultT = new GpuUIntBigInteger(workspace, maxTWords);
 
         var tNegative = GpuBigIntMath.AddSignedMagnitude(termA, signA, termB, signB, resultT);
 

@@ -6,10 +6,10 @@ using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
 using BigInt;
 using Providers;
 
-public ref struct BigFloatExpressionVisitor(GpuWorkspace context, IGpuBigFloatArithmetic? arithmetic = null)
+public ref struct BigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFloatArithmetic? arithmetic = null)
 {
-    public GpuWorkspace Context = context;
-    public IGpuBigFloatArithmetic Arithmetic { get; } = arithmetic ?? (context.Engine == GpuExecutionEngine.GSharpAot
+    public GpuWorkspace Workspace = workspace;
+    public IGpuBigFloatArithmetic Arithmetic { get; } = arithmetic ?? (workspace.Engine == GpuExecutionEngine.GSharpAot
 
         ? GSharpAotFloatProvider.Instance
 
@@ -23,7 +23,7 @@ public ref struct BigFloatExpressionVisitor(GpuWorkspace context, IGpuBigFloatAr
         var maxWords = Math.Max(left.UFloat.Significand.NumWords, right.UFloat.Significand.NumWords) + 1;
         var resultSig = new GpuUIntBigInteger(left.UFloat.Significand.Workspace, maxWords);
         
-        var execContext = new BigIntExecutionContext(Context, Context.MemoryManager, new LegacyProviderArithmeticAdapter(), Context.Stream);
+        var execContext = new BigIntExecutionContext(Workspace, Workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), Workspace.Stream);
         Arithmetic.Add(ref execContext,
             new BigIntMemoryHandle(new BigIntDeviceBuffer(left.UFloat.Significand.DevicePointer, left.UFloat.Significand.NumWords), 0, left.UFloat.Significand.NumWords), left.UFloat.Exponent, left.IsNegative,
             new BigIntMemoryHandle(new BigIntDeviceBuffer(right.UFloat.Significand.DevicePointer, right.UFloat.Significand.NumWords), 0, right.UFloat.Significand.NumWords), right.UFloat.Exponent, right.IsNegative,
@@ -40,7 +40,7 @@ public ref struct BigFloatExpressionVisitor(GpuWorkspace context, IGpuBigFloatAr
         var maxWords = Math.Max(left.UFloat.Significand.NumWords, right.UFloat.Significand.NumWords) + 1;
         var resultSig = new GpuUIntBigInteger(left.UFloat.Significand.Workspace, maxWords);
         
-        var execContext = new BigIntExecutionContext(Context, Context.MemoryManager, new LegacyProviderArithmeticAdapter(), Context.Stream);
+        var execContext = new BigIntExecutionContext(Workspace, Workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), Workspace.Stream);
         
         // Subtraction is simply addition with the right sign flipped
         Arithmetic.Add(ref execContext,
@@ -58,7 +58,7 @@ public ref struct BigFloatExpressionVisitor(GpuWorkspace context, IGpuBigFloatAr
         
         // For multiplication, we can directly reuse GpuUIntBigInteger AST for significands!
         var sigExpr = left.UFloat.Significand * right.UFloat.Significand;
-        var resultSig = BigInt.Expressions.GpuBigUIntExpressionExtensions.Evaluate(sigExpr.Node, Context);
+        var resultSig = BigInt.Expressions.GpuBigUIntExpressionExtensions.Evaluate(sigExpr.Node, Workspace);
         
         var resultExp = left.UFloat.Exponent + right.UFloat.Exponent;
         var resultSign = left.IsNegative != right.IsNegative;
@@ -72,7 +72,7 @@ public ref struct BigFloatExpressionVisitor(GpuWorkspace context, IGpuBigFloatAr
         var right = expr.Right;
         var maxWords = Math.Max(left.Significand.NumWords, right.Significand.NumWords) + 1;
         var resultSig = new GpuUIntBigInteger(left.Significand.Workspace, maxWords);
-        var execContext = new BigIntExecutionContext(Context, Context.MemoryManager, new LegacyProviderArithmeticAdapter(), Context.Stream);
+        var execContext = new BigIntExecutionContext(Workspace, Workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), Workspace.Stream);
         Arithmetic.Add(ref execContext,
             new BigIntMemoryHandle(new BigIntDeviceBuffer(left.Significand.DevicePointer, left.Significand.NumWords), 0, left.Significand.NumWords), left.Exponent, false,
             new BigIntMemoryHandle(new BigIntDeviceBuffer(right.Significand.DevicePointer, right.Significand.NumWords), 0, right.Significand.NumWords), right.Exponent, false,
@@ -86,7 +86,7 @@ public ref struct BigFloatExpressionVisitor(GpuWorkspace context, IGpuBigFloatAr
         var right = expr.Right;
         var maxWords = Math.Max(left.Significand.NumWords, right.Significand.NumWords) + 1;
         var resultSig = new GpuUIntBigInteger(left.Significand.Workspace, maxWords);
-        var execContext = new BigIntExecutionContext(Context, Context.MemoryManager, new LegacyProviderArithmeticAdapter(), Context.Stream);
+        var execContext = new BigIntExecutionContext(Workspace, Workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), Workspace.Stream);
         Arithmetic.Add(ref execContext,
             new BigIntMemoryHandle(new BigIntDeviceBuffer(left.Significand.DevicePointer, left.Significand.NumWords), 0, left.Significand.NumWords), left.Exponent, false,
             new BigIntMemoryHandle(new BigIntDeviceBuffer(right.Significand.DevicePointer, right.Significand.NumWords), 0, right.Significand.NumWords), right.Exponent, true,

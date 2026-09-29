@@ -4,7 +4,7 @@ internal class GpuBigIntLeafExpression(GpuBigInteger value) : IGpuBigIntExpressi
 {
     public int NumWords => value.Value.NumWords;
 
-    public GpuBigInteger Evaluate(GpuWorkspace context, GpuUIntBigInteger? targetResult = null)
+    public GpuBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null)
     {
         if (!targetResult.HasValue)
         {
@@ -35,7 +35,7 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         }
     }
 
-    public GpuBigInteger Evaluate(GpuWorkspace context, GpuUIntBigInteger? targetResult = null)
+    public GpuBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null)
     {
         if (targetResult.HasValue && targetResult.Value.NumWords != NumWords)
         {
@@ -48,11 +48,11 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
 
         try
         {
-            leftResult = Left.Evaluate(context);
-            rightResult = Right.Evaluate(context);
+            leftResult = Left.Evaluate(workspace);
+            rightResult = Right.Evaluate(workspace);
             if (!finalBuffer.HasValue)
             {
-                finalBuffer = context.RentTemp(NumWords);
+                finalBuffer = workspace.RentTemp(NumWords);
             }
 
             var result = Execute(leftResult, rightResult, finalBuffer.Value);
@@ -63,17 +63,17 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         {
             if (true && leftResult.Value.IsTemp)
             {
-                context.ReturnTemp(leftResult.Value);
+                workspace.ReturnTemp(leftResult.Value);
             }
 
             if (true && rightResult.Value.IsTemp)
             {
-                context.ReturnTemp(rightResult.Value);
+                workspace.ReturnTemp(rightResult.Value);
             }
 
             if (!targetResult.HasValue && finalBuffer.HasValue)
             {
-                context.ReturnTemp(finalBuffer.Value);
+                workspace.ReturnTemp(finalBuffer.Value);
             }
         }
     }
@@ -154,9 +154,9 @@ internal class SignedNegateExpression(IGpuBigIntExpression target) : IGpuBigIntE
     private IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public int NumWords => Target.NumWords;
 
-    public GpuBigInteger Evaluate(GpuWorkspace context, GpuUIntBigInteger? targetResult = null)
+    public GpuBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null)
     {
-        var innerResult = Target.Evaluate(context, targetResult);
+        var innerResult = Target.Evaluate(workspace, targetResult);
         return new GpuBigInteger(innerResult.Value, !innerResult.IsNegative);
     }
 }
@@ -166,7 +166,7 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
     protected IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public virtual int NumWords => Target.NumWords;
 
-    public GpuBigInteger Evaluate(GpuWorkspace context, GpuUIntBigInteger? targetResult = null)
+    public GpuBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null)
     {
         if (targetResult.HasValue && targetResult.Value.NumWords != NumWords)
         {
@@ -178,10 +178,10 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
 
         try
         {
-            targetEval = Target.Evaluate(context);
+            targetEval = Target.Evaluate(workspace);
             if (!finalBuffer.HasValue)
             {
-                finalBuffer = context.RentTemp(NumWords);
+                finalBuffer = workspace.RentTemp(NumWords);
             }
 
             var result = Execute(targetEval, finalBuffer.Value);
@@ -192,12 +192,12 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
         {
             if (targetEval.Value.IsTemp)
             {
-                context.ReturnTemp(targetEval.Value);
+                workspace.ReturnTemp(targetEval.Value);
             }
 
             if (!targetResult.HasValue && finalBuffer.HasValue)
             {
-                context.ReturnTemp(finalBuffer.Value);
+                workspace.ReturnTemp(finalBuffer.Value);
             }
         }
     }

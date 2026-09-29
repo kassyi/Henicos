@@ -187,9 +187,9 @@ public readonly struct GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression, I
         Workspace.Provider.CopyHostToDevice(destPtr, [0], 1, Workspace.Stream);
     }
 
-    public static GpuUIntBigInteger CreatePowerOfTwo(GpuWorkspace context, int numWords, int bitIndex)
+    public static GpuUIntBigInteger CreatePowerOfTwo(GpuWorkspace workspace, int numWords, int bitIndex)
     {
-        var result = new GpuUIntBigInteger(context, numWords);
+        var result = new GpuUIntBigInteger(workspace, numWords);
         var wordIndex = bitIndex / 32;
         var bitOffset = bitIndex % 32;
         if (wordIndex >= numWords)
@@ -201,7 +201,7 @@ public readonly struct GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression, I
         try
         {
             word[0] = 1u << bitOffset;
-            context.Provider.CopyHostToDevice(IntPtr.Add(result.DevicePointer, wordIndex * 4), word, 1, context.Stream);
+            workspace.Provider.CopyHostToDevice(IntPtr.Add(result.DevicePointer, wordIndex * 4), word, 1, workspace.Stream);
         }
         finally
         {
@@ -275,12 +275,12 @@ public readonly struct GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression, I
         return result;
     }
 
-    public static GpuUIntBigInteger FromBigInteger(GpuWorkspace context, BigInteger val, int minWords = 0)
+    public static GpuUIntBigInteger FromBigInteger(GpuWorkspace workspace, BigInteger val, int minWords = 0)
     {
         val = BigInteger.Abs(val);
         if (val.IsZero)
         {
-            return new GpuUIntBigInteger(context, System.Math.Max(1, minWords));
+            return new GpuUIntBigInteger(workspace, System.Math.Max(1, minWords));
         }
 
         var byteCount = val.GetByteCount(isUnsigned: true);
@@ -292,8 +292,8 @@ public readonly struct GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression, I
             hostData.AsSpan(0, allocWords).Clear();
             var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
             val.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false);
-            var result = new GpuUIntBigInteger(context, allocWords);
-            context.Provider.CopyHostToDevice(result.DevicePointer, hostData, allocWords, context.Stream);
+            var result = new GpuUIntBigInteger(workspace, allocWords);
+            workspace.Provider.CopyHostToDevice(result.DevicePointer, hostData, allocWords, workspace.Stream);
             return result;
         }
         finally

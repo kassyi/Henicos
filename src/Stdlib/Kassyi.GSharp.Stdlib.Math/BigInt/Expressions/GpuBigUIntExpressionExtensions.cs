@@ -10,9 +10,9 @@ public static class GpuBigUIntExpressionExtensions
     /// <summary>
     /// Evaluates this expression on the GPU into the specified target buffer using the Visitor pattern.
     /// </summary>
-    public static GpuUIntBigInteger Evaluate(this IGpuBigUIntExpression expr, GpuWorkspace context, GpuUIntBigInteger? targetResult = null)
+    public static GpuUIntBigInteger Evaluate(this IGpuBigUIntExpression expr, GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null)
     {
-        var execContext = new BigIntExecutionContext(context, context.MemoryManager, new LegacyProviderArithmeticAdapter(), context.Stream);
+        var execContext = new BigIntExecutionContext(workspace, workspace.MemoryManager, new LegacyProviderArithmeticAdapter(), workspace.Stream);
         
         ScopedBigIntMemory targetMem = default;
         GpuUIntBigInteger finalResult;
@@ -26,7 +26,7 @@ public static class GpuBigUIntExpressionExtensions
         }
         else
         {
-            finalResult = context.RentTemp(expr.NumWords);
+            finalResult = workspace.RentTemp(expr.NumWords);
             var dummyHandle = new BigIntMemoryHandle(
                 new BigIntDeviceBuffer(finalResult.DevicePointer, finalResult.NumWords), 
                 0, finalResult.NumWords);
@@ -38,7 +38,7 @@ public static class GpuBigUIntExpressionExtensions
         
         if (scopedMem.Handle.Buffer != null && scopedMem.Handle.Buffer.Pointer != finalResult.DevicePointer)
         {
-            context.Provider.CopyDeviceToDevice(finalResult.DevicePointer, scopedMem.Handle.Buffer.Pointer, System.Math.Min(finalResult.NumWords, scopedMem.Handle.NumWords), context.Stream);
+            workspace.Provider.CopyDeviceToDevice(finalResult.DevicePointer, scopedMem.Handle.Buffer.Pointer, System.Math.Min(finalResult.NumWords, scopedMem.Handle.NumWords), workspace.Stream);
         }
         
         return finalResult;

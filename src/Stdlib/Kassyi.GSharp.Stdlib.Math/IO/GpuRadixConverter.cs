@@ -14,19 +14,19 @@ public static class GpuRadixConverter
     /// Converts a <see cref="GpuUIntBigInteger"/> to decimal digits using GPU-accelerated divide-and-conquer division,
     /// streaming the output directly to a <see cref="TextWriter"/>.
     /// </summary>
-    /// <param name="context">The GPU computation context.</param>
+    /// <param name="workspace">The GPU computation workspace.</param>
     /// <param name="value">The integer to convert.</param>
     /// <param name="targetDigits">The number of digits to generate.</param>
     /// <param name="writer">The output stream writer.</param>
     /// <param name="isMostSignificant">True if formatting the integer part with a decimal point (e.g. "3.1415...").</param>
     public static void ConvertAndWrite(
-        GpuWorkspace context,
+        GpuWorkspace workspace,
         GpuUIntBigInteger value,
         int targetDigits,
         TextWriter writer,
         bool isMostSignificant = false)
     {
-        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(workspace);
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetDigits);
 
@@ -35,7 +35,7 @@ public static class GpuRadixConverter
 
         try
         {
-            ConvertAndWriteInternal(context, value, targetDigits, writer, radixCache, activePointers, isMostSignificant);
+            ConvertAndWriteInternal(workspace, value, targetDigits, writer, radixCache, activePointers, isMostSignificant);
         }
         finally
         {
@@ -47,7 +47,7 @@ public static class GpuRadixConverter
     }
 
     private static void ConvertAndWriteInternal(
-        GpuWorkspace context,
+        GpuWorkspace workspace,
         GpuUIntBigInteger value,
         int targetDigits,
         TextWriter writer,
@@ -92,7 +92,7 @@ public static class GpuRadixConverter
                 Logger.Info("RadixConverter", $"Radix Cache: Computing 10^{lowerDigits} on GPU...");
             }
 
-            divisorGpu = GpuBigIntMath.Pow10(context, lowerDigits);
+            divisorGpu = GpuBigIntMath.Pow10(workspace, lowerDigits);
             radixCache[lowerDigits] = divisorGpu;
             activePointers.Add(divisorGpu);
             swCache.Stop();
@@ -109,12 +109,12 @@ public static class GpuRadixConverter
         using var paddedValue = value.PadTo(targetWords);
         using var paddedDivisor = divisorGpu.PadTo(targetWords);
 
-        using var quotient = new GpuUIntBigInteger(context, targetWords);
-        using var remainder = new GpuUIntBigInteger(context, targetWords);
+        using var quotient = new GpuUIntBigInteger(workspace, targetWords);
+        using var remainder = new GpuUIntBigInteger(workspace, targetWords);
 
         GpuBigIntDivRem.DivRem(paddedValue, paddedDivisor, quotient, remainder);
 
-        ConvertAndWriteInternal(context, quotient, upperDigits, writer, radixCache, activePointers, isMostSignificant);
-        ConvertAndWriteInternal(context, remainder, lowerDigits, writer, radixCache, activePointers, false);
+        ConvertAndWriteInternal(workspace, quotient, upperDigits, writer, radixCache, activePointers, isMostSignificant);
+        ConvertAndWriteInternal(workspace, remainder, lowerDigits, writer, radixCache, activePointers, false);
     }
 }
