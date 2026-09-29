@@ -14,6 +14,7 @@ public class GSH_00_03_GpuKernelAnalyzerTests
     [InlineData("SYN-49", "Analyzers/SYN-49_UnsupportedInterlockedOverload.cs", "GSH0003")]
     [InlineData("SYN-68", "Analyzers/SYN-68_UnsupportedMathMethod.cs", "GSH0003")]
     [InlineData("SYN-155", "Analyzers/SYN-155_UnsupportedBitOperationsMethod.cs", "GSH0003")]
+    [InlineData("GSH-36", "Analyzers/GSH-36_KernelClassMustBePartial_SadPath.cs", "GSH0036")]
     public async Task Test_GpuKernelAnalyzer_ReportsExpectedError(string featureId, string testCasePath, string expectedErrorId)
     {
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
