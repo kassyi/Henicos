@@ -214,6 +214,7 @@ public class GpuWorkspace : IGpuResourceScope
                     }
                     catch
                     {
+                        // Best-effort
                     }
                 }
             }
