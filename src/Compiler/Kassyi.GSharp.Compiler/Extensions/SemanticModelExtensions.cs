@@ -14,4 +14,10 @@ internal static class SemanticModelExtensions
     /// </summary>
     public static ITypeSymbol? GetTypeSymbol(this SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken = default) =>
         semanticModel.GetTypeInfo(node, cancellationToken).Type;
+
+    /// <summary>
+    /// Gets the declared symbol for the specified syntax node cast to <typeparamref name="T"/>, or null if unresolvable or of different type.
+    /// </summary>
+    public static T? GetDeclaredSymbol<T>(this SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken = default) where T : class, ISymbol =>
+        semanticModel.GetDeclaredSymbol(node, cancellationToken) as T;
 }

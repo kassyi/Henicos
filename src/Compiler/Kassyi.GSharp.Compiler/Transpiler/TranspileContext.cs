@@ -137,6 +137,18 @@ public struct TranspileContext(
     /// <returns>A tuple detailing reference, pointer, and restrict qualifiers emitted.</returns>
     public (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameterCppType(ParameterSyntax p,
         ITypeSymbol? typeSymbol) => Dialect.AppendParameter(ref this, p, typeSymbol);
+
+    /// <summary>
+    /// Emits a compiler diagnostic at the specified syntax node location if diagnostic reporting is enabled.
+    /// </summary>
+    public void Report(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[]? messageArgs) =>
+        ReportDiagnostic?.Invoke(Diagnostic.Create(descriptor, node.GetLocation(), messageArgs));
+
+    /// <summary>
+    /// Emits a compiler diagnostic at the specified source location if diagnostic reporting is enabled.
+    /// </summary>
+    public void Report(DiagnosticDescriptor descriptor, Location? location, params object?[]? messageArgs) =>
+        ReportDiagnostic?.Invoke(Diagnostic.Create(descriptor, location, messageArgs));
 }
 
 /// <summary>
