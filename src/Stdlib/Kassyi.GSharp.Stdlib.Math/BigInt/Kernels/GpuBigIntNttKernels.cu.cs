@@ -538,26 +538,26 @@ public static class GpuBigIntNttKernels
             return;
         }
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
-        Gpu.SyncGrid();
+        var argsRow1 = args;
+        argsRow1.Buffer = temporaryBuffer;
+        argsRow1.CurrentL = length1;
+        argsRow1.ApplyTwiddleBefore = false;
+        argsRow1.ApplyTwiddleAfter = true;
+        argsRow1.MaxBlocks = length2;
 
-        args.Buffer = temporaryBuffer;
-        args.CurrentL = length1;
-        args.ApplyTwiddleBefore = false;
-        args.ApplyTwiddleAfter = true;
-        args.MaxBlocks = length2;
-        ExecuteNttSharedRow(args);
-        args.Buffer = buffer; // Restore buffer
-        Gpu.SyncGrid();
+        var argsRow2 = args;
+        argsRow2.CurrentL = length2;
+        argsRow2.ApplyTwiddleBefore = false;
+        argsRow2.ApplyTwiddleAfter = false;
+        argsRow2.MaxBlocks = length1;
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
-        Gpu.SyncGrid();
-
-        args.CurrentL = length2;
-        args.ApplyTwiddleBefore = false;
-        args.ApplyTwiddleAfter = false;
-        args.MaxBlocks = length1;
-        ExecuteNttSharedRow(args);
+        Gpu.SyncGrid(() =>
+        {
+            GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
+            ExecuteNttSharedRow(argsRow1);
+            GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
+            ExecuteNttSharedRow(argsRow2);
+        });
         Gpu.SyncGrid();
     }
 
@@ -581,27 +581,71 @@ public static class GpuBigIntNttKernels
             return;
         }
 
-        args.CurrentL = length2;
-        args.ApplyTwiddleBefore = false;
-        args.ApplyTwiddleAfter = true;
-        args.MaxBlocks = length1;
-        ExecuteNttSharedRow(args);
-        Gpu.SyncGrid();
+        var argsRow1 = args;
+        argsRow1.CurrentL = length2;
+        argsRow1.ApplyTwiddleBefore = false;
+        argsRow1.ApplyTwiddleAfter = true;
+        argsRow1.MaxBlocks = length1;
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
-        Gpu.SyncGrid();
+        var argsRow2 = args;
+        argsRow2.Buffer = temporaryBuffer;
+        argsRow2.CurrentL = length1;
+        argsRow2.ApplyTwiddleBefore = false;
+        argsRow2.ApplyTwiddleAfter = false;
+        argsRow2.MaxBlocks = length2;
 
-        args.Buffer = temporaryBuffer;
-        args.CurrentL = length1;
-        args.ApplyTwiddleBefore = false;
-        args.ApplyTwiddleAfter = false;
-        args.MaxBlocks = length2;
-        ExecuteNttSharedRow(args);
-        args.Buffer = buffer; // Restore buffer
+        Gpu.SyncGrid(() =>
+        {
+            ExecuteNttSharedRow(argsRow1);
+            GpuBigIntFermatKernels.DeviceTranspose32X32(buffer, temporaryBuffer, length2, length1, true);
+            ExecuteNttSharedRow(argsRow2);
+            GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
+        });
         Gpu.SyncGrid();
+    }
 
-        GpuBigIntFermatKernels.DeviceTranspose32X32(temporaryBuffer, buffer, length1, length2, true);
-        Gpu.SyncGrid();
+    [GpuDeviceFunction]
+    public static void ExecuteDualForwardNtt(
+        uint[] buffer1, uint[] buffer2, uint[] temporaryBuffer,
+        [GpuReadOnly] uint[] twiddle1, [GpuReadOnly] uint[] twiddle2,
+        int m, int n1, int n2)
+    {
+        var args1 = new NumberTheoreticTransformKernelArgs
+        {
+            Buffer = buffer1, TemporaryBuffer = temporaryBuffer,
+            Twiddle = twiddle1, M = m, N1 = n1, N2 = n2, P = Prime1, Pm = BarrettMagic1
+        };
+        ExecuteForwardNtt(args1);
+
+        var args2 = new NumberTheoreticTransformKernelArgs
+        {
+            Buffer = buffer2, TemporaryBuffer = temporaryBuffer,
+            Twiddle = twiddle2, M = m, N1 = n1, N2 = n2, P = Prime2, Pm = BarrettMagic2
+        };
+        ExecuteForwardNtt(args2);
+    }
+
+    [GpuDeviceFunction]
+    public static void ExecuteDualInverseNtt(
+        uint[] buffer1, uint[] buffer2, uint[] temporaryBuffer,
+        [GpuReadOnly] uint[] twiddle1, [GpuReadOnly] uint[] twiddle2,
+        int m, int n1, int n2)
+    {
+        var args1 = new NumberTheoreticTransformKernelArgs
+        {
+            Buffer = buffer1, TemporaryBuffer = temporaryBuffer,
+            Twiddle = twiddle1, M = m, N1 = n1, N2 = n2, P = Prime1, Pm = BarrettMagic1,
+            IsInverse = true
+        };
+        ExecuteInverseNtt(args1);
+
+        var args2 = new NumberTheoreticTransformKernelArgs
+        {
+            Buffer = buffer2, TemporaryBuffer = temporaryBuffer,
+            Twiddle = twiddle2, M = m, N1 = n1, N2 = n2, P = Prime2, Pm = BarrettMagic2,
+            IsInverse = true
+        };
+        ExecuteInverseNtt(args2);
     }
 
     // ReSharper disable once UnusedMember.Global -- Exists solely to trigger snapshot transpilation
