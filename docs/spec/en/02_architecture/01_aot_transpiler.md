@@ -227,7 +227,44 @@ output = [&]() {
 }();
 ```
 
-Because this lambda is executed immediately and captures scope by reference (`[&]`), the CUDA compiler (`nvcc`) aggressively inlines the closure during PTX generation. This guarantees that modern C# branching logic executes with strictly zero-allocation overhead on the device.
+## 1.4 Host Launcher Stub & `AotContexts` Architecture
+
+The `GpuKernelGenerator` enhances every class containing `[GpuKernel]` or `[GpuDeviceFunction]` methods using Roslyn `partial class` source generation (enforced by rule `GSH0036`).
+
+Instead of emitting a separate `*Wrapper` class, the generator directly injects launch helper methods and interop metadata into the user's kernel class:
+
+```csharp
+namespace UserNamespace
+{
+    public partial class MyKernels
+    {
+        // 1. Nested AOT Context for Interop and Custom Struct Layouts
+        public static partial class AotContexts
+        {
+            // Emitted shadow struct with explicit field offsets matching CUDA alignment
+            [StructLayout(LayoutKind.Explicit, Size = 16)]
+            public unsafe partial struct CustomPoint
+            {
+                [FieldOffset(0)] public float X;
+                [FieldOffset(4)] public float Y;
+            }
+
+            public static unsafe void Marshal_CustomPoint(...) { ... }
+        }
+
+        // 2. High-Level Launch Stub (Managed Types)
+        public static unsafe void LaunchMyKernel(ref CustomPoint point, ...) { ... }
+
+        // 3. Low-Level Launch Stub (Native/Device Pointers)
+        public static unsafe void LaunchMyKernelPtr(IntPtr pointPtr, ...) { ... }
+    }
+}
+```
+
+### 1.4.1 Role of `AotContexts`
+
+- **Internal Encapsulation**: For 95% of application developers, `AotContexts` is an internal implementation detail managed entirely by `LaunchMyKernel(...)`.
+- **Advanced Low-Level Interoperability**: For advanced scenarios (e.g., custom C++ Native P/Invoke, direct `cuLaunchKernel` invocations, or explicit zero-copy VRAM buffer allocation), developers can explicitly reference `MyKernels.AotContexts.CustomPoint` to interact directly with memory-aligned native struct representations.
 
 ## See also
 
