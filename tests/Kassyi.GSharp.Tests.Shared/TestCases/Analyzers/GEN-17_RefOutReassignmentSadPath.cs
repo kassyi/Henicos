@@ -7,7 +7,7 @@ public struct TestStructGEN17
     public int Value;
 }
 
-public static class GEN17_RefOutReassignmentSadPathCase
+public static partial class GEN17_RefOutReassignmentSadPathCase
 {
     [GpuKernel]
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]

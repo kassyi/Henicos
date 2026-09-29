@@ -41,5 +41,5 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::TestSpace.ErrorSpecKernelWrapper.WarmupFunctionPointerBadKernel();
+global::TestSpace.ErrorSpecKernel.WarmupFunctionPointerBadKernel();
 }}}

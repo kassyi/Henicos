@@ -4,7 +4,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_08_LambdaAndLocalFunctionsKernels
+public static partial class SYN_08_LambdaAndLocalFunctionsKernels
 {
     [GpuKernel]
     public static void NonCapturingLambdaKernel(int[] data)

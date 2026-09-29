@@ -29,7 +29,7 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
         uint[] rotLeft = new uint[1];
         uint[] rotRight = new uint[1];
 
-        SYN_155_BitOperationsKernelsWrapper.LaunchRotate32Kernel(vals, shifts, rotLeft, rotRight, blockDimX: 1);
+        SYN_155_BitOperationsKernels.LaunchRotate32Kernel(vals, shifts, rotLeft, rotRight, blockDimX: 1);
 
         Assert.Equal(BitOperations.RotateLeft(val, shift), rotLeft[0]);
         Assert.Equal(BitOperations.RotateRight(val, shift), rotRight[0]);
@@ -54,7 +54,7 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
         ulong[] rotLeft = new ulong[1];
         ulong[] rotRight = new ulong[1];
 
-        SYN_155_BitOperationsKernelsWrapper.LaunchRotate64Kernel(vals, shifts, rotLeft, rotRight, blockDimX: 1);
+        SYN_155_BitOperationsKernels.LaunchRotate64Kernel(vals, shifts, rotLeft, rotRight, blockDimX: 1);
 
         Assert.Equal(BitOperations.RotateLeft(val, shift), rotLeft[0]);
         Assert.Equal(BitOperations.RotateRight(val, shift), rotRight[0]);
@@ -66,7 +66,7 @@ public class SYN_155_BitOperationsTests : TranspilerTestBase
     public void Test_BCL02_BitOperations_Rotate32_TranspilesToPtxFunnelShiftIntrinsics()
     {
         // 1. Verify wrapper source uses G# rotation prelude intrinsics
-        string source = SYN_155_BitOperationsKernelsWrapper.Rotate32Kernel_Source;
+        string source = SYN_155_BitOperationsKernels.Rotate32Kernel_Source;
         Assert.Contains("__gsharp_rotl32", source);
         Assert.Contains("__gsharp_rotr32", source);
 

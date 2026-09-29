@@ -182,8 +182,6 @@ public class LoggerTests
         }
 
         var marker = $"Marker-{Guid.NewGuid()}";
-        // Cannot use logger because we need it to use the static Log internally maybe?
-        // Wait, we can just use the static Logger method indirectly or create a new logger.
         var logger = new TestLogger();
         logger.LogInformation(marker);
 

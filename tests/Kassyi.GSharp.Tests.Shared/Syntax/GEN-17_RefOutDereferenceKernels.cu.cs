@@ -9,7 +9,7 @@ public struct RefTestStruct
     public int Value;
 }
 
-public static class GEN_17_RefOutDereferenceKernels
+public static partial class GEN_17_RefOutDereferenceKernels
 {
     [GpuDeviceFunction]
     public static void ModifyRef(ref bool successFlag)

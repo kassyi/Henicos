@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers;
 
-public class GSH_32_UnrollStaticDeterminism_HappyPath
+public partial class GSH_32_UnrollStaticDeterminism_HappyPath
 {
     [GpuKernel]
     public static unsafe void HappyPath_Unroll(int* data, [Constant] int iterations)

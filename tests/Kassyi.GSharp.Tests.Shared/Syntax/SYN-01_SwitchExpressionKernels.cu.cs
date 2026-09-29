@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_01_SwitchExpressionKernels
+public static partial class SYN_01_SwitchExpressionKernels
 {
     [GpuKernel]
     public static void SimpleConstantSwitchKernel(int[] input, int[] output)

@@ -41,6 +41,6 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::DebugReduc.ComprehensiveSpecKernelWrapper.WarmupFunctionPointerProcessPhysics();
-global::DebugReduc.ComprehensiveSpecKernelWrapper.WarmupFunctionPointerCooperativePhysicsProcess();
+global::DebugReduc.ComprehensiveSpecKernel.WarmupFunctionPointerProcessPhysics();
+global::DebugReduc.ComprehensiveSpecKernel.WarmupFunctionPointerCooperativePhysicsProcess();
 }}}

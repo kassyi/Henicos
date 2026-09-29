@@ -39,7 +39,7 @@ public class SYN_31_38_AdvancedMemoryTests
         uint[] src = [10, 20, 30];
         uint[] dest = [0, 0, 0];
 
-        SYN_31_38_AdvancedMemoryKernelsWrapper.LaunchPointerIncrementKernel(src, dest);
+        SYN_31_38_AdvancedMemoryKernels.LaunchPointerIncrementKernel(src, dest);
 
         Assert.Equal(10u, dest[0]);
         Assert.Equal(20u, dest[1]);
@@ -54,7 +54,7 @@ public class SYN_31_38_AdvancedMemoryTests
         uint[] src = [100, 200, 300];
         uint[] dest = [0, 0, 0];
 
-        SYN_31_38_AdvancedMemoryKernelsWrapper.LaunchPointerDecrementKernel(src, dest);
+        SYN_31_38_AdvancedMemoryKernels.LaunchPointerDecrementKernel(src, dest);
 
         Assert.Equal(100u, dest[0]);
         Assert.Equal(200u, dest[1]);
@@ -73,7 +73,7 @@ public class SYN_31_38_AdvancedMemoryTests
     {
         uint[] dest = [0, 0, 0];
 
-        SYN_31_38_AdvancedMemoryKernelsWrapper.LaunchPointerComplexAssignmentKernel(idx, val, dest);
+        SYN_31_38_AdvancedMemoryKernels.LaunchPointerComplexAssignmentKernel(idx, val, dest);
 
         Assert.Equal(expectedDest[0], dest[0]);
         Assert.Equal(expectedDest[1], dest[1]);

@@ -20,7 +20,7 @@ public struct AggregateStruct
     public int B;
 }
 
-public static class SYN_90_StructAggregateInitKernels
+public static partial class SYN_90_StructAggregateInitKernels
 {
     [GpuKernel]
     public static void AggregateInitKernel(int[] output)

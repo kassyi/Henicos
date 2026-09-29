@@ -8,7 +8,7 @@ public struct CustomPoint
     public float Y;
 }
 
-public static class SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels
+public static partial class SYN_13_GSH_04_GEN_29_MemoryAndFixedArraysKernels
 {
     [GpuKernel]
     public static void SharedMemoryStaticKernel(int[] intOutput, float[] floatOutput, CustomPoint[] pointOutput)

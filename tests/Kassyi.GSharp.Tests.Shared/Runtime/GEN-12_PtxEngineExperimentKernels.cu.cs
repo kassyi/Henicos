@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests;
 
-public static class PtxEngineExperimentKernels
+public static partial class PtxEngineExperimentKernels
 {
     [GpuKernel]
     public static void AddKernel(int[] a, int[] b, int[] c)

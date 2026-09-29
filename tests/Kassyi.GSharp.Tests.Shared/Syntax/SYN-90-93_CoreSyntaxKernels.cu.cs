@@ -17,7 +17,7 @@ public struct MixedPaddingStruct
     public short Flag2;
 }
 
-public static class SYN_90_93_CoreSyntaxKernels
+public static partial class SYN_90_93_CoreSyntaxKernels
 {
     // SYN-90: 複雑な制御フロー (if-else ネストとループの複合)
     [GpuKernel]

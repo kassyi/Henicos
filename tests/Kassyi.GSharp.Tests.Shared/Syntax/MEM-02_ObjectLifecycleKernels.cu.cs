@@ -10,7 +10,7 @@ public struct LifecycleObjectState
     public int Status;
 }
 
-public static class MEM_02_ObjectLifecycleKernels
+public static partial class MEM_02_ObjectLifecycleKernels
 {
     [GpuDeviceFunction]
     public static LifecycleObjectState TransformState(LifecycleObjectState state, int multiplier)

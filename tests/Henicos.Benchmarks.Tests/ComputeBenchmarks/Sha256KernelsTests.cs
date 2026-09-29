@@ -5,7 +5,7 @@ using Henicos.Benchmarks.ComputeBenchmarks;
 
 namespace Henicos.Benchmarks.Tests.ComputeBenchmarks;
 
-public class Sha256KernelsTests
+public partial class Sha256KernelsTests
 {
     [Fact]
     public void ComputeBlock_MatchesStandardSha256()

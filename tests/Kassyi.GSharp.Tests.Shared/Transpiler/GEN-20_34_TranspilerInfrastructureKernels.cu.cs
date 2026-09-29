@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Transpiler;
 
-public static class GEN_20_34_TranspilerInfrastructureKernels
+public static partial class GEN_20_34_TranspilerInfrastructureKernels
 {
     // GEN-20: Mutually calling device functions (forward declarations test)
     [GpuDeviceFunction]

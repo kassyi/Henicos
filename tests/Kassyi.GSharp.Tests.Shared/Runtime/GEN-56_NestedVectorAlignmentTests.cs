@@ -25,7 +25,7 @@ public class GEN56_NestedVectorAlignmentTests
         // メモリオフセットが、CUDA ABI互換のサイズ/パディングになっているか検証する。
         // C#側の `LayoutKind.Explicit` と `[FieldOffset]` の計算が正しいかのテスト。
         
-        var assembly = typeof(GEN56_NestedVectorAlignmentKernelsWrapper).Assembly;
+        var assembly = typeof(GEN56_NestedVectorAlignmentKernels).Assembly;
         Type type = null;
         try
         {
@@ -70,9 +70,9 @@ public class GEN56_NestedVectorAlignmentTests
         };
 
         var offsets = new int[6];
-        GEN56_NestedVectorAlignmentKernelsWrapper.LaunchWriteExpectedOffsetsKernel(offsets);
+        GEN56_NestedVectorAlignmentKernels.LaunchWriteExpectedOffsetsKernel(offsets);
 
-        GEN56_NestedVectorAlignmentKernelsWrapper.LaunchRoundtripKernel(ref data);
+        GEN56_NestedVectorAlignmentKernels.LaunchRoundtripKernel(ref data);
 
         Assert.Equal((byte)10, data.Field1_Byte);
         

@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Core;
 
-public class GEN_29_SharedMemoryKernels
+public partial class GEN_29_SharedMemoryKernels
 {
     [GpuKernel]
     public static void ReverseArrayWithSharedMemoryKernel(int[] input, int[] output, int length)

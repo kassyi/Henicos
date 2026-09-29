@@ -40,7 +40,7 @@ public class GEN_13_GpuMacroTests
             gridSize = 2; // small grid, forces stride loop to jump
         }
 
-        GpuMacroTestKernelsWrapper.LaunchKernel_MacroTest_FillAndSingle(
+        GpuMacroTestKernels.LaunchKernel_MacroTest_FillAndSingle(
             output, length, fillValue, singleValue,
             gridDimX: gridSize, blockDimX: blockSize);
 

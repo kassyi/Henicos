@@ -45,7 +45,7 @@
                                 ^^^^^^^^^^^^^^^^^^^
 
 */
- : (27,32)-(27,51),
+ : (29,32)-(29,51),
       Message: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.,
       Severity: Error,
       Descriptor: {
@@ -64,7 +64,7 @@
                                       ^^^^^^^^^^
 }
 */
- : (31,38)-(31,48),
+ : (33,38)-(33,48),
       Message: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.,
       Severity: Error,
       Descriptor: {

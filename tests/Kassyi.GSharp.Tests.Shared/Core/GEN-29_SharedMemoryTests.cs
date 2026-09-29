@@ -24,7 +24,7 @@ public class GEN_29_SharedMemoryTests : TranspilerTestBase
         }
 
         // SourceGenerator emits this wrapper class and method.
-        GEN_29_SharedMemoryKernelsWrapper.LaunchReverseArrayWithSharedMemoryKernel(
+        GEN_29_SharedMemoryKernels.LaunchReverseArrayWithSharedMemoryKernel(
             input,
             output,
             length,

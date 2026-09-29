@@ -8,7 +8,7 @@ public struct TestStructSYN90
     public int B;
 }
 
-public static class SYN90_UnsupportedMethodInStructInitCase
+public static partial class SYN90_UnsupportedMethodInStructInitCase
 {
     private static int UnsupportedMethod() => 42;
 

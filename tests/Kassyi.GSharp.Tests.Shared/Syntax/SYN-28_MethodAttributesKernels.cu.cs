@@ -4,7 +4,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_28_MethodAttributesKernels
+public static partial class SYN_28_MethodAttributesKernels
 {
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

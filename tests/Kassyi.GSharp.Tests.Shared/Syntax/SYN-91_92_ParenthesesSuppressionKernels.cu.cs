@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_91_92_ParenthesesSuppressionKernels
+public static partial class SYN_91_92_ParenthesesSuppressionKernels
 {
     [GpuKernel]
     public static void ParenthesesKernel(int[] output, int a, int b, int c)

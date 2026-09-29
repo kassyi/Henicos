@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Stdlib.Math
 {
-    public static class GpuBigIntKernels
+    public static partial class GpuBigIntKernels
     {
         [GpuKernel]
         public static void ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize)

@@ -4,7 +4,7 @@ using Henicos.Benchmarks.ComputeBenchmarks;
 
 namespace Henicos.Benchmarks.Tests.ComputeBenchmarks;
 
-public class BlackScholesKernelsTests
+public partial class BlackScholesKernelsTests
 {
     [Fact]
     public void CalculateOptionPrice_ReturnsExpectedValues()

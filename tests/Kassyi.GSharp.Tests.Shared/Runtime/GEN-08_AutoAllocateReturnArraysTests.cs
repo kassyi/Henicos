@@ -12,7 +12,7 @@ public class GEN_08_AutoAllocateReturnArraysTests
     [Trait("Category", "GpuExecution")]
     public void NormalReturnKernel_MultiThread_ReturnsExpectedArray()
     {
-        var result = GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchNormalReturnKernel(10, blockDimX: 5, blockDimY: 2);
+        var result = GEN_08_AutoAllocateReturnArraysKernels.LaunchNormalReturnKernel(10, blockDimX: 5, blockDimY: 2);
         
         Assert.NotNull(result);
         Assert.Equal(10, result.Length);
@@ -24,7 +24,7 @@ public class GEN_08_AutoAllocateReturnArraysTests
     [Trait("Category", "GpuExecution")]
     public void OneThreadKernel_OneThread_ReturnsSingleElementArray()
     {
-        var result = GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchOneThreadKernel(blockDimX: 1, blockDimY: 1, blockDimZ: 1);
+        var result = GEN_08_AutoAllocateReturnArraysKernels.LaunchOneThreadKernel(blockDimX: 1, blockDimY: 1, blockDimZ: 1);
         
         Assert.NotNull(result);
         Assert.Single(result);
@@ -36,7 +36,7 @@ public class GEN_08_AutoAllocateReturnArraysTests
     [Trait("Category", "GpuExecution")]
     public void StructReturnKernel_BlittableStruct_ReturnsExpectedStructArray()
     {
-        var result = GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchStructReturnKernel(blockDimX: 100);
+        var result = GEN_08_AutoAllocateReturnArraysKernels.LaunchStructReturnKernel(blockDimX: 100);
         
         Assert.NotNull(result);
         Assert.Equal(100, result.Length);
@@ -53,7 +53,7 @@ public class GEN_08_AutoAllocateReturnArraysTests
     public void KernelLaunchZeroDimension_ThrowsArgumentOutOfRangeException()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => 
-            GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchNormalReturnKernel(10, blockDimX: 0));
+            GEN_08_AutoAllocateReturnArraysKernels.LaunchNormalReturnKernel(10, blockDimX: 0));
     }
 
     [Fact]
@@ -62,6 +62,6 @@ public class GEN_08_AutoAllocateReturnArraysTests
     public void KernelLaunchOverflowingDimension_ThrowsOverflowException()
     {
         Assert.Throws<OverflowException>(() => 
-            GEN_08_AutoAllocateReturnArraysKernelsWrapper.LaunchNormalReturnKernel(10, blockDimX: int.MaxValue, blockDimY: 2));
+            GEN_08_AutoAllocateReturnArraysKernels.LaunchNormalReturnKernel(10, blockDimX: int.MaxValue, blockDimY: 2));
     }
 }

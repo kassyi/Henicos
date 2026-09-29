@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.TestCases.Analyzers;
 
-public static class GEN29_DynamicSharedMemorySadPathCase
+public static partial class GEN29_DynamicSharedMemorySadPathCase
 {
     [GpuKernel]
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]

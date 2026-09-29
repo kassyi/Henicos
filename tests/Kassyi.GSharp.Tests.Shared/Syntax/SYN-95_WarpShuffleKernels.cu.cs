@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Syntax;
 
-public static class SYN_95_WarpShuffleKernels
+public static partial class SYN_95_WarpShuffleKernels
 {
     // [Happy Path] Parallel Reduction Sum using ShuffleDownSync within a 32-thread warp
     [GpuKernel]

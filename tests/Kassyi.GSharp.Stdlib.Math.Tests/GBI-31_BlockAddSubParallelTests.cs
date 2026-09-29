@@ -61,7 +61,7 @@ public class GBI_31_BlockAddSubParallelTests
         // blockDim = 256 for this test
         uint blockDimX = 256;
 
-        GpuBigIntFermatKernelsWrapper.LaunchKernelTestBlockAddSubParallel(
+        GpuBigIntFermatKernels.LaunchKernelTestBlockAddSubParallel(
             aData,
             bData,
             resultData,

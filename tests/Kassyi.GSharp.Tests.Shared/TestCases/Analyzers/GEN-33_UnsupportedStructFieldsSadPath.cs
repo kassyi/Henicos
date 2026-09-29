@@ -14,7 +14,7 @@ public struct InvalidStructWithList
     public List<int> Items;
 }
 
-public static class GEN_33_SadPathKernels
+public static partial class GEN_33_SadPathKernels
 {
     [GpuKernel]
     [Kassyi.GSharp.Core.SkipSnapshotConsistency("Sad Path")]

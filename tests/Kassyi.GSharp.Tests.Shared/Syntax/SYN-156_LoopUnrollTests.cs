@@ -45,7 +45,7 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     {
 
         int[] data = [0];
-        SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollForKernel(data, blockDimX: 1);
+        SYN_156_LoopUnrollKernels.LaunchLoopUnrollForKernel(data, blockDimX: 1);
         Assert.Equal(10, data[0]);
     }
 
@@ -56,7 +56,7 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     {
 
         int[] data = [0];
-        SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollFactorKernel(data, blockDimX: 1);
+        SYN_156_LoopUnrollKernels.LaunchLoopUnrollFactorKernel(data, blockDimX: 1);
         Assert.Equal(100, data[0]);
     }
 
@@ -67,7 +67,7 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     {
 
         int[] data = [0];
-        SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollWhileKernel(data, blockDimX: 1);
+        SYN_156_LoopUnrollKernels.LaunchLoopUnrollWhileKernel(data, blockDimX: 1);
         Assert.Equal(15, data[0]);
     }
 
@@ -78,7 +78,7 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     {
 
         int[] data = [0];
-        SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollNestedKernel(data, blockDimX: 1);
+        SYN_156_LoopUnrollKernels.LaunchLoopUnrollNestedKernel(data, blockDimX: 1);
         Assert.Equal(18, data[0]);
     }
 
@@ -89,7 +89,7 @@ public class SYN_156_LoopUnrollTests : TranspilerTestBase
     {
 
         int[] data = [0];
-        SYN_156_LoopUnrollKernelsWrapper.LaunchLoopUnrollSingleStatementKernel(data, blockDimX: 1);
+        SYN_156_LoopUnrollKernels.LaunchLoopUnrollSingleStatementKernel(data, blockDimX: 1);
         Assert.Equal(8, data[0]);
     }
 
