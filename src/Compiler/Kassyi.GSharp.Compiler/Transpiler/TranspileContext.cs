@@ -21,7 +21,7 @@ using Rules;
 public struct TranspileContext(
     SourceWriter writer,
     HashSet<INamedTypeSymbol> usedStructs,
-    List<(string Name, OverrideValue Value)> localVariableOverrides,
+    OverrideScopeStack localVariableOverrides,
     SemanticModel semanticModel,
     Action<Diagnostic>? reportDiagnostic,
     RoslynToCudaVisitor visitor,
@@ -43,47 +43,25 @@ public struct TranspileContext(
     /// The stack of identifier substitutions applied during macro and intrinsic expansion.
     /// Searched in reverse order so inner scopes shadow outer scopes.
     /// </summary>
-    public List<(string Name, OverrideValue Value)> LocalVariableOverrides = localVariableOverrides;
+    public OverrideScopeStack LocalVariableOverrides = localVariableOverrides;
 
     /// <summary>
     /// Pushes an override value into the active scope and returns a state token for later restoration.
     /// </summary>
-    public int PushOverrideScope(string name, OverrideValue value)
-    {
-        int cookie = LocalVariableOverrides.Count;
-        LocalVariableOverrides.Add((name, value));
-        return cookie;
-    }
+    public int PushOverrideScope(string name, OverrideValue value) =>
+        LocalVariableOverrides.Push(name, value);
 
     /// <summary>
     /// Restores the override scope to the specified state token.
     /// </summary>
-    public void PopOverrideScope(int cookie)
-    {
-        int removeCount = LocalVariableOverrides.Count - cookie;
-        if (removeCount > 0)
-        {
-            LocalVariableOverrides.RemoveRange(cookie, removeCount);
-        }
-    }
+    public void PopOverrideScope(int cookie) =>
+        LocalVariableOverrides.Pop(cookie);
 
     /// <summary>
     /// Attempts to resolve a local variable override by name, searching from the innermost scope outwards.
     /// </summary>
-    public bool TryGetOverride(string name, out OverrideValue value)
-    {
-        for (int i = LocalVariableOverrides.Count - 1; i >= 0; i--)
-        {
-            if (LocalVariableOverrides[i].Name == name)
-            {
-                value = LocalVariableOverrides[i].Value;
-                return true;
-            }
-        }
-
-        value = default;
-        return false;
-    }
+    public bool TryGetOverride(string name, out OverrideValue value) =>
+        LocalVariableOverrides.TryGet(name, out value);
 
     /// <summary>
     /// Indicates whether the dynamic shared memory base declaration (<c>extern __shared__</c>) has already been emitted in the current kernel.

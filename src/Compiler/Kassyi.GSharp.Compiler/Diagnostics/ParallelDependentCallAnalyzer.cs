@@ -166,10 +166,38 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
 
         private bool IsSingleThreadDivergentCondition(ExpressionSyntax condition)
         {
-            // Simple heuristic to detect single thread divergence (e.g., if (Gpu.ThreadIndex.X == 0))
-            var text = condition.ToString();
-            return (text.Contains("ThreadIndex") || text.Contains("GlobalThreadIndex") || text.Contains("BlockIndex")) && 
-                   text.Contains("==") && text.Contains("0");
+            if (condition is not BinaryExpressionSyntax binary || !binary.IsKind(SyntaxKind.EqualsExpression))
+            {
+                return false;
+            }
+
+            ExpressionSyntax targetExpr;
+            if (IsZeroLiteral(binary.Left))
+            {
+                targetExpr = binary.Right;
+            }
+            else if (IsZeroLiteral(binary.Right))
+            {
+                targetExpr = binary.Left;
+            }
+            else
+            {
+                return false;
+            }
+
+            foreach (var node in targetExpr.DescendantNodesAndSelf())
+            {
+                if (node is IdentifierNameSyntax identifier &&
+                    identifier.Identifier.ValueText is "ThreadIndex" or "GlobalThreadIndex" or "BlockIndex")
+                {
+                    return true;
+                }
+            }
+
+            return false;
+
+            static bool IsZeroLiteral(ExpressionSyntax expr) =>
+                expr is LiteralExpressionSyntax { Token.ValueText: "0" };
         }
 
         private void CheckAndReportIfParallelDependent(SyntaxNode node, IMethodSymbol methodSymbol)

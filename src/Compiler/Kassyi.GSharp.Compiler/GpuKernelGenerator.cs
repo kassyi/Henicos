@@ -11,7 +11,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 {
     private sealed class DiagnosticCollector
     {
-        private readonly List<Diagnostic> _diagnostics = [];
+        private readonly ImmutableArray<Diagnostic>.Builder _diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
 
         public EquatableArray<EquatableDiagnostic> GetDiagnostics()
         {
@@ -246,7 +246,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         bool isCuda = config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase);
         ITranspilerDialect dialect = isCuda ? new GSharpCudaDialect() : new StandardCppDialect();
 
-        var distinctDeviceMethods = new List<TranspiledDeviceMethodResult>();
+        var distinctDeviceMethods = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
         var seenDeviceMethods = new HashSet<TranspiledDeviceMethodResult>();
         foreach (var m in deviceMethods)
         {
@@ -269,9 +269,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         var allKernelsSource = new StringBuilder();
         var seenKernelMethods = new HashSet<TranspiledKernelResult>();
-        var distinctKernelMethods = new List<TranspiledKernelResult>();
+        var distinctKernelMethods = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
 
-        var methodsByClass = new Dictionary<INamedTypeSymbol, List<TranspiledKernelResult>>(SymbolEqualityComparer.Default);
+        var methodsByClass = new Dictionary<INamedTypeSymbol, ImmutableArray<TranspiledKernelResult>.Builder>(SymbolEqualityComparer.Default);
         foreach (var method in kernelMethods)
         {
             if (seenKernelMethods.Add(method))
@@ -280,12 +280,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 string source = isCuda ? method.CudaSource : method.CppSource;
                 allKernelsSource.AppendLine(source);
 
-                if (!methodsByClass.TryGetValue(method.MethodSymbol.ContainingType, out var list))
+                if (!methodsByClass.TryGetValue(method.MethodSymbol.ContainingType, out var builder))
                 {
-                    list = [];
-                    methodsByClass[method.MethodSymbol.ContainingType] = list;
+                    builder = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
+                    methodsByClass[method.MethodSymbol.ContainingType] = builder;
                 }
-                list.Add(method);
+                builder.Add(method);
             }
         }
 
@@ -295,7 +295,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
-        var safeAssemblyName = assemblyName.Replace(".", "_");
+        var safeAssemblyName = IdentifierHelper.ToSafeIdentifier(assemblyName);
         WriteUnityAotArtifact(safeAssemblyName, config, preludeSource, commonDeviceSource, allKernelsSource.ToString(), dialect, context);
 
         if (isCuda)
@@ -323,7 +323,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             using (preludeWriter.Scope())
             {
                 preludeWriter.Append("public const string Source = @\"");
-                preludeWriter.Append(preludeSource.Replace("\"", "\"\""));
+                preludeWriter.AppendVerbatimLiteral(preludeSource);
                 preludeWriter.AppendLine("\";");
             }
         }
@@ -340,7 +340,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             using (deviceWriter.Scope())
             {
                 deviceWriter.Append("public const string Source = @\"");
-                deviceWriter.Append(commonDeviceSource.Replace("\"", "\"\""));
+                deviceWriter.AppendVerbatimLiteral(commonDeviceSource);
                 deviceWriter.AppendLine("\";");
             }
         }
@@ -349,10 +349,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
             SourceText.From(deviceWriter.ToString(), Encoding.UTF8));
     }
 
-    private static void ProcessKernelClass(INamedTypeSymbol classSymbol, List<TranspiledKernelResult> methods, GeneratorConfig config,
+    private static void ProcessKernelClass(INamedTypeSymbol classSymbol, IEnumerable<TranspiledKernelResult> methods, GeneratorConfig config,
         SourceProductionContext context, bool isCuda)
     {
-        var methodsData = new List<(IMethodSymbol Method, string Source)>();
+        var methodsData = ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source)>();
         foreach (var method in methods)
         {
             foreach (var diag in method.Diagnostics)

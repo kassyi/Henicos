@@ -178,16 +178,16 @@ internal static class MacroTranspiler
 
     private readonly ref struct MacroScope
     {
-        private readonly List<(string Name, OverrideValue Value)> _overrides;
+        private readonly OverrideScopeStack _stack;
         public readonly string ParamName;
         private readonly int _cookie;
 
         public MacroScope(ref TranspileContext context, string paramName, string? contextParamName,
             ExpressionSyntax? contextArgExpr)
         {
-            _overrides = context.LocalVariableOverrides;
+            _stack = context.LocalVariableOverrides;
             ParamName = paramName;
-            _cookie = _overrides.Count;
+            _cookie = _stack.Count;
 
             if (contextParamName != null && contextArgExpr != null)
             {
@@ -197,11 +197,7 @@ internal static class MacroTranspiler
 
         public void Dispose()
         {
-            var removeCount = _overrides.Count - _cookie;
-            if (removeCount > 0)
-            {
-                _overrides.RemoveRange(_cookie, removeCount);
-            }
+            _stack.Pop(_cookie);
         }
     }
 

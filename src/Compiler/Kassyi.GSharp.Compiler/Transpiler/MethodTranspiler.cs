@@ -283,15 +283,9 @@ public static class MethodTranspiler
     private static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
         ref TranspileContext context)
     {
-        var validParameters = new List<ParameterSyntax>(parameters.Count);
-        foreach (var p in parameters)
+        for (var i = 0; i < parameters.Count; i++)
         {
-            validParameters.Add(p);
-        }
-
-        for (var i = 0; i < validParameters.Count; i++)
-        {
-            var p = validParameters[i];
+            var p = parameters[i];
             if (p.Type == null)
             {
                 continue;
@@ -316,7 +310,7 @@ public static class MethodTranspiler
             }
 
             context.Writer.Append($" {p.Identifier.Text}");
-            if (i < validParameters.Count - 1)
+            if (i < parameters.Count - 1)
             {
                 context.Writer.Append(", ");
             }

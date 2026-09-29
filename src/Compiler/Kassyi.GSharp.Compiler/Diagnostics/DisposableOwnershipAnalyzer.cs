@@ -21,9 +21,6 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     }
 
     [ThreadStatic]
-    private static List<ISymbol>? s_tDisposableMembers;
-
-    [ThreadStatic]
     private static HashSet<string>? s_tBorrowedParamNames;
 
     [ThreadStatic]
@@ -40,8 +37,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var disposableMembers = s_tDisposableMembers ??= [];
-        disposableMembers.Clear();
+        var disposableMembers = ImmutableArray.CreateBuilder<ISymbol>();
 
         foreach (var m in namedType.GetMembers())
         {
@@ -171,7 +167,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     private static void ValidateMissingIDisposable(
         SymbolAnalysisContext context,
         INamedTypeSymbol namedType,
-        List<ISymbol> disposableMembers,
+        IReadOnlyList<ISymbol> disposableMembers,
         HashSet<string> borrowedFields,
         bool implementsIDisposable)
     {
@@ -202,7 +198,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     private static void ValidateDisposeImplementation(
         SymbolAnalysisContext context,
         INamedTypeSymbol namedType,
-        List<ISymbol> disposableMembers,
+        IReadOnlyList<ISymbol> disposableMembers,
         HashSet<string> borrowedFields,
         HashSet<string> disposedMemberNames)
     {

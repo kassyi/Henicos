@@ -9,7 +9,7 @@ public class GEN_05_StructTranspilerEdgeCasesTests
         return new TranspileContext(
             default,
             usedStructs,
-            new List<(string Name, OverrideValue Value)>(),
+            new OverrideScopeStack(),
             null!,
             null,
             null!,

@@ -35,10 +35,10 @@ internal static class StructTranspiler
     /// <summary>
     /// Topologically sorts referenced structs so that dependent nested structs are declared first in C++.
     /// </summary>
-    public static IEnumerable<INamedTypeSymbol> GetTopologicallySortedStructs(ref TranspileContext context)
+    public static System.Collections.Immutable.ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(ref TranspileContext context)
     {
         // [WHY] CUDA C++ requires full struct definitions in dependency order before value-type usage as fields.
-        var result = new List<INamedTypeSymbol>();
+        var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
         var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         var visiting = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         var usedStructs = context.UsedStructs;
@@ -48,7 +48,7 @@ internal static class StructTranspiler
             visit(s);
         }
 
-        return result;
+        return result.ToImmutable();
 
         void visit(INamedTypeSymbol s)
         {

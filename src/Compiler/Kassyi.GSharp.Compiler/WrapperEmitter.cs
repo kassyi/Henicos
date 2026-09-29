@@ -226,8 +226,9 @@ internal static class WrapperEmitter
             return;
         }
 
-        var escapedSource = source.Replace("\"", "\"\"");
-        writer.AppendLine($"public const string {method.Name}_Source = @\"{escapedSource}\";");
+        writer.Append($"public const string {method.Name}_Source = @\"");
+        writer.AppendVerbatimLiteral(source);
+        writer.AppendLine("\";");
         writer.AppendLine(
             $"public static readonly string {method.Name}_FullSource=" +
             $"global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}Prelude.Source +" +
@@ -430,7 +431,7 @@ internal static class WrapperEmitter
         {
             writer.AppendLine($"if (s_hfunc_{method.Name}.HasValue) return;");
             writer.Append("IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_");
-            var assemblyName = method.ContainingAssembly.Name.Replace(".", "_");
+            var assemblyName = IdentifierHelper.ToSafeIdentifier(method.ContainingAssembly.Name);
             writer.Append(assemblyName);
             writer.AppendLine(".GetOrLoadModule();");
             writer.AppendLine(
@@ -450,7 +451,7 @@ internal static class WrapperEmitter
     public static string GenerateModuleContextClass(string assemblyName,
         IEnumerable<TranspiledKernelResult> kernelMethods)
     {
-        var safeAssemblyName = assemblyName.Replace(".", "_");
+        var safeAssemblyName = IdentifierHelper.ToSafeIdentifier(assemblyName);
 
         var writer = new SourceWriter();
         writer.AppendLine($$"""
@@ -567,7 +568,7 @@ internal static class WrapperEmitter
 
     private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method)
     {
-        var safeAssemblyName = method.ContainingAssembly.Name.Replace(".", "_");
+        var safeAssemblyName = IdentifierHelper.ToSafeIdentifier(method.ContainingAssembly.Name);
         var mangledName = GetMangledKernelName(method);
 
         writer.AppendLine(

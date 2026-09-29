@@ -20,7 +20,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     // [WHY] Reusable collections pooled per visitor instance to ensure zero-allocation during generation.
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
-    private readonly List<(string Name, OverrideValue Value)> _localVariableOverrides = [];
+    private readonly OverrideScopeStack _localVariableOverrides = new();
 
     internal TranspileContext Context;
     private int _isRented;
@@ -303,15 +303,15 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         IReadOnlyList<StatementSyntax> statements,
         SemanticModel semanticModel)
     {
-        var result = new List<StatementSyntax>(statements.Count);
+        var result = System.Collections.Immutable.ImmutableArray.CreateBuilder<StatementSyntax>(statements.Count);
         FlattenInto(statements, semanticModel, result);
-        return result;
+        return result.ToImmutable();
     }
 
     private static void FlattenInto(
         IEnumerable<StatementSyntax> statements,
         SemanticModel semanticModel,
-        List<StatementSyntax> result)
+        ImmutableArray<StatementSyntax>.Builder result)
     {
         foreach (var stmt in statements)
         {
