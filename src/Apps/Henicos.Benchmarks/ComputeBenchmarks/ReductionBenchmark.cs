@@ -64,7 +64,7 @@ public class ReductionBenchmark : IComputeBenchmark
 
     public void RunGSharp()
     {
-        ReductionKernelsWrapper.LaunchReductionKernel(
+        ReductionKernels.LaunchReductionKernel(
             _input, _outputGsharp, N,
             gridDimX: Blocks, blockDimX: ThreadsPerBlock);
 

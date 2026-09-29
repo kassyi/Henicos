@@ -1,33 +1,28 @@
-using System.Runtime.InteropServices;
-
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
-public static class BlackScholesKernels
+public static partial class BlackScholesKernels
 {
-    public static class AotContexts
+    public struct BlackScholesContext
     {
-        public struct BlackScholes
-        {
-            [GpuReadOnly]
-            public float[] S;
+        [GpuReadOnly]
+        public float[] S;
 
-            [GpuReadOnly]
-            public float[] X;
+        [GpuReadOnly]
+        public float[] X;
 
-            [GpuReadOnly]
-            public float[] T;
+        [GpuReadOnly]
+        public float[] T;
 
-            public float R;
-            public float V;
-            public float[] CallResult;
-            public float[] PutResult;
-            public int N;
-        }
+        public float R;
+        public float V;
+        public float[] CallResult;
+        public float[] PutResult;
+        public int N;
     }
 
 
     [GpuKernel]
-    public static void BlackScholesKernel(AotContexts.BlackScholes ctx)
+    public static void BlackScholesKernel(BlackScholesContext ctx)
     {
         Gpu.GridStrideLoop(ctx.N, tid =>
         {
@@ -47,19 +42,19 @@ public static class BlackScholesKernels
         float cndD1 = Cnd(d1);
         float cndD2 = Cnd(d2);
 
-        float expRT = FastMath.Exp(-r * t);
+        float expRt = FastMath.Exp(-r * t);
 
-        callResult = s * cndD1 - x * expRT * cndD2;
-        putResult = x * expRT * (1.0f - cndD2) - s * (1.0f - cndD1);
+        callResult = s * cndD1 - x * expRt * cndD2;
+        putResult = x * expRt * (1.0f - cndD2) - s * (1.0f - cndD1);
     }
 
     [GpuDeviceFunction]
     public static float Cnd(float d)
     {
-        float K = 1.0f / (1.0f + 0.2316419f * FastMath.Abs(d));
+        float k = 1.0f / (1.0f + 0.2316419f * FastMath.Abs(d));
         float cnd = 0.3989422804f * FastMath.Exp(-0.5f * d * d) *
-                    (K * (0.31938153f +
-                          K * (-0.356563782f + K * (1.781477937f + K * (-1.821255978f + K * 1.330274429f)))));
+                    (k * (0.31938153f +
+                          k * (-0.356563782f + k * (1.781477937f + k * (-1.821255978f + k * 1.330274429f)))));
 
         if (d > 0)
         {

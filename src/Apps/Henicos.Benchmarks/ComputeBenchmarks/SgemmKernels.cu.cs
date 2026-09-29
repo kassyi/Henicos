@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
-public static class SgemmKernels
+public static partial class SgemmKernels
 {
     [GpuKernel]
     public static void SgemmKernel([In] float[] a, [In] float[] b, [Out] float[] c, int n)

@@ -53,7 +53,7 @@ public class SgemmBenchmark : IComputeBenchmark
         uint blockDimX = TileSize;
         uint blockDimY = TileSize;
 
-        SgemmKernelsWrapper.LaunchSgemmKernel(
+        SgemmKernels.LaunchSgemmKernel(
             _a, _b, _cGsharp, N,
             gridDimX: gridDimX, gridDimY: gridDimY, blockDimX: blockDimX, blockDimY: blockDimY);
     }
