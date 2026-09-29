@@ -88,7 +88,9 @@ internal static class WrapperEmitter
             }
             case true when CudaLayoutRules.IsCustomStruct(p.Type):
             {
-                var rawTypeName = "Aot_" + GetFlatTypeName(p.Type);
+                var tempWriter = new SourceWriter();
+                tempWriter.AppendAotStructPath(p.Type);
+                var rawTypeName = tempWriter.ToString();
                 return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
             }
             default:
@@ -118,14 +120,6 @@ internal static class WrapperEmitter
             currentType = currentType.ContainingType;
         }
 
-        var ns = typeSymbol.ContainingNamespace;
-        while (ns is { IsGlobalNamespace: false })
-        {
-            length += ns.Name.Length;
-            partsCount++;
-            ns = ns.ContainingNamespace;
-        }
-
         if (partsCount > 1)
         {
             length += partsCount - 1; // underscores
@@ -145,28 +139,7 @@ internal static class WrapperEmitter
             }
 
             currentType = currentType.ContainingType;
-            if (currentType == null && (typeSymbol.ContainingNamespace == null ||
-                                        typeSymbol.ContainingNamespace.IsGlobalNamespace))
-            {
-                continue;
-            }
-
-            currentIndex--;
-            buffer[currentIndex] = '_';
-        }
-
-        ns = typeSymbol.ContainingNamespace;
-        while (ns is { IsGlobalNamespace: false })
-        {
-            var name = ns.Name;
-            currentIndex -= name.Length;
-            for (var i = 0; i < name.Length; i++)
-            {
-                buffer[currentIndex + i] = name[i];
-            }
-
-            ns = ns.ContainingNamespace;
-            if (ns == null || ns.IsGlobalNamespace)
+            if (currentType == null)
             {
                 continue;
             }
@@ -178,9 +151,9 @@ internal static class WrapperEmitter
         return new string(buffer, 0, length);
     }
 
-    public static string GenerateWrapperClass(IMethodSymbol method, string source, GeneratorConfig config)
+    public static string GenerateWrapperClass(INamedTypeSymbol classSymbol, System.Collections.Generic.IEnumerable<(IMethodSymbol Method, string Source)> methods, GeneratorConfig config)
     {
-        var className = method.ContainingType.Name + "Wrapper";
+        var className = classSymbol.Name + "Wrapper";
 
         var writer = new SourceWriter();
         writer.AppendLine("""
@@ -198,36 +171,44 @@ internal static class WrapperEmitter
 
         writer.AppendLine();
         writer.Append("namespace ");
-        if (method.ContainingNamespace.IsGlobalNamespace)
+        if (classSymbol.ContainingNamespace.IsGlobalNamespace)
         {
             writer.AppendLine("Kassyi.GSharp.Generated");
         }
         else
         {
-            WriteNamespace(writer, method.ContainingNamespace);
+            WriteNamespace(writer, classSymbol.ContainingNamespace);
             writer.AppendLine();
         }
 
         using (writer.Scope())
         {
-            writer.Append("public static partial class ");
+            writer.Append("public partial class ");
             writer.AppendLine(className);
             using (writer.Scope())
             {
-                WriteKernelSource(writer, method, source, config);
-                StructMarshalingEmitter.WriteStructMarshaling(writer, method);
-
-                if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
+                writer.AppendLine("public static partial class AotContexts");
+                using (writer.Scope())
                 {
-                    writer.AppendLine($"private static IntPtr? s_hfunc_{method.Name};");
-                    WriteWarmupFunctionPointerMethod(writer, method);
-                    WriteLaunchMethod(writer, method, false);
-                    WriteLaunchMethod(writer, method, true);
+                    StructMarshalingEmitter.WriteStructMarshaling(writer, methods);
                 }
-                else
+
+                foreach (var (method, source) in methods)
                 {
-                    WriteCpuDelegateDeclaration(writer, method);
-                    WriteLaunchMethodCpu(writer, method);
+                    WriteKernelSource(writer, method, source, config);
+
+                    if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
+                    {
+                        writer.AppendLine($"private static IntPtr? s_hfunc_{method.Name};");
+                        WriteWarmupFunctionPointerMethod(writer, method);
+                        WriteLaunchMethod(writer, method, false);
+                        WriteLaunchMethod(writer, method, true);
+                    }
+                    else
+                    {
+                        WriteCpuDelegateDeclaration(writer, method);
+                        WriteLaunchMethodCpu(writer, method);
+                    }
                 }
             }
         }

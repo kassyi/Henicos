@@ -167,11 +167,10 @@ internal static class KernelLaunchEmitter
     private static void WriteCustomStructMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex,
         bool isDevicePtr)
     {
-        writer.Append($"Aot_");
-        writer.AppendFullyQualifiedCppName(p.Type);
+        writer.AppendAotStructPath(p.Type);
         writer.AppendLine($" native_{p.Name} = default;");
-        writer.Append($"Marshal_");
-        writer.AppendFullyQualifiedCppName(p.Type);
+        writer.Append($"AotContexts.Marshal_");
+        writer.AppendNestedCppName(p.Type);
         using (writer.Parentheses())
         {
             writer.Append(
@@ -183,8 +182,8 @@ internal static class KernelLaunchEmitter
         if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
             writer.AppendLine($"// Marshal ref/out struct: {p.Name}");
-            writer.Append($"int {p.Name}_size = sizeof(Aot_");
-            writer.AppendFullyQualifiedCppName(p.Type);
+            writer.Append($"int {p.Name}_size = sizeof(");
+            writer.AppendAotStructPath(p.Type);
             writer.AppendLine(");");
 
             writer.AppendLine(
@@ -366,8 +365,8 @@ internal static class KernelLaunchEmitter
             }
         }
 
-        writer.Append("Unmarshal_");
-        writer.AppendFullyQualifiedCppName(p.Type);
+        writer.Append("AotContexts.Unmarshal_");
+        writer.AppendNestedCppName(p.Type);
         using (writer.Parentheses())
         {
             writer.Append($"ref {p.Name}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")}");

@@ -5,12 +5,15 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </summary>
 internal static class StructMarshalingEmitter
 {
-    internal static void WriteStructMarshaling(SourceWriter writer, IMethodSymbol method)
+    internal static void WriteStructMarshaling(SourceWriter writer, System.Collections.Generic.IEnumerable<(IMethodSymbol Method, string Source)> methods)
     {
         var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-        foreach (var parameter in method.Parameters)
+        foreach (var (method, _) in methods)
         {
-            CudaLayoutRules.CollectStructs(parameter.Type, structTypes);
+            foreach (var parameter in method.Parameters)
+            {
+                CudaLayoutRules.CollectStructs(parameter.Type, structTypes);
+            }
         }
 
         if (structTypes.Count > 0)
@@ -32,13 +35,13 @@ internal static class StructMarshalingEmitter
     {
         writer.Append("public static unsafe void");
         writer.Append(" Marshal_");
-        writer.AppendFullyQualifiedCppName(s);
+        writer.AppendNestedCppName(s);
         using (writer.Parentheses())
         {
             writer.Append("ref ");
             writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(" host, ref Aot_");
-            writer.AppendFullyQualifiedCppName(s);
+            writer.Append(" host, ref ");
+            writer.AppendAotStructPath(s);
             writer.Append(" native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs");
         }
 
@@ -66,7 +69,7 @@ internal static class StructMarshalingEmitter
         else if (CudaLayoutRules.IsCustomStruct(member.Type))
         {
             writer.Append("Marshal_");
-            writer.AppendFullyQualifiedCppName(member.Type);
+            writer.AppendNestedCppName(member.Type);
             using (writer.Parentheses())
             {
                 writer.Append($"ref host.{member.Name}, ref native.{member.Name}, isDevicePtr, allocatedPtrs");
@@ -116,15 +119,15 @@ internal static class StructMarshalingEmitter
 
                     if (CudaLayoutRules.IsCustomStruct(arrayType.ElementType))
                     {
-                        writer.Append($"var tempArray = new Aot_");
-                        writer.AppendFullyQualifiedCppName(arrayType.ElementType);
+                        writer.Append($"var tempArray = new ");
+                        writer.AppendAotStructPath(arrayType.ElementType);
                         writer.AppendLine($"[host.{member.Name}.Length];");
 
                         writer.AppendLine($"for (int i = 0; i < host.{member.Name}.Length; i++)");
                         using (writer.Scope())
                         {
                             writer.Append("Marshal_");
-                            writer.AppendFullyQualifiedCppName(arrayType.ElementType);
+                            writer.AppendNestedCppName(arrayType.ElementType);
                             writer.AppendLine($"(ref host.{member.Name}[i], ref tempArray[i], false, allocatedPtrs);");
                         }
 
@@ -165,13 +168,13 @@ internal static class StructMarshalingEmitter
     private static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s)
     {
         writer.Append("public static unsafe void Unmarshal_");
-        writer.AppendFullyQualifiedCppName(s);
+        writer.AppendNestedCppName(s);
         using (writer.Parentheses())
         {
             writer.Append("ref ");
             writer.AppendFullyQualifiedCsharpName(s);
-            writer.Append(" host, ref Aot_");
-            writer.AppendFullyQualifiedCppName(s);
+            writer.Append(" host, ref ");
+            writer.AppendAotStructPath(s);
             writer.Append(" native, bool isDevicePtr");
         }
 
@@ -199,7 +202,7 @@ internal static class StructMarshalingEmitter
         else if (CudaLayoutRules.IsCustomStruct(member.Type))
         {
             writer.Append("Unmarshal_");
-            writer.AppendFullyQualifiedCppName(member.Type);
+            writer.AppendNestedCppName(member.Type);
             using (writer.Parentheses())
             {
                 writer.Append($"ref host.{member.Name}, ref native.{member.Name}, isDevicePtr");
@@ -236,8 +239,8 @@ internal static class StructMarshalingEmitter
             {
                 if (CudaLayoutRules.IsCustomStruct(arrayType.ElementType))
                 {
-                    writer.Append("var tempArray = new Aot_");
-                    writer.AppendFullyQualifiedCppName(arrayType.ElementType);
+                    writer.Append("var tempArray = new ");
+                    writer.AppendAotStructPath(arrayType.ElementType);
                     writer.AppendLine($"[host.{member.Name}.Length];");
 
                     writer.AppendLine("var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
@@ -257,7 +260,7 @@ internal static class StructMarshalingEmitter
                     using (writer.Scope())
                     {
                         writer.Append("Unmarshal_");
-                        writer.AppendFullyQualifiedCppName(arrayType.ElementType);
+                        writer.AppendNestedCppName(arrayType.ElementType);
                         writer.AppendLine($"(ref host.{member.Name}[i], ref tempArray[i], false);");
                     }
                 }
@@ -286,8 +289,8 @@ internal static class StructMarshalingEmitter
     {
         if (CudaLayoutRules.IsCustomStruct(arrayType.ElementType))
         {
-            writer.Append($"int size = {prefix}{name}.Length * sizeof(Aot_");
-            writer.AppendFullyQualifiedCppName(arrayType.ElementType);
+            writer.Append($"int size = {prefix}{name}.Length * sizeof(");
+            writer.AppendAotStructPath(arrayType.ElementType);
             writer.AppendLine(");");
         }
         else
