@@ -7,7 +7,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// Traverses and transpiles Roslyn C# syntax nodes directly into CUDA C++ source representations using pooled visitor instances.
 /// </summary>
 /// <remarks>
-/// <para>Implements: <b>GEN-15</b></para>
 /// <para><b>Performance:</b> Instances are pooled via <see cref="Rent"/> and returned via <see cref="Dispose"/> to eliminate heap allocations during large-scale compilation passes.</para>
 /// <para><b>Thread Safety:</b> Individual visitor instances are mutable and not thread-safe. However, <see cref="Rent"/> and <see cref="Dispose"/> are safe for multi-threaded invocation.</para>
 /// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment). Cannot be executed within GPU kernels.</para>

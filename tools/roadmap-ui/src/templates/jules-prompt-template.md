@@ -41,7 +41,7 @@ Assume the following existing helpers and attributes when designing.
   A caching infrastructure that minimizes Roslyn's reference assembly resolution overhead. Using lazy initialization, it generates and caches a mega-compilation with all metadata loaded only once per process. Assume a differential addition design where individual test cases pass through `RoslynTestUtility.CreateCompilation()` and perform `AddSyntaxTrees()` against the cache.
 - **Requirement Tracking and Filtering Attributes**
     - `[Trait("Category", "GpuExecution")]`: Used to classify execution-based tests (tests requiring real hardware like a GPU).
-    - `[Trait("FeatureId", "TaskID")]`: Must be applied to test methods or classes to ensure traceability with the roadmap.
+    - `[Trait("Category", "HappyPath")]`, `[Trait("Category", "SadPath")]`: Used to classify test scenarios. Do NOT attach `FeatureId` traits directly to C# test code.
 
 ### Execution Steps & Output Format
 
@@ -102,7 +102,7 @@ However, do not write the target code inline. Always isolate it (Source Separati
 
 1. **No Reflection**: Parse exclusively using Roslyn's syntax tree (`CSharpSyntaxWalker`) and `SemanticModel`.
 2. **Zero Allocation**: Utilize `SourceWriter`, `ref struct`, and `Span<T>` to avoid heap allocation.
-3. **Attribute Requirement**: Always attach `[Trait("FeatureId", "TaskID")]` to all test methods.
+3. **Natural Language Naming**: Use clear, descriptive names for tests without prefixing them with task IDs. Use `[Trait("Category", "HappyPath")]` / `[Trait("Category", "SadPath")]` instead of `FeatureId`.
 4. Thoroughly read guidelines (`AGENTS.md`, `qa-testing-guidelines`, etc.) to understand the architecture.
 
 ### Instructions

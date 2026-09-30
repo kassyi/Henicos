@@ -5,7 +5,7 @@ using Kassyi.GSharp.Core;
 // LeadingZeroCount
 [assembly: BclIntrinsicMap("System.Numerics.BitOperations", "LeadingZeroCount", ["System.UInt32"], "__gsharp_lzc_32")]
 
-// SYN-49: Interlocked
+// Interlocked
 [assembly: BclIntrinsicMap("System.Threading.Interlocked", "Add", ["System.Int32", "System.Int32"], "__gsharp_atomicAdd")]
 [assembly: BclIntrinsicMap("System.Threading.Interlocked", "Add", ["System.Int64", "System.Int64"], "__gsharp_atomicAdd", CastFirstArgumentTo = "unsigned long long*")]
 

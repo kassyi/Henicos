@@ -1,0 +1,26 @@
+
+namespace Kassyi.GSharp.Tests.Syntax;
+
+public class LoopsAndJumpsTests
+:  TranspilerTestBase{
+    [SkippableFact]
+    [Trait("Category", "GpuExecution")]
+    public void Test_ForeachInlineArray_Execution()
+    {
+        int[] output = [0];
+        LoopsAndJumpsKernels.LaunchForeachInlineArrayKernel(output, blockDimX: 1);
+        Assert.Equal(100, output[0]);
+    }
+
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_SwitchGotoCase_Transpilation()
+    {
+    }
+
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_NamedBreakGoto_Transpilation()
+    {
+    }
+}

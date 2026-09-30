@@ -1,0 +1,59 @@
+
+namespace Kassyi.GSharp.Tests.Syntax;
+
+public class MicroModifiersTests
+:  TranspilerTestBase{
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_FileLocalTypes_Transpilation()
+    {
+    }
+
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_ParamsSpan_Transpilation()
+    {
+    }
+
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_RefReadonlyReturns_Transpilation()
+    {
+    }
+
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_VolatileModifier_Transpilation()
+    {
+    }
+
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_SkipLocalsInitAttribute_Transpilation()
+    {
+    }
+
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_ForeachTupleDeconstruction_Transpilation()
+    {
+    }
+
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_FunctionPointerCallingConventions_Transpilation()
+    {
+    }
+
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_LineDirectives_Transpilation()
+    {
+    }
+
+    [Fact()]
+    [Trait("Category", "Syntax")]
+    public void Test_ImplicitStackallocArray_Transpilation()
+    {
+    }
+}

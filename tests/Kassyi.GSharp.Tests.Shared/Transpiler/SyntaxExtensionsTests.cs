@@ -8,8 +8,7 @@ public class SyntaxExtensionsTests
 {
     [Fact]
     [Trait("Category", "Compiler")]
-    [Trait("FeatureId", "GEN-20")]
-    public void Test_GEN20_SyntaxExtensions_SyntaxToken_IsKind_MatchesCorrectly()
+    public void Test_SyntaxExtensions_SyntaxToken_IsKind_MatchesCorrectly()
     {
         var token = SyntaxFactory.Token(SyntaxKind.RefKeyword);
 
@@ -20,8 +19,7 @@ public class SyntaxExtensionsTests
 
     [Fact]
     [Trait("Category", "Compiler")]
-    [Trait("FeatureId", "GEN-20")]
-    public void Test_GEN20_SyntaxExtensions_SyntaxNode_IsKind_MatchesCorrectly()
+    public void Test_SyntaxExtensions_SyntaxNode_IsKind_MatchesCorrectly()
     {
         var node = SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression);
 

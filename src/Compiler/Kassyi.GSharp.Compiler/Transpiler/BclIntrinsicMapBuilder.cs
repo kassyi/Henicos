@@ -2,8 +2,6 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Discovers assembly attributes and builds immutable mappings from BCL methods to CUDA intrinsic functions.</summary>
-/// <remarks><para>Implements: <b>GEN-39</b></para></remarks>
-/// <remarks><para>Implements: <b>GEN-16, BCL-01, BCL-02, BCL-03, GEN-30</b></para></remarks>
 internal static class BclIntrinsicMapBuilder
 {
     private const string BclIntrinsicMapAttributeFullName = "Kassyi.GSharp.Core.BclIntrinsicMapAttribute";
