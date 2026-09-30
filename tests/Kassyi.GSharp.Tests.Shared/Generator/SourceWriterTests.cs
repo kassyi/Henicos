@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using VerifyXunit;
 
-namespace Kassyi.GSharp.Tests.Generator;
+namespace Kassyi.GSharp.Tests.Shared.Generator;
 
 public class SourceWriterTests
 {
@@ -118,9 +118,10 @@ public class SourceWriterTests
         }
 
         var methodName = nameof(Test_SourceWriter_NestedScopeAndIndentation_Snapshots);
-        var hash10 = Kassyi.GSharp.Tests.Helpers.HashHelper.ComputeShortHash(methodName);
+        var hash10 = Kassyi.GSharp.Tests.Shared.Helpers.HashHelper.ComputeShortHash(methodName);
         var snapshotName = $"Snap.SourceWriter_{hash10}";
 
         return Verifier.Verify(writer.ToString()).UseFileName(snapshotName);
     }
 }
+

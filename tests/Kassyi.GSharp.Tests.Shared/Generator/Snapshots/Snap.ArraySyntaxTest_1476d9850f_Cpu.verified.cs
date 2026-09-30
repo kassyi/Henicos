@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Generator
+namespace Kassyi.GSharp.Tests.Shared.Generator
 {
 public partial class ArraySyntaxTestKernels
 {

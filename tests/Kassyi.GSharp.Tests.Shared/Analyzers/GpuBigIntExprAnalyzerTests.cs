@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Tests.Analyzers;
+namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 public class GpuBigIntExprAnalyzerTests
 :  TranspilerTestBase{

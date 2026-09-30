@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Tests.Generator;
+namespace Kassyi.GSharp.Tests.Shared.Generator;
 
 public class NativeStructGenerationTests
 {

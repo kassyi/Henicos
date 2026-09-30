@@ -5,7 +5,7 @@ using System.Threading;
 using Kassyi.GSharp.Core;
 using System.Runtime.InteropServices;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct AtomicTestStruct

@@ -2,7 +2,7 @@
 
 // [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
-namespace Kassyi.GSharp.Tests;
+namespace Kassyi.GSharp.Tests.Shared;
 
 public static class ModuleInitializer
 {

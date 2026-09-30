@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Runtime
+namespace Kassyi.GSharp.Tests.Shared.Runtime
 {
 public partial class AutoAllocateReturnArraysKernels
 {
@@ -282,18 +282,18 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemFree_v2(d___gsharp_auto_result));
 return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
-public const string StructReturnKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Runtime_AutoAllocateReturnArraysKernels_TestStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Runtime_AutoAllocateReturnArraysKernels_TestStruct__
-struct Kassyi_GSharp_Tests_Runtime_AutoAllocateReturnArraysKernels_TestStruct
+public const string StructReturnKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Runtime_AutoAllocateReturnArraysKernels_TestStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Runtime_AutoAllocateReturnArraysKernels_TestStruct__
+struct Kassyi_GSharp_Tests_Shared_Runtime_AutoAllocateReturnArraysKernels_TestStruct
 {
 int A;
 float B;
 }
 ;
 #endif
-extern ""C"" __global__ void AutoAllocateReturnArraysKernels_StructReturnKernel(Kassyi_GSharp_Tests_Runtime_AutoAllocateReturnArraysKernels_TestStruct* __restrict__ __gsharp_auto_result){
+extern ""C"" __global__ void AutoAllocateReturnArraysKernels_StructReturnKernel(Kassyi_GSharp_Tests_Shared_Runtime_AutoAllocateReturnArraysKernels_TestStruct* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-Kassyi_GSharp_Tests_Runtime_AutoAllocateReturnArraysKernels_TestStruct s;
+Kassyi_GSharp_Tests_Shared_Runtime_AutoAllocateReturnArraysKernels_TestStruct s;
 s.A=threadIdx.x;
 s.B=threadIdx.x*1.5f;
 __gsharp_auto_result[__gsharp_global_tid] = s;
@@ -310,11 +310,11 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTes
 s_hfunc_StructReturnKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "AutoAllocateReturnArraysKernels_StructReturnKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.TestStruct[] LaunchStructReturnKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct[] LaunchStructReturnKernel(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
-var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.TestStruct[__gsharp_total_threads];
+var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerStructReturnKernel();
@@ -324,7 +324,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal auto result array
-int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.TestStruct);
+int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct);
 if (__gsharp_auto_result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d___gsharp_auto_result, __gsharp_auto_result_size));
@@ -341,7 +341,7 @@ IntPtr.Zero // Extra
 ));
 if (__gsharp_auto_result != null && d___gsharp_auto_result != IntPtr.Zero)
 {
-int size = __gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.TestStruct);
+int size = __gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct);
 if (size > 0)
 {
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -368,11 +368,11 @@ return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.TestStruct[] LaunchStructReturnKernelPtr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct[] LaunchStructReturnKernelPtr(uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException("Dimensions", "Launch dimensions must be greater than 0.");
 uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }
-var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.TestStruct[__gsharp_total_threads];
+var __gsharp_auto_result = new global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct[__gsharp_total_threads];
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerStructReturnKernel();
@@ -382,7 +382,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal auto result array
-int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.TestStruct);
+int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct);
 if (__gsharp_auto_result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d___gsharp_auto_result, __gsharp_auto_result_size));
@@ -399,7 +399,7 @@ IntPtr.Zero // Extra
 ));
 if (__gsharp_auto_result != null && d___gsharp_auto_result != IntPtr.Zero)
 {
-int size = __gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.TestStruct);
+int size = __gsharp_auto_result.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct);
 if (size > 0)
 {
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);
@@ -472,9 +472,9 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.WarmupFunctionPointerNormalReturnKernel();
-global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.WarmupFunctionPointerOneThreadKernel();
-global::Kassyi.GSharp.Tests.Runtime.AutoAllocateReturnArraysKernels.WarmupFunctionPointerStructReturnKernel();
+global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.WarmupFunctionPointerNormalReturnKernel();
+global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.WarmupFunctionPointerOneThreadKernel();
+global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.WarmupFunctionPointerStructReturnKernel();
 }}}
 
 

@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class ConcurrencyAndWarpKernels
 {
@@ -624,11 +624,11 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.ConcurrencyAndWarpKernels.WarmupFunctionPointerSharedMemoryKernel();
-global::Kassyi.GSharp.Tests.Syntax.ConcurrencyAndWarpKernels.WarmupFunctionPointerSharedMemoryReverseKernel();
-global::Kassyi.GSharp.Tests.Syntax.ConcurrencyAndWarpKernels.WarmupFunctionPointerIntrinsicsKernel();
-global::Kassyi.GSharp.Tests.Syntax.ConcurrencyAndWarpKernels.WarmupFunctionPointerAtomicAddStressKernel();
-global::Kassyi.GSharp.Tests.Syntax.ConcurrencyAndWarpKernels.WarmupFunctionPointerAtomicOrMaxStressKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ConcurrencyAndWarpKernels.WarmupFunctionPointerSharedMemoryKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ConcurrencyAndWarpKernels.WarmupFunctionPointerSharedMemoryReverseKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ConcurrencyAndWarpKernels.WarmupFunctionPointerIntrinsicsKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ConcurrencyAndWarpKernels.WarmupFunctionPointerAtomicAddStressKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ConcurrencyAndWarpKernels.WarmupFunctionPointerAtomicOrMaxStressKernel();
 }}}
 
 

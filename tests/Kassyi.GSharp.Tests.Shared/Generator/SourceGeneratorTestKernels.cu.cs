@@ -1,7 +1,7 @@
 // ReSharper disable All
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Generator;
+namespace Kassyi.GSharp.Tests.Shared.Generator;
 
 public static partial class SourceGeneratorTestKernels
 {

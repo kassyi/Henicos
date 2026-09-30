@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Kassyi.GSharp.Core;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Core;
+namespace Kassyi.GSharp.Tests.Shared.Core;
 
 [Trait("IssueId", "177")]
 public class FastMathBoundaryTests

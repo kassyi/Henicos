@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Tests.Generator;
+namespace Kassyi.GSharp.Tests.Shared.Generator;
 
 using Xunit;
 using System.Threading.Tasks;

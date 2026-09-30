@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class TypesAndStructsTests
 :  TranspilerTestBase{

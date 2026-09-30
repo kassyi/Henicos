@@ -1,9 +1,9 @@
 using System.Linq;
 using Kassyi.GSharp.Compiler.Transpiler;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class WarpShuffleTests : TranspilerTestBase
 {
@@ -200,3 +200,4 @@ public class WarpShuffleTests : TranspilerTestBase
         Assert.Contains("0xffffffff", cudaSource);
     }
 }
+

@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 using Logger = Kassyi.GSharp.Core.Logger;
 using LogLevel = Kassyi.GSharp.Core.LogLevel;
 
-namespace Kassyi.GSharp.Tests.Core;
+namespace Kassyi.GSharp.Tests.Shared.Core;
 
 public class LoggerFixture : IAsyncLifetime
 {

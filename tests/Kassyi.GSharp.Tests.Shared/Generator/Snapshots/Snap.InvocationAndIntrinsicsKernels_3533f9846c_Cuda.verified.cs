@@ -41,10 +41,10 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.InvocationAndIntrinsicsKernels.WarmupFunctionPointerInterlockedKernel();
-global::Kassyi.GSharp.Tests.Syntax.InvocationAndIntrinsicsKernels.WarmupFunctionPointerInterlockedEdgeCasesKernel();
-global::Kassyi.GSharp.Tests.Syntax.InvocationAndIntrinsicsKernels.WarmupFunctionPointerMathKernel();
-global::Kassyi.GSharp.Tests.Syntax.InvocationAndIntrinsicsKernels.WarmupFunctionPointerMathEdgeCasesKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.InvocationAndIntrinsicsKernels.WarmupFunctionPointerInterlockedKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.InvocationAndIntrinsicsKernels.WarmupFunctionPointerInterlockedEdgeCasesKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.InvocationAndIntrinsicsKernels.WarmupFunctionPointerMathKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.InvocationAndIntrinsicsKernels.WarmupFunctionPointerMathEdgeCasesKernel();
 }}}
 
 
@@ -70,7 +70,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class InvocationAndIntrinsicsKernels
 {
@@ -301,9 +301,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string InterlockedEdgeCasesKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_AtomicTestStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_AtomicTestStruct__
-struct Kassyi_GSharp_Tests_Syntax_AtomicTestStruct
+public const string InterlockedEdgeCasesKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct
 {
 int ValueI;
 unsigned int ValueU;
@@ -311,7 +311,7 @@ long long ValueL;
 }
 ;
 #endif
-extern ""C"" __global__ void InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(int* __restrict__ array, Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray){
+extern ""C"" __global__ void InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(int* __restrict__ array, Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct* __restrict__ structArray){
 int tid = threadIdx.x;
 __gsharp_atomicAdd(&array[tid],10);
 __gsharp_atomicAdd(&structArray[tid].ValueI,1);
@@ -329,7 +329,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTes
 s_hfunc_InterlockedEdgeCasesKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchInterlockedEdgeCasesKernel(global::System.Int32[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchInterlockedEdgeCasesKernel(global::System.Int32[] array, global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (array.Length == 0 || structArray.Length == 0){
 return;
@@ -361,7 +361,7 @@ handle_array.Free();
 }
 kernelParams[0] = &d_array;
 // Marshal array: structArray
-int structArray_size = structArray.Length * sizeof(global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct);
+int structArray_size = structArray.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct);
 if (structArray_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_structArray, structArray_size));

@@ -20,16 +20,16 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class LoopsAndJumpsKernels
 {
 public static partial class AotContexts
 {
 }
-public const string ForeachInlineArrayKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_FixedArray4__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_FixedArray4__
-struct Kassyi_GSharp_Tests_Syntax_FixedArray4
+public const string ForeachInlineArrayKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4__
+struct Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4
 {
 int _element0[4];
 __device__ inline int& operator[](int index){
@@ -48,7 +48,7 @@ __device__ inline int size() const { return 4; }
 ;
 #endif
 extern ""C"" __declspec(dllexport) void LoopsAndJumpsKernels_ForeachInlineArrayKernel(int* __restrict__ output){
-Kassyi_GSharp_Tests_Syntax_FixedArray4 arr = Kassyi_GSharp_Tests_Syntax_FixedArray4{};
+Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4 arr = Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4{};
 arr[0]=10;
 arr[1]=20;
 arr[2]=30;

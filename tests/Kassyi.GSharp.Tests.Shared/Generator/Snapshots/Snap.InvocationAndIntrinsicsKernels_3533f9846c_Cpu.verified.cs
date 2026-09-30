@@ -20,7 +20,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class InvocationAndIntrinsicsKernels
 {
@@ -82,9 +82,9 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_intBuf, p
 }
 }
 #pragma warning restore CS8500
-public const string InterlockedEdgeCasesKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_AtomicTestStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_AtomicTestStruct__
-struct Kassyi_GSharp_Tests_Syntax_AtomicTestStruct
+public const string InterlockedEdgeCasesKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct
 {
 int ValueI;
 unsigned int ValueU;
@@ -92,14 +92,14 @@ long long ValueL;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(int* __restrict__ array, Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray){
+extern ""C"" __declspec(dllexport) void InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(int* __restrict__ array, Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct* __restrict__ structArray){
 int tid = threadIdx.x;
 __gsharp_atomicAdd(&array[tid],10);
 __gsharp_atomicAdd(&structArray[tid].ValueI,1);
 atomicExch(&structArray[tid].ValueU,42u);
 __gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99L,0L);
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ array, Kassyi_GSharp_Tests_Syntax_AtomicTestStruct* __restrict__ structArray)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ array, Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct* __restrict__ structArray)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -115,9 +115,9 @@ InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(array, structArray);
 ";
 public static readonly string InterlockedEdgeCasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +InterlockedEdgeCasesKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void InterlockedEdgeCasesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* structArray);
+private unsafe delegate void InterlockedEdgeCasesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* array, global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct* structArray);
 #pragma warning disable CS8500
-public static unsafe void LaunchInterlockedEdgeCasesKernel(global::System.Int32[] array, global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchInterlockedEdgeCasesKernel(global::System.Int32[] array, global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct[] structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (array.Length == 0 || structArray.Length == 0){
 return;
@@ -127,7 +127,7 @@ var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InterlockedEdgeCasesKernel_Delegate>("__gsharp_launch_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel", dllPath);
 fixed (global::System.Int32* p_array = array)
-fixed (global::Kassyi.GSharp.Tests.Syntax.AtomicTestStruct* p_structArray = structArray)
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct* p_structArray = structArray)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_array, p_structArray);
 }

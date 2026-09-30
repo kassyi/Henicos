@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Runtime;
 
-namespace Kassyi.GSharp.Tests.Runtime;
+namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 public class LaunchDimensionTests
 {

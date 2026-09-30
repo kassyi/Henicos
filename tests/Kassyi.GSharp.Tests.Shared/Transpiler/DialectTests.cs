@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Tests.Transpiler;
+namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 public class DialectTests
 {

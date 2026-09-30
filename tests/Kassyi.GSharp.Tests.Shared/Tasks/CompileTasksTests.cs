@@ -6,7 +6,7 @@ using Microsoft.Build.Utilities;
 using Microsoft.Build.Locator;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Tasks;
+namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
 public class CompileTasksTests
 {

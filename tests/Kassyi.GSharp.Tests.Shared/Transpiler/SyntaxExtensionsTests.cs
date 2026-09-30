@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Kassyi.GSharp.Compiler.Extensions;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Transpiler;
+namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 public class SyntaxExtensionsTests
 {

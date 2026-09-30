@@ -1,8 +1,8 @@
 using Henicos.Benchmarks.ComputeBenchmarks;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Runtime;
+namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 [Trait("Category", "Benchmark")]
 [Collection("Sequential")]
@@ -71,3 +71,4 @@ public class ComputeBenchmarkTests
         Assert.False(result);
     }
 }
+

@@ -41,8 +41,8 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.ObjectLifecycleKernels.WarmupFunctionPointerKernel_LifecycleUpdate();
-global::Kassyi.GSharp.Tests.Syntax.ObjectLifecycleKernels.WarmupFunctionPointerKernel_FactoryInitialization();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ObjectLifecycleKernels.WarmupFunctionPointerKernel_LifecycleUpdate();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ObjectLifecycleKernels.WarmupFunctionPointerKernel_FactoryInitialization();
 }}}
 
 
@@ -52,12 +52,12 @@ namespace Kassyi.GSharp.Generated
 {
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"struct Kassyi_GSharp_Tests_Syntax_LifecycleObjectState;
-inline __device__ Kassyi_GSharp_Tests_Syntax_LifecycleObjectState TransformState(Kassyi_GSharp_Tests_Syntax_LifecycleObjectState state, int multiplier);
+public const string Source = @"struct Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState;
+inline __device__ Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState TransformState(Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState state, int multiplier);
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_LifecycleObjectState__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_LifecycleObjectState__
-struct Kassyi_GSharp_Tests_Syntax_LifecycleObjectState
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState__
+struct Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState
 {
 int Id;
 int Value;
@@ -65,7 +65,7 @@ int Status;
 }
 ;
 #endif
-inline __device__ Kassyi_GSharp_Tests_Syntax_LifecycleObjectState TransformState(Kassyi_GSharp_Tests_Syntax_LifecycleObjectState state, int multiplier){
+inline __device__ Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState TransformState(Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState state, int multiplier){
 state.Value=state.Value*multiplier;
 state.Status=(state.Value>100?1:0);
 return state;
@@ -87,16 +87,16 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class ObjectLifecycleKernels
 {
 public static partial class AotContexts
 {
 }
-public const string Kernel_LifecycleUpdate_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_LifecycleObjectState__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_LifecycleObjectState__
-struct Kassyi_GSharp_Tests_Syntax_LifecycleObjectState
+public const string Kernel_LifecycleUpdate_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState__
+struct Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState
 {
 int Id;
 int Value;
@@ -104,11 +104,11 @@ int Status;
 }
 ;
 #endif
-extern ""C"" __global__ void ObjectLifecycleKernels_Kernel_LifecycleUpdate(Kassyi_GSharp_Tests_Syntax_LifecycleObjectState* __restrict__ states, int length, int multiplier){
+extern ""C"" __global__ void ObjectLifecycleKernels_Kernel_LifecycleUpdate(Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState* __restrict__ states, int length, int multiplier){
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<length)
 {
-Kassyi_GSharp_Tests_Syntax_LifecycleObjectState s = states[tid];
+Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState s = states[tid];
 states[tid]=TransformState(s,multiplier);
 }
 }
@@ -123,7 +123,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTes
 s_hfunc_Kernel_LifecycleUpdate = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "ObjectLifecycleKernels_Kernel_LifecycleUpdate");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchKernel_LifecycleUpdate(global::Kassyi.GSharp.Tests.Syntax.LifecycleObjectState[] states, global::System.Int32 length, global::System.Int32 multiplier, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchKernel_LifecycleUpdate(global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] states, global::System.Int32 length, global::System.Int32 multiplier, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (states.Length == 0){
 return;
@@ -137,7 +137,7 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal array: states
-int states_size = states.Length * sizeof(global::Kassyi.GSharp.Tests.Syntax.LifecycleObjectState);
+int states_size = states.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState);
 if (states_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_states, states_size));
@@ -220,9 +220,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string Kernel_FactoryInitialization_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_LifecycleObjectState__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_LifecycleObjectState__
-struct Kassyi_GSharp_Tests_Syntax_LifecycleObjectState
+public const string Kernel_FactoryInitialization_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState__
+struct Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState
 {
 int Id;
 int Value;
@@ -230,11 +230,11 @@ int Status;
 }
 ;
 #endif
-extern ""C"" __global__ void ObjectLifecycleKernels_Kernel_FactoryInitialization(int* __restrict__ inputValues, Kassyi_GSharp_Tests_Syntax_LifecycleObjectState* __restrict__ outputStates, int length){
+extern ""C"" __global__ void ObjectLifecycleKernels_Kernel_FactoryInitialization(int* __restrict__ inputValues, Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState* __restrict__ outputStates, int length){
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<length)
 {
-Kassyi_GSharp_Tests_Syntax_LifecycleObjectState state = {};
+Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState state = {};
 state.Id=tid+1;
 state.Value=inputValues[tid];
 state.Status=(inputValues[tid]<0?-1:((inputValues[tid]==0?0:1)));
@@ -252,7 +252,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTes
 s_hfunc_Kernel_FactoryInitialization = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "ObjectLifecycleKernels_Kernel_FactoryInitialization");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchKernel_FactoryInitialization(global::System.Int32[] inputValues, global::Kassyi.GSharp.Tests.Syntax.LifecycleObjectState[] outputStates, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchKernel_FactoryInitialization(global::System.Int32[] inputValues, global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] outputStates, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (inputValues.Length == 0 || outputStates.Length == 0){
 return;
@@ -284,7 +284,7 @@ handle_inputValues.Free();
 }
 kernelParams[0] = &d_inputValues;
 // Marshal array: outputStates
-int outputStates_size = outputStates.Length * sizeof(global::Kassyi.GSharp.Tests.Syntax.LifecycleObjectState);
+int outputStates_size = outputStates.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState);
 if (outputStates_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_outputStates, outputStates_size));

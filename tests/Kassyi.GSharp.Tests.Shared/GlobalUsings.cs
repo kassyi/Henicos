@@ -12,8 +12,9 @@ global using Kassyi.GSharp.Compiler.Dialects;
 global using Kassyi.GSharp.Compiler.Transpiler;
 global using Kassyi.GSharp.Compiler.Transpiler.Dialects;
 global using Kassyi.GSharp.Runtime.Aot;
-global using Kassyi.GSharp.Tests.Helpers;
+global using Kassyi.GSharp.Tests.Shared.Helpers;
 global using Microsoft.CodeAnalysis;
 global using Microsoft.CodeAnalysis.CSharp;
 global using Microsoft.CodeAnalysis.CSharp.Syntax;
-global using static Kassyi.GSharp.Tests.Helpers.CapabilityChecker;
+global using static Kassyi.GSharp.Tests.Shared.Helpers.CapabilityChecker;
+

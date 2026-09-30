@@ -1,7 +1,7 @@
 #nullable enable
 using Microsoft.CodeAnalysis.Diagnostics;
 
-namespace Kassyi.GSharp.Tests.Helpers;
+namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 /// <summary>Provides utility methods and fluent helpers for Roslyn compilation, generator, analyzer, and transpiler testing.</summary>
 public static class RoslynTestUtility

@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Core;
+namespace Kassyi.GSharp.Tests.Shared.Core;
 
 [Trait("Category", "GpuExecution")]
 public class WarpLevelConcurrencyTests

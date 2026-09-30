@@ -41,11 +41,11 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerNonCapturingLambdaKernel();
-global::Kassyi.GSharp.Tests.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerValueCapturingLambdaKernel();
-global::Kassyi.GSharp.Tests.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerImmediatelyEvaluatedLambdaKernel();
-global::Kassyi.GSharp.Tests.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerShadowedVariableCaptureKernel();
-global::Kassyi.GSharp.Tests.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerNestedReturnsKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerNonCapturingLambdaKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerValueCapturingLambdaKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerImmediatelyEvaluatedLambdaKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerShadowedVariableCaptureKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LambdaAndLocalFunctionsKernels.WarmupFunctionPointerNestedReturnsKernel();
 }}}
 
 
@@ -71,7 +71,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class LambdaAndLocalFunctionsKernels
 {

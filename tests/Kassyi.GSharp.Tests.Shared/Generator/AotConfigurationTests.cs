@@ -4,9 +4,9 @@ using Microsoft.CodeAnalysis;
 using Xunit;
 using System.Collections.Generic;
 using Kassyi.GSharp.Compiler;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 
-namespace Kassyi.GSharp.Tests.Generator;
+namespace Kassyi.GSharp.Tests.Shared.Generator;
 
 public class AotConfigurationTests
 {
@@ -81,3 +81,4 @@ public class AotConfigurationTests
         }
     }
 }
+

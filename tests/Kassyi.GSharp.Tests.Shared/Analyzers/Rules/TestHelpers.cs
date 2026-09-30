@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Tests.Analyzers.Rules;
+namespace Kassyi.GSharp.Tests.Shared.Analyzers.Rules;
 
 internal static class TestHelpers
 {

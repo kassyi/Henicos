@@ -2,7 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 [InlineArray(4)]
 public struct FixedArray4

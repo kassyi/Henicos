@@ -6,7 +6,7 @@ using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigFloat;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.BigMath;
 
@@ -89,3 +89,4 @@ public class BigMathTests : TranspilerTestBase
         Assert.Throws<ArgumentNullException>(() => new GpuUIntBigInteger(null!, 4));
     }
 }
+

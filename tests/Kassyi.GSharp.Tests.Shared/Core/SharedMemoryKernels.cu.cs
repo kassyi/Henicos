@@ -1,7 +1,7 @@
 using System;
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Core;
+namespace Kassyi.GSharp.Tests.Shared.Core;
 
 public partial class SharedMemoryKernels
 {

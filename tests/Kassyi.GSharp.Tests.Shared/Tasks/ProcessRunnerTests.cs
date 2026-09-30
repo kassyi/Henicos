@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.Tasks.Helpers;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Tasks;
+namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
 public class ProcessRunnerTests
 {
