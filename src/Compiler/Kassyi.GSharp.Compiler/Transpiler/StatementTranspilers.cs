@@ -3,7 +3,6 @@ using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# control-flow statements (if, for, while, do-while, switch, return) to CUDA C++.</summary>
-/// <remarks><para>Implements: <b>SYN-01, SYN-70, SYN-71, SYN-72, SYN-84, SYN-91</b></para></remarks>
 internal static class StatementTranspilers
 {
     /// <summary>

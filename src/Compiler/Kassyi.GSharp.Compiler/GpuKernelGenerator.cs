@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis.Text;
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>Roslyn incremental source generator that transpiles C# GPU kernels to CUDA C++ and emits host invocations.</summary>
-// <remarks><para>Implements: <b>GEN-01, GEN-02, GEN-03, GEN-04, GEN-05, GEN-06, GE-07, GEN-08, GEN-09, GEN-10, GEN-11, GEN-12, GEN-13, GEN-14, GEN-17, GEN-18, GEN-19, GEN-25, GEN-28, GEN-29, GEN-31, GEN-32</b></para></remarks>
 [Generator]
 public class GpuKernelGenerator : IIncrementalGenerator
 {

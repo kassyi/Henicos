@@ -6,7 +6,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// Provides high-level compilation services to transpile C# method and GPU kernel declarations into CUDA C++ source definitions or forward declarations.
 /// </summary>
 /// <remarks>
-/// <para>Implements: <b>GEN-20</b></para>
 /// <para><b>Performance:</b> Utilizes pooled syntax walkers and string builders to achieve near zero-allocation transpilation.</para>
 /// <para><b>Thread Safety:</b> All static methods in this class are thread-safe and can be invoked concurrently across multiple compilation workers.</para>
 /// <para><b>Execution Target:</b> Host-only (Roslyn compiler-time execution). Cannot be invoked within GPU kernels.</para>
