@@ -1,7 +1,7 @@
 using System;
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Shared.Generator.Kernels;
+namespace Kassyi.GSharp.Tests.Generator;
 
 public partial class ArraySyntaxTestKernels
 {

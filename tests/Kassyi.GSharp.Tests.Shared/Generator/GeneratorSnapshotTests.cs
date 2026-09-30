@@ -1,5 +1,5 @@
 #nullable enable
-namespace Kassyi.GSharp.Tests;
+namespace Kassyi.GSharp.Tests.Generator;
 
 public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.TranspilerTestBase
 {

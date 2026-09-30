@@ -1,10 +1,10 @@
 using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 
-namespace Kassyi.GSharp.Tests.Generators
-{
-    [Generator]
-    public class SnapshotTestCaseGenerator : IIncrementalGenerator
+namespace Kassyi.GSharp.Tests.Generators;
+
+[Generator]
+public class SnapshotTestCaseGenerator : IIncrementalGenerator
     {
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -96,4 +96,3 @@ public static TheoryData<string> GetTestCases()
             });
         }
     }
-}

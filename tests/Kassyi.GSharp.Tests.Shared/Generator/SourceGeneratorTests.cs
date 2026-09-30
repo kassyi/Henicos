@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Tests;
+namespace Kassyi.GSharp.Tests.Generator;
 
 public class SourceGeneratorTests(ITestOutputHelper output)
 {
