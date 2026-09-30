@@ -111,7 +111,6 @@ public static class GridDimension
 /// <summary>
 /// Provides hardware intrinsics, synchronization primitives, atomic operations, and macro markers for GPU kernels.
 /// </summary>
-/// <remarks><para>Implements: <b>GEN-52</b></para></remarks>
 // ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
 // ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
 #pragma warning disable IDE0051 // Justification: Public API exposed for library consumers
