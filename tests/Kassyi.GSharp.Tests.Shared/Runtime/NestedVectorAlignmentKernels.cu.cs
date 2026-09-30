@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Shared.Runtime;
+namespace Kassyi.GSharp.Tests.Runtime;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct GEN56_AlignmentTestStruct

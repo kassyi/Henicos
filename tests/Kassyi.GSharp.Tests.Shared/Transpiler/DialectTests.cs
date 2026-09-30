@@ -1,7 +1,7 @@
-namespace Kassyi.GSharp.Tests.DialectTests
+namespace Kassyi.GSharp.Tests.Transpiler;
+
+public class DialectTests
 {
-    public class DialectTests
-    {
         [Fact]
         public void Test_CanLoadStandardCpp()
         {
@@ -24,4 +24,3 @@ namespace Kassyi.GSharp.Tests.DialectTests
             Assert.Equal("__device__ inline ", dialect.MethodPrefix);
         }
     }
-}
