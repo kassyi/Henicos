@@ -66,23 +66,20 @@ dist-ssr/
 
 # --- BEGIN Antigravity global AGENTS MANAGED FILES ---
 # These files are auto-synced by setup.js. DO NOT EDIT MANUALLY.
-/.agents/bin/check-meta-scan.js
-/.agents/bin/collect-coverage.js
-/.agents/bin/common.js
-/.agents/bin/extract-issues.js
-/.agents/bin/merge-code-reviews.js
-/.agents/bin/normalize-meta-index.js
-/.agents/bin/qodo.js
-/.agents/bin/setup.js
-/.agents/skills/code-meta-scanner/SKILL.md
-/.agents/skills/code-review/SKILL.md
-/.agents/skills/gpu-code-review/SKILL.md
+/.agents/bin/
+/.agents/skills/code-review/
+/.agents/skills/design-pattern-cva/
+/.agents/skills/file-enumerator/
+/.agents/skills/gpu-code-review/
+/.agents/skills/phased-session-manager/
+/.agents/skills/qodo/
 /.agents/workflows/ci.en.prompt.md
 /.agents/workflows/ci.ja.prompt.md
 /.agents/workflows/clean-branches.prompt.md
-/.agents/workflows/code-review.prompt.md
 /.agents/workflows/commit.en.prompt.md
 /.agents/workflows/commit.ja.prompt.md
+/.agents/workflows/design-pattern-plan.prompt.md
+/.agents/workflows/design-pattern-refactor.prompt.md
 /.agents/workflows/phased-code-review-flash.prompt.md
 /.agents/workflows/phased-code-review-pro.prompt.md
 /.agents/workflows/qodo.en.prompt.md
