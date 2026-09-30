@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.FastMathTests;
+namespace Kassyi.GSharp.Tests.Core;
 
 public static partial class FastMathBoundaryKernels
 {

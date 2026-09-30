@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.FastMathTests
+namespace Kassyi.GSharp.Tests.Core
 {
 public partial class FastMathBoundaryKernels
 {

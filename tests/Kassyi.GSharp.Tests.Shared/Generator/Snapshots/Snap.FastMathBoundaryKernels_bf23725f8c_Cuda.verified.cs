@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.FastMathTests
+namespace Kassyi.GSharp.Tests.Core
 {
 public partial class FastMathBoundaryKernels
 {
@@ -619,10 +619,10 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.FastMathTests.FastMathBoundaryKernels.WarmupFunctionPointerKernel_COR01_FastMath_Exp();
-global::Kassyi.GSharp.Tests.FastMathTests.FastMathBoundaryKernels.WarmupFunctionPointerKernel_COR01_FastMath_Log();
-global::Kassyi.GSharp.Tests.FastMathTests.FastMathBoundaryKernels.WarmupFunctionPointerKernel_COR01_FastMath_Sqrt();
-global::Kassyi.GSharp.Tests.FastMathTests.FastMathBoundaryKernels.WarmupFunctionPointerKernel_COR01_FastMath_Abs();
+global::Kassyi.GSharp.Tests.Core.FastMathBoundaryKernels.WarmupFunctionPointerKernel_COR01_FastMath_Exp();
+global::Kassyi.GSharp.Tests.Core.FastMathBoundaryKernels.WarmupFunctionPointerKernel_COR01_FastMath_Log();
+global::Kassyi.GSharp.Tests.Core.FastMathBoundaryKernels.WarmupFunctionPointerKernel_COR01_FastMath_Sqrt();
+global::Kassyi.GSharp.Tests.Core.FastMathBoundaryKernels.WarmupFunctionPointerKernel_COR01_FastMath_Abs();
 }}}
 
 
