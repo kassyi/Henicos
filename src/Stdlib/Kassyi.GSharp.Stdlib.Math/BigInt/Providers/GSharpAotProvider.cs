@@ -6,7 +6,6 @@ namespace Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
 /// Execution provider implementing arbitrary-precision BigInteger arithmetic via GSharp JIT transpiled GPU kernels.
 /// This class acts as a Facade, delegating specific operations to specialized sub-handlers.
 /// </summary>
-// <remarks><para>Implements: <b>GEN-49, GEN-50</b></para></remarks>
 public sealed class GSharpAotProvider : IGpuExecutionProvider
 {
     /// <summary>Gets the singleton instance of the <see cref="GSharpAotProvider"/>.</summary>
