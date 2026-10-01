@@ -20,6 +20,6 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
     public override void Transpile(PostfixUnaryExpressionSyntax node, ref TranspileContext context)
     {
         context.Visitor.Visit(node.Operand);
-        context.Writer.Append(node.OperatorToken.Text);
+        context.Emitter.Writer.Append(node.OperatorToken.Text);
     }
 }

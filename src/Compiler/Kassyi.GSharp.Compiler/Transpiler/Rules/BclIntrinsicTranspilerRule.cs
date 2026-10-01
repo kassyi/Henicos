@@ -5,26 +5,26 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
 {
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        if (!context.BclIntrinsicMap.TryGetValue(symbol.OriginalDefinition, out var mappingInfo))
+        if (!context.Query.BclIntrinsicMap.TryGetValue(symbol.OriginalDefinition, out var mappingInfo))
         {
             return false;
         }
 
-        context.Writer.Append(mappingInfo.CudaIntrinsicName);
-        using (context.Writer.Parentheses())
+        context.Emitter.Writer.Append(mappingInfo.CudaIntrinsicName);
+        using (context.Emitter.Writer.Parentheses())
         {
             for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
             {
                 if (i == 0 && mappingInfo.CastFirstArgumentTo != null)
                 {
-                    using (context.Writer.Parentheses())
+                    using (context.Emitter.Writer.Parentheses())
                     {
-                        context.Writer.Append(mappingInfo.CastFirstArgumentTo);
+                        context.Emitter.Writer.Append(mappingInfo.CastFirstArgumentTo);
                     }
                 }
 
                 using (i == 0 && mappingInfo.CastFirstArgumentTo != null
-                           ? context.Writer.Parentheses()
+                           ? context.Emitter.Writer.Parentheses()
                            : default)
                 {
                     context.Visitor.Visit(node.ArgumentList.Arguments[i]);
@@ -32,7 +32,7 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
 
                 if (i < node.ArgumentList.Arguments.Count - 1)
                 {
-                    context.Writer.AppendComma();
+                    context.Emitter.Writer.AppendComma();
                 }
             }
         }

@@ -34,7 +34,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
     /// <inheritdoc />
     public override void Transpile(VariableDeclarationSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.SemanticModel.GetTypeSymbol(node.Type);
+        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Type);
         ValidateAndTrackVariableType(typeSymbol, node.Type, ref context);
 
         var mapping = AnalyzeVariableMapping(node, typeSymbol);
@@ -64,7 +64,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
     {
         if (typeSymbol is { SpecialType: SpecialType.System_String })
         {
-            context.Report(GSharpDiagnostics.StringNotSupported, typeSyntax);
+            context.Reporter.Report(GSharpDiagnostics.StringNotSupported, typeSyntax);
         }
 
         StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
@@ -81,7 +81,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
             {
                 if (i < variables.Count - 1)
                 {
-                    context.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendSemiColonLine();
                 }
 
                 continue;
@@ -89,12 +89,12 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
 
             if (isVar)
             {
-                context.Writer.Append($"auto {v.Identifier.Text}");
+                context.Emitter.Writer.Append($"auto {v.Identifier.Text}");
             }
             else
             {
-                context.AppendType(typeSymbol);
-                context.Writer.Append($" {v.Identifier.Text}");
+                context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+                context.Emitter.Writer.Append($" {v.Identifier.Text}");
             }
 
             DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
@@ -104,7 +104,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
                 continue;
             }
 
-            context.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendSemiColonLine();
         }
     }
 
@@ -137,23 +137,23 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
     {
         if (isConst)
         {
-            context.Writer.Append("const ");
+            context.Emitter.Writer.Append("const ");
         }
 
-        context.AppendType(elemType);
-        context.Writer.Append($" {identifier}");
+        context.Emitter.Dialect.AppendType(ref context, elemType);
+        context.Emitter.Writer.Append($" {identifier}");
     }
 
     private static void WriteArrayWithInitializer(VariableDeclaratorSyntax variable, ITypeSymbol elemType, bool isConst,
         int count, SyntaxNode initializerNode, ref TranspileContext context)
     {
         WriteArrayDeclarationHeader(elemType, variable.Identifier.Text, isConst, ref context);
-        using (context.Writer.Brackets())
+        using (context.Emitter.Writer.Brackets())
         {
-            context.Writer.Append(count);
+            context.Emitter.Writer.Append(count);
         }
 
-        context.Writer.AppendOperator("=");
+        context.Emitter.Writer.AppendOperator("=");
         context.Visitor.Visit(initializerNode);
     }
 
@@ -165,15 +165,15 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
             return false;
         }
 
-        var constVal = context.SemanticModel.GetConstantValue(sizeExpr);
+        var constVal = context.Query.SemanticModel.GetConstantValue(sizeExpr);
         if (!constVal.HasValue)
         {
-            context.Report(GSharpDiagnostics.UnsupportedSyntax, sizeExpr, errorLabel);
+            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, sizeExpr, errorLabel);
             return true;
         }
 
         WriteArrayDeclarationHeader(elemType, variable.Identifier.Text, isConst, ref context);
-        using (context.Writer.Brackets())
+        using (context.Emitter.Writer.Brackets())
         {
             context.Visitor.Visit(sizeExpr);
         }

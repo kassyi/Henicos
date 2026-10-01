@@ -20,14 +20,14 @@ public sealed class ElementAccessExpressionTranspilerRule : SyntaxNodeTranspiler
     public override void Transpile(ElementAccessExpressionSyntax node, ref TranspileContext context)
     {
         context.Visitor.Visit(node.Expression);
-        using (context.Writer.Brackets())
+        using (context.Emitter.Writer.Brackets())
         {
             for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
             {
                 context.Visitor.Visit(node.ArgumentList.Arguments[i].Expression);
                 if (i < node.ArgumentList.Arguments.Count - 1)
                 {
-                    context.Writer.AppendComma();
+                    context.Emitter.Writer.AppendComma();
                 }
             }
         }

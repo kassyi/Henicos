@@ -19,7 +19,7 @@ public sealed class ObjectCreationExpressionTranspilerRule : SyntaxNodeTranspile
     /// <inheritdoc />
     public override void Transpile(ObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.SemanticModel.GetTypeSymbol(node);
+        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node);
         ObjectCreationHelper.TryTranspileObjectCreationHelper(typeSymbol, node, node.Initializer, node.ArgumentList,
             ref context);
     }
@@ -44,7 +44,7 @@ public sealed class ImplicitObjectCreationExpressionTranspilerRule : SyntaxNodeT
     /// <inheritdoc />
     public override void Transpile(ImplicitObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.SemanticModel.GetTypeSymbol(node);
+        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node);
         ObjectCreationHelper.TryTranspileObjectCreationHelper(typeSymbol, node, node.Initializer, node.ArgumentList,
             ref context);
     }
@@ -75,7 +75,7 @@ internal static class ObjectCreationHelper
             return;
         }
 
-        context.Report(GSharpDiagnostics.ObjectCreationNotSupported, node);
+        context.Reporter.Report(GSharpDiagnostics.ObjectCreationNotSupported, node);
         context.Visitor.DefaultVisit(node);
     }
 
@@ -96,30 +96,30 @@ internal static class ObjectCreationHelper
         ArgumentListSyntax? argumentList,
         ref TranspileContext context)
     {
-        context.AppendType(typeSymbol);
+        context.Emitter.Dialect.AppendType(ref context, typeSymbol);
         TranspileArgumentListAsBraces(argumentList, ref context);
     }
 
     private static void TranspileStructCreationWithInitializer(ITypeSymbol typeSymbol,
         InitializerExpressionSyntax initializer, ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
-        using (context.Writer.Parentheses())
+        using (context.Emitter.Writer.Parentheses())
         {
-            using (context.Writer.Brackets())
+            using (context.Emitter.Writer.Brackets())
             {
-                context.Writer.Append("&");
+                context.Emitter.Writer.Append("&");
             }
 
-            context.Writer.AppendParentheses();
-            context.Writer.AppendSpace();
-            using (context.Writer.Scope())
+            context.Emitter.Writer.AppendParentheses();
+            context.Emitter.Writer.AppendSpace();
+            using (context.Emitter.Writer.Scope())
             {
-                context.AppendType(typeSymbol);
-                context.Writer.Append(" _tmp");
+                context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+                context.Emitter.Writer.Append(" _tmp");
                 TranspileArgumentListAsBraces(argumentList, ref context);
 
-                context.Writer.AppendSemiColon();
-                context.Writer.AppendSpace();
+                context.Emitter.Writer.AppendSemiColon();
+                context.Emitter.Writer.AppendSpace();
 
                 foreach (var expr in initializer.Expressions)
                 {
@@ -128,17 +128,17 @@ internal static class ObjectCreationHelper
                         continue;
                     }
 
-                    context.Writer.Append("_tmp.");
+                    context.Emitter.Writer.Append("_tmp.");
                     context.Visitor.Visit(assignment.Left);
-                    context.Writer.Append(" = ");
+                    context.Emitter.Writer.Append(" = ");
                     context.Visitor.Visit(assignment.Right);
-                    context.Writer.Append("; ");
+                    context.Emitter.Writer.Append("; ");
                 }
 
-                context.Writer.Append("return _tmp; ");
+                context.Emitter.Writer.Append("return _tmp; ");
             }
 
-            context.Writer.AppendParentheses();
+            context.Emitter.Writer.AppendParentheses();
         }
     }
 
@@ -146,14 +146,14 @@ internal static class ObjectCreationHelper
     {
         if (argumentList is { Arguments.Count: > 0 })
         {
-            using (context.Writer.Braces())
+            using (context.Emitter.Writer.Braces())
             {
                 var first = true;
                 foreach (var arg in argumentList.Arguments)
                 {
                     if (!first)
                     {
-                        context.Writer
+                        context.Emitter.Writer
                             .AppendComma()
                             .AppendSpace();
                     }
@@ -165,7 +165,7 @@ internal static class ObjectCreationHelper
         }
         else
         {
-            context.Writer.AppendEmptyScope();
+            context.Emitter.Writer.AppendEmptyScope();
         }
     }
 }

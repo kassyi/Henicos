@@ -25,7 +25,7 @@ internal static class MacroTranspiler
     private static bool TryTranspileInvocation(InvocationExpressionSyntax invocation,
         ExpressionStatementSyntax statement, ref TranspileContext context)
     {
-        if (context.SemanticModel.GetSymbol(invocation) is not IMethodSymbol symbol ||
+        if (context.Query.SemanticModel.GetSymbol(invocation) is not IMethodSymbol symbol ||
             !symbol.ContainingNamespace.IsCoreNamespace())
         {
             return false;
@@ -57,7 +57,7 @@ internal static class MacroTranspiler
     {
         if (GpuMacroArgumentRule.GetSupportedLoop(statement) == null)
         {
-            context.Report(GSharpDiagnostics.UnrollHintMustPrecedeLoop, invocation);
+            context.Reporter.Report(GSharpDiagnostics.UnrollHintMustPrecedeLoop, invocation);
             return true;
         }
 
@@ -66,10 +66,10 @@ internal static class MacroTranspiler
         if (args.Count > 0)
         {
             var factorExpr = args[0].Expression;
-            var constantValue = context.SemanticModel.GetConstantValue(factorExpr);
+            var constantValue = context.Query.SemanticModel.GetConstantValue(factorExpr);
             if (!constantValue.HasValue || constantValue.Value is not int intVal || intVal < 0)
             {
-                context.Report(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
+                context.Reporter.Report(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
                 return true;
             }
 
@@ -78,11 +78,11 @@ internal static class MacroTranspiler
 
         if (factor > 0)
         {
-            context.Writer.AppendLine($"#pragma unroll {factor}");
+            context.Emitter.Writer.AppendLine($"#pragma unroll {factor}");
         }
         else
         {
-            context.Writer.AppendLine("#pragma unroll");
+            context.Emitter.Writer.AppendLine("#pragma unroll");
         }
 
         return true;
@@ -100,10 +100,10 @@ internal static class MacroTranspiler
             return false;
         }
 
-        if (!TryGetConstantInt(args[offset].Expression, context.SemanticModel, out var start) ||
-            !TryGetConstantInt(args[offset + 1].Expression, context.SemanticModel, out var count))
+        if (!TryGetConstantInt(args[offset].Expression, context.Query.SemanticModel, out var start) ||
+            !TryGetConstantInt(args[offset + 1].Expression, context.Query.SemanticModel, out var count))
         {
-            context.Report(GSharpDiagnostics.UnsupportedSyntax, invocation, "ForUnroll arguments must be constants");
+            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, invocation, "ForUnroll arguments must be constants");
             return false;
         }
 
@@ -114,19 +114,19 @@ internal static class MacroTranspiler
 
         using var scopeDisposer = macroScope;
 
-        context.Writer.AppendLine($"// [GpuUnroll] start={start}, count={count}");
+        context.Emitter.Writer.AppendLine($"// [GpuUnroll] start={start}, count={count}");
 
         // [WHY] Unrolls the loop at C# source transpilation time by substituting the loop induction variable with literal constants, eliminating runtime branching in the GPU kernel.
         for (var i = start; i < start + count; i++)
         {
-            var iterationCookie = context.PushOverrideScope(macroScope.ParamName, new OverrideValue(i.ToString()));
+            var iterationCookie = context.Emitter.PushOverrideScope(macroScope.ParamName, new OverrideValue(i.ToString()));
             try
             {
                 EmitUnrolledBody(ref context, lambdaExpr.Body);
             }
             finally
             {
-                context.PopOverrideScope(iterationCookie);
+                context.Emitter.PopOverrideScope(iterationCookie);
             }
         }
 
@@ -154,16 +154,16 @@ internal static class MacroTranspiler
         using var scopeDisposer = macroScope;
 
         // Emit: for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < [EXPR]; {paramName} += gridDim.x * blockDim.x)
-        context.Writer.AppendKeyword("for");
-        using (context.Writer.Parentheses())
+        context.Emitter.Writer.AppendKeyword("for");
+        using (context.Emitter.Writer.Parentheses())
         {
-            context.Writer.Append(
+            context.Emitter.Writer.Append(
                 $"int {macroScope.ParamName} = blockIdx.x * blockDim.x + threadIdx.x; {macroScope.ParamName} < ");
             context.Visitor.Visit(args[offset].Expression);
-            context.Writer.Append($"; {macroScope.ParamName} += gridDim.x * blockDim.x");
+            context.Emitter.Writer.Append($"; {macroScope.ParamName} += gridDim.x * blockDim.x");
         }
 
-        context.Writer.AppendLine();
+        context.Emitter.Writer.AppendLine();
         EmitUnrolledBody(ref context, lambdaExpr.Body);
 
         return true;
@@ -178,13 +178,13 @@ internal static class MacroTranspiler
         public MacroScope(ref TranspileContext context, string paramName, string? contextParamName,
             ExpressionSyntax? contextArgExpr)
         {
-            _stack = context.LocalVariableOverrides;
+            _stack = context.Emitter.LocalVariableOverrides;
             ParamName = paramName;
             _cookie = _stack.Count;
 
             if (contextParamName != null && contextArgExpr != null)
             {
-                context.PushOverrideScope(contextParamName, new OverrideValue(contextArgExpr));
+                context.Emitter.PushOverrideScope(contextParamName, new OverrideValue(contextArgExpr));
             }
         }
 
@@ -207,7 +207,7 @@ internal static class MacroTranspiler
         var paramName = ExtractUnrollLoopParameterName(lambdaExpr, hasContext);
         if (string.IsNullOrEmpty(paramName))
         {
-            context.Report(GSharpDiagnostics.MacroLambdaRequiresParameter, invocation, macroName);
+            context.Reporter.Report(GSharpDiagnostics.MacroLambdaRequiresParameter, invocation, macroName);
             return false;
         }
 
@@ -231,24 +231,24 @@ internal static class MacroTranspiler
             return false;
         }
 
-        context.Writer.AppendKeyword("if");
-        using (context.Writer.Parentheses())
+        context.Emitter.Writer.AppendKeyword("if");
+        using (context.Emitter.Writer.Parentheses())
         {
-            context.Writer.Append("threadIdx.x == 0 && blockIdx.x == 0");
+            context.Emitter.Writer.Append("threadIdx.x == 0 && blockIdx.x == 0");
         }
 
-        context.Writer.AppendLine();
+        context.Emitter.Writer.AppendLine();
 
         // Suppress AutoSyncGrid in SingleThread blocks to prevent GPU deadlock (grid sync requires all threads)
-        var prevDepth = context.AutoSyncGridDepth;
-        context.AutoSyncGridDepth = 0;
+        var prevDepth = context.Emitter.AutoSyncGridDepth;
+        context.Emitter.AutoSyncGridDepth = 0;
         try
         {
             EmitUnrolledBody(ref context, lambdaExpr.Body);
         }
         finally
         {
-            context.AutoSyncGridDepth = prevDepth;
+            context.Emitter.AutoSyncGridDepth = prevDepth;
         }
 
         return true;
@@ -259,20 +259,20 @@ internal static class MacroTranspiler
         var args = invocation.ArgumentList.Arguments;
         if (args.Count != 1 || args[0].Expression is not LambdaExpressionSyntax lambdaExpr)
         {
-            context.Report(GSharpDiagnostics.UnsupportedSyntax, invocation, "Gpu.SyncGrid requires a single lambda expression argument");
+            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, invocation, "Gpu.SyncGrid requires a single lambda expression argument");
             return false;
         }
 
         if (lambdaExpr.Body is BlockSyntax block)
         {
-            var flatStatements = RoslynToCudaVisitor.FlattenStatements(block.Statements, context.SemanticModel);
+            var flatStatements = RoslynToCudaVisitor.FlattenStatements(block.Statements, context.Query.SemanticModel);
             if (!HasExecutableStatements(flatStatements))
             {
                 return true; // [WHY] Completely eliminate empty Gpu.SyncGrid(() => {}) as a No-op (zero CUDA C++ output).
             }
 
-            var isNested = context.AutoSyncGridDepth > 0;
-            context.AutoSyncGridDepth++;
+            var isNested = context.Emitter.AutoSyncGridDepth > 0;
+            context.Emitter.AutoSyncGridDepth++;
             try
             {
                 if (isNested)
@@ -281,7 +281,7 @@ internal static class MacroTranspiler
                 }
                 else
                 {
-                    using (context.Writer.Scope())
+                    using (context.Emitter.Writer.Scope())
                     {
                         EmitFlattenedSyncGridBlock(flatStatements, ref context);
                     }
@@ -289,7 +289,7 @@ internal static class MacroTranspiler
             }
             finally
             {
-                context.AutoSyncGridDepth--;
+                context.Emitter.AutoSyncGridDepth--;
             }
 
             return true;
@@ -297,27 +297,27 @@ internal static class MacroTranspiler
 
         if (lambdaExpr.Body is ExpressionSyntax expr)
         {
-            var isNested = context.AutoSyncGridDepth > 0;
-            context.AutoSyncGridDepth++;
+            var isNested = context.Emitter.AutoSyncGridDepth > 0;
+            context.Emitter.AutoSyncGridDepth++;
             try
             {
                 if (isNested)
                 {
                     context.Visitor.Visit(expr);
-                    context.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendSemiColonLine();
                 }
                 else
                 {
-                    using (context.Writer.Scope())
+                    using (context.Emitter.Writer.Scope())
                     {
                         context.Visitor.Visit(expr);
-                        context.Writer.AppendSemiColonLine();
+                        context.Emitter.Writer.AppendSemiColonLine();
                     }
                 }
             }
             finally
             {
-                context.AutoSyncGridDepth--;
+                context.Emitter.AutoSyncGridDepth--;
             }
 
             return true;
@@ -345,32 +345,32 @@ internal static class MacroTranspiler
         {
             var stmt = flatStatements[i];
             context.Visitor.Visit(stmt);
-            context.Writer.AppendLine();
+            context.Emitter.Writer.AppendLine();
             if (context.Visitor.ShouldInsertAutoSync(flatStatements, i))
             {
-                context.Writer.AppendLine("cg::this_grid().sync();");
+                context.Emitter.Writer.AppendLine("cg::this_grid().sync();");
             }
         }
     }
 
     private static void EmitUnrolledBody(ref TranspileContext context, SyntaxNode rewrittenBody)
     {
-        using (context.Writer.Scope())
+        using (context.Emitter.Writer.Scope())
         {
             switch (rewrittenBody)
             {
                 case BlockSyntax block:
-                    var flatStatements = context.AutoSyncGridDepth > 0
-                        ? RoslynToCudaVisitor.FlattenStatements(block.Statements, context.SemanticModel)
+                    var flatStatements = context.Emitter.AutoSyncGridDepth > 0
+                        ? RoslynToCudaVisitor.FlattenStatements(block.Statements, context.Query.SemanticModel)
                         : block.Statements;
                     for (var i = 0; i < flatStatements.Count; i++)
                     {
                         var stmt = flatStatements[i];
                         context.Visitor.Visit(stmt);
-                        context.Writer.AppendLine();
+                        context.Emitter.Writer.AppendLine();
                         if (context.Visitor.ShouldInsertAutoSync(flatStatements, i))
                         {
-                            context.Writer.AppendLine("cg::this_grid().sync();");
+                            context.Emitter.Writer.AppendLine("cg::this_grid().sync();");
                         }
                     }
 
@@ -378,7 +378,7 @@ internal static class MacroTranspiler
 
                 case ExpressionSyntax expr:
                     context.Visitor.Visit(expr);
-                    context.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendSemiColonLine();
                     break;
             }
         }
@@ -414,9 +414,9 @@ internal static class MacroTranspiler
 
     private static bool TryTranspileAssignment(AssignmentExpressionSyntax assignment, ref TranspileContext context)
     {
-        var rightNode = UnwrapExpression(assignment.Right, context.SemanticModel);
+        var rightNode = UnwrapExpression(assignment.Right, context.Query.SemanticModel);
 
-        if (context.SemanticModel.GetSymbol(rightNode) is not IMethodSymbol methodSymbol)
+        if (context.Query.SemanticModel.GetSymbol(rightNode) is not IMethodSymbol methodSymbol)
         {
             return false;
         }
@@ -473,7 +473,7 @@ internal static class MacroTranspiler
         {
             if (targetType != null && targetMethodName != null)
             {
-                context.Report(
+                context.Reporter.Report(
                     GSharpDiagnostics.UnsupportedSyntax,
                     assignment,
                     $"Macro target method '{targetType.Name}.{targetMethodName}' is missing or incompatible.");
@@ -486,13 +486,13 @@ internal static class MacroTranspiler
         var resultOp = assignment.Left;
         var hasContext = targetMethod.Parameters.Length == expectedMethodParamsMax;
 
-        context.Writer.Append(targetMethodName);
-        using (context.Writer.Parentheses())
+        context.Emitter.Writer.Append(targetMethodName);
+        using (context.Emitter.Writer.Parentheses())
         {
             EmitMacroArguments(targetMethod, resultOp, leftOp, rightOp, extraArg, hasContext, ref context);
         }
 
-        context.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendSemiColonLine();
         return true;
     }
 
@@ -588,7 +588,7 @@ internal static class MacroTranspiler
         {
             if (!isFirst)
             {
-                localContext.Writer.AppendComma();
+                localContext.Emitter.Writer.AppendComma();
             }
 
             isFirst = false;
@@ -598,17 +598,17 @@ internal static class MacroTranspiler
 
             if (isPointer && rawString != null)
             {
-                localContext.Writer.Append($"&{rawString}");
+                localContext.Emitter.Writer.Append($"&{rawString}");
             }
             else if (rawString != null)
             {
-                localContext.Writer.Append(rawString);
+                localContext.Emitter.Writer.Append(rawString);
             }
             else if (expr != null)
             {
-                if (isPointer && RefSyntaxHelper.NeedsAddressOf(expr, localContext.SemanticModel))
+                if (isPointer && RefSyntaxHelper.NeedsAddressOf(expr, localContext.Query.SemanticModel))
                 {
-                    localContext.Writer.Append("&");
+                    localContext.Emitter.Writer.Append("&");
                 }
 
                 localContext.Visitor.Visit(expr);

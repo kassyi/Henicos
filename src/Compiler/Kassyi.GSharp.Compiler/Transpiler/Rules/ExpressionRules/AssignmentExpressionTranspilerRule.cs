@@ -23,19 +23,19 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         if (node is { Left: TupleExpressionSyntax leftTuple, Right: TupleExpressionSyntax rightTuple })
         {
             // [WHY] Emits an immediately invoked C++ lambda to evaluate RHS tuple elements before assigning to LHS, preventing variable swap clobbering.
-            using (context.Writer.ImmediatelyInvokedLambda())
+            using (context.Emitter.Writer.ImmediatelyInvokedLambda())
             {
                 for (var i = 0; i < rightTuple.Arguments.Count; i++)
                 {
-                    context.Writer.Append($"auto _t{i} = ");
+                    context.Emitter.Writer.Append($"auto _t{i} = ");
                     context.Visitor.Visit(rightTuple.Arguments[i].Expression);
-                    context.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendSemiColonLine();
                 }
 
                 for (var i = 0; i < leftTuple.Arguments.Count; i++)
                 {
                     context.Visitor.Visit(leftTuple.Arguments[i].Expression);
-                    context.Writer
+                    context.Emitter.Writer
                         .Append($" = _t{i}")
                         .AppendSemiColonLine();
                 }
@@ -46,27 +46,27 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
-            using (context.Writer.ImmediatelyInvokedLambda("decltype(auto)"))
+            using (context.Emitter.Writer.ImmediatelyInvokedLambda("decltype(auto)"))
             {
-                context.Writer.Append("auto& __coalesce_target = ");
+                context.Emitter.Writer.Append("auto& __coalesce_target = ");
                 context.Visitor.Visit(node.Left);
-                context.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendSemiColonLine();
 
-                context.Writer.Append("return !__coalesce_target.HasValue ? ");
-                using (context.Writer.Parentheses())
+                context.Emitter.Writer.Append("return !__coalesce_target.HasValue ? ");
+                using (context.Emitter.Writer.Parentheses())
                 {
-                    context.Writer.Append("__coalesce_target = ");
+                    context.Emitter.Writer.Append("__coalesce_target = ");
                     context.Visitor.Visit(node.Right);
                 }
 
-                context.Writer.AppendLine(" : __coalesce_target.Value;");
+                context.Emitter.Writer.AppendLine(" : __coalesce_target.Value;");
             }
 
             return;
         }
 
         context.Visitor.Visit(node.Left);
-        context.Writer.AppendOperator(node.OperatorToken.Text);
+        context.Emitter.Writer.AppendOperator(node.OperatorToken.Text);
         context.Visitor.Visit(node.Right);
     }
 }

@@ -18,11 +18,11 @@ public class PoolStressTests
             {
                 using var visitor = RoslynToCudaVisitor.Rent(new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect(), semanticModel, null);
 
-                Assert.Empty(visitor.Context.UsedStructs);
-                Assert.Empty(visitor.Context.LocalVariableOverrides);
+                Assert.Empty(visitor.Context.Query.UsedStructs);
+                Assert.Empty(visitor.Context.Emitter.LocalVariableOverrides);
 
                 // Mutate to test reset in future loops
-                visitor.Context.PushOverrideScope($"var_{i}", new OverrideValue("test"));
+                visitor.Context.Emitter.PushOverrideScope($"var_{i}", new OverrideValue("test"));
             }
             catch (Exception ex)
             {

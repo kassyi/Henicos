@@ -34,11 +34,11 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 
         var argExpr = node.ArgumentList.Arguments[0].Expression;
 
-        var constantValue = context.SemanticModel.GetConstantValue(argExpr);
+        var constantValue = context.Query.SemanticModel.GetConstantValue(argExpr);
         if (constantValue is { HasValue: true, Value: string ptxString })
         {
-            context.Writer.Append(ptxString);
-            context.Writer.AppendLine();
+            context.Emitter.Writer.Append(ptxString);
+            context.Emitter.Writer.AppendLine();
             return;
         }
 
@@ -48,7 +48,7 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
             return;
         }
 
-        context.Report(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node);
+        context.Reporter.Report(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node);
     }
 
     private static void TranspileInterpolatedInlinePtx(InterpolatedStringExpressionSyntax interpolated,
@@ -59,7 +59,7 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
             switch (content)
             {
                 case InterpolatedStringTextSyntax text:
-                    context.Writer.Append(text.TextToken.ValueText);
+                    context.Emitter.Writer.Append(text.TextToken.ValueText);
                     break;
                 case InterpolationSyntax interpolation:
                     context.Visitor.Visit(interpolation.Expression);
@@ -67,7 +67,7 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
             }
         }
 
-        context.Writer.AppendLine();
+        context.Emitter.Writer.AppendLine();
     }
 
     private static void TranspileConstant(InvocationExpressionSyntax node, ref TranspileContext context)
@@ -77,11 +77,11 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
             var expr = node.ArgumentList.Arguments[0].Expression;
             if (expr is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression))
             {
-                context.Writer.Append(literal.Token.ValueText);
+                context.Emitter.Writer.Append(literal.Token.ValueText);
             }
             else if (expr is IdentifierNameSyntax identifier)
             {
-                context.Writer.Append(identifier.Identifier.ValueText);
+                context.Emitter.Writer.Append(identifier.Identifier.ValueText);
             }
         }
     }
