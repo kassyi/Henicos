@@ -3,9 +3,10 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 /// <summary>
 /// Ensures that prohibited APIs (like System.Math, System.Threading.Interlocked) are not used in GPU kernels.
 /// </summary>
-internal sealed class ProhibitedApiRule
+internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpressionSyntax>
 {
     public static readonly ProhibitedApiRule Instance = new();
+    public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(GSharpDiagnostics.UnsupportedSyntax);
 
     private ProhibitedApiRule()
     {

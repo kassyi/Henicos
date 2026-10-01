@@ -6,21 +6,8 @@ namespace Kassyi.GSharp.Compiler.Diagnostics;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class GpuKernelAnalyzer : DiagnosticAnalyzer
 {
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
-        GSharpDiagnostics.ForeachNotSupported,
-        GSharpDiagnostics.LinqNotSupported,
-        GSharpDiagnostics.ImplicitVarNeedsSuffix,
-        GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral,
-        GSharpDiagnostics.MacroArgumentMustBeConstant,
-        GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
-        GSharpDiagnostics.UnrollHintMustPrecedeLoop,
-        GSharpDiagnostics.UnrolledLoopMustBeStatic,
-        GSharpDiagnostics.UnrolledLoopMayBeIgnored,
-        GSharpDiagnostics.ManualEnumeratorNotSupported,
-        GSharpDiagnostics.UnsupportedSyntax,
-        GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
-        GSharpDiagnostics.ParamsModifierNotSupported,
-        GSharpDiagnostics.KernelClassMustBePartial);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
+        DiagnosticRuleRegistry.AllSupportedDiagnostics.Add(GSharpDiagnostics.KernelClassMustBePartial);
 
     public override void Initialize(AnalysisContext context)
     {
