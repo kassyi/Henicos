@@ -74,11 +74,13 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         var hasContext = invocationSymbol.Parameters.Length == 4;
         var offset = hasContext ? 1 : 0;
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count >= offset + 2)
+        if (args.Count < offset + 2)
         {
-            CheckConstant(args[offset].Expression, "start", TypeConstants.GpuMacros.ForUnroll, ref context);
-            CheckConstant(args[offset + 1].Expression, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
+            return;
         }
+
+        CheckConstant(args[offset].Expression, "start", TypeConstants.GpuMacros.ForUnroll, ref context);
+        CheckConstant(args[offset + 1].Expression, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
     }
 
     private void CheckInlinePtx(InvocationExpressionSyntax invocation, ref ValidationContext context)
@@ -303,14 +305,16 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
     private static bool IsCooperativeKernel(IMethodSymbol methodSymbol)
     {
         var kernelAttr = methodSymbol.GetAttribute(KnownAttributes.GpuKernel);
-        if (kernelAttr != null)
+        if (kernelAttr == null)
         {
-            foreach (var namedArg in kernelAttr.NamedArguments)
+            return false;
+        }
+
+        foreach (var namedArg in kernelAttr.NamedArguments)
+        {
+            if (namedArg is { Key: "Cooperative", Value.Value: true })
             {
-                if (namedArg is { Key: "Cooperative", Value.Value: true })
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
