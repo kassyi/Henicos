@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public static partial class MethodAttributesKernels
 {

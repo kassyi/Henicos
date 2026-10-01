@@ -41,11 +41,11 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.LocalFunctionLoweringKernels.WarmupFunctionPointerLocalFunctionVoidKernel();
-global::Kassyi.GSharp.Tests.Syntax.LocalFunctionLoweringKernels.WarmupFunctionPointerLocalFunctionValueReturnKernel();
-global::Kassyi.GSharp.Tests.Syntax.LocalFunctionLoweringKernels.WarmupFunctionPointerLocalFunctionExpressionBodyKernel();
-global::Kassyi.GSharp.Tests.Syntax.LocalFunctionLoweringKernels.WarmupFunctionPointerNestedLocalFunctionKernel();
-global::Kassyi.GSharp.Tests.Syntax.LocalFunctionLoweringKernels.WarmupFunctionPointerMultiParamLocalFunctionKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionLoweringKernels.WarmupFunctionPointerLocalFunctionVoidKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionLoweringKernels.WarmupFunctionPointerLocalFunctionValueReturnKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionLoweringKernels.WarmupFunctionPointerLocalFunctionExpressionBodyKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionLoweringKernels.WarmupFunctionPointerNestedLocalFunctionKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LocalFunctionLoweringKernels.WarmupFunctionPointerMultiParamLocalFunctionKernel();
 }}}
 
 
@@ -71,7 +71,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class LocalFunctionLoweringKernels
 {

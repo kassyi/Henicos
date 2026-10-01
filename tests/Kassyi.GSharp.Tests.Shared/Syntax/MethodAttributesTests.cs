@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public partial class MethodAttributesTests
 :  TranspilerTestBase{

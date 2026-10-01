@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class AdvancedMemoryKernels
 {
@@ -645,10 +645,10 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.AdvancedMemoryKernels.WarmupFunctionPointerFixedBufferKernel();
-global::Kassyi.GSharp.Tests.Syntax.AdvancedMemoryKernels.WarmupFunctionPointerPointerIncrementKernel();
-global::Kassyi.GSharp.Tests.Syntax.AdvancedMemoryKernels.WarmupFunctionPointerPointerDecrementKernel();
-global::Kassyi.GSharp.Tests.Syntax.AdvancedMemoryKernels.WarmupFunctionPointerPointerComplexAssignmentKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.AdvancedMemoryKernels.WarmupFunctionPointerFixedBufferKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.AdvancedMemoryKernels.WarmupFunctionPointerPointerIncrementKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.AdvancedMemoryKernels.WarmupFunctionPointerPointerDecrementKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.AdvancedMemoryKernels.WarmupFunctionPointerPointerComplexAssignmentKernel();
 }}}
 
 

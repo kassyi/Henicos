@@ -41,11 +41,11 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.LoopUnrollKernels.WarmupFunctionPointerLoopUnrollForKernel();
-global::Kassyi.GSharp.Tests.Syntax.LoopUnrollKernels.WarmupFunctionPointerLoopUnrollFactorKernel();
-global::Kassyi.GSharp.Tests.Syntax.LoopUnrollKernels.WarmupFunctionPointerLoopUnrollWhileKernel();
-global::Kassyi.GSharp.Tests.Syntax.LoopUnrollKernels.WarmupFunctionPointerLoopUnrollNestedKernel();
-global::Kassyi.GSharp.Tests.Syntax.LoopUnrollKernels.WarmupFunctionPointerLoopUnrollSingleStatementKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LoopUnrollKernels.WarmupFunctionPointerLoopUnrollForKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LoopUnrollKernels.WarmupFunctionPointerLoopUnrollFactorKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LoopUnrollKernels.WarmupFunctionPointerLoopUnrollWhileKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LoopUnrollKernels.WarmupFunctionPointerLoopUnrollNestedKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.LoopUnrollKernels.WarmupFunctionPointerLoopUnrollSingleStatementKernel();
 }}}
 
 
@@ -71,7 +71,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class LoopUnrollKernels
 {

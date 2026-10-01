@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class CoreSyntaxKernels
 {
@@ -128,26 +128,26 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 }
 }
 #pragma warning restore CS8500
-public const string StructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Vector2__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Vector2__
-struct Kassyi_GSharp_Tests_Syntax_Vector2
+public const string StructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Vector2__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Vector2__
+struct Kassyi_GSharp_Tests_Shared_Syntax_Vector2
 {
 float X;
 float Y;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void CoreSyntaxKernels_StructKernel(Kassyi_GSharp_Tests_Syntax_Vector2* __restrict__ vectors, int length){
+extern ""C"" __declspec(dllexport) void CoreSyntaxKernels_StructKernel(Kassyi_GSharp_Tests_Shared_Syntax_Vector2* __restrict__ vectors, int length){
 int tid = threadIdx.x;
 if(tid<length)
 {
-Kassyi_GSharp_Tests_Syntax_Vector2 v = vectors[tid];
+Kassyi_GSharp_Tests_Shared_Syntax_Vector2 v = vectors[tid];
 v.X=v.X*2.0f;
 v.Y=v.Y+1.0f;
 vectors[tid]=v;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_CoreSyntaxKernels_StructKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Syntax_Vector2* __restrict__ vectors, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_CoreSyntaxKernels_StructKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Syntax_Vector2* __restrict__ vectors, int length)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -163,9 +163,9 @@ CoreSyntaxKernels_StructKernel(vectors, length);
 ";
 public static readonly string StructKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +StructKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void StructKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Syntax.Vector2* vectors, global::System.Int32 length);
+private unsafe delegate void StructKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2* vectors, global::System.Int32 length);
 #pragma warning disable CS8500
-public static unsafe void LaunchStructKernel(global::Kassyi.GSharp.Tests.Syntax.Vector2[] vectors, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchStructKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2[] vectors, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (vectors.Length == 0){
 return;
@@ -174,15 +174,15 @@ var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchit
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<StructKernel_Delegate>("__gsharp_launch_CoreSyntaxKernels_StructKernel", dllPath);
-fixed (global::Kassyi.GSharp.Tests.Syntax.Vector2* p_vectors = vectors)
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2* p_vectors = vectors)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_vectors, length);
 }
 }
 #pragma warning restore CS8500
-public const string PaddedStructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct__
-struct Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct
+public const string PaddedStructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct
 {
 unsigned char Flag1;
 double ValueD;
@@ -191,11 +191,11 @@ short Flag2;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void CoreSyntaxKernels_PaddedStructKernel(Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct* __restrict__ items, int length){
+extern ""C"" __declspec(dllexport) void CoreSyntaxKernels_PaddedStructKernel(Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct* __restrict__ items, int length){
 int tid = threadIdx.x;
 if(tid<length)
 {
-Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct item = items[tid];
+Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct item = items[tid];
 item.Flag1=(unsigned char)(item.Flag1+1);
 item.ValueD=item.ValueD*1.5;
 item.ValueI=item.ValueI+100;
@@ -203,7 +203,7 @@ item.Flag2=(short)(item.Flag2-5);
 items[tid]=item;
 }
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_CoreSyntaxKernels_PaddedStructKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct* __restrict__ items, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_CoreSyntaxKernels_PaddedStructKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct* __restrict__ items, int length)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -219,9 +219,9 @@ CoreSyntaxKernels_PaddedStructKernel(items, length);
 ";
 public static readonly string PaddedStructKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +PaddedStructKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void PaddedStructKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct* items, global::System.Int32 length);
+private unsafe delegate void PaddedStructKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct* items, global::System.Int32 length);
 #pragma warning disable CS8500
-public static unsafe void LaunchPaddedStructKernel(global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct[] items, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchPaddedStructKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct[] items, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (items.Length == 0){
 return;
@@ -230,7 +230,7 @@ var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchit
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PaddedStructKernel_Delegate>("__gsharp_launch_CoreSyntaxKernels_PaddedStructKernel", dllPath);
-fixed (global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct* p_items = items)
+fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct* p_items = items)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_items, length);
 }

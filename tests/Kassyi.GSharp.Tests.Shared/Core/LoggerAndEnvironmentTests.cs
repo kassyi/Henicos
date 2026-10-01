@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using MSLogLevel = Microsoft.Extensions.Logging.LogLevel;
 using GSharpLogLevel = Kassyi.GSharp.Core.LogLevel;
 
-namespace Kassyi.GSharp.Tests.Core;
+namespace Kassyi.GSharp.Tests.Shared.Core;
 
 public class LoggerAndEnvironmentTests
 {

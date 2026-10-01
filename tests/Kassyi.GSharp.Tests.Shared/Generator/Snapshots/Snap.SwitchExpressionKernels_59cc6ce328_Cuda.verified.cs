@@ -41,9 +41,9 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.SwitchExpressionKernels.WarmupFunctionPointerSimpleConstantSwitchKernel();
-global::Kassyi.GSharp.Tests.Syntax.SwitchExpressionKernels.WarmupFunctionPointerFloatingPointReturnSwitchKernel();
-global::Kassyi.GSharp.Tests.Syntax.SwitchExpressionKernels.WarmupFunctionPointerMultipleArmsBoundarySwitchKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.WarmupFunctionPointerSimpleConstantSwitchKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.WarmupFunctionPointerFloatingPointReturnSwitchKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.SwitchExpressionKernels.WarmupFunctionPointerMultipleArmsBoundarySwitchKernel();
 }}}
 
 
@@ -69,7 +69,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class SwitchExpressionKernels
 {

@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Runtime;
+namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 [Trait("Category", "GpuExecution")]
 [Trait("Category", "Stress")]

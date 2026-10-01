@@ -1,7 +1,7 @@
 using System;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Core;
+namespace Kassyi.GSharp.Tests.Shared.Core;
 
 [Trait("Category", "GpuExecution")]
 public class SharedMemoryTests : TranspilerTestBase

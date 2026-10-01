@@ -2,9 +2,9 @@ using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 
-namespace Kassyi.GSharp.Tests.Stdlib;
+namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 
 [Trait("Category", "GpuExecution")]
 public class GpuBigIntegerTests
@@ -300,3 +300,4 @@ public class GpuBigIntegerTests
         Assert.Equal(0, mulResult.Value.CompareTo(uExpected)); // Is zero
     }
 }
+

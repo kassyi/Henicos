@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class BitOperationsKernels
 {
@@ -483,8 +483,8 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.BitOperationsKernels.WarmupFunctionPointerRotate32Kernel();
-global::Kassyi.GSharp.Tests.Syntax.BitOperationsKernels.WarmupFunctionPointerRotate64Kernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.BitOperationsKernels.WarmupFunctionPointerRotate32Kernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.BitOperationsKernels.WarmupFunctionPointerRotate64Kernel();
 }}}
 
 

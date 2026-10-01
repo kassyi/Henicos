@@ -1,5 +1,5 @@
 #nullable enable
-namespace Kassyi.GSharp.Tests.Helpers;
+namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 public abstract class TranspilerTestBase
 {

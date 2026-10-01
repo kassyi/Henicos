@@ -6,7 +6,7 @@ using Kassyi.GSharp.Runtime.Aot;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Kassyi.GSharp.Tests.Runtime;
+namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 public class GpuKernelLoaderAotTests
 {

@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class ControlFlowKernels
 {
@@ -1170,12 +1170,12 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.ControlFlowKernels.WarmupFunctionPointerSimpleTernaryKernel();
-global::Kassyi.GSharp.Tests.Syntax.ControlFlowKernels.WarmupFunctionPointerNestedTernaryKernel();
-global::Kassyi.GSharp.Tests.Syntax.ControlFlowKernels.WarmupFunctionPointerSwitchExpressionKernel();
-global::Kassyi.GSharp.Tests.Syntax.ControlFlowKernels.WarmupFunctionPointerRefSwitchExpressionKernel();
-global::Kassyi.GSharp.Tests.Syntax.ControlFlowKernels.WarmupFunctionPointerNullCoalescingKernel();
-global::Kassyi.GSharp.Tests.Syntax.ControlFlowKernels.WarmupFunctionPointerNullCoalescingAssignmentSideEffectKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.WarmupFunctionPointerSimpleTernaryKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.WarmupFunctionPointerNestedTernaryKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.WarmupFunctionPointerSwitchExpressionKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.WarmupFunctionPointerRefSwitchExpressionKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.WarmupFunctionPointerNullCoalescingKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.ControlFlowKernels.WarmupFunctionPointerNullCoalescingAssignmentSideEffectKernel();
 }}}
 
 

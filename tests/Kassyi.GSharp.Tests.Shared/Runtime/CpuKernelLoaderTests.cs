@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Kassyi.GSharp.Runtime.Aot;
 
-namespace Kassyi.GSharp.Tests.Runtime;
+namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 [Trait("Category", "CpuExecution")]
 public class CpuKernelLoaderTests

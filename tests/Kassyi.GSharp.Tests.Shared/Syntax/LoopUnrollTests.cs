@@ -1,6 +1,6 @@
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class LoopUnrollTests : TranspilerTestBase
 {
@@ -208,3 +208,4 @@ public class LoopUnrollTests : TranspilerTestBase
         Assert.Contains("#pragma unroll\nfor", cudaSource2.Replace("\r", ""));
     }
 }
+

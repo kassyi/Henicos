@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Tests.Analyzers.Rules;
+namespace Kassyi.GSharp.Tests.Shared.Analyzers.Rules;
 
 public class ImplicitVarNeedsSuffixRuleTests
 :  TranspilerTestBase{

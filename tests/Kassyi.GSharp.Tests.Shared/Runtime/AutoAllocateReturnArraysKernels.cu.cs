@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Runtime;
+namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 public unsafe partial class AutoAllocateReturnArraysKernels
 {

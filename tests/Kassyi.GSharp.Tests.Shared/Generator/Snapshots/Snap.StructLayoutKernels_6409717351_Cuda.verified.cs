@@ -41,8 +41,8 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Core.StructLayoutKernels.WarmupFunctionPointerModifyStructLayoutKernel();
-global::Kassyi.GSharp.Tests.Core.StructLayoutKernels.WarmupFunctionPointerModifyPackedInlineArrayKernel();
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutKernels.WarmupFunctionPointerModifyStructLayoutKernel();
+global::Kassyi.GSharp.Tests.Shared.Core.StructLayoutKernels.WarmupFunctionPointerModifyPackedInlineArrayKernel();
 }}}
 
 
@@ -68,7 +68,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Core
+namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class StructLayoutKernels
 {
@@ -76,9 +76,9 @@ public static partial class AotContexts
 {
 }
 public const string ModifyStructLayoutKernel_Source = @"#pragma pack(push, 1)
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_CustomLayoutStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_CustomLayoutStruct__
-struct Kassyi_GSharp_Tests_Core_CustomLayoutStruct
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct__
+struct Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct
 {
 unsigned char A;
 double B;
@@ -87,7 +87,7 @@ float C;
 ;
 #endif
 #pragma pack(pop)
-extern ""C"" __global__ void StructLayoutKernels_ModifyStructLayoutKernel(Kassyi_GSharp_Tests_Core_CustomLayoutStruct* __restrict__ data){
+extern ""C"" __global__ void StructLayoutKernels_ModifyStructLayoutKernel(Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct* __restrict__ data){
 int tid = threadIdx.x;
 data[tid].A+=10;
 data[tid].B*=2.0;
@@ -104,7 +104,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTes
 s_hfunc_ModifyStructLayoutKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "StructLayoutKernels_ModifyStructLayoutKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchModifyStructLayoutKernel(global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchModifyStructLayoutKernel(global::Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
@@ -118,7 +118,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: data
-int data_size = data.Length * sizeof(global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct);
+int data_size = data.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct);
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
@@ -194,9 +194,9 @@ finally
 }
 #pragma warning restore CS8500
 public const string ModifyPackedInlineArrayKernel_Source = @"#pragma pack(push, 1)
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_PackedInlineArray__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_PackedInlineArray__
-struct Kassyi_GSharp_Tests_Core_PackedInlineArray
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray__
+struct Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray
 {
 unsigned char Element[4];
 __device__ inline unsigned char& operator[](int index){
@@ -216,18 +216,18 @@ __device__ inline int size() const { return 4; }
 #endif
 #pragma pack(pop)
 #pragma pack(push, 1)
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray__
-struct Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray__
+struct Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray
 {
 unsigned char A;
-Kassyi_GSharp_Tests_Core_PackedInlineArray Buffer;
+Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray Buffer;
 int B;
 }
 ;
 #endif
 #pragma pack(pop)
-extern ""C"" __global__ void StructLayoutKernels_ModifyPackedInlineArrayKernel(Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray* __restrict__ data){
+extern ""C"" __global__ void StructLayoutKernels_ModifyPackedInlineArrayKernel(Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray* __restrict__ data){
 int tid = threadIdx.x;
 data[tid].A+=1;
 data[tid].Buffer[0]+=2;
@@ -244,7 +244,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTes
 s_hfunc_ModifyPackedInlineArrayKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "StructLayoutKernels_ModifyPackedInlineArrayKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchModifyPackedInlineArrayKernel(global::Kassyi.GSharp.Tests.Core.StructWithPackedInlineArray[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchModifyPackedInlineArrayKernel(global::Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
@@ -258,7 +258,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal array: data
-int data_size = data.Length * sizeof(global::Kassyi.GSharp.Tests.Core.StructWithPackedInlineArray);
+int data_size = data.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray);
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));

@@ -41,10 +41,10 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.WarpShuffleKernels.WarmupFunctionPointerWarpReductionKernel();
-global::Kassyi.GSharp.Tests.Syntax.WarpShuffleKernels.WarmupFunctionPointerWarpShuffleBoundaryKernel();
-global::Kassyi.GSharp.Tests.Syntax.WarpShuffleKernels.WarmupFunctionPointerWarpDivergenceKernel();
-global::Kassyi.GSharp.Tests.Syntax.WarpShuffleKernels.WarmupFunctionPointerWarpShuffleExtremaKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.WarmupFunctionPointerWarpReductionKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.WarmupFunctionPointerWarpShuffleBoundaryKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.WarmupFunctionPointerWarpDivergenceKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.WarpShuffleKernels.WarmupFunctionPointerWarpShuffleExtremaKernel();
 }}}
 
 
@@ -70,7 +70,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class WarpShuffleKernels
 {

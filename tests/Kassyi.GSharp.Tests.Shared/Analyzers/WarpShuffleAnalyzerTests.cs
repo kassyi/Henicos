@@ -1,10 +1,10 @@
 using System.Threading.Tasks;
 using Kassyi.GSharp.Compiler.Diagnostics;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Analyzers;
+namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 public class WarpShuffleAnalyzerTests : TranspilerTestBase
 {
@@ -28,3 +28,4 @@ public class WarpShuffleAnalyzerTests : TranspilerTestBase
                                .ReportsNoDiagnosticsAsync();
     }
 }
+

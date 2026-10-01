@@ -3,7 +3,7 @@ using System.Linq;
 using Xunit;
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Runtime;
+namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 public class AutoAllocateReturnArraysTests
 {

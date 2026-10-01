@@ -2,9 +2,9 @@ using System;
 using System.Threading;
 using Xunit;
 using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 
-namespace Kassyi.GSharp.Tests.Runtime;
+namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 [Trait("Category", "GpuExecution")]
 public class CudaEventTimerTests : TranspilerTestBase
@@ -52,3 +52,4 @@ public class CudaEventTimerTests : TranspilerTestBase
         Assert.Null(exception);
     }
 }
+

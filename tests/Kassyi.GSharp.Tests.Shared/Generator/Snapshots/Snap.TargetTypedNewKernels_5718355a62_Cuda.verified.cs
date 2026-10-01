@@ -41,8 +41,8 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.TargetTypedNewKernels.WarmupFunctionPointerHappyPathKernel();
-global::Kassyi.GSharp.Tests.Syntax.TargetTypedNewKernels.WarmupFunctionPointerNestedInitializerKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.TargetTypedNewKernels.WarmupFunctionPointerHappyPathKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.TargetTypedNewKernels.WarmupFunctionPointerNestedInitializerKernel();
 }}}
 
 
@@ -52,18 +52,18 @@ namespace Kassyi.GSharp.Generated
 {
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"struct Kassyi_GSharp_Tests_Syntax_NestedChildStruct;
-inline __device__ Kassyi_GSharp_Tests_Syntax_NestedChildStruct CreateChild(Kassyi_GSharp_Tests_Syntax_NestedChildStruct child);
+public const string Source = @"struct Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct;
+inline __device__ Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct CreateChild(Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct child);
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedChildStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedChildStruct__
-struct Kassyi_GSharp_Tests_Syntax_NestedChildStruct
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct
 {
 int Value;
 }
 ;
 #endif
-inline __device__ Kassyi_GSharp_Tests_Syntax_NestedChildStruct CreateChild(Kassyi_GSharp_Tests_Syntax_NestedChildStruct child){
+inline __device__ Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct CreateChild(Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct child){
 return child;
 }
 
@@ -83,16 +83,16 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class TargetTypedNewKernels
 {
 public static partial class AotContexts
 {
 }
-public const string HappyPathKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedChildStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedChildStruct__
-struct Kassyi_GSharp_Tests_Syntax_NestedChildStruct
+public const string HappyPathKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct
 {
 int Value;
 }
@@ -100,9 +100,9 @@ int Value;
 #endif
 extern ""C"" __global__ void TargetTypedNewKernels_HappyPathKernel(int* __restrict__ output){
 int tid = threadIdx.x;
-Kassyi_GSharp_Tests_Syntax_NestedChildStruct c1 = Kassyi_GSharp_Tests_Syntax_NestedChildStruct{};
+Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct c1 = Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct{};
 c1.Value=tid+100;
-Kassyi_GSharp_Tests_Syntax_NestedChildStruct c2 = CreateChild(Kassyi_GSharp_Tests_Syntax_NestedChildStruct{});
+Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct c2 = CreateChild(Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct{});
 c2.Value=tid+200;
 output[tid]=c1.Value+c2.Value;
 }
@@ -206,27 +206,27 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string NestedInitializerKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedChildStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedChildStruct__
-struct Kassyi_GSharp_Tests_Syntax_NestedChildStruct
+public const string NestedInitializerKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct
 {
 int Value;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedParentStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_NestedParentStruct__
-struct Kassyi_GSharp_Tests_Syntax_NestedParentStruct
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_NestedParentStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_NestedParentStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_NestedParentStruct
 {
 int Id;
-Kassyi_GSharp_Tests_Syntax_NestedChildStruct Child;
+Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct Child;
 }
 ;
 #endif
 extern ""C"" __global__ void TargetTypedNewKernels_NestedInitializerKernel(int* __restrict__ output){
 int tid = threadIdx.x;
-Kassyi_GSharp_Tests_Syntax_NestedParentStruct p = ([&]() {
-Kassyi_GSharp_Tests_Syntax_NestedParentStruct _tmp{}; _tmp.Id = tid; _tmp.Child = Kassyi_GSharp_Tests_Syntax_NestedChildStruct{}; return _tmp; }
+Kassyi_GSharp_Tests_Shared_Syntax_NestedParentStruct p = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_NestedParentStruct _tmp{}; _tmp.Id = tid; _tmp.Child = Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct{}; return _tmp; }
 ());
 p.Child.Value=tid*5;
 output[tid]=p.Id+p.Child.Value;

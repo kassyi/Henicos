@@ -20,7 +20,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Core
+namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class StructLayoutKernels
 {
@@ -28,9 +28,9 @@ public static partial class AotContexts
 {
 }
 public const string ModifyStructLayoutKernel_Source = @"#pragma pack(push, 1)
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_CustomLayoutStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_CustomLayoutStruct__
-struct Kassyi_GSharp_Tests_Core_CustomLayoutStruct
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct__
+struct Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct
 {
 unsigned char A;
 double B;
@@ -39,13 +39,13 @@ float C;
 ;
 #endif
 #pragma pack(pop)
-extern ""C"" __declspec(dllexport) void StructLayoutKernels_ModifyStructLayoutKernel(Kassyi_GSharp_Tests_Core_CustomLayoutStruct* __restrict__ data){
+extern ""C"" __declspec(dllexport) void StructLayoutKernels_ModifyStructLayoutKernel(Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct* __restrict__ data){
 int tid = threadIdx.x;
 data[tid].A+=10;
 data[tid].B*=2.0;
 data[tid].C-=1.0f;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_StructLayoutKernels_ModifyStructLayoutKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Core_CustomLayoutStruct* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_StructLayoutKernels_ModifyStructLayoutKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -61,9 +61,9 @@ StructLayoutKernels_ModifyStructLayoutKernel(data);
 ";
 public static readonly string ModifyStructLayoutKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ModifyStructLayoutKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ModifyStructLayoutKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct* data);
+private unsafe delegate void ModifyStructLayoutKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct* data);
 #pragma warning disable CS8500
-public static unsafe void LaunchModifyStructLayoutKernel(global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchModifyStructLayoutKernel(global::Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
@@ -72,16 +72,16 @@ var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchit
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ModifyStructLayoutKernel_Delegate>("__gsharp_launch_StructLayoutKernels_ModifyStructLayoutKernel", dllPath);
-fixed (global::Kassyi.GSharp.Tests.Core.CustomLayoutStruct* p_data = data)
+fixed (global::Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 }
 }
 #pragma warning restore CS8500
 public const string ModifyPackedInlineArrayKernel_Source = @"#pragma pack(push, 1)
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_PackedInlineArray__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_PackedInlineArray__
-struct Kassyi_GSharp_Tests_Core_PackedInlineArray
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray__
+struct Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray
 {
 unsigned char Element[4];
 __device__ inline unsigned char& operator[](int index){
@@ -101,24 +101,24 @@ __device__ inline int size() const { return 4; }
 #endif
 #pragma pack(pop)
 #pragma pack(push, 1)
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray__
-struct Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray__
+struct Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray
 {
 unsigned char A;
-Kassyi_GSharp_Tests_Core_PackedInlineArray Buffer;
+Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray Buffer;
 int B;
 }
 ;
 #endif
 #pragma pack(pop)
-extern ""C"" __declspec(dllexport) void StructLayoutKernels_ModifyPackedInlineArrayKernel(Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray* __restrict__ data){
+extern ""C"" __declspec(dllexport) void StructLayoutKernels_ModifyPackedInlineArrayKernel(Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray* __restrict__ data){
 int tid = threadIdx.x;
 data[tid].A+=1;
 data[tid].Buffer[0]+=2;
 data[tid].B+=3;
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_StructLayoutKernels_ModifyPackedInlineArrayKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Core_StructWithPackedInlineArray* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_StructLayoutKernels_ModifyPackedInlineArrayKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray* __restrict__ data)
 {
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
@@ -134,9 +134,9 @@ StructLayoutKernels_ModifyPackedInlineArrayKernel(data);
 ";
 public static readonly string ModifyPackedInlineArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ModifyPackedInlineArrayKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ModifyPackedInlineArrayKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Core.StructWithPackedInlineArray* data);
+private unsafe delegate void ModifyPackedInlineArrayKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray* data);
 #pragma warning disable CS8500
-public static unsafe void LaunchModifyPackedInlineArrayKernel(global::Kassyi.GSharp.Tests.Core.StructWithPackedInlineArray[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchModifyPackedInlineArrayKernel(global::Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (data.Length == 0){
 return;
@@ -145,7 +145,7 @@ var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchit
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ModifyPackedInlineArrayKernel_Delegate>("__gsharp_launch_StructLayoutKernels_ModifyPackedInlineArrayKernel", dllPath);
-fixed (global::Kassyi.GSharp.Tests.Core.StructWithPackedInlineArray* p_data = data)
+fixed (global::Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 }

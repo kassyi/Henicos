@@ -1,7 +1,7 @@
 using System;
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Runtime;
+namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
 public partial class HeavyGpuStressKernels
 {

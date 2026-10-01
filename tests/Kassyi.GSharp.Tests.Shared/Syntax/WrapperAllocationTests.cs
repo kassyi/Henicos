@@ -4,7 +4,7 @@ using Xunit;
 using Kassyi.GSharp.Runtime.Interop;
 using System.Collections.Generic;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 [Trait("Category", "GpuExecution")]
 public class WrapperAllocationTests : TranspilerTestBase

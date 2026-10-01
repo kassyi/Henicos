@@ -3,10 +3,10 @@ using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
 using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
-namespace Kassyi.GSharp.Stdlib.Math.Tests
-{
-    [Trait("Category", "GpuExecution")]
-    public class GpuBigIntCoreTests
+namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
+
+[Trait("Category", "GpuExecution")]
+public class GpuBigIntCoreTests
     {
         [SkippableFact]
         [Trait("Category", "Memory")]
@@ -1273,7 +1273,6 @@ namespace Kassyi.GSharp.Stdlib.Math.Tests
             Assert.Empty(exceptions);
         }
     }
-}
 
 
 

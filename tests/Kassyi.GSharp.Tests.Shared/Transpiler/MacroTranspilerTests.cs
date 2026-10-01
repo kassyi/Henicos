@@ -1,10 +1,10 @@
 #nullable enable
 using System.Threading.Tasks;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using VerifyXunit;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Transpiler;
+namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 public class MacroTranspilerTests : TranspilerTestBase
 {
@@ -19,3 +19,4 @@ public class MacroTranspilerTests : TranspilerTestBase
         await Verify(driver);
     }
 }
+

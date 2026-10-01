@@ -3,7 +3,7 @@ using System.Numerics;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Shared.Stdlib;
+namespace Kassyi.GSharp.Tests.Stdlib;
 
 [Trait("Category", "Unit")]
 public class BigIntegerExtensionsTests

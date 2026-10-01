@@ -4,9 +4,9 @@ using System.Numerics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Kassyi.GSharp.Compiler.Transpiler;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class BitOperationsTests : TranspilerTestBase
 {
@@ -86,3 +86,4 @@ public class BitOperationsTests : TranspilerTestBase
         Assert.Contains("__gsharp_rotr32", cudaSource);
     }
 }
+

@@ -1,7 +1,7 @@
 // ReSharper disable All
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public struct NestedChildStruct
 {

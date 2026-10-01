@@ -1,6 +1,6 @@
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 [Trait("Category", "GpuExecution")]
 public class ObjectLifecycleTests

@@ -7,7 +7,7 @@ using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.Math;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 [InlineArray(4)]
 public struct Tier1FixedArray

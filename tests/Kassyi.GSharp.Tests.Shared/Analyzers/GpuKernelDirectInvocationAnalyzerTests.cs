@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Compiler.Diagnostics;
 
-namespace Kassyi.GSharp.Tests.Analyzers;
+namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 public class GpuKernelDirectInvocationAnalyzerTests : TranspilerTestBase
 {

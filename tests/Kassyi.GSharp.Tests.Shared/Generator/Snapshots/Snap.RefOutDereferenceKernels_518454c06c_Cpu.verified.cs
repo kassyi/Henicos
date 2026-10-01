@@ -6,8 +6,8 @@ internal static class GSharpSharedCpuDeviceCode
 {
 public const string Source = @"inline void ModifyRef(bool* __restrict__  successFlag);
 
-struct Kassyi_GSharp_Tests_Syntax_RefTestStruct;
-inline void MemberAccessRef(Kassyi_GSharp_Tests_Syntax_RefTestStruct* __restrict__  refArg);
+struct Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct;
+inline void MemberAccessRef(Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct* __restrict__  refArg);
 
 inline void ChainedAssignmentRef(int* __restrict__  refArg, int* __restrict__  a, int* __restrict__  b);
 
@@ -15,16 +15,16 @@ inline void ModifyRef(bool* __restrict__  successFlag){
 (*successFlag)=false;
 }
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_RefTestStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_RefTestStruct__
-struct Kassyi_GSharp_Tests_Syntax_RefTestStruct
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct
 {
 int Field;
 int Value;
 }
 ;
 #endif
-inline void MemberAccessRef(Kassyi_GSharp_Tests_Syntax_RefTestStruct* __restrict__  refArg){
+inline void MemberAccessRef(Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct* __restrict__  refArg){
 (*refArg).Field=5;
 }
 
@@ -48,16 +48,16 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class RefOutDereferenceKernels
 {
 public static partial class AotContexts
 {
 }
-public const string RefOutTestKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_RefTestStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_RefTestStruct__
-struct Kassyi_GSharp_Tests_Syntax_RefTestStruct
+public const string RefOutTestKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct
 {
 int Field;
 int Value;
@@ -67,8 +67,8 @@ int Value;
 extern ""C"" __declspec(dllexport) void RefOutDereferenceKernels_RefOutTestKernel(int* __restrict__ data){
 bool flag = true;
 ModifyRef(&flag);
-Kassyi_GSharp_Tests_Syntax_RefTestStruct s = ([&]() {
-Kassyi_GSharp_Tests_Syntax_RefTestStruct _tmp{}; _tmp.Field = 0; _tmp.Value = 10; return _tmp; }
+Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct s = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct _tmp{}; _tmp.Field = 0; _tmp.Value = 10; return _tmp; }
 ());
 MemberAccessRef(&s);
 int a;

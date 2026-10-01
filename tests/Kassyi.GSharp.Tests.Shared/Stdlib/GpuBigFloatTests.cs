@@ -3,10 +3,10 @@ using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.Math;
 using Kassyi.GSharp.Stdlib.Math.BigFloat;
 using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 
-namespace Kassyi.GSharp.Tests.Stdlib;
+namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 
 [Trait("Category", "GpuExecution")]
 public class GpuBigFloatTests
@@ -94,3 +94,4 @@ public class GpuBigFloatTests
         });
     }
 }
+

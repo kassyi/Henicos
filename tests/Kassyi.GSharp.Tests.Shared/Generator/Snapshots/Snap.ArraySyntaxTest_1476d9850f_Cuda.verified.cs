@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Shared.Generator.Kernels
+namespace Kassyi.GSharp.Tests.Shared.Generator
 {
 public partial class ArraySyntaxTestKernels
 {
@@ -131,7 +131,7 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Shared.Generator.Kernels.ArraySyntaxTestKernels.WarmupFunctionPointerImplicitArrayFormsKernel();
+global::Kassyi.GSharp.Tests.Shared.Generator.ArraySyntaxTestKernels.WarmupFunctionPointerImplicitArrayFormsKernel();
 }}}
 
 

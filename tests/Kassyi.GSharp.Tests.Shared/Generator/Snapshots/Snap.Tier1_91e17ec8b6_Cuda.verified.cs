@@ -41,7 +41,7 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.Tier1IntegrationKernels.WarmupFunctionPointerAllInOneKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.WarmupFunctionPointerAllInOneKernel();
 }}}
 
 
@@ -86,7 +86,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class Tier1IntegrationKernels
 {
@@ -106,13 +106,13 @@ public const string DebugName_BoolVal = "global::System.Boolean";
 [System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Boolean BoolVal;
 }
-public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
 {
 native.IntVal = host.IntVal;
 native.FloatVal = host.FloatVal;
 native.BoolVal = host.BoolVal;
 }
-public static unsafe void Unmarshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr)
+public static unsafe void Unmarshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr)
 {
 host.IntVal = native.IntVal;
 host.FloatVal = native.FloatVal;
@@ -120,9 +120,9 @@ host.BoolVal = native.BoolVal;
 }
 #pragma warning restore CS8500
 }
-public const string AllInOneKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct__
-struct Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct
+public const string AllInOneKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct
 {
 int IntVal;
 float FloatVal;
@@ -130,9 +130,9 @@ bool BoolVal;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Tier1FixedArray__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Tier1FixedArray__
-struct Kassyi_GSharp_Tests_Syntax_Tier1FixedArray
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray__
+struct Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray
 {
 float _element0[4];
 __device__ inline float& operator[](int index){
@@ -150,15 +150,15 @@ __device__ inline int size() const { return 4; }
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct__
-struct Kassyi_GSharp_Tests_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct
 {
 int Data[4];
 }
 ;
 #endif
-extern ""C"" __global__ void Tier1IntegrationKernels_AllInOneKernel(int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize){
+extern ""C"" __global__ void Tier1IntegrationKernels_AllInOneKernel(int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize){
 for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < count; tid += gridDim.x * blockDim.x)
 {
 auto LocalInlineFunc = [&](int x) {
@@ -200,7 +200,7 @@ case 1: return 2.0f;
 default: return 3.0f;
 }
 }());
-Kassyi_GSharp_Tests_Syntax_Tier1FixedArray arr = Kassyi_GSharp_Tests_Syntax_Tier1FixedArray{};
+Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray arr = Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray{};
 arr[0]=mag;
 arr[1]=mag*2.0f;
 arr[2]=mag*3.0f;
@@ -269,7 +269,7 @@ dynamicSharedMem[threadIdx.x]=sum;
 __syncthreads();
 float finalVal = ((bitwise>0)?((dynamicSharedMem[threadIdx.x]>10.0f?10.0f:dynamicSharedMem[threadIdx.x])):0.0f);
 {
-Kassyi_GSharp_Tests_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct fbs = Kassyi_GSharp_Tests_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct{};
+Kassyi_GSharp_Tests_Shared_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct fbs = Kassyi_GSharp_Tests_Shared_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct{};
 fbs.Data[0]=bitwise;
 finalVal+=fbs.Data[0];
 }
@@ -315,7 +315,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTes
 s_hfunc_AllInOneKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "Tier1IntegrationKernels_AllInOneKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchAllInOneKernel(global::System.Int32[] intInput, global::System.Single[] floatInput, global::System.Single[] results, global::Kassyi.GSharp.Tests.Syntax.Tier1CustomStruct config, global::System.UInt64[] globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchAllInOneKernel(global::System.Int32[] intInput, global::System.Single[] floatInput, global::System.Single[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, global::System.UInt64[] globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intInput.Length == 0 || floatInput.Length == 0 || results.Length == 0 || globalCounter.Length == 0){
 return;

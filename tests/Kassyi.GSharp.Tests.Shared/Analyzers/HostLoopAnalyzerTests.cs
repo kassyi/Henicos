@@ -1,9 +1,9 @@
-namespace Kassyi.GSharp.Tests.Analyzers;
+namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 using Kassyi.GSharp.Compiler.Diagnostics;
 using System.Threading.Tasks;
 using Xunit;
-using Kassyi.GSharp.Tests.Helpers;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 
 public class HostLoopAnalyzerTests : TranspilerTestBase
 {
@@ -28,3 +28,4 @@ public class HostLoopAnalyzerTests : TranspilerTestBase
                                .ReportsNoDiagnosticsAsync();
     }
 }
+

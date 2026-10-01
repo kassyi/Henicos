@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Compiler.Helpers;
 
-namespace Kassyi.GSharp.Tests.Transpiler;
+namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 public class CompilerInfrastructureUnitTests
 {

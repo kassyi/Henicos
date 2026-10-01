@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class Tier1_IntegrationTests : TranspilerTestBase
 {

@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class CoreSyntaxKernels
 {
@@ -330,20 +330,20 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string StructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Vector2__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_Vector2__
-struct Kassyi_GSharp_Tests_Syntax_Vector2
+public const string StructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Vector2__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Vector2__
+struct Kassyi_GSharp_Tests_Shared_Syntax_Vector2
 {
 float X;
 float Y;
 }
 ;
 #endif
-extern ""C"" __global__ void CoreSyntaxKernels_StructKernel(Kassyi_GSharp_Tests_Syntax_Vector2* __restrict__ vectors, int length){
+extern ""C"" __global__ void CoreSyntaxKernels_StructKernel(Kassyi_GSharp_Tests_Shared_Syntax_Vector2* __restrict__ vectors, int length){
 int tid = threadIdx.x;
 if(tid<length)
 {
-Kassyi_GSharp_Tests_Syntax_Vector2 v = vectors[tid];
+Kassyi_GSharp_Tests_Shared_Syntax_Vector2 v = vectors[tid];
 v.X=v.X*2.0f;
 v.Y=v.Y+1.0f;
 vectors[tid]=v;
@@ -360,7 +360,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTes
 s_hfunc_StructKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "CoreSyntaxKernels_StructKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchStructKernel(global::Kassyi.GSharp.Tests.Syntax.Vector2[] vectors, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchStructKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2[] vectors, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (vectors.Length == 0){
 return;
@@ -374,7 +374,7 @@ try
 {
 void** kernelParams = stackalloc void*[2];
 // Marshal array: vectors
-int vectors_size = vectors.Length * sizeof(global::Kassyi.GSharp.Tests.Syntax.Vector2);
+int vectors_size = vectors.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.Vector2);
 if (vectors_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_vectors, vectors_size));
@@ -453,9 +453,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PaddedStructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct__
-struct Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct
+public const string PaddedStructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct
 {
 unsigned char Flag1;
 double ValueD;
@@ -464,11 +464,11 @@ short Flag2;
 }
 ;
 #endif
-extern ""C"" __global__ void CoreSyntaxKernels_PaddedStructKernel(Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct* __restrict__ items, int length){
+extern ""C"" __global__ void CoreSyntaxKernels_PaddedStructKernel(Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct* __restrict__ items, int length){
 int tid = threadIdx.x;
 if(tid<length)
 {
-Kassyi_GSharp_Tests_Syntax_MixedPaddingStruct item = items[tid];
+Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct item = items[tid];
 item.Flag1=(unsigned char)(item.Flag1+1);
 item.ValueD=item.ValueD*1.5;
 item.ValueI=item.ValueI+100;
@@ -487,7 +487,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTes
 s_hfunc_PaddedStructKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "CoreSyntaxKernels_PaddedStructKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchPaddedStructKernel(global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct[] items, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchPaddedStructKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct[] items, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (items.Length == 0){
 return;
@@ -501,7 +501,7 @@ try
 {
 void** kernelParams = stackalloc void*[2];
 // Marshal array: items
-int items_size = items.Length * sizeof(global::Kassyi.GSharp.Tests.Syntax.MixedPaddingStruct);
+int items_size = items.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct);
 if (items_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_items, items_size));
@@ -731,11 +731,11 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.CoreSyntaxKernels.WarmupFunctionPointerComplexLogicKernel();
-global::Kassyi.GSharp.Tests.Syntax.CoreSyntaxKernels.WarmupFunctionPointerControlFlowKernel();
-global::Kassyi.GSharp.Tests.Syntax.CoreSyntaxKernels.WarmupFunctionPointerStructKernel();
-global::Kassyi.GSharp.Tests.Syntax.CoreSyntaxKernels.WarmupFunctionPointerPaddedStructKernel();
-global::Kassyi.GSharp.Tests.Syntax.CoreSyntaxKernels.WarmupFunctionPointerDeviceMethodKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.CoreSyntaxKernels.WarmupFunctionPointerComplexLogicKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.CoreSyntaxKernels.WarmupFunctionPointerControlFlowKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.CoreSyntaxKernels.WarmupFunctionPointerStructKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.CoreSyntaxKernels.WarmupFunctionPointerPaddedStructKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.CoreSyntaxKernels.WarmupFunctionPointerDeviceMethodKernel();
 }}}
 
 

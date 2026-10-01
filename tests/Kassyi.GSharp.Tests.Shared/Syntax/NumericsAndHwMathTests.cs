@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace Kassyi.GSharp.Tests.Syntax;
+namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class NumericsAndHwMathTests
 :  TranspilerTestBase{

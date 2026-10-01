@@ -20,16 +20,16 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class StructAggregateInitKernels
 {
 public static partial class AotContexts
 {
 }
-public const string AggregateInitKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_AggregateStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_AggregateStruct__
-struct Kassyi_GSharp_Tests_Syntax_AggregateStruct
+public const string AggregateInitKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct
 {
 int A;
 int B;
@@ -37,8 +37,8 @@ int B;
 ;
 #endif
 extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_AggregateInitKernel(int* __restrict__ output){
-Kassyi_GSharp_Tests_Syntax_AggregateStruct s = ([&]() {
-Kassyi_GSharp_Tests_Syntax_AggregateStruct _tmp{}; _tmp.A = 1; _tmp.B = 2; return _tmp; }
+Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct s = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct _tmp{}; _tmp.A = 1; _tmp.B = 2; return _tmp; }
 ());
 output[0]=s.A+s.B;
 }
@@ -75,27 +75,27 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
 }
 }
 #pragma warning restore CS8500
-public const string DeeplyNestedInitKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_InnerStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_InnerStruct__
-struct Kassyi_GSharp_Tests_Syntax_InnerStruct
+public const string DeeplyNestedInitKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct
 {
 int X;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_OuterStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_OuterStruct__
-struct Kassyi_GSharp_Tests_Syntax_OuterStruct
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct
 {
-Kassyi_GSharp_Tests_Syntax_InnerStruct B;
+Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct B;
 int Y;
 }
 ;
 #endif
 extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_DeeplyNestedInitKernel(int* __restrict__ output){
-Kassyi_GSharp_Tests_Syntax_OuterStruct outer = ([&]() {
-Kassyi_GSharp_Tests_Syntax_OuterStruct _tmp{}; _tmp.B = ([&]() {
-Kassyi_GSharp_Tests_Syntax_InnerStruct _tmp{}; _tmp.X = 1; return _tmp; }
+Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct outer = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct _tmp{}; _tmp.B = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct _tmp{}; _tmp.X = 1; return _tmp; }
 ()); _tmp.Y = 10; return _tmp; }
 ());
 output[0]=outer.B.X+outer.Y;

@@ -1,7 +1,7 @@
 // ReSharper disable All
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Tests.Transpiler;
+namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 public static partial class TranspilerInfrastructureKernels
 {

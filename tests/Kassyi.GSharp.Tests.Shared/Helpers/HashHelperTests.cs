@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Tests.Helpers;
+namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 public class HashHelperTests
 {

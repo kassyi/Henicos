@@ -1,7 +1,7 @@
 #nullable enable
-namespace Kassyi.GSharp.Tests;
+namespace Kassyi.GSharp.Tests.Shared.Generator;
 
-public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.TranspilerTestBase
+public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers.TranspilerTestBase
 {
     private class GpuAttributeRemover : CSharpSyntaxRewriter
     {
@@ -88,7 +88,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.Transp
 
         var compilation = CSharpCompilation.Create("SnapshotTest")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
-            .AddReferences(Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.BaseCompilation.References);
+            .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.MegaCompilationCache.BaseCompilation.References);
 
         if (isStdlibKernel)
         {
@@ -175,7 +175,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.Transp
             generators: new[] { generator.AsSourceGenerator() },
             additionalTexts: null,
             parseOptions: parseOptions,
-            optionsProvider: new Kassyi.GSharp.Tests.Helpers.TestAnalyzerConfigOptionsProvider(DialectName));
+            optionsProvider: new Kassyi.GSharp.Tests.Shared.Helpers.TestAnalyzerConfigOptionsProvider(DialectName));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var generatorDiagnostics);
 
@@ -200,7 +200,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.Transp
         var combinedSource = string.Join("\n\n", nonSharedTrees);
 
         var prefix = testName.Split('_')[0];
-        var hash10 = Kassyi.GSharp.Tests.Helpers.HashHelper.ComputeShortHash(testName);
+        var hash10 = Kassyi.GSharp.Tests.Shared.Helpers.HashHelper.ComputeShortHash(testName);
         var snapshotName = $"Snap.{prefix}_{hash10}_{DialectName}";
 
         await Verifier.Verify(combinedSource, "cs")
@@ -236,7 +236,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.Transp
         var syntaxTrees = new List<SyntaxTree> { CSharpSyntaxTree.ParseText(src, options: parseOptions) };
         var compilation = CSharpCompilation.Create("DummyCompilation")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
-            .AddReferences(Kassyi.GSharp.Tests.Helpers.MegaCompilationCache.BaseCompilation.References)
+            .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.MegaCompilationCache.BaseCompilation.References)
             .AddSyntaxTrees(syntaxTrees);
 
         var generator = new GpuKernelGenerator();
@@ -244,7 +244,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.Transp
             generators: new[] { generator.AsSourceGenerator() },
             additionalTexts: null,
             parseOptions: parseOptions,
-            optionsProvider: new Kassyi.GSharp.Tests.Helpers.TestAnalyzerConfigOptionsProvider(DialectName));
+            optionsProvider: new Kassyi.GSharp.Tests.Shared.Helpers.TestAnalyzerConfigOptionsProvider(DialectName));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
         
@@ -293,7 +293,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.Transp
         foreach (var pureName in mandatorySnapshotKernels)
         {
             var prefix = pureName.Split('_')[0];
-            var hash10 = Kassyi.GSharp.Tests.Helpers.HashHelper.ComputeShortHash(pureName);
+            var hash10 = Kassyi.GSharp.Tests.Shared.Helpers.HashHelper.ComputeShortHash(pureName);
             var expectedPattern = $"{prefix}_{hash10}";
 
             if (!snapshotFiles.Any(f => f.Contains(expectedPattern, StringComparison.OrdinalIgnoreCase)))
@@ -308,3 +308,4 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Helpers.Transp
     [GeneratedRegex(@"^[A-Z]{3}-\d{2}(_\d{2})?_")]
     private static partial Regex PureNameRegex();
 }
+

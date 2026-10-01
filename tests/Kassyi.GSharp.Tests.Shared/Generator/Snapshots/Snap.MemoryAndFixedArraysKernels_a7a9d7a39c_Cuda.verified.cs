@@ -41,7 +41,7 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Tests.Syntax.MemoryAndFixedArraysKernels.WarmupFunctionPointerSharedMemoryStaticKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.MemoryAndFixedArraysKernels.WarmupFunctionPointerSharedMemoryStaticKernel();
 }}}
 
 
@@ -67,26 +67,26 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Tests.Syntax
+namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class MemoryAndFixedArraysKernels
 {
 public static partial class AotContexts
 {
 }
-public const string SharedMemoryStaticKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_CustomPoint__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Syntax_CustomPoint__
-struct Kassyi_GSharp_Tests_Syntax_CustomPoint
+public const string SharedMemoryStaticKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint__
+struct Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint
 {
 float X;
 float Y;
 }
 ;
 #endif
-extern ""C"" __global__ void MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Syntax_CustomPoint* __restrict__ pointOutput){
+extern ""C"" __global__ void MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint* __restrict__ pointOutput){
 __shared__ int intSmem[256];
 __shared__ float floatSmem[256];
-__shared__ Kassyi_GSharp_Tests_Syntax_CustomPoint pointSmem[64];
+__shared__ Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint pointSmem[64];
 int tid = threadIdx.x;
 if(tid<256)
 {
@@ -96,7 +96,7 @@ floatSmem[tid]=tid*1.5f;
 if(tid<64)
 {
 pointSmem[tid]=([&]() {
-Kassyi_GSharp_Tests_Syntax_CustomPoint _tmp{}; _tmp.X = tid*1.0f; _tmp.Y = tid*2.0f; return _tmp; }
+Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint _tmp{}; _tmp.X = tid*1.0f; _tmp.Y = tid*2.0f; return _tmp; }
 ());
 }
 __syncthreads();
@@ -118,7 +118,7 @@ IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTes
 s_hfunc_SharedMemoryStaticKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "MemoryAndFixedArraysKernels_SharedMemoryStaticKernel");
 }
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-public static unsafe void LaunchSharedMemoryStaticKernel(global::System.Int32[] intOutput, global::System.Single[] floatOutput, global::Kassyi.GSharp.Tests.Syntax.CustomPoint[] pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchSharedMemoryStaticKernel(global::System.Int32[] intOutput, global::System.Single[] floatOutput, global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint[] pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 if (intOutput.Length == 0 || floatOutput.Length == 0 || pointOutput.Length == 0){
 return;
@@ -168,7 +168,7 @@ handle_floatOutput.Free();
 }
 kernelParams[1] = &d_floatOutput;
 // Marshal array: pointOutput
-int pointOutput_size = pointOutput.Length * sizeof(global::Kassyi.GSharp.Tests.Syntax.CustomPoint);
+int pointOutput_size = pointOutput.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint);
 if (pointOutput_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_pointOutput, pointOutput_size));
