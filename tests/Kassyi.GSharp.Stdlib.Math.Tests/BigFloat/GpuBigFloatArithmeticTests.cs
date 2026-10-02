@@ -3,21 +3,21 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.Math.BigFloat.Providers;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
-using Kassyi.GSharp.Stdlib.Math.BigFloat;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.GpuBigFloat.Providers;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Runtime;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Providers;
+using Kassyi.GSharp.Stdlib.Math.GpuBigFloat;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt;
 using Xunit;
 using VerifyXunit;
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests.BigFloat;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.GpuBigFloat;
 
 public class GpuBigFloatArithmeticTests
 {
-    private BigIntExecutionContext CreateContext(GpuWorkspace ctx)
+    private GpuBigIntExecutionContext CreateContext(GpuWorkspace ctx)
     {
-        return new BigIntExecutionContext(ctx, ctx.MemoryManager, default!, ctx.Stream);
+        return new GpuBigIntExecutionContext(ctx, ctx.MemoryManager, default!, ctx.Stream);
     }
 
     [SkippableFact]
@@ -38,7 +38,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Divide(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Divide(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
@@ -114,7 +114,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 2048);
 
-        CSharpBigFloatArithmetic.Instance.Divide(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Divide(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
@@ -192,7 +192,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Multiply(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Multiply(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
@@ -256,7 +256,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Add(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Add(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
@@ -316,7 +316,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Reciprocal(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Reciprocal(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -370,13 +370,13 @@ public class GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Sqrt(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Sqrt(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -433,13 +433,13 @@ public class GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Rsqrt(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Rsqrt(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -498,7 +498,7 @@ public class GpuBigFloatArithmeticTests
         // Target: 4 words (128 bits). 1 is at bit 0. It should be shifted to bit 127.
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Normalize(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -552,13 +552,13 @@ public class GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Exp(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Exp(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -615,13 +615,13 @@ public class GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Log(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Log(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -677,19 +677,20 @@ public class GpuBigFloatArithmeticTests
         int rawBaseExp = 0;
         bool rawBaseSign = false;
         using var baseSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, rawBaseSig.Handle, rawBaseExp, rawBaseSign,
+        CSharpCpuBigFloatArithmetic.Instance.Normalize(ref execCtx, rawBaseSig.Handle, rawBaseExp, rawBaseSign,
             baseSig.Handle, out int baseExp, out bool baseSign);
 
         using var rawExpSig = new GpuUIntBigInteger(ctx, new uint[] { 3, 0, 0, 0 });
         int rawExpExp = 0;
         bool rawExpSign = false;
         using var expSig = new GpuUIntBigInteger(ctx, 4);
-        CSharpBigFloatArithmetic.Instance.Normalize(ref execCtx, rawExpSig.Handle, rawExpExp, rawExpSign, expSig.Handle,
+        CSharpCpuBigFloatArithmetic.Instance.Normalize(ref execCtx, rawExpSig.Handle, rawExpExp, rawExpSign,
+            expSig.Handle,
             out int expExp, out bool expSign);
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.Pow(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.Pow(ref execCtx,
             baseSig.Handle, baseExp, baseSign,
             expSig.Handle, expExp, expSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
@@ -754,7 +755,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.DivideByUInt32(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.DivideByUInt32(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             3,
             resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);
@@ -812,7 +813,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuUIntBigInteger(ctx, 4);
 
-        CSharpBigFloatArithmetic.Instance.DivideByUInt32(ref execCtx,
+        CSharpCpuBigFloatArithmetic.Instance.DivideByUInt32(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             0xFFFFFFFF, // Max uint
             resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);
@@ -868,7 +869,7 @@ public class GpuBigFloatArithmeticTests
         Assert.Throws<DivideByZeroException>(() =>
         {
             var execCtx = CreateContext(ctx);
-            CSharpBigFloatArithmetic.Instance.DivideByUInt32(ref execCtx,
+            CSharpCpuBigFloatArithmetic.Instance.DivideByUInt32(ref execCtx,
                 valueSig.Handle, 0, false,
                 0, // Divide by zero
                 resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);

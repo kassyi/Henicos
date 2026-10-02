@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.GpuBigInt;
 
 [Trait("Category", "GpuExecution")]
 public class GpuBigIntegerTests : IDisposable
@@ -22,7 +22,7 @@ public class GpuBigIntegerTests : IDisposable
 
     [SkippableFact]
     [Trait("Category", "HappyPath")]
-    public void Test_ConstructAndDispose_WorksCorrectly()
+    public void Test_Construct_WorksCorrectly()
     {
         CudaCapability.EnsureGpuAvailable();
         var gpuBigInt = new GpuUIntBigInteger(_context, 4);
@@ -30,8 +30,5 @@ public class GpuBigIntegerTests : IDisposable
 
         Assert.True(signed.IsNegative);
         Assert.Equal(gpuBigInt, signed.Value);
-
-        // Ensure disposing GpuBigInteger disposes the underlying GpuUIntBigInteger
-        signed.Dispose();
     }
 }

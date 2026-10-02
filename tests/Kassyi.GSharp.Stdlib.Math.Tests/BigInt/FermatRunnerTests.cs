@@ -2,10 +2,10 @@ using System;
 using System.Numerics;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt;
 using Xunit;
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.GpuBigInt;
 
 [Collection("GpuWorkspace")]
 [Trait("Category", "GpuExecution")]

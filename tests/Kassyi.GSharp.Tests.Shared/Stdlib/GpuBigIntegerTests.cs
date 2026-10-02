@@ -1,7 +1,7 @@
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Expressions;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Stdlib;
@@ -112,11 +112,11 @@ public class GpuBigIntegerTests
         GpuBigIntExpr divExpr = a / b;
 
         using var destMul = new GpuUIntBigInteger(context, 8);
-        using var evalMul = mulExpr.Evaluate(destMul);
+        var evalMul = mulExpr.Evaluate(destMul);
         Assert.Equal(expectedNeg, evalMul.IsNegative);
 
         using var destDiv = new GpuUIntBigInteger(context, 4);
-        using var evalDiv = divExpr.Evaluate(destDiv);
+        var evalDiv = divExpr.Evaluate(destDiv);
         Assert.Equal(expectedNeg, evalDiv.IsNegative);
     }
 
@@ -138,7 +138,7 @@ public class GpuBigIntegerTests
         GpuBigIntExpr addExpr = a + b;
 
         using var dest = new GpuUIntBigInteger(context, 4);
-        using var evalAdd = addExpr.Evaluate(dest);
+        var evalAdd = addExpr.Evaluate(dest);
         Assert.Equal(expectedNeg, evalAdd.IsNegative);
     }
 
@@ -168,7 +168,7 @@ public class GpuBigIntegerTests
         GpuBigIntExpr addExpr = a + b;
 
         using var dest = new GpuUIntBigInteger(context, 4);
-        using var evalAdd = addExpr.Evaluate(dest);
+        var evalAdd = addExpr.Evaluate(dest);
         
         Assert.Equal(expectedNeg, evalAdd.IsNegative);
         
@@ -195,7 +195,7 @@ public class GpuBigIntegerTests
         GpuBigIntExpr subExpr = a - b;
 
         using var dest = new GpuUIntBigInteger(context, 4);
-        using var evalSub = subExpr.Evaluate(dest);
+        var evalSub = subExpr.Evaluate(dest);
         Assert.Equal(expectedNeg, evalSub.IsNegative);
     }
 
@@ -226,7 +226,7 @@ public class GpuBigIntegerTests
         GpuBigIntExpr subExpr = a - b;
 
         using var dest = new GpuUIntBigInteger(context, 4);
-        using var evalSub = subExpr.Evaluate(dest);
+        var evalSub = subExpr.Evaluate(dest);
         
         Assert.Equal(expectedNeg, evalSub.IsNegative);
 
@@ -249,11 +249,11 @@ public class GpuBigIntegerTests
         GpuBigIntExpr notExpr = ~exprA;
 
         using var destNeg = new GpuUIntBigInteger(context, 4);
-        using var evalNeg = negExpr.Evaluate(destNeg);
+        var evalNeg = negExpr.Evaluate(destNeg);
         Assert.True(evalNeg.IsNegative);
 
         using var destNot = new GpuUIntBigInteger(context, 4);
-        using var evalNot = notExpr.Evaluate(destNot);
+        var evalNot = notExpr.Evaluate(destNot);
         Assert.False(evalNot.IsNegative);
     }
 
@@ -293,7 +293,7 @@ public class GpuBigIntegerTests
         
         // 4. Multiplication without explicit destination (allocates sum of widths correctly)
         GpuBigIntExpr exprMul = a * b; // 4 + 4 = 8
-        using var mulResult = exprMul.Evaluate(context); // Rents temporary buffer
+        var mulResult = exprMul.Evaluate(context); // Rents temporary buffer
         Assert.Equal(8, mulResult.Value.NumWords);
         
         using var uExpected = new GpuUIntBigInteger(context, 8);

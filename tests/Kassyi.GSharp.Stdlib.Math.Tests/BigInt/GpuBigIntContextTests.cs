@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
-namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Providers;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.GpuBigInt;
 
 [Trait("Category", "GpuExecution")]
 public class GpuBigIntContextTests
