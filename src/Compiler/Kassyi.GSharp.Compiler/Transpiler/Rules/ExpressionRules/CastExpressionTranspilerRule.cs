@@ -19,9 +19,9 @@ public sealed class CastExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
     /// <inheritdoc />
     public override void Transpile(CastExpressionSyntax node, ref TranspileContext context)
     {
-        using (context.Writer.Parentheses())
+        using (context.Emitter.Writer.Parentheses())
         {
-            context.AppendType(context.SemanticModel.GetTypeSymbol(node.Type));
+            context.Emitter.Dialect.AppendType(ref context, context.Query.SemanticModel.GetTypeSymbol(node.Type));
         }
 
         context.Visitor.Visit(node.Expression);

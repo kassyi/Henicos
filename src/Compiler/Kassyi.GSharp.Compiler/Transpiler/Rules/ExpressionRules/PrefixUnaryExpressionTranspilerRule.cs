@@ -22,13 +22,13 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
         // For pointers: *a
         if (node.IsKind(SyntaxKind.PointerIndirectionExpression))
         {
-            context.Writer.AppendOperator("*");
+            context.Emitter.Writer.AppendOperator("*");
             context.Visitor.Visit(node.Operand);
             return;
         }
 
         var op = node.OperatorToken.Text;
-        context.Writer.Append(op);
+        context.Emitter.Writer.Append(op);
         context.Visitor.Visit(node.Operand);
     }
 }

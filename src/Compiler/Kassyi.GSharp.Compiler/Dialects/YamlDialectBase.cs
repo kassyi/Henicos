@@ -14,21 +14,21 @@ public abstract class YamlDialectBase : ITranspilerDialect
     {
         if (typeSymbol == null)
         {
-            context.Writer.Append("void");
+            context.Emitter.Writer.Append("void");
             return;
         }
 
         if (typeSymbol is IArrayTypeSymbol array)
         {
             AppendType(ref context, array.ElementType);
-            context.Writer.Append("*");
+            context.Emitter.Writer.Append("*");
             return;
         }
 
         if (typeSymbol is IPointerTypeSymbol pointer)
         {
             AppendType(ref context, pointer.PointedAtType);
-            context.Writer.Append("*");
+            context.Emitter.Writer.Append("*");
             return;
         }
 
@@ -43,28 +43,28 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         if (TryMapType(name, out var mappedType))
         {
-            context.Writer.Append(mappedType);
+            context.Emitter.Writer.Append(mappedType);
             return;
         }
 
-        context.Writer.AppendFullyQualifiedCppName(typeSymbol);
+        context.Emitter.Writer.AppendFullyQualifiedCppName(typeSymbol);
 
         if (typeSymbol is not INamedTypeSymbol { IsGenericType: true } namedType)
         {
             return;
         }
 
-        context.Writer.Append("<");
+        context.Emitter.Writer.Append("<");
         for (var i = 0; i < namedType.TypeArguments.Length; i++)
         {
             AppendType(ref context, namedType.TypeArguments[i]);
             if (i < namedType.TypeArguments.Length - 1)
             {
-                context.Writer.Append(", ");
+                context.Emitter.Writer.Append(", ");
             }
         }
 
-        context.Writer.Append(">");
+        context.Emitter.Writer.Append(">");
     }
 
     public virtual bool TryMapType(string fullyQualifiedName, out string mappedType)
@@ -156,7 +156,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
             namedType.ContainingNamespace.IsCoreNamespace())
         {
             AppendType(ref context, namedType.TypeArguments[0]);
-            context.Writer.Append("*");
+            context.Emitter.Writer.Append("*");
             isPointerType = true;
         }
         else
@@ -166,7 +166,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         if (isRefPointer)
         {
-            context.Writer.Append("* __restrict__ ");
+            context.Emitter.Writer.Append("* __restrict__ ");
         }
 
         return (isRefPointer, isPointerType, isRefPointer);

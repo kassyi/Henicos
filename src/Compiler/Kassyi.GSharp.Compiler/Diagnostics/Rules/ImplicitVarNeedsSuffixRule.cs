@@ -1,9 +1,10 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 /// <summary>Diagnostic rule that requires explicit type suffixes on implicit var declarations with numeric literals.</summary>
-internal sealed class ImplicitVarNeedsSuffixRule
+internal sealed class ImplicitVarNeedsSuffixRule : ISyntaxValidationRule<VariableDeclaratorSyntax>
 {
     public static readonly ImplicitVarNeedsSuffixRule Instance = new();
+    public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(GSharpDiagnostics.ImplicitVarNeedsSuffix);
 
     private ImplicitVarNeedsSuffixRule()
     {

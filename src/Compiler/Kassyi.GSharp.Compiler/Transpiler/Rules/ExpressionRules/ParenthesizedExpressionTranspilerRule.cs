@@ -19,7 +19,7 @@ public sealed class ParenthesizedExpressionTranspilerRule : SyntaxNodeTranspiler
     /// <inheritdoc />
     public override void Transpile(ParenthesizedExpressionSyntax node, ref TranspileContext context)
     {
-        using (context.Writer.Parentheses())
+        using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(node.Expression);
         }

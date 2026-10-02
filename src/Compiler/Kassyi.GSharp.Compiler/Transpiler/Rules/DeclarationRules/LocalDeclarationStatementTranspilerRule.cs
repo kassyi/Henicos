@@ -34,7 +34,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
     /// <inheritdoc />
     public override void Transpile(LocalDeclarationStatementSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.SemanticModel.GetTypeSymbol(node.Declaration.Type);
+        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Declaration.Type);
         if (typeSymbol?.Name == TypeConstants.SharedMemoryType &&
             typeSymbol.ContainingNamespace.IsCoreNamespace())
         {
@@ -46,7 +46,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
 
         // Dispatch inner variable declaration transpilation to the visitor (which will use VariableDeclarationTranspilerRule)
         context.Visitor.VisitVariableDeclaration(node.Declaration);
-        context.Writer.AppendSemiColon();
+        context.Emitter.Writer.AppendSemiColon();
     }
 
     private static void ProcessSharedMemoryDeclaration(LocalDeclarationStatementSyntax node,
@@ -56,7 +56,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
 
         for (var i = 0; i < node.Declaration.Variables.Count; i++)
         {
-            var alloc = AnalyzeSharedMemoryAllocation(node.Declaration.Variables[i], context.SemanticModel);
+            var alloc = AnalyzeSharedMemoryAllocation(node.Declaration.Variables[i], context.Query.SemanticModel);
             if (alloc == null)
             {
                 continue;
@@ -96,29 +96,29 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
     {
         CheckExcessiveSharedMemoryUsage(alloc.SizeArgument, alloc.StaticSize, typeArg, ref context);
 
-        context.Writer.Append("__shared__ ");
-        context.AppendType(typeArg);
-        context.Writer.Append($" {alloc.Declarator.Identifier.Text}");
-        using (context.Writer.Brackets())
+        context.Emitter.Writer.Append("__shared__ ");
+        context.Emitter.Dialect.AppendType(ref context, typeArg);
+        context.Emitter.Writer.Append($" {alloc.Declarator.Identifier.Text}");
+        using (context.Emitter.Writer.Brackets())
         {
             context.Visitor.Visit(alloc.SizeArgument);
         }
 
-        context.Writer.Append(";");
+        context.Emitter.Writer.Append(";");
         if (i < node.Declaration.Variables.Count - 1)
         {
-            context.Writer.AppendLine();
+            context.Emitter.Writer.AppendLine();
         }
     }
 
     private static void CheckExcessiveSharedMemoryUsage(ExpressionSyntax sizeArg, int elementCount,
         ITypeSymbol typeArg, ref TranspileContext context)
     {
-        var elemSize = context.Dialect.GetApproximateSize(typeArg);
+        var elemSize = context.Emitter.Dialect.GetApproximateSize(typeArg);
         var byteSize = elementCount * elemSize;
         if (byteSize > 32768)
         {
-            context.Report(GSharpDiagnostics.ExcessiveSharedMemoryWarning, sizeArg, byteSize, 32768);
+            context.Reporter.Report(GSharpDiagnostics.ExcessiveSharedMemoryWarning, sizeArg, byteSize, 32768);
         }
     }
 
@@ -131,75 +131,75 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
 
         if (index < node.Declaration.Variables.Count - 1)
         {
-            context.Writer.AppendLine();
+            context.Emitter.Writer.AppendLine();
         }
     }
 
     private static void EnsureDynamicSharedMemoryBase(ref TranspileContext context)
     {
-        if (context.HasEmittedDynamicSmemBase)
+        if (context.Emitter.HasEmittedDynamicSmemBase)
         {
             return;
         }
 
-        context.Writer.AppendLine("extern __shared__ char __gsharp_dynamic_smem[];");
-        context.Writer.AppendLine("size_t __smem_offset = 0;");
-        context.HasEmittedDynamicSmemBase = true;
+        context.Emitter.Writer.AppendLine("extern __shared__ char __gsharp_dynamic_smem[];");
+        context.Emitter.Writer.AppendLine("size_t __smem_offset = 0;");
+        context.Emitter.HasEmittedDynamicSmemBase = true;
     }
 
     private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref TranspileContext context)
     {
         // [WHY] Computes aligned offset: (offset + align - 1) & ~(align - 1) to avoid CUDA unaligned memory access faults.
-        context.Writer.Append("__smem_offset = ");
-        using (context.Writer.Parentheses())
+        context.Emitter.Writer.Append("__smem_offset = ");
+        using (context.Emitter.Writer.Parentheses())
         {
-            context.Writer.Append("__smem_offset + alignof");
-            using (context.Writer.Parentheses())
+            context.Emitter.Writer.Append("__smem_offset + alignof");
+            using (context.Emitter.Writer.Parentheses())
             {
-                context.AppendType(typeArg);
+                context.Emitter.Dialect.AppendType(ref context, typeArg);
             }
-            context.Writer.Append(" - 1");
+            context.Emitter.Writer.Append(" - 1");
         }
 
-        context.Writer.Append(" & ~");
-        using (context.Writer.Parentheses())
+        context.Emitter.Writer.Append(" & ~");
+        using (context.Emitter.Writer.Parentheses())
         {
-            context.Writer.Append("alignof");
-            using (context.Writer.Parentheses())
+            context.Emitter.Writer.Append("alignof");
+            using (context.Emitter.Writer.Parentheses())
             {
-                context.AppendType(typeArg);
+                context.Emitter.Dialect.AppendType(ref context, typeArg);
             }
-            context.Writer.Append(" - 1");
+            context.Emitter.Writer.Append(" - 1");
         }
 
-        context.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendSemiColonLine();
     }
 
     private static void EmitDynamicSharedMemoryPointerAndAdvance(SharedMemoryAllocation alloc,
         ITypeSymbol typeArg, ref TranspileContext context)
     {
-        context.AppendType(typeArg);
-        context.Writer.Append($"* {alloc.Declarator.Identifier.Text} = ");
-        using (context.Writer.Parentheses())
+        context.Emitter.Dialect.AppendType(ref context, typeArg);
+        context.Emitter.Writer.Append($"* {alloc.Declarator.Identifier.Text} = ");
+        using (context.Emitter.Writer.Parentheses())
         {
-            context.AppendType(typeArg);
-            context.Writer.Append("*");
+            context.Emitter.Dialect.AppendType(ref context, typeArg);
+            context.Emitter.Writer.Append("*");
         }
 
-        context.Writer.Append("(__gsharp_dynamic_smem + __smem_offset)");
+        context.Emitter.Writer.Append("(__gsharp_dynamic_smem + __smem_offset)");
 
-        context.Writer.AppendLine(";");
-        context.Writer.Append("__smem_offset += ");
-        using (context.Writer.Parentheses())
+        context.Emitter.Writer.AppendLine(";");
+        context.Emitter.Writer.Append("__smem_offset += ");
+        using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(alloc.SizeArgument);
         }
 
-        context.Writer.Append(" * sizeof");
-        using (context.Writer.Parentheses())
+        context.Emitter.Writer.Append(" * sizeof");
+        using (context.Emitter.Writer.Parentheses())
         {
-            context.AppendType(typeArg);
+            context.Emitter.Dialect.AppendType(ref context, typeArg);
         }
-        context.Writer.AppendSemiColon();
+        context.Emitter.Writer.AppendSemiColon();
     }
 }

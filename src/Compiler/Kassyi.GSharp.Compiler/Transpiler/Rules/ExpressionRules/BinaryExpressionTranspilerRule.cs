@@ -24,15 +24,15 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     {
         if (node.IsKind(SyntaxKind.CoalesceExpression))
         {
-            using (context.Writer.ImmediatelyInvokedLambda())
+            using (context.Emitter.Writer.ImmediatelyInvokedLambda())
             {
-                context.Writer.Append("auto __coalesce_tmp = ");
+                context.Emitter.Writer.Append("auto __coalesce_tmp = ");
                 context.Visitor.Visit(node.Left);
-                context.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendSemiColonLine();
 
-                context.Writer.Append("return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : ");
+                context.Emitter.Writer.Append("return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : ");
                 context.Visitor.Visit(node.Right);
-                context.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendSemiColonLine();
             }
 
             return;
@@ -43,11 +43,11 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         var opText = node.OperatorToken.Text;
         if (opText.Length > 0 && char.IsLetter(opText[0]))
         {
-            context.Writer.Append($" {opText} ");
+            context.Emitter.Writer.Append($" {opText} ");
         }
         else
         {
-            context.Writer.AppendOperator(opText);
+            context.Emitter.Writer.AppendOperator(opText);
         }
 
         context.Visitor.Visit(node.Right);

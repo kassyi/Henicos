@@ -6,11 +6,11 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 {
     public override void Transpile(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
-        var symbol = context.SemanticModel.GetSymbol(node);
+        var symbol = context.Query.SemanticModel.GetSymbol(node);
 
         if (symbol == null && node.Parent is InvocationExpressionSyntax invocation && invocation.Expression == node)
         {
-            symbol = context.SemanticModel.GetSymbol(invocation);
+            symbol = context.Query.SemanticModel.GetSymbol(invocation);
         }
 
         if (symbol != null && TryTranspileIntrinsic(symbol, ref context))
@@ -20,11 +20,11 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
         if (symbol is IFieldSymbol { IsConst: true, HasConstantValue: true } field)
         {
-            context.Writer.AppendConstantField(field);
+            context.Emitter.Writer.AppendConstantField(field);
             return;
         }
 
-        var memberExprSymbol = context.SemanticModel.GetSymbol(node.Expression);
+        var memberExprSymbol = context.Query.SemanticModel.GetSymbol(node.Expression);
         if (TryTranspileEnumAccess(memberExprSymbol, node, ref context))
         {
             return;
@@ -33,7 +33,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (memberExprSymbol is ITypeSymbol)
         {
             // Skip class name for global static methods
-            context.Writer.Append(node.Name.Identifier.Text);
+            context.Emitter.Writer.Append(node.Name.Identifier.Text);
             return;
         }
 
@@ -47,9 +47,9 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
     private static bool TryTranspileIntrinsic(ISymbol symbol, ref TranspileContext context)
     {
-        if (context.Dialect.TryMapIntrinsic(symbol, out var mappedName))
+        if (context.Emitter.Dialect.TryMapIntrinsic(symbol, out var mappedName))
         {
-            context.Writer.Append(mappedName);
+            context.Emitter.Writer.Append(mappedName);
             return true;
         }
 
@@ -62,7 +62,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (memberExprSymbol is ITypeSymbol { TypeKind: TypeKind.Enum })
         {
             context.Visitor.Visit(node.Expression);
-            context.Writer.Append($"::{node.Name.Identifier.Text}");
+            context.Emitter.Writer.Append($"::{node.Name.Identifier.Text}");
             return true;
         }
 
@@ -72,24 +72,24 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
     private static void TranspileMemberAccess(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
         context.Visitor.Visit(node.Expression);
-        context.Writer.Append(".");
+        context.Emitter.Writer.Append(".");
 
         var memberName = node.Name.Identifier.Text;
-        var typeSymbol = context.SemanticModel.GetTypeSymbol(node.Expression);
-        if (typeSymbol != null && context.Dialect.TryMapMemberAccess(typeSymbol, memberName, out var mappedName, out var isMethodCall))
+        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Expression);
+        if (typeSymbol != null && context.Emitter.Dialect.TryMapMemberAccess(typeSymbol, memberName, out var mappedName, out var isMethodCall))
         {
             if (isMethodCall)
             {
-                context.Writer.Append(mappedName!).AppendParentheses();
+                context.Emitter.Writer.Append(mappedName!).AppendParentheses();
             }
             else
             {
-                context.Writer.Append(mappedName!);
+                context.Emitter.Writer.Append(mappedName!);
             }
         }
         else
         {
-            context.Writer.Append(memberName);
+            context.Emitter.Writer.Append(memberName);
         }
     }
 
@@ -100,7 +100,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return false;
         }
 
-        var symbol = context.SemanticModel.GetSymbol(node.Expression);
+        var symbol = context.Query.SemanticModel.GetSymbol(node.Expression);
         if (symbol is ILocalSymbol localSym)
         {
             if (localSym.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is not VariableDeclaratorSyntax decl)
@@ -121,7 +121,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
             if (count.HasValue)
             {
-                context.Writer.Append(count.Value);
+                context.Emitter.Writer.Append(count.Value);
                 return true;
             }
 

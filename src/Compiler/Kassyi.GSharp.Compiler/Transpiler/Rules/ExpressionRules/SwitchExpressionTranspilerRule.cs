@@ -19,22 +19,22 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     /// <inheritdoc />
     public override void Transpile(SwitchExpressionSyntax node, ref TranspileContext context)
     {
-        using (context.Writer.ImmediatelyInvokedLambda())
+        using (context.Emitter.Writer.ImmediatelyInvokedLambda())
         {
-            context.Writer.AppendKeyword("switch");
-            using (context.Writer.Parentheses())
+            context.Emitter.Writer.AppendKeyword("switch");
+            using (context.Emitter.Writer.Parentheses())
             {
                 context.Visitor.Visit(node.GoverningExpression);
             }
 
-            context.Writer.AppendLine();
-            using (context.Writer.Scope())
+            context.Emitter.Writer.AppendLine();
+            using (context.Emitter.Writer.Scope())
             {
                 foreach (var arm in node.Arms)
                 {
                     if (arm.WhenClause != null)
                     {
-                        context.Report(GSharpDiagnostics.UnsupportedSyntax,
+                        context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax,
                             arm.WhenClause,
                             "Switch expression arms with 'when' clauses are not supported");
                         return;
@@ -43,24 +43,24 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
                     switch (arm.Pattern)
                     {
                         case ConstantPatternSyntax constantPattern:
-                            context.Writer.Append("case ");
+                            context.Emitter.Writer.Append("case ");
                             context.Visitor.Visit(constantPattern.Expression);
-                            context.Writer.Append(":");
+                            context.Emitter.Writer.Append(":");
                             break;
                         case DiscardPatternSyntax:
-                            context.Writer.Append("default:");
+                            context.Emitter.Writer.Append("default:");
                             break;
                         default:
-                            context.Report(GSharpDiagnostics.UnsupportedSyntax,
+                            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax,
                                 arm.Pattern,
                                 "Switch expression patterns other than constant and discard are not supported");
-                            context.Writer.Append("default:");
+                            context.Emitter.Writer.Append("default:");
                             break;
                     }
 
-                    context.Writer.Append(" return ");
+                    context.Emitter.Writer.Append(" return ");
                     context.Visitor.Visit(arm.Expression);
-                    context.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendSemiColonLine();
                 }
             }
         }

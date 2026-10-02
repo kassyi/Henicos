@@ -11,38 +11,38 @@ internal static class DeclarationTranspilerHelper
     {
         if (isVar)
         {
-            context.Writer.Append("auto");
+            context.Emitter.Writer.Append("auto");
         }
         else
         {
             if (isPointer && typeSymbol is IPointerTypeSymbol pointerType)
             {
-                context.AppendType(pointerType.PointedAtType);
+                context.Emitter.Dialect.AppendType(ref context, pointerType.PointedAtType);
             }
             else
             {
-                context.AppendType(typeSymbol);
+                context.Emitter.Dialect.AppendType(ref context, typeSymbol);
             }
         }
-        context.Writer.Append(" ");
+        context.Emitter.Writer.Append(" ");
 
         for (var i = 0; i < variables.Count; i++)
         {
             var v = variables[i];
             if (isPointer)
             {
-                context.Writer.Append($"*{v.Identifier.Text}");
+                context.Emitter.Writer.Append($"*{v.Identifier.Text}");
             }
             else
             {
-                context.Writer.Append(v.Identifier.Text);
+                context.Emitter.Writer.Append(v.Identifier.Text);
             }
 
             WriteDeclaratorInitializer(v, ref context);
 
             if (i < variables.Count - 1)
             {
-                context.Writer.AppendComma();
+                context.Emitter.Writer.AppendComma();
             }
         }
     }
@@ -51,7 +51,7 @@ internal static class DeclarationTranspilerHelper
     {
         if (variable.Initializer != null)
         {
-            if (context.SkipLocalsInit)
+            if (context.Emitter.SkipLocalsInit)
             {
                 var val = variable.Initializer.Value;
                 if (val is ImplicitObjectCreationExpressionSyntax or ObjectCreationExpressionSyntax { ArgumentList.Arguments.Count: 0 } or DefaultExpressionSyntax ||
@@ -61,7 +61,7 @@ internal static class DeclarationTranspilerHelper
                 }
             }
 
-            context.Writer.Append(" = ");
+            context.Emitter.Writer.Append(" = ");
             context.Visitor.Visit(variable.Initializer.Value);
         }
     }

@@ -24,7 +24,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     /// <inheritdoc />
     public override void Transpile(InvocationExpressionSyntax node, ref TranspileContext context)
     {
-        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol symbol)
+        if (context.Query.SemanticModel.GetSymbol(node) is IMethodSymbol symbol)
         {
             if (TryTranspileCustomInvocation(node, symbol, ref context))
             {
@@ -60,7 +60,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         ref TranspileContext context)
     {
         context.Visitor.Visit(node.Expression);
-        using (context.Writer.Parentheses())
+        using (context.Emitter.Writer.Parentheses())
         {
             TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, ref context);
         }
@@ -71,7 +71,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         ref TranspileContext context)
     {
         context.Visitor.Visit(node.Expression);
-        using (context.Writer.Parentheses())
+        using (context.Emitter.Writer.Parentheses())
         {
             var arguments = node.ArgumentList.Arguments;
             for (var i = 0; i < arguments.Count; i++)
@@ -79,7 +79,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 context.Visitor.Visit(arguments[i]);
                 if (i < arguments.Count - 1)
                 {
-                    context.Writer.AppendComma();
+                    context.Emitter.Writer.AppendComma();
                 }
             }
         }
@@ -112,7 +112,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 {
                     while (positionalArgIndex < arguments.Count && arguments[positionalArgIndex].NameColon == null)
                     {
-                        context.Writer.AppendComma();
+                        context.Emitter.Writer.AppendComma();
                         context.Visitor.Visit(arguments[positionalArgIndex]);
                         positionalArgIndex++;
                     }
@@ -125,7 +125,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
             if (i < parameters.Length - 1)
             {
-                context.Writer.AppendComma();
+                context.Emitter.Writer.AppendComma();
             }
         }
     }
@@ -153,7 +153,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
-        context.Writer.Append(FormatConstantLiteral(parameter.ExplicitDefaultValue, parameter.Type));
+        context.Emitter.Writer.Append(FormatConstantLiteral(parameter.ExplicitDefaultValue, parameter.Type));
     }
 
     private static ExpressionSyntax? GetDefaultValueSyntax(IParameterSymbol parameter) =>

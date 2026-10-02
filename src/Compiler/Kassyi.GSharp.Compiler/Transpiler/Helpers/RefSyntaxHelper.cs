@@ -32,9 +32,9 @@ internal static class RefSyntaxHelper
     /// </summary>
     public static void TranspileAsByRefArgument(ref TranspileContext context, ExpressionSyntax expression)
     {
-        if (NeedsAddressOf(expression, context.SemanticModel))
+        if (NeedsAddressOf(expression, context.Query.SemanticModel))
         {
-            context.Writer.Append("&");
+            context.Emitter.Writer.Append("&");
         }
 
         context.Visitor.Visit(expression);

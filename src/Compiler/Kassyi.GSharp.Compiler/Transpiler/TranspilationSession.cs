@@ -57,11 +57,11 @@ internal readonly ref struct TranspilationSession
                 methodSymbol.ContainingType?.HasAttribute(KnownAttributes.SkipLocalsInit) == true ||
                 methodSymbol.ContainingModule?.HasAttribute(KnownAttributes.SkipLocalsInit) == true)
             {
-                context.SkipLocalsInit = true;
+                context.Emitter.SkipLocalsInit = true;
             }
 
-            context.IsGpuKernelEntry = methodSymbol.HasAttribute(KnownAttributes.GpuKernel);
-            context.IsVoidReturn = methodSymbol.ReturnType.SpecialType == SpecialType.System_Void;
+            context.Emitter.IsGpuKernelEntry = methodSymbol.HasAttribute(KnownAttributes.GpuKernel);
+            context.Emitter.IsVoidReturn = methodSymbol.ReturnType.SpecialType == SpecialType.System_Void;
         }
 
         return new TranspilationSession(visitor, methodSymbol, null);

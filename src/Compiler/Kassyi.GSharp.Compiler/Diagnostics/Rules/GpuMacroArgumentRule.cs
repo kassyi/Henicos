@@ -1,9 +1,19 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 /// <summary>Diagnostic rule that verifies required arguments to GPU macro methods are compile-time constants.</summary>
-internal sealed class GpuMacroArgumentRule
+internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExpressionSyntax>
 {
     public static readonly GpuMacroArgumentRule Instance = new();
+
+    public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+        GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral,
+        GSharpDiagnostics.MacroArgumentMustBeConstant,
+        GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
+        GSharpDiagnostics.UnrollHintMustPrecedeLoop,
+        GSharpDiagnostics.UnrolledLoopMustBeStatic,
+        GSharpDiagnostics.UnrolledLoopMayBeIgnored,
+        GSharpDiagnostics.UnsupportedSyntax,
+        GSharpDiagnostics.SyncGridRequiresCooperativeKernel);
 
     private GpuMacroArgumentRule()
     {
@@ -30,7 +40,8 @@ internal sealed class GpuMacroArgumentRule
         }
     }
 
-    private void AnalyzeHintMacro(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol, ref ValidationContext context)
+    private void AnalyzeHintMacro(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
+        ref ValidationContext context)
     {
         if (invocationSymbol.Name == TypeConstants.GpuMacros.Unroll)
         {
@@ -38,7 +49,8 @@ internal sealed class GpuMacroArgumentRule
         }
     }
 
-    private void AnalyzeGpuMacro(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol, ref ValidationContext context)
+    private void AnalyzeGpuMacro(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
+        ref ValidationContext context)
     {
         switch (invocationSymbol.Name)
         {
@@ -56,16 +68,19 @@ internal sealed class GpuMacroArgumentRule
         }
     }
 
-    private void CheckForUnroll(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol, ref ValidationContext context)
+    private void CheckForUnroll(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
+        ref ValidationContext context)
     {
         var hasContext = invocationSymbol.Parameters.Length == 4;
         var offset = hasContext ? 1 : 0;
         var args = invocation.ArgumentList.Arguments;
-        if (args.Count >= offset + 2)
+        if (args.Count < offset + 2)
         {
-            CheckConstant(args[offset].Expression, "start", TypeConstants.GpuMacros.ForUnroll, ref context);
-            CheckConstant(args[offset + 1].Expression, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
+            return;
         }
+
+        CheckConstant(args[offset].Expression, "start", TypeConstants.GpuMacros.ForUnroll, ref context);
+        CheckConstant(args[offset + 1].Expression, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
     }
 
     private void CheckInlinePtx(InvocationExpressionSyntax invocation, ref ValidationContext context)
@@ -77,7 +92,8 @@ internal sealed class GpuMacroArgumentRule
         }
     }
 
-    private void CheckSyncGrid(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol, ref ValidationContext context)
+    private void CheckSyncGrid(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
+        ref ValidationContext context)
     {
         if (invocationSymbol.Parameters.Length == 1)
         {
@@ -178,39 +194,41 @@ internal sealed class GpuMacroArgumentRule
                 ReportGsh0032(loopStmt, ref context);
                 return;
             case BinaryExpressionSyntax binaryExpr:
+            {
+                var leftIsConst = IsStaticallyDeterministic(binaryExpr.Left, ref context);
+                var rightIsConst = IsStaticallyDeterministic(binaryExpr.Right, ref context);
+                if (!leftIsConst && !rightIsConst)
                 {
-                    var leftIsConst = IsStaticallyDeterministic(binaryExpr.Left, ref context);
-                    var rightIsConst = IsStaticallyDeterministic(binaryExpr.Right, ref context);
-                    if (!leftIsConst && !rightIsConst)
-                    {
-                        ReportGsh0032(loopStmt, ref context);
-                    }
-
-                    break;
+                    ReportGsh0032(loopStmt, ref context);
                 }
+
+                break;
+            }
             default:
+            {
+                if (!IsStaticallyDeterministic(condition, ref context))
                 {
-                    if (!IsStaticallyDeterministic(condition, ref context))
-                    {
-                        ReportGsh0032(loopStmt, ref context);
-                    }
-
-                    break;
+                    ReportGsh0032(loopStmt, ref context);
                 }
+
+                break;
+            }
         }
     }
 
     private bool IsStaticallyDeterministic(ExpressionSyntax expr, ref ValidationContext context)
     {
-        var constant = context.SemanticModel.GetConstantValue(expr);
-        if (constant.HasValue)
+        while (true)
         {
-            return true;
-        }
+            var constant = context.SemanticModel.GetConstantValue(expr);
+            if (constant.HasValue)
+            {
+                return true;
+            }
 
-        switch (expr)
-        {
-            case IdentifierNameSyntax idName:
+            switch (expr)
+            {
+                case IdentifierNameSyntax idName:
                 {
                     var symbol = context.SemanticModel.GetSymbol(idName);
                     if (symbol is IParameterSymbol paramSymbol && paramSymbol.HasAttribute(KnownAttributes.Constant))
@@ -220,20 +238,20 @@ internal sealed class GpuMacroArgumentRule
 
                     break;
                 }
-            case BinaryExpressionSyntax binaryExpr:
-                return IsStaticallyDeterministic(binaryExpr.Left, ref context) &&
-                       IsStaticallyDeterministic(binaryExpr.Right, ref context);
-            case ParenthesizedExpressionSyntax parenExpr:
-                return IsStaticallyDeterministic(parenExpr.Expression, ref context);
+                case BinaryExpressionSyntax binaryExpr:
+                    return IsStaticallyDeterministic(binaryExpr.Left, ref context) &&
+                           IsStaticallyDeterministic(binaryExpr.Right, ref context);
+                case ParenthesizedExpressionSyntax parenExpr:
+                    expr = parenExpr.Expression;
+                    continue;
+            }
+
+            return false;
         }
-
-        return false;
     }
 
-    private void ReportGsh0032(StatementSyntax loopStmt, ref ValidationContext context)
-    {
+    private void ReportGsh0032(StatementSyntax loopStmt, ref ValidationContext context) =>
         context.Report(GSharpDiagnostics.UnrolledLoopMustBeStatic, loopStmt);
-    }
 
     private void CheckDynamicControlFlow(StatementSyntax loopStmt, ref ValidationContext context)
     {
@@ -287,14 +305,16 @@ internal sealed class GpuMacroArgumentRule
     private static bool IsCooperativeKernel(IMethodSymbol methodSymbol)
     {
         var kernelAttr = methodSymbol.GetAttribute(KnownAttributes.GpuKernel);
-        if (kernelAttr != null)
+        if (kernelAttr == null)
         {
-            foreach (var namedArg in kernelAttr.NamedArguments)
+            return false;
+        }
+
+        foreach (var namedArg in kernelAttr.NamedArguments)
+        {
+            if (namedArg is { Key: "Cooperative", Value.Value: true })
             {
-                if (namedArg is { Key: "Cooperative", Value.Value: true })
-                {
-                    return true;
-                }
+                return true;
             }
         }
 

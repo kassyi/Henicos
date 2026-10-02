@@ -10,38 +10,38 @@ internal static class LambdaTranspilerHelper
         BlockSyntax? block,
         ExpressionSyntax? expressionBody)
     {
-        context.CallableDepth++;
+        context.Emitter.CallableDepth++;
         try
         {
             if (block != null)
             {
-                using (context.Writer.Scope())
+                using (context.Emitter.Writer.Scope())
                 {
                     for (var i = 0; i < block.Statements.Count; i++)
                     {
                         var stmt = block.Statements[i];
                         context.Visitor.Visit(stmt);
-                        context.Writer.AppendLine();
+                        context.Emitter.Writer.AppendLine();
                         if (context.Visitor.ShouldInsertAutoSync(block.Statements, i))
                         {
-                            context.Writer.AppendLine("cg::this_grid().sync();");
+                            context.Emitter.Writer.AppendLine("cg::this_grid().sync();");
                         }
                     }
                 }
             }
             else if (expressionBody != null)
             {
-                using (context.Writer.Scope())
+                using (context.Emitter.Writer.Scope())
                 {
-                    context.Writer.Append("return ");
+                    context.Emitter.Writer.Append("return ");
                     context.Visitor.Visit(expressionBody);
-                    context.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendSemiColonLine();
                 }
             }
         }
         finally
         {
-            context.CallableDepth--;
+            context.Emitter.CallableDepth--;
         }
     }
 }

@@ -46,17 +46,17 @@ public static class MethodTranspiler
         using var bodyWriter = new SourceWriter();
 
         ref var context = ref session.Context;
-        context.Writer = bodyWriter;
+        context.Emitter.Writer = bodyWriter;
 
         WriteMethodSignature(methodDecl, isDevice, ref context);
         WriteMethodBody(methodDecl, ref context);
 
-        if (!isDevice && !context.Dialect.IsCuda)
+        if (!isDevice && !context.Emitter.Dialect.IsCuda)
         {
             WriteCpuLauncher(methodDecl, ref context);
         }
 
-        context.Writer = mainWriter;
+        context.Emitter.Writer = mainWriter;
         var sortedStructs = StructTranspiler.GetTopologicallySortedStructs(ref context);
         foreach (var structSym in sortedStructs)
         {
@@ -100,19 +100,19 @@ public static class MethodTranspiler
         using var sigWriter = new SourceWriter();
 
         ref var context = ref session.Context;
-        context.Writer = sigWriter;
+        context.Emitter.Writer = sigWriter;
 
         WriteMethodSignature(methodDecl, isDevice, ref context);
-        context.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendSemiColonLine();
 
-        context.Writer = mainWriter;
+        context.Emitter.Writer = mainWriter;
         foreach (var structSym in StructTranspiler.GetTopologicallySortedStructs(ref context))
         {
             StructTranspiler.WriteTemplatePrefix(ref context, structSym);
-            context.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine(";");
+            context.Emitter.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine(";");
         }
 
-        context.Writer.Append(sigWriter.ToString());
+        context.Emitter.Writer.Append(sigWriter.ToString());
         return mainWriter.ToString();
     }
 
@@ -120,7 +120,7 @@ public static class MethodTranspiler
     private static void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice,
         ref TranspileContext context)
     {
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
+        var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
 
         if (isDevice)
         {
@@ -137,8 +137,8 @@ public static class MethodTranspiler
             methodName = $"{methodSymbol.ContainingType.Name}_{methodName}";
         }
 
-        context.Writer.Append($" {methodName}");
-        using (context.Writer.Parentheses())
+        context.Emitter.Writer.Append($" {methodName}");
+        using (context.Emitter.Writer.Parentheses())
         {
             WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
 
@@ -150,11 +150,11 @@ public static class MethodTranspiler
 
             if (method.ParameterList.Parameters.Count > 0)
             {
-                context.Writer.Append(", ");
+                context.Emitter.Writer.Append(", ");
             }
 
-            context.AppendType(methodSymbol.ReturnType);
-            context.Writer.Append("* __restrict__ __gsharp_auto_result");
+            context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
+            context.Emitter.Writer.Append("* __restrict__ __gsharp_auto_result");
         }
     }
 
@@ -162,23 +162,23 @@ public static class MethodTranspiler
     {
         var inlineKeyword = GetInliningKeyword(methodSymbol);
 
-        if (context.Dialect.IsCuda)
+        if (context.Emitter.Dialect.IsCuda)
         {
-            context.Writer.Append($"{inlineKeyword} __device__ ");
+            context.Emitter.Writer.Append($"{inlineKeyword} __device__ ");
         }
         else
         {
-            context.Writer.Append($"{inlineKeyword} ");
+            context.Emitter.Writer.Append($"{inlineKeyword} ");
         }
 
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })
         {
-            context.AppendType(returnType);
+            context.Emitter.Dialect.AppendType(ref context, returnType);
         }
         else
         {
-            context.Writer.AppendKeyword("void");
+            context.Emitter.Writer.AppendKeyword("void");
         }
     }
 
@@ -235,22 +235,22 @@ public static class MethodTranspiler
     private static void WriteKernelMethodPrefix(ref TranspileContext context)
     {
         // Auto-allocate feature: GpuKernel methods are now allowed to return values.
-        context.Writer.AppendKeyword(context.Dialect.IsCuda
+        context.Emitter.Writer.AppendKeyword(context.Emitter.Dialect.IsCuda
             ? "extern \"C\" __global__ void"
             : "extern \"C\" __declspec(dllexport) void");
     }
 
     private static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
     {
-        using (context.Writer.Scope())
+        using (context.Emitter.Writer.Scope())
         {
-            var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
+            var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
             var isKernelWithReturn = methodSymbol != null && methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
                                      methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
 
             if (isKernelWithReturn)
             {
-                context.Writer.AppendLine(
+                context.Emitter.Writer.AppendLine(
                     "unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
                     " * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
             }
@@ -263,17 +263,17 @@ public static class MethodTranspiler
             {
                 if (methodSymbol is { ReturnsVoid: false })
                 {
-                    context.Writer.Append(isKernelWithReturn
+                    context.Emitter.Writer.Append(isKernelWithReturn
                         ? "__gsharp_auto_result[__gsharp_global_tid] = "
                         : "return ");
                 }
 
                 context.Visitor.Visit(method.ExpressionBody.Expression);
-                context.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendSemiColonLine();
 
                 if (isKernelWithReturn)
                 {
-                    context.Writer.AppendKeyword("return").AppendSemiColonLine();
+                    context.Emitter.Writer.AppendKeyword("return").AppendSemiColonLine();
                 }
             }
         }
@@ -290,52 +290,52 @@ public static class MethodTranspiler
                 continue;
             }
 
-            var typeSymbol = context.SemanticModel.GetTypeSymbol(p.Type);
+            var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(p.Type);
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 
-            var paramSymbol = context.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
+            var paramSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
             if (paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuReadOnly))
             {
-                context.Writer.Append("const ");
+                context.Emitter.Writer.Append("const ");
             }
 
-            var (isRefPointer, isPointerType, hasRestrict) = context.AppendParameterCppType(p, typeSymbol);
+            var (isRefPointer, isPointerType, hasRestrict) = context.Emitter.Dialect.AppendParameter(ref context, p, typeSymbol);
             StructTranspiler.CheckLargeStructByValue(p, typeSymbol, isRefPointer, ref context);
 
             if (!isDevice && isPointerType && !hasRestrict)
             {
-                context.Writer.Append(" __restrict__");
+                context.Emitter.Writer.Append(" __restrict__");
             }
 
-            context.Writer.Append($" {p.Identifier.Text}");
+            context.Emitter.Writer.Append($" {p.Identifier.Text}");
             if (i < parameters.Count - 1)
             {
-                context.Writer.Append(", ");
+                context.Emitter.Writer.Append(", ");
             }
         }
     }
 
     private static void WriteCpuLauncher(MethodDeclarationSyntax method, ref TranspileContext context)
     {
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
+        var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
         if (methodSymbol == null)
         {
             return;
         }
 
-        context.Writer.AppendLine();
-        context.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
+        context.Emitter.Writer.AppendLine();
+        context.Emitter.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
         var methodName = $"{methodSymbol.ContainingType.Name}_{method.Identifier.Text}";
-        context.Writer.Append($" __gsharp_launch_{methodName}(");
+        context.Emitter.Writer.Append($" __gsharp_launch_{methodName}(");
 
         // Launch dimensions
-        context.Writer.Append("uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, ");
-        context.Writer.Append("uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ");
+        context.Emitter.Writer.Append("uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, ");
+        context.Emitter.Writer.Append("uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ");
 
         if (method.ParameterList.Parameters.Count > 0)
         {
-            context.Writer.Append(", ");
+            context.Emitter.Writer.Append(", ");
         }
 
         WriteParameters(method.ParameterList.Parameters, false, ref context);
@@ -344,27 +344,27 @@ public static class MethodTranspiler
                                  methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
         if (isKernelWithReturn)
         {
-            context.Writer.Append(", ");
-            context.AppendType(methodSymbol.ReturnType);
-            context.Writer.Append("* __restrict__ __gsharp_auto_result");
+            context.Emitter.Writer.Append(", ");
+            context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
+            context.Emitter.Writer.Append("* __restrict__ __gsharp_auto_result");
         }
 
-        context.Writer.AppendLine(")");
+        context.Emitter.Writer.AppendLine(")");
 
-        using (context.Writer.Scope())
+        using (context.Emitter.Writer.Scope())
         {
-            context.Writer.AppendLine("for (uint32_t bz = 0; bz < gridDimZ; bz++)");
-            context.Writer.AppendLine("for (uint32_t by = 0; by < gridDimY; by++)");
-            context.Writer.AppendLine("for (uint32_t bx = 0; bx < gridDimX; bx++)");
-            context.Writer.AppendLine("for (uint32_t tz = 0; tz < blockDimZ; tz++)");
-            context.Writer.AppendLine("for (uint32_t ty = 0; ty < blockDimY; ty++)");
-            context.Writer.AppendLine("for (uint32_t tx = 0; tx < blockDimX; tx++)");
-            using (context.Writer.Scope())
+            context.Emitter.Writer.AppendLine("for (uint32_t bz = 0; bz < gridDimZ; bz++)");
+            context.Emitter.Writer.AppendLine("for (uint32_t by = 0; by < gridDimY; by++)");
+            context.Emitter.Writer.AppendLine("for (uint32_t bx = 0; bx < gridDimX; bx++)");
+            context.Emitter.Writer.AppendLine("for (uint32_t tz = 0; tz < blockDimZ; tz++)");
+            context.Emitter.Writer.AppendLine("for (uint32_t ty = 0; ty < blockDimY; ty++)");
+            context.Emitter.Writer.AppendLine("for (uint32_t tx = 0; tx < blockDimX; tx++)");
+            using (context.Emitter.Writer.Scope())
             {
-                context.Writer.AppendLine(
+                context.Emitter.Writer.AppendLine(
                     "__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);");
-                context.Writer.Append(methodName);
-                using (context.Writer.Parentheses())
+                context.Emitter.Writer.Append(methodName);
+                using (context.Emitter.Writer.Parentheses())
                 {
                     var isFirst = true;
 
@@ -372,26 +372,26 @@ public static class MethodTranspiler
                     {
                         if (!isFirst)
                         {
-                            context.Writer.AppendComma().AppendSpace();
+                            context.Emitter.Writer.AppendComma().AppendSpace();
                         }
 
                         isFirst = false;
 
-                        context.Writer.Append(parameter.Identifier.Text);
+                        context.Emitter.Writer.Append(parameter.Identifier.Text);
                     }
 
                     if (isKernelWithReturn)
                     {
                         if (!isFirst)
                         {
-                            context.Writer.AppendComma().AppendSpace();
+                            context.Emitter.Writer.AppendComma().AppendSpace();
                         }
 
-                        context.Writer.Append("__gsharp_auto_result");
+                        context.Emitter.Writer.Append("__gsharp_auto_result");
                     }
                 }
 
-                context.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendSemiColonLine();
             }
         }
     }

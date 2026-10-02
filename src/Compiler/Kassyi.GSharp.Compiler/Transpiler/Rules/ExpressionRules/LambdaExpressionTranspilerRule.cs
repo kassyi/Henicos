@@ -42,14 +42,14 @@ public sealed class LambdaExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         ExpressionSyntax? expressionBody,
         ref TranspileContext context)
     {
-        context.Writer.Append("[&]");
+        context.Emitter.Writer.Append("[&]");
 
         if (parameterOrList != null)
         {
             if (parameterOrList is ParameterSyntax parameter)
             {
                 // Simple lambda has no parentheses around its single parameter
-                using (context.Writer.Parentheses())
+                using (context.Emitter.Writer.Parentheses())
                 {
                     context.Visitor.Visit(parameter);
                 }
@@ -61,10 +61,10 @@ public sealed class LambdaExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         }
         else
         {
-            context.Writer.AppendParentheses();
+            context.Emitter.Writer.AppendParentheses();
         }
 
-        context.Writer.AppendSpace();
+        context.Emitter.Writer.AppendSpace();
 
         LambdaTranspilerHelper.TranspileLambdaBody(ref context, block, expressionBody);
     }
