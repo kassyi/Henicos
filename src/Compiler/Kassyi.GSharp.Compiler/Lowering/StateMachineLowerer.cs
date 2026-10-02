@@ -16,7 +16,7 @@ public class StateMachineLowerer
         {
             if (IsSyncThreads(stmt))
             {
-                // state update and return
+                // The C++ emulator relies on returning to the scheduler at each barrier.
                 currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
                     SyntaxFactory.AssignmentExpression(
                         SyntaxKind.SimpleAssignmentExpression,
@@ -26,7 +26,7 @@ public class StateMachineLowerer
                 ));
                 currentCaseStatements.Add(SyntaxFactory.ReturnStatement());
 
-                // create case
+
                 cases.Add(SyntaxFactory.SwitchSection(
                     SyntaxFactory.SingletonList<SwitchLabelSyntax>(SyntaxFactory.CaseSwitchLabel(
                         SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state))
@@ -43,7 +43,7 @@ public class StateMachineLowerer
             }
         }
 
-        // Final case (state = -1 to indicate completion)
+        // State -1 signals the emulator that this kernel execution thread has reached its end.
         currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
             SyntaxFactory.AssignmentExpression(
                 SyntaxKind.SimpleAssignmentExpression,
@@ -76,15 +76,12 @@ public class StateMachineLowerer
             return false;
         }
 
-        if (inv.Expression is MemberAccessExpressionSyntax ma)
+        return inv.Expression switch
         {
-            return ma.Name.Identifier.ValueText == "SyncThreads" && 
-                   (ma.Expression as IdentifierNameSyntax)?.Identifier.ValueText == "Gpu";
-        }
-        if (inv.Expression is IdentifierNameSyntax id)
-        {
-            return id.Identifier.ValueText == "SyncThreads";
-        }
-        return false;
+            MemberAccessExpressionSyntax ma => ma.Name.Identifier.ValueText == "SyncThreads" &&
+                                               (ma.Expression as IdentifierNameSyntax)?.Identifier.ValueText == "Gpu",
+            IdentifierNameSyntax id => id.Identifier.ValueText == "SyncThreads",
+            _ => false
+        };
     }
 }
