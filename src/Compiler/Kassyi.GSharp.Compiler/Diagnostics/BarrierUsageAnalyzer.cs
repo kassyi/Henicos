@@ -118,13 +118,15 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         // GSH0046: async keyword on [GpuKernel]
         foreach (var modifier in methodDecl.Modifiers)
         {
-            if (modifier.IsKind(SyntaxKind.AsyncKeyword))
+            if (!modifier.IsKind(SyntaxKind.AsyncKeyword))
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    GSharpDiagnostics.AsyncYieldInKernelProhibited,
-                    methodDecl.Identifier.GetLocation()));
-                break;
+                continue;
             }
+
+            context.ReportDiagnostic(Diagnostic.Create(
+                GSharpDiagnostics.AsyncYieldInKernelProhibited,
+                methodDecl.Identifier.GetLocation()));
+            break;
         }
 
         // GSH0044: ref, out, in, and ref struct parameters on [GpuKernel]
@@ -133,12 +135,14 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             var isByRef = false;
             foreach (var mod in param.Modifiers)
             {
-                if (mod.IsKind(SyntaxKind.RefKeyword) || mod.IsKind(SyntaxKind.OutKeyword) ||
-                    mod.IsKind(SyntaxKind.InKeyword))
+                if (!mod.IsKind(SyntaxKind.RefKeyword) && !mod.IsKind(SyntaxKind.OutKeyword) &&
+                    !mod.IsKind(SyntaxKind.InKeyword))
                 {
-                    isByRef = true;
-                    break;
+                    continue;
                 }
+
+                isByRef = true;
+                break;
             }
 
             if (isByRef)
@@ -241,18 +245,16 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         {
             foreach (var initChild in varDecl.Initializer.DescendantNodes())
             {
-                if (initChild is StackAllocArrayCreationExpressionSyntax
-                    or ImplicitStackAllocArrayCreationExpressionSyntax)
+                if (initChild is not (StackAllocArrayCreationExpressionSyntax
+                        or ImplicitStackAllocArrayCreationExpressionSyntax) &&
+                    (initChild is not PrefixUnaryExpressionSyntax prefix ||
+                     !prefix.IsKind(SyntaxKind.AddressOfExpression)))
                 {
-                    isLocalPointer = true;
-                    break;
+                    continue;
                 }
 
-                if (initChild is PrefixUnaryExpressionSyntax prefix && prefix.IsKind(SyntaxKind.AddressOfExpression))
-                {
-                    isLocalPointer = true;
-                    break;
-                }
+                isLocalPointer = true;
+                break;
             }
         }
 
@@ -271,38 +273,41 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     {
         for (var ancestor = barrier.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
         {
-            // GSH0043: fixed block barrier prohibited
-            if (ancestor is FixedStatementSyntax)
+            switch (ancestor)
             {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    GSharpDiagnostics.FixedBlockBarrierProhibited,
-                    barrier.GetLocation()));
-            }
-
-            // GSH0037: Divergent barrier in conditional branches
-            if (ancestor is IfStatementSyntax or SwitchStatementSyntax or SwitchSectionSyntax)
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    GSharpDiagnostics.DivergentBarrierProhibited,
-                    barrier.GetLocation()));
-            }
-
-            // GSH0045: Queue local function containing barrier for recursion check
-            if (ancestor is LocalFunctionStatementSyntax localFunc)
-            {
-                var alreadyQueued = false;
-                foreach (var queued in localFunctionsWithBarrier)
+                // GSH0043: fixed block barrier prohibited
+                case FixedStatementSyntax:
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        GSharpDiagnostics.FixedBlockBarrierProhibited,
+                        barrier.GetLocation()));
+                    break;
+                // GSH0037: Divergent barrier in conditional branches
+                case IfStatementSyntax or SwitchStatementSyntax or SwitchSectionSyntax:
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        GSharpDiagnostics.DivergentBarrierProhibited,
+                        barrier.GetLocation()));
+                    break;
+                // GSH0045: Queue local function containing barrier for recursion check
+                case LocalFunctionStatementSyntax localFunc:
                 {
-                    if (queued == localFunc)
+                    var alreadyQueued = false;
+                    foreach (var queued in localFunctionsWithBarrier)
                     {
+                        if (queued != localFunc)
+                        {
+                            continue;
+                        }
+
                         alreadyQueued = true;
                         break;
                     }
-                }
 
-                if (!alreadyQueued)
-                {
-                    localFunctionsWithBarrier.Add(localFunc);
+                    if (!alreadyQueued)
+                    {
+                        localFunctionsWithBarrier.Add(localFunc);
+                    }
+
+                    break;
                 }
             }
         }
@@ -325,15 +330,19 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             var isRecursive = false;
             foreach (var innerNode in localFunc.DescendantNodes())
             {
-                if (innerNode is InvocationExpressionSyntax innerInv)
+                if (innerNode is not InvocationExpressionSyntax innerInv)
                 {
-                    var calledSym = semanticModel.GetSymbolInfo(innerInv).Symbol;
-                    if (SymbolEqualityComparer.Default.Equals(calledSym, localFuncSymbol))
-                    {
-                        isRecursive = true;
-                        break;
-                    }
+                    continue;
                 }
+
+                var calledSym = semanticModel.GetSymbolInfo(innerInv).Symbol;
+                if (!SymbolEqualityComparer.Default.Equals(calledSym, localFuncSymbol))
+                {
+                    continue;
+                }
+
+                isRecursive = true;
+                break;
             }
 
             if (isRecursive)
@@ -373,11 +382,13 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             LabeledStatementSyntax? targetLabel = null;
             foreach (var l in labels)
             {
-                if (l.Identifier.ValueText == labelName)
+                if (l.Identifier.ValueText != labelName)
                 {
-                    targetLabel = l;
-                    break;
+                    continue;
                 }
+
+                targetLabel = l;
+                break;
             }
 
             if (targetLabel == null)
@@ -393,17 +404,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var crossesBarrier = false;
-            foreach (var b in barriers)
-            {
-                if (b.SpanStart > start && b.Span.End < end)
-                {
-                    crossesBarrier = true;
-                    break;
-                }
-            }
-
-            if (crossesBarrier)
+            var firstBarrier = FindFirstBarrierAfter(start, barriers);
+            if (firstBarrier != null && firstBarrier.Span.End < end)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
                     GSharpDiagnostics.CrossBarrierGotoProhibited,
@@ -429,24 +431,13 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         {
             var varStart = tracked.Declarator.SpanStart;
 
-            var hasBarrierAfter = false;
-            var firstBarrierAfterEnd = 0;
-            foreach (var b in barriers)
-            {
-                if (b.SpanStart <= varStart)
-                {
-                    continue;
-                }
-
-                hasBarrierAfter = true;
-                firstBarrierAfterEnd = b.Span.End;
-                break;
-            }
-
-            if (!hasBarrierAfter)
+            var firstBarrier = FindFirstBarrierAfter(varStart, barriers);
+            if (firstBarrier == null)
             {
                 continue;
             }
+
+            var firstBarrierAfterEnd = firstBarrier.Span.End;
 
             var scopeNode = tracked.Declarator.Parent?.Parent?.Parent ?? methodDecl;
 
@@ -482,30 +473,42 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsSyncThreadsInvocation(InvocationExpressionSyntax invocation, SemanticModel semanticModel)
+    private static InvocationExpressionSyntax? FindFirstBarrierAfter(
+        int position,
+        ImmutableArray<InvocationExpressionSyntax>.Builder barriers)
     {
-        if (invocation.Expression is not MemberAccessExpressionSyntax ma)
+        var low = 0;
+        var high = barriers.Count - 1;
+        var resultIndex = -1;
+
+        while (low <= high)
         {
-            return false;
+            var mid = low + (high - low) / 2;
+            if (barriers[mid].SpanStart > position)
+            {
+                resultIndex = mid;
+                high = mid - 1;
+            }
+            else
+            {
+                low = mid + 1;
+            }
         }
 
-        if (ma.Name.Identifier.ValueText != "SyncThreads")
-        {
-            return false;
-        }
-
-        if (semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol symbol)
-        {
-            return symbol.ContainingType?.Name == "Gpu";
-        }
-
-        if (ma.Expression is IdentifierNameSyntax idExpr)
-        {
-            return idExpr.Identifier.ValueText == "Gpu";
-        }
-
-        return false;
+        return resultIndex >= 0 ? barriers[resultIndex] : null;
     }
+
+    private static bool IsSyncThreadsInvocation(InvocationExpressionSyntax invocation, SemanticModel semanticModel) =>
+        invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SyncThreads" } ma =>
+                semanticModel.GetSymbolInfo(invocation).Symbol switch
+                {
+                    IMethodSymbol symbol => symbol.ContainingType?.Name == TypeConstants.GpuType,
+                    _ => ma.Expression is IdentifierNameSyntax { Identifier.ValueText: TypeConstants.GpuType }
+                },
+            _ => false
+        };
 
     private readonly struct TrackedLocalInfo(
         VariableDeclaratorSyntax declarator,
