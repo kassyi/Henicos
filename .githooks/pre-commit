@@ -1,0 +1,13 @@
+#!/bin/sh
+# Prevent direct commits to main/master branches
+
+branch="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+    echo "================================================================" >&2
+    echo " ERROR: Direct commit to '$branch' branch is prohibited!" >&2
+    echo " Please switch to a topic branch and create a Pull Request." >&2
+    echo "   Example: git switch -c feat/my-feature" >&2
+    echo "================================================================" >&2
+    exit 1
+fi

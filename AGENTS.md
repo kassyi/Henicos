@@ -40,6 +40,7 @@ These rules are absolute. Any violation will directly induce runtime failures, G
     - **For prototyping/WIP:** Suggest `/commit.ja.prompt` (to propose commits with Japanese messages).
     - **For publishing/PR creation:** Suggest `/commit.en.prompt` (to propose commits with English conventional messages).
 - Only execute commits when running the explicitly invoked `/commit.*.prompt` workflow AND after the user replies with "yes" to your proposed commit plan.
+- **DO NOT commit directly to 'main' or 'master' branch under any circumstances.** Commits must always be performed on a dedicated topic branch (e.g., `feat/...`, `refactor/...`, `fix/...`). If you are on `main` or `master`, you must create and switch to a topic branch first before proposing or executing commits.
 
 ### 1.2. Source Generator Constraints
 
