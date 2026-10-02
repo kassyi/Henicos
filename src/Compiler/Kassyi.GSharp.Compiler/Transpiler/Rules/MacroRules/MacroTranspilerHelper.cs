@@ -1,7 +1,3 @@
-using System.Collections.Generic;
-using Kassyi.GSharp.Compiler.Diagnostics.Rules;
-using Kassyi.GSharp.Compiler.Transpiler.Helpers;
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
 /// <summary>

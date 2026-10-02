@@ -6,15 +6,26 @@ namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static unsafe class NativeKernelInvoker
 {
-    private static readonly Lazy<byte[]> s_fatbinSgemm = new(() => File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "sgemm_kernel.fatbin")));
-    private static readonly Lazy<byte[]> s_fatbinSha256 = new(() => File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "sha256_kernel.fatbin")));
-    private static readonly Lazy<byte[]> s_fatbinBlackScholes = new(() => File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "blackscholes_kernel.fatbin")));
-    private static readonly Lazy<byte[]> s_fatbinReduction = new(() => File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "reduction_kernel.fatbin")));
+    private static readonly Lazy<byte[]> s_fatbinSgemm = new(() =>
+        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "sgemm_kernel.fatbin")));
+
+    private static readonly Lazy<byte[]> s_fatbinSha256 = new(() =>
+        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "sha256_kernel.fatbin")));
+
+    private static readonly Lazy<byte[]> s_fatbinBlackScholes = new(() =>
+        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "blackscholes_kernel.fatbin")));
+
+    private static readonly Lazy<byte[]> s_fatbinReduction = new(() =>
+        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "reduction_kernel.fatbin")));
 
     public static IntPtr FunctionSgemm => GpuKernelLoader.LoadAotKernel(s_fatbinSgemm.Value, "SgemmKernel_Native");
     public static IntPtr FunctionSha256 => GpuKernelLoader.LoadAotKernel(s_fatbinSha256.Value, "Sha256Kernel_Native");
-    public static IntPtr FunctionBlackScholes => GpuKernelLoader.LoadAotKernel(s_fatbinBlackScholes.Value, "BlackScholesKernel_Native");
-    public static IntPtr FunctionReduction => GpuKernelLoader.LoadAotKernel(s_fatbinReduction.Value, "ReductionKernel_Native");
+
+    public static IntPtr FunctionBlackScholes =>
+        GpuKernelLoader.LoadAotKernel(s_fatbinBlackScholes.Value, "BlackScholesKernel_Native");
+
+    public static IntPtr FunctionReduction =>
+        GpuKernelLoader.LoadAotKernel(s_fatbinReduction.Value, "ReductionKernel_Native");
 
     public static void LaunchSgemm(
         float[] a, float[] b, float[] c, int n,
@@ -140,7 +151,6 @@ public static unsafe class NativeKernelInvoker
         kernelParams[0] = &ctx;
 
         CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-
             kernel,
             gridDimX, 1, 1,
             blockDimX, 1, 1,
@@ -184,5 +194,4 @@ public static unsafe class NativeKernelInvoker
         CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
         d_out.CopyToHost(output);
     }
-
 }
