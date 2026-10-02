@@ -323,5 +323,104 @@
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "DivergentBarrierProhibited",
+    "id": "GSH0037",
+    "title": "Divergent barriers are prohibited",
+    "messageFormat": "Gpu.SyncThreads() cannot be placed inside a thread-dependent conditional branch. This causes undefined behavior on the GPU and deadlocks the CPU emulator.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "ExceptionHandlingInKernelProhibited",
+    "id": "GSH0038",
+    "title": "Exception handling is not supported in GPU kernels",
+    "messageFormat": "The try-catch-finally construct is not supported in GPU kernels. Exceptions cannot be thrown or caught on the GPU.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "CrossBarrierRefStructProhibited",
+    "id": "GSH0039",
+    "title": "ref structs cannot be held across barrier synchronization",
+    "messageFormat": "A ref or ref struct variable '{0}' cannot be held across a Gpu.SyncThreads() barrier. This is restricted by the C# state machine model.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "CrossBarrierGotoProhibited",
+    "id": "GSH0040",
+    "title": "goto statements cannot cross barrier synchronization",
+    "messageFormat": "A goto statement cannot jump across a Gpu.SyncThreads() barrier. Ensure the goto label and statement are within the same barrier phase.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "CrossBarrierLocalPointerProhibited",
+    "id": "GSH0041",
+    "title": "Stack pointers cannot be held across barrier synchronization",
+    "messageFormat": "A pointer to a local variable or stackalloc block cannot cross a Gpu.SyncThreads() barrier because the CPU emulator rewinds the stack frame.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "ExternalBarrierCallProhibited",
+    "id": "GSH0042",
+    "title": "Gpu.SyncThreads() cannot be called from external helper methods",
+    "messageFormat": "Gpu.SyncThreads() can only be called directly within a [GpuKernel] method or its local functions. Calling it from external methods breaks state machine generation.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "FixedBlockBarrierProhibited",
+    "id": "GSH0043",
+    "title": "Gpu.SyncThreads() cannot be called inside a fixed block",
+    "messageFormat": "Gpu.SyncThreads() cannot be called inside a fixed block. The GC pin is released when the CPU emulator suspends, causing potential access violations upon resume.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "KernelParameterRefStructProhibited",
+    "id": "GSH0044",
+    "title": "ref, out, in, and ref struct parameters are prohibited in GPU kernels",
+    "messageFormat": "The parameter '{0}' uses a prohibited modifier (ref/out/in) or type (ref struct). These cannot be saved to the state machine context across barriers.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "RecursiveBarrierProhibited",
+    "id": "GSH0045",
+    "title": "Recursive local functions cannot contain Gpu.SyncThreads()",
+    "messageFormat": "The local function '{0}' is recursive and contains or calls Gpu.SyncThreads(). This prevents static AST inlining for state machine generation.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "AsyncYieldInKernelProhibited",
+    "id": "GSH0046",
+    "title": "async, await, and yield return are prohibited in GPU kernels",
+    "messageFormat": "The async, await, and yield keywords are not supported in [GpuKernel] methods because they conflict with the G# state machine generator.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "LockStatementInKernelProhibited",
+    "id": "GSH0047",
+    "title": "The lock statement is prohibited in GPU kernels",
+    "messageFormat": "The lock statement is not supported in GPU kernels. Use atomic operations provided by the Gpu.Atomic class instead.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
   }
 ]

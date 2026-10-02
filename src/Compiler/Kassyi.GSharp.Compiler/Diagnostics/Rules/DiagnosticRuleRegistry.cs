@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 internal static class DiagnosticRuleRegistry
