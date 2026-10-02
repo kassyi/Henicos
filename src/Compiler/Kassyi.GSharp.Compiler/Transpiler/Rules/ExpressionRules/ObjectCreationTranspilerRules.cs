@@ -62,6 +62,11 @@ internal static class ObjectCreationHelper
         ArgumentListSyntax? argumentList,
         ref TranspileContext context)
     {
+        if (typeSymbol is null or IErrorTypeSymbol || typeSymbol.TypeKind == TypeKind.Error)
+        {
+            return;
+        }
+
         if (typeSymbol is { Name: TypeConstants.SharedMemoryType } &&
             typeSymbol.ContainingNamespace.IsCoreNamespace())
         {
