@@ -1,6 +1,6 @@
 using Kassyi.GSharp.Stdlib.Math.Tests.Kernels;
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.GpuBigInt;
 
 [Trait("Category", "GpuExecution")]
 public class GpuMacroTests

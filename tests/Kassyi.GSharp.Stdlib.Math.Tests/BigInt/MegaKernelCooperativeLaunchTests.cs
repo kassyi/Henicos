@@ -1,9 +1,9 @@
 using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Algorithms;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Expressions;
 using Xunit;
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.GpuBigInt;
 
 [Trait("Category", "GpuExecution")]
 public class MegaKernelCooperativeLaunchTests

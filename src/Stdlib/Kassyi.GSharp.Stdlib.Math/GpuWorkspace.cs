@@ -1,7 +1,7 @@
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Providers;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Providers;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Runtime;
 using Kassyi.GSharp.Stdlib.Math.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math;

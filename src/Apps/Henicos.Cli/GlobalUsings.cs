@@ -9,4 +9,4 @@ global using System.Threading.Tasks;
 global using BenchmarkDotNet.Attributes;
 global using Kassyi.GSharp.Core;
 global using Kassyi.GSharp.Stdlib.Math;
-global using Kassyi.GSharp.Stdlib.Math.BigInt;
+global using Kassyi.GSharp.Stdlib.Math.GpuBigInt;

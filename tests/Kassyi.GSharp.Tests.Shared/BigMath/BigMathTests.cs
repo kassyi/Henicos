@@ -4,8 +4,8 @@ using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Stdlib.Math.BigFloat;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt;
+using Kassyi.GSharp.Stdlib.Math.GpuBigFloat;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.BigMath;
@@ -54,7 +54,7 @@ public class BigMathTests : TranspilerTestBase
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         var uInt = new GpuUIntBigInteger(context, 4); // 4 words
         var uFloat = new GpuBigUFloat(uInt, 0);
-        using var bigFloat = new GpuBigFloat(uFloat, false);
+        var bigFloat = new GpuBigFloat(uFloat, false);
 
         Assert.NotNull(bigFloat);
         Assert.Equal(0, bigFloat.UFloat.Exponent);

@@ -1,10 +1,10 @@
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Kernels;
 using Xunit;
 
-namespace Kassyi.GSharp.Stdlib.Math.Tests.BigInt;
+namespace Kassyi.GSharp.Stdlib.Math.Tests.GpuBigInt;
 
 public class BlockAddSubParallelTests
 {
