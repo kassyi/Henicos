@@ -1,5 +1,5 @@
-using Kassyi.GSharp.Stdlib.Math.BigFloat.Providers;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Runtime;
+using Kassyi.GSharp.Stdlib.Math.GpuBigFloat.Providers;
+using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Runtime;
 
 namespace Henicos.Benchmarks;
 
@@ -40,7 +40,7 @@ public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
 
     protected override void ExecuteBatchMultiply()
     {
-        var execCtx = new BigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
+        var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
         for (var i = 0; i < BatchSize; i++)
         {
             GSharpAotFloatProvider.Instance.Multiply(ref execCtx, _leftSigs[i].Handle, 1000, false,
@@ -50,7 +50,7 @@ public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
 
     protected override void ExecuteBatchDivide()
     {
-        var execCtx = new BigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
+        var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
         for (var i = 0; i < BatchSize; i++)
         {
             GSharpAotFloatProvider.Instance.Divide(ref execCtx, _leftSigs[i].Handle, 1000, false, _rightSigs[i].Handle,
@@ -60,7 +60,7 @@ public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
 
     protected override void ExecuteBatchSqrt()
     {
-        var execCtx = new BigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
+        var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
         for (var i = 0; i < BatchSize; i++)
         {
             GSharpAotFloatProvider.Instance.Sqrt(ref execCtx, _leftSigs[i].Handle, 1000, false, _resultSigs[i].Handle,

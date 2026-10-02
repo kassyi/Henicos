@@ -118,7 +118,7 @@ public static class GpuChudnovskyPi
 
         // 1. Compute Binary Splitting tree using Hybrid CPU/GPU execution
         var progressState = new ProgressState(totalTerms, digits);
-        using var pqt = ComputeTree(0, totalTerms, workspace, thresholdTerms, progressState);
+        var pqt = ComputeTree(0, totalTerms, workspace, thresholdTerms, progressState);
         var treeTimeMs = totalStopwatch.ElapsedMilliseconds;
         Logger.Info("GPU-Pi", $"Binary Splitting Tree computed in {treeTimeMs} ms");
 
@@ -350,10 +350,10 @@ public static class GpuChudnovskyPi
 
         var m = (a + b) / 2;
         var swLeft = Stopwatch.StartNew();
-        using var left = ComputeTree(a, m, workspace, thresholdTerms, state);
+        var left = ComputeTree(a, m, workspace, thresholdTerms, state);
         swLeft.Stop();
         var swRight = Stopwatch.StartNew();
-        using var right = ComputeTree(m, b, workspace, thresholdTerms, state);
+        var right = ComputeTree(m, b, workspace, thresholdTerms, state);
         swRight.Stop();
 
         var swMerge = Stopwatch.StartNew();
