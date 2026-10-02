@@ -77,32 +77,32 @@ internal static class WrapperEmitter
         switch (isDevicePtr)
         {
             case true when (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out):
-            {
-                if (p.HasExplicitDefaultValue)
                 {
-                    defaultValue = "default";
+                    if (p.HasExplicitDefaultValue)
+                    {
+                        defaultValue = "default";
+                    }
+
+                    return new InteropParameterInfo(string.Empty, null, true, defaultValue);
                 }
-
-                return new InteropParameterInfo(string.Empty, null, true, defaultValue);
-            }
             case true when CudaLayoutRules.IsCustomStruct(p.Type):
-            {
-                var tempWriter = new SourceWriter();
-                tempWriter.AppendAotStructPath(p.Type);
-                var rawTypeName = tempWriter.ToString();
-                return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
-            }
-            default:
-            {
-                var modifier = p.RefKind switch
                 {
-                    RefKind.Ref => "ref",
-                    RefKind.Out => "out",
-                    _ => string.Empty
-                };
+                    var tempWriter = new SourceWriter();
+                    tempWriter.AppendAotStructPath(p.Type);
+                    var rawTypeName = tempWriter.ToString();
+                    return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
+                }
+            default:
+                {
+                    var modifier = p.RefKind switch
+                    {
+                        RefKind.Ref => "ref",
+                        RefKind.Out => "out",
+                        _ => string.Empty
+                    };
 
-                return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
-            }
+                    return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
+                }
         }
     }
 

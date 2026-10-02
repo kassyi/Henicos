@@ -194,25 +194,25 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
                 ReportGsh0032(loopStmt, ref context);
                 return;
             case BinaryExpressionSyntax binaryExpr:
-            {
-                var leftIsConst = IsStaticallyDeterministic(binaryExpr.Left, ref context);
-                var rightIsConst = IsStaticallyDeterministic(binaryExpr.Right, ref context);
-                if (!leftIsConst && !rightIsConst)
                 {
-                    ReportGsh0032(loopStmt, ref context);
-                }
+                    var leftIsConst = IsStaticallyDeterministic(binaryExpr.Left, ref context);
+                    var rightIsConst = IsStaticallyDeterministic(binaryExpr.Right, ref context);
+                    if (!leftIsConst && !rightIsConst)
+                    {
+                        ReportGsh0032(loopStmt, ref context);
+                    }
 
-                break;
-            }
+                    break;
+                }
             default:
-            {
-                if (!IsStaticallyDeterministic(condition, ref context))
                 {
-                    ReportGsh0032(loopStmt, ref context);
-                }
+                    if (!IsStaticallyDeterministic(condition, ref context))
+                    {
+                        ReportGsh0032(loopStmt, ref context);
+                    }
 
-                break;
-            }
+                    break;
+                }
         }
     }
 
@@ -229,15 +229,15 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
             switch (expr)
             {
                 case IdentifierNameSyntax idName:
-                {
-                    var symbol = context.SemanticModel.GetSymbol(idName);
-                    if (symbol is IParameterSymbol paramSymbol && paramSymbol.HasAttribute(KnownAttributes.Constant))
                     {
-                        return true;
-                    }
+                        var symbol = context.SemanticModel.GetSymbol(idName);
+                        if (symbol is IParameterSymbol paramSymbol && paramSymbol.HasAttribute(KnownAttributes.Constant))
+                        {
+                            return true;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 case BinaryExpressionSyntax binaryExpr:
                     return IsStaticallyDeterministic(binaryExpr.Left, ref context) &&
                            IsStaticallyDeterministic(binaryExpr.Right, ref context);
