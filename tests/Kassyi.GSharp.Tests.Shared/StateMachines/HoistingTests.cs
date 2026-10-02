@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 public class HoistingTests
 {
     [Fact]
-    [Trait("Category", "StateMachineLowering")]
+    [Trait("Category", "Compiler")]
     public Task Hoist_VariablesAcrossBarrier()
     {
         var code = """
