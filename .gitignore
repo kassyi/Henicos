@@ -67,6 +67,7 @@ dist-ssr/
 # --- BEGIN Antigravity global AGENTS MANAGED FILES ---
 # These files are auto-synced by setup.js. DO NOT EDIT MANUALLY.
 /.agents/bin/
+/.agents/skills/architecture-mapper/
 /.agents/skills/code-review/
 /.agents/skills/design-pattern-cva/
 /.agents/skills/file-enumerator/
