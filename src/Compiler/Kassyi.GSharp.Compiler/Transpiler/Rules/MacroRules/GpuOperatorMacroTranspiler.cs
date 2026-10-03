@@ -48,7 +48,7 @@ internal static class GpuOperatorMacroTranspiler
             return castExpr.Expression;
         }
 
-        var op = semanticModel.GetOperation(expression);
+        var op = semanticModel.GetSafeOperation(expression);
         if (op is IConversionOperation conv)
         {
             return conv.Operand.Syntax as ExpressionSyntax ?? expression;

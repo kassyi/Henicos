@@ -218,6 +218,20 @@ internal static class StatementTranspilers
     public static void TranspileContinueStatement(ContinueStatementSyntax node, ref TranspileContext context) =>
         context.Emitter.Writer.Append("continue;");
 
+    public static void TranspileGotoStatement(GotoStatementSyntax node, ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append("goto ");
+        context.Visitor.Visit(node.Expression);
+        context.Emitter.Writer.AppendSemiColonLine();
+    }
+
+    public static void TranspileLabeledStatement(LabeledStatementSyntax node, ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append(node.Identifier.ValueText);
+        context.Emitter.Writer.AppendLine(":");
+        context.Visitor.Visit(node.Statement);
+    }
+
     /// <summary>
     /// Transpiles a return statement, hoisting any inline declarations from the returned expression.
     /// </summary>

@@ -414,6 +414,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitContinueStatement(ContinueStatementSyntax node)
         => StatementTranspilers.TranspileContinueStatement(node, ref Context);
 
+    public override void VisitGotoStatement(GotoStatementSyntax node)
+        => StatementTranspilers.TranspileGotoStatement(node, ref Context);
+
+    public override void VisitLabeledStatement(LabeledStatementSyntax node)
+        => StatementTranspilers.TranspileLabeledStatement(node, ref Context);
+
+    public override void VisitEmptyStatement(EmptyStatementSyntax node) => Context.Emitter.Writer.AppendSemiColonLine();
+
     public override void VisitReturnStatement(ReturnStatementSyntax node)
         => StatementTranspilers.TranspileReturnStatement(node, ref Context);
 

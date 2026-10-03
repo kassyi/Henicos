@@ -1,23 +1,105 @@
 namespace Kassyi.GSharp.Compiler.Extensions;
 
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
+
 /// <summary>Provides zero-allocation extension methods for Roslyn <see cref="SemanticModel"/> queries.</summary>
 internal static class SemanticModelExtensions
 {
+    private static bool IsInSameTree(SemanticModel semanticModel, SyntaxNode node) =>
+        node.SyntaxTree == semanticModel.SyntaxTree;
+
+    private static SyntaxNode? FindOriginalNode(SemanticModel semanticModel, SyntaxNode node)
+    {
+        if (!node.HasAnnotations("GSharpOriginalSpan"))
+        {
+            return null;
+        }
+
+        foreach (var ann in node.GetAnnotations("GSharpOriginalSpan"))
+        {
+            var parts = ann.Data?.Split(',');
+            if (parts is { Length: 2 } && int.TryParse(parts[0], out var start) && int.TryParse(parts[1], out var length))
+            {
+                var span = new TextSpan(start, length);
+                return semanticModel.SyntaxTree.GetRoot().FindNode(span, getInnermostNodeForTie: true);
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// Gets the resolved symbol for the specified syntax node, or null if unresolvable.
     /// </summary>
-    public static ISymbol? GetSymbol(this SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken = default) =>
-        semanticModel.GetSymbolInfo(node, cancellationToken).Symbol;
+    public static ISymbol? GetSymbol(this SemanticModel semanticModel, SyntaxNode node,
+        CancellationToken cancellationToken = default)
+    {
+        if (IsInSameTree(semanticModel, node))
+        {
+            return semanticModel.GetSymbolInfo(node, cancellationToken).Symbol;
+        }
+
+        var original = FindOriginalNode(semanticModel, node);
+        return original != null ? semanticModel.GetSymbolInfo(original, cancellationToken).Symbol : null;
+    }
 
     /// <summary>
     /// Gets the resolved type symbol for the specified syntax node, or null if unresolvable.
     /// </summary>
-    public static ITypeSymbol? GetTypeSymbol(this SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken = default) =>
-        semanticModel.GetTypeInfo(node, cancellationToken).Type;
+    public static ITypeSymbol? GetTypeSymbol(this SemanticModel semanticModel, SyntaxNode node,
+        CancellationToken cancellationToken = default)
+    {
+        if (IsInSameTree(semanticModel, node))
+        {
+            return semanticModel.GetTypeInfo(node, cancellationToken).Type;
+        }
+
+        var original = FindOriginalNode(semanticModel, node);
+        return original != null ? semanticModel.GetTypeInfo(original, cancellationToken).Type : null;
+    }
 
     /// <summary>
     /// Gets the declared symbol for the specified syntax node cast to <typeparamref name="T"/>, or null if unresolvable or of different type.
     /// </summary>
-    public static T? GetDeclaredSymbol<T>(this SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken = default) where T : class, ISymbol =>
-        semanticModel.GetDeclaredSymbol(node, cancellationToken) as T;
+    public static T? GetDeclaredSymbol<T>(this SemanticModel semanticModel, SyntaxNode node,
+        CancellationToken cancellationToken = default) where T : class, ISymbol
+    {
+        if (IsInSameTree(semanticModel, node))
+        {
+            return semanticModel.GetDeclaredSymbol(node, cancellationToken) as T;
+        }
+
+        var original = FindOriginalNode(semanticModel, node);
+        return original != null ? semanticModel.GetDeclaredSymbol(original, cancellationToken) as T : null;
+    }
+
+    /// <summary>
+    /// Gets the constant value for the specified expression, or an empty Optional if unresolvable.
+    /// </summary>
+    public static Optional<object?> GetSafeConstantValue(this SemanticModel semanticModel, SyntaxNode node,
+        CancellationToken cancellationToken = default)
+    {
+        if (IsInSameTree(semanticModel, node))
+        {
+            return semanticModel.GetConstantValue(node, cancellationToken);
+        }
+
+        var original = FindOriginalNode(semanticModel, node);
+        return original != null ? semanticModel.GetConstantValue(original, cancellationToken) : default;
+    }
+
+    /// <summary>
+    /// Gets the operation for the specified expression, or null if unresolvable.
+    /// </summary>
+    public static IOperation? GetSafeOperation(this SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken = default)
+    {
+        if (IsInSameTree(semanticModel, node))
+        {
+            return semanticModel.GetOperation(node, cancellationToken);
+        }
+
+        var original = FindOriginalNode(semanticModel, node);
+        return original != null ? semanticModel.GetOperation(original, cancellationToken) : null;
+    }
 }

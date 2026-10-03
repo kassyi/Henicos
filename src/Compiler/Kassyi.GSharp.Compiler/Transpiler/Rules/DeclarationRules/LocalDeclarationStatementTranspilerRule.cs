@@ -77,7 +77,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
             return null;
         }
 
-        var constantValue = semanticModel.GetConstantValue(sizeArg);
+        var constantValue = semanticModel.GetSafeConstantValue(sizeArg);
         return new SharedMemoryAllocation(
             declarator,
             sizeArg,

@@ -98,7 +98,7 @@ internal static class MacroTranspilerHelper
 
     public static bool TryGetConstantInt(ExpressionSyntax expression, SemanticModel semanticModel, out int value)
     {
-        var constant = semanticModel.GetConstantValue(expression);
+        var constant = semanticModel.GetSafeConstantValue(expression);
         if (constant.Value is int intValue)
         {
             value = intValue;

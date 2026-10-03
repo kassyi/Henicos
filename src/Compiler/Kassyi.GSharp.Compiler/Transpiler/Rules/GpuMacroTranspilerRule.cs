@@ -34,7 +34,7 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 
         var argExpr = node.ArgumentList.Arguments[0].Expression;
 
-        var constantValue = context.Query.SemanticModel.GetConstantValue(argExpr);
+        var constantValue = context.Query.SemanticModel.GetSafeConstantValue(argExpr);
         if (constantValue is { HasValue: true, Value: string ptxString })
         {
             context.Emitter.Writer.Append(ptxString);

@@ -158,7 +158,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
             return false;
         }
 
-        var constVal = context.Query.SemanticModel.GetConstantValue(sizeExpr);
+        var constVal = context.Query.SemanticModel.GetSafeConstantValue(sizeExpr);
         if (!constVal.HasValue)
         {
             context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, sizeExpr, errorLabel);
