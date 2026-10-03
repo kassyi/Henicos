@@ -44,7 +44,7 @@ public const string DebugName_N = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(48)]
 public global::System.Int32 N;
 }
-public static unsafe void Marshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 if (host.S != null)
 {
@@ -57,12 +57,12 @@ else
 int size = host.S.Length * sizeof(global::System.Single);
 if (size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.S, size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.S, (IntPtr)size, hStream));
 allocatedPtrs?.Add(native.S);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.S, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.S, handle.AddrOfPinnedObject(), size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.S, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
 }
 finally
 {
@@ -82,12 +82,12 @@ else
 int size = host.X.Length * sizeof(global::System.Single);
 if (size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.X, size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.X, (IntPtr)size, hStream));
 allocatedPtrs?.Add(native.X);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.X, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.X, handle.AddrOfPinnedObject(), size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.X, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
 }
 finally
 {
@@ -107,12 +107,12 @@ else
 int size = host.T.Length * sizeof(global::System.Single);
 if (size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.T, size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.T, (IntPtr)size, hStream));
 allocatedPtrs?.Add(native.T);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.T, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.T, handle.AddrOfPinnedObject(), size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.T, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
 }
 finally
 {
@@ -134,12 +134,12 @@ else
 int size = host.CallResult.Length * sizeof(global::System.Single);
 if (size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.CallResult, size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.CallResult, (IntPtr)size, hStream));
 allocatedPtrs?.Add(native.CallResult);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CallResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.CallResult, handle.AddrOfPinnedObject(), size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.CallResult, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
 }
 finally
 {
@@ -159,12 +159,12 @@ else
 int size = host.PutResult.Length * sizeof(global::System.Single);
 if (size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out native.PutResult, size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.PutResult, (IntPtr)size, hStream));
 allocatedPtrs?.Add(native.PutResult);
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.PutResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(native.PutResult, handle.AddrOfPinnedObject(), size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.PutResult, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));
 }
 finally
 {
@@ -175,7 +175,7 @@ handle.Free();
 }
 native.N = host.N;
 }
-public static unsafe void Unmarshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr)
+public static unsafe void Unmarshal_BlackScholesKernels_BlackScholesContext(ref global::Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext host, ref AotContexts.BlackScholes native, bool isDevicePtr, IntPtr hStream = default)
 {
 if (host.S != null && !isDevicePtr && native.S != IntPtr.Zero)
 {
@@ -185,7 +185,7 @@ if (size > 0)
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.S, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.S, size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.S, (IntPtr)size, hStream));
 }
 finally
 {
@@ -201,7 +201,7 @@ if (size > 0)
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.X, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.X, size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.X, (IntPtr)size, hStream));
 }
 finally
 {
@@ -217,7 +217,7 @@ if (size > 0)
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.T, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.T, size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.T, (IntPtr)size, hStream));
 }
 finally
 {
@@ -235,7 +235,7 @@ if (size > 0)
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.CallResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.CallResult, size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.CallResult, (IntPtr)size, hStream));
 }
 finally
 {
@@ -251,7 +251,7 @@ if (size > 0)
 var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.PutResult, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(handle.AddrOfPinnedObject(), native.PutResult, size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.PutResult, (IntPtr)size, hStream));
 }
 finally
 {
@@ -310,7 +310,7 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.BlackScholes native_ctx = default;
-AotContexts.Marshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref native_ctx, false, ctx_allocatedPtrs);
+AotContexts.Marshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref native_ctx, false, ctx_allocatedPtrs, hStream);
 // Marshal scalar struct: ctx
 kernelParams[0] = &native_ctx;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -322,11 +322,11 @@ hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref native_ctx, false);
+AotContexts.Unmarshal_BlackScholesKernels_BlackScholesContext(ref ctx, ref native_ctx, false, hStream);
 }
 finally
 {
-foreach (var ptr in ctx_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
+foreach (var ptr in ctx_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 }
 }
 }

@@ -59,13 +59,13 @@ public const string DebugName_BoolVal = "global::System.Boolean";
 [System.Runtime.InteropServices.FieldOffset(8)]
 public global::System.Boolean BoolVal;
 }
-public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 native.IntVal = host.IntVal;
 native.FloatVal = host.FloatVal;
 native.BoolVal = host.BoolVal;
 }
-public static unsafe void Unmarshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr)
+public static unsafe void Unmarshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
 host.IntVal = native.IntVal;
 host.FloatVal = native.FloatVal;

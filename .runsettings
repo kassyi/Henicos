@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RunSettings>
   <RunConfiguration>
-    <MaxCpuCount>0</MaxCpuCount>
+    <MaxCpuCount>1</MaxCpuCount>
   </RunConfiguration>
-  <!-- xUnit configuration -->
-  <xUnit>
-    <ParallelizeAssembly>true</ParallelizeAssembly>
-    <ParallelizeTestCollections>true</ParallelizeTestCollections>
-    <MaxParallelThreads>0</MaxParallelThreads>
-  </xUnit>
 </RunSettings>

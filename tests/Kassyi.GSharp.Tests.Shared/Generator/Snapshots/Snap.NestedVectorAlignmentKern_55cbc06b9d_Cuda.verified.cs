@@ -94,7 +94,7 @@ public const string DebugName_Field5_Double2 = "global::Kassyi.GSharp.Core.Doubl
 [System.Runtime.InteropServices.FieldOffset(48)]
 public fixed byte Field5_Double2[16];
 }
-public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 native.Field1_Byte = host.Field1_Byte;
 fixed (byte* pField = native.Field2_Float2)
@@ -111,7 +111,7 @@ fixed (byte* pField = native.Field5_Double2)
 *((global::Kassyi.GSharp.Core.Double2*)pField) = host.Field5_Double2;
 }
 }
-public static unsafe void Unmarshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr)
+public static unsafe void Unmarshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
 host.Field1_Byte = native.Field1_Byte;
 fixed (byte* pField = native.Field2_Float2)
@@ -211,12 +211,13 @@ void** kernelParams = stackalloc void*[1];
 int offsets_size = offsets.Length * sizeof(global::System.Int32);
 if (offsets_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_offsets, offsets_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_offsets, (IntPtr)offsets_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_offsets = System.Runtime.InteropServices.GCHandle.Alloc(offsets, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_offsets = handle_offsets.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_offsets, p_offsets, offsets_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_offsets, p_offsets, (IntPtr)offsets_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -240,7 +241,8 @@ System.Runtime.InteropServices.GCHandle handleBack_offsets = System.Runtime.Inte
 try
 {
 IntPtr p_offsets = handleBack_offsets.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_offsets, d_offsets, offsets_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_offsets, d_offsets, (IntPtr)offsets_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -250,7 +252,7 @@ handleBack_offsets.Free();
 }
 finally
 {
-if (d_offsets != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_offsets);
+if (d_offsets != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_offsets, hStream);
 }
 }
 }
@@ -351,12 +353,13 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 AotContexts.GEN56_AlignmentTestStruct native_data = default;
-AotContexts.Marshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false, data_allocatedPtrs);
+AotContexts.Marshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false, data_allocatedPtrs, hStream);
 // Marshal ref/out struct: data
 int data_size = sizeof(AotContexts.GEN56_AlignmentTestStruct);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
 // Fast zero-allocation copy to device
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_data, (IntPtr)(&native_data), data_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)(&native_data), (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 kernelParams[0] = &d_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -368,13 +371,14 @@ kernelParams,
 IntPtr.Zero // Extra
 ));
 // Fast zero-allocation copy from device
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&native_data), d_data, data_size));
-AotContexts.Unmarshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false);
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)(&native_data), d_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+AotContexts.Unmarshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false, hStream);
 }
 finally
 {
-foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
-if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
+foreach (var ptr in data_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
+if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 }
 }
 }

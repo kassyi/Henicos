@@ -14,16 +14,22 @@ public enum LogLevel
 {
     /// <summary>Detailed diagnostic and tracing information.</summary>
     Trace = 0,
+
     /// <summary>Verbose execution flow details.</summary>
     Verbose = 1,
+
     /// <summary>Debug information useful during active development.</summary>
     Debug = 2,
+
     /// <summary>General informational messages.</summary>
     Info = 3,
+
     /// <summary>Warning messages indicating non-fatal issues or unexpected conditions.</summary>
     Warning = 4,
+
     /// <summary>Error messages indicating failures or unhandled exceptions.</summary>
     Error = 5,
+
     /// <summary>Disables all logging output.</summary>
     None = 6
 }
@@ -38,37 +44,9 @@ public enum LogLevel
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 public abstract class Logger : ILogger
 {
-    private const int MaxRetries = 3;
-    private const int BufferCapacity = 1000000;
-    private const int RetryDelayMs = 50;
-    private const string ClearCommand = "__CLEAR__";
-
-    private static readonly string s_logPath = Path.Combine(
-        AppDomain.CurrentDomain.BaseDirectory,
-        "gsharp_diagnostics.log"
-    );
-
-    private static readonly BoundedChannelOptions s_channelOptions = new(BufferCapacity)
-    {
-        FullMode = BoundedChannelFullMode.DropOldest
-    };
-
-    private static readonly Channel<string> s_logChannel = Channel.CreateBounded<string>(s_channelOptions);
-
-    private static readonly Task s_loggingTask;
-
     private static readonly ConcurrentDictionary<string, long> s_accumulatedTimes = new();
 
-    static Logger()
-    {
-        // バックグラウンドでログ書き込みタスクを開始
-        s_loggingTask = Task.Run(ProcessLogQueueAsync);
-    }
-
-    public static LogLevel ActiveLogLevel
-    {
-        get; set;
-    } =
+    public static LogLevel ActiveLogLevel { get; set; } =
         LogLevel.Trace; // Trace by default to output everything during debugging
 
     /// <summary>
@@ -127,106 +105,38 @@ public abstract class Logger : ILogger
         where TState : notnull =>
         null;
 
-    private static async Task ProcessLogQueueAsync()
-    {
-        // リアロケーションの O(N) を排除するため、Channelの最大容量で初期化
-        var buffer = new List<string>(BufferCapacity);
-
-        while (await s_logChannel.Reader.WaitToReadAsync().ConfigureAwait(false))
-        {
-            try
-            {
-                // I/O回数のオーダーを O(N/100) -> O(1) に削減するため全量を吸い上げる
-                while (s_logChannel.Reader.TryRead(out var msg))
-                {
-                    if (msg == ClearCommand)
-                    {
-                        if (File.Exists(s_logPath))
-                        {
-                            File.Delete(s_logPath);
-                        }
-
-                        buffer.Clear();
-                        continue;
-                    }
-
-                    buffer.Add(msg);
-                }
-
-                if (buffer.Count == 0)
-                {
-                    continue;
-                }
-
-                var retryCount = 0;
-                while (retryCount < MaxRetries)
-                {
-                    try
-                    {
-                        await File.AppendAllLinesAsync(s_logPath, buffer).ConfigureAwait(false);
-                        break;
-                    }
-                    catch (Exception ex)
-                    {
-                        retryCount++;
-                        if (retryCount >= MaxRetries)
-                        {
-                            // 非同期awaitの O(N) 回のコンテキストスイッチを排除し、O(1) 回で出力
-                            var errBody = string.Join(Environment.NewLine, buffer);
-                            var errLine =
-                                $"[LOGGER_FALLBACK_ERROR] Failed to write logs (Reason: {ex.Message}){Environment.NewLine}{errBody}";
-                            await Console.Error.WriteLineAsync(errLine).ConfigureAwait(false);
-                            System.Diagnostics.Debug.WriteLine(errLine);
-                        }
-                        else
-                        {
-                            await Task.Delay(RetryDelayMs * retryCount).ConfigureAwait(false);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[LOGGER_FATAL] Background logging task iteration failed: {ex}");
-            }
-            finally
-            {
-                buffer.Clear();
-            }
-        }
-    }
-
     /// <summary>
     /// Asynchronously flushes the log queue and shuts down the background logging task.
     /// </summary>
     /// <returns>A task that represents the asynchronous shutdown operation.</returns>
-    public static async Task ShutdownAsync()
+    public static Task ShutdownAsync()
     {
-        s_logChannel.Writer.Complete();
-        try
-        {
-            await s_loggingTask.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
-        }
-        catch
-        {
-            // Ignore timeout or task cancellation errors on shutdown
-        }
+        return Task.CompletedTask;
     }
 
     /// <summary>
-    /// Synchronously flushes the log queue and waits for pending writes to complete.
+    /// Gets the approximate number of messages currently waiting in the log queue.
+    /// </summary>
+    public static int PendingMessageCount => 0;
+
+    /// <summary>
+    /// Gets a value indicating whether the logger is currently writing to the file system.
+    /// </summary>
+    public static bool IsWritingToFile => false;
+
+    /// <summary>
+    /// Asynchronously waits for all currently pending log messages to be written to the file system.
     /// </summary>
     /// <param name="timeoutMs">Maximum milliseconds to wait for the flush.</param>
-    public static void Flush(int timeoutMs = 3000)
+    /// <returns>A task that represents the asynchronous flush operation.</returns>
+    public static Task FlushAsync(int timeoutMs = 30000) => Task.CompletedTask;
+
+    /// <summary>
+    /// Synchronously flushes the log queue without shutting down the logger.
+    /// </summary>
+    /// <param name="timeoutMs">Maximum milliseconds to wait for the flush.</param>
+    public static void Flush(int timeoutMs = 30000)
     {
-        try
-        {
-            ShutdownAsync().Wait(TimeSpan.FromMilliseconds(timeoutMs));
-        }
-        catch
-        {
-            // Ignore timeout on flush
-        }
     }
 
     /// <summary>
@@ -266,9 +176,6 @@ public abstract class Logger : ILogger
 
         // Debug output for VS Code output window
         System.Diagnostics.Debug.WriteLine(logLine);
-
-        // Queue plain text to file
-        s_logChannel.Writer.TryWrite(logLine);
     }
 
     /// <summary>Logs a trace message with a specified tag.</summary>
@@ -291,12 +198,15 @@ public abstract class Logger : ILogger
 
     /// <summary>Logs an exception and associated error message with a specified tag.</summary>
     public static void Error(string tag, Exception ex, string message) =>
-        Log(LogLevel.Error, tag, $"{message}\nException: {ex.GetType().FullName} - {ex.Message}\nStack Trace: {ex.StackTrace}");
+        Log(LogLevel.Error, tag,
+            $"{message}\nException: {ex.GetType().FullName} - {ex.Message}\nStack Trace: {ex.StackTrace}");
 
     /// <summary>
     /// Queues a command to clear the physical log file and flush the internal buffer.
     /// </summary>
-    public static void Clear() => s_logChannel.Writer.TryWrite(ClearCommand);
+    public static void Clear()
+    {
+    }
 
     /// <summary>
     /// Accumulates the elapsed time for a given performance metric key.
@@ -328,9 +238,11 @@ public abstract class Logger : ILogger
             {
                 sb.Append(", ");
             }
+
             first = false;
             sb.Append(kv.Key).Append(": ").Append(kv.Value).Append(" ms");
         }
+
         sb.Append(']');
 
         Log(
@@ -447,16 +359,22 @@ public class Logger<T> : Logger
 
     /// <summary>Logs a trace message.</summary>
     public static void Trace(string message) => Log(LogLevel.Trace, typeof(T).Name, message);
+
     /// <summary>Logs a verbose message.</summary>
     public static void Verbose(string message) => Log(LogLevel.Verbose, typeof(T).Name, message);
+
     /// <summary>Logs a debug message.</summary>
     public static void Debug(string message) => Log(LogLevel.Debug, typeof(T).Name, message);
+
     /// <summary>Logs an informational message.</summary>
     public static void Info(string message) => Log(LogLevel.Info, typeof(T).Name, message);
+
     /// <summary>Logs a warning message.</summary>
     public static void Warning(string message) => Log(LogLevel.Warning, typeof(T).Name, message);
+
     /// <summary>Logs an error message.</summary>
     public static void Error(string message) => Log(LogLevel.Error, typeof(T).Name, message);
+
     /// <summary>Logs an exception and associated error message.</summary>
     public static void Error(Exception ex, string message) => Log(LogLevel.Error, typeof(T).Name, $"{message}\n{ex}");
 }

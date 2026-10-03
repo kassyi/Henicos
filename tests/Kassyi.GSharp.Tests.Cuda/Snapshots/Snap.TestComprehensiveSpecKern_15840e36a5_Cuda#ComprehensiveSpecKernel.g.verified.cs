@@ -53,7 +53,7 @@ public const string DebugName_DoubleValue = "global::System.Double";
 [System.Runtime.InteropServices.FieldOffset(40)]
 public global::System.Double DoubleValue;
 }
-public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 native.BooleanValue = host.BooleanValue;
 native.ByteValue = host.ByteValue;
@@ -67,7 +67,7 @@ native.ULongValue = host.ULongValue;
 native.FloatValue = host.FloatValue;
 native.DoubleValue = host.DoubleValue;
 }
-public static unsafe void Unmarshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr)
+public static unsafe void Unmarshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, IntPtr hStream = default)
 {
 host.BooleanValue = native.BooleanValue;
 host.ByteValue = native.ByteValue;
@@ -303,12 +303,13 @@ void** kernelParams = stackalloc void*[6];
 int particles_size = particles.Length * sizeof(global::DebugReduc.PhysicsVector);
 if (particles_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_particles, particles_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_particles, (IntPtr)particles_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_particles = System.Runtime.InteropServices.GCHandle.Alloc(particles, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_particles = handle_particles.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_particles, p_particles, particles_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_particles, p_particles, (IntPtr)particles_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -318,19 +319,20 @@ handle_particles.Free();
 kernelParams[0] = &d_particles;
 // Marshal ref/out scalar: totalMagnitude
 int totalMagnitude_size = sizeof(global::System.Single);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_totalMagnitude, totalMagnitude_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_totalMagnitude, (IntPtr)totalMagnitude_size, hStream));
 // Fast zero-allocation copy to device
 fixed (global::System.Single* p_totalMagnitude_temp = &totalMagnitude)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_totalMagnitude, (IntPtr)p_totalMagnitude_temp, totalMagnitude_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_totalMagnitude, (IntPtr)p_totalMagnitude_temp, (IntPtr)totalMagnitude_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 kernelParams[1] = &d_totalMagnitude;
 // Marshal ref/out scalar: successFlag
 int successFlag_size = sizeof(global::System.Boolean);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_successFlag, successFlag_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_successFlag, (IntPtr)successFlag_size, hStream));
 kernelParams[2] = &d_successFlag;
 AotContexts.SpecTypes native_largeStructVal = default;
-AotContexts.Marshal_SpecTypes(ref largeStructVal, ref native_largeStructVal, false, largeStructVal_allocatedPtrs);
+AotContexts.Marshal_SpecTypes(ref largeStructVal, ref native_largeStructVal, false, largeStructVal_allocatedPtrs, hStream);
 // Marshal scalar struct: largeStructVal
 kernelParams[3] = &native_largeStructVal;
 // Marshal scalar: particleCount
@@ -353,7 +355,8 @@ System.Runtime.InteropServices.GCHandle handleBack_particles = System.Runtime.In
 try
 {
 IntPtr p_particles = handleBack_particles.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_particles, d_particles, particles_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_particles, d_particles, (IntPtr)particles_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -363,22 +366,24 @@ handleBack_particles.Free();
 // Fast zero-allocation copy from device for scalar: totalMagnitude
 fixed (global::System.Single* ptr_totalMagnitude = &totalMagnitude)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_totalMagnitude, d_totalMagnitude, totalMagnitude_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_totalMagnitude, d_totalMagnitude, (IntPtr)totalMagnitude_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 successFlag = default;
 // Fast zero-allocation copy from device for scalar: successFlag
 fixed (global::System.Boolean* ptr_successFlag = &successFlag)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_successFlag, d_successFlag, successFlag_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_successFlag, d_successFlag, (IntPtr)successFlag_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-AotContexts.Unmarshal_SpecTypes(ref largeStructVal, ref native_largeStructVal, false);
+AotContexts.Unmarshal_SpecTypes(ref largeStructVal, ref native_largeStructVal, false, hStream);
 }
 finally
 {
-if (d_particles != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_particles);
-if (d_totalMagnitude != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_totalMagnitude);
-if (d_successFlag != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_successFlag);
-foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
+if (d_particles != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_particles, hStream);
+if (d_totalMagnitude != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_totalMagnitude, hStream);
+if (d_successFlag != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_successFlag, hStream);
+foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 }
 }
 }
@@ -454,12 +459,13 @@ void** kernelParams = stackalloc void*[1];
 int data_size = data.Length * sizeof(global::System.Int32);
 if (data_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_data, data_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_data = handle_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_data, p_data, data_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, p_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -482,7 +488,8 @@ System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.Interop
 try
 {
 IntPtr p_data = handleBack_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_data, d_data, data_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_data, d_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -492,7 +499,7 @@ handleBack_data.Free();
 }
 finally
 {
-if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_data);
+if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
 }
 }
 }

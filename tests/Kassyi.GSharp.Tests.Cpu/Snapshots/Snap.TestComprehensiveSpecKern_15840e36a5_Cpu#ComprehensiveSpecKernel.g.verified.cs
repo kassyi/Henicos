@@ -53,7 +53,7 @@ public const string DebugName_DoubleValue = "global::System.Double";
 [System.Runtime.InteropServices.FieldOffset(40)]
 public global::System.Double DoubleValue;
 }
-public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 native.BooleanValue = host.BooleanValue;
 native.ByteValue = host.ByteValue;
@@ -67,7 +67,7 @@ native.ULongValue = host.ULongValue;
 native.FloatValue = host.FloatValue;
 native.DoubleValue = host.DoubleValue;
 }
-public static unsafe void Unmarshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr)
+public static unsafe void Unmarshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, IntPtr hStream = default)
 {
 host.BooleanValue = native.BooleanValue;
 host.ByteValue = native.ByteValue;

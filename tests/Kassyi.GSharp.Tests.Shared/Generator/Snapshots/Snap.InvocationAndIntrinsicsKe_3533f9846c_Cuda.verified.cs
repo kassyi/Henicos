@@ -127,12 +127,13 @@ void** kernelParams = stackalloc void*[4];
 int intBuf_size = intBuf.Length * sizeof(global::System.Int32);
 if (intBuf_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_intBuf, intBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_intBuf, (IntPtr)intBuf_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_intBuf = System.Runtime.InteropServices.GCHandle.Alloc(intBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_intBuf = handle_intBuf.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_intBuf, p_intBuf, intBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_intBuf, p_intBuf, (IntPtr)intBuf_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -144,12 +145,13 @@ kernelParams[0] = &d_intBuf;
 int uintBuf_size = uintBuf.Length * sizeof(global::System.UInt32);
 if (uintBuf_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_uintBuf, uintBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_uintBuf, (IntPtr)uintBuf_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_uintBuf = System.Runtime.InteropServices.GCHandle.Alloc(uintBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_uintBuf = handle_uintBuf.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_uintBuf, p_uintBuf, uintBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_uintBuf, p_uintBuf, (IntPtr)uintBuf_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -161,12 +163,13 @@ kernelParams[1] = &d_uintBuf;
 int longBuf_size = longBuf.Length * sizeof(global::System.Int64);
 if (longBuf_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_longBuf, longBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_longBuf, (IntPtr)longBuf_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_longBuf = System.Runtime.InteropServices.GCHandle.Alloc(longBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_longBuf = handle_longBuf.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_longBuf, p_longBuf, longBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_longBuf, p_longBuf, (IntPtr)longBuf_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -178,12 +181,13 @@ kernelParams[2] = &d_longBuf;
 int ulongBuf_size = ulongBuf.Length * sizeof(global::System.UInt64);
 if (ulongBuf_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_ulongBuf, ulongBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_ulongBuf, (IntPtr)ulongBuf_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_ulongBuf = System.Runtime.InteropServices.GCHandle.Alloc(ulongBuf, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_ulongBuf = handle_ulongBuf.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_ulongBuf, p_ulongBuf, ulongBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_ulongBuf, p_ulongBuf, (IntPtr)ulongBuf_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -207,7 +211,8 @@ System.Runtime.InteropServices.GCHandle handleBack_intBuf = System.Runtime.Inter
 try
 {
 IntPtr p_intBuf = handleBack_intBuf.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_intBuf, d_intBuf, intBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_intBuf, d_intBuf, (IntPtr)intBuf_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -221,7 +226,8 @@ System.Runtime.InteropServices.GCHandle handleBack_uintBuf = System.Runtime.Inte
 try
 {
 IntPtr p_uintBuf = handleBack_uintBuf.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_uintBuf, d_uintBuf, uintBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_uintBuf, d_uintBuf, (IntPtr)uintBuf_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -235,7 +241,8 @@ System.Runtime.InteropServices.GCHandle handleBack_longBuf = System.Runtime.Inte
 try
 {
 IntPtr p_longBuf = handleBack_longBuf.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_longBuf, d_longBuf, longBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_longBuf, d_longBuf, (IntPtr)longBuf_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -249,7 +256,8 @@ System.Runtime.InteropServices.GCHandle handleBack_ulongBuf = System.Runtime.Int
 try
 {
 IntPtr p_ulongBuf = handleBack_ulongBuf.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_ulongBuf, d_ulongBuf, ulongBuf_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_ulongBuf, d_ulongBuf, (IntPtr)ulongBuf_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -259,10 +267,10 @@ handleBack_ulongBuf.Free();
 }
 finally
 {
-if (d_intBuf != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_intBuf);
-if (d_uintBuf != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_uintBuf);
-if (d_longBuf != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_longBuf);
-if (d_ulongBuf != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_ulongBuf);
+if (d_intBuf != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_intBuf, hStream);
+if (d_uintBuf != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_uintBuf, hStream);
+if (d_longBuf != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_longBuf, hStream);
+if (d_ulongBuf != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_ulongBuf, hStream);
 }
 }
 }
@@ -347,12 +355,13 @@ void** kernelParams = stackalloc void*[2];
 int array_size = array.Length * sizeof(global::System.Int32);
 if (array_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_array, array_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_array, (IntPtr)array_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_array = System.Runtime.InteropServices.GCHandle.Alloc(array, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_array = handle_array.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_array, p_array, array_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_array, p_array, (IntPtr)array_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -364,12 +373,13 @@ kernelParams[0] = &d_array;
 int structArray_size = structArray.Length * sizeof(global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct);
 if (structArray_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_structArray, structArray_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_structArray, (IntPtr)structArray_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_structArray = System.Runtime.InteropServices.GCHandle.Alloc(structArray, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_structArray = handle_structArray.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_structArray, p_structArray, structArray_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_structArray, p_structArray, (IntPtr)structArray_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -393,7 +403,8 @@ System.Runtime.InteropServices.GCHandle handleBack_array = System.Runtime.Intero
 try
 {
 IntPtr p_array = handleBack_array.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_array, d_array, array_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_array, d_array, (IntPtr)array_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -407,7 +418,8 @@ System.Runtime.InteropServices.GCHandle handleBack_structArray = System.Runtime.
 try
 {
 IntPtr p_structArray = handleBack_structArray.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_structArray, d_structArray, structArray_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_structArray, d_structArray, (IntPtr)structArray_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -417,8 +429,8 @@ handleBack_structArray.Free();
 }
 finally
 {
-if (d_array != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_array);
-if (d_structArray != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_structArray);
+if (d_array != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_array, hStream);
+if (d_structArray != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_structArray, hStream);
 }
 }
 }
@@ -507,12 +519,13 @@ void** kernelParams = stackalloc void*[4];
 int doubleInputs_size = doubleInputs.Length * sizeof(global::System.Double);
 if (doubleInputs_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleInputs, doubleInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_doubleInputs, (IntPtr)doubleInputs_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_doubleInputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_doubleInputs = handle_doubleInputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_doubleInputs, p_doubleInputs, doubleInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_doubleInputs, p_doubleInputs, (IntPtr)doubleInputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -524,12 +537,13 @@ kernelParams[0] = &d_doubleInputs;
 int doubleOutputs_size = doubleOutputs.Length * sizeof(global::System.Double);
 if (doubleOutputs_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleOutputs, doubleOutputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_doubleOutputs, (IntPtr)doubleOutputs_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_doubleOutputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleOutputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_doubleOutputs = handle_doubleOutputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_doubleOutputs, p_doubleOutputs, doubleOutputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_doubleOutputs, p_doubleOutputs, (IntPtr)doubleOutputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -541,12 +555,13 @@ kernelParams[1] = &d_doubleOutputs;
 int floatInputs_size = floatInputs.Length * sizeof(global::System.Single);
 if (floatInputs_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatInputs, floatInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_floatInputs, (IntPtr)floatInputs_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_floatInputs = System.Runtime.InteropServices.GCHandle.Alloc(floatInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatInputs = handle_floatInputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_floatInputs, p_floatInputs, floatInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_floatInputs, p_floatInputs, (IntPtr)floatInputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -558,12 +573,13 @@ kernelParams[2] = &d_floatInputs;
 int floatOutputs_size = floatOutputs.Length * sizeof(global::System.Single);
 if (floatOutputs_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatOutputs, floatOutputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_floatOutputs, (IntPtr)floatOutputs_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_floatOutputs = System.Runtime.InteropServices.GCHandle.Alloc(floatOutputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatOutputs = handle_floatOutputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_floatOutputs, p_floatOutputs, floatOutputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_floatOutputs, p_floatOutputs, (IntPtr)floatOutputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -587,7 +603,8 @@ System.Runtime.InteropServices.GCHandle handleBack_doubleInputs = System.Runtime
 try
 {
 IntPtr p_doubleInputs = handleBack_doubleInputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_doubleInputs, d_doubleInputs, doubleInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_doubleInputs, d_doubleInputs, (IntPtr)doubleInputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -601,7 +618,8 @@ System.Runtime.InteropServices.GCHandle handleBack_doubleOutputs = System.Runtim
 try
 {
 IntPtr p_doubleOutputs = handleBack_doubleOutputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_doubleOutputs, d_doubleOutputs, doubleOutputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_doubleOutputs, d_doubleOutputs, (IntPtr)doubleOutputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -615,7 +633,8 @@ System.Runtime.InteropServices.GCHandle handleBack_floatInputs = System.Runtime.
 try
 {
 IntPtr p_floatInputs = handleBack_floatInputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_floatInputs, d_floatInputs, floatInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_floatInputs, d_floatInputs, (IntPtr)floatInputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -629,7 +648,8 @@ System.Runtime.InteropServices.GCHandle handleBack_floatOutputs = System.Runtime
 try
 {
 IntPtr p_floatOutputs = handleBack_floatOutputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_floatOutputs, d_floatOutputs, floatOutputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_floatOutputs, d_floatOutputs, (IntPtr)floatOutputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -639,10 +659,10 @@ handleBack_floatOutputs.Free();
 }
 finally
 {
-if (d_doubleInputs != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_doubleInputs);
-if (d_doubleOutputs != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_doubleOutputs);
-if (d_floatInputs != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_floatInputs);
-if (d_floatOutputs != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_floatOutputs);
+if (d_doubleInputs != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_doubleInputs, hStream);
+if (d_doubleOutputs != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_doubleOutputs, hStream);
+if (d_floatInputs != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_floatInputs, hStream);
+if (d_floatOutputs != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_floatOutputs, hStream);
 }
 }
 }
@@ -729,12 +749,13 @@ void** kernelParams = stackalloc void*[4];
 int floatSpecialInputs_size = floatSpecialInputs.Length * sizeof(global::System.Single);
 if (floatSpecialInputs_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatSpecialInputs, floatSpecialInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_floatSpecialInputs, (IntPtr)floatSpecialInputs_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_floatSpecialInputs = System.Runtime.InteropServices.GCHandle.Alloc(floatSpecialInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatSpecialInputs = handle_floatSpecialInputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_floatSpecialInputs, p_floatSpecialInputs, floatSpecialInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_floatSpecialInputs, p_floatSpecialInputs, (IntPtr)floatSpecialInputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -746,12 +767,13 @@ kernelParams[0] = &d_floatSpecialInputs;
 int floatSpecialResults_size = floatSpecialResults.Length * sizeof(global::System.Single);
 if (floatSpecialResults_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_floatSpecialResults, floatSpecialResults_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_floatSpecialResults, (IntPtr)floatSpecialResults_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_floatSpecialResults = System.Runtime.InteropServices.GCHandle.Alloc(floatSpecialResults, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_floatSpecialResults = handle_floatSpecialResults.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_floatSpecialResults, p_floatSpecialResults, floatSpecialResults_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_floatSpecialResults, p_floatSpecialResults, (IntPtr)floatSpecialResults_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -763,12 +785,13 @@ kernelParams[1] = &d_floatSpecialResults;
 int doubleSpecialInputs_size = doubleSpecialInputs.Length * sizeof(global::System.Double);
 if (doubleSpecialInputs_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleSpecialInputs, doubleSpecialInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_doubleSpecialInputs, (IntPtr)doubleSpecialInputs_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_doubleSpecialInputs = System.Runtime.InteropServices.GCHandle.Alloc(doubleSpecialInputs, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_doubleSpecialInputs = handle_doubleSpecialInputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_doubleSpecialInputs, p_doubleSpecialInputs, doubleSpecialInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_doubleSpecialInputs, p_doubleSpecialInputs, (IntPtr)doubleSpecialInputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -780,12 +803,13 @@ kernelParams[2] = &d_doubleSpecialInputs;
 int doubleSpecialResults_size = doubleSpecialResults.Length * sizeof(global::System.Double);
 if (doubleSpecialResults_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_doubleSpecialResults, doubleSpecialResults_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_doubleSpecialResults, (IntPtr)doubleSpecialResults_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_doubleSpecialResults = System.Runtime.InteropServices.GCHandle.Alloc(doubleSpecialResults, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_doubleSpecialResults = handle_doubleSpecialResults.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_doubleSpecialResults, p_doubleSpecialResults, doubleSpecialResults_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_doubleSpecialResults, p_doubleSpecialResults, (IntPtr)doubleSpecialResults_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -809,7 +833,8 @@ System.Runtime.InteropServices.GCHandle handleBack_floatSpecialInputs = System.R
 try
 {
 IntPtr p_floatSpecialInputs = handleBack_floatSpecialInputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_floatSpecialInputs, d_floatSpecialInputs, floatSpecialInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_floatSpecialInputs, d_floatSpecialInputs, (IntPtr)floatSpecialInputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -823,7 +848,8 @@ System.Runtime.InteropServices.GCHandle handleBack_floatSpecialResults = System.
 try
 {
 IntPtr p_floatSpecialResults = handleBack_floatSpecialResults.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_floatSpecialResults, d_floatSpecialResults, floatSpecialResults_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_floatSpecialResults, d_floatSpecialResults, (IntPtr)floatSpecialResults_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -837,7 +863,8 @@ System.Runtime.InteropServices.GCHandle handleBack_doubleSpecialInputs = System.
 try
 {
 IntPtr p_doubleSpecialInputs = handleBack_doubleSpecialInputs.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_doubleSpecialInputs, d_doubleSpecialInputs, doubleSpecialInputs_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_doubleSpecialInputs, d_doubleSpecialInputs, (IntPtr)doubleSpecialInputs_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -851,7 +878,8 @@ System.Runtime.InteropServices.GCHandle handleBack_doubleSpecialResults = System
 try
 {
 IntPtr p_doubleSpecialResults = handleBack_doubleSpecialResults.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_doubleSpecialResults, d_doubleSpecialResults, doubleSpecialResults_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_doubleSpecialResults, d_doubleSpecialResults, (IntPtr)doubleSpecialResults_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -861,10 +889,10 @@ handleBack_doubleSpecialResults.Free();
 }
 finally
 {
-if (d_floatSpecialInputs != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_floatSpecialInputs);
-if (d_floatSpecialResults != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_floatSpecialResults);
-if (d_doubleSpecialInputs != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_doubleSpecialInputs);
-if (d_doubleSpecialResults != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_doubleSpecialResults);
+if (d_floatSpecialInputs != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_floatSpecialInputs, hStream);
+if (d_floatSpecialResults != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_floatSpecialResults, hStream);
+if (d_doubleSpecialInputs != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_doubleSpecialInputs, hStream);
+if (d_doubleSpecialResults != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_doubleSpecialResults, hStream);
 }
 }
 }

@@ -84,12 +84,12 @@ public const string DebugName_B = "global::System.Single";
 [System.Runtime.InteropServices.FieldOffset(4)]
 public global::System.Single B;
 }
-public static unsafe void Marshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 native.A = host.A;
 native.B = host.B;
 }
-public static unsafe void Unmarshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr)
+public static unsafe void Unmarshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
 host.A = native.A;
 host.B = native.B;
@@ -144,27 +144,29 @@ try
 void** kernelParams = stackalloc void*[5];
 // Marshal ref/out scalar: scalarRef
 int scalarRef_size = sizeof(global::System.Int32);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_scalarRef, scalarRef_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_scalarRef, (IntPtr)scalarRef_size, hStream));
 // Fast zero-allocation copy to device
 fixed (global::System.Int32* p_scalarRef_temp = &scalarRef)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_scalarRef, (IntPtr)p_scalarRef_temp, scalarRef_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_scalarRef, (IntPtr)p_scalarRef_temp, (IntPtr)scalarRef_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 kernelParams[0] = &d_scalarRef;
 // Marshal ref/out scalar: scalarOut
 int scalarOut_size = sizeof(global::System.Single);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_scalarOut, scalarOut_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_scalarOut, (IntPtr)scalarOut_size, hStream));
 kernelParams[1] = &d_scalarOut;
 // Marshal array: arrayVal
 int arrayVal_size = arrayVal.Length * sizeof(global::System.Int32);
 if (arrayVal_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_arrayVal, arrayVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_arrayVal, (IntPtr)arrayVal_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_arrayVal = System.Runtime.InteropServices.GCHandle.Alloc(arrayVal, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_arrayVal = handle_arrayVal.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_arrayVal, p_arrayVal, arrayVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_arrayVal, p_arrayVal, (IntPtr)arrayVal_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -173,12 +175,13 @@ handle_arrayVal.Free();
 }
 kernelParams[2] = &d_arrayVal;
 AotContexts.MyCustomStruct native_structRef = default;
-AotContexts.Marshal_MyCustomStruct(ref structRef, ref native_structRef, false, structRef_allocatedPtrs);
+AotContexts.Marshal_MyCustomStruct(ref structRef, ref native_structRef, false, structRef_allocatedPtrs, hStream);
 // Marshal ref/out struct: structRef
 int structRef_size = sizeof(AotContexts.MyCustomStruct);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_structRef, structRef_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_structRef, (IntPtr)structRef_size, hStream));
 // Fast zero-allocation copy to device
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_structRef, (IntPtr)(&native_structRef), structRef_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_structRef, (IntPtr)(&native_structRef), (IntPtr)structRef_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 kernelParams[3] = &d_structRef;
 // Marshal scalar: constantVal
 kernelParams[4] = &constantVal;
@@ -194,13 +197,15 @@ IntPtr.Zero // Extra
 // Fast zero-allocation copy from device for scalar: scalarRef
 fixed (global::System.Int32* ptr_scalarRef = &scalarRef)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_scalarRef, d_scalarRef, scalarRef_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_scalarRef, d_scalarRef, (IntPtr)scalarRef_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 scalarOut = default;
 // Fast zero-allocation copy from device for scalar: scalarOut
 fixed (global::System.Single* ptr_scalarOut = &scalarOut)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_scalarOut, d_scalarOut, scalarOut_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_scalarOut, d_scalarOut, (IntPtr)scalarOut_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 // Copy back array: arrayVal
 if (arrayVal_size > 0 && d_arrayVal != IntPtr.Zero)
@@ -209,7 +214,8 @@ System.Runtime.InteropServices.GCHandle handleBack_arrayVal = System.Runtime.Int
 try
 {
 IntPtr p_arrayVal = handleBack_arrayVal.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_arrayVal, d_arrayVal, arrayVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_arrayVal, d_arrayVal, (IntPtr)arrayVal_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -217,16 +223,17 @@ handleBack_arrayVal.Free();
 }
 }
 // Fast zero-allocation copy from device
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&native_structRef), d_structRef, structRef_size));
-AotContexts.Unmarshal_MyCustomStruct(ref structRef, ref native_structRef, false);
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)(&native_structRef), d_structRef, (IntPtr)structRef_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+AotContexts.Unmarshal_MyCustomStruct(ref structRef, ref native_structRef, false, hStream);
 }
 finally
 {
-if (d_scalarRef != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_scalarRef);
-if (d_scalarOut != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_scalarOut);
-if (d_arrayVal != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_arrayVal);
-foreach (var ptr in structRef_allocatedPtrs) CudaDriverApi.cuMemFree_v2(ptr);
-if (d_structRef != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_structRef);
+if (d_scalarRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarRef, hStream);
+if (d_scalarOut != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_scalarOut, hStream);
+if (d_arrayVal != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_arrayVal, hStream);
+foreach (var ptr in structRef_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
+if (d_structRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_structRef, hStream);
 }
 }
 }

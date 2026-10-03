@@ -160,68 +160,99 @@ public class GpuWorkspace : IGpuResourceScope
 
         try
         {
-            // Enforce safe teardown. Never let exceptions escape the finalizer thread.
-            lock (_trackedResources)
-            {
-                foreach (var res in _trackedResources)
-                {
-                    try
-                    {
-                        res.Dispose();
-                    }
-                    catch
-                    {
-                        // Best-effort cleanup during finalization / disposal
-                    }
-                }
-
-                _trackedResources.Clear();
-            }
-
-            if (MemoryManager is IDisposable disposableManager)
-            {
-                try
-                {
-                    disposableManager.Dispose();
-                }
-                catch
-                {
-                    // Best-effort
-                }
-            }
-
-            if (Engine == GpuExecutionEngine.GSharpAot)
-            {
-                if (Stream != IntPtr.Zero)
-                {
-                    try
-                    {
-                        CudaDriverApi.cuStreamDestroy(Stream);
-                    }
-                    catch
-                    {
-                        // Best-effort
-                    }
-                }
-            }
-            else
-            {
-                if (WorkspacePointer != IntPtr.Zero)
-                {
-                    try
-                    {
-                        NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
-                    }
-                    catch
-                    {
-                        // Best-effort
-                    }
-                }
-            }
+            DisposeTrackedResources();
+            DisposeMemoryManager();
+            DisposeEngineResources();
         }
         finally
         {
             contextScope?.Dispose();
+        }
+    }
+
+    private void DisposeTrackedResources()
+    {
+        // Enforce safe teardown. Never let exceptions escape the finalizer thread.
+        lock (_trackedResources)
+        {
+            foreach (var res in _trackedResources)
+            {
+                try
+                {
+                    res.Dispose();
+                }
+                catch
+                {
+                    // Best-effort cleanup during finalization / disposal
+                }
+            }
+
+            _trackedResources.Clear();
+        }
+    }
+
+    private void DisposeMemoryManager()
+    {
+        if (MemoryManager is not IDisposable disposableManager)
+        {
+            return;
+        }
+
+        try
+        {
+            disposableManager.Dispose();
+        }
+        catch
+        {
+            // Best-effort
+        }
+    }
+
+    private void DisposeEngineResources()
+    {
+        if (Engine == GpuExecutionEngine.GSharpAot)
+        {
+            if (Stream == IntPtr.Zero)
+            {
+                return;
+            }
+
+            try
+            {
+                // Check if stream was abandoned in a capturing state (e.g., due to an exception)
+                if (CudaDriverApi.cuStreamIsCapturing(Stream, out var captureStatus) == CUresult.CudaSuccess &&
+                    captureStatus != CUstreamCaptureStatus.None)
+                {
+                    // Abort and discard uncommitted graph to prevent cross-test / cross-task contamination
+                    CudaDriverApi.cuStreamEndCapture(Stream, out var leakedGraph);
+                    if (leakedGraph != IntPtr.Zero)
+                    {
+                        CudaDriverApi.cuGraphDestroy(leakedGraph);
+                    }
+                }
+
+                CudaDriverApi.cuStreamDestroy(Stream);
+            }
+            catch
+            {
+                // Best-effort cleanup during disposal
+            }
+        }
+        else
+        {
+            if (WorkspacePointer == IntPtr.Zero)
+            {
+                return;
+            }
+
+            try
+            {
+                NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
+            }
+            catch
+            {
+                // Best-effort
+            }
         }
     }
 

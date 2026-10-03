@@ -114,27 +114,29 @@ try
 void** kernelParams = stackalloc void*[4];
 // Marshal ref/out scalar: ioVal
 int ioVal_size = sizeof(global::System.Int32);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_ioVal, ioVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_ioVal, (IntPtr)ioVal_size, hStream));
 // Fast zero-allocation copy to device
 fixed (global::System.Int32* p_ioVal_temp = &ioVal)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_ioVal, (IntPtr)p_ioVal_temp, ioVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_ioVal, (IntPtr)p_ioVal_temp, (IntPtr)ioVal_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 kernelParams[0] = &d_ioVal;
 // Marshal ref/out scalar: outVal
 int outVal_size = sizeof(global::System.Single);
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_outVal, outVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_outVal, (IntPtr)outVal_size, hStream));
 kernelParams[1] = &d_outVal;
 // Marshal array: arrayVal
 int arrayVal_size = arrayVal.Length * sizeof(global::System.Int32);
 if (arrayVal_size > 0)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out d_arrayVal, arrayVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_arrayVal, (IntPtr)arrayVal_size, hStream));
 System.Runtime.InteropServices.GCHandle handle_arrayVal = System.Runtime.InteropServices.GCHandle.Alloc(arrayVal, System.Runtime.InteropServices.GCHandleType.Pinned);
 try
 {
 IntPtr p_arrayVal = handle_arrayVal.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(d_arrayVal, p_arrayVal, arrayVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_arrayVal, p_arrayVal, (IntPtr)arrayVal_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -156,13 +158,15 @@ IntPtr.Zero // Extra
 // Fast zero-allocation copy from device for scalar: ioVal
 fixed (global::System.Int32* ptr_ioVal = &ioVal)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_ioVal, d_ioVal, ioVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_ioVal, d_ioVal, (IntPtr)ioVal_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 outVal = default;
 // Fast zero-allocation copy from device for scalar: outVal
 fixed (global::System.Single* ptr_outVal = &outVal)
 {
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr_outVal, d_outVal, outVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_outVal, d_outVal, (IntPtr)outVal_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 // Copy back array: arrayVal
 if (arrayVal_size > 0 && d_arrayVal != IntPtr.Zero)
@@ -171,7 +175,8 @@ System.Runtime.InteropServices.GCHandle handleBack_arrayVal = System.Runtime.Int
 try
 {
 IntPtr p_arrayVal = handleBack_arrayVal.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2(p_arrayVal, d_arrayVal, arrayVal_size));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_arrayVal, d_arrayVal, (IntPtr)arrayVal_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -181,9 +186,9 @@ handleBack_arrayVal.Free();
 }
 finally
 {
-if (d_ioVal != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_ioVal);
-if (d_outVal != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_outVal);
-if (d_arrayVal != IntPtr.Zero) CudaDriverApi.cuMemFree_v2(d_arrayVal);
+if (d_ioVal != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_ioVal, hStream);
+if (d_outVal != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_outVal, hStream);
+if (d_arrayVal != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_arrayVal, hStream);
 }
 }
 }
