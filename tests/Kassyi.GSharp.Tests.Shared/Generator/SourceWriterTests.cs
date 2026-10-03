@@ -118,7 +118,7 @@ public class SourceWriterTests
         }
 
         var methodName = nameof(Test_SourceWriter_NestedScopeAndIndentation_Snapshots);
-        return Verifier.Verify(writer.ToString()).UseFastHashSnapshotName(methodName);
+        return Verifier.Verify(writer.ToString(), "cs").UseFastHashSnapshotName(methodName);
     }
 }
 

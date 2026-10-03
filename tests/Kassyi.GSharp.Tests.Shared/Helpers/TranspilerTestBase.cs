@@ -48,5 +48,17 @@ public abstract class TranspilerTestBase
     {
         return Verifier.Verify(target).UseFastHashSnapshotName(methodName, DialectName);
     }
+
+    protected SettingsTask Verify(string target,
+        [CallerMemberName] string methodName = "")
+    {
+        return Verifier.Verify(target, "cs").UseFastHashSnapshotName(methodName, DialectName);
+    }
+
+    protected SettingsTask Verify(SyntaxNode target,
+        [CallerMemberName] string methodName = "")
+    {
+        return Verifier.Verify(target.ToFullString(), "cs").UseFastHashSnapshotName(methodName, DialectName);
+    }
 }
 
