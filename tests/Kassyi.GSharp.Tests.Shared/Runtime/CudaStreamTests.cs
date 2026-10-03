@@ -25,10 +25,10 @@ public partial class CudaStreamKernels
     }
 }
 
+[Trait("Category", "GpuExecution")]
 public class CudaStreamTests : TranspilerTestBase
 {
     [Fact]
-    [Trait("Category", "GPU")]
     public void Test_CudaStream_MultipleStreamsExecuteConcurrently()
     {
         using var ctx = new GpuKernelLoader.CudaContextScope();
