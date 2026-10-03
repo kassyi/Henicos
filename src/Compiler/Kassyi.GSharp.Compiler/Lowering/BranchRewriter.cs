@@ -10,7 +10,7 @@ public class BranchRewriter : CSharpSyntaxRewriter
 
     public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
 
-    public override SyntaxNode? VisitBlock(BlockSyntax node)
+    public override SyntaxNode VisitBlock(BlockSyntax node)
     {
         var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
 
@@ -34,7 +34,7 @@ public class BranchRewriter : CSharpSyntaxRewriter
         return SyntaxFactory.Block(newStatements);
     }
 
-    public override SyntaxNode? VisitIfStatement(IfStatementSyntax node)
+    public override SyntaxNode VisitIfStatement(IfStatementSyntax node)
     {
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
         var id = _labelCounter++;
