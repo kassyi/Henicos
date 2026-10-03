@@ -1,0 +1,10 @@
+﻿{
+  ResultWords: [
+    333,
+    0,
+    0,
+    0
+  ],
+  ResultSign: false,
+  Remainder: 1
+}
