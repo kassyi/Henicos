@@ -48,6 +48,25 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0032](GSH0032.md) | Error | Unrolled loop bounds must be statically deterministic |
 | [GSH0033](GSH0033.md) | Warning | Unrolled loop may be silently ignored |
 | [GSH0034](GSH0034.md) | Error | The 'params' modifier is prohibited in GPU device code |
+| [GSH0035](GSH0035.md) | Error | Cannot call parallel-dependent processing from a single-thread context |
+| [GSH0036](GSH0036.md) | Error | Kernel class must be partial |
+| [GSH0037](GSH0037.md) | Error | Divergent barriers are prohibited |
+| [GSH0038](GSH0038.md) | Error | Exception handling is not supported in GPU kernels |
+| [GSH0039](GSH0039.md) | Error | ref structs cannot be held across barrier synchronization |
+| [GSH0040](GSH0040.md) | Error | goto statements cannot cross barrier synchronization |
+| [GSH0041](GSH0041.md) | Error | Stack pointers cannot be held across barrier synchronization |
+| [GSH0042](GSH0042.md) | Error | Gpu.SyncThreads() cannot be called from external helper methods |
+| [GSH0043](GSH0043.md) | Error | Gpu.SyncThreads() cannot be called inside a fixed block |
+| [GSH0044](GSH0044.md) | Error | ref, out, in, and ref struct parameters are prohibited in GPU kernels |
+| [GSH0045](GSH0045.md) | Error | Recursive local functions cannot contain Gpu.SyncThreads() |
+| [GSH0046](GSH0046.md) | Error | async, await, and yield return are prohibited in GPU kernels |
+| [GSH0047](GSH0047.md) | Error | The lock statement is prohibited in GPU kernels |
+| [GSH0048](GSH0048.md) | Error | Source Generator Internal Error |
+| [GSH0049](GSH0049.md) | Error | Test classes must inherit from required base classes |
+| [GSH0050](GSH0050.md) | Error | Test methods must have a Category trait |
+| [GSH0051](GSH0051.md) | Error | [TakesOwnership] applied to non-IDisposable type |
+| [GSH0052](GSH0052.md) | Error | [TakesOwnership] is only allowed on constructor parameters |
+| [GSH0053](GSH0053.md) | Error | Cannot take ownership of a reference parameter |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 
 ## See Also
