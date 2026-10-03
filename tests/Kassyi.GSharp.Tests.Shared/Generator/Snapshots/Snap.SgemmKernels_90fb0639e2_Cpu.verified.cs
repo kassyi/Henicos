@@ -30,13 +30,13 @@ public static partial class AotContexts
 public const string SgemmKernel_Source = @"extern ""C"" __declspec(dllexport) void SgemmKernels_SgemmKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n){
 __shared__ float As[256];
 __shared__ float Bs[256];
-int bx = blockIdx.x;
-int by = blockIdx.y;
-int tx = threadIdx.x;
-int ty = threadIdx.y;
-int row = by*16+ty;
-int col = bx*16+tx;
-float cValue = 0.0f;
+auto bx = blockIdx.x;
+auto by = blockIdx.y;
+auto tx = threadIdx.x;
+auto ty = threadIdx.y;
+auto row = by*16+ty;
+auto col = bx*16+tx;
+auto cValue = 0.0f;
 for(int m = 0;m<(n+15)/16;m++)
 {
 if(row<n&&m*16+tx<n)
