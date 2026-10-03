@@ -12,13 +12,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 /// </remarks>
 public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<VariableDeclarationSyntax>
 {
-    /// <summary>
-    /// Gets the singleton instance of the <see cref="VariableDeclarationTranspilerRule"/>.
-    /// </summary>
-    public VariableDeclarationTranspilerRule()
-    {
-    }
-
     private readonly struct VariableMapping(
         ITypeSymbol? typeSymbol,
         bool isVar,
