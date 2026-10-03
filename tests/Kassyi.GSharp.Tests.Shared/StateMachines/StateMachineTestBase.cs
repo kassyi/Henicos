@@ -5,35 +5,74 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using VerifyXunit;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 
 public abstract class StateMachineTestBase
 {
-    protected static Task VerifyTransformation(string code, Func<BlockSyntax, SyntaxNode> transform)
+    protected static Task VerifyTransformation(Action action, Func<BlockSyntax, SyntaxNode> transform,
+        [CallerArgumentExpression(nameof(action))]
+        string source = "",
+        [CallerMemberName] string methodName = "")
     {
-        var block = (BlockSyntax)SyntaxFactory.ParseStatement(code);
+        var lambda = (ParenthesizedLambdaExpressionSyntax)SyntaxFactory.ParseExpression(source);
+        var block = (BlockSyntax)lambda.Body;
         var transformed = transform(block);
         var formatted = transformed.NormalizeWhitespace().ToFullString();
-        return Verifier.Verify(formatted);
+
+        var wrapped = $$"""
+            public class {{methodName}}_Snapshot
+            {
+                public void LoweredMethod()
+            {{formatted}}
+            }
+            """;
+        return Verifier.Verify(wrapped, "cs").UseFastHashSnapshotName(methodName);
     }
 
-    protected static Task VerifyStateMachineLower(string code) =>
-        VerifyTransformation(code, b => new StateMachineLowerer().Lower(b));
+    protected static Task VerifyStateMachineLower(Action action,
+        [CallerArgumentExpression(nameof(action))]
+        string source = "", [CallerMemberName] string methodName = "") =>
+        VerifyTransformation(action, b => new StateMachineLowerer().Lower(b), source, methodName);
 
-    protected static Task VerifyBranchRewrite(string code) =>
-        VerifyTransformation(code, b => new BranchRewriter().Rewrite(b));
+    protected static Task VerifyBranchRewrite(Action action,
+        [CallerArgumentExpression(nameof(action))]
+        string source = "", [CallerMemberName] string methodName = "") =>
+        VerifyTransformation(action, b => new BranchRewriter().Rewrite(b), source, methodName);
 
-    protected static Task VerifyLoopRewrite(string code) =>
-        VerifyTransformation(code, b => new LoopRewriter().Rewrite(b));
+    protected static Task VerifyLoopRewrite(Action action,
+        [CallerArgumentExpression(nameof(action))]
+        string source = "", [CallerMemberName] string methodName = "") =>
+        VerifyTransformation(action, b => new LoopRewriter().Rewrite(b), source, methodName);
 
-    protected static Task VerifyWarpRewrite(string code) =>
-        VerifyTransformation(code, b => new WarpInstructionRewriter().Rewrite(b));
+    protected static Task VerifyWarpRewrite(Action action,
+        [CallerArgumentExpression(nameof(action))]
+        string source = "",
+        [CallerMemberName] string methodName = "") =>
+        VerifyTransformation(action, b => new WarpInstructionRewriter().Rewrite(b), source, methodName);
 
-    protected static Task VerifyHoist(string code) =>
-        VerifyTransformation(code, b =>
+    protected static Task VerifyHoist(Action action,
+        [CallerArgumentExpression(nameof(action))]
+        string source = "", [CallerMemberName] string methodName = "") =>
+        VerifyTransformation(action, b =>
         {
             var (rewrittenBlock, _) = new ContextHoister().Hoist(b);
             return new StateMachineLowerer().Lower(rewrittenBlock);
-        });
+        }, source, methodName);
+}
+
+// Mock class to allow compiling test delegates containing Gpu.* calls without depending on the actual Intrinsics.
+public static class Gpu
+{
+    public static void SyncThreads()
+    {
+    }
+
+    public static void SyncWarp()
+    {
+    }
+
+    public static int WarpShuffle(int var, int srcLane) => var;
+    public static int WarpReduceSum(int var) => var;
 }

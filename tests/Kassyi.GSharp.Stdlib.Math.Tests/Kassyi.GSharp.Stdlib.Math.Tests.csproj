@@ -18,6 +18,10 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Kassyi.GSharp.Tests.Shared\Helpers\HashHelper.cs" Link="Helpers\HashHelper.cs" />
+    <Compile Include="..\Kassyi.GSharp.Tests.Shared\Helpers\SnapshotNamingHelper.cs" Link="Helpers\SnapshotNamingHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Stdlib\Kassyi.GSharp.Stdlib.Math\Kassyi.GSharp.Stdlib.Math.csproj" />
     <ProjectReference Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>

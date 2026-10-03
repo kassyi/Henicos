@@ -52,13 +52,13 @@ public class GpuBigIntContextTests
     {
         CudaCapability.EnsureGpuAvailable();
         // Arrange
-        var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         var provider = GSharpAotProvider.Instance;
         
         // Populate cache by performing an NTT multiplication
-        var a = new GpuUIntBigInteger(context, new uint[] { 1, 2, 3 });
-        var b = new GpuUIntBigInteger(context, new uint[] { 4, 5, 6 });
-        var c = new GpuUIntBigInteger(context, new uint[6]);
+        using var a = new GpuUIntBigInteger(context, new uint[] { 1, 2, 3 });
+        using var b = new GpuUIntBigInteger(context, new uint[] { 4, 5, 6 });
+        using var c = new GpuUIntBigInteger(context, new uint[6]);
         provider.Mul(context, a, b, c);
 
         var advancedMathField = typeof(GSharpAotProvider).GetField(

@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Stdlib.Math.GpuBigFloat;
 /// Represents an arbitrary-precision signed floating-point number on the GPU using an unsigned floating-point value and a sign flag.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBigFloat>
+public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBigFloat>, IDisposable
 {
     /// <summary>
     /// The underlying unsigned floating-point value payload.
@@ -17,6 +17,11 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
     /// Gets a value indicating whether the floating-point number is negative.
     /// </summary>
     public bool IsNegative { get; }
+
+    /// <summary>
+    /// Disposes the underlying GPU memory.
+    /// </summary>
+    public void Dispose() => UFloat.Dispose();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuBigFloat"/> struct.
@@ -48,7 +53,7 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
         ) AlignRadixPoint(GpuBigFloat other) => throw new NotImplementedException();
 
     public GpuBigFloat Normalize(int leadingZeros = 0, bool carryOut = false) =>
-        new GpuBigFloat(UFloat.Normalize(leadingZeros, carryOut), IsNegative);
+        new(UFloat.Normalize(leadingZeros, carryOut), IsNegative);
 
     public (GpuBigFloat Quotient, uint Remainder) DivideByUInt32(uint divisor)
     {

@@ -11,11 +11,18 @@ namespace Kassyi.GSharp.Stdlib.Math.GpuBigInt;
 ///   <item><description><see cref="T"/>: <c>T(a, b) = \sum ...</c></description></item>
 /// </list>
 /// </remarks>
-public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInteger p, [TakesOwnership] GpuUIntBigInteger q, [TakesOwnership] GpuBigInteger t)
+public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInteger p, [TakesOwnership] GpuUIntBigInteger q, [TakesOwnership] GpuBigInteger t) : IDisposable
 {
     public GpuBigInteger P { get; } = p;
     public GpuUIntBigInteger Q { get; } = q;
     public GpuBigInteger T { get; } = t;
+
+    public void Dispose()
+    {
+        P.Dispose();
+        Q.Dispose();
+        T.Dispose();
+    }
 
     /// <summary>
     /// Merges two adjacent <see cref="GpuHypergeometricPqt"/> states on the GPU.

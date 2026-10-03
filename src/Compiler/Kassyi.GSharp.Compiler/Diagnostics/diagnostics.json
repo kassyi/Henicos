@@ -431,5 +431,23 @@
     "category": "GSharpCompiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "TestClassMustInheritFromBase",
+    "id": "GSH0049",
+    "title": "Test classes must inherit from required base classes",
+    "messageFormat": "Test class '{0}' contains [Fact] or [Theory] methods but does not inherit from TranspilerTestBase or StateMachineTestBase. This is required by the G# test architecture guidelines.",
+    "category": "GSharpTestArchitecture",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "TestMethodMustHaveCategoryTrait",
+    "id": "GSH0050",
+    "title": "Test methods must have a Category trait",
+    "messageFormat": "Test method '{0}' is missing [Trait(\"Category\", \"...\")]. All tests must be categorized (e.g., Compiler, SadPath, GpuExecution).",
+    "category": "GSharpTestArchitecture",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
   }
 ]
