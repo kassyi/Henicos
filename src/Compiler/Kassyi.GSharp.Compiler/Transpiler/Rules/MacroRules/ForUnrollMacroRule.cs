@@ -45,12 +45,15 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
         for (var i = start; i < start + count; i++)
         {
             var iterationCookie = context.Emitter.PushOverrideScope(macroScope.ParamName, new OverrideValue(i.ToString()));
+            var oldSuffix = context.Emitter.LabelSuffix;
+            context.Emitter.LabelSuffix = $"_Unroll_{i}";
             try
             {
                 MacroTranspilerHelper.EmitUnrolledBody(ref context, lambdaExpr.Body);
             }
             finally
             {
+                context.Emitter.LabelSuffix = oldSuffix;
                 context.Emitter.PopOverrideScope(iterationCookie);
             }
         }

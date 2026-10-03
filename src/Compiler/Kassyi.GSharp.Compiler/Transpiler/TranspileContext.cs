@@ -28,6 +28,8 @@ public struct Emitter(
     public bool IsVoidReturn = false;
     public int CallableDepth = 0;
     public int AutoSyncGridDepth = 0;
+    public string? LabelSuffix = null;
+    public int SmemAllocCount = 0;
 
     public int PushOverrideScope(string name, OverrideValue value) =>
         LocalVariableOverrides.Push(name, value);

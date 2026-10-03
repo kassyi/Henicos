@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Dialects;
+using Kassyi.GSharp.Compiler.Lowering;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -42,18 +43,41 @@ public static class MethodTranspiler
             return session.ErrorMessage!;
         }
 
+        ref var context = ref session.Context;
+
+        IReadOnlyList<VariableDeclaratorSyntax>? contextFields = null;
+        BlockSyntax? loweredBody = null;
+
+        if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.Body != null)
+        {
+            var tuple = AstLoweringPipeline.Lower(methodDecl.Body!);
+            loweredBody = tuple.LoweredBody;
+            contextFields = tuple.ContextFields;
+        }
+
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
 
-        ref var context = ref session.Context;
         context.Emitter.Writer = bodyWriter;
 
-        WriteMethodSignature(methodDecl, isDevice, ref context);
-        WriteMethodBody(methodDecl, ref context);
+        if (contextFields != null)
+        {
+            var methodName = methodDecl.Identifier.Text;
+            var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
+            if (methodSymbol != null)
+            {
+                methodName = $"{methodSymbol.ContainingType.Name}_{methodName}";
+            }
+
+            WriteContextStruct(methodName, contextFields, ref context);
+        }
+
+        WriteMethodSignature(methodDecl, isDevice, contextFields != null, ref context);
+        WriteMethodBody(methodDecl, loweredBody, ref context);
 
         if (!isDevice && !context.Emitter.Dialect.IsCuda)
         {
-            WriteCpuLauncher(methodDecl, ref context);
+            WriteCpuLauncher(methodDecl, contextFields != null, ref context);
         }
 
         context.Emitter.Writer = mainWriter;
@@ -64,6 +88,35 @@ public static class MethodTranspiler
         }
 
         return mainWriter + bodyWriter.ToString();
+    }
+
+    private static void WriteContextStruct(string methodName, IReadOnlyList<VariableDeclaratorSyntax> fields,
+        ref TranspileContext context)
+    {
+        context.Emitter.Writer.AppendLine($"struct __gsharp_context_{methodName} {{");
+        context.Emitter.Writer.AppendLine("int _state = 0;");
+        foreach (var field in fields)
+        {
+            var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
+            if (typeSyntax == null)
+            {
+                continue;
+            }
+
+            var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(typeSyntax);
+            if (typeSymbol == null)
+            {
+                continue;
+            }
+
+            StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
+            context.Emitter.Dialect.AppendType(ref context, typeSymbol);
+            context.Emitter.Writer.Append($" {field.Identifier.ValueText};");
+            context.Emitter.Writer.AppendLine();
+        }
+
+        context.Emitter.Writer.AppendLine("};");
+        context.Emitter.Writer.AppendLine();
     }
 
     /// <summary>
@@ -96,13 +149,33 @@ public static class MethodTranspiler
             return session.ErrorMessage!;
         }
 
+        ref var context = ref session.Context;
+
+        IReadOnlyList<VariableDeclaratorSyntax>? contextFields = null;
+        if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.Body != null)
+        {
+            var tuple = AstLoweringPipeline.Lower(methodDecl.Body!);
+            contextFields = tuple.ContextFields;
+        }
+
         using var mainWriter = new SourceWriter();
         using var sigWriter = new SourceWriter();
 
-        ref var context = ref session.Context;
         context.Emitter.Writer = sigWriter;
 
-        WriteMethodSignature(methodDecl, isDevice, ref context);
+        if (contextFields != null)
+        {
+            var methodName = methodDecl.Identifier.Text;
+            var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
+            if (methodSymbol != null)
+            {
+                methodName = $"{methodSymbol.ContainingType.Name}_{methodName}";
+            }
+
+            WriteContextStruct(methodName, contextFields, ref context);
+        }
+
+        WriteMethodSignature(methodDecl, isDevice, contextFields != null, ref context);
         context.Emitter.Writer.AppendSemiColonLine();
 
         context.Emitter.Writer = mainWriter;
@@ -117,7 +190,7 @@ public static class MethodTranspiler
     }
 
 
-    private static void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice,
+    private static void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice, bool hasContext,
         ref TranspileContext context)
     {
         var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
@@ -142,13 +215,23 @@ public static class MethodTranspiler
         {
             WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
 
+            if (hasContext)
+            {
+                if (method.ParameterList.Parameters.Count > 0)
+                {
+                    context.Emitter.Writer.Append(", ");
+                }
+
+                context.Emitter.Writer.Append($"__gsharp_context_{methodName}* _ctx");
+            }
+
             if (isDevice || methodSymbol is null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
                 methodSymbol.ReturnType.SpecialType == SpecialType.System_Void)
             {
                 return;
             }
 
-            if (method.ParameterList.Parameters.Count > 0)
+            if (method.ParameterList.Parameters.Count > 0 || hasContext)
             {
                 context.Emitter.Writer.Append(", ");
             }
@@ -240,7 +323,8 @@ public static class MethodTranspiler
             : "extern \"C\" __declspec(dllexport) void");
     }
 
-    private static void WriteMethodBody(MethodDeclarationSyntax method, ref TranspileContext context)
+    private static void WriteMethodBody(MethodDeclarationSyntax method, BlockSyntax? loweredBody,
+        ref TranspileContext context)
     {
         using (context.Emitter.Writer.Scope())
         {
@@ -256,7 +340,16 @@ public static class MethodTranspiler
                     " threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
             }
 
-            if (method.Body != null)
+            if (loweredBody != null)
+            {
+                context.Emitter.Writer.AppendLine("#define _state _ctx->_state");
+            }
+
+            if (loweredBody != null)
+            {
+                context.Visitor.Visit(loweredBody);
+            }
+            else if (method.Body != null)
             {
                 context.Visitor.Visit(method.Body);
             }
@@ -276,6 +369,11 @@ public static class MethodTranspiler
                 {
                     context.Emitter.Writer.AppendKeyword("return").AppendSemiColonLine();
                 }
+            }
+
+            if (loweredBody != null)
+            {
+                context.Emitter.Writer.AppendLine("#undef _state");
             }
         }
     }
@@ -318,7 +416,7 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteCpuLauncher(MethodDeclarationSyntax method, ref TranspileContext context)
+    private static void WriteCpuLauncher(MethodDeclarationSyntax method, bool hasContext, ref TranspileContext context)
     {
         var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
         if (methodSymbol == null)
@@ -355,14 +453,59 @@ public static class MethodTranspiler
 
         using (context.Emitter.Writer.Scope())
         {
+            if (hasContext)
+            {
+                context.Emitter.Writer.AppendLine(
+                    $"std::vector<__gsharp_context_{methodName}> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);");
+            }
+
             context.Emitter.Writer.AppendLine("for (uint32_t bz = 0; bz < gridDimZ; bz++)");
             context.Emitter.Writer.AppendLine("for (uint32_t by = 0; by < gridDimY; by++)");
             context.Emitter.Writer.AppendLine("for (uint32_t bx = 0; bx < gridDimX; bx++)");
-            context.Emitter.Writer.AppendLine("for (uint32_t tz = 0; tz < blockDimZ; tz++)");
-            context.Emitter.Writer.AppendLine("for (uint32_t ty = 0; ty < blockDimY; ty++)");
-            context.Emitter.Writer.AppendLine("for (uint32_t tx = 0; tx < blockDimX; tx++)");
             using (context.Emitter.Writer.Scope())
             {
+                context.Emitter.Writer.AppendLine("__gsharp_reset_smem();");
+                if (hasContext)
+                {
+                    context.Emitter.Writer.AppendLine("for (auto& ctx : _gsharp_contexts) ctx._state = 0;");
+                    context.Emitter.Writer.AppendLine("bool anyActive = true;");
+                    context.Emitter.Writer.AppendLine("while (anyActive)");
+                    using (context.Emitter.Writer.Scope())
+                    {
+                        context.Emitter.Writer.AppendLine("anyActive = false;");
+                        WriteBlockLoop(method, methodSymbol, methodName, hasContext, ref context);
+                    }
+                }
+                else
+                {
+                    WriteBlockLoop(method, methodSymbol, methodName, hasContext, ref context);
+                }
+            }
+        }
+    }
+
+    private static void WriteBlockLoop(MethodDeclarationSyntax method, IMethodSymbol methodSymbol, string methodName,
+        bool hasContext, ref TranspileContext context)
+    {
+        context.Emitter.Writer.AppendLine("for (uint32_t tz = 0; tz < blockDimZ; tz++)");
+        context.Emitter.Writer.AppendLine("for (uint32_t ty = 0; ty < blockDimY; ty++)");
+        context.Emitter.Writer.AppendLine("for (uint32_t tx = 0; tx < blockDimX; tx++)");
+        using (context.Emitter.Writer.Scope())
+        {
+            if (hasContext)
+            {
+                context.Emitter.Writer.AppendLine(
+                    "uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;");
+                context.Emitter.Writer.AppendLine("if (_gsharp_contexts[_ctxtid]._state != -1)");
+            }
+
+            using (hasContext ? context.Emitter.Writer.Scope() : default)
+            {
+                if (hasContext)
+                {
+                    context.Emitter.Writer.AppendLine("anyActive = true;");
+                }
+
                 context.Emitter.Writer.AppendLine(
                     "__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);");
                 context.Emitter.Writer.Append(methodName);
@@ -378,9 +521,22 @@ public static class MethodTranspiler
                         }
 
                         isFirst = false;
-
                         context.Emitter.Writer.Append(parameter.Identifier.Text);
                     }
+
+                    if (hasContext)
+                    {
+                        if (!isFirst)
+                        {
+                            context.Emitter.Writer.AppendComma().AppendSpace();
+                        }
+
+                        isFirst = false;
+                        context.Emitter.Writer.Append("&_gsharp_contexts[_ctxtid]");
+                    }
+
+                    var isKernelWithReturn = methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
+                                             methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
 
                     if (isKernelWithReturn)
                     {
