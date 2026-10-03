@@ -25,7 +25,7 @@ public class GpuBigIntegerTests : IDisposable
     public void Test_Construct_WorksCorrectly()
     {
         CudaCapability.EnsureGpuAvailable();
-        var gpuBigInt = new GpuUIntBigInteger(_context, 4);
+        using var gpuBigInt = new GpuUIntBigInteger(_context, 4);
         var signed = new GpuBigInteger(gpuBigInt, isNegative: true);
 
         Assert.True(signed.IsNegative);

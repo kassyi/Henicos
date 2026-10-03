@@ -896,7 +896,7 @@ public class GpuBigFloatArithmeticTests
         });
     }
 
-    protected SettingsTask Verify(object? target,
+    protected Task Verify(object? target,
         [CallerMemberName] string methodName = "")
     {
         return Verifier.Verify(target).UseFastHashSnapshotName(methodName);
