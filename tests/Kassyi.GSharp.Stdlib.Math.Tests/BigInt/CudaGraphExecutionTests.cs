@@ -9,6 +9,7 @@ using Xunit;
 namespace Kassyi.GSharp.Stdlib.Math.Tests.GpuBigInt;
 
 [Trait("Category", "GpuExecution")]
+[Collection("CudaGraphExclusive")]
 public class CudaGraphExecutionTests
 {
     [SkippableFact]
