@@ -1,19 +1,13 @@
 using System.Threading.Tasks;
-using Kassyi.GSharp.Compiler.Lowering;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 
-public class BranchTests
+public class BranchTests : StateMachineTestBase
 {
     [Fact]
     [Trait("Category", "Compiler")]
-    public Task Lower_IfStatement_WithoutElse()
-    {
-        var code = """
+    public Task Lower_IfStatement_WithoutElse() => VerifyBranchRewrite("""
         {
             if (condition)
             {
@@ -21,21 +15,11 @@ public class BranchTests
                 Gpu.SyncThreads();
             }
         }
-        """;
-        var block = (BlockSyntax)SyntaxFactory.ParseStatement(code);
-        
-        var rewriter = new BranchRewriter();
-        var rewritten = rewriter.Rewrite(block);
-        
-        var formatted = rewritten.NormalizeWhitespace().ToFullString();
-        return VerifyXunit.Verifier.Verify(formatted);
-    }
+        """);
 
     [Fact]
     [Trait("Category", "Compiler")]
-    public Task Lower_IfStatement_WithElse()
-    {
-        var code = """
+    public Task Lower_IfStatement_WithElse() => VerifyBranchRewrite("""
         {
             if (condition)
             {
@@ -47,13 +31,5 @@ public class BranchTests
                 Gpu.SyncThreads();
             }
         }
-        """;
-        var block = (BlockSyntax)SyntaxFactory.ParseStatement(code);
-        
-        var rewriter = new BranchRewriter();
-        var rewritten = rewriter.Rewrite(block);
-        
-        var formatted = rewritten.NormalizeWhitespace().ToFullString();
-        return VerifyXunit.Verifier.Verify(formatted);
-    }
+        """);
 }
