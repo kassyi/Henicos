@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Stdlib.Math.GpuBigInt;
 /// used for tracking alternating series or arbitrary signed integers on the GPU.
 /// </summary>
 public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value, bool isNegative)
-    : IEquatable<GpuBigInteger>, IComparable<GpuBigInteger>
+    : IEquatable<GpuBigInteger>, IComparable<GpuBigInteger>, IDisposable
 {
     /// <summary>
     /// Gets the underlying absolute value buffer on the GPU.
@@ -18,6 +18,11 @@ public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value, b
     /// Gets a value indicating whether the integer is strictly negative.
     /// </summary>
     public bool IsNegative { get; } = isNegative;
+
+    /// <summary>
+    /// Disposes the underlying GPU memory.
+    /// </summary>
+    public void Dispose() => Value.Dispose();
 
     public int CompareTo(GpuBigInteger other)
     {
