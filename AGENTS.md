@@ -58,6 +58,7 @@ For all C# coding style conventions (Naming, Syntax, Zero-Allocation preferences
 
 - **General C# Style:** [`.agents/rules/coding-style.md`](.agents/rules/coding-style.md)
 - **GPU / C# Boundary Naming Conventions:** [`.agents/rules/gsharp-naming-conventions.md`](.agents/rules/gsharp-naming-conventions.md)
+- **Test Architecture & Tier 1-3 Strategy:** [`.agents/rules/test-architecture.md`](.agents/rules/test-architecture.md)
 
 ---
 
