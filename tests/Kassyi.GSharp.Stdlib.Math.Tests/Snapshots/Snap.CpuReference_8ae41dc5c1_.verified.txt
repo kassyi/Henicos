@@ -1,0 +1,10 @@
+﻿{
+  ResultWords: [
+    1431655765,
+    1431655765,
+    1431655765,
+    2236962133
+  ],
+  ResultExp: -117,
+  ResultSign: false
+}
