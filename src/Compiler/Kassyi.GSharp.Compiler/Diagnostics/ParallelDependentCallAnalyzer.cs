@@ -58,7 +58,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
         {
             var symbol = context.SemanticModel.GetSymbol(node) as IMethodSymbol;
-            bool isSingleThreadMacro = false;
+            var isSingleThreadMacro = false;
 
             if (symbol != null &&
                 (symbol.Name == TypeConstants.GpuMacros.SingleThread || symbol.Name == TypeConstants.GpuMacros.SyncGrid) &&
@@ -149,7 +149,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
 
         public override void VisitIfStatement(IfStatementSyntax node)
         {
-            bool isDivergentSingleThread = IsSingleThreadDivergentCondition(node.Condition);
+            var isDivergentSingleThread = IsSingleThreadDivergentCondition(node.Condition);
 
             if (isDivergentSingleThread)
             {

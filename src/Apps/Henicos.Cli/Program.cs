@@ -169,7 +169,7 @@ public class FermatBenchmarks
     [IterationCleanup]
     public void IterationCleanup()
     {
-        CudaDriverApi.cuMemGetInfo_v2(out nint vramAfter, out _);
+        CudaDriverApi.cuMemGetInfo_v2(out var vramAfter, out _);
         long leakedMb = (_vramBefore - vramAfter) / 1024 / 1024;
         if (leakedMb > 0)
         {

@@ -132,16 +132,16 @@ public static partial class GpuBigIntFermatKernels
             var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords ? numWords - 1 : srcIdx0);
             var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords ? numWords - 1 : srcIdx1);
 
-            uint w0 = src[safeIdx0];
-            uint w1 = src[safeIdx1];
+            var w0 = src[safeIdx0];
+            var w1 = src[safeIdx1];
 
-            uint mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
-            uint mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
+            var mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
+            var mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
 
             w0 &= mask0;
             w1 &= mask1;
 
-            uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
             dst[i] = (w0 << bitShift) | ((w1 >> (32 - bitShift)) & shiftMask);
         });
 
@@ -179,16 +179,16 @@ public static partial class GpuBigIntFermatKernels
                 var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumWords * 2 ? ctx.NumWords * 2 - 1 : srcIdx0);
                 var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumWords * 2 ? ctx.NumWords * 2 - 1 : srcIdx1);
 
-                uint w0 = ctx.MulResult[safeIdx0];
-                uint w1 = ctx.MulResult[safeIdx1];
+                var w0 = ctx.MulResult[safeIdx0];
+                var w1 = ctx.MulResult[safeIdx1];
 
-                uint mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumWords * 2 ? 0xFFFFFFFFu : 0u;
-                uint mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumWords * 2 ? 0xFFFFFFFFu : 0u;
+                var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumWords * 2 ? 0xFFFFFFFFu : 0u;
+                var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumWords * 2 ? 0xFFFFFFFFu : 0u;
 
                 w0 &= mask0;
                 w1 &= mask1;
 
-                uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+                var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
                 ctx.Quotient[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
 
                 ctx.Remainder[i] = ctx.MulResult[i] & ctx.RemainderMask[i];

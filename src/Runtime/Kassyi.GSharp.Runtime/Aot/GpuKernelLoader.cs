@@ -179,7 +179,7 @@ public sealed class GpuKernelLoader
     private static unsafe GpuModule LoadKernelFunction(byte[] binaryData, string kernelName)
     {
         // Fatbins MUST be 8-byte aligned for cuModuleLoadDataEx
-        void* pAlignedBinary = NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
+        var pAlignedBinary = NativeMemory.AlignedAlloc((nuint)binaryData.Length, 8);
         try
         {
             Marshal.Copy(binaryData, 0, (IntPtr)pAlignedBinary, binaryData.Length);
@@ -209,7 +209,7 @@ public sealed class GpuKernelLoader
         EnsureInitialized();
 
         var (processed, _) = AotSignatureValidator.ExtractAndVerify(binaryData);
-        void* pAlignedBinary = NativeMemory.AlignedAlloc((nuint)processed.Length, 8);
+        var pAlignedBinary = NativeMemory.AlignedAlloc((nuint)processed.Length, 8);
         try
         {
             Marshal.Copy(processed, 0, (IntPtr)pAlignedBinary, processed.Length);

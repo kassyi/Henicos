@@ -32,11 +32,11 @@ public static partial class GpuBigFloatKernels
     private static uint GetShiftedRightWord([GpuReadOnly] uint[] data, int numWords, int destIdx, int wordShift,
         int bitShift)
     {
-        int s0 = destIdx + wordShift;
-        int s1 = s0 + 1;
+        var s0 = destIdx + wordShift;
+        var s1 = s0 + 1;
 
-        uint w0 = (s0 >= 0 && s0 < numWords) ? data[s0] : 0u;
-        uint w1 = (s1 >= 0 && s1 < numWords) ? data[s1] : 0u;
+        var w0 = (s0 >= 0 && s0 < numWords) ? data[s0] : 0u;
+        var w1 = (s1 >= 0 && s1 < numWords) ? data[s1] : 0u;
 
         if (bitShift == 0)
         {
@@ -49,22 +49,22 @@ public static partial class GpuBigFloatKernels
     [GpuKernel]
     public static void FloatAddAlignedKernel(GpuBigFloatAddContext ctx)
     {
-        int tid = ThreadIndex.X;
-        int bDim = BlockDimension.X;
-        int laneId = tid % 32;
-        int warpId = tid / 32;
+        var tid = ThreadIndex.X;
+        var bDim = BlockDimension.X;
+        var laneId = tid % 32;
+        var warpId = tid / 32;
 
-        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
+        var sharedCarry = new SharedMemory<uint>(32);
 
-        uint blockCarryIn = ctx.SignScale == 1 ? 0u : 1u;
+        var blockCarryIn = ctx.SignScale == 1 ? 0u : 1u;
 
         for (int offset = 0; offset < ctx.NumWords; offset += bDim)
         {
-            int idx = offset + tid;
-            bool valid = idx < ctx.NumWords;
+            var idx = offset + tid;
+            var valid = idx < ctx.NumWords;
 
-            uint valA = (valid && idx < ctx.LargerWords) ? ctx.LargerSig[idx] : 0u;
-            uint valB = 0u;
+            var valA = (valid && idx < ctx.LargerWords) ? ctx.LargerSig[idx] : 0u;
+            var valB = 0u;
             if (valid)
             {
                 valB = GetShiftedRightWord(ctx.SmallerSig, ctx.SmallerWords, idx, ctx.WordShift, ctx.BitShift);
@@ -75,13 +75,13 @@ public static partial class GpuBigFloatKernels
                 valB = ~valB;
             }
 
-            ulong sum = (ulong)valA + valB;
-            uint g = (uint)(sum >> 32);
-            uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
+            var sum = (ulong)valA + valB;
+            var g = (uint)(sum >> 32);
+            var p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
             var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
-            uint scanG = warpScan.Generate;
-            uint scanP = warpScan.Propagate;
+            var scanG = warpScan.Generate;
+            var scanP = warpScan.Propagate;
 
             if (laneId == 31)
             {
@@ -92,7 +92,7 @@ public static partial class GpuBigFloatKernels
 
             if (warpId == 0)
             {
-                int numWarps = (bDim + 31) / 32;
+                var numWarps = (bDim + 31) / 32;
                 var valState = laneId < numWarps
                     ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId])
                     : new GpuBigIntKernels.CarryState(0, 0);
@@ -106,7 +106,7 @@ public static partial class GpuBigFloatKernels
 
             Gpu.SyncThreads();
 
-            uint carryIn = blockCarryIn;
+            var carryIn = blockCarryIn;
 
             if (warpId > 0)
             {
@@ -114,8 +114,8 @@ public static partial class GpuBigFloatKernels
                     carryIn);
             }
 
-            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
-            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
+            var prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
+            var prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
             if (laneId > 0)
             {
                 carryIn = prevScanG | (prevScanP & carryIn);
@@ -140,21 +140,21 @@ public static partial class GpuBigFloatKernels
         uint[] resultSig, int resultWords,
         int wordShift, int bitShift)
     {
-        int tid = ThreadIndex.X;
-        int bDim = BlockDimension.X;
+        var tid = ThreadIndex.X;
+        var bDim = BlockDimension.X;
 
         for (int offset = 0; offset < resultWords; offset += bDim)
         {
-            int idx = offset + tid;
-            bool valid = idx < resultWords;
+            var idx = offset + tid;
+            var valid = idx < resultWords;
 
             if (valid)
             {
-                int srcIdxHi = idx - wordShift;
-                int srcIdxLo = srcIdxHi - 1;
+                var srcIdxHi = idx - wordShift;
+                var srcIdxLo = srcIdxHi - 1;
 
-                uint hi = (srcIdxHi >= 0 && srcIdxHi < valueWords) ? valueSig[srcIdxHi] : 0u;
-                uint lo = (srcIdxLo >= 0 && srcIdxLo < valueWords) ? valueSig[srcIdxLo] : 0u;
+                var hi = (srcIdxHi >= 0 && srcIdxHi < valueWords) ? valueSig[srcIdxHi] : 0u;
+                var lo = (srcIdxLo >= 0 && srcIdxLo < valueWords) ? valueSig[srcIdxLo] : 0u;
 
                 if (bitShift == 0)
                 {

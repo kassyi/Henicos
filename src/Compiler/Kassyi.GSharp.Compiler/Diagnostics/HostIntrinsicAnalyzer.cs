@@ -21,7 +21,7 @@ public class HostIntrinsicAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        bool isIntrinsic = methodSymbol.HasAttribute(KnownAttributes.CudaIntrinsic);
+        var isIntrinsic = methodSymbol.HasAttribute(KnownAttributes.CudaIntrinsic);
         if (!isIntrinsic)
         {
             return;

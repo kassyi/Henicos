@@ -197,11 +197,11 @@ public static class MethodTranspiler
                 KnownAttributes.GpuNoInline or KnownAttributes.GpuNoInline + "Attribute" => "__noinline__",
                 KnownAttributes.MethodImpl or KnownAttributes.MethodImpl + "Attribute" => ExtractMethodImplOptions(attr)
                     switch
-                {
-                    var opt when (opt & MethodImplOptions.AggressiveInlining) != 0 => "__forceinline__",
-                    var opt when (opt & MethodImplOptions.NoInlining) != 0 => "__noinline__",
-                    _ => null
-                },
+                    {
+                        var opt when (opt & MethodImplOptions.AggressiveInlining) != 0 => "__forceinline__",
+                        var opt when (opt & MethodImplOptions.NoInlining) != 0 => "__noinline__",
+                        _ => null
+                    },
                 _ => null
             };
 
@@ -252,7 +252,8 @@ public static class MethodTranspiler
             {
                 context.Emitter.Writer.AppendLine(
                     "unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
-                    " * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
+                    " * (blockDim.x * blockDim.y * blockDim.z) +" +
+                    " threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
             }
 
             if (method.Body != null)
@@ -300,7 +301,8 @@ public static class MethodTranspiler
                 context.Emitter.Writer.Append("const ");
             }
 
-            var (isRefPointer, isPointerType, hasRestrict) = context.Emitter.Dialect.AppendParameter(ref context, p, typeSymbol);
+            var (isRefPointer, isPointerType, hasRestrict) =
+                context.Emitter.Dialect.AppendParameter(ref context, p, typeSymbol);
             StructTranspiler.CheckLargeStructByValue(p, typeSymbol, isRefPointer, ref context);
 
             if (!isDevice && isPointerType && !hasRestrict)

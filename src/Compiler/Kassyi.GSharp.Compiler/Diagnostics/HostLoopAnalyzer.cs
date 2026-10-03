@@ -44,7 +44,7 @@ public class HostLoopAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        bool isInsideLoop = false;
+        var isInsideLoop = false;
         var parent = invocation.Parent;
         while (parent != null)
         {

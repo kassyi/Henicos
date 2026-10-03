@@ -171,7 +171,7 @@ internal static class WrapperEmitter
 
         writer.AppendLine();
 
-        bool isGlobalNamespace = classSymbol.ContainingNamespace.IsGlobalNamespace;
+        var isGlobalNamespace = classSymbol.ContainingNamespace.IsGlobalNamespace;
         if (!isGlobalNamespace)
         {
             writer.Append("namespace ");

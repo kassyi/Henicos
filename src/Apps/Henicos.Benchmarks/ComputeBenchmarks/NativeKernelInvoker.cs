@@ -37,7 +37,7 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        IntPtr kernel = FunctionSgemm;
+        var kernel = FunctionSgemm;
 
         using var d_a = new GpuBuffer<float>(a.Length);
         d_a.CopyToDevice(a);
@@ -45,11 +45,11 @@ public static unsafe class NativeKernelInvoker
         d_b.CopyToDevice(b);
         using var d_c = new GpuBuffer<float>(c.Length);
 
-        IntPtr pa = d_a.DevicePointer;
-        IntPtr pb = d_b.DevicePointer;
-        IntPtr pc = d_c.DevicePointer;
+        var pa = d_a.DevicePointer;
+        var pb = d_b.DevicePointer;
+        var pc = d_c.DevicePointer;
 
-        void** kernelParams = stackalloc void*[4];
+        var kernelParams = stackalloc void*[4];
         kernelParams[0] = &pa;
         kernelParams[1] = &pb;
         kernelParams[2] = &pc;
@@ -75,16 +75,16 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        IntPtr kernel = FunctionSha256;
+        var kernel = FunctionSha256;
 
         using var d_in = new GpuBuffer<byte>(input.Length);
         d_in.CopyToDevice(input);
         using var d_out = new GpuBuffer<uint>(output.Length);
 
-        IntPtr pin = d_in.DevicePointer;
-        IntPtr pout = d_out.DevicePointer;
+        var pin = d_in.DevicePointer;
+        var pout = d_out.DevicePointer;
 
-        void** kernelParams = stackalloc void*[3];
+        var kernelParams = stackalloc void*[3];
         kernelParams[0] = &pin;
         kernelParams[1] = &pout;
         kernelParams[2] = &numMessages;
@@ -124,7 +124,7 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        IntPtr kernel = FunctionBlackScholes;
+        var kernel = FunctionBlackScholes;
 
         using var d_s = new GpuBuffer<float>(s.Length);
         d_s.CopyToDevice(s);
@@ -147,7 +147,7 @@ public static unsafe class NativeKernelInvoker
             N = n
         };
 
-        void** kernelParams = stackalloc void*[1];
+        var kernelParams = stackalloc void*[1];
         kernelParams[0] = &ctx;
 
         CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -171,16 +171,16 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        IntPtr kernel = FunctionReduction;
+        var kernel = FunctionReduction;
 
         using var d_in = new GpuBuffer<Float4>(input.Length);
         d_in.CopyToDevice(input);
         using var d_out = new GpuBuffer<float>(output.Length);
 
-        IntPtr pin = d_in.DevicePointer;
-        IntPtr pout = d_out.DevicePointer;
+        var pin = d_in.DevicePointer;
+        var pout = d_out.DevicePointer;
 
-        void** kernelParams = stackalloc void*[3];
+        var kernelParams = stackalloc void*[3];
         kernelParams[0] = &pin;
         kernelParams[1] = &pout;
         kernelParams[2] = &n;
