@@ -66,6 +66,14 @@ public enum CuFunctionAttribute
     BinaryVersion = 6
 }
 
+/// <summary>Represents the capture status of a CUDA stream.</summary>
+public enum CUstreamCaptureStatus
+{
+    None = 0,
+    Active = 1,
+    Invalidated = 2
+}
+
 /// <summary>Exception thrown when a CUDA Driver API call returns a non-success status code.</summary>
 public class CudaException(CUresult result, string? message = null) : Exception(message ?? $"CUDA Error: {result}")
 {
@@ -243,6 +251,14 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemAllocAsync(out IntPtr dptr, IntPtr bytesize, IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuMemFreeAsync(IntPtr dptr, IntPtr hStream);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuMemsetD8Async(IntPtr dptr, byte uc, IntPtr byteCount, IntPtr hStream);
 
     [LibraryImport(DllName)]
@@ -257,6 +273,10 @@ public static partial class CudaDriverApi
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuStreamBeginCapture(IntPtr hStream, int mode);
+
+    [LibraryImport(DllName)]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
+    public static partial CUresult cuStreamIsCapturing(IntPtr hStream, out CUstreamCaptureStatus captureStatus);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
