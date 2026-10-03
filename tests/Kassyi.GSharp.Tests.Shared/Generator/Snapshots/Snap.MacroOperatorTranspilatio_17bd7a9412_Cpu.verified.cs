@@ -67,11 +67,11 @@ public const string DebugName_State = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 State;
 }
-public static unsafe void Marshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs)
+public static unsafe void Marshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 native.State = host.State;
 }
-public static unsafe void Unmarshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, bool isDevicePtr)
+public static unsafe void Unmarshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, bool isDevicePtr, IntPtr hStream = default)
 {
 host.State = native.State;
 }

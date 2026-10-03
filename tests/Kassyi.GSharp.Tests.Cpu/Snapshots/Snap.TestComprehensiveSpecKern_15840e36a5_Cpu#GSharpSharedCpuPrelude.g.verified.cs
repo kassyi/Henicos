@@ -138,10 +138,10 @@ inline int atomicExch(int* address, int val) { int old = *address; *address = va
 inline unsigned int atomicExch(unsigned int* address, unsigned int val) { unsigned int old = *address; *address = val; return old; }
 inline unsigned long long atomicExch(unsigned long long* address, unsigned long long val) { unsigned long long old = *address; *address = val; return old; }
 
-__declspec(selectany) char __gsharp_dynamic_smem[65536];
-__declspec(selectany) size_t __gsharp_smem_offsets[64];
-__declspec(selectany) bool __gsharp_smem_initialized[64];
-__declspec(selectany) size_t __gsharp_smem_current_base;
+inline thread_local char __gsharp_dynamic_smem[65536];
+inline thread_local size_t __gsharp_smem_offsets[64];
+inline thread_local bool __gsharp_smem_initialized[64];
+inline thread_local size_t __gsharp_smem_current_base;
 
 inline void __gsharp_reset_smem() {
     __gsharp_smem_current_base = 0;
