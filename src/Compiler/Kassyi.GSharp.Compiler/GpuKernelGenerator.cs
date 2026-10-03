@@ -123,7 +123,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
-        
+
         try
         {
             if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
@@ -172,10 +172,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             var collector = new DiagnosticCollector();
             collector.Report(Diagnostic.Create(
-                GSharpDiagnostics.InternalCompilerError, 
-                Location.None, 
+                GSharpDiagnostics.InternalCompilerError,
+                Location.None,
                 ex.Message));
-            
+
             return new TranspiledKernelResult(
                 methodSymbol!,
                 methodSymbol?.Name ?? "E",
@@ -190,7 +190,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
-        
+
         try
         {
             if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
@@ -226,14 +226,20 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cppBody,
                 collector.GetDiagnostics());
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            var collector = new DiagnosticCollector();
+            collector.Report(Diagnostic.Create(
+                GSharpDiagnostics.InternalCompilerError,
+                Location.None,
+                ex.Message));
+
             return new TranspiledDeviceMethodResult(
                 methodSymbol!,
                 methodSymbol?.Name ?? "E",
                 methodSymbol?.ContainingType.Name ?? "E",
                 null,
-                "", "", "", "", []);
+                "", "", "", "", collector.GetDiagnostics());
         }
     }
 

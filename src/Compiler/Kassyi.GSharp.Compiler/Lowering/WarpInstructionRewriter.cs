@@ -84,14 +84,14 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             switch (inv.Expression)
             {
                 case MemberAccessExpressionSyntax ma:
-                {
-                    if (ma.Expression is IdentifierNameSyntax { Identifier.ValueText: "Gpu" })
                     {
-                        name = ma.Name.Identifier.ValueText;
-                    }
+                        if (ma.Expression is IdentifierNameSyntax { Identifier.ValueText: "Gpu" })
+                        {
+                            name = ma.Name.Identifier.ValueText;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
 
                 case IdentifierNameSyntax id:
 

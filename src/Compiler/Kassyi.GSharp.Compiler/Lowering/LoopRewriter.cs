@@ -8,6 +8,26 @@ public class LoopRewriter : CSharpSyntaxRewriter
     private int _labelCounter;
     private readonly Stack<(string Break, string Continue)> _loopStack = new();
 
+    private static bool ContainsBarrier(SyntaxNode node)
+    {
+        foreach (var descendant in node.DescendantNodesAndSelf())
+        {
+            if (descendant is not InvocationExpressionSyntax inv)
+            {
+                continue;
+            }
+
+            if ((inv.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SyncThreads" } ma &&
+                 (ma.Expression as IdentifierNameSyntax)?.Identifier.ValueText == "Gpu") ||
+                inv.Expression is IdentifierNameSyntax { Identifier.ValueText: "SyncThreads" })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
@@ -20,7 +40,14 @@ public class LoopRewriter : CSharpSyntaxRewriter
 
             if (visited is BlockSyntax nestedBlock)
             {
-                newStatements.AddRange(nestedBlock.Statements);
+                if (ContainsBarrier(statement))
+                {
+                    newStatements.AddRange(nestedBlock.Statements);
+                }
+                else
+                {
+                    newStatements.Add(nestedBlock);
+                }
             }
             else
             {
@@ -53,18 +80,38 @@ public class LoopRewriter : CSharpSyntaxRewriter
         return SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(continueLabel));
     }
 
-    public override SyntaxNode VisitWhileStatement(WhileStatementSyntax node) =>
-        RewriteLoop("While", node.Condition, node.Statement, isPostCondition: false);
+    public override SyntaxNode VisitWhileStatement(WhileStatementSyntax node)
+    {
+        if (!ContainsBarrier(node))
+        {
+            return base.VisitWhileStatement(node)!;
+        }
 
-    public override SyntaxNode VisitDoStatement(DoStatementSyntax node) =>
-        RewriteLoop("Do", node.Condition, node.Statement, isPostCondition: true);
+        return RewriteLoop("While", node.Condition, node.Statement, isPostCondition: false);
+    }
+
+    public override SyntaxNode VisitDoStatement(DoStatementSyntax node)
+    {
+        if (!ContainsBarrier(node))
+        {
+            return base.VisitDoStatement(node)!;
+        }
+
+        return RewriteLoop("Do", node.Condition, node.Statement, isPostCondition: true);
+    }
 
     public override SyntaxNode VisitForStatement(ForStatementSyntax node)
     {
+        if (!ContainsBarrier(node))
+        {
+            return base.VisitForStatement(node)!;
+        }
+
         var initializers = ImmutableArray.CreateBuilder<StatementSyntax>();
         if (node.Declaration != null)
         {
-            initializers.Add(SyntaxFactory.LocalDeclarationStatement((VariableDeclarationSyntax)Visit(node.Declaration)));
+            initializers.Add(
+                SyntaxFactory.LocalDeclarationStatement((VariableDeclarationSyntax)Visit(node.Declaration)));
         }
 
         foreach (var init in node.Initializers)
@@ -144,12 +191,14 @@ public class LoopRewriter : CSharpSyntaxRewriter
         if (isPostCondition && condition != null)
         {
             var visitedCondition = (ExpressionSyntax)Visit(condition);
-            var gotoStart = SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(startLabel));
+            var gotoStart =
+                SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(startLabel));
             statements.Add(SyntaxFactory.IfStatement(visitedCondition, gotoStart));
         }
         else
         {
-            statements.Add(SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(startLabel)));
+            statements.Add(SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement,
+                SyntaxFactory.IdentifierName(startLabel)));
         }
 
         statements.Add(SyntaxFactory.LabeledStatement(endLabel, SyntaxFactory.EmptyStatement()));

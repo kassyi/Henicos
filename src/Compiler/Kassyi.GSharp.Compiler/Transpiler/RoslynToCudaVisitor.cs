@@ -272,12 +272,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 continue;
             }
 
-            if (IsParameterlessSyncGrid(next))
-            {
-                return false;
-            }
-
-            return true;
+            return !IsParameterlessSyncGrid(next);
         }
 
         return false;
@@ -294,11 +289,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
 
         return Context.Query.SemanticModel.GetSymbol(invocation) is IMethodSymbol
-               {
-                   Name: TypeConstants.GpuMacros.SyncGrid,
-                   ContainingType.Name: TypeConstants.GpuType,
-                   Parameters.Length: 0
-               } symbol &&
+        {
+            Name: TypeConstants.GpuMacros.SyncGrid,
+            ContainingType.Name: TypeConstants.GpuType,
+            Parameters.Length: 0
+        } symbol &&
                symbol.ContainingNamespace.IsCoreNamespace();
     }
 
@@ -459,14 +454,14 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
                 return;
             case IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true }:
-            {
-                using (Context.Emitter.Writer.Parentheses())
                 {
-                    Context.Emitter.Writer.Append($"*{node.Identifier.Text}");
-                }
+                    using (Context.Emitter.Writer.Parentheses())
+                    {
+                        Context.Emitter.Writer.Append($"*{node.Identifier.Text}");
+                    }
 
-                return;
-            }
+                    return;
+                }
             default:
                 Context.Emitter.Writer.Append(node.Identifier.Text);
                 break;

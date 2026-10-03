@@ -8,6 +8,26 @@ public class BranchRewriter : CSharpSyntaxRewriter
 {
     private int _labelCounter;
 
+    private static bool ContainsBarrier(SyntaxNode node)
+    {
+        foreach (var descendant in node.DescendantNodesAndSelf())
+        {
+            if (descendant is not InvocationExpressionSyntax inv)
+            {
+                continue;
+            }
+
+            if ((inv.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SyncThreads" } ma &&
+                 (ma.Expression as IdentifierNameSyntax)?.Identifier.ValueText == "Gpu") ||
+                inv.Expression is IdentifierNameSyntax { Identifier.ValueText: "SyncThreads" })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
@@ -20,10 +40,16 @@ public class BranchRewriter : CSharpSyntaxRewriter
 
             if (visited is BlockSyntax nestedBlock)
             {
-                // Inline nested blocks to ensure a completely flat statement list for the StateMachineLowerer.
-                // C# prevents local variable shadowing within the same method (CS0136), 
-                // so flattening scopes will not cause name collisions.
-                newStatements.AddRange(nestedBlock.Statements);
+                // Only inline blocks that contain a barrier. Other blocks can remain nested 
+                // to preserve variable scopes and prevent unnecessary hoisting.
+                if (ContainsBarrier(statement))
+                {
+                    newStatements.AddRange(nestedBlock.Statements);
+                }
+                else
+                {
+                    newStatements.Add(nestedBlock);
+                }
             }
             else
             {
@@ -36,6 +62,11 @@ public class BranchRewriter : CSharpSyntaxRewriter
 
     public override SyntaxNode VisitIfStatement(IfStatementSyntax node)
     {
+        if (!ContainsBarrier(node))
+        {
+            return base.VisitIfStatement(node)!;
+        }
+
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
         var id = _labelCounter++;
         var endLabelName = $"_BranchEnd_{id}";

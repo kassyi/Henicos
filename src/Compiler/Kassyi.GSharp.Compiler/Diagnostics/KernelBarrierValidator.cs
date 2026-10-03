@@ -211,26 +211,26 @@ internal readonly ref struct KernelBarrierValidator(
                     break;
                 // GSH0045: Queue local function containing barrier for recursion check
                 case LocalFunctionStatementSyntax localFunc:
-                {
-                    var alreadyQueued = false;
-                    foreach (var queued in _localFunctionsWithBarrier)
                     {
-                        if (queued != localFunc)
+                        var alreadyQueued = false;
+                        foreach (var queued in _localFunctionsWithBarrier)
                         {
-                            continue;
+                            if (queued != localFunc)
+                            {
+                                continue;
+                            }
+
+                            alreadyQueued = true;
+                            break;
                         }
 
-                        alreadyQueued = true;
+                        if (!alreadyQueued)
+                        {
+                            _localFunctionsWithBarrier.Add(localFunc);
+                        }
+
                         break;
                     }
-
-                    if (!alreadyQueued)
-                    {
-                        _localFunctionsWithBarrier.Add(localFunc);
-                    }
-
-                    break;
-                }
             }
         }
     }
