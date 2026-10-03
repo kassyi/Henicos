@@ -422,5 +422,14 @@
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "InternalCompilerError",
+    "id": "GSH0048",
+    "title": "Source Generator Internal Error",
+    "messageFormat": "Internal compiler error in G# Transpiler: {0}",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
   }
 ]
