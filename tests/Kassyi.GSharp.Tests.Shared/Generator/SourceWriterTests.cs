@@ -118,10 +118,7 @@ public class SourceWriterTests
         }
 
         var methodName = nameof(Test_SourceWriter_NestedScopeAndIndentation_Snapshots);
-        var hash10 = Kassyi.GSharp.Tests.Shared.Helpers.HashHelper.ComputeShortHash(methodName);
-        var snapshotName = $"Snap.SourceWriter_{hash10}";
-
-        return Verifier.Verify(writer.ToString()).UseFileName(snapshotName);
+        return Verifier.Verify(writer.ToString()).UseFastHashSnapshotName(methodName);
     }
 }
 

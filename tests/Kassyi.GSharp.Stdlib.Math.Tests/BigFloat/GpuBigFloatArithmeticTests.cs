@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime;
@@ -898,10 +899,6 @@ public class GpuBigFloatArithmeticTests
     protected SettingsTask Verify(object? target,
         [CallerMemberName] string methodName = "")
     {
-        var prefixParts = methodName.Split('_');
-        var prefix = prefixParts.Length > 1 ? prefixParts[1] : "Test";
-        var hash10 = Helpers.HashHelper.ComputeShortHash(methodName);
-        var snapshotName = $"Snap.{prefix}_{hash10}";
-        return VerifyXunit.Verifier.Verify(target).UseFileName(snapshotName);
+        return Verifier.Verify(target).UseFastHashSnapshotName(methodName);
     }
 }

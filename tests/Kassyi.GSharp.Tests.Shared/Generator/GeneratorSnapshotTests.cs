@@ -199,13 +199,9 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
             .Select(t => $"// File: {Path.GetFileName(t.FilePath)}\n{t.GetText().ToString()}");
         var combinedSource = string.Join("\n\n", nonSharedTrees);
 
-        var prefix = testName.Split('_')[0];
-        var hash10 = Kassyi.GSharp.Tests.Shared.Helpers.HashHelper.ComputeShortHash(testName);
-        var snapshotName = $"Snap.{prefix}_{hash10}_{DialectName}";
-
         await Verifier.Verify(combinedSource, "cs")
             .UseDirectory(GetSnapshotsDirectory())
-            .UseFileName(snapshotName);
+            .UseFastHashSnapshotName(testName, DialectName);
     }
 
     [SkippableTheory]
@@ -247,12 +243,12 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
             optionsProvider: new Kassyi.GSharp.Tests.Shared.Helpers.TestAnalyzerConfigOptionsProvider(DialectName));
 
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
-        
+
         var runResult = driver.GetRunResult();
         var sharedHeader = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("Prelude"))
             ?.GetText().ToString();
-            
+
         Assert.NotNull(sharedHeader);
         Assert.NotEmpty(sharedHeader);
 
@@ -292,13 +288,14 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         var missingSnapshots = new List<string>();
         foreach (var pureName in mandatorySnapshotKernels)
         {
-            var prefix = pureName.Split('_')[0];
-            var hash10 = Kassyi.GSharp.Tests.Shared.Helpers.HashHelper.ComputeShortHash(pureName);
+            var prefix = SnapshotNamingHelper.GetMeaningfulPrefix(pureName);
+            var hash10 = HashHelper.ComputeShortHash(pureName);
             var expectedPattern = $"{prefix}_{hash10}";
 
             if (!snapshotFiles.Any(f => f.Contains(expectedPattern, StringComparison.OrdinalIgnoreCase)))
             {
-                missingSnapshots.Add($"TestCase/Kernel '{pureName}' does not have any corresponding snapshot ({expectedPattern}).");
+                missingSnapshots.Add(
+                    $"TestCase/Kernel '{pureName}' does not have any corresponding snapshot ({expectedPattern}).");
             }
         }
 
