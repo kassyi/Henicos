@@ -9,29 +9,28 @@ This rule defines the standardized testing framework architecture for G# (Henico
 1. **C# Mental Model First & .cs Priority**: If code is intended to run as a G# GPU kernel, it should fundamentally be valid, compilable C# with IDE support (syntax highlighting, autocomplete, type-checking, and code formatting). Unless testing deliberately illegal C# syntax (e.g. defensive compiler recovery), **95% of test cases can and must be written directly in `.cs` files / C# syntax. Writing in `.cs` is the absolute highest priority.**
 2. **Snapshot Legitimacy as C# (`.verified.cs`)**: Existing and new snapshot tests producing `.verified.txt` must be rewritten wherever possible so that the generated output forms syntactically valid C# (e.g., wrapped in a dummy class/method or block context) and is emitted as `.verified.cs`.
 3. **Minimize Fragile String-based ASTs**: Avoid writing raw string code fragments (e.g., `ParseBlock("while(condition) { ... }")`). String-based syntax lacks semantic models, symbols, and compiler validation, making tests brittle and prone to artificial behaviors.
-4. **Strict 3-Tier Hierarchy**: Tests must be classified into Tier 1 (default), Tier 2 (AST lowering/rewrite), or Tier 3 (isolated raw strings for malformed edge cases).
+4. **Strict 2-Tier Hierarchy**: Tests must be classified into Tier 1 (default), Tier 2 (AST lowering/rewrite).
 
 ---
 
-## 2. The 3-Tier Testing Architecture
+## 2. The 2-Tier Testing Architecture
 
 ```mermaid
 graph TD
     A[G# Test Requirements] --> B{Standard kernel feature or normal transpile?}
     B -- Yes (95%) --> Tier1[Tier 1: E2E Snapshot & Execution Tests]
     B -- No --> C{AST Lowering, rewrite pass, or G#-illegal semantic test?}
-    C -- Yes (4%) --> Tier2[Tier 2: Delegate Expression Tests]
-    C -- No (1% - Malformed / Context-free AST) --> Tier3[Tier 3: Raw String Tests]
+    C -- Yes (5%) --> Tier2[Tier 2: Delegate Expression Tests]
 ```
 
 ### 2.1. Tier 1: E2E Snapshot & Execution Tests (~95% of tests)
 
-* **Purpose**: Primary testing approach for features, control flow, math intrinsics, and general kernel transpilation.
-* **Format**:
-  * GPU kernel defined in a dedicated `.cu.cs` file (e.g., `ControlFlowKernels.cu.cs`) decorated with `[GpuKernel]`.
-  * Transpiled end-to-end via `MegaCompiler` / Source Generator.
-  * Verified via `Verify.Xunit` snapshots (`.verified.cs`) and/or runtime execution (`LaunchKernel(...)`).
-* **Guarantee**: Full Roslyn semantic model and syntax tree validation. Guarantees that the kernel is valid C#.
+- **Purpose**: Primary testing approach for features, control flow, math intrinsics, and general kernel transpilation.
+- **Format**:
+    - GPU kernel defined in a dedicated `.cu.cs` file (e.g., `ControlFlowKernels.cu.cs`) decorated with `[GpuKernel]`.
+    - Transpiled end-to-end via `MegaCompiler` / Source Generator.
+    - Verified via `Verify.Xunit` snapshots (`.verified.cs`) and/or runtime execution (`LaunchKernel(...)`).
+- **Guarantee**: Full Roslyn semantic model and syntax tree validation. Guarantees that the kernel is valid C#.
 
 #### Example (Tier 1):
 
@@ -69,14 +68,14 @@ public class ControlFlowTests
 
 ---
 
-### 2.2. Tier 2: Delegate Expression Tests (~4% of tests)
+### 2.2. Tier 2: Delegate Expression Tests (~5% of tests)
 
-* **Purpose**: Testing internal AST passes (such as State Machine Lowering Phase 2.1–2.5), localized syntax rewriters, or testing diagnostics for syntax that is **legal in C# but prohibited in G#** (e.g., heap allocations or unsupported keywords).
-* **Format**:
-  * Written directly in C# using `Action` delegates or lambda expressions.
-  * Utilizes `[CallerArgumentExpression]` in the test base runner (`RunLoweringTest`) to capture the syntax expression.
-  * The test base parses the captured code with Roslyn into a `BlockSyntax` or `MethodDeclarationSyntax` and feeds it to the target rewriter.
-* **Benefits**: Full IDE support (syntax highlighting, formatting, refactoring) and compile-time detection of accidental syntax errors.
+- **Purpose**: Testing internal AST passes (such as State Machine Lowering Phase 2.1–2.5), localized syntax rewriters, or testing diagnostics for syntax that is **legal in C# but prohibited in G#** (e.g., heap allocations or unsupported keywords).
+- **Format**:
+    - Written directly in C# using `Action` delegates or lambda expressions.
+    - Utilizes `[CallerArgumentExpression]` in the test base runner (`RunLoweringTest`) to capture the syntax expression.
+    - The test base parses the captured code with Roslyn into a `BlockSyntax` or `MethodDeclarationSyntax` and feeds it to the target rewriter.
+- **Benefits**: Full IDE support (syntax highlighting, formatting, refactoring) and compile-time detection of accidental syntax errors.
 
 #### Example (Tier 2):
 
@@ -112,47 +111,26 @@ public abstract class StateMachineTestBase
 
 ---
 
-### 2.3. Tier 3: Raw String Tests (~1% of tests - Last Resort)
-
-* **Purpose**: Strictly reserved for scenarios where valid C# code cannot be constructed, such as:
-  * Context-free statement fragments.
-  * Intentionally malformed or broken AST nodes to test compiler defensive error-handling.
-  * Intermediate lowered AST structures that are syntactically impossible to write directly in C#.
-* **Format**:
-  * Explicitly isolated in dedicated helper methods (e.g., `RunRawLoweringTest(string rawCode)`).
-  * Must include an inline comment explaining why Tier 1 or Tier 2 cannot be used.
-
-#### Example (Tier 3):
-
-```csharp
-[Fact]
-[Trait("Category", "Compiler")]
-public Task Lower_MalformedIncompleteNode_DefensiveCheck()
-{
-    // Tier 3 Reason: Tests defensive handling when a context-free statement lacks an enclosing block/method.
-    return RunRawLoweringTest("while(condition)");
-}
-```
-
----
-
 ## 3. Test Suite Hygiene Rules
 
 ### 3.1. Prohibition of Redundant `partial` Modifiers
-* **Rule**: Do **NOT** declare test classes with the `partial` keyword (e.g. `public partial class FooTests`) unless the class is legitimately split across multiple physical files.
-* **Allowed `partial` usages**:
-  * Kernel classes in `.cu.cs` where the source generator emits companion host launcher methods into `.g.cs`.
-  * Large test classes explicitly partitioned across multiple source files.
+
+- **Rule**: Do **NOT** declare test classes with the `partial` keyword (e.g. `public partial class FooTests`) unless the class is legitimately split across multiple physical files.
+- **Allowed `partial` usages**:
+    - Kernel classes in `.cu.cs` where the source generator emits companion host launcher methods into `.g.cs`.
+    - Large test classes explicitly partitioned across multiple source files.
 
 ### 3.2. Categorization & Traits
-* Follow `qa-testing-guidelines`:
-  * Use `[Trait("Category", "Compiler")]`, `[Trait("Category", "SadPath")]`, `[Trait("Category", "GpuExecution")]`, etc.
-  * Never hardcode ticket numbers or Feature IDs into `[Trait]` attributes.
+
+- Follow `qa-testing-guidelines`:
+    - Use `[Trait("Category", "Compiler")]`, `[Trait("Category", "SadPath")]`, `[Trait("Category", "GpuExecution")]`, etc.
+    - Never hardcode ticket numbers or Feature IDs into `[Trait]` attributes.
 
 ### 3.3. Snapshot Format & Fast-Hash Naming (`.verified.cs`)
-* **Extension Priority**: Unless the target is purely non-code data (e.g. JSON dumps in stdlib math tests) or syntactically invalid edge cases, all snapshot tests **must emit `.verified.cs`**. If testing statements or partial constructs, the test harness must format/wrap them into valid C# code.
-* **Short Hash Naming**: Use the standardized zero-allocation FNV-1a 64-bit 10-hex naming scheme:
-  ```text
-  Snap.{Prefix}_{Hash10}[_{Dialect}].g.verified.cs
-  ```
-* **Infrastructure**: Never clone or copy-paste `HashHelper` or snapshot naming methods into individual test assemblies. Use the centralized test foundation in `Kassyi.GSharp.Tests.Shared.Helpers`.
+
+- **Extension Priority**: Unless the target is purely non-code data (e.g. JSON dumps in stdlib math tests) or syntactically invalid edge cases, all snapshot tests **must emit `.verified.cs`**. If testing statements or partial constructs, the test harness must format/wrap them into valid C# code.
+- **Short Hash Naming**: Use the standardized zero-allocation FNV-1a 64-bit 10-hex naming scheme:
+    ```text
+    Snap.{Prefix}_{Hash10}[_{Dialect}].g.verified.cs
+    ```
+- **Infrastructure**: Never clone or copy-paste `HashHelper` or snapshot naming methods into individual test assemblies. Use the centralized test foundation in `Kassyi.GSharp.Tests.Shared.Helpers`.
