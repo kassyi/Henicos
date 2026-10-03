@@ -1,4 +1,6 @@
 #nullable enable
+using Microsoft.CodeAnalysis.Diagnostics;
+
 namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 public abstract class TranspilerTestBase
@@ -27,25 +29,24 @@ public abstract class TranspilerTestBase
 
     protected string DialectName => IsCudaDialect ? "Cuda" : "Cpu";
 
-    protected GeneratorTestConfig TestGenerator(string relativePathToTestCases, [System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "")
+    protected GeneratorTestConfig TestGenerator(string relativePathToTestCases,
+        [CallerFilePath] string callerFilePath = "")
     {
         return RoslynTestUtility.TestGenerator(relativePathToTestCases, callerFilePath)
-                                .WithDialect(DialectName);
+            .WithDialect(DialectName);
     }
 
-    protected AnalyzerTestConfig TestAnalyzer(string relativePathToTestCases, Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer analyzer, [System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "")
+    protected AnalyzerTestConfig TestAnalyzer(string relativePathToTestCases,
+        DiagnosticAnalyzer analyzer, [CallerFilePath] string callerFilePath = "")
     {
         return RoslynTestUtility.TestAnalyzer(relativePathToTestCases, analyzer, callerFilePath)
-                                .WithDialect(DialectName);
+            .WithDialect(DialectName);
     }
 
-    protected VerifyTests.SettingsTask Verify(object? target, [System.Runtime.CompilerServices.CallerMemberName] string methodName = "")
+    protected SettingsTask Verify(object? target,
+        [CallerMemberName] string methodName = "")
     {
-        var prefixParts = methodName.Split('_');
-        var prefix = prefixParts.Length > 1 ? prefixParts[1] : "Test";
-        var hash10 = HashHelper.ComputeShortHash(methodName);
-        var snapshotName = $"Snap.{prefix}_{hash10}_{DialectName}";
-        return VerifyXunit.Verifier.Verify(target).UseFileName(snapshotName);
+        return Verifier.Verify(target).UseFastHashSnapshotName(methodName, DialectName);
     }
 }
 
