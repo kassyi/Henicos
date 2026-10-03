@@ -27,6 +27,9 @@ public abstract class StateMachineTestBase
     protected static Task VerifyLoopRewrite(string code) =>
         VerifyTransformation(code, b => new LoopRewriter().Rewrite(b));
 
+    protected static Task VerifyWarpRewrite(string code) =>
+        VerifyTransformation(code, b => new WarpInstructionRewriter().Rewrite(b));
+
     protected static Task VerifyHoist(string code) =>
         VerifyTransformation(code, b =>
         {
