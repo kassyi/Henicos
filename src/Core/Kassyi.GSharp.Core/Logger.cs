@@ -39,7 +39,7 @@ public enum LogLevel
 public abstract class Logger : ILogger
 {
     private const int MaxRetries = 3;
-    private const int BufferCapacity = 10000;
+    private const int BufferCapacity = 1000000;
     private const int RetryDelayMs = 50;
     private const string ClearCommand = "__CLEAR__";
 
