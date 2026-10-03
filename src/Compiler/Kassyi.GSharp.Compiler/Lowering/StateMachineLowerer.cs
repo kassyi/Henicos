@@ -24,7 +24,8 @@ public class StateMachineLowerer
                         SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state + 1))
                     )
                 ));
-                currentCaseStatements.Add(SyntaxFactory.ReturnStatement());
+                currentCaseStatements.Add(SyntaxFactory.ReturnStatement()
+                    .WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn")));
 
 
                 cases.Add(SyntaxFactory.SwitchSection(
@@ -51,7 +52,8 @@ public class StateMachineLowerer
                 SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-1))
             )
         ));
-        currentCaseStatements.Add(SyntaxFactory.ReturnStatement());
+        currentCaseStatements.Add(SyntaxFactory.ReturnStatement()
+            .WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn")));
 
         cases.Add(SyntaxFactory.SwitchSection(
             SyntaxFactory.SingletonList<SwitchLabelSyntax>(SyntaxFactory.CaseSwitchLabel(

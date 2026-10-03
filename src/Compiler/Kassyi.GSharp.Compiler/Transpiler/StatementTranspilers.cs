@@ -32,14 +32,15 @@ internal static class StatementTranspilers
         }
 
         context.Emitter.Writer.AppendLine();
-
         context.Visitor.VisitStatementOrBlock(node.Statement);
 
-        if (node.Else != null)
+        if (node.Else == null)
         {
-            context.Emitter.Writer.AppendLine("else");
-            context.Visitor.VisitStatementOrBlock(node.Else.Statement);
+            return;
         }
+
+        context.Emitter.Writer.AppendLine("else");
+        context.Visitor.VisitStatementOrBlock(node.Else.Statement);
     }
 
     /// <summary>
@@ -221,13 +222,27 @@ internal static class StatementTranspilers
     public static void TranspileGotoStatement(GotoStatementSyntax node, ref TranspileContext context)
     {
         context.Emitter.Writer.Append("goto ");
-        context.Visitor.Visit(node.Expression);
+        if (node.Expression is IdentifierNameSyntax identifier && context.Emitter.LabelSuffix != null)
+        {
+            context.Emitter.Writer.Append(identifier.Identifier.ValueText);
+            context.Emitter.Writer.Append(context.Emitter.LabelSuffix);
+        }
+        else
+        {
+            context.Visitor.Visit(node.Expression);
+        }
+
         context.Emitter.Writer.AppendSemiColonLine();
     }
 
     public static void TranspileLabeledStatement(LabeledStatementSyntax node, ref TranspileContext context)
     {
         context.Emitter.Writer.Append(node.Identifier.ValueText);
+        if (context.Emitter.LabelSuffix != null)
+        {
+            context.Emitter.Writer.Append(context.Emitter.LabelSuffix);
+        }
+
         context.Emitter.Writer.AppendLine(":");
         context.Visitor.Visit(node.Statement);
     }
@@ -237,28 +252,48 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
-        if (context.Emitter is { IsGpuKernelEntry: true, IsVoidReturn: false, CallableDepth: 0 } && node.Expression != null)
+        var isStateMachineReturn = node.HasAnnotations("StateMachineReturn");
+        var emitStateTermination = !isStateMachineReturn && !context.Emitter.Dialect.IsCuda
+                                   && context.Emitter is { IsGpuKernelEntry: true, CallableDepth: 0 };
+
+        if (context.Emitter is { IsGpuKernelEntry: true, IsVoidReturn: false, CallableDepth: 0 } &&
+            node.Expression != null)
         {
             DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
             context.Emitter.Writer.Append("__gsharp_auto_result[__gsharp_global_tid] = ");
             context.Visitor.Visit(node.Expression);
             context.Emitter.Writer.AppendSemiColonLine();
-            context.Emitter.Writer.AppendKeyword("return").AppendSemiColon();
+
+            if (emitStateTermination)
+            {
+                context.Emitter.Writer.Append("_state = -1;");
+            }
+
+            context.Emitter.Writer.AppendKeyword("return;");
             return;
         }
 
         if (node.Expression != null)
         {
             DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
+            if (emitStateTermination)
+            {
+                context.Emitter.Writer.Append("_state = -1;");
+            }
+
             context.Emitter.Writer.Append("return ");
             context.Visitor.Visit(node.Expression);
+            context.Emitter.Writer.AppendSemiColon();
         }
         else
         {
-            context.Emitter.Writer.AppendKeyword("return");
-        }
+            if (emitStateTermination)
+            {
+                context.Emitter.Writer.Append("_state = -1;");
+            }
 
-        context.Emitter.Writer.AppendSemiColon();
+            context.Emitter.Writer.AppendKeyword("return;");
+        }
     }
 }
 
