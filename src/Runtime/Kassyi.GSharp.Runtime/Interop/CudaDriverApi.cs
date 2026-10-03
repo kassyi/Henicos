@@ -207,13 +207,15 @@ public static partial class CudaDriverApi
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuMemcpyDtoH_v2(IntPtr dstHost, IntPtr srcDevice, IntPtr byteCount);
 
+
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
     public static partial CUresult cuMemcpyDtoD_v2(IntPtr dstDevice, IntPtr srcDevice, IntPtr byteCount);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult cuMemcpyDtoDAsync_v2(IntPtr dstDevice, IntPtr srcDevice, IntPtr byteCount, IntPtr hStream);
+    public static partial CUresult cuMemcpyDtoDAsync_v2(IntPtr dstDevice, IntPtr srcDevice, IntPtr byteCount,
+        IntPtr hStream);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
@@ -263,11 +265,13 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult cuMemcpyHtoDAsync_v2(IntPtr dstDevice, IntPtr srcHost, IntPtr byteCount, IntPtr hStream);
+    public static partial CUresult cuMemcpyHtoDAsync_v2(IntPtr dstDevice, IntPtr srcHost, IntPtr byteCount,
+        IntPtr hStream);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult cuMemcpyDtoHAsync_v2(IntPtr dstHost, IntPtr srcDevice, IntPtr byteCount, IntPtr hStream);
+    public static partial CUresult cuMemcpyDtoHAsync_v2(IntPtr dstHost, IntPtr srcDevice, IntPtr byteCount,
+        IntPtr hStream);
 
     // CUDA Graph APIs
     [LibraryImport(DllName)]
@@ -284,7 +288,8 @@ public static partial class CudaDriverApi
 
     [LibraryImport(DllName, EntryPoint = "cuGraphInstantiate_v2")]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
-    public static partial CUresult cuGraphInstantiate(out IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, nuint bufferSize);
+    public static partial CUresult cuGraphInstantiate(out IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode,
+        IntPtr logBuffer, nuint bufferSize);
 
     [LibraryImport(DllName)]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]
