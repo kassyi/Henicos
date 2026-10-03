@@ -1,3 +1,4 @@
+#pragma warning disable CS0219
 using System.Threading.Tasks;
 using Xunit;
 
