@@ -6,9 +6,10 @@ This rule defines the standardized testing framework architecture for G# (Henico
 
 ## 1. Core Testing Philosophy
 
-1. **C# Mental Model First**: If code is intended to run as a G# GPU kernel, it should fundamentally be valid, compilable C# with IDE support (syntax highlighting, autocomplete, type-checking, and code formatting).
-2. **Minimize Fragile String-based ASTs**: Avoid writing raw string code fragments (e.g., `ParseBlock("while(condition) { ... }")`). String-based syntax lacks semantic models, symbols, and compiler validation, making tests brittle and prone to artificial behaviors.
-3. **Strict 3-Tier Hierarchy**: Tests must be classified into Tier 1 (default), Tier 2 (AST lowering/rewrite), or Tier 3 (isolated raw strings for malformed edge cases).
+1. **C# Mental Model First & .cs Priority**: If code is intended to run as a G# GPU kernel, it should fundamentally be valid, compilable C# with IDE support (syntax highlighting, autocomplete, type-checking, and code formatting). Unless testing deliberately illegal C# syntax (e.g. defensive compiler recovery), **95% of test cases can and must be written directly in `.cs` files / C# syntax. Writing in `.cs` is the absolute highest priority.**
+2. **Snapshot Legitimacy as C# (`.verified.cs`)**: Existing and new snapshot tests producing `.verified.txt` must be rewritten wherever possible so that the generated output forms syntactically valid C# (e.g., wrapped in a dummy class/method or block context) and is emitted as `.verified.cs`.
+3. **Minimize Fragile String-based ASTs**: Avoid writing raw string code fragments (e.g., `ParseBlock("while(condition) { ... }")`). String-based syntax lacks semantic models, symbols, and compiler validation, making tests brittle and prone to artificial behaviors.
+4. **Strict 3-Tier Hierarchy**: Tests must be classified into Tier 1 (default), Tier 2 (AST lowering/rewrite), or Tier 3 (isolated raw strings for malformed edge cases).
 
 ---
 
@@ -147,3 +148,11 @@ public Task Lower_MalformedIncompleteNode_DefensiveCheck()
 * Follow `qa-testing-guidelines`:
   * Use `[Trait("Category", "Compiler")]`, `[Trait("Category", "SadPath")]`, `[Trait("Category", "GpuExecution")]`, etc.
   * Never hardcode ticket numbers or Feature IDs into `[Trait]` attributes.
+
+### 3.3. Snapshot Format & Fast-Hash Naming (`.verified.cs`)
+* **Extension Priority**: Unless the target is purely non-code data (e.g. JSON dumps in stdlib math tests) or syntactically invalid edge cases, all snapshot tests **must emit `.verified.cs`**. If testing statements or partial constructs, the test harness must format/wrap them into valid C# code.
+* **Short Hash Naming**: Use the standardized zero-allocation FNV-1a 64-bit 10-hex naming scheme:
+  ```text
+  Snap.{Prefix}_{Hash10}[_{Dialect}].g.verified.cs
+  ```
+* **Infrastructure**: Never clone or copy-paste `HashHelper` or snapshot naming methods into individual test assemblies. Use the centralized test foundation in `Kassyi.GSharp.Tests.Shared.Helpers`.
