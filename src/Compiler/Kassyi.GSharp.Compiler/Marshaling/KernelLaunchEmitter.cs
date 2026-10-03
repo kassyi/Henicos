@@ -110,6 +110,7 @@ internal static class KernelLaunchEmitter
                     writer.AppendLine(
                         "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
                         "handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)size, hStream));");
+                    writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
                 }
 
                 writer.AppendLine("finally");
@@ -201,6 +202,7 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine(
                     $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_{p.Name}, " +
                     $"(IntPtr)(&native_{p.Name}), (IntPtr){p.Name}_size, hStream));");
+                writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
             }
 
             writer.AppendLine($"kernelParams[{paramIndex}] = &d_{p.Name};");
@@ -247,6 +249,7 @@ internal static class KernelLaunchEmitter
                     writer.AppendLine(
                         $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
                         $"d_{p.Name}, p_{p.Name}, (IntPtr){p.Name}_size, hStream));");
+                    writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
                 }
 
                 writer.AppendLine("finally");
@@ -280,6 +283,7 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine(
                     $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_{p.Name}," +
                     $" (IntPtr)p_{p.Name}_temp, (IntPtr){p.Name}_size, hStream));");
+                writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
             }
         }
 
@@ -375,6 +379,7 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine(
                     $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)(&native_{p.Name})," +
                     $" d_{p.Name}, (IntPtr){p.Name}_size, hStream));");
+                writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
             }
         }
 
@@ -418,6 +423,7 @@ internal static class KernelLaunchEmitter
                 writer.AppendLine($"IntPtr p_{p.Name} = handleBack_{p.Name}.AddrOfPinnedObject();");
                 writer.AppendLine(
                     $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_{p.Name}, d_{p.Name}, (IntPtr){p.Name}_size, hStream));");
+                writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
             }
 
             writer.AppendLine("finally");
@@ -449,6 +455,7 @@ internal static class KernelLaunchEmitter
             writer.AppendLine(
                 "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
                 $"(IntPtr)ptr_{p.Name}, d_{p.Name}, (IntPtr){p.Name}_size, hStream));");
+            writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
         }
     }
 

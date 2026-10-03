@@ -64,6 +64,7 @@ try
 {
 IntPtr p_outputBuffer = handle_outputBuffer.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_outputBuffer, p_outputBuffer, (IntPtr)outputBuffer_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -93,6 +94,7 @@ try
 {
 IntPtr p_outputBuffer = handleBack_outputBuffer.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_outputBuffer, d_outputBuffer, (IntPtr)outputBuffer_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {

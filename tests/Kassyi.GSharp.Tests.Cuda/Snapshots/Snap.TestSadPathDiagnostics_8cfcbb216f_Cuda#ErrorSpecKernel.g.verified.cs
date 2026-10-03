@@ -72,6 +72,7 @@ var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result,
 try
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -130,6 +131,7 @@ var handle = System.Runtime.InteropServices.GCHandle.Alloc(__gsharp_auto_result,
 try
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {

@@ -74,6 +74,7 @@ try
 {
 IntPtr p_dA = handle_dA.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_dA, p_dA, (IntPtr)dA_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -91,6 +92,7 @@ try
 {
 IntPtr p_dB = handle_dB.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_dB, p_dB, (IntPtr)dB_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -108,6 +110,7 @@ try
 {
 IntPtr p_dResult = handle_dResult.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_dResult, p_dResult, (IntPtr)dResult_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -125,6 +128,7 @@ try
 {
 IntPtr p_carryBuffer = handle_carryBuffer.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_carryBuffer, p_carryBuffer, (IntPtr)carryBuffer_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -153,6 +157,7 @@ try
 {
 IntPtr p_dA = handleBack_dA.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_dA, d_dA, (IntPtr)dA_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -167,6 +172,7 @@ try
 {
 IntPtr p_dB = handleBack_dB.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_dB, d_dB, (IntPtr)dB_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -181,6 +187,7 @@ try
 {
 IntPtr p_dResult = handleBack_dResult.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_dResult, d_dResult, (IntPtr)dResult_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -195,6 +202,7 @@ try
 {
 IntPtr p_carryBuffer = handleBack_carryBuffer.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_carryBuffer, d_carryBuffer, (IntPtr)carryBuffer_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {

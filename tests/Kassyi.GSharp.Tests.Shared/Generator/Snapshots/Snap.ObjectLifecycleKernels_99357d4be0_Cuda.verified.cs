@@ -146,6 +146,7 @@ try
 {
 IntPtr p_states = handle_states.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_states, p_states, (IntPtr)states_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -174,6 +175,7 @@ try
 {
 IntPtr p_states = handleBack_states.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_states, d_states, (IntPtr)states_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -276,6 +278,7 @@ try
 {
 IntPtr p_inputValues = handle_inputValues.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_inputValues, p_inputValues, (IntPtr)inputValues_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -293,6 +296,7 @@ try
 {
 IntPtr p_outputStates = handle_outputStates.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_outputStates, p_outputStates, (IntPtr)outputStates_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -319,6 +323,7 @@ try
 {
 IntPtr p_inputValues = handleBack_inputValues.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_inputValues, d_inputValues, (IntPtr)inputValues_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -333,6 +338,7 @@ try
 {
 IntPtr p_outputStates = handleBack_outputStates.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_outputStates, d_outputStates, (IntPtr)outputStates_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {

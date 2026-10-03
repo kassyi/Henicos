@@ -217,6 +217,7 @@ try
 {
 IntPtr p_offsets = handle_offsets.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_offsets, p_offsets, (IntPtr)offsets_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -241,6 +242,7 @@ try
 {
 IntPtr p_offsets = handleBack_offsets.AddrOfPinnedObject();
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_offsets, d_offsets, (IntPtr)offsets_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
@@ -357,6 +359,7 @@ int data_size = sizeof(AotContexts.GEN56_AlignmentTestStruct);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
 // Fast zero-allocation copy to device
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)(&native_data), (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 kernelParams[0] = &d_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
@@ -369,6 +372,7 @@ IntPtr.Zero // Extra
 ));
 // Fast zero-allocation copy from device
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)(&native_data), d_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 AotContexts.Unmarshal_GEN56_AlignmentTestStruct(ref data, ref native_data, false, hStream);
 }
 finally
