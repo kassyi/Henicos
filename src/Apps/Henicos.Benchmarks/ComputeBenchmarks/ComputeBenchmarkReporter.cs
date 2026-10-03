@@ -27,8 +27,8 @@ public static class ComputeBenchmarkReporter
             var name = FormatName(r.Name);
             if (r.Success)
             {
-                double ratio = r.NativeStats.Mean > 0 ? r.GsharpStats.Mean / r.NativeStats.Mean : 1.0;
-                double speedup = r.GsharpStats.Mean > 0 ? r.CpuMeanMs / r.GsharpStats.Mean : 1.0;
+                var ratio = r.NativeStats.Mean > 0 ? r.GsharpStats.Mean / r.NativeStats.Mean : 1.0;
+                var speedup = r.GsharpStats.Mean > 0 ? r.CpuMeanMs / r.GsharpStats.Mean : 1.0;
                 logOut.WriteLine(string.Format("{0,-26} | {1,8:F2} | {2,8:F2} ms | {3,6:F2} ms | {4,6:F2}x | {5,6:F1}x",
                     name, r.CpuMeanMs, r.NativeStats.Mean, r.GsharpStats.Mean, ratio, speedup));
             }

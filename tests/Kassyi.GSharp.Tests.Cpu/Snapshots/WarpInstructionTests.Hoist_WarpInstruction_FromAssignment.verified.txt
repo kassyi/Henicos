@@ -1,0 +1,4 @@
+﻿{
+    var _warpTemp_0 = Gpu.WarpShuffle(y, 0);
+    int a = x + _warpTemp_0 * z;
+}

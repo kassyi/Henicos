@@ -41,7 +41,14 @@ public partial class InlineOutVarKernels
 public static partial class AotContexts
 {
 }
-public const string HappyPathKernel_Source = @"extern ""C"" __declspec(dllexport) void InlineOutVarKernels_HappyPathKernel(int* __restrict__ input, int* __restrict__ output, int* __restrict__ success){
+public const string HappyPathKernel_Source = @"struct __gsharp_context_InlineOutVarKernels_HappyPathKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void InlineOutVarKernels_HappyPathKernel(int* __restrict__ input, int* __restrict__ output, int* __restrict__ success, __gsharp_context_InlineOutVarKernels_HappyPathKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 int res;
 bool ok = TrySquare(input[tid],&res);
@@ -54,18 +61,37 @@ else
 {
 success[tid]=0;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InlineOutVarKernels_HappyPathKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output, int* __restrict__ success)
 {
+std::vector<__gsharp_context_InlineOutVarKernels_HappyPathKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-InlineOutVarKernels_HappyPathKernel(input, output, success);
+InlineOutVarKernels_HappyPathKernel(input, output, success, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -90,7 +116,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string IfConditionKernel_Source = @"extern ""C"" __declspec(dllexport) void InlineOutVarKernels_IfConditionKernel(int* __restrict__ input, int* __restrict__ output){
+public const string IfConditionKernel_Source = @"struct __gsharp_context_InlineOutVarKernels_IfConditionKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void InlineOutVarKernels_IfConditionKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_InlineOutVarKernels_IfConditionKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 int val;
 if(TrySquare(input[tid],&val))
@@ -101,18 +134,37 @@ else
 {
 output[tid]=val-10;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InlineOutVarKernels_IfConditionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
+std::vector<__gsharp_context_InlineOutVarKernels_IfConditionKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-InlineOutVarKernels_IfConditionKernel(input, output);
+InlineOutVarKernels_IfConditionKernel(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -136,7 +188,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string WhileConditionKernel_Source = @"extern ""C"" __declspec(dllexport) void InlineOutVarKernels_WhileConditionKernel(int* __restrict__ input, int* __restrict__ output){
+public const string WhileConditionKernel_Source = @"struct __gsharp_context_InlineOutVarKernels_WhileConditionKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void InlineOutVarKernels_WhileConditionKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_InlineOutVarKernels_WhileConditionKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 int curr = input[tid];
 int sum = 0;
@@ -147,18 +206,37 @@ sum+=nextVal;
 curr=nextVal;
 }
 output[tid]=sum;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InlineOutVarKernels_WhileConditionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
+std::vector<__gsharp_context_InlineOutVarKernels_WhileConditionKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-InlineOutVarKernels_WhileConditionKernel(input, output);
+InlineOutVarKernels_WhileConditionKernel(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

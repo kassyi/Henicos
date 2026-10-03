@@ -21,19 +21,19 @@ public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value, b
 
     public int CompareTo(GpuBigInteger other)
     {
-        bool thisZero = Value.IsZero();
-        bool otherZero = other.Value.IsZero();
+        var thisZero = Value.IsZero();
+        var otherZero = other.Value.IsZero();
 
-        int absCmp = Value.CompareTo(other.Value);
+        var absCmp = Value.CompareTo(other.Value);
 
-        int sameSignCmp = IsNegative ? -absCmp : absCmp;
-        int diffSignCmp = IsNegative ? -1 : 1;
-        int normalCmp = (IsNegative != other.IsNegative) ? diffSignCmp : sameSignCmp;
+        var sameSignCmp = IsNegative ? -absCmp : absCmp;
+        var diffSignCmp = IsNegative ? -1 : 1;
+        var normalCmp = (IsNegative != other.IsNegative) ? diffSignCmp : sameSignCmp;
 
-        int thisZeroCmp = other.IsNegative ? 1 : -1;
-        int otherZeroCmp = IsNegative ? -1 : 1;
+        var thisZeroCmp = other.IsNegative ? 1 : -1;
+        var otherZeroCmp = IsNegative ? -1 : 1;
 
-        int zeroCmp = thisZero ? thisZeroCmp : (otherZero ? otherZeroCmp : normalCmp);
+        var zeroCmp = thisZero ? thisZeroCmp : (otherZero ? otherZeroCmp : normalCmp);
 
         return (thisZero && otherZero) ? 0 : zeroCmp;
     }

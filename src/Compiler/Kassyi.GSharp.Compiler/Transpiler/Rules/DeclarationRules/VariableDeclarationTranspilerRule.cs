@@ -12,13 +12,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 /// </remarks>
 public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<VariableDeclarationSyntax>
 {
-    /// <summary>
-    /// Gets the singleton instance of the <see cref="VariableDeclarationTranspilerRule"/>.
-    /// </summary>
-    public VariableDeclarationTranspilerRule()
-    {
-    }
-
     private readonly struct VariableMapping(
         ITypeSymbol? typeSymbol,
         bool isVar,
@@ -165,7 +158,7 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
             return false;
         }
 
-        var constVal = context.Query.SemanticModel.GetConstantValue(sizeExpr);
+        var constVal = context.Query.SemanticModel.GetSafeConstantValue(sizeExpr);
         if (!constVal.HasValue)
         {
             context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, sizeExpr, errorLabel);

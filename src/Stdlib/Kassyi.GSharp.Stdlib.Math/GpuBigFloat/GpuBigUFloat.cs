@@ -48,7 +48,7 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
             return new GpuBigUFloat(Significand, 0);
         }
 
-        int normExp = Exponent;
+        var normExp = Exponent;
         var normSig = Significand;
 
         if (carryOut)

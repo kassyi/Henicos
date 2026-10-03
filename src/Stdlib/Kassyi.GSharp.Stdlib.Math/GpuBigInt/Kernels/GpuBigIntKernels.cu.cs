@@ -36,13 +36,13 @@ public static partial class GpuBigIntKernels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CarryState WarpScanGp(CarryState state, int laneId)
     {
-        uint g = state.Generate;
-        uint p = state.Propagate;
+        var g = state.Generate;
+        var p = state.Propagate;
 
         for (int i = 1; i < 32; i *= 2)
         {
-            uint prevG = Warp.ShuffleUpSync(0xFFFFFFFFu, g, (uint)i);
-            uint prevP = Warp.ShuffleUpSync(0xFFFFFFFFu, p, (uint)i);
+            var prevG = Warp.ShuffleUpSync(0xFFFFFFFFu, g, (uint)i);
+            var prevP = Warp.ShuffleUpSync(0xFFFFFFFFu, p, (uint)i);
 
             if (laneId < i)
             {
@@ -79,35 +79,35 @@ public static partial class GpuBigIntKernels
         int sign = 1,
         bool syncThreads = true)
     {
-        int tid = ThreadIndex.X;
-        int bDim = BlockDimension.X;
-        int laneId = tid % 32;
-        int warpId = tid / 32;
+        var tid = ThreadIndex.X;
+        var bDim = BlockDimension.X;
+        var laneId = tid % 32;
+        var warpId = tid / 32;
 
-        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32); // Max 1024 threads / 32 = 32 warps
+        var sharedCarry = new SharedMemory<uint>(32); // Max 1024 threads / 32 = 32 warps
 
-        uint blockCarryIn = sign == 1 ? 0u : 1u;
+        var blockCarryIn = sign == 1 ? 0u : 1u;
 
         for (int offset = 0; offset < numWords; offset += bDim)
         {
-            int idx = offset + tid;
-            bool valid = idx < numWords;
+            var idx = offset + tid;
+            var valid = idx < numWords;
 
-            uint valA = valid ? a[idx] : 0u;
-            uint valB = valid ? b[idx] : 0u;
+            var valA = valid ? a[idx] : 0u;
+            var valB = valid ? b[idx] : 0u;
 
             if (sign == -1)
             {
                 valB = ~valB;
             }
 
-            ulong sum = (ulong)valA + valB;
-            uint g = (uint)(sum >> 32);
-            uint p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
+            var sum = (ulong)valA + valB;
+            var g = (uint)(sum >> 32);
+            var p = (uint)sum == 0xFFFFFFFFu ? 1u : 0u;
 
             var warpScan = WarpScanGp(new CarryState(g, p), laneId);
-            uint scanG = warpScan.Generate;
-            uint scanP = warpScan.Propagate;
+            var scanG = warpScan.Generate;
+            var scanP = warpScan.Propagate;
 
             if (laneId == 31)
             {
@@ -118,7 +118,7 @@ public static partial class GpuBigIntKernels
 
             if (warpId == 0)
             {
-                int numWarps = (bDim + 31) / 32;
+                var numWarps = (bDim + 31) / 32;
                 var valState = laneId < numWarps ? UnpackCarryState(sharedCarry[laneId]) : new CarryState(0, 0);
                 var blockScan = WarpScanGp(valState, laneId);
 
@@ -130,15 +130,15 @@ public static partial class GpuBigIntKernels
 
             Gpu.SyncThreads();
 
-            uint carryIn = blockCarryIn;
+            var carryIn = blockCarryIn;
 
             if (warpId > 0)
             {
                 carryIn = ApplyCarry(UnpackCarryState(sharedCarry[warpId - 1]), carryIn);
             }
 
-            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
-            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
+            var prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, scanG, 1);
+            var prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, scanP, 1);
             if (laneId > 0)
             {
                 carryIn = prevScanG | (prevScanP & carryIn);
@@ -183,16 +183,16 @@ public static partial class GpuBigIntKernels
             var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords ? numWords - 1 : srcIdx0);
             var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords ? numWords - 1 : srcIdx1);
 
-            uint w0 = dA[safeIdx0];
-            uint w1 = dA[safeIdx1];
+            var w0 = dA[safeIdx0];
+            var w1 = dA[safeIdx1];
 
-            uint mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
-            uint mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
+            var mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
+            var mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
 
             w0 &= mask0;
             w1 &= mask1;
 
-            uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
             dResult[i] = (w0 << bitShift) | ((w1 >> (32 - bitShift)) & shiftMask);
         });
     }
@@ -208,16 +208,16 @@ public static partial class GpuBigIntKernels
             var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= numWords ? numWords - 1 : srcIdx0);
             var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= numWords ? numWords - 1 : srcIdx1);
 
-            uint w0 = dA[safeIdx0];
-            uint w1 = dA[safeIdx1];
+            var w0 = dA[safeIdx0];
+            var w1 = dA[safeIdx1];
 
-            uint mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
-            uint mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
+            var mask0 = srcIdx0 >= 0 && srcIdx0 < numWords ? 0xFFFFFFFFu : 0u;
+            var mask1 = srcIdx1 >= 0 && srcIdx1 < numWords ? 0xFFFFFFFFu : 0u;
 
             w0 &= mask0;
             w1 &= mask1;
 
-            uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
             dResult[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
         });
     }
@@ -271,16 +271,16 @@ public static partial class GpuBigIntKernels
             var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx0);
             var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx1);
 
-            uint w0 = ctx.Operands.LeftOperand[safeIdx0];
-            uint w1 = ctx.Operands.LeftOperand[safeIdx1];
+            var w0 = ctx.Operands.LeftOperand[safeIdx0];
+            var w1 = ctx.Operands.LeftOperand[safeIdx1];
 
-            uint mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-            uint mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
+            var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
+            var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
 
             w0 &= mask0;
             w1 &= mask1;
 
-            uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
             ctx.Operands.ResultBuffer[i] = (w0 << bitShift) | ((w1 >> (32 - bitShift)) & shiftMask);
         });
     }
@@ -296,16 +296,16 @@ public static partial class GpuBigIntKernels
             var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx0);
             var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx1);
 
-            uint w0 = ctx.Operands.LeftOperand[safeIdx0];
-            uint w1 = ctx.Operands.LeftOperand[safeIdx1];
+            var w0 = ctx.Operands.LeftOperand[safeIdx0];
+            var w1 = ctx.Operands.LeftOperand[safeIdx1];
 
-            uint mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-            uint mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
+            var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
+            var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
 
             w0 &= mask0;
             w1 &= mask1;
 
-            uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
             ctx.Operands.ResultBuffer[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
         });
     }
@@ -379,16 +379,16 @@ public static partial class GpuBigIntKernels
             var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx0);
             var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx1);
 
-            uint w0 = left[safeIdx0];
-            uint w1 = left[safeIdx1];
+            var w0 = left[safeIdx0];
+            var w1 = left[safeIdx1];
 
-            uint mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-            uint mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
+            var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
+            var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
 
             w0 &= mask0;
             w1 &= mask1;
 
-            uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
             result[i] = (w0 << bitShift) | ((w1 >> (32 - bitShift)) & shiftMask);
         }
     }
@@ -406,16 +406,16 @@ public static partial class GpuBigIntKernels
             var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx0);
             var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumberOfWords ? ctx.NumberOfWords - 1 : srcIdx1);
 
-            uint w0 = left[safeIdx0];
-            uint w1 = left[safeIdx1];
+            var w0 = left[safeIdx0];
+            var w1 = left[safeIdx1];
 
-            uint mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
-            uint mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
+            var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
+            var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumberOfWords ? 0xFFFFFFFFu : 0u;
 
             w0 &= mask0;
             w1 &= mask1;
 
-            uint shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
+            var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
             result[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
         }
     }

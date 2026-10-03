@@ -27,7 +27,14 @@ public partial class WarpLevelConcurrencyKernels
 public static partial class AotContexts
 {
 }
-public const string WarpReduceSumKernel_Source = @"extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpReduceSumKernel(int* __restrict__ input, int* __restrict__ output){
+public const string WarpReduceSumKernel_Source = @"struct __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpReduceSumKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 int lane = tid%32;
 int warpId = tid/32;
@@ -42,18 +49,37 @@ if(lane==0)
 {
 output[warpId]=val;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_WarpLevelConcurrencyKernels_WarpReduceSumKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
+std::vector<__gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WarpLevelConcurrencyKernels_WarpReduceSumKernel(input, output);
+WarpLevelConcurrencyKernels_WarpReduceSumKernel(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -77,7 +103,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string WarpPrimitivesKernel_Source = @"extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpPrimitivesKernel(int* __restrict__ input, int* __restrict__ output){
+public const string WarpPrimitivesKernel_Source = @"struct __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpPrimitivesKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 unsigned int mask = __activemask();
 int val = input[tid];
@@ -88,18 +121,37 @@ val=(int)__shfl_down_sync(mask,(unsigned int)val,1,32);
 val=__shfl_up_sync(mask,val,1,32);
 val=__shfl_xor_sync(mask,val,1,32);
 output[tid]=val;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
+std::vector<__gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WarpLevelConcurrencyKernels_WarpPrimitivesKernel(input, output);
+WarpLevelConcurrencyKernels_WarpPrimitivesKernel(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

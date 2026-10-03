@@ -43,7 +43,7 @@ public static partial class Tier1IntegrationKernels
     }
 
     [GpuDeviceFunction]
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float HelperMathAggressive(float x)
     {
         return (float)System.Math.Abs(x);
@@ -117,24 +117,28 @@ public static partial class Tier1IntegrationKernels
             sum += foreachSum;
 
             // SYN-12: C# 12 Collection Expressions on ReadOnlySpan & Length property
-            ReadOnlySpan<float> coll = [1.0f, 2.0f, 3.0f, 4.0f];
-            float collSum = 0;
-            foreach (var val in coll)
             {
-                collSum += val;
-            }
+                ReadOnlySpan<float> coll = [1.0f, 2.0f, 3.0f, 4.0f];
+                float collSum = 0;
+                foreach (var val in coll)
+                {
+                    collSum += val;
+                }
 
-            sum += collSum + coll.Length;
+                sum += collSum + coll.Length;
+            }
 
             // SYN-13: StackAlloc on Span & Length property
-            Span<float> stackBuf = stackalloc float[] { 5.0f, 10.0f, 15.0f, 20.0f };
-            float stackSum = 0;
-            foreach (var val in stackBuf)
             {
-                stackSum += val;
-            }
+                Span<float> stackBuf = stackalloc float[] { 5.0f, 10.0f, 15.0f, 20.0f };
+                float stackSum = 0;
+                foreach (var val in stackBuf)
+                {
+                    stackSum += val;
+                }
 
-            sum += stackSum + stackBuf.Length;
+                sum += stackSum + stackBuf.Length;
+            }
 
             // SYN-08: Lambda expressions (Expanded to C++ auto lambdas)
             var multiplier = (float x, float m) => x * m;

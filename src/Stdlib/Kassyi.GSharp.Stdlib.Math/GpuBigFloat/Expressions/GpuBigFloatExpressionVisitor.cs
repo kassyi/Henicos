@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Stdlib.Math.GpuBigFloat.Expressions;
 using System;
 using Runtime;
 using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Runtime;
-using Kassyi.GSharp.Stdlib.Math.GpuBigInt;
+using GpuBigInt;
 using Providers;
 
 public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFloatArithmetic? arithmetic = null)

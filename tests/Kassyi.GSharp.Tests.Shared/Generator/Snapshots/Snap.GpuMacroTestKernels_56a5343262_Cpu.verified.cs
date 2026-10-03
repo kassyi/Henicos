@@ -16,7 +16,14 @@ public partial class GpuMacroTestKernels
 public static partial class AotContexts
 {
 }
-public const string Kernel_MacroTest_FillAndSingle_Source = @"extern ""C"" __declspec(dllexport) void GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue){
+public const string Kernel_MacroTest_FillAndSingle_Source = @"struct __gsharp_context_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue, __gsharp_context_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
 {
 outputBuffer[i]=fillValue;
@@ -29,18 +36,37 @@ if(length>0)
 outputBuffer[0]=singleValue;
 }
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue)
 {
+std::vector<__gsharp_context_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(outputBuffer, length, fillValue, singleValue);
+GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(outputBuffer, length, fillValue, singleValue, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

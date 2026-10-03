@@ -64,7 +64,14 @@ int Value;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void RefOutDereferenceKernels_RefOutTestKernel(int* __restrict__ data){
+struct __gsharp_context_RefOutDereferenceKernels_RefOutTestKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void RefOutDereferenceKernels_RefOutTestKernel(int* __restrict__ data, __gsharp_context_RefOutDereferenceKernels_RefOutTestKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 bool flag = true;
 ModifyRef(&flag);
 Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct s = ([&]() {
@@ -76,18 +83,37 @@ int b;
 int val = 1;
 ChainedAssignmentRef(&val,&a,&b);
 data[0]=((flag?100:0))+s.Field+a+b+val;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_RefOutDereferenceKernels_RefOutTestKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
+std::vector<__gsharp_context_RefOutDereferenceKernels_RefOutTestKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-RefOutDereferenceKernels_RefOutTestKernel(data);
+RefOutDereferenceKernels_RefOutTestKernel(data, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

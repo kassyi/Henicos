@@ -92,7 +92,7 @@ internal class SignedAddExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
             return new GpuBigInteger(resultBuffer, a.IsNegative);
         }
 
-        int cmp = a.Value.CompareTo(b.Value);
+        var cmp = a.Value.CompareTo(b.Value);
         if (cmp >= 0)
         {
             GpuBigIntMath.Sub(a.Value, b.Value, resultBuffer);
@@ -115,7 +115,7 @@ internal class SignedSubExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
             return new GpuBigInteger(resultBuffer, a.IsNegative);
         }
 
-        int cmp = a.Value.CompareTo(b.Value);
+        var cmp = a.Value.CompareTo(b.Value);
         if (cmp >= 0)
         {
             GpuBigIntMath.Sub(a.Value, b.Value, resultBuffer);

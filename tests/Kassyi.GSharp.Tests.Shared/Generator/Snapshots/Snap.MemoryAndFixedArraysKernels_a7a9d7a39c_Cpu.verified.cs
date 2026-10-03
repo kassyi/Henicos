@@ -36,41 +36,73 @@ float Y;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint* __restrict__ pointOutput){
-__shared__ int intSmem[256];
-__shared__ float floatSmem[256];
-__shared__ Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint pointSmem[64];
-int tid = threadIdx.x;
-if(tid<256)
+struct __gsharp_context_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel {
+int _state = 0;
+Kassyi_GSharp_Core_SharedMemory<int> intSmem;
+Kassyi_GSharp_Core_SharedMemory<float> floatSmem;
+Kassyi_GSharp_Core_SharedMemory<Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint> pointSmem;
+int tid;
+};
+extern ""C"" __declspec(dllexport) void MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint* __restrict__ pointOutput, __gsharp_context_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
 {
-intSmem[tid]=tid*3;
-floatSmem[tid]=tid*1.5f;
+case 0:
+_ctx->intSmem={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
+_ctx->floatSmem={ (float*)__gsharp_allocate_smem(1, (256) * sizeof(float), alignof(float)) };
+_ctx->pointSmem={ (Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint*)__gsharp_allocate_smem(2, (64) * sizeof(Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint), alignof(Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint)) };
+_ctx->tid=threadIdx.x;
+if(_ctx->tid<256)
+{
+_ctx->intSmem[_ctx->tid]=_ctx->tid*3;
+_ctx->floatSmem[_ctx->tid]=_ctx->tid*1.5f;
 }
-if(tid<64)
+if(_ctx->tid<64)
 {
-pointSmem[tid]=([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint _tmp{}; _tmp.X = tid*1.0f; _tmp.Y = tid*2.0f; return _tmp; }
+_ctx->pointSmem[_ctx->tid]=([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint _tmp{}; _tmp.X = _ctx->tid*1.0f; _tmp.Y = _ctx->tid*2.0f; return _tmp; }
 ());
 }
-__syncthreads();
-if(tid==0)
+_state=1;
+return;
+case 1:
+if(_ctx->tid==0)
 {
-intOutput[0]=intSmem[10];
-floatOutput[0]=floatSmem[10];
-pointOutput[0]=pointSmem[5];
+intOutput[0]=_ctx->intSmem[10];
+floatOutput[0]=_ctx->floatSmem[10];
+pointOutput[0]=_ctx->pointSmem[5];
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint* __restrict__ pointOutput)
 {
+std::vector<__gsharp_context_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(intOutput, floatOutput, pointOutput);
+MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(intOutput, floatOutput, pointOutput, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

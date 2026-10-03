@@ -58,7 +58,7 @@ internal static class NativeStructEmitter
     }
 
     private static void MapToNativeField(SourceWriter writer, IFieldSymbol field, int fieldSize)
-    
+
     {
         if (field.Type is IArrayTypeSymbol)
         {

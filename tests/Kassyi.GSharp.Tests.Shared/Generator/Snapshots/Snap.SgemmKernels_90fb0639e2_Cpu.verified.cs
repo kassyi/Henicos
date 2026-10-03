@@ -27,57 +27,108 @@ public partial class SgemmKernels
 public static partial class AotContexts
 {
 }
-public const string SgemmKernel_Source = @"extern ""C"" __declspec(dllexport) void SgemmKernels_SgemmKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n){
-__shared__ float As[256];
-__shared__ float Bs[256];
-int bx = blockIdx.x;
-int by = blockIdx.y;
-int tx = threadIdx.x;
-int ty = threadIdx.y;
-int row = by*16+ty;
-int col = bx*16+tx;
-float cValue = 0.0f;
-for(int m = 0;m<(n+15)/16;m++)
+public const string SgemmKernel_Source = @"struct __gsharp_context_SgemmKernels_SgemmKernel {
+int _state = 0;
+Kassyi_GSharp_Core_SharedMemory<float> As;
+Kassyi_GSharp_Core_SharedMemory<float> Bs;
+int bx;
+int by;
+int tx;
+int ty;
+int row;
+int col;
+float cValue;
+int m;
+int k;
+};
+extern ""C"" __declspec(dllexport) void SgemmKernels_SgemmKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n, __gsharp_context_SgemmKernels_SgemmKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
 {
-if(row<n&&m*16+tx<n)
+case 0:
+_ctx->As={ (float*)__gsharp_allocate_smem(0, (256) * sizeof(float), alignof(float)) };
+_ctx->Bs={ (float*)__gsharp_allocate_smem(1, (256) * sizeof(float), alignof(float)) };
+_ctx->bx=blockIdx.x;
+_ctx->by=blockIdx.y;
+_ctx->tx=threadIdx.x;
+_ctx->ty=threadIdx.y;
+_ctx->row=_ctx->by*16+_ctx->ty;
+_ctx->col=_ctx->bx*16+_ctx->tx;
+_ctx->cValue=0.0f;
+_ctx->m=0;
+_ForStart_0:
+;
+if(!(_ctx->m<(n+15)/16))
 {
-As[ty*16+tx]=a[row*n+m*16+tx];
+goto _ForEnd_0;
+}
+if(_ctx->row<n&&_ctx->m*16+_ctx->tx<n)
+{
+_ctx->As[_ctx->ty*16+_ctx->tx]=a[_ctx->row*n+_ctx->m*16+_ctx->tx];
 }
 else
 {
-As[ty*16+tx]=0.0f;
+_ctx->As[_ctx->ty*16+_ctx->tx]=0.0f;
 }
-if(m*16+ty<n&&col<n)
+if(_ctx->m*16+_ctx->ty<n&&_ctx->col<n)
 {
-Bs[ty*16+tx]=b[(m*16+ty)*n+col];
+_ctx->Bs[_ctx->ty*16+_ctx->tx]=b[(_ctx->m*16+_ctx->ty)*n+_ctx->col];
 }
 else
 {
-Bs[ty*16+tx]=0.0f;
+_ctx->Bs[_ctx->ty*16+_ctx->tx]=0.0f;
 }
-__syncthreads();
-for(int k = 0;k<16;++k)
+_state=1;
+return;
+case 1:
+for(int k = 0;_ctx->k<16;++_ctx->k)
 {
-cValue+=As[ty*16+k]*Bs[k*16+tx];
+_ctx->cValue+=_ctx->As[_ctx->ty*16+_ctx->k]*_ctx->Bs[_ctx->k*16+_ctx->tx];
 }
-__syncthreads();
-}
-if(row<n&&col<n)
+_state=2;
+return;
+case 2:
+_ForContinue_0:
+;
+_ctx->m++;
+goto _ForStart_0;
+_ForEnd_0:
+;
+if(_ctx->row<n&&_ctx->col<n)
 {
-c[row*n+col]=cValue;
+c[_ctx->row*n+_ctx->col]=_ctx->cValue;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_SgemmKernels_SgemmKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n)
 {
+std::vector<__gsharp_context_SgemmKernels_SgemmKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-SgemmKernels_SgemmKernel(a, b, c, n);
+SgemmKernels_SgemmKernel(a, b, c, n, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

@@ -278,7 +278,14 @@ int N;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void BlackScholesKernels_BlackScholesKernel(Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_BlackScholesContext ctx){
+struct __gsharp_context_BlackScholesKernels_BlackScholesKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void BlackScholesKernels_BlackScholesKernel(Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_BlackScholesContext ctx, __gsharp_context_BlackScholesKernels_BlackScholesKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < ctx.N; tid += gridDim.x * blockDim.x)
 {
 float c;
@@ -287,18 +294,37 @@ CalculateOptionPrice(ctx.S[tid],ctx.X[tid],ctx.T[tid],ctx.R,ctx.V,&c,&p);
 ctx.CallResult[tid]=c;
 ctx.PutResult[tid]=p;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_BlackScholesKernels_BlackScholesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_BlackScholesContext ctx)
 {
+std::vector<__gsharp_context_BlackScholesKernels_BlackScholesKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-BlackScholesKernels_BlackScholesKernel(ctx);
+BlackScholesKernels_BlackScholesKernel(ctx, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -330,18 +356,18 @@ public const string Source = @"inline void CalculateOptionPrice(float s, float x
 inline float Cnd(float d);
 
 inline void CalculateOptionPrice(float s, float x, float t, float r, float v, float* __restrict__  callResult, float* __restrict__  putResult){
-float d1 = (logf(s/x)+(r+v*v/2.0f)*t)/(v*sqrtf(t));
-float d2 = d1-v*sqrtf(t);
-float cndD1 = Cnd(d1);
-float cndD2 = Cnd(d2);
-float expRt = expf(-r*t);
+auto d1 = (logf(s/x)+(r+v*v/2.0f)*t)/(v*sqrtf(t));
+auto d2 = d1-v*sqrtf(t);
+auto cndD1 = Cnd(d1);
+auto cndD2 = Cnd(d2);
+auto expRt = expf(-r*t);
 (*callResult)=s*cndD1-x*expRt*cndD2;
 (*putResult)=x*expRt*(1.0f-cndD2)-s*(1.0f-cndD1);
 }
 
 inline float Cnd(float d){
-float k = 1.0f/(1.0f+0.2316419f*fabsf(d));
-float cnd = 0.3989422804f*expf(-0.5f*d*d)*(k*(0.31938153f+k*(-0.356563782f+k*(1.781477937f+k*(-1.821255978f+k*1.330274429f)))));
+auto k = 1.0f/(1.0f+0.2316419f*fabsf(d));
+auto cnd = 0.3989422804f*expf(-0.5f*d*d)*(k*(0.31938153f+k*(-0.356563782f+k*(1.781477937f+k*(-1.821255978f+k*1.330274429f)))));
 if(d>0)
 {
 cnd=1.0f-cnd;

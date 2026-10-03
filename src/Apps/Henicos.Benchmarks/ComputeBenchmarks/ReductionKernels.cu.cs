@@ -9,10 +9,10 @@ public static partial class ReductionKernels
     {
         SharedMemory<float> sdata = new(8);
 
-        int tid = ThreadIndex.X;
-        int i = BlockIndex.X * (BlockDimension.X * 2) + tid;
+        var tid = ThreadIndex.X;
+        var i = BlockIndex.X * (BlockDimension.X * 2) + tid;
 
-        float sum = 0.0f;
+        var sum = 0.0f;
         if (i < n)
         {
             var v = input[i];
@@ -30,8 +30,8 @@ public static partial class ReductionKernels
         sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 2);
         sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 1);
 
-        int lane = tid % 32;
-        int warpId = tid / 32;
+        var lane = tid % 32;
+        var warpId = tid / 32;
 
         if (lane == 0)
         {
@@ -42,7 +42,7 @@ public static partial class ReductionKernels
 
         if (warpId == 0)
         {
-            float val = (tid < 8) ? sdata[tid] : 0.0f;
+            var val = (tid < 8) ? sdata[tid] : 0.0f;
 
             val += Gpu.ShuffleDownSync(0xFFFFFFFF, val, 4);
             val += Gpu.ShuffleDownSync(0xFFFFFFFF, val, 2);

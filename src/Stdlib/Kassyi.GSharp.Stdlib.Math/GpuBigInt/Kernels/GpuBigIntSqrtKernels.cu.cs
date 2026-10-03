@@ -18,7 +18,7 @@ public static partial class GpuBigIntSqrtKernels
         var m = ctx.Ntt.TransformLength;
         // Basic parameters for NTT
         int n1 = 32;
-        int n2 = m / 32;
+        var n2 = m / 32;
         if (m <= 512)
         {
             n1 = m;
@@ -70,7 +70,7 @@ public static partial class GpuBigIntSqrtKernels
         Gpu.SyncGrid();
 
         // 7-8. Resolve Carries (Blocked & Apply)
-        int numBlocks = (numWordsResult + 1023) / 1024;
+        var numBlocks = (numWordsResult + 1023) / 1024;
         Gpu.SyncGrid(() =>
         {
             GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(ctx.Workspace.UncarriedLow, ctx.Workspace.UncarriedHigh,
@@ -88,7 +88,7 @@ public static partial class GpuBigIntSqrtKernels
     [GpuKernel(Cooperative = true)]
     public static void InverseSqrtNewtonRaphsonMegaKernel(SqrtNewtonRaphson ctx)
     {
-        int n = ctx.Dimensions.NumberOfWords;
+        var n = ctx.Dimensions.NumberOfWords;
 
         // main loop
         for (int i = 0; i < ctx.Dimensions.Iterations; i++)
@@ -120,20 +120,20 @@ public static partial class GpuBigIntSqrtKernels
                 4 * n + 3 * ctx.Dimensions.MarginWords);
 
             // 5. resultBuffer = nextXUnshifted >> (2 * n * 32 + 2 * marginBits + 1)
-            int shiftTotal = 2 * n * 32 + 2 * ctx.Dimensions.MarginBits + 1;
-            int wordShift = shiftTotal / 32;
-            int bitShift = shiftTotal % 32;
-            int destWords = n + ctx.Dimensions.MarginWords;
-            int srcMaxWords = 4 * n + 3 * ctx.Dimensions.MarginWords;
+            var shiftTotal = 2 * n * 32 + 2 * ctx.Dimensions.MarginBits + 1;
+            var wordShift = shiftTotal / 32;
+            var bitShift = shiftTotal % 32;
+            var destWords = n + ctx.Dimensions.MarginWords;
+            var srcMaxWords = 4 * n + 3 * ctx.Dimensions.MarginWords;
 
             Gpu.GridStrideLoop(destWords, idx =>
             {
-                int srcIdx = idx + wordShift;
+                var srcIdx = idx + wordShift;
                 // Ensure we don't read out of bounds. The nextXUnshifted buffer size is 4n+3m
-                uint w0 = (srcIdx < srcMaxWords) ? ctx.Workspace.NextXUnshifted[srcIdx] : 0u;
-                uint w1 = (srcIdx + 1 < srcMaxWords) ? ctx.Workspace.NextXUnshifted[srcIdx + 1] : 0u;
+                var w0 = (srcIdx < srcMaxWords) ? ctx.Workspace.NextXUnshifted[srcIdx] : 0u;
+                var w1 = (srcIdx + 1 < srcMaxWords) ? ctx.Workspace.NextXUnshifted[srcIdx + 1] : 0u;
 
-                uint shiftedValue = (w0 >> bitShift) | (bitShift == 0 ? 0u : (w1 << (32 - bitShift)));
+                var shiftedValue = (w0 >> bitShift) | (bitShift == 0 ? 0u : (w1 << (32 - bitShift)));
                 ctx.Operands.ResultBuffer[idx] = shiftedValue;
             });
             Gpu.SyncGrid();

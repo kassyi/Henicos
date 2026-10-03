@@ -123,7 +123,14 @@ Kassyi_GSharp_Core_Double2 Field5_Double2;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(int* __restrict__ offsets){
+struct __gsharp_context_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(int* __restrict__ offsets, __gsharp_context_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 {
 Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct s = {};
 unsigned char* basePtr = (unsigned char*)&s;
@@ -134,18 +141,37 @@ offsets[3]=(int)((unsigned char*)&s.Field4_Short-basePtr);
 offsets[4]=(int)((unsigned char*)&s.Field5_Double2-basePtr);
 offsets[5]=64;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ offsets)
 {
+std::vector<__gsharp_context_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(offsets);
+NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(offsets, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -209,21 +235,47 @@ Kassyi_GSharp_Core_Double2 Field5_Double2;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void NestedVectorAlignmentKernels_RoundtripKernel(Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct* __restrict__  data){
+struct __gsharp_context_NestedVectorAlignmentKernels_RoundtripKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void NestedVectorAlignmentKernels_RoundtripKernel(Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct* __restrict__  data, __gsharp_context_NestedVectorAlignmentKernels_RoundtripKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 (*data).Field1_Byte=(unsigned char)((*data).Field1_Byte+1-1);
 (*data).Field4_Short=(short)((*data).Field4_Short+1-1);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_NestedVectorAlignmentKernels_RoundtripKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct* __restrict__  data)
 {
+std::vector<__gsharp_context_NestedVectorAlignmentKernels_RoundtripKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-NestedVectorAlignmentKernels_RoundtripKernel(data);
+NestedVectorAlignmentKernels_RoundtripKernel(data, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

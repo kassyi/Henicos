@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
 {
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => 
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(GSharpDiagnostics.ParallelDependentCallFromSingleThreadContext);
 
     public override void Initialize(AnalysisContext context)
@@ -21,7 +21,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             var inferenceCache = new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default);
             compilationContext.RegisterSyntaxNodeAction(
-                ctx => AnalyzeMethod(ctx, inferenceCache), 
+                ctx => AnalyzeMethod(ctx, inferenceCache),
                 SyntaxKind.MethodDeclaration);
         });
     }
@@ -58,11 +58,11 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
         {
             var symbol = context.SemanticModel.GetSymbol(node) as IMethodSymbol;
-            bool isSingleThreadMacro = false;
+            var isSingleThreadMacro = false;
 
-            if (symbol != null && 
-                (symbol.Name == TypeConstants.GpuMacros.SingleThread || symbol.Name == TypeConstants.GpuMacros.SyncGrid) && 
-                symbol.ContainingType?.Name == TypeConstants.GpuType && 
+            if (symbol != null &&
+                (symbol.Name == TypeConstants.GpuMacros.SingleThread || symbol.Name == TypeConstants.GpuMacros.SyncGrid) &&
+                symbol.ContainingType?.Name == TypeConstants.GpuType &&
                 symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() == true)
             {
                 // For SyncGrid, it's only a single thread macro if it has arguments (a delegate)
@@ -149,15 +149,15 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
 
         public override void VisitIfStatement(IfStatementSyntax node)
         {
-            bool isDivergentSingleThread = IsSingleThreadDivergentCondition(node.Condition);
-            
+            var isDivergentSingleThread = IsSingleThreadDivergentCondition(node.Condition);
+
             if (isDivergentSingleThread)
             {
                 _singleThreadDepth++;
             }
-            
+
             base.VisitIfStatement(node);
-            
+
             if (isDivergentSingleThread)
             {
                 _singleThreadDepth--;

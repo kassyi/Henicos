@@ -12,8 +12,8 @@ public readonly record struct BenchmarkStats(double Min, double Median, double M
         var sorted = (double[])samples.Clone();
         Array.Sort(sorted);
 
-        double min = sorted[0];
-        double median = sorted.Length % 2 == 0
+        var min = sorted[0];
+        var median = sorted.Length % 2 == 0
             ? (sorted[sorted.Length / 2 - 1] + sorted[sorted.Length / 2]) / 2.0
             : sorted[sorted.Length / 2];
 
@@ -23,7 +23,7 @@ public readonly record struct BenchmarkStats(double Min, double Median, double M
             sum += v;
         }
 
-        double mean = sum / sorted.Length;
+        var mean = sum / sorted.Length;
         return new BenchmarkStats(min, median, mean);
     }
 }

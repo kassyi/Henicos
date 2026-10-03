@@ -16,21 +16,47 @@ public partial class FastMathBoundaryKernels
 public static partial class AotContexts
 {
 }
-public const string Kernel_COR01_FastMath_Exp_Source = @"extern ""C"" __declspec(dllexport) void FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Exp_Source = @"struct __gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(float* __restrict__ input, float* __restrict__ output, __gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 output[tid]=expf(input[tid]);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
 {
+std::vector<__gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(input, output);
+FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -54,21 +80,47 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string Kernel_COR01_FastMath_Log_Source = @"extern ""C"" __declspec(dllexport) void FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Log_Source = @"struct __gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(float* __restrict__ input, float* __restrict__ output, __gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 output[tid]=logf(input[tid]);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
 {
+std::vector<__gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Log> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(input, output);
+FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -92,21 +144,47 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string Kernel_COR01_FastMath_Sqrt_Source = @"extern ""C"" __declspec(dllexport) void FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Sqrt_Source = @"struct __gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(float* __restrict__ input, float* __restrict__ output, __gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 output[tid]=sqrtf(input[tid]);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
 {
+std::vector<__gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(input, output);
+FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -130,21 +208,47 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string Kernel_COR01_FastMath_Abs_Source = @"extern ""C"" __declspec(dllexport) void FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(float* __restrict__ input, float* __restrict__ output){
+public const string Kernel_COR01_FastMath_Abs_Source = @"struct __gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(float* __restrict__ input, float* __restrict__ output, __gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 output[tid]=fabsf(input[tid]);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ input, float* __restrict__ output)
 {
+std::vector<__gsharp_context_FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(input, output);
+FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

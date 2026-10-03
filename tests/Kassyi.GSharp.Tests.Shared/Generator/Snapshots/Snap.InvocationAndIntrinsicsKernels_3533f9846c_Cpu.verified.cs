@@ -27,7 +27,14 @@ public partial class InvocationAndIntrinsicsKernels
 public static partial class AotContexts
 {
 }
-public const string InterlockedKernel_Source = @"extern ""C"" __declspec(dllexport) void InvocationAndIntrinsicsKernels_InterlockedKernel(int* __restrict__ intBuf, unsigned int* __restrict__ uintBuf, long long* __restrict__ longBuf, unsigned long long* __restrict__ ulongBuf){
+public const string InterlockedKernel_Source = @"struct __gsharp_context_InvocationAndIntrinsicsKernels_InterlockedKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void InvocationAndIntrinsicsKernels_InterlockedKernel(int* __restrict__ intBuf, unsigned int* __restrict__ uintBuf, long long* __restrict__ longBuf, unsigned long long* __restrict__ ulongBuf, __gsharp_context_InvocationAndIntrinsicsKernels_InterlockedKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 __gsharp_atomicAdd(&intBuf[0],1);
 __gsharp_atomicAdd((unsigned long long*)(&longBuf[0]),2L);
@@ -45,18 +52,37 @@ __gsharp_atomicCAS(&uintBuf[2],600u,0u);
 __gsharp_atomicCAS((unsigned long long*)(&longBuf[2]),700L,0L);
 __gsharp_atomicCAS((unsigned long long*)(&ulongBuf[2]),800ul,0ul);
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InvocationAndIntrinsicsKernels_InterlockedKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intBuf, unsigned int* __restrict__ uintBuf, long long* __restrict__ longBuf, unsigned long long* __restrict__ ulongBuf)
 {
+std::vector<__gsharp_context_InvocationAndIntrinsicsKernels_InterlockedKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-InvocationAndIntrinsicsKernels_InterlockedKernel(intBuf, uintBuf, longBuf, ulongBuf);
+InvocationAndIntrinsicsKernels_InterlockedKernel(intBuf, uintBuf, longBuf, ulongBuf, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -92,24 +118,50 @@ long long ValueL;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(int* __restrict__ array, Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct* __restrict__ structArray){
+struct __gsharp_context_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(int* __restrict__ array, Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct* __restrict__ structArray, __gsharp_context_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 __gsharp_atomicAdd(&array[tid],10);
 __gsharp_atomicAdd(&structArray[tid].ValueI,1);
 atomicExch(&structArray[tid].ValueU,42u);
 __gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99L,0L);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ array, Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct* __restrict__ structArray)
 {
+std::vector<__gsharp_context_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(array, structArray);
+InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(array, structArray, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -133,7 +185,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_array, p_
 }
 }
 #pragma warning restore CS8500
-public const string MathKernel_Source = @"extern ""C"" __declspec(dllexport) void InvocationAndIntrinsicsKernels_MathKernel(double* __restrict__ doubleInputs, double* __restrict__ doubleOutputs, float* __restrict__ floatInputs, float* __restrict__ floatOutputs){
+public const string MathKernel_Source = @"struct __gsharp_context_InvocationAndIntrinsicsKernels_MathKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void InvocationAndIntrinsicsKernels_MathKernel(double* __restrict__ doubleInputs, double* __restrict__ doubleOutputs, float* __restrict__ floatInputs, float* __restrict__ floatOutputs, __gsharp_context_InvocationAndIntrinsicsKernels_MathKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 double dVal = doubleInputs[tid];
 doubleOutputs[0]=sin(dVal);
@@ -155,18 +214,37 @@ floatOutputs[5]=fabsf(fVal);
 floatOutputs[6]=expf(fVal);
 floatOutputs[7]=sqrtf(fabsf(fVal));
 floatOutputs[8]=logf(fabsf(fVal)+1.0f);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InvocationAndIntrinsicsKernels_MathKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, double* __restrict__ doubleInputs, double* __restrict__ doubleOutputs, float* __restrict__ floatInputs, float* __restrict__ floatOutputs)
 {
+std::vector<__gsharp_context_InvocationAndIntrinsicsKernels_MathKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-InvocationAndIntrinsicsKernels_MathKernel(doubleInputs, doubleOutputs, floatInputs, floatOutputs);
+InvocationAndIntrinsicsKernels_MathKernel(doubleInputs, doubleOutputs, floatInputs, floatOutputs, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -192,7 +270,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_doubleInp
 }
 }
 #pragma warning restore CS8500
-public const string MathEdgeCasesKernel_Source = @"extern ""C"" __declspec(dllexport) void InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults){
+public const string MathEdgeCasesKernel_Source = @"struct __gsharp_context_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults, __gsharp_context_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 float f = floatSpecialInputs[tid];
 floatSpecialResults[0]=fabsf(f);
@@ -208,18 +293,37 @@ doubleSpecialResults[2]=fmin(d,0.0);
 doubleSpecialResults[3]=exp(d);
 doubleSpecialResults[4]=sqrt(d);
 doubleSpecialResults[5]=log(d);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ floatSpecialInputs, float* __restrict__ floatSpecialResults, double* __restrict__ doubleSpecialInputs, double* __restrict__ doubleSpecialResults)
 {
+std::vector<__gsharp_context_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(floatSpecialInputs, floatSpecialResults, doubleSpecialInputs, doubleSpecialResults);
+InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(floatSpecialInputs, floatSpecialResults, doubleSpecialInputs, doubleSpecialResults, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

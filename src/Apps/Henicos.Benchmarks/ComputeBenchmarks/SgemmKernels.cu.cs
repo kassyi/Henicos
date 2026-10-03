@@ -10,15 +10,15 @@ public static partial class SgemmKernels
         SharedMemory<float> As = new(256); // 16 * 16
         SharedMemory<float> Bs = new(256); // 16 * 16
 
-        int bx = BlockIndex.X;
-        int by = BlockIndex.Y;
-        int tx = ThreadIndex.X;
-        int ty = ThreadIndex.Y;
+        var bx = BlockIndex.X;
+        var by = BlockIndex.Y;
+        var tx = ThreadIndex.X;
+        var ty = ThreadIndex.Y;
 
-        int row = by * 16 + ty;
-        int col = bx * 16 + tx;
+        var row = by * 16 + ty;
+        var col = bx * 16 + tx;
 
-        float cValue = 0.0f;
+        var cValue = 0.0f;
 
         for (int m = 0; m < (n + 15) / 16; m++)
         {

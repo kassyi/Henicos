@@ -27,7 +27,14 @@ public partial class SwitchExpressionKernels
 public static partial class AotContexts
 {
 }
-public const string SimpleConstantSwitchKernel_Source = @"extern ""C"" __declspec(dllexport) void SwitchExpressionKernels_SimpleConstantSwitchKernel(int* __restrict__ input, int* __restrict__ output){
+public const string SimpleConstantSwitchKernel_Source = @"struct __gsharp_context_SwitchExpressionKernels_SimpleConstantSwitchKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void SwitchExpressionKernels_SimpleConstantSwitchKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_SwitchExpressionKernels_SimpleConstantSwitchKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 int val = input[tid];
 output[tid]=([&]() {
@@ -39,18 +46,37 @@ case 3: return 300;
 default: return -1;
 }
 }());
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_SwitchExpressionKernels_SimpleConstantSwitchKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
+std::vector<__gsharp_context_SwitchExpressionKernels_SimpleConstantSwitchKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-SwitchExpressionKernels_SimpleConstantSwitchKernel(input, output);
+SwitchExpressionKernels_SimpleConstantSwitchKernel(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -74,7 +100,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string FloatingPointReturnSwitchKernel_Source = @"extern ""C"" __declspec(dllexport) void SwitchExpressionKernels_FloatingPointReturnSwitchKernel(int* __restrict__ input, float* __restrict__ output){
+public const string FloatingPointReturnSwitchKernel_Source = @"struct __gsharp_context_SwitchExpressionKernels_FloatingPointReturnSwitchKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void SwitchExpressionKernels_FloatingPointReturnSwitchKernel(int* __restrict__ input, float* __restrict__ output, __gsharp_context_SwitchExpressionKernels_FloatingPointReturnSwitchKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 int mode = input[tid];
 output[tid]=([&]() {
@@ -86,18 +119,37 @@ case 2: return 2.71828f;
 default: return -1.0f;
 }
 }());
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_SwitchExpressionKernels_FloatingPointReturnSwitchKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, float* __restrict__ output)
 {
+std::vector<__gsharp_context_SwitchExpressionKernels_FloatingPointReturnSwitchKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-SwitchExpressionKernels_FloatingPointReturnSwitchKernel(input, output);
+SwitchExpressionKernels_FloatingPointReturnSwitchKernel(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -121,7 +173,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string MultipleArmsBoundarySwitchKernel_Source = @"extern ""C"" __declspec(dllexport) void SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel(int* __restrict__ input, int* __restrict__ output){
+public const string MultipleArmsBoundarySwitchKernel_Source = @"struct __gsharp_context_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 int val = input[tid];
 output[tid]=([&]() {
@@ -135,18 +194,37 @@ case 2147483647: return 5;
 default: return 0;
 }
 }());
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
+std::vector<__gsharp_context_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel(input, output);
+SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

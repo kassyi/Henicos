@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
+    <Compile Remove="..\Kassyi.GSharp.Tests.Shared\TestCases\**\*.cs" />
   </ItemGroup>
 
   <ItemGroup>

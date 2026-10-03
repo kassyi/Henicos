@@ -48,7 +48,7 @@ internal static class GpuOperatorMacroTranspiler
             return castExpr.Expression;
         }
 
-        var op = semanticModel.GetOperation(expression);
+        var op = semanticModel.GetSafeOperation(expression);
         if (op is IConversionOperation conv)
         {
             return conv.Operand.Syntax as ExpressionSyntax ?? expression;
@@ -131,16 +131,16 @@ internal static class GpuOperatorMacroTranspiler
 
     private static (ExpressionSyntax? Left, ExpressionSyntax? Right, ExpressionSyntax? Extra) ExtractOperands(
         ExpressionSyntax rightNode) => rightNode switch
-    {
-        BinaryExpressionSyntax { Left: var left, Right: var right } binary
-            when binary.IsKind(SyntaxKind.LeftShiftExpression, SyntaxKind.RightShiftExpression)
-            => (left, null, right),
-        BinaryExpressionSyntax { Left: var left, Right: var right }
-            => (left, right, null),
-        PrefixUnaryExpressionSyntax unary
-            => (unary.Operand, null, null),
-        _ => (null, null, null)
-    };
+        {
+            BinaryExpressionSyntax { Left: var left, Right: var right } binary
+                when binary.IsKind(SyntaxKind.LeftShiftExpression, SyntaxKind.RightShiftExpression)
+                => (left, null, right),
+            BinaryExpressionSyntax { Left: var left, Right: var right }
+                => (left, right, null),
+            PrefixUnaryExpressionSyntax unary
+                => (unary.Operand, null, null),
+            _ => (null, null, null)
+        };
 
     private static void EmitMacroArguments(
         IMethodSymbol targetMethod,

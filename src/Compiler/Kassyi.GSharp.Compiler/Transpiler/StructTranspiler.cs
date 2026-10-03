@@ -34,7 +34,7 @@ internal static class StructTranspiler
     /// <summary>
     /// Topologically sorts referenced structs so that dependent nested structs are declared first in C++.
     /// </summary>
-    public static System.Collections.Immutable.ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(ref TranspileContext context)
+    public static ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(ref TranspileContext context)
     {
         // [WHY] CUDA C++ requires full struct definitions in dependency order before value-type usage as fields.
         var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();

@@ -90,7 +90,10 @@ public sealed class TranspilerRuleRegistry : ITranspilerRuleRegistry
             SyntaxKind.ParenthesizedLambdaExpression,
             SyntaxKind.AnonymousMethodExpression
         ], new LambdaExpressionTranspilerRule());
-        registry.Register(SyntaxKind.SimpleMemberAccessExpression, new MemberAccessExpressionTranspilerRule());
+        registry.Register([
+            SyntaxKind.SimpleMemberAccessExpression,
+            SyntaxKind.PointerMemberAccessExpression
+        ], new MemberAccessExpressionTranspilerRule());
         registry.Register(SyntaxKind.ObjectCreationExpression, new ObjectCreationExpressionTranspilerRule());
         registry.Register(SyntaxKind.ImplicitObjectCreationExpression,
             new ImplicitObjectCreationExpressionTranspilerRule());

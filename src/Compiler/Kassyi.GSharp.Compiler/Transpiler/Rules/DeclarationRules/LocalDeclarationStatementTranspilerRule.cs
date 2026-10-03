@@ -12,13 +12,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 /// </remarks>
 public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleBase<LocalDeclarationStatementSyntax>
 {
-    /// <summary>
-    /// Gets the singleton instance of the <see cref="LocalDeclarationStatementTranspilerRule"/>.
-    /// </summary>
-    public LocalDeclarationStatementTranspilerRule()
-    {
-    }
-
     private readonly struct SharedMemoryAllocation(
         VariableDeclaratorSyntax declarator,
         ExpressionSyntax sizeArgument,
@@ -45,7 +38,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
         DeclarationHoistingHelper.HoistDeclarationExpressions(node, ref context);
 
         // Dispatch inner variable declaration transpilation to the visitor (which will use VariableDeclarationTranspilerRule)
-        context.Visitor.VisitVariableDeclaration(node.Declaration);
+        context.Visitor.Visit(node.Declaration);
         context.Emitter.Writer.AppendSemiColon();
     }
 
@@ -77,13 +70,14 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
         SemanticModel semanticModel)
     {
         if (declarator.Initializer?.Value == null ||
-            !InitializationSyntaxExtractor.TryGetObjectCreationFirstArgument(declarator.Initializer.Value, out var sizeArg) ||
+            !InitializationSyntaxExtractor.TryGetObjectCreationFirstArgument(declarator.Initializer.Value,
+                out var sizeArg) ||
             sizeArg == null)
         {
             return null;
         }
 
-        var constantValue = semanticModel.GetConstantValue(sizeArg);
+        var constantValue = semanticModel.GetSafeConstantValue(sizeArg);
         return new SharedMemoryAllocation(
             declarator,
             sizeArg,
@@ -158,6 +152,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
             {
                 context.Emitter.Dialect.AppendType(ref context, typeArg);
             }
+
             context.Emitter.Writer.Append(" - 1");
         }
 
@@ -169,6 +164,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
             {
                 context.Emitter.Dialect.AppendType(ref context, typeArg);
             }
+
             context.Emitter.Writer.Append(" - 1");
         }
 
@@ -200,6 +196,7 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
         {
             context.Emitter.Dialect.AppendType(ref context, typeArg);
         }
+
         context.Emitter.Writer.AppendSemiColon();
     }
 }

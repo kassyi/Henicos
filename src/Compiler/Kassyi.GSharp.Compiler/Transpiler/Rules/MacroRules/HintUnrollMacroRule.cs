@@ -31,7 +31,7 @@ internal sealed class HintUnrollMacroRule : IMacroTranspilerRule
         if (args.Count > 0)
         {
             var factorExpr = args[0].Expression;
-            var constantValue = context.Query.SemanticModel.GetConstantValue(factorExpr);
+            var constantValue = context.Query.SemanticModel.GetSafeConstantValue(factorExpr);
             if (!constantValue.HasValue || constantValue.Value is not int intVal || intVal < 0)
             {
                 context.Reporter.Report(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);

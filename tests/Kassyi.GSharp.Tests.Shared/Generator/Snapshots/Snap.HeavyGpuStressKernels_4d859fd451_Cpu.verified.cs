@@ -27,7 +27,14 @@ public partial class HeavyGpuStressKernels
 public static partial class AotContexts
 {
 }
-public const string MatrixMultiplyStressKernel_Source = @"extern ""C"" __declspec(dllexport) void HeavyGpuStressKernels_MatrixMultiplyStressKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n){
+public const string MatrixMultiplyStressKernel_Source = @"struct __gsharp_context_HeavyGpuStressKernels_MatrixMultiplyStressKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void HeavyGpuStressKernels_MatrixMultiplyStressKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n, __gsharp_context_HeavyGpuStressKernels_MatrixMultiplyStressKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int row = blockIdx.y*blockDim.y+threadIdx.y;
 int col = blockIdx.x*blockDim.x+threadIdx.x;
 if(row<n&&col<n)
@@ -39,18 +46,37 @@ sum+=a[row*n+k]*b[k*n+col];
 }
 c[row*n+col]=sum;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_HeavyGpuStressKernels_MatrixMultiplyStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n)
 {
+std::vector<__gsharp_context_HeavyGpuStressKernels_MatrixMultiplyStressKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-HeavyGpuStressKernels_MatrixMultiplyStressKernel(a, b, c, n);
+HeavyGpuStressKernels_MatrixMultiplyStressKernel(a, b, c, n, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

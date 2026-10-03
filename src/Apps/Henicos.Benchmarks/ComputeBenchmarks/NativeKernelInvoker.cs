@@ -6,15 +6,26 @@ namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static unsafe class NativeKernelInvoker
 {
-    private static readonly Lazy<IntPtr> s_hfuncSgemm = new(() => LoadKernel("sgemm_kernel.fatbin", "SgemmKernel_Native"));
-    private static readonly Lazy<IntPtr> s_hfuncSha256 = new(() => LoadKernel("sha256_kernel.fatbin", "Sha256Kernel_Native"));
-    private static readonly Lazy<IntPtr> s_hfuncBlackScholes = new(() => LoadKernel("blackscholes_kernel.fatbin", "BlackScholesKernel_Native"));
-    private static readonly Lazy<IntPtr> s_hfuncReduction = new(() => LoadKernel("reduction_kernel.fatbin", "ReductionKernel_Native"));
+    private static readonly Lazy<byte[]> s_fatbinSgemm = new(() =>
+        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "sgemm_kernel.fatbin")));
 
-    public static IntPtr FunctionSgemm => s_hfuncSgemm.Value;
-    public static IntPtr FunctionSha256 => s_hfuncSha256.Value;
-    public static IntPtr FunctionBlackScholes => s_hfuncBlackScholes.Value;
-    public static IntPtr FunctionReduction => s_hfuncReduction.Value;
+    private static readonly Lazy<byte[]> s_fatbinSha256 = new(() =>
+        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "sha256_kernel.fatbin")));
+
+    private static readonly Lazy<byte[]> s_fatbinBlackScholes = new(() =>
+        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "blackscholes_kernel.fatbin")));
+
+    private static readonly Lazy<byte[]> s_fatbinReduction = new(() =>
+        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "reduction_kernel.fatbin")));
+
+    public static IntPtr FunctionSgemm => GpuKernelLoader.LoadAotKernel(s_fatbinSgemm.Value, "SgemmKernel_Native");
+    public static IntPtr FunctionSha256 => GpuKernelLoader.LoadAotKernel(s_fatbinSha256.Value, "Sha256Kernel_Native");
+
+    public static IntPtr FunctionBlackScholes =>
+        GpuKernelLoader.LoadAotKernel(s_fatbinBlackScholes.Value, "BlackScholesKernel_Native");
+
+    public static IntPtr FunctionReduction =>
+        GpuKernelLoader.LoadAotKernel(s_fatbinReduction.Value, "ReductionKernel_Native");
 
     public static void LaunchSgemm(
         float[] a, float[] b, float[] c, int n,
@@ -26,7 +37,7 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        IntPtr kernel = s_hfuncSgemm.Value;
+        var kernel = FunctionSgemm;
 
         using var d_a = new GpuBuffer<float>(a.Length);
         d_a.CopyToDevice(a);
@@ -34,11 +45,11 @@ public static unsafe class NativeKernelInvoker
         d_b.CopyToDevice(b);
         using var d_c = new GpuBuffer<float>(c.Length);
 
-        IntPtr pa = d_a.DevicePointer;
-        IntPtr pb = d_b.DevicePointer;
-        IntPtr pc = d_c.DevicePointer;
+        var pa = d_a.DevicePointer;
+        var pb = d_b.DevicePointer;
+        var pc = d_c.DevicePointer;
 
-        void** kernelParams = stackalloc void*[4];
+        var kernelParams = stackalloc void*[4];
         kernelParams[0] = &pa;
         kernelParams[1] = &pb;
         kernelParams[2] = &pc;
@@ -64,16 +75,16 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        IntPtr kernel = s_hfuncSha256.Value;
+        var kernel = FunctionSha256;
 
         using var d_in = new GpuBuffer<byte>(input.Length);
         d_in.CopyToDevice(input);
         using var d_out = new GpuBuffer<uint>(output.Length);
 
-        IntPtr pin = d_in.DevicePointer;
-        IntPtr pout = d_out.DevicePointer;
+        var pin = d_in.DevicePointer;
+        var pout = d_out.DevicePointer;
 
-        void** kernelParams = stackalloc void*[3];
+        var kernelParams = stackalloc void*[3];
         kernelParams[0] = &pin;
         kernelParams[1] = &pout;
         kernelParams[2] = &numMessages;
@@ -113,7 +124,7 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        IntPtr kernel = s_hfuncBlackScholes.Value;
+        var kernel = FunctionBlackScholes;
 
         using var d_s = new GpuBuffer<float>(s.Length);
         d_s.CopyToDevice(s);
@@ -136,11 +147,10 @@ public static unsafe class NativeKernelInvoker
             N = n
         };
 
-        void** kernelParams = stackalloc void*[1];
+        var kernelParams = stackalloc void*[1];
         kernelParams[0] = &ctx;
 
         CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
-
             kernel,
             gridDimX, 1, 1,
             blockDimX, 1, 1,
@@ -161,16 +171,16 @@ public static unsafe class NativeKernelInvoker
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        IntPtr kernel = s_hfuncReduction.Value;
+        var kernel = FunctionReduction;
 
         using var d_in = new GpuBuffer<Float4>(input.Length);
         d_in.CopyToDevice(input);
         using var d_out = new GpuBuffer<float>(output.Length);
 
-        IntPtr pin = d_in.DevicePointer;
-        IntPtr pout = d_out.DevicePointer;
+        var pin = d_in.DevicePointer;
+        var pout = d_out.DevicePointer;
 
-        void** kernelParams = stackalloc void*[3];
+        var kernelParams = stackalloc void*[3];
         kernelParams[0] = &pin;
         kernelParams[1] = &pout;
         kernelParams[2] = &n;
@@ -183,16 +193,5 @@ public static unsafe class NativeKernelInvoker
 
         CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
         d_out.CopyToHost(output);
-    }
-
-    private static IntPtr LoadKernel(string fatbinFileName, string kernelName)
-    {
-        var path = Path.Combine(AppContext.BaseDirectory, fatbinFileName);
-        if (!File.Exists(path))
-        {
-            throw new FileNotFoundException($"Native fatbin '{fatbinFileName}' not found at '{path}'.");
-        }
-        var fatbinBytes = File.ReadAllBytes(path);
-        return GpuKernelLoader.LoadAotKernel(fatbinBytes, kernelName);
     }
 }

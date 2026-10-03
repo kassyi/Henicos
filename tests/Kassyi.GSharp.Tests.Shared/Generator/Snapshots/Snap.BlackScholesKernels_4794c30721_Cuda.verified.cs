@@ -421,18 +421,18 @@ public const string Source = @"inline __device__ void CalculateOptionPrice(float
 inline __device__ float Cnd(float d);
 
 inline __device__ void CalculateOptionPrice(float s, float x, float t, float r, float v, float* __restrict__  callResult, float* __restrict__  putResult){
-float d1 = (__logf(s/x)+(r+v*v/2.0f)*t)/(v*__fsqrt_rn(t));
-float d2 = d1-v*__fsqrt_rn(t);
-float cndD1 = Cnd(d1);
-float cndD2 = Cnd(d2);
-float expRt = __expf(-r*t);
+auto d1 = (__logf(s/x)+(r+v*v/2.0f)*t)/(v*__fsqrt_rn(t));
+auto d2 = d1-v*__fsqrt_rn(t);
+auto cndD1 = Cnd(d1);
+auto cndD2 = Cnd(d2);
+auto expRt = __expf(-r*t);
 (*callResult)=s*cndD1-x*expRt*cndD2;
 (*putResult)=x*expRt*(1.0f-cndD2)-s*(1.0f-cndD1);
 }
 
 inline __device__ float Cnd(float d){
-float k = 1.0f/(1.0f+0.2316419f*fabsf(d));
-float cnd = 0.3989422804f*__expf(-0.5f*d*d)*(k*(0.31938153f+k*(-0.356563782f+k*(1.781477937f+k*(-1.821255978f+k*1.330274429f)))));
+auto k = 1.0f/(1.0f+0.2316419f*fabsf(d));
+auto cnd = 0.3989422804f*__expf(-0.5f*d*d)*(k*(0.31938153f+k*(-0.356563782f+k*(1.781477937f+k*(-1.821255978f+k*1.330274429f)))));
 if(d>0)
 {
 cnd=1.0f-cnd;

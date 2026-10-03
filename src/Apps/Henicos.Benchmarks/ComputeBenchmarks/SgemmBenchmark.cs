@@ -22,7 +22,7 @@ public class SgemmBenchmark : IComputeBenchmark
         _cNative = new float[N * N];
 
         var rand = new Random(42);
-        for (int i = 0; i < N * N; i++)
+        for (var i = 0; i < N * N; i++)
         {
             _a[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
             _b[i] = (float)(rand.NextDouble() * 2.0 - 1.0);
@@ -31,12 +31,12 @@ public class SgemmBenchmark : IComputeBenchmark
 
     public void RunReferenceCpu()
     {
-        for (int row = 0; row < N; row++)
+        for (var row = 0; row < N; row++)
         {
-            for (int col = 0; col < N; col++)
+            for (var col = 0; col < N; col++)
             {
-                float sum = 0.0f;
-                for (int k = 0; k < N; k++)
+                var sum = 0.0f;
+                for (var k = 0; k < N; k++)
                 {
                     sum += _a[row * N + k] * _b[k * N + col];
                 }
@@ -72,7 +72,7 @@ public class SgemmBenchmark : IComputeBenchmark
 
     public void Verify()
     {
-        for (int i = 0; i < N * N; i++)
+        for (var i = 0; i < N * N; i++)
         {
             if (Math.Abs(_cCpu[i] - _cGsharp[i]) > 1e-2f)
             {

@@ -8,7 +8,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
     public virtual bool IsCuda => GetType().Name.Contains("Cuda");
 
     public virtual DialectCapabilities Capabilities =>
-        IsCuda ? DialectCapabilities.AllGpuFeatures : DialectCapabilities.None;
+        DialectCapabilities.AllGpuFeatures;
 
     public virtual void AppendType(ref TranspileContext context, ITypeSymbol? typeSymbol)
     {
@@ -137,13 +137,13 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return true;
         }
 
-        if (memberName == "Count")
+        if (memberName != "Count")
         {
-            mappedName = "length";
-            return true;
+            return false;
         }
 
-        return false;
+        mappedName = "length";
+        return true;
     }
 
     public virtual (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(

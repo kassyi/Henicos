@@ -39,7 +39,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     private static bool CheckSuppressGs0001(MethodDeclarationSyntax methodDeclaration)
     {
-        bool suppressGs0001 = false;
+        var suppressGs0001 = false;
         var root = methodDeclaration.SyntaxTree.GetRoot();
         var nodes = root.DescendantNodes(TextSpan.FromBounds(0, methodDeclaration.Span.End), descendIntoTrivia: true);
 
@@ -123,23 +123,41 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
-        if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
-        {
-            return null;
-        }
 
-        var collector = new DiagnosticCollector();
-        var cudaDialect = new GSharpCudaDialect();
-        var cppDialect = new StandardCppDialect();
-
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, collector.Report,
-            isDevice: false, cudaDialect);
-        var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
+        try
         {
-        }, isDevice: false, cppDialect);
+            if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+            {
+                return null;
+            }
 
-        if (!CheckSuppressGs0001(methodDeclaration))
-        {
+            var collector = new DiagnosticCollector();
+            var cudaDialect = new GSharpCudaDialect();
+            var cppDialect = new StandardCppDialect();
+
+            var cudaSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
+                collector.Report,
+                isDevice: false, cudaDialect);
+            var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
+            {
+            }, isDevice: false, cppDialect);
+
+            if (!CheckSuppressGs0001(methodDeclaration))
+            {
+                return new TranspiledKernelResult(
+                    methodSymbol,
+                    methodSymbol.Name,
+                    methodSymbol.ContainingType.Name,
+                    methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+                    cudaSource,
+                    cppSource,
+                    collector.GetDiagnostics()
+                );
+            }
+
+            cudaSource = "// gsharp:suppress GS0001\n" + cudaSource;
+            cppSource = "// gsharp:suppress GS0001\n" + cppSource;
+
             return new TranspiledKernelResult(
                 methodSymbol,
                 methodSymbol.Name,
@@ -150,19 +168,21 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 collector.GetDiagnostics()
             );
         }
+        catch (Exception ex)
+        {
+            var collector = new DiagnosticCollector();
+            collector.Report(Diagnostic.Create(
+                GSharpDiagnostics.InternalCompilerError,
+                Location.None,
+                ex.Message));
 
-        cudaSource = "// gsharp:suppress GS0001\n" + cudaSource;
-        cppSource = "// gsharp:suppress GS0001\n" + cppSource;
-
-        return new TranspiledKernelResult(
-            methodSymbol,
-            methodSymbol.Name,
-            methodSymbol.ContainingType.Name,
-            methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
-            cudaSource,
-            cppSource,
-            collector.GetDiagnostics()
-        );
+            return new TranspiledKernelResult(
+                methodSymbol!,
+                methodSymbol?.Name ?? "E",
+                methodSymbol?.ContainingType.Name ?? "E",
+                methodSymbol?.ContainingNamespace?.GetFullNamespaceName(),
+                "", "", collector.GetDiagnostics());
+        }
     }
 
     private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorSyntaxContext context,
@@ -170,37 +190,57 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
-        if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+
+        try
         {
-            return null;
+            if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+            {
+                return null;
+            }
+
+            var collector = new DiagnosticCollector();
+            var cudaDialect = new GSharpCudaDialect();
+            var cppDialect = new StandardCppDialect();
+
+            var cudaSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel,
+                collector.Report, isDevice: true, cudaDialect);
+            var cppSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel, _ =>
+            {
+            }, isDevice: true, cppDialect);
+
+            var cudaBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
+                collector.Report,
+                isDevice: true, cudaDialect);
+            var cppBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
+            {
+            }, isDevice: true, cppDialect);
+
+            return new TranspiledDeviceMethodResult(
+                methodSymbol,
+                methodSymbol.Name,
+                methodSymbol.ContainingType.Name,
+                methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+                cudaSignature,
+                cudaBody,
+                cppSignature,
+                cppBody,
+                collector.GetDiagnostics());
         }
-
-        var collector = new DiagnosticCollector();
-        var cudaDialect = new GSharpCudaDialect();
-        var cppDialect = new StandardCppDialect();
-
-        var cudaSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel,
-            collector.Report, isDevice: true, cudaDialect);
-        var cppSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel, _ =>
+        catch (Exception ex)
         {
-        }, isDevice: true, cppDialect);
+            var collector = new DiagnosticCollector();
+            collector.Report(Diagnostic.Create(
+                GSharpDiagnostics.InternalCompilerError,
+                Location.None,
+                ex.Message));
 
-        var cudaBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, collector.Report,
-            isDevice: true, cudaDialect);
-        var cppBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
-        {
-        }, isDevice: true, cppDialect);
-
-        return new TranspiledDeviceMethodResult(
-            methodSymbol,
-            methodSymbol.Name,
-            methodSymbol.ContainingType.Name,
-            methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
-            cudaSignature,
-            cudaBody,
-            cppSignature,
-            cppBody,
-            collector.GetDiagnostics());
+            return new TranspiledDeviceMethodResult(
+                methodSymbol!,
+                methodSymbol?.Name ?? "E",
+                methodSymbol?.ContainingType.Name ?? "E",
+                null,
+                "", "", "", "", collector.GetDiagnostics());
+        }
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node, string attributeName)
@@ -243,7 +283,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return;
         }
 
-        bool isCuda = config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase);
+        var isCuda = config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase);
         ITranspilerDialect dialect = isCuda ? new GSharpCudaDialect() : new StandardCppDialect();
 
         var distinctDeviceMethods = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
@@ -279,7 +319,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             if (seenKernelMethods.Add(method))
             {
                 distinctKernelMethods.Add(method);
-                string source = isCuda ? method.CudaSource : method.CppSource;
+                var source = isCuda ? method.CudaSource : method.CppSource;
                 allKernelsSource.AppendLine(source);
 
                 if (!methodsByClass.TryGetValue(method.MethodSymbol.ContainingType, out var builder))
@@ -302,12 +342,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
         WriteUnityAotArtifact(safeAssemblyName, config, preludeSource, commonDeviceSource, allKernelsSource.ToString(),
             dialect, context);
 
-        if (isCuda)
+        if (!isCuda)
         {
-            var contextSource = WrapperEmitter.GenerateModuleContextClass(assemblyName, distinctKernelMethods);
-            context.AddSource($"GSharpModuleContext_{safeAssemblyName}.g.cs",
-                SourceText.From(contextSource, Encoding.UTF8));
+            return;
         }
+
+        var contextSource = WrapperEmitter.GenerateModuleContextClass(assemblyName, distinctKernelMethods);
+        context.AddSource($"GSharpModuleContext_{safeAssemblyName}.g.cs",
+            SourceText.From(contextSource, Encoding.UTF8));
     }
 
     private static void EmitSharedSources(SourceProductionContext context, GeneratorConfig config, string preludeSource,
@@ -365,7 +407,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(diag.Diagnostic);
             }
 
-            string source = isCuda ? method.CudaSource : method.CppSource;
+            var source = isCuda ? method.CudaSource : method.CppSource;
             methodsData.Add((method.MethodSymbol, source));
         }
 

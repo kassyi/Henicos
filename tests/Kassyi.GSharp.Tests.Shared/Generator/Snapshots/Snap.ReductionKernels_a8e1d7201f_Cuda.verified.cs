@@ -87,9 +87,9 @@ float W;
 #endif
 extern ""C"" __global__ void ReductionKernels_ReductionKernel(float4* __restrict__ input, float* __restrict__ output, int n){
 __shared__ float sdata[8];
-int tid = threadIdx.x;
-int i = blockIdx.x*(blockDim.x*2)+tid;
-float sum = 0.0f;
+auto tid = threadIdx.x;
+auto i = blockIdx.x*(blockDim.x*2)+tid;
+auto sum = 0.0f;
 if(i<n)
 {
 auto v = input[i];
@@ -105,8 +105,8 @@ sum+=__shfl_down_sync(0xFFFFFFFF,sum,8,32);
 sum+=__shfl_down_sync(0xFFFFFFFF,sum,4,32);
 sum+=__shfl_down_sync(0xFFFFFFFF,sum,2,32);
 sum+=__shfl_down_sync(0xFFFFFFFF,sum,1,32);
-int lane = tid%32;
-int warpId = tid/32;
+auto lane = tid%32;
+auto warpId = tid/32;
 if(lane==0)
 {
 sdata[warpId]=sum;
@@ -114,7 +114,7 @@ sdata[warpId]=sum;
 __syncthreads();
 if(warpId==0)
 {
-float val = ((tid<8)?sdata[tid]:0.0f);
+auto val = ((tid<8)?sdata[tid]:0.0f);
 val+=__shfl_down_sync(0xFFFFFFFF,val,4,32);
 val+=__shfl_down_sync(0xFFFFFFFF,val,2,32);
 val+=__shfl_down_sync(0xFFFFFFFF,val,1,32);

@@ -72,7 +72,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
     private static void TranspileMemberAccess(MemberAccessExpressionSyntax node, ref TranspileContext context)
     {
         context.Visitor.Visit(node.Expression);
-        context.Emitter.Writer.Append(".");
+        context.Emitter.Writer.Append(node.IsKind(SyntaxKind.PointerMemberAccessExpression) ? "->" : ".");
 
         var memberName = node.Name.Identifier.Text;
         var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Expression);
