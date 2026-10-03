@@ -39,23 +39,49 @@ float C;
 ;
 #endif
 #pragma pack(pop)
-extern ""C"" __declspec(dllexport) void StructLayoutKernels_ModifyStructLayoutKernel(Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct* __restrict__ data){
+struct __gsharp_context_StructLayoutKernels_ModifyStructLayoutKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void StructLayoutKernels_ModifyStructLayoutKernel(Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct* __restrict__ data, __gsharp_context_StructLayoutKernels_ModifyStructLayoutKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 data[tid].A+=10;
 data[tid].B*=2.0;
 data[tid].C-=1.0f;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_StructLayoutKernels_ModifyStructLayoutKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct* __restrict__ data)
 {
+std::vector<__gsharp_context_StructLayoutKernels_ModifyStructLayoutKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-StructLayoutKernels_ModifyStructLayoutKernel(data);
+StructLayoutKernels_ModifyStructLayoutKernel(data, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -112,23 +138,49 @@ int B;
 ;
 #endif
 #pragma pack(pop)
-extern ""C"" __declspec(dllexport) void StructLayoutKernels_ModifyPackedInlineArrayKernel(Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray* __restrict__ data){
+struct __gsharp_context_StructLayoutKernels_ModifyPackedInlineArrayKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void StructLayoutKernels_ModifyPackedInlineArrayKernel(Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray* __restrict__ data, __gsharp_context_StructLayoutKernels_ModifyPackedInlineArrayKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 data[tid].A+=1;
 data[tid].Buffer[0]+=2;
 data[tid].B+=3;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_StructLayoutKernels_ModifyPackedInlineArrayKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray* __restrict__ data)
 {
+std::vector<__gsharp_context_StructLayoutKernels_ModifyPackedInlineArrayKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-StructLayoutKernels_ModifyPackedInlineArrayKernel(data);
+StructLayoutKernels_ModifyPackedInlineArrayKernel(data, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

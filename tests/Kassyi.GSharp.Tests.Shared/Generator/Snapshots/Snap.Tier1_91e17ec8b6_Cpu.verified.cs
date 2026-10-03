@@ -73,17 +73,7 @@ host.BoolVal = native.BoolVal;
 }
 #pragma warning restore CS8500
 }
-public const string AllInOneKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct__
-struct Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct
-{
-int IntVal;
-float FloatVal;
-bool BoolVal;
-}
-;
-#endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray__
+public const string AllInOneKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray__
 struct Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray
 {
@@ -103,6 +93,16 @@ __device__ inline int size() const { return 4; }
 }
 ;
 #endif
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct__
+struct Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct
+{
+int IntVal;
+float FloatVal;
+bool BoolVal;
+}
+;
+#endif
 #ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct__
 struct Kassyi_GSharp_Tests_Shared_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct
@@ -111,7 +111,22 @@ int Data[4];
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void Tier1IntegrationKernels_AllInOneKernel(int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize){
+struct __gsharp_context_Tier1IntegrationKernels_AllInOneKernel {
+int _state = 0;
+bool ok;
+int bitwise;
+float mag;
+Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray arr;
+float sum;
+float foreachSum;
+System_Func<float, float, float> multiplier;
+Kassyi_GSharp_Core_SharedMemory<float> dynamicSharedMem;
+};
+extern ""C"" __declspec(dllexport) void Tier1IntegrationKernels_AllInOneKernel(int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize, __gsharp_context_Tier1IntegrationKernels_AllInOneKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < count; tid += gridDim.x * blockDim.x)
 {
 auto LocalInlineFunc = [&](int x) {
@@ -139,13 +154,13 @@ a = _t0;
 b = _t1;
 }());
 int processed;
-bool ok = TryProcess(intInput[tid],&processed);
-int bitwise = (a<<1)|(b>>1)^0xFF;
-bitwise&=~1;
-float mag = HelperMath(floatInput[tid],(float)processed);
-mag=HelperMathAggressive(mag);
-mag=(float)fmaxf(mag,config.FloatVal);
-mag+=([&]() {
+_ctx->ok=TryProcess(intInput[tid],&processed);
+_ctx->bitwise=(a<<1)|(b>>1)^0xFF;
+_ctx->bitwise&=~1;
+_ctx->mag=HelperMath(floatInput[tid],(float)processed);
+_ctx->mag=HelperMathAggressive(_ctx->mag);
+_ctx->mag=(float)fmaxf(_ctx->mag,config.FloatVal);
+_ctx->mag+=([&]() {
 switch((tid%3))
 {
 case 0: return 1.0f;
@@ -153,77 +168,73 @@ case 1: return 2.0f;
 default: return 3.0f;
 }
 }());
-Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray arr = Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray{};
-arr[0]=mag;
-arr[1]=mag*2.0f;
-arr[2]=mag*3.0f;
-arr[3]=mag*4.0f;
-float sum = 0;
+_ctx->arr=Kassyi_GSharp_Tests_Shared_Syntax_Tier1FixedArray{};
+_ctx->arr[0]=_ctx->mag;
+_ctx->arr[1]=_ctx->mag*2.0f;
+_ctx->arr[2]=_ctx->mag*3.0f;
+_ctx->arr[3]=_ctx->mag*4.0f;
+_ctx->sum=0;
 // [GpuUnroll] start=0, count=4
 {
 if(0!=1)
 {
-sum+=arr[0];
+_ctx->sum+=_ctx->arr[0];
 }
 }
 {
 if(1!=1)
 {
-sum+=arr[1];
+_ctx->sum+=_ctx->arr[1];
 }
 }
 {
 if(2!=1)
 {
-sum+=arr[2];
+_ctx->sum+=_ctx->arr[2];
 }
 }
 {
 if(3!=1)
 {
-sum+=arr[3];
+_ctx->sum+=_ctx->arr[3];
 }
 }
-float foreachSum = 0;
-for(auto val : arr)
+_ctx->foreachSum=0;
+for(auto val : _ctx->arr)
 {
-foreachSum+=val;
+_ctx->foreachSum+=val;
 }
-sum+=foreachSum;
+_ctx->sum+=_ctx->foreachSum;
 const float coll[4]={ 1.0f, 2.0f, 3.0f, 4.0f };
 float collSum = 0;
 for(auto val : coll)
 {
 collSum+=val;
 }
-sum+=collSum+4;
+_ctx->sum+=collSum+4;
 float stackBuf[4]={ 5.0f, 10.0f, 15.0f, 20.0f };
 float stackSum = 0;
 for(auto val : stackBuf)
 {
 stackSum+=val;
 }
-sum+=stackSum+4;
-auto multiplier = [&](float x, float m) {
+_ctx->sum+=stackSum+4;
+_ctx->multiplier=[&](float x, float m) {
 return x*m;
 }
 ;
-sum=multiplier(sum,2.0f);
-if(ok&&config.BoolVal)
+_ctx->sum=_ctx->multiplier(_ctx->sum,2.0f);
+if(_ctx->ok&&config.BoolVal)
 {
-atomicAdd(&globalCounter[0],(unsigned long long)bitwise);
+atomicAdd(&globalCounter[0],(unsigned long long)_ctx->bitwise);
 }
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __smem_offset = 0;
-__smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
-float* dynamicSharedMem = (float*)(__gsharp_dynamic_smem + __smem_offset);
-__smem_offset += (dynamicSharedSize) * sizeof(float);
-dynamicSharedMem[threadIdx.x]=sum;
+_ctx->dynamicSharedMem={ (float*)__gsharp_allocate_smem(0, (dynamicSharedSize) * sizeof(float), alignof(float)) };
+_ctx->dynamicSharedMem[threadIdx.x]=_ctx->sum;
 __syncthreads();
-float finalVal = ((bitwise>0)?((dynamicSharedMem[threadIdx.x]>10.0f?10.0f:dynamicSharedMem[threadIdx.x])):0.0f);
+float finalVal = ((_ctx->bitwise>0)?((_ctx->dynamicSharedMem[threadIdx.x]>10.0f?10.0f:_ctx->dynamicSharedMem[threadIdx.x])):0.0f);
 {
 Kassyi_GSharp_Tests_Shared_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct fbs = Kassyi_GSharp_Tests_Shared_Syntax_Tier1IntegrationKernels_Tier1FixedBufferStruct{};
-fbs.Data[0]=bitwise;
+fbs.Data[0]=_ctx->bitwise;
 finalVal+=fbs.Data[0];
 }
 System_Nullable<int> maybeVal = {};
@@ -232,8 +243,8 @@ auto __coalesce_tmp = maybeVal;
 return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : 5;
 }());
 finalVal+=actualVal;
-int popCount = __popc((unsigned int)((unsigned int)bitwise));
-int leadingZeroes = __gsharp_lzc_32((unsigned int)bitwise);
+int popCount = __popc((unsigned int)((unsigned int)_ctx->bitwise));
+int leadingZeroes = __gsharp_lzc_32((unsigned int)_ctx->bitwise);
 finalVal+=popCount+leadingZeroes;
 int loopCounter = 0;
 do
@@ -256,18 +267,37 @@ while(loopCounter<3);
 ;
 results[tid]=finalVal;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Tier1IntegrationKernels_AllInOneKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize)
 {
+std::vector<__gsharp_context_Tier1IntegrationKernels_AllInOneKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-Tier1IntegrationKernels_AllInOneKernel(intInput, floatInput, results, config, globalCounter, count, dynamicSharedSize);
+Tier1IntegrationKernels_AllInOneKernel(intInput, floatInput, results, config, globalCounter, count, dynamicSharedSize, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

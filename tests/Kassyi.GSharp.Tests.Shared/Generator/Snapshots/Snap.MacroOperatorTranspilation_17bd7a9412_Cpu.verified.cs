@@ -100,25 +100,51 @@ return this->Data;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void TestKernels_MacroKernel(TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult){
+struct __gsharp_context_TestKernels_MacroKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void TestKernels_MacroKernel(TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, __gsharp_context_TestKernels_MacroKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 TestNamespace_DummyRef a = dA;
 TestNamespace_DummyRef b = dB;
 TestNamespace_DummyRef c = dResult;
 DummyOp(&ctx,c,a,b);
 DummyUnaryOp(c,a);
 DummyShiftOp(ctx,c,a,5);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_TestKernels_MacroKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult)
 {
+std::vector<__gsharp_context_TestKernels_MacroKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-TestKernels_MacroKernel(ctx, dA, dB, dResult);
+TestKernels_MacroKernel(ctx, dA, dB, dResult, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

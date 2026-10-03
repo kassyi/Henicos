@@ -27,18 +27,25 @@ public partial class StatementsSnapshotKernels
 public static partial class AotContexts
 {
 }
-public const string BasicStatementsKernel_Source = @"extern ""C"" __declspec(dllexport) void StatementsSnapshotKernels_BasicStatementsKernel(int* __restrict__ output, int n){
+public const string BasicStatementsKernel_Source = @"struct __gsharp_context_StatementsSnapshotKernels_BasicStatementsKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void StatementsSnapshotKernels_BasicStatementsKernel(int* __restrict__ output, int n, __gsharp_context_StatementsSnapshotKernels_BasicStatementsKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int total = 0;
 if(n<=0)
 {
-return;
+_state = -1;return;
 }
 else
 {
 if(n==1)
 {
 output[0]=1;
-return;
+_state = -1;return;
 }
 else
 {
@@ -71,18 +78,37 @@ k++;
 }
 while(k<10);
 output[0]=total;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_StatementsSnapshotKernels_BasicStatementsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output, int n)
 {
+std::vector<__gsharp_context_StatementsSnapshotKernels_BasicStatementsKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-StatementsSnapshotKernels_BasicStatementsKernel(output, n);
+StatementsSnapshotKernels_BasicStatementsKernel(output, n, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

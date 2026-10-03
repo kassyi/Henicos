@@ -27,7 +27,14 @@ public partial class VectorBuiltinKernels
 public static partial class AotContexts
 {
 }
-public const string Vector2AddKernel_Source = @"extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector2AddKernel(float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length){
+public const string Vector2AddKernel_Source = @"struct __gsharp_context_VectorBuiltinKernels_Vector2AddKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector2AddKernel(float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length, __gsharp_context_VectorBuiltinKernels_Vector2AddKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 auto tid = threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
 {
@@ -35,18 +42,37 @@ auto va = a[tid];
 auto vb = b[tid];
 result[tid]=float2{(float)(va.x+vb.x), (float)(va.y+vb.y)};
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector2AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length)
 {
+std::vector<__gsharp_context_VectorBuiltinKernels_Vector2AddKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-VectorBuiltinKernels_Vector2AddKernel(a, b, result, length);
+VectorBuiltinKernels_Vector2AddKernel(a, b, result, length, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -71,7 +97,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p
 }
 }
 #pragma warning restore CS8500
-public const string Vector3AddKernel_Source = @"extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector3AddKernel(float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length){
+public const string Vector3AddKernel_Source = @"struct __gsharp_context_VectorBuiltinKernels_Vector3AddKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector3AddKernel(float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length, __gsharp_context_VectorBuiltinKernels_Vector3AddKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 auto tid = threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
 {
@@ -79,18 +112,37 @@ auto va = a[tid];
 auto vb = b[tid];
 result[tid]=float3{(float)(va.x+vb.x), (float)(va.y+vb.y), (float)(va.z+vb.z)};
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector3AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length)
 {
+std::vector<__gsharp_context_VectorBuiltinKernels_Vector3AddKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-VectorBuiltinKernels_Vector3AddKernel(a, b, result, length);
+VectorBuiltinKernels_Vector3AddKernel(a, b, result, length, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -115,7 +167,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p
 }
 }
 #pragma warning restore CS8500
-public const string Vector4AddKernel_Source = @"extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector4AddKernel(float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length){
+public const string Vector4AddKernel_Source = @"struct __gsharp_context_VectorBuiltinKernels_Vector4AddKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector4AddKernel(float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length, __gsharp_context_VectorBuiltinKernels_Vector4AddKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 auto tid = threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
 {
@@ -123,18 +182,37 @@ auto va = a[tid];
 auto vb = b[tid];
 result[tid]=float4{(float)(va.x+vb.x), (float)(va.y+vb.y), (float)(va.z+vb.z), (float)(va.w+vb.w)};
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector4AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length)
 {
+std::vector<__gsharp_context_VectorBuiltinKernels_Vector4AddKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-VectorBuiltinKernels_Vector4AddKernel(a, b, result, length);
+VectorBuiltinKernels_Vector4AddKernel(a, b, result, length, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

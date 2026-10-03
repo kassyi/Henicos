@@ -27,7 +27,14 @@ public partial class WarpShuffleKernels
 public static partial class AotContexts
 {
 }
-public const string WarpReductionKernel_Source = @"extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpReductionKernel(int* __restrict__ input, int* __restrict__ output){
+public const string WarpReductionKernel_Source = @"struct __gsharp_context_WarpShuffleKernels_WarpReductionKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpReductionKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_WarpShuffleKernels_WarpReductionKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 int lane = tid%32;
 int warpId = tid/32;
@@ -42,18 +49,37 @@ if(lane==0)
 {
 output[warpId]=val;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_WarpShuffleKernels_WarpReductionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
+std::vector<__gsharp_context_WarpShuffleKernels_WarpReductionKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WarpShuffleKernels_WarpReductionKernel(input, output);
+WarpShuffleKernels_WarpReductionKernel(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -77,25 +103,51 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string WarpShuffleBoundaryKernel_Source = @"extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpShuffleBoundaryKernel(int* __restrict__ input, int* __restrict__ outputBoundary0, int* __restrict__ outputBoundary31, int* __restrict__ outputBoundary32){
+public const string WarpShuffleBoundaryKernel_Source = @"struct __gsharp_context_WarpShuffleKernels_WarpShuffleBoundaryKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpShuffleBoundaryKernel(int* __restrict__ input, int* __restrict__ outputBoundary0, int* __restrict__ outputBoundary31, int* __restrict__ outputBoundary32, __gsharp_context_WarpShuffleKernels_WarpShuffleBoundaryKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 unsigned int mask = 0xffffffff;
 int val = input[tid];
 outputBoundary0[tid]=__shfl_down_sync(mask,val,0,32);
 outputBoundary31[tid]=__shfl_down_sync(mask,val,31,32);
 outputBoundary32[tid]=__shfl_down_sync(mask,val,32,32);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_WarpShuffleKernels_WarpShuffleBoundaryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ outputBoundary0, int* __restrict__ outputBoundary31, int* __restrict__ outputBoundary32)
 {
+std::vector<__gsharp_context_WarpShuffleKernels_WarpShuffleBoundaryKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WarpShuffleKernels_WarpShuffleBoundaryKernel(input, outputBoundary0, outputBoundary31, outputBoundary32);
+WarpShuffleKernels_WarpShuffleBoundaryKernel(input, outputBoundary0, outputBoundary31, outputBoundary32, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -121,7 +173,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string WarpDivergenceKernel_Source = @"extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpDivergenceKernel(int* __restrict__ input, int* __restrict__ output){
+public const string WarpDivergenceKernel_Source = @"struct __gsharp_context_WarpShuffleKernels_WarpDivergenceKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpDivergenceKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_WarpShuffleKernels_WarpDivergenceKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 int lane = tid%32;
 unsigned int mask = 0xffffffff;
@@ -137,18 +196,37 @@ mask=0xFFFF0000;
 val=__shfl_down_sync(mask,val,2,16);
 }
 output[tid]=val;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_WarpShuffleKernels_WarpDivergenceKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
 {
+std::vector<__gsharp_context_WarpShuffleKernels_WarpDivergenceKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WarpShuffleKernels_WarpDivergenceKernel(input, output);
+WarpShuffleKernels_WarpDivergenceKernel(input, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -172,21 +250,47 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 }
 }
 #pragma warning restore CS8500
-public const string WarpShuffleExtremaKernel_Source = @"extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpShuffleExtremaKernel(unsigned int mask, int* __restrict__ input, unsigned int delta, int width, int* __restrict__ output){
+public const string WarpShuffleExtremaKernel_Source = @"struct __gsharp_context_WarpShuffleKernels_WarpShuffleExtremaKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpShuffleExtremaKernel(unsigned int mask, int* __restrict__ input, unsigned int delta, int width, int* __restrict__ output, __gsharp_context_WarpShuffleKernels_WarpShuffleExtremaKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 output[tid]=__shfl_down_sync(mask,input[tid],delta,width);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_WarpShuffleKernels_WarpShuffleExtremaKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int mask, int* __restrict__ input, unsigned int delta, int width, int* __restrict__ output)
 {
+std::vector<__gsharp_context_WarpShuffleKernels_WarpShuffleExtremaKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WarpShuffleKernels_WarpShuffleExtremaKernel(mask, input, delta, width, output);
+WarpShuffleKernels_WarpShuffleExtremaKernel(mask, input, delta, width, output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

@@ -36,23 +36,49 @@ int B;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_AggregateInitKernel(int* __restrict__ output){
+struct __gsharp_context_StructAggregateInitKernels_AggregateInitKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_AggregateInitKernel(int* __restrict__ output, __gsharp_context_StructAggregateInitKernels_AggregateInitKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct s = ([&]() {
 Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct _tmp{}; _tmp.A = 1; _tmp.B = 2; return _tmp; }
 ());
 output[0]=s.A+s.B;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_StructAggregateInitKernels_AggregateInitKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
+std::vector<__gsharp_context_StructAggregateInitKernels_AggregateInitKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-StructAggregateInitKernels_AggregateInitKernel(output);
+StructAggregateInitKernels_AggregateInitKernel(output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -92,25 +118,51 @@ int Y;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_DeeplyNestedInitKernel(int* __restrict__ output){
+struct __gsharp_context_StructAggregateInitKernels_DeeplyNestedInitKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_DeeplyNestedInitKernel(int* __restrict__ output, __gsharp_context_StructAggregateInitKernels_DeeplyNestedInitKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct outer = ([&]() {
 Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct _tmp{}; _tmp.B = ([&]() {
 Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct _tmp{}; _tmp.X = 1; return _tmp; }
 ()); _tmp.Y = 10; return _tmp; }
 ());
 output[0]=outer.B.X+outer.Y;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_StructAggregateInitKernels_DeeplyNestedInitKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
+std::vector<__gsharp_context_StructAggregateInitKernels_DeeplyNestedInitKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-StructAggregateInitKernels_DeeplyNestedInitKernel(output);
+StructAggregateInitKernels_DeeplyNestedInitKernel(output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

@@ -10,6 +10,8 @@ public const string Source = @"// GSharp CPU/Standard C++ Prelude Header
 #include <algorithm>
 #include <cstdint>
 #include <intrin.h>
+#include <vector>
+#include <functional>
 
 struct float2 { float x, y; };
 struct float3 { float x, y, z; };
@@ -72,6 +74,42 @@ struct GSharpArray {
     inline operator const T*() const { return data; }
 };
 
+template <typename R, typename... Args>
+using System_Func = std::function<R(Args...)>;
+
+template <typename... Args>
+using System_Action = std::function<void(Args...)>;
+
+template <typename T>
+struct Kassyi_GSharp_Core_SharedMemory {
+    T* data;
+    inline T& operator[](int index) { return data[index]; }
+    inline const T& operator[](int index) const { return data[index]; }
+    inline operator T*() { return data; }
+    inline operator const T*() const { return data; }
+};
+
+template <typename T>
+struct System_ReadOnlySpan {
+    const T* __restrict__ data;
+    int length;
+    inline const T* begin() const { return data; }
+    inline const T* end() const { return data + length; }
+    inline const T& operator[](int index) const { return data[index]; }
+};
+
+template <typename T>
+struct System_Span {
+    T* __restrict__ data;
+    int length;
+    inline T* begin() { return data; }
+    inline T* end() { return data + length; }
+    inline const T* begin() const { return data; }
+    inline const T* end() const { return data + length; }
+    inline T& operator[](int index) { return data[index]; }
+    inline const T& operator[](int index) const { return data[index]; }
+};
+
 struct uint3 { uint32_t x, y, z; };
 struct dim3 { uint32_t x, y, z; };
 
@@ -100,6 +138,27 @@ inline unsigned int atomicExch(unsigned int* address, unsigned int val) { unsign
 inline unsigned long long atomicExch(unsigned long long* address, unsigned long long val) { unsigned long long old = *address; *address = val; return old; }
 
 __declspec(selectany) char __gsharp_dynamic_smem[65536];
+__declspec(selectany) size_t __gsharp_smem_offsets[64];
+__declspec(selectany) bool __gsharp_smem_initialized[64];
+__declspec(selectany) size_t __gsharp_smem_current_base;
+
+inline void __gsharp_reset_smem() {
+    __gsharp_smem_current_base = 0;
+    for (int i = 0; i < 64; i++) {
+        __gsharp_smem_initialized[i] = false;
+        __gsharp_smem_offsets[i] = 0;
+    }
+}
+
+inline void* __gsharp_allocate_smem(int allocId, size_t size, size_t alignment) {
+    if (!__gsharp_smem_initialized[allocId]) {
+        __gsharp_smem_current_base = (__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1);
+        __gsharp_smem_offsets[allocId] = __gsharp_smem_current_base;
+        __gsharp_smem_current_base += size;
+        __gsharp_smem_initialized[allocId] = true;
+    }
+    return (void*)(__gsharp_dynamic_smem + __gsharp_smem_offsets[allocId]);
+}
 
 inline void __syncthreads() {}
 

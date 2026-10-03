@@ -38,56 +38,90 @@ float W;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void ReductionKernels_ReductionKernel(Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n){
-__shared__ float sdata[8];
-auto tid = threadIdx.x;
-auto i = blockIdx.x*(blockDim.x*2)+tid;
-auto sum = 0.0f;
-if(i<n)
+struct __gsharp_context_ReductionKernels_ReductionKernel {
+int _state = 0;
+Kassyi_GSharp_Core_SharedMemory<float> sdata;
+int tid;
+int i;
+float sum;
+int lane;
+int warpId;
+};
+extern ""C"" __declspec(dllexport) void ReductionKernels_ReductionKernel(Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n, __gsharp_context_ReductionKernels_ReductionKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
 {
-auto v = input[i];
-sum=v.x+v.y+v.z+v.w;
+case 0:
+_ctx->sdata={ (float*)__gsharp_allocate_smem(0, (8) * sizeof(float), alignof(float)) };
+_ctx->tid=threadIdx.x;
+_ctx->i=blockIdx.x*(blockDim.x*2)+_ctx->tid;
+_ctx->sum=0.0f;
+if(_ctx->i<n)
+{
+auto v = input[_ctx->i];
+_ctx->sum=v.x+v.y+v.z+v.w;
 }
-if(i+blockDim.x<n)
+if(_ctx->i+blockDim.x<n)
 {
-auto v = input[i+blockDim.x];
-sum+=v.x+v.y+v.z+v.w;
+auto v = input[_ctx->i+blockDim.x];
+_ctx->sum+=v.x+v.y+v.z+v.w;
 }
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,16,32);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,8,32);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,4,32);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,2,32);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,1,32);
-auto lane = tid%32;
-auto warpId = tid/32;
-if(lane==0)
+_ctx->sum+=__shfl_down_sync(0xFFFFFFFF,_ctx->sum,16,32);
+_ctx->sum+=__shfl_down_sync(0xFFFFFFFF,_ctx->sum,8,32);
+_ctx->sum+=__shfl_down_sync(0xFFFFFFFF,_ctx->sum,4,32);
+_ctx->sum+=__shfl_down_sync(0xFFFFFFFF,_ctx->sum,2,32);
+_ctx->sum+=__shfl_down_sync(0xFFFFFFFF,_ctx->sum,1,32);
+_ctx->lane=_ctx->tid%32;
+_ctx->warpId=_ctx->tid/32;
+if(_ctx->lane==0)
 {
-sdata[warpId]=sum;
+_ctx->sdata[_ctx->warpId]=_ctx->sum;
 }
-__syncthreads();
-if(warpId==0)
+_state=1;
+return;
+case 1:
+if(_ctx->warpId==0)
 {
-auto val = ((tid<8)?sdata[tid]:0.0f);
+auto val = ((_ctx->tid<8)?_ctx->sdata[_ctx->tid]:0.0f);
 val+=__shfl_down_sync(0xFFFFFFFF,val,4,32);
 val+=__shfl_down_sync(0xFFFFFFFF,val,2,32);
 val+=__shfl_down_sync(0xFFFFFFFF,val,1,32);
-if(tid==0)
+if(_ctx->tid==0)
 {
 output[blockIdx.x]=val;
 }
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ReductionKernels_ReductionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n)
 {
+std::vector<__gsharp_context_ReductionKernels_ReductionKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ReductionKernels_ReductionKernel(input, output, n);
+ReductionKernels_ReductionKernel(input, output, n, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

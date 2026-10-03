@@ -16,34 +16,60 @@ public partial class ConcurrencyAndWarpKernels
 public static partial class AotContexts
 {
 }
-public const string SharedMemoryKernel_Source = @"extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_SharedMemoryKernel(int* __restrict__ data, int dynSize){
-int tid = threadIdx.x;
-__shared__ int sStatic[256];
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __smem_offset = 0;
-__smem_offset = (__smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* sDyn1 = (int*)(__gsharp_dynamic_smem + __smem_offset);
-__smem_offset += (dynSize) * sizeof(int);
-__smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
-float* sDyn2 = (float*)(__gsharp_dynamic_smem + __smem_offset);
-__smem_offset += (dynSize) * sizeof(float);
-sStatic[tid]=data[tid];
-sDyn1[tid]=data[tid]*2;
-sDyn2[tid]=3.14f;
-__syncthreads();
-data[tid]=sStatic[tid]+sDyn1[tid];
+public const string SharedMemoryKernel_Source = @"struct __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel {
+int _state = 0;
+int tid;
+Kassyi_GSharp_Core_SharedMemory<int> sStatic;
+Kassyi_GSharp_Core_SharedMemory<int> sDyn1;
+Kassyi_GSharp_Core_SharedMemory<float> sDyn2;
+};
+extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_SharedMemoryKernel(int* __restrict__ data, int dynSize, __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
+_ctx->tid=threadIdx.x;
+_ctx->sStatic={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
+_ctx->sDyn1={ (int*)__gsharp_allocate_smem(1, (dynSize) * sizeof(int), alignof(int)) };
+_ctx->sDyn2={ (float*)__gsharp_allocate_smem(2, (dynSize) * sizeof(float), alignof(float)) };
+_ctx->sStatic[_ctx->tid]=data[_ctx->tid];
+_ctx->sDyn1[_ctx->tid]=data[_ctx->tid]*2;
+_ctx->sDyn2[_ctx->tid]=3.14f;
+_state=1;
+return;
+case 1:
+data[_ctx->tid]=_ctx->sStatic[_ctx->tid]+_ctx->sDyn1[_ctx->tid];
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_SharedMemoryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int dynSize)
 {
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ConcurrencyAndWarpKernels_SharedMemoryKernel(data, dynSize);
+ConcurrencyAndWarpKernels_SharedMemoryKernel(data, dynSize, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -66,30 +92,60 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, dyn
 }
 }
 #pragma warning restore CS8500
-public const string SharedMemoryReverseKernel_Source = @"extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(int* __restrict__ data, int size){
-int tid = threadIdx.x;
-__shared__ int sMem[256];
-if(tid<size)
+public const string SharedMemoryReverseKernel_Source = @"struct __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel {
+int _state = 0;
+int tid;
+Kassyi_GSharp_Core_SharedMemory<int> sMem;
+};
+extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(int* __restrict__ data, int size, __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
 {
-sMem[tid]=data[tid];
-}
-__syncthreads();
-if(tid<size)
+case 0:
+_ctx->tid=threadIdx.x;
+_ctx->sMem={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
+if(_ctx->tid<size)
 {
-data[tid]=sMem[size-1-tid];
+_ctx->sMem[_ctx->tid]=data[_ctx->tid];
 }
+_state=1;
+return;
+case 1:
+if(_ctx->tid<size)
+{
+data[_ctx->tid]=_ctx->sMem[size-1-_ctx->tid];
+}
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int size)
 {
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(data, size);
+ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(data, size, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -112,29 +168,58 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, siz
 }
 }
 #pragma warning restore CS8500
-public const string IntrinsicsKernel_Source = @"extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_IntrinsicsKernel(int* __restrict__ data){
-int tid = threadIdx.x;
-if(tid<10)
+public const string IntrinsicsKernel_Source = @"struct __gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel {
+int _state = 0;
+int tid;
+};
+extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_IntrinsicsKernel(int* __restrict__ data, __gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
 {
-atomicAdd(&data[0],tid);
+case 0:
+_ctx->tid=threadIdx.x;
+if(_ctx->tid<10)
+{
+atomicAdd(&data[0],_ctx->tid);
 }
-__syncthreads();
-if(tid==0)
+_state=1;
+return;
+case 1:
+if(_ctx->tid==0)
 {
 data[1]=max(data[0],100);
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_IntrinsicsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ConcurrencyAndWarpKernels_IntrinsicsKernel(data);
+ConcurrencyAndWarpKernels_IntrinsicsKernel(data, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -157,20 +242,46 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 }
 }
 #pragma warning restore CS8500
-public const string AtomicAddStressKernel_Source = @"extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_AtomicAddStressKernel(int* __restrict__ globalSum){
+public const string AtomicAddStressKernel_Source = @"struct __gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_AtomicAddStressKernel(int* __restrict__ globalSum, __gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 atomicAdd(&globalSum[0],1);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_AtomicAddStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ globalSum)
 {
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ConcurrencyAndWarpKernels_AtomicAddStressKernel(globalSum);
+ConcurrencyAndWarpKernels_AtomicAddStressKernel(globalSum, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -193,25 +304,51 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_globalSum
 }
 }
 #pragma warning restore CS8500
-public const string AtomicOrMaxStressKernel_Source = @"extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(unsigned int* __restrict__ globalState){
+public const string AtomicOrMaxStressKernel_Source = @"struct __gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(unsigned int* __restrict__ globalState, __gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<31)
 {
 atomicOr(&globalState[0],(unsigned int)(1<<tid));
 }
 atomicMax(&globalState[1],(unsigned int)tid);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ globalState)
 {
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(globalState);
+ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(globalState, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

@@ -159,78 +159,110 @@ unsigned long long Flags;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void ComprehensiveSpecKernel_ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor){
+struct __gsharp_context_ComprehensiveSpecKernel_ProcessPhysics {
+int _state = 0;
+float Gravity;
+int tx;
+int ty;
+int tz;
+int bx;
+int by;
+int bz;
+int bdimX;
+int bdimY;
+int bdimZ;
+int gdimX;
+int gdimY;
+int gdimZ;
+int tid;
+Kassyi_GSharp_Core_SharedMemory<int> staticCache;
+Kassyi_GSharp_Core_SharedMemory<float> dynamicCache;
+Kassyi_GSharp_Core_SharedMemory<int> targetTypedCache;
+DebugReduc_PhysicsVector p;
+DebugReduc_SpecTypes types;
+DebugReduc_Point origin;
+float distance;
+DebugReduc_NestedPhysicsState nested;
+float mag;
+int i;
+int counter;
+};
+extern ""C"" __declspec(dllexport) void ComprehensiveSpecKernel_ProcessPhysics(DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor, __gsharp_context_ComprehensiveSpecKernel_ProcessPhysics* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 (*successFlag)=false;
-float Gravity = 9.8f;
-int tx = threadIdx.x;
-int ty = threadIdx.y;
-int tz = threadIdx.z;
-int bx = blockIdx.x;
-int by = blockIdx.y;
-int bz = blockIdx.z;
-int bdimX = blockDim.x;
-int bdimY = blockDim.y;
-int bdimZ = blockDim.z;
-int gdimX = gridDim.x;
-int gdimY = gridDim.y;
-int gdimZ = gridDim.z;
-int tid = tx+bx*bdimX;
-__shared__ int staticCache[10000];
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __smem_offset = 0;
-__smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
-float* dynamicCache = (float*)(__gsharp_dynamic_smem + __smem_offset);
-__smem_offset += (particleCount) * sizeof(float);
-__shared__ int targetTypedCache[256];
-if(tid<particleCount)
+_ctx->Gravity=9.8f;
+_ctx->tx=threadIdx.x;
+_ctx->ty=threadIdx.y;
+_ctx->tz=threadIdx.z;
+_ctx->bx=blockIdx.x;
+_ctx->by=blockIdx.y;
+_ctx->bz=blockIdx.z;
+_ctx->bdimX=blockDim.x;
+_ctx->bdimY=blockDim.y;
+_ctx->bdimZ=blockDim.z;
+_ctx->gdimX=gridDim.x;
+_ctx->gdimY=gridDim.y;
+_ctx->gdimZ=gridDim.z;
+_ctx->tid=_ctx->tx+_ctx->bx*_ctx->bdimX;
+_ctx->staticCache={ (int*)__gsharp_allocate_smem(0, (10000) * sizeof(int), alignof(int)) };
+_ctx->dynamicCache={ (float*)__gsharp_allocate_smem(1, (particleCount) * sizeof(float), alignof(float)) };
+_ctx->targetTypedCache={ (int*)__gsharp_allocate_smem(2, (256) * sizeof(int), alignof(int)) };
+if(!(_ctx->tid<particleCount))
 {
-DebugReduc_PhysicsVector p = particles[tid];
-DebugReduc_SpecTypes types = largeStructVal;
-auto origin = DebugReduc_Point{0, 0};
-auto distance = origin.X+p.X;
-auto nested = ([&]() {
-DebugReduc_NestedPhysicsState _tmp{}; _tmp.Position = p; _tmp.Velocity = p; _tmp.StatusFlag = 1; return _tmp; }
+goto _BranchEnd_0;
+}
+_ctx->p=particles[_ctx->tid];
+_ctx->types=largeStructVal;
+_ctx->origin=DebugReduc_Point{0, 0};
+_ctx->distance=_ctx->origin.X+_ctx->p.X;
+_ctx->nested=([&]() {
+DebugReduc_NestedPhysicsState _tmp{}; _tmp.Position = _ctx->p; _tmp.Velocity = _ctx->p; _tmp.StatusFlag = 1; return _tmp; }
 ());
-float mag = ComputeMagnitude(p);
-mag=(float)fabsf(mag);
-for(int i = 0;i<unrollFactor;i++)
+_ctx->mag=ComputeMagnitude(_ctx->p);
+_ctx->mag=(float)fabsf(_ctx->mag);
+for(int i = 0;_ctx->i<unrollFactor;_ctx->i++)
 {
-if(i==1)
+if(_ctx->i==1)
 {
 continue;
 }
-mag=(float)fmaxf(mag,p.X*i+Gravity);
+_ctx->mag=(float)fmaxf(_ctx->mag,_ctx->p.X*_ctx->i+_ctx->Gravity);
 }
-if(!IsPositive(mag))
+if(!IsPositive(_ctx->mag))
 {
-mag=0;
+_ctx->mag=0;
 }
-int counter = 0;
-while(counter<2)
+_ctx->counter=0;
+while(_ctx->counter<2)
 {
-mag=(float)fminf(mag,mag+1);
-counter++;
+_ctx->mag=(float)fminf(_ctx->mag,_ctx->mag+1);
+_ctx->counter++;
 }
 do
 {
-counter--;
+_ctx->counter--;
 }
-while(counter>0);
-switch(tx)
+while(_ctx->counter>0);
+switch(_ctx->tx)
 {
 case 0:
-mag+=1;
+_ctx->mag+=1;
 break;
 default:
-mag+=0;
+_ctx->mag+=0;
 break;
 }
-staticCache[tx]=tid;
-dynamicCache[tx]=mag;
-__syncthreads();
-if(tx==0)
+_ctx->staticCache[_ctx->tx]=_ctx->tid;
+_ctx->dynamicCache[_ctx->tx]=_ctx->mag;
+_state=1;
+return;
+case 1:
+if(_ctx->tx==0)
 {
-atomicAdd((*totalMagnitude),dynamicCache[0]);
+atomicAdd((*totalMagnitude),_ctx->dynamicCache[0]);
 (*successFlag)=true;
 }
 DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec = DebugReduc_ComprehensiveSpecKernel_Vector8{};
@@ -249,39 +281,59 @@ if(sum>diff)
 state.Flags=1;
 }
 }
-bool condition1 = tx>0;
-bool condition2 = ty==0;
+bool condition1 = _ctx->tx>0;
+bool condition2 = _ctx->ty==0;
 if(condition1&&condition2)
 {
-int bitwise = (tx<<2)|(ty>>1)^0xFF;
+int bitwise = (_ctx->tx<<2)|(_ctx->ty>>1)^0xFF;
 bitwise&=~1;
 }
 else
 {
 if(condition1||!condition2)
 {
-mag+=1.5f;
+_ctx->mag+=1.5f;
 }
 }
 /* test ptx inline */
 ;
-if(ty>0)
+if(_ctx->ty>0)
 {
+_state = -1;return;
+}
+_BranchEnd_0:
+;
+_state=-1;
 return;
 }
-}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ComprehensiveSpecKernel_ProcessPhysics(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor)
 {
+std::vector<__gsharp_context_ComprehensiveSpecKernel_ProcessPhysics> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ComprehensiveSpecKernel_ProcessPhysics(particles, totalMagnitude, successFlag, largeStructVal, particleCount, unrollFactor);
+ComprehensiveSpecKernel_ProcessPhysics(particles, totalMagnitude, successFlag, largeStructVal, particleCount, unrollFactor, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -307,22 +359,48 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_particles
 }
 }
 #pragma warning restore CS8500
-public const string CooperativePhysicsProcess_Source = @"extern ""C"" __declspec(dllexport) void ComprehensiveSpecKernel_CooperativePhysicsProcess(int* __restrict__ data){
+public const string CooperativePhysicsProcess_Source = @"struct __gsharp_context_ComprehensiveSpecKernel_CooperativePhysicsProcess {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void ComprehensiveSpecKernel_CooperativePhysicsProcess(int* __restrict__ data, __gsharp_context_ComprehensiveSpecKernel_CooperativePhysicsProcess* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int tid = threadIdx.x;
 data[tid]=tid;
 cg::this_grid().sync();
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ComprehensiveSpecKernel_CooperativePhysicsProcess(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
+std::vector<__gsharp_context_ComprehensiveSpecKernel_CooperativePhysicsProcess> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ComprehensiveSpecKernel_CooperativePhysicsProcess(data);
+ComprehensiveSpecKernel_CooperativePhysicsProcess(data, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

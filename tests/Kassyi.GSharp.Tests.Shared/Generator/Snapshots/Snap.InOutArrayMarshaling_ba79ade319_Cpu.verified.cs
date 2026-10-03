@@ -16,24 +16,50 @@ public partial class GEN_57_InOutArrayMarshaling
 public static partial class AotContexts
 {
 }
-public const string InOutKernel_Source = @"extern ""C"" __declspec(dllexport) void GEN_57_InOutArrayMarshaling_InOutKernel(float* __restrict__ data, int n){
+public const string InOutKernel_Source = @"struct __gsharp_context_GEN_57_InOutArrayMarshaling_InOutKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void GEN_57_InOutArrayMarshaling_InOutKernel(float* __restrict__ data, int n, __gsharp_context_GEN_57_InOutArrayMarshaling_InOutKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int idx = threadIdx.x+blockIdx.x*blockDim.x;
 if(idx<n)
 {
 data[idx]*=2.0f;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_57_InOutArrayMarshaling_InOutKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ data, int n)
 {
+std::vector<__gsharp_context_GEN_57_InOutArrayMarshaling_InOutKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-GEN_57_InOutArrayMarshaling_InOutKernel(data, n);
+GEN_57_InOutArrayMarshaling_InOutKernel(data, n, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

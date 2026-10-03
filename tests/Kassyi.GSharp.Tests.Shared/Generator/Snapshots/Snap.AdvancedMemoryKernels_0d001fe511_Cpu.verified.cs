@@ -16,23 +16,49 @@ public partial class AdvancedMemoryKernels
 public static partial class AotContexts
 {
 }
-public const string FixedBufferKernel_Source = @"extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_FixedBufferKernel(unsigned int* __restrict__ data){
+public const string FixedBufferKernel_Source = @"struct __gsharp_context_AdvancedMemoryKernels_FixedBufferKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_FixedBufferKernel(unsigned int* __restrict__ data, __gsharp_context_AdvancedMemoryKernels_FixedBufferKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 unsigned int* p = &data[0];
 {
 p[1]=p[0]+10;
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_FixedBufferKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ data)
 {
+std::vector<__gsharp_context_AdvancedMemoryKernels_FixedBufferKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-AdvancedMemoryKernels_FixedBufferKernel(data);
+AdvancedMemoryKernels_FixedBufferKernel(data, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -55,7 +81,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 }
 }
 #pragma warning restore CS8500
-public const string PointerIncrementKernel_Source = @"extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerIncrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest){
+public const string PointerIncrementKernel_Source = @"struct __gsharp_context_AdvancedMemoryKernels_PointerIncrementKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerIncrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest, __gsharp_context_AdvancedMemoryKernels_PointerIncrementKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 unsigned int* pSrc = &src[0];
 unsigned int* pDest = &dest[0];
 {
@@ -66,18 +99,37 @@ for(int i = 0;i<3;i++)
 *ptrD++=*ptrS++;
 }
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerIncrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ src, unsigned int* __restrict__ dest)
 {
+std::vector<__gsharp_context_AdvancedMemoryKernels_PointerIncrementKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-AdvancedMemoryKernels_PointerIncrementKernel(src, dest);
+AdvancedMemoryKernels_PointerIncrementKernel(src, dest, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -101,7 +153,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_src, p_de
 }
 }
 #pragma warning restore CS8500
-public const string PointerDecrementKernel_Source = @"extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerDecrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest){
+public const string PointerDecrementKernel_Source = @"struct __gsharp_context_AdvancedMemoryKernels_PointerDecrementKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerDecrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest, __gsharp_context_AdvancedMemoryKernels_PointerDecrementKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 unsigned int* pSrc = &src[0];
 unsigned int* pDest = &dest[0];
 {
@@ -112,18 +171,37 @@ for(int i = 0;i<3;i++)
 *ptrD--=*ptrS--;
 }
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerDecrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ src, unsigned int* __restrict__ dest)
 {
+std::vector<__gsharp_context_AdvancedMemoryKernels_PointerDecrementKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-AdvancedMemoryKernels_PointerDecrementKernel(src, dest);
+AdvancedMemoryKernels_PointerDecrementKernel(src, dest, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -147,7 +225,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_src, p_de
 }
 }
 #pragma warning restore CS8500
-public const string PointerComplexAssignmentKernel_Source = @"extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerComplexAssignmentKernel(unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest){
+public const string PointerComplexAssignmentKernel_Source = @"struct __gsharp_context_AdvancedMemoryKernels_PointerComplexAssignmentKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerComplexAssignmentKernel(unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest, __gsharp_context_AdvancedMemoryKernels_PointerComplexAssignmentKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 unsigned int* pIdx = &idx[0];
 unsigned int* pVal = &val[0];
 {
@@ -158,18 +243,37 @@ for(int i = 0;i<3;i++)
 dest[*ptrI++]=*ptrV+++10u;
 }
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerComplexAssignmentKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest)
 {
+std::vector<__gsharp_context_AdvancedMemoryKernels_PointerComplexAssignmentKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-AdvancedMemoryKernels_PointerComplexAssignmentKernel(idx, val, dest);
+AdvancedMemoryKernels_PointerComplexAssignmentKernel(idx, val, dest, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

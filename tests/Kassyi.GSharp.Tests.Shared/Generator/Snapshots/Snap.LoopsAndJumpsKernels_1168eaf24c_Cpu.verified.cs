@@ -47,7 +47,14 @@ __device__ inline int size() const { return 4; }
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void LoopsAndJumpsKernels_ForeachInlineArrayKernel(int* __restrict__ output){
+struct __gsharp_context_LoopsAndJumpsKernels_ForeachInlineArrayKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void LoopsAndJumpsKernels_ForeachInlineArrayKernel(int* __restrict__ output, __gsharp_context_LoopsAndJumpsKernels_ForeachInlineArrayKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4 arr = Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4{};
 arr[0]=10;
 arr[1]=20;
@@ -59,18 +66,37 @@ for(auto val : arr)
 total+=val;
 }
 output[0]=total;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopsAndJumpsKernels_ForeachInlineArrayKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
+std::vector<__gsharp_context_LoopsAndJumpsKernels_ForeachInlineArrayKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LoopsAndJumpsKernels_ForeachInlineArrayKernel(output);
+LoopsAndJumpsKernels_ForeachInlineArrayKernel(output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -93,7 +119,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
 }
 }
 #pragma warning restore CS8500
-public const string ForeachCollectionExpressionKernel_Source = @"extern ""C"" __declspec(dllexport) void LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(int* __restrict__ output){
+public const string ForeachCollectionExpressionKernel_Source = @"struct __gsharp_context_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(int* __restrict__ output, __gsharp_context_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 const int arr[4]={ 10, 20, 30, 40 };
 int total = 0;
 for(auto val : arr)
@@ -101,18 +134,37 @@ for(auto val : arr)
 total+=val;
 }
 output[0]=total;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
+std::vector<__gsharp_context_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(output);
+LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
@@ -135,7 +187,14 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
 }
 }
 #pragma warning restore CS8500
-public const string ForeachStackAllocKernel_Source = @"extern ""C"" __declspec(dllexport) void LoopsAndJumpsKernels_ForeachStackAllocKernel(int* __restrict__ output){
+public const string ForeachStackAllocKernel_Source = @"struct __gsharp_context_LoopsAndJumpsKernels_ForeachStackAllocKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void LoopsAndJumpsKernels_ForeachStackAllocKernel(int* __restrict__ output, __gsharp_context_LoopsAndJumpsKernels_ForeachStackAllocKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 int arr[4]={ 10, 20, 30, 40 };
 int total = 0;
 for(auto val : arr)
@@ -143,18 +202,37 @@ for(auto val : arr)
 total+=val;
 }
 output[0]=total;
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopsAndJumpsKernels_ForeachStackAllocKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
 {
+std::vector<__gsharp_context_LoopsAndJumpsKernels_ForeachStackAllocKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-LoopsAndJumpsKernels_ForeachStackAllocKernel(output);
+LoopsAndJumpsKernels_ForeachStackAllocKernel(output, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

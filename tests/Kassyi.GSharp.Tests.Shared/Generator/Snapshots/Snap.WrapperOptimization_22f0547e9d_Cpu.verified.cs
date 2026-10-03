@@ -58,25 +58,51 @@ float B;
 }
 ;
 #endif
-extern ""C"" __declspec(dllexport) void WrapperOptimizationKernels_ComplexSignatureKernel(int* __restrict__  scalarRef, float* __restrict__  scalarOut, int* __restrict__ arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal){
+struct __gsharp_context_WrapperOptimizationKernels_ComplexSignatureKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void WrapperOptimizationKernels_ComplexSignatureKernel(int* __restrict__  scalarRef, float* __restrict__  scalarOut, int* __restrict__ arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal, __gsharp_context_WrapperOptimizationKernels_ComplexSignatureKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 (*scalarOut)=0;
 if((*scalarRef)>constantVal)
 {
 (*scalarOut)=arrayVal[0]+(*structRef).A;
 (*structRef).B=(*scalarOut);
 }
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_WrapperOptimizationKernels_ComplexSignatureKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__  scalarRef, float* __restrict__  scalarOut, int* __restrict__ arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal)
 {
+std::vector<__gsharp_context_WrapperOptimizationKernels_ComplexSignatureKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WrapperOptimizationKernels_ComplexSignatureKernel(scalarRef, scalarOut, arrayVal, structRef, constantVal);
+WrapperOptimizationKernels_ComplexSignatureKernel(scalarRef, scalarOut, arrayVal, structRef, constantVal, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";

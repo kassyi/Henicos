@@ -16,7 +16,14 @@ public partial class BitOpsTestKernels
 public static partial class AotContexts
 {
 }
-public const string BitOpsKernel_Source = @"extern ""C"" __declspec(dllexport) void BitOpsTestKernels_BitOpsKernel(unsigned int* __restrict__ u32Data, unsigned long long* __restrict__ u64Data){
+public const string BitOpsKernel_Source = @"struct __gsharp_context_BitOpsTestKernels_BitOpsKernel {
+int _state = 0;
+};
+extern ""C"" __declspec(dllexport) void BitOpsTestKernels_BitOpsKernel(unsigned int* __restrict__ u32Data, unsigned long long* __restrict__ u64Data, __gsharp_context_BitOpsTestKernels_BitOpsKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
 unsigned int u32Val = u32Data[0];
 u32Data[1]=(unsigned int)__gsharp_lzc_32(u32Val);
 u32Data[2]=(unsigned int)__popc((unsigned int)(u32Val));
@@ -31,18 +38,37 @@ u64Data[3]=(unsigned long long)__gsharp_tzc_64(u64Val);
 u64Data[4]=(unsigned long long)__gsharp_log2_64(u64Val);
 u64Data[5]=__gsharp_rotl64(u64Val,10);
 u64Data[6]=__gsharp_rotr64(u64Val,7);
+_state=-1;
+return;
+}
+#undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_BitOpsTestKernels_BitOpsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ u32Data, unsigned long long* __restrict__ u64Data)
 {
+std::vector<__gsharp_context_BitOpsTestKernels_BitOpsKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
 for (uint32_t bz = 0; bz < gridDimZ; bz++)
 for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
+{
+__gsharp_reset_smem();
+for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
 for (uint32_t tz = 0; tz < blockDimZ; tz++)
 for (uint32_t ty = 0; ty < blockDimY; ty++)
 for (uint32_t tx = 0; tx < blockDimX; tx++)
 {
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-BitOpsTestKernels_BitOpsKernel(u32Data, u64Data);
+BitOpsTestKernels_BitOpsKernel(u32Data, u64Data, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
 }
 }
 ";
