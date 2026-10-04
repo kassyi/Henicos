@@ -1,8 +1,7 @@
 using System;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.GpuBigFloat;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 

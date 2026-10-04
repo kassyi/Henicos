@@ -1,6 +1,6 @@
 using System;
 using System.Numerics;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Stdlib;

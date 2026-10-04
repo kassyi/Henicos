@@ -1,0 +1,70 @@
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+
+/// <summary>
+/// Represents the intermediate state (P, Q, T) of a hypergeometric series evaluated using Binary Splitting on the GPU.
+/// </summary>
+/// <remarks>
+/// Defined according to the Binary Splitting algorithm:
+/// <list type="bullet">
+///   <item><description><see cref="P"/>: <c>P(a, b) = \prod p(k)</c></description></item>
+///   <item><description><see cref="Q"/>: <c>Q(a, b) = \prod q(k)</c></description></item>
+///   <item><description><see cref="T"/>: <c>T(a, b) = \sum ...</c></description></item>
+/// </list>
+/// </remarks>
+public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInt p, [TakesOwnership] GpuBigUInt q, [TakesOwnership] GpuBigInt t) : IDisposable
+{
+    public GpuBigInt P { get; } = p;
+    public GpuBigUInt Q { get; } = q;
+    public GpuBigInt T { get; } = t;
+
+    public void Dispose()
+    {
+        P.Dispose();
+        Q.Dispose();
+        T.Dispose();
+    }
+
+    /// <summary>
+    /// Merges two adjacent <see cref="GpuHypergeometricPqt"/> states on the GPU.
+    /// P = Pl * Pr
+    /// Q = Ql * Qr
+    /// T = Tl * Qr + Pl * Tr
+    /// </summary>
+    public static GpuHypergeometricPqt Merge(GpuWorkspace workspace, GpuHypergeometricPqt left, GpuHypergeometricPqt right)
+    {
+        // P = Pl * Pr
+        var pWords = left.P.Value.NumWords + right.P.Value.NumWords;
+        var resultP = new GpuBigUInt(workspace, pWords);
+        GpuBigIntMath.Mul(left.P.Value, right.P.Value, resultP);
+        var pNegative = left.P.IsNegative ^ right.P.IsNegative;
+
+        // Q = Ql * Qr
+        var qWords = left.Q.NumWords + right.Q.NumWords;
+        var resultQ = new GpuBigUInt(workspace, qWords);
+        GpuBigIntMath.Mul(left.Q, right.Q, resultQ);
+
+        // T = Tl * Qr + Pl * Tr
+        var wordsA = left.T.Value.NumWords + right.Q.NumWords;
+        using var rawTermA = new GpuBigUInt(workspace, wordsA);
+        GpuBigIntMath.Mul(left.T.Value, right.Q, rawTermA);
+        var signA = left.T.IsNegative;
+
+        var wordsB = left.P.Value.NumWords + right.T.Value.NumWords;
+        using var rawTermB = new GpuBigUInt(workspace, wordsB);
+        GpuBigIntMath.Mul(left.P.Value, right.T.Value, rawTermB);
+        var signB = left.P.IsNegative ^ right.T.IsNegative;
+
+        var maxTWords = Math.Max(wordsA, wordsB);
+        using var termA = rawTermA.PadTo(maxTWords);
+        using var termB = rawTermB.PadTo(maxTWords);
+        var resultT = new GpuBigUInt(workspace, maxTWords);
+
+        var tNegative = GpuBigIntMath.AddSignedMagnitude(termA, signA, termB, signB, resultT);
+
+        return new GpuHypergeometricPqt(
+            new GpuBigInt(resultP, pNegative),
+            resultQ,
+            new GpuBigInt(resultT, tNegative)
+        );
+    }
+}
