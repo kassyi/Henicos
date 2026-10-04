@@ -9,11 +9,6 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 [Trait("Category", "GpuExecution")]
 public class CudaEventTimerTests : TranspilerTestBase
 {
-    public CudaEventTimerTests()
-    {
-        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
-    }
-
     [SkippableFact]
     [Trait("Category", "Runtime")]
     [Trait("Category", "HappyPath")]

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Runtime.Aot;
+
 namespace Kassyi.GSharp.Runtime.Interop;
 
 /// <summary>
@@ -5,8 +7,11 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// </summary>
 public sealed class CudaEventTimer : IDisposable
 {
+    private readonly bool _isFallback;
     private IntPtr _startEvent;
     private IntPtr _endEvent;
+    private long _startTimestamp;
+    private long _endTimestamp;
     private bool _disposed;
 
 #pragma warning disable IDE0051 // Intended for external kernel consumers
@@ -14,6 +19,12 @@ public sealed class CudaEventTimer : IDisposable
 
     public CudaEventTimer()
     {
+        if (GpuKernelLoader.IsCpuFallbackMode)
+        {
+            _isFallback = true;
+            return;
+        }
+
         // CU_EVENT_DEFAULT = 0x0
         CudaException.ThrowIfError(CudaDriverApi.cuEventCreate(out _startEvent, 0));
         try
@@ -34,15 +45,28 @@ public sealed class CudaEventTimer : IDisposable
     public void Start(IntPtr hStream = 0)
     {
         ThrowIfDisposed();
+        if (_isFallback)
+        {
+            _startTimestamp = Stopwatch.GetTimestamp();
+            return;
+        }
+
         CudaException.ThrowIfError(CudaDriverApi.cuEventRecord(_startEvent, hStream));
     }
 
     /// <summary>
     /// Records the end event in the specified stream.
     /// </summary>
+    /// <param name="hStream">The stream to record the event in.</param>
     public void Stop(IntPtr hStream = 0)
     {
         ThrowIfDisposed();
+        if (_isFallback)
+        {
+            _endTimestamp = Stopwatch.GetTimestamp();
+            return;
+        }
+
         CudaException.ThrowIfError(CudaDriverApi.cuEventRecord(_endEvent, hStream));
     }
 
@@ -52,6 +76,11 @@ public sealed class CudaEventTimer : IDisposable
     public void Synchronize()
     {
         ThrowIfDisposed();
+        if (_isFallback)
+        {
+            return;
+        }
+
         CudaException.ThrowIfError(CudaDriverApi.cuEventSynchronize(_endEvent));
     }
 
@@ -62,6 +91,11 @@ public sealed class CudaEventTimer : IDisposable
     public float GetElapsedTimeMilliseconds()
     {
         ThrowIfDisposed();
+        if (_isFallback)
+        {
+            return (float)((_endTimestamp - _startTimestamp) * 1000.0 / Stopwatch.Frequency);
+        }
+
         CudaException.ThrowIfError(CudaDriverApi.cuEventElapsedTime(out var ms, _startEvent, _endEvent));
         return ms;
     }
@@ -83,16 +117,19 @@ public sealed class CudaEventTimer : IDisposable
             return;
         }
 
-        if (_startEvent != IntPtr.Zero)
+        if (!_isFallback)
         {
-            CudaDriverApi.cuEventDestroy_v2(_startEvent);
-            _startEvent = IntPtr.Zero;
-        }
+            if (_startEvent != IntPtr.Zero)
+            {
+                CudaDriverApi.cuEventDestroy_v2(_startEvent);
+                _startEvent = IntPtr.Zero;
+            }
 
-        if (_endEvent != IntPtr.Zero)
-        {
-            CudaDriverApi.cuEventDestroy_v2(_endEvent);
-            _endEvent = IntPtr.Zero;
+            if (_endEvent != IntPtr.Zero)
+            {
+                CudaDriverApi.cuEventDestroy_v2(_endEvent);
+                _endEvent = IntPtr.Zero;
+            }
         }
 
         _disposed = true;
