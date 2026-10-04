@@ -1,5 +1,5 @@
 using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Kernels;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels;
 
 namespace Henicos.Benchmarks;
 

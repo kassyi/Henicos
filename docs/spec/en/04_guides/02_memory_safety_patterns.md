@@ -27,7 +27,7 @@ To solve this, G# implements a **Strict Ownership Model** applied strictly to `I
 ```csharp
 // Example: Borrowing
 // GpuBigIntLeafExpression does NOT need to implement IDisposable because `value` is borrowed.
-public class GpuBigIntLeafExpression(GpuBigInteger value) : IGpuBigIntExpression
+public class GpuBigIntLeafExpression(GpuBigInt value) : IGpuBigIntExpression
 {
     // ❌ ERROR (GSH0027): Calling value.Dispose() here would cause a double-dispose hazard.
 }
@@ -38,8 +38,8 @@ public class GpuBigIntLeafExpression(GpuBigInteger value) : IGpuBigIntExpression
 ```csharp
 // Execution Context: G# Kernel (GPU)
 // Example: Moving / Ownership Transfer
-// GpuBigInteger MUST implement IDisposable because it takes ownership of `value`.
-public readonly struct GpuBigInteger([TakesOwnership] GpuUIntBigInteger value) : IDisposable
+// GpuBigInt MUST implement IDisposable because it takes ownership of `value`.
+public readonly struct GpuBigInt([TakesOwnership] GpuBigUInt value) : IDisposable
 {
     // ❌ ERROR (GSH0021) if Dispose is missing or doesn't dispose `value`.
     // Note: Dispose() is only invoked on the Host side.
@@ -56,7 +56,7 @@ This mental model brings compile-time memory safety guarantees to C# without req
 > **What does `[TakesOwnership]` apply to?**
 > The analyzer strictly triggers on the `IDisposable` interface.
 >
-> - **Value Types (`struct`)**: If a `struct` implements `IDisposable` (e.g., `GpuUIntBigInteger`), `[TakesOwnership]` works perfectly and enforces the ownership rules.
+> - **Value Types (`struct`)**: If a `struct` implements `IDisposable` (e.g., `GpuBigUInt`), `[TakesOwnership]` works perfectly and enforces the ownership rules.
 > - **Primitives & Pointers**: For types that do _not_ implement `IDisposable` (like `int`, `float`, or raw pointers `void*`), the analyzer completely ignores them. Adding `[TakesOwnership]` to a raw pointer is meaningless; pointers must be managed manually in `unsafe` blocks (see Layer 7).
 
 ---

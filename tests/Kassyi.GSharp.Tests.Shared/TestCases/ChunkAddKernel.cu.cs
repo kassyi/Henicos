@@ -1,7 +1,7 @@
 // ReSharper disable All
 using Kassyi.GSharp.Core;
 
-namespace Kassyi.GSharp.Stdlib.Math
+namespace Kassyi.GSharp.Stdlib.GpuMath
 {
     public static partial class GpuBigIntKernels
     {

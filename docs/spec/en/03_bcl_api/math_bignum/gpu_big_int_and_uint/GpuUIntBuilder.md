@@ -1,22 +1,22 @@
 ---
-title: "GpuUIntBuilder Class (G#)"
+title: "GpuBigUIntBuilder Class (G#)"
 site: "G# Documentation"
 published: "2026-09-24T00:00:00.000Z"
 language: "en"
 description: "A shared generic builder for C# 12 Collection Expressions."
 ---
 
-## GpuUIntBuilder Class
+## GpuBigUIntBuilder Class
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A shared generic builder for C# 12 Collection Expressions.
 
 ```csharp
-public static class GpuUIntBuilder
+public static class GpuBigUIntBuilder
 ```
 
 ## Methods
@@ -30,7 +30,7 @@ public static class GpuUIntBuilder
 Creates a fixed-size GPU unsigned big integer buffer from a span of elements.
 
 ```csharp
-public static GpuUIntBigInteger<TSize> Create<TSize>(ReadOnlySpan<uint> elements) where TSize : unmanaged;
+public static GpuBigUInt<TSize> Create<TSize>(ReadOnlySpan<uint> elements) where TSize : unmanaged;
 ```
 
 #### Type Parameters
@@ -58,19 +58,19 @@ Thrown when the number of elements provided exceeds the capacity of the target f
 ### Constructing Fixed-Size Buffers
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU) or G# Kernel (GPU)
 
-// GpuUIntBuilder provides the infrastructure for C# 12 collection expressions.
-// It allows constructing fixed-size GpuUIntBigInteger<TSize> instances elegantly.
+// GpuBigUIntBuilder provides the infrastructure for C# 12 collection expressions.
+// It allows constructing fixed-size GpuBigUInt<TSize> instances elegantly.
 
-GpuUIntBigInteger<LimbBuffer4> fromLimbs = GpuUIntBuilder.Create<LimbBuffer4>([1, 2, 3, 4]);
+GpuBigUInt<LimbBuffer4> fromLimbs = GpuBigUIntBuilder.Create<LimbBuffer4>([1, 2, 3, 4]);
 
 Console.WriteLine($"fromLimbs.Limbs[0] = {fromLimbs.Limbs[0]}");
 ```

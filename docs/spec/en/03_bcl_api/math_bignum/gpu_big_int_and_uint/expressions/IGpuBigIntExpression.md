@@ -10,8 +10,8 @@ description: "Represents a signed GPU BigInteger AST node."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt.Expressions`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents a signed GPU BigInteger AST node.
 
@@ -33,14 +33,14 @@ int NumWords { get; }
 
 | Name                                                                              | Description                                                                                    |
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [Evaluate(GpuWorkspace, GpuUIntBigInteger?)](#evaluategpuworkspace-gpuuintbiginteger) | Evaluates this AST node into a new or provided GPU buffer, returning a signed `GpuBigInteger`. |
+| [Evaluate(GpuWorkspace, GpuBigUInt?)](#evaluategpuworkspace-gpuuintbiginteger) | Evaluates this AST node into a new or provided GPU buffer, returning a signed `GpuBigInt`. |
 
-## Evaluate(GpuWorkspace, GpuUIntBigInteger?)
+## Evaluate(GpuWorkspace, GpuBigUInt?)
 
-Evaluates this AST node into a new or provided GPU buffer, returning a signed `GpuBigInteger`.
+Evaluates this AST node into a new or provided GPU buffer, returning a signed `GpuBigInt`.
 
 ```csharp
-GpuBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null);
+GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null);
 ```
 
 #### Parameters
@@ -61,28 +61,28 @@ The evaluated result with its sign.
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../../00_index.md)
-- [Arbitrary-Precision Integers (GpuBigInteger)](../00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
 
 
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 #nullable enable
 // Execution Context: Host (CPU)
 using System;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
 
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
-using var aUint = new GpuUIntBigInteger(workspace, new uint[] { 10 });
-using var bUint = new GpuUIntBigInteger(workspace, new uint[] { 25 });
+using var aUint = new GpuBigUInt(workspace, new uint[] { 10 });
+using var bUint = new GpuBigUInt(workspace, new uint[] { 25 });
 
-var a = new GpuBigInteger(aUint, isNegative: false);
-var b = new GpuBigInteger(bUint, isNegative: false);
+var a = new GpuBigInt(aUint, isNegative: false);
+var b = new GpuBigInt(bUint, isNegative: false);
 
 IGpuBigIntExpression expression = new CustomSumNode(a, b);
 var result = expression.Evaluate(workspace);
@@ -94,10 +94,10 @@ Console.WriteLine($"Result: {(result.IsNegative ? "-" : "")}{resultWords[0]}");
 
 public class CustomSumNode : IGpuBigIntExpression
 {
-    private readonly GpuBigInteger _left;
-    private readonly GpuBigInteger _right;
+    private readonly GpuBigInt _left;
+    private readonly GpuBigInt _right;
 
-    public CustomSumNode(GpuBigInteger left, GpuBigInteger right)
+    public CustomSumNode(GpuBigInt left, GpuBigInt right)
     {
         _left = left;
         _right = right;
@@ -105,13 +105,13 @@ public class CustomSumNode : IGpuBigIntExpression
 
     public int NumWords => System.Math.Max(_left.Value.NumWords, _right.Value.NumWords) + 1;
 
-    public GpuBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null)
+    public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
-        var resultBuf = targetResult ?? new GpuUIntBigInteger(workspace, NumWords);
+        var resultBuf = targetResult ?? new GpuBigUInt(workspace, NumWords);
         using var leftPad = _left.Value.PadTo(NumWords);
         using var rightPad = _right.Value.PadTo(NumWords);
         GpuBigIntMath.Add(leftPad, rightPad, resultBuf);
-        return new GpuBigInteger(resultBuf, isNegative: true);
+        return new GpuBigInt(resultBuf, isNegative: true);
     }
 }
 ```

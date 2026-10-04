@@ -29,20 +29,20 @@ To guarantee static determinism and seamless mapping to CUDA C++ registers and s
 
 ```csharp
 // Execution Context: Host (CPU)
-namespace Kassyi.GSharp.Stdlib.Math.BigInt;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 [StructLayout(LayoutKind.Sequential)]
-public struct GpuUIntBigInteger<TSize> where TSize : unmanaged
+public struct GpuBigUInt<TSize> where TSize : unmanaged
 {
     public TSize Limbs;
 }
 
-namespace Kassyi.GSharp.Stdlib.Math.BigFloat;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigFloat;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct GpuBigUFloat<TSize> where TSize : unmanaged
 {
-    public GpuUIntBigInteger<TSize> Significand;
+    public GpuBigUInt<TSize> Significand;
     public int Exponent;
 }
 
@@ -159,7 +159,7 @@ Instead of requiring users to specify generic size parameters (e.g., `GpuBigFloa
 - **Floating-Point**: `GpuFloat128`, `GpuFloat256`, `GpuFloat512`
 - **Integer (Significand)**: `GpuUInt128`, `GpuUInt256`, `GpuUInt512`
 
-These structs act as ultra-thin, zero-overhead wrappers around the generic `GpuBigFloat<TSize>` and `GpuUIntBigInteger<TSize>` types. They provide implicit conversions and operator overloads for seamless arithmetic.
+These structs act as ultra-thin, zero-overhead wrappers around the generic `GpuBigFloat<TSize>` and `GpuBigUInt<TSize>` types. They provide implicit conversions and operator overloads for seamless arithmetic.
 
 ### 2.7.2 Zero-Allocation Collection Expressions
 
@@ -204,13 +204,13 @@ The module utilizes a highly decoupled **Multi-Engine Execution Model** (`GpuExe
 
 ```mermaid
 flowchart LR
-    Host["C# GpuBigInteger (Host Wrapper)"] --> Context["GpuWorkspace"]
+    Host["C# GpuBigInt (Host Wrapper)"] --> Context["GpuWorkspace"]
     Context -->|Provider| Native["LegacyNative (C++ Backend)"]
     Context -->|Provider| AOT["GSharpAot (Pure C# JIT)"]
     Context -->|Provider| CPU["CpuFallback (Native CPU)"]
 ```
 
-1.  **C# GpuBigInteger (Host Wrapper)**: A `IDisposable` C# class that manages the `IntPtr` to the GPU device memory. It provides the high-level API for the host application to allocate, copy, and invoke operations.
+1.  **C# GpuBigInt (Host Wrapper)**: A `IDisposable` C# class that manages the `IntPtr` to the GPU device memory. It provides the high-level API for the host application to allocate, copy, and invoke operations.
 2.  **Native C++ Backend (`GpuExecutionEngine.LegacyNative`)**: Handled via `Providers/NativeProvider.cs` and `Interop/NativeMethods.cs`, this exposes the legacy hand-written CUDA C++ library for memory management (`cudaMalloc`) and executing NTT/FFT kernels.
 3.  **G# Kernels (`GpuExecutionEngine.GSharpAot`)**: Handled via `Providers/GSharpAotProvider.cs`, this is a pure C# JIT backend where the mathematical operations are natively written in C# using `[GpuKernel]` inside the `Kernels/` directory.
 4.  **CPU Fallback Backend (`GpuExecutionEngine.CpuFallback`)**: A purely native CPU-side fallback for executing the identical C# kernel implementations locally for debugging and validation.
@@ -251,22 +251,22 @@ flowchart LR
 2. **NVCC Logs Verification**: If a GPU test fails or hangs unexpectedly, check the background `ask-xxx.log` (NVCC compilation logs) to ensure the transpiler hasn't silently dropped a method.
 3. **Migrate to Device Code**: Once the CPU code is mathematically sound and unit-tested, introduce `[GpuDeviceFunction]` / `[GpuKernel]` attributes and deploy it to the GPU.
 
-### Zero-Allocation BigInt Building (`GpuUIntBuilder` and `LimbBuffer`)
+### Zero-Allocation BigInt Building (`GpuBigUIntBuilder` and `LimbBuffer`)
 
-To construct large constant values or intermediate configurations natively inside GPU kernels (e.g., setting up initial states) without allocating memory on the managed heap, G# provides the `GpuUIntBuilder` and `LimbBuffer` structures.
+To construct large constant values or intermediate configurations natively inside GPU kernels (e.g., setting up initial states) without allocating memory on the managed heap, G# provides the `GpuBigUIntBuilder` and `LimbBuffer` structures.
 
 * **`LimbBuffer`**: A memory-safe, generic abstraction leveraging the C# 12 `[System.Runtime.CompilerServices.InlineArray]` feature to allocate fixed-size limb arrays (e.g., 8, 16, or 32 words) directly on the local execution stack (registers/local memory).
-* **`GpuUIntBuilder`**: A mutating builder struct that wraps a `LimbBuffer`. It provides host-like API methods (such as `Add`, `ShiftLeft`, `SetBit`) to safely construct and manipulate small-to-medium arbitrary precision integers directly on the device before writing the final result to global memory.
+* **`GpuBigUIntBuilder`**: A mutating builder struct that wraps a `LimbBuffer`. It provides host-like API methods (such as `Add`, `ShiftLeft`, `SetBit`) to safely construct and manipulate small-to-medium arbitrary precision integers directly on the device before writing the final result to global memory.
 
 ```csharp
 // Execution Context: G# Kernel (GPU)
-// Example: Using GpuUIntBuilder inside a [GpuKernel]
+// Example: Using GpuBigUIntBuilder inside a [GpuKernel]
 [GpuKernel]
 public static void SetupInitialState(uint[] globalOutput)
 {
     // Create a 16-word (512-bit) structure from a ReadOnlySpan
     ReadOnlySpan<uint> limbs = [12345, 0, 0, 0];
-    var builder = GpuUIntBuilder.Create<LimbBuffer16>(limbs);
+    var builder = GpuBigUIntBuilder.Create<LimbBuffer16>(limbs);
     
     // ...
 }

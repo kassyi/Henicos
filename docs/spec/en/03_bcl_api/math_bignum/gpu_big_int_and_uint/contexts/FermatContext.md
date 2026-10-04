@@ -10,8 +10,8 @@ description: "Context parameters for the Fermat sequence computation."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.Contexts`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.Contexts`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Context parameters for the Fermat sequence computation.
 
@@ -24,11 +24,11 @@ public struct FermatContext
 ### Creating a Fermat Context
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.Math.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
 
 // Initialize dimensions for a Fermat transform context
 var dimensions = new FermatContext.DimensionsContext
@@ -65,4 +65,4 @@ Console.WriteLine($"Extended words: {context.Dimensions.NumberOfWordsExtended}")
 ### Guides
 
 - [4. Practical Guides and Best Practices](../../../../04_guides/00_index.md)
-- [Advanced: Extending GpuBigInteger with Custom Algorithms](../../../../04_guides/08_advanced_custom_math_kernels.md)
+- [Advanced: Extending GpuBigInt with Custom Algorithms](../../../../04_guides/08_advanced_custom_math_kernels.md)

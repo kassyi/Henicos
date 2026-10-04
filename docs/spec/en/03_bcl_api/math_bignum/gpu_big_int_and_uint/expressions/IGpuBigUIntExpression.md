@@ -10,8 +10,8 @@ description: "Defines the contract for an abstract syntax tree (AST) node repres
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt.Expressions`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Defines the contract for an abstract syntax tree (AST) node representing a lazily evaluated GPU BigInteger expression.
 
@@ -33,14 +33,14 @@ int NumWords { get; }
 
 | Name                                                                              | Description                                                            |
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| [Evaluate(GpuWorkspace, GpuUIntBigInteger?)](#evaluategpuworkspace-gpuuintbiginteger) | Evaluates this expression on the GPU into the specified target buffer. |
+| [Evaluate(GpuWorkspace, GpuBigUInt?)](#evaluategpuworkspace-gpuuintbiginteger) | Evaluates this expression on the GPU into the specified target buffer. |
 
-## Evaluate(GpuWorkspace, GpuUIntBigInteger?)
+## Evaluate(GpuWorkspace, GpuBigUInt?)
 
 Evaluates this expression on the GPU into the specified target buffer.
 
 ```csharp
-GpuUIntBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null);
+GpuBigUInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null);
 ```
 
 #### Parameters
@@ -54,32 +54,32 @@ Optional target buffer to write the evaluated result into.
 #### Returns
 
 _GpuUIntBigInteger_<br>
-The evaluated `GpuUIntBigInteger` result buffer.
+The evaluated `GpuBigUInt` result buffer.
 
 ## See also
 
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../../00_index.md)
-- [Arbitrary-Precision Integers (GpuBigInteger)](../00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
 
 
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 #nullable enable
 // Execution Context: Host (CPU)
 using System;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
 
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
-using var left = new GpuUIntBigInteger(workspace, new uint[] { 500 });
-using var right = new GpuUIntBigInteger(workspace, new uint[] { 700 });
+using var left = new GpuBigUInt(workspace, new uint[] { 500 });
+using var right = new GpuBigUInt(workspace, new uint[] { 700 });
 
 IGpuBigUIntExpression expression = new CustomAddNode(left, right);
 using var result = expression.Evaluate(workspace);
@@ -91,10 +91,10 @@ Console.WriteLine($"500 + 700 = {resultData[0]}");
 
 public class CustomAddNode : IGpuBigUIntExpression
 {
-    private readonly GpuUIntBigInteger _left;
-    private readonly GpuUIntBigInteger _right;
+    private readonly GpuBigUInt _left;
+    private readonly GpuBigUInt _right;
 
-    public CustomAddNode(GpuUIntBigInteger left, GpuUIntBigInteger right)
+    public CustomAddNode(GpuBigUInt left, GpuBigUInt right)
     {
         _left = left;
         _right = right;
@@ -102,9 +102,9 @@ public class CustomAddNode : IGpuBigUIntExpression
 
     public int NumWords => System.Math.Max(_left.NumWords, _right.NumWords) + 1;
 
-    public GpuUIntBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null)
+    public GpuBigUInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
-        var resultBuf = targetResult ?? new GpuUIntBigInteger(workspace, NumWords);
+        var resultBuf = targetResult ?? new GpuBigUInt(workspace, NumWords);
         workspace.Provider.Add(workspace, _left, _right, resultBuf);
         return resultBuf;
     }

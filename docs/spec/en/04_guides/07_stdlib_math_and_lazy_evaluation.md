@@ -8,7 +8,7 @@ description: "A deep dive into why GSharp's arbitrary-precision math libraries u
 
 # Advanced Math & Lazy Evaluation (Expression Trees)
 
-GSharp provides powerful arbitrary-precision arithmetic libraries (`GpuBigInteger`, `GpuBigFloat`) in the `Kassyi.GSharp.Stdlib.Math` namespace. However, if you look at the API reference, you'll notice a strict warning: **These types cannot be used inside `[GpuKernel]` methods.**
+GSharp provides powerful arbitrary-precision arithmetic libraries (`GpuBigInt`, `GpuBigFloat`) in the `Kassyi.GSharp.Stdlib.GpuMath` namespace. However, if you look at the API reference, you'll notice a strict warning: **These types cannot be used inside `[GpuKernel]` methods.**
 
 Why? And why do their operator overloads (`+`, `*`) return strange `Expr` (Expression Tree) types instead of the computed results?
 
@@ -37,7 +37,7 @@ public static void BadAllocationKernel() {
 ```
 
 ### The Register Pressure Problem (Heavy Structs)
-If we can't allocate on the heap, can we just make `GpuBigInteger` a massive `struct` (e.g., a 256-byte `struct` holding an inline array of 64 `uint`s) and pass it by value?
+If we can't allocate on the heap, can we just make `GpuBigInt` a massive `struct` (e.g., a 256-byte `struct` holding an inline array of 64 `uint`s) and pass it by value?
 
 On a CPU, this is fine. The CPU has massive L1 caches.
 On a GPU, local variables are stored in **Registers**. A GPU SM (Streaming Multiprocessor) has a fixed number of registers shared among thousands of concurrent threads. If your kernel uses massive `struct` variables, you will exhaust the registers immediately.
@@ -77,9 +77,9 @@ When you write the following code on the Host (CPU):
 using var workspace = new GpuWorkspace(maxWords: 1024);
 
 // A is positive, B is negative, C is positive
-var A = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 100), isNegative: false);
-var B = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 50), isNegative: true);
-var C = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 2), isNegative: false);
+var A = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 100), isNegative: false);
+var B = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 50), isNegative: true);
+var C = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 2), isNegative: false);
 
 // We write an addition, but since B is negative, the CPU evaluates the signs
 // and swaps the node into a Subtraction behind the scenes!
@@ -121,29 +121,29 @@ By deferring the execution (Lazy Evaluation), the runtime avoids redundant `cuda
 
 ## 3. The Architecture: Signed vs. Unsigned Separation
 
-Another core optimization you will notice in the `GpuBigInt` module is the strict structural separation between `GpuUIntBigInteger` (Unsigned memory) and `GpuBigInteger` (Signed wrapper).
+Another core optimization you will notice in the `GpuBigInt` module is the strict structural separation between `GpuBigUInt` (Unsigned memory) and `GpuBigInt` (Signed wrapper).
 
 ### Why Separate Them? (Avoiding Warp Divergence)
 As explained in the Anti-Patterns guide, GPUs suffer massive performance penalties from `if-else` branches (Warp Divergence). If a GPU kernel had to check `if (isNegative)` during every bitwise addition or multiplication step, it would cause catastrophic divergence and pipeline stalls.
 
-To prevent this, GSharp enforces a strict rule: **All GPU kernels operate purely on unsigned memory buffers (`GpuUIntBigInteger`)**. The GPU never knows or cares about the "sign" of a number.
+To prevent this, GSharp enforces a strict rule: **All GPU kernels operate purely on unsigned memory buffers (`GpuBigUInt`)**. The GPU never knows or cares about the "sign" of a number.
 
 ### Sign-Magnitude vs Two's Complement
 Unlike standard CPU integers (which use Two's Complement representation), GSharp uses a **Sign-Magnitude** representation for arbitrary-precision numbers:
-- **Magnitude**: The underlying `GpuUIntBigInteger` array sitting in GPU VRAM.
+- **Magnitude**: The underlying `GpuBigUInt` array sitting in GPU VRAM.
 - **Sign**: A simple boolean flag (`IsNegative`) managed entirely on the Host CPU.
 
 Using Two's Complement for multi-megabyte integers would require sweeping across the entire array and flipping millions of bits just to change a sign (`-A`). With Sign-Magnitude, negating a massive number is a zero-cost operation on the CPU (just flipping the boolean flag).
 
 ### The Host-Side Wrapper
 
-The `GpuBigInteger` is merely a lightweight C# wrapper struct that lives on the Host CPU. It pairs the unsigned memory buffer with the `IsNegative` flag.
+The `GpuBigInt` is merely a lightweight C# wrapper struct that lives on the Host CPU. It pairs the unsigned memory buffer with the `IsNegative` flag.
 
 ```csharp
 // The wrapper struct only exists on the Host CPU
-public readonly struct GpuBigInteger
+public readonly struct GpuBigInt
 {
-    public GpuUIntBigInteger Value { get; }
+    public GpuBigUInt Value { get; }
     public bool IsNegative { get; }
 }
 ```
@@ -156,11 +156,11 @@ As a result, the GPU only ever receives pure, branchless math kernels to execute
 
 ## 4. What if I need math inside a kernel? (Alternatives)
 
-Given that `GpuBigInteger` and `GpuBigFloat` are strictly Host-Side orchestration types, what should you do if your GPU kernel actually needs to perform mathematics?
+Given that `GpuBigInt` and `GpuBigFloat` are strictly Host-Side orchestration types, what should you do if your GPU kernel actually needs to perform mathematics?
 
 > [!WARNING]
-> **What happens if I use GpuBigInteger inside a `[GpuKernel]`?**
-> If you attempt to instantiate a `GpuBigInteger` or evaluate `A + B` inside a kernel, the GSharp Roslyn Transpiler will immediately halt the build with a **compilation error** (such as [`GSH0001: Object creation not supported in GPU kernels`](../03_bcl_api/diagnostics/GSH0001.md) or [`RS0030: Banned API usage`](../03_bcl_api/diagnostics/RS0030.md)). 
+> **What happens if I use GpuBigInt inside a `[GpuKernel]`?**
+> If you attempt to instantiate a `GpuBigInt` or evaluate `A + B` inside a kernel, the GSharp Roslyn Transpiler will immediately halt the build with a **compilation error** (such as [`GSH0001: Object creation not supported in GPU kernels`](../03_bcl_api/diagnostics/GSH0001.md) or [`RS0030: Banned API usage`](../03_bcl_api/diagnostics/RS0030.md)). 
 > Because GBI/GBF are not annotated with `[GpuDeviceFunction]` and they allocate AST nodes on the managed heap, the transpiler's static analyzer guarantees at compile-time that these orchestration types cannot leak into device code.
 
 ### Use Standard Primitives
@@ -206,5 +206,5 @@ When working with `Stdlib.Math`, always remember:
 ### Guides
 
 - [4. Practical Guides and Best Practices](00_index.md)
-- [Advanced: Extending GpuBigInteger with Custom Algorithms](08_advanced_custom_math_kernels.md)
+- [Advanced: Extending GpuBigInt with Custom Algorithms](08_advanced_custom_math_kernels.md)
 

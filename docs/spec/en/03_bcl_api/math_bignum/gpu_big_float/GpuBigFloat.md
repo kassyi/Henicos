@@ -10,8 +10,8 @@ description: "Reference for arbitrary-precision floating-point numbers on the GP
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigFloat`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigFloat`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents an arbitrary-precision signed floating-point number on the GPU.
 It operates entirely on the GPU and is composed of an underlying unsigned magnitude ([`GpuBigUFloat<TSize>`](GpuBigUFloat.md)) and a sign bit.
@@ -32,7 +32,7 @@ The unmanaged struct type representing the significand storage size (e.g., `Vect
 | Name                                               | Description                                                                         |
 | -------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `GpuBigFloat(GpuBigUFloat<TSize>, bool)`           | Initializes a new floating point wrapper around an unsigned float.                  |
-| `GpuBigFloat(GpuUIntBigInteger<TSize>, int, bool)` | Initializes a new floating point wrapper from significand, exponent, and sign flag. |
+| `GpuBigFloat(GpuBigUInt<TSize>, int, bool)` | Initializes a new floating point wrapper from significand, exponent, and sign flag. |
 
 ## Properties / Fields
 
@@ -155,14 +155,14 @@ The difference as a new `GpuBigFloat<TSize>`.
 ### Constructing a GpuBigFloat
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math, Kassyi.GSharp.Core
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath, Kassyi.GSharp.Core
 
 ```csharp
 
 
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math.BigFloat;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigFloat;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU)
 Example.ComputeFloat();
@@ -176,7 +176,7 @@ public class Example
         // Initialize significand representing the value '3' (zero allocation)
         var buffer = new LimbBuffer8();
         buffer[0] = 3;
-        var significand = new GpuUIntBigInteger<LimbBuffer8>(buffer);
+        var significand = new GpuBigUInt<LimbBuffer8>(buffer);
 
         // Create the signed big float (e.g., 3 * 2^-1 = 1.5)
         var floatVal = new GpuBigFloat<LimbBuffer8>(significand, exponent: -1, isNegative: false);

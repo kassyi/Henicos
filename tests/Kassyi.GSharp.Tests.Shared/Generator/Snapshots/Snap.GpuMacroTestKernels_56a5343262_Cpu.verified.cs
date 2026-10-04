@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Stdlib.Math.Tests.Kernels
+namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels
 {
 public partial class GpuMacroTestKernels
 {

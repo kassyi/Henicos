@@ -869,7 +869,7 @@
     "score": 35,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GEN-13_GpuMacroTests.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GEN-13_GpuMacroTests.cs",
       "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs"
     ],
     "depends_on": [
@@ -6162,13 +6162,13 @@
     "details": {
       "current_behavior": "Achieved deterministic zero-allocation, cleanups, and memory leak elimination by introducing ScopedGpuMemory (including addressing Qodo feedback).",
       "strategy": "Implemented thread-safe pooling using Lazy<ConcurrentBag<T>> in GpuWorkspace and GSharpJitProvider to prevent race conditions and allocation overhead during initialization.",
-      "csharp_example": "// CPU side: Scoped memory management using GpuWorkspace\nusing var context = new GpuWorkspace();\nvar bigInt = new GpuBigInteger(context, \"12345678901234567890\");\n\n// Internally, GSharpJitProvider manages ScopedGpuMemory allocation from a ConcurrentBag pool",
+      "csharp_example": "// CPU side: Scoped memory management using GpuWorkspace\nusing var context = new GpuWorkspace();\nvar bigInt = new GpuBigInt(context, \"12345678901234567890\");\n\n// Internally, GSharpJitProvider manages ScopedGpuMemory allocation from a ConcurrentBag pool",
       "cpp_example": "/* Memory Pool context operates on the Host (C#) to safely reuse device memory blocks */\n// (C++ diagnostic representation: No direct transpilation for this host-side logic)"
     },
     "score": 28,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-11",
@@ -6200,11 +6200,11 @@
     "details": {
       "current_behavior": "The algorithm for ModPow (binary exponentiation) itself is already implemented. Since GBI-01 is resolved, the [Fact(Skip)] attribute will be removed, verified, and enabled in the next phase.",
       "strategy": "Run tests to verify and enable.",
-      "csharp_example": "GpuBigInteger.ModPow(baseVal, exp, mod);"
+      "csharp_example": "GpuBigInt.ModPow(baseVal, exp, mod);"
     },
     "score": 27,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6250,14 +6250,14 @@
     "details": {
       "current_behavior": "CPU transfers for checks like CompareTo, GetBitLength, IsZero, IsOne, IsEven have been abolished and successfully migrated to parallel reduction and dedicated kernel processing on the GPU side.",
       "strategy": "Executes parallel reduction kernels on the GPU side, eliminating host transfer overhead. Implementation complete.",
-      "csharp_example": "// CPU Host code invoking GpuBigInteger methods\nusing var context = new GpuWorkspace();\nvar a = new GpuBigInteger(context, \"9999\");\n\n// IsZero check is fully executed via parallel reduction on GPU, eliminating fallback CPU data transfers\nbool isZero = a.IsZero();\nint bitLength = a.GetBitLength();",
+      "csharp_example": "// CPU Host code invoking GpuBigInt methods\nusing var context = new GpuWorkspace();\nvar a = new GpuBigInt(context, \"9999\");\n\n// IsZero check is fully executed via parallel reduction on GPU, eliminating fallback CPU data transfers\nbool isZero = a.IsZero();\nint bitLength = a.GetBitLength();",
       "cpp_example": "/* Parallel reduction kernels launched internally by the provider */\n// e.g. Launch -> __global__ void IsZeroKernel(uint32_t* data, bool* result)"
     },
     "score": 29,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs",
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/BigInt/GpuBigInteger.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigInt.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6291,14 +6291,14 @@
     "details": {
       "current_behavior": "Currently GSharpAotProvider.Square is substituting it by calling the generic Mul(A, A, Result). The dedicated squaring routine (Device_NTT_PointwiseSquare) existing on the Native side is bypassed on the JIT side.",
       "strategy": "On the JIT side, directly dispatches a Pointwise kernel dedicated for squaring, cutting the number of NTT transforms and multiplication complexity in half.",
-      "csharp_example": "using var context = new GpuWorkspace();\nvar a = new GpuBigInteger(context, \"999999999999\");\n\n// Dispatches a dedicated squaring NTT kernel instead of general Mul(A, A)\nvar squared = GpuBigInteger.Square(a);",
+      "csharp_example": "using var context = new GpuWorkspace();\nvar a = new GpuBigInt(context, \"999999999999\");\n\n// Dispatches a dedicated squaring NTT kernel instead of general Mul(A, A)\nvar squared = GpuBigInt.Square(a);",
       "cpp_example": "/* Dispatches Device_NTT_PointwiseSquare kernel cutting the number of transforms in half */\n// Launch -> __global__ void Device_NTT_PointwiseSquare(...)"
     },
     "score": 28,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs",
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/BigInt/GpuBigIntMath.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigIntMath.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6345,14 +6345,14 @@
     "details": {
       "current_behavior": "The current GCD implementation relies on sequential quotient estimation with a single block / few threads, limiting scalability for extremely large digits (tens to hundreds of thousands of words).",
       "strategy": "Considering parallel GPU implementation of Half-GCD / Matrix-based GCD.",
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\nusing var context = new GpuWorkspace();\nvar a = new GpuBigInteger(context, \"999999999999\");\nvar b = new GpuBigInteger(context, \"123456789012\");\n\n// Calculates GCD utilizing parallel GPU kernels for extremely large integers\nvar gcd = GpuBigInteger.GreatestCommonDivisor(a, b);",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\nusing var context = new GpuWorkspace();\nvar a = new GpuBigInt(context, \"999999999999\");\nvar b = new GpuBigInt(context, \"123456789012\");\n\n// Calculates GCD utilizing parallel GPU kernels for extremely large integers\nvar gcd = GpuBigInt.GreatestCommonDivisor(a, b);",
       "cpp_example": "/* Dispatches parallel Half-GCD / Matrix-based GCD kernels to avoid sequential bottlenecks on large digits */\n// Launch -> __global__ void Device_HalfGcd_Parallel(...)"
     },
     "score": 11,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs",
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/BigInt/GpuBigIntMath.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigIntMath.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6402,13 +6402,13 @@
     "details": {
       "current_behavior": "Current expression trees sequentially dispatch individual kernels (Add, Sub, Bitwise, etc.), consuming VRAM read/write bandwidth for intermediate buffers.",
       "strategy": "JIT廃止に伴い、実行時動的フュージョンから、Roslyn Source Generator (AOT) によるコンパイル時の構文解析と融合カーネルの事前生成へと移行する計画。",
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\nusing var context = new GpuWorkspace();\nvar a = new GpuBigInteger(context, \"100\");\nvar b = new GpuBigInteger(context, \"200\");\nvar c = new GpuBigInteger(context, \"300\");\n\n// The AOT Compiler (Source Generator) analyzes this expression tree at compile-time and emits a fused kernel\nvar result = (a + b) * c;",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\nusing var context = new GpuWorkspace();\nvar a = new GpuBigInt(context, \"100\");\nvar b = new GpuBigInt(context, \"200\");\nvar c = new GpuBigInt(context, \"300\");\n\n// The AOT Compiler (Source Generator) analyzes this expression tree at compile-time and emits a fused kernel\nvar result = (a + b) * c;",
       "cpp_example": "/* Planned: AOT Compiler emits a fused kernel for the compound expression tree ahead of time */\n// extern \"C\" __global__ void FusedKernel_Add_Mul(uint32_t* a, uint32_t* b, uint32_t* c, uint32_t* out)"
     },
     "score": 15,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/BigInt/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-01-25_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-01-25_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6462,15 +6462,15 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\nvar c = a + b;\nvar d = a - b;",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\nvar c = a + b;\nvar d = a - b;",
       "current_behavior": "CarryBuffer zero-allocation and fast path completed.",
       "strategy": "Implemented basic GpuBigIntMath arithmetic algorithms for addition and subtraction with CUDA-safe carry flag handling.",
       "cpp_example": "/* GpuBigIntMath invokes parallel addition/subtraction kernels handling carry flags safely */\n// Launch -> __global__ void Device_BigInt_Add(uint32_t* a, uint32_t* b, uint32_t* result)"
     },
     "score": 30,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6502,15 +6502,15 @@
       "score": 35
     },
     "details": {
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\n// Multiplies extremely large integers utilizing parallel NTT or Karatsuba\nvar c = a * b;",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\n// Multiplies extremely large integers utilizing parallel NTT or Karatsuba\nvar c = a * b;",
       "current_behavior": "NTT / Karatsuba / Schoolbook parallel multiplication tuning complete.",
       "strategy": "Implemented GPU-based long multiplication algorithm in GpuBigIntMath, avoiding out-of-bounds register spills.",
       "cpp_example": "/* Provider automatically switches between Schoolbook, Karatsuba, and NTT parallel kernels based on digit length */\n// Launch -> __global__ void Device_BigInt_NTT_Multiply(uint32_t* a, uint32_t* b, uint32_t* result)"
     },
     "score": 35,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-30",
@@ -6538,15 +6538,15 @@
       "score": 32
     },
     "details": {
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\n// Executes DivRem algorithms safely inside the GPU, avoiding temporary allocations\nvar q = a / b;\nvar r = a % b;",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\n// Executes DivRem algorithms safely inside the GPU, avoiding temporary allocations\nvar q = a / b;\nvar r = a % b;",
       "current_behavior": "Functional operation confirmed. Temporary allocation reduction in internal DivRem (GBI-01) resolved.",
       "strategy": "Implemented DivRem and Mod algorithms in GpuBigIntDivRem for BigInteger division logic.",
       "cpp_example": "/* Executes parallel division and modulo kernels via GpuBigIntDivRem logic */\n// Launch -> __global__ void Device_BigInt_DivRem(uint32_t* a, uint32_t* b, uint32_t* q, uint32_t* r)"
     },
     "score": 32,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6579,15 +6579,15 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\nvar c = a & b;\nvar d = a | b;\nvar e = a ^ b;\nvar f = ~a;",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\nvar c = a & b;\nvar d = a | b;\nvar e = a ^ b;\nvar f = ~a;",
       "current_behavior": "-",
-      "strategy": "Implemented full set of bitwise operations (And, Or, Xor, Not) for GpuUIntBigInteger.",
+      "strategy": "Implemented full set of bitwise operations (And, Or, Xor, Not) for GpuBigUInt.",
       "cpp_example": "/* Performs parallel bitwise operations across multi-limb integers */\n// Launch -> __global__ void Device_BigInt_BitwiseAnd(uint32_t* a, uint32_t* b, uint32_t* result)\n// Launch -> __global__ void Device_BigInt_BitwiseOr(uint32_t* a, uint32_t* b, uint32_t* result)\n// Launch -> __global__ void Device_BigInt_BitwiseXor(uint32_t* a, uint32_t* b, uint32_t* result)\n// Launch -> __global__ void Device_BigInt_BitwiseNot(uint32_t* a, uint32_t* result)"
     },
     "score": 30,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6621,15 +6621,15 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\n// Arbitrary multi-limb bit shifts (<<, >>)\nvar c = a << 5;\nvar d = a >> 5;",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\n// Arbitrary multi-limb bit shifts (<<, >>)\nvar c = a << 5;\nvar d = a >> 5;",
       "current_behavior": "Fully operational and optimized via the arbitrary bit-shift kernel.",
       "strategy": "Supported arbitrary bit shift left (<<) and right (>>) across multi-limb integers.",
       "cpp_example": "/* Performs parallel arbitrary bit shifts across all limbs */\n// Launch -> __global__ void Device_BigInt_ShiftLeft(uint32_t* a, int shiftAmount, uint32_t* result)\n// Launch -> __global__ void Device_BigInt_ShiftRight(uint32_t* a, int shiftAmount, uint32_t* result)"
     },
     "score": 30,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6664,15 +6664,15 @@
       "score": 30
     },
     "details": {
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\n// Relational operators execute natively on the GPU without CPU data transfer\nif (a == b || a > b)\n{\n    // ...\n}",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\n// Relational operators execute natively on the GPU without CPU data transfer\nif (a == b || a > b)\n{\n    // ...\n}",
       "current_behavior": "Checks themselves are fully operational. CPU transfer of all words has been abolished and parallelized via GPU kernels (CompareToKernel, etc.) (GBI-03 complete).",
       "strategy": "Implemented CompareTo logic supporting equality and relational operators (==, !=, <, >, <=, >=) across arrays.",
       "cpp_example": "/* Comparison operations are parallelized via reduction kernels (e.g. CompareToKernel) */\n// Launch -> __global__ void Device_BigInt_CompareTo(uint32_t* a, uint32_t* b, int* result)"
     },
     "score": 30,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6711,12 +6711,12 @@
     "details": {
       "csharp_example": "a++;\n--b;",
       "current_behavior": "Supported via in-place scalar Add/Sub on GPU.",
-      "strategy": "Implemented operator ++ and operator -- on GpuUIntBigInteger delegating to in-place GpuBigIntMath.Add/Sub."
+      "strategy": "Implemented operator ++ and operator -- on GpuBigUInt delegating to in-place GpuBigIntMath.Add/Sub."
     },
     "score": 26,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInt/GpuUIntBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/BigInt/GpuBigIntCoreTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt/GpuBigUInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/BigInt/GpuBigIntCoreTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6747,7 +6747,7 @@
   },
   {
     "id": "GBI-17",
-    "title": "GpuBigInteger.DivRem",
+    "title": "GpuBigInt.DivRem",
     "domain": "GBI",
     "category": "Functional operators",
     "status": "implemented",
@@ -6759,14 +6759,14 @@
     },
     "details": {
       "current_behavior": "Simultaneous calculation of division and modulo",
-      "strategy": "Implemented signed wrapper logic for DivRem and Modulo operations in GpuBigInteger layer.",
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\n// Simultaneous calculation of division and modulo on the GPU\nvar quotient = GpuBigInteger.DivRem(a, b, out var remainder);",
+      "strategy": "Implemented signed wrapper logic for DivRem and Modulo operations in GpuBigInt layer.",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\n// Simultaneous calculation of division and modulo on the GPU\nvar quotient = GpuBigInt.DivRem(a, b, out var remainder);",
       "cpp_example": "/* Simultaneous parallel quotient and remainder calculation */\n// Launch -> __global__ void Device_BigInt_DivRem(uint32_t* a, uint32_t* b, uint32_t* q, uint32_t* r)"
     },
     "score": 32,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6793,7 +6793,7 @@
   },
   {
     "id": "GBI-18",
-    "title": "GpuBigInteger.ModPow",
+    "title": "GpuBigInt.ModPow",
     "domain": "GBI",
     "category": "Functional operators",
     "status": "implemented",
@@ -6806,13 +6806,13 @@
     "details": {
       "current_behavior": "Modular exponentiation ($a^e \\bmod n$)",
       "strategy": "Implemented ModPow in GpuBigIntDivRem after resolving memory pooling constraints (GBI-01).",
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\n// Modular exponentiation (base^exp % mod) calculated efficiently on the GPU\nvar result = GpuBigInteger.ModPow(baseVal, exp, mod);",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\n// Modular exponentiation (base^exp % mod) calculated efficiently on the GPU\nvar result = GpuBigInt.ModPow(baseVal, exp, mod);",
       "cpp_example": "/* Parallel Montgomery or standard ModPow kernels dispatched internally */\n// Launch -> __global__ void Device_BigInt_ModPow(...)"
     },
     "score": 25,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/BigInt/GpuBigIntDivRem.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigIntDivRem.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6840,7 +6840,7 @@
   },
   {
     "id": "GBI-19",
-    "title": "GpuBigInteger.Square",
+    "title": "GpuBigInt.Square",
     "domain": "GBI",
     "category": "Functional operators",
     "status": "implemented",
@@ -6853,12 +6853,12 @@
     "details": {
       "current_behavior": "Squaring ($a^2$)",
       "strategy": "Implemented specialized point-wise square kernels (Device_NTT_PointwiseSquare / GpuBigInt_Square) for faster multiplication.",
-      "csharp_example": "GpuBigInteger.Square(a);"
+      "csharp_example": "GpuBigInt.Square(a);"
     },
     "score": 28,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6888,7 +6888,7 @@
   },
   {
     "id": "GBI-20",
-    "title": "GpuBigInteger.GreatestCommonDivisor",
+    "title": "GpuBigInt.GreatestCommonDivisor",
     "domain": "GBI",
     "category": "Functional operators",
     "status": "implemented",
@@ -6901,12 +6901,12 @@
     "details": {
       "current_behavior": "Greatest Common Divisor (GCD)",
       "strategy": "Implemented GreatestCommonDivisor algorithm on GPU leveraging optimized binary GCD.",
-      "csharp_example": "GpuBigInteger.GreatestCommonDivisor(a, b);"
+      "csharp_example": "GpuBigInt.GreatestCommonDivisor(a, b);"
     },
     "score": 32,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6935,7 +6935,7 @@
   },
   {
     "id": "GBI-21",
-    "title": "GpuBigInteger.ModInverse",
+    "title": "GpuBigInt.ModInverse",
     "domain": "GBI",
     "category": "Functional operators",
     "status": "incomplete",
@@ -6947,14 +6947,14 @@
     },
     "details": {
       "current_behavior": "Modular Inverse",
-      "strategy": "Implement parallel modular multiplicative inverse algorithm (e.g., Extended Euclidean) for multi-limb GpuBigInteger numbers within the device mathematics library.",
-      "csharp_example": "[GpuKernel]\npublic static void ModInverseKernel(GpuBigInteger a, GpuBigInteger mod)\n{\n    // モジュラ逆数を計算\n    GpuBigInteger inv = GpuBigInteger.ModInverse(a, mod);\n}",
-      "cpp_example": "extern \"C\" __global__ void ModInverseKernel(GpuBigInteger* a, GpuBigInteger* mod)\n{\n    // 内部的なGPUカーネル (拡張ユークリッド等) への展開\n    GpuBigInteger inv = Device_BigInt_ModInverse(a, mod);\n}"
+      "strategy": "Implement parallel modular multiplicative inverse algorithm (e.g., Extended Euclidean) for multi-limb GpuBigInt numbers within the device mathematics library.",
+      "csharp_example": "[GpuKernel]\npublic static void ModInverseKernel(GpuBigInt a, GpuBigInt mod)\n{\n    // モジュラ逆数を計算\n    GpuBigInt inv = GpuBigInt.ModInverse(a, mod);\n}",
+      "cpp_example": "extern \"C\" __global__ void ModInverseKernel(GpuBigInt* a, GpuBigInt* mod)\n{\n    // 内部的なGPUカーネル (拡張ユークリッド等) への展開\n    GpuBigInt inv = Device_BigInt_ModInverse(a, mod);\n}"
     },
     "score": 30,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6992,13 +6992,13 @@
     },
     "details": {
       "current_behavior": "Size Comparison and Equality Check",
-      "strategy": "Implemented signed CompareTo and Equals overriding relational operators (<, >, <=, >=) in GpuBigInteger.",
-      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "strategy": "Implemented signed CompareTo and Equals overriding relational operators (<, >, <=, >=) in GpuBigInt.",
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInt : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 30,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7040,13 +7040,13 @@
     "details": {
       "current_behavior": "Effective bit/byte length",
       "strategy": "Implemented GetBitLength and GetByteCount via CUDA intrinsic __clz and reduction.",
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\n// Effective bit/byte length calculated without full CPU transfers\nint bits = a.GetBitLength();\nint bytes = a.GetByteCount();",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\n// Effective bit/byte length calculated without full CPU transfers\nint bits = a.GetBitLength();\nint bytes = a.GetByteCount();",
       "cpp_example": "/* Uses parallel reduction and __clz (count leading zeros) intrinsics */\n// Launch -> __global__ void Device_BigInt_GetBitLength(uint32_t* a, int* result)\n// Launch -> __global__ void Device_BigInt_GetByteCount(uint32_t* a, int* result)"
     },
     "score": 30,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7090,13 +7090,13 @@
     "details": {
       "current_behavior": "State flag evaluation",
       "strategy": "Implemented IsZero, IsOne, and IsEven properties utilizing fast CUDA reduction kernels and bitwise checks.",
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\n// Quick state flag evaluations\nbool isZero = a.IsZero;\nbool isOne = a.IsOne;\nbool isEven = a.IsEven;",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\n// Quick state flag evaluations\nbool isZero = a.IsZero;\nbool isOne = a.IsOne;\nbool isEven = a.IsEven;",
       "cpp_example": "/* State flags evaluated using fast CUDA reduction kernels and bitwise checks */\n// Launch -> __global__ void Device_BigInt_IsZero(uint32_t* a, bool* result)\n// Launch -> __global__ void Device_BigInt_IsOne(uint32_t* a, bool* result)\n// Launch -> __global__ void Device_BigInt_IsEven(uint32_t* a, bool* result)"
     },
     "score": 30,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7127,7 +7127,7 @@
   },
   {
     "id": "GBI-25",
-    "title": "GpuBigInteger.Sqrt",
+    "title": "GpuBigInt.Sqrt",
     "domain": "GBI",
     "category": "Functional operators",
     "status": "implemented",
@@ -7140,13 +7140,13 @@
     "details": {
       "current_behavior": "Square Root ($\\lfloor\\sqrt{a}\\rfloor$)",
       "strategy": "Implemented integer Square Root approximation (InverseSqrt) using Newton-Raphson iterations on GPU.",
-      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInteger methods\n// Square Root (floor(sqrt(a)))\nvar root = GpuBigInteger.Sqrt(a);",
+      "csharp_example": "// [HOST SIDE] CPU code invoking GpuBigInt methods\n// Square Root (floor(sqrt(a)))\nvar root = GpuBigInt.Sqrt(a);",
       "cpp_example": "/* Integer Square Root approximation using Newton-Raphson iterations on the GPU */\n// Launch -> __global__ void Device_BigInt_Sqrt(...)"
     },
     "score": 25,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7197,7 +7197,7 @@
     },
     "score": 20,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
       "tests/Kassyi.GSharp.Tests/Analyzers/GpuBigIntExprAnalyzerTests.cs"
     ],
     "depends_on": [
@@ -7250,7 +7250,7 @@
     },
     "score": 20,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
       "tests/Kassyi.GSharp.Tests/Analyzers/GpuBigIntExprAnalyzerTests.cs"
     ],
     "depends_on": [
@@ -7304,7 +7304,7 @@
     },
     "score": 20,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
       "tests/Kassyi.GSharp.Tests/Analyzers/GpuBigIntExprAnalyzerTests.cs"
     ],
     "depends_on": [
@@ -7361,7 +7361,7 @@
     },
     "score": 39,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs"
     ],
     "pr": [
       63
@@ -7384,12 +7384,12 @@
       "csharp_example": "// [Kernel Side] Synchronization Primitives\n[GpuKernel]\npublic static void SyncKernel(float[] sharedCache)\n{\n    int tid = ThreadIndex.X;\n    sharedCache[tid] = tid * 2.0f;\n    \n    // Enforce thread-block level memory synchronization\n    Gpu.SyncThreads();\n}",
       "current_behavior": "Successfully transpiled and executed",
       "target_cuda": "Mapped to __syncthreads() and cg::this_grid().sync().",
-      "strategy": "Implemented trailing zero count algorithms utilizing CUDA __ffs / __brev intrinsics for GpuBigInteger.",
+      "strategy": "Implemented trailing zero count algorithms utilizing CUDA __ffs / __brev intrinsics for GpuBigInt.",
       "cpp_example": "extern \"C\" __global__ void SyncKernel(float* __restrict__ sharedCache)\n{\n    int tid = threadIdx.x;\n    sharedCache[tid] = (tid * 2.0f);\n    \n    // Directly emits the PTX/CUDA barrier intrinsic\n    __syncthreads();\n}"
     },
     "score": 39,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs"
     ],
     "depends_on": [
       "GBI-30"
@@ -7420,7 +7420,7 @@
     },
     "score": 39,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs"
     ],
     "depends_on": [
       "GBI-30",
@@ -7447,12 +7447,12 @@
       "csharp_example": "// [Kernel Side / High-Level] Friendly operator overloads\n// Developer uses +, -, *, which the Transpiler replaces with device intrinsics\n[GpuKernel]\npublic static void FriendlyMathKernel(GpuBigIntRef a, GpuBigIntRef b, GpuBigIntRef result)\n{\n    result = a + b; // Transpiled to AddWithCarry internally\n}\n\n// [Kernel Side / Low-Level Intrinsic] Explicit intrinsic usage\n[GpuKernel]\npublic static void IntrinsicMathKernel(uint[] left, uint[] right, uint[] result)\n{\n    ulong carry = 0;\n    int i = Gpu.ThreadIndex.X;\n    result[i] = Gpu.AddWithCarry(left[i], right[i], ref carry);\n}",
       "current_behavior": "Successfully transpiled and executed",
       "target_cuda": "Mapped to PTX level carry/borrow intrinsic functions (__builtin_addc etc.).",
-      "strategy": "Implemented Population Count (PopCount) for GpuBigInteger utilizing CUDA __popc.",
+      "strategy": "Implemented Population Count (PopCount) for GpuBigInt utilizing CUDA __popc.",
       "cpp_example": "extern \"C\" __global__ void IntrinsicMathKernel(unsigned int* __restrict__ left, unsigned int* __restrict__ right, unsigned int* __restrict__ result)\n{\n    unsigned long long carry = 0;\n    int i = threadIdx.x;\n    // Both friendly operators and intrinsics map to hardware carry instructions\n    result[i] = __builtin_addc(left[i], right[i], &carry); \n}"
     },
     "score": 39,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs"
     ],
     "depends_on": [
       "GBI-30",
@@ -7485,7 +7485,7 @@
     },
     "score": 39,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs"
     ],
     "depends_on": [
       "GBI-30",
@@ -8440,7 +8440,7 @@
   },
   {
     "id": "GEN-46",
-    "title": "Lazy Expression Tree and operator overloading for GpuBigInteger",
+    "title": "Lazy Expression Tree and operator overloading for GpuBigInt",
     "domain": "GEN",
     "category": "Math Stdlib",
     "status": "implemented",
@@ -8451,14 +8451,14 @@
       "score": 34
     },
     "details": {
-      "current_behavior": "Operators (+, -, *, /) for GpuBigInteger instances are generated as expression tree objects (GpuBigIntExpr), and the actual GPU kernels are issued upon calling .Value or .Evaluate().",
-      "strategy": "Implemented expression tree fusion and mathematical operator overloading on GpuBigInteger struct to optimize memory bandwidth.",
-      "csharp_example": "public static GpuBigInteger operator +(GpuBigInteger a, GpuBigInteger b)"
+      "current_behavior": "Operators (+, -, *, /) for GpuBigInt instances are generated as expression tree objects (GpuBigIntExpr), and the actual GPU kernels are issued upon calling .Value or .Evaluate().",
+      "strategy": "Implemented expression tree fusion and mathematical operator overloading on GpuBigInt struct to optimize memory bandwidth.",
+      "csharp_example": "public static GpuBigInt operator +(GpuBigInt a, GpuBigInt b)"
     },
     "score": 34,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/BigInt/GpuBigInteger.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigInt.cs"
     ],
     "depends_on": [
       "GBI-30",
@@ -8492,7 +8492,7 @@
     },
     "score": 35,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/ScopedGpuMemory.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/Providers/ScopedGpuMemory.cs",
       "src/Runtime/Kassyi.GSharp.Runtime/Interop/ScopedGpuMemory.cs"
     ],
     "pr": [
@@ -8515,12 +8515,12 @@
     "details": {
       "current_behavior": "For Div/Rem operations, calculates the reciprocal approximation of the divisor on the GPU using Newton-Raphson iteration, solving the division based on multiplication.",
       "strategy": "Newton-Raphson approximation implemented for DivRem",
-      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInteger : IDisposable, IGpuBigIntExpression\n{"
+      "csharp_example": "[SuppressMessage(\"ReSharper\", \"UnusedMember.Global\", Justification = \"Public API exposed for library consumers\")]\n[SuppressMessage(\"ReSharper\", \"UnusedType.Global\", Justification = \"Public API exposed for library consumers\")]\npublic class GpuBigInt : IDisposable, IGpuBigIntExpression\n{"
     },
     "score": 25,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/BigInt/GpuBigIntDivRem.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigIntDivRem.cs"
     ],
     "depends_on": [
       "GBI-11",
@@ -8555,7 +8555,7 @@
     },
     "score": 27,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpAotProvider.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/Providers/GSharpAotProvider.cs"
     ],
     "pr": [
       108
@@ -8581,8 +8581,8 @@
     },
     "score": 26,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/Providers/GSharpAotProvider.cs",
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/BigInt/GpuBigIntMath.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/Providers/GSharpAotProvider.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigIntMath.cs"
     ],
     "depends_on": [
       "GEN-49"
@@ -8611,7 +8611,7 @@
     },
     "score": 18,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/FermatRunner.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/FermatRunner.cs"
     ],
     "pr": [
       108
@@ -8716,7 +8716,7 @@
     },
     "score": 38,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/BigFloat/GpuBigFloat.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigFloat/GpuBigFloat.cs"
     ],
     "pr": [
       127

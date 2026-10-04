@@ -1,36 +1,36 @@
 ---
-title: "GpuBigInteger Struct (G#)"
+title: "GpuBigInt Struct (G#)"
 site: "G# Documentation"
 published: "2026-09-24T00:00:00.000Z"
 language: "en"
-description: "A lightweight value type wrapping a GpuUIntBigInteger with a sign bit, used for tracking alternating series or arbitrary signed integers on the GPU."
+description: "A lightweight value type wrapping a GpuBigUInt with a sign bit, used for tracking alternating series or arbitrary signed integers on the GPU."
 ---
 
-## GpuBigInteger Struct
+## GpuBigInt Struct
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-A lightweight value type wrapping a `GpuUIntBigInteger` with a sign bit, used for tracking alternating series or arbitrary signed integers on the GPU.
+A lightweight value type wrapping a `GpuBigUInt` with a sign bit, used for tracking alternating series or arbitrary signed integers on the GPU.
 
 ```csharp
-public readonly struct GpuBigInteger : IDisposable, IEquatable<GpuBigInteger>, IComparable<GpuBigInteger>
+public readonly struct GpuBigInt : IDisposable, IEquatable<GpuBigInt>, IComparable<GpuBigInt>
 ```
 
 ## Constructors
 
 | Name | Description |
 | --- | --- |
-| [GpuBigInteger(GpuUIntBigInteger, bool)](#gpubigintegergpuuintbiginteger-bool) | Initializes a new instance of the `GpuBigInteger` struct. |
+| [GpuBigInt(GpuBigUInt, bool)](#gpubigintegergpuuintbiginteger-bool) | Initializes a new instance of the `GpuBigInt` struct. |
 
-## GpuBigInteger(GpuUIntBigInteger, bool)
+## GpuBigInt(GpuBigUInt, bool)
 
-Initializes a new instance of the `GpuBigInteger` struct.
+Initializes a new instance of the `GpuBigInt` struct.
 
 ```csharp
-public GpuBigInteger([TakesOwnership] GpuUIntBigInteger value, bool isNegative);
+public GpuBigInt([TakesOwnership] GpuBigUInt value, bool isNegative);
 ```
 
 #### Parameters
@@ -61,25 +61,25 @@ public bool IsNegative { get; }
 Gets the underlying absolute value buffer on the GPU.
 
 ```csharp
-public GpuUIntBigInteger Value { get; }
+public GpuBigUInt Value { get; }
 ```
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [CompareTo(GpuBigInteger)](#comparetogpubiginteger) | Compares this instance with another `GpuBigInteger` and returns an integer that indicates whether this instance precedes, follows, or appears in the same position in the sort order as the specified parameter. |
+| [CompareTo(GpuBigInt)](#comparetogpubiginteger) | Compares this instance with another `GpuBigInt` and returns an integer that indicates whether this instance precedes, follows, or appears in the same position in the sort order as the specified parameter. |
 | [Dispose()](#dispose) | Disposes the underlying GPU buffer. |
-| [Equals(GpuBigInteger)](#equalsgpubiginteger) | Indicates whether the current object is equal to another object of the same type. |
+| [Equals(GpuBigInt)](#equalsgpubiginteger) | Indicates whether the current object is equal to another object of the same type. |
 | [Equals(object?)](#equalsobject) | Indicates whether this instance and a specified object are equal. |
 | [GetHashCode()](#gethashcode) | Returns the hash code for this instance. |
 
-## CompareTo(GpuBigInteger)
+## CompareTo(GpuBigInt)
 
-Compares this instance with another `GpuBigInteger` and returns an integer that indicates whether this instance precedes, follows, or appears in the same position in the sort order as the specified parameter.
+Compares this instance with another `GpuBigInt` and returns an integer that indicates whether this instance precedes, follows, or appears in the same position in the sort order as the specified parameter.
 
 ```csharp
-public int CompareTo(GpuBigInteger other);
+public int CompareTo(GpuBigInt other);
 ```
 
 #### Parameters
@@ -100,12 +100,12 @@ Disposes the underlying GPU buffer.
 public void Dispose();
 ```
 
-## Equals(GpuBigInteger)
+## Equals(GpuBigInt)
 
 Indicates whether the current object is equal to another object of the same type.
 
 ```csharp
-public bool Equals(GpuBigInteger other);
+public bool Equals(GpuBigInt other);
 ```
 
 #### Parameters
@@ -153,48 +153,48 @@ A 32-bit signed integer that is the hash code for this instance.
 
 | Name | Description |
 | --- | --- |
-| `Addition(GpuBigInteger, GpuBigInteger)` | Adds two big integers. |
-| `Subtraction(GpuBigInteger, GpuBigInteger)` | Subtracts one big integer from another. |
-| `Multiply(GpuBigInteger, GpuBigInteger)` | Multiplies two big integers. |
-| `Division(GpuBigInteger, GpuBigInteger)` | Divides one big integer by another. |
-| `Equality(GpuBigInteger, GpuBigInteger)` | Indicates whether two `GpuBigInteger` values are equal. |
-| `Inequality(GpuBigInteger, GpuBigInteger)` | Indicates whether two `GpuBigInteger` values are not equal. |
-| `LessThan(GpuBigInteger, GpuBigInteger)` | Returns a value indicating whether a specified `GpuBigInteger` is less than another specified `GpuBigInteger`. |
-| `GreaterThan(GpuBigInteger, GpuBigInteger)` | Returns a value indicating whether a specified `GpuBigInteger` is greater than another specified `GpuBigInteger`. |
-| `LessThanOrEqual(GpuBigInteger, GpuBigInteger)` | Returns a value indicating whether a specified `GpuBigInteger` is less than or equal to another specified `GpuBigInteger`. |
-| `GreaterThanOrEqual(GpuBigInteger, GpuBigInteger)` | Returns a value indicating whether a specified `GpuBigInteger` is greater than or equal to another specified `GpuBigInteger`. |
+| `Addition(GpuBigInt, GpuBigInt)` | Adds two big integers. |
+| `Subtraction(GpuBigInt, GpuBigInt)` | Subtracts one big integer from another. |
+| `Multiply(GpuBigInt, GpuBigInt)` | Multiplies two big integers. |
+| `Division(GpuBigInt, GpuBigInt)` | Divides one big integer by another. |
+| `Equality(GpuBigInt, GpuBigInt)` | Indicates whether two `GpuBigInt` values are equal. |
+| `Inequality(GpuBigInt, GpuBigInt)` | Indicates whether two `GpuBigInt` values are not equal. |
+| `LessThan(GpuBigInt, GpuBigInt)` | Returns a value indicating whether a specified `GpuBigInt` is less than another specified `GpuBigInt`. |
+| `GreaterThan(GpuBigInt, GpuBigInt)` | Returns a value indicating whether a specified `GpuBigInt` is greater than another specified `GpuBigInt`. |
+| `LessThanOrEqual(GpuBigInt, GpuBigInt)` | Returns a value indicating whether a specified `GpuBigInt` is less than or equal to another specified `GpuBigInt`. |
+| `GreaterThanOrEqual(GpuBigInt, GpuBigInt)` | Returns a value indicating whether a specified `GpuBigInt` is greater than or equal to another specified `GpuBigInt`. |
 
 ## Examples
 
 ### Lazy Evaluation (CPU)
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
 
 // Execution Context: Host (CPU)
 try {
     using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
     
-    using var uintA = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(100), 4);
-    using var uintB = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(50), 4);
+    using var uintA = GpuBigUInt.FromBigInteger(workspace, new BigInteger(100), 4);
+    using var uintB = GpuBigUInt.FromBigInteger(workspace, new BigInteger(50), 4);
 
     // Wrap with a sign to represent signed integers
-    var valA = new GpuBigInteger(uintA, isNegative: false);
-    var valB = new GpuBigInteger(uintB, isNegative: false);
+    var valA = new GpuBigInt(uintA, isNegative: false);
+    var valB = new GpuBigInt(uintB, isNegative: false);
 
     // Operator overloads on CPU return AST expressions (Lazy Evaluation)
     var sumExpr = valA + valB;
     
     // Evaluate dynamically to a new buffer
-    using var sumResult = (GpuBigInteger)sumExpr.Node.Evaluate(workspace, null);
+    using var sumResult = (GpuBigInt)sumExpr.Node.Evaluate(workspace, null);
     
     Console.WriteLine($"Sum evaluated to={sumResult.Value.ToBigInteger(sumResult.IsNegative)}");
 } catch (GpuOnlyException) {
@@ -205,13 +205,13 @@ try {
 ### Immediate Evaluation (GPU)
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU)
 Example.ComputeBigIntMath();

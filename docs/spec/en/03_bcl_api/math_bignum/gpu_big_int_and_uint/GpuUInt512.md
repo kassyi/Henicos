@@ -10,8 +10,8 @@ description: "Represents a 512-bit unsigned integer stored on the GPU."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents a 512-bit unsigned integer stored on the GPU.
 
@@ -24,15 +24,15 @@ public struct GpuUInt512
 
 | Name                                                                                           | Description                                            |
 | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| [GpuUInt512(GpuUIntBigInteger&lt;LimbBuffer16&gt;)](#gpuuint512gpuuintbiginteger-limbbuffer16) | Initializes a new instance of the `GpuUInt512` struct. |
+| [GpuUInt512(GpuBigUInt&lt;LimbBuffer16&gt;)](#gpuuint512gpuuintbiginteger-limbbuffer16) | Initializes a new instance of the `GpuUInt512` struct. |
 | [GpuUInt512(uint)](#gpuuint512uint)                                                            | Initializes a new instance of the `GpuUInt512` struct. |
 
-## GpuUInt512(GpuUIntBigInteger&lt;LimbBuffer16&gt;)
+## GpuUInt512(GpuBigUInt&lt;LimbBuffer16&gt;)
 
 Initializes a new instance of the `GpuUInt512` struct from an existing buffer.
 
 ```csharp
-public GpuUInt512(GpuUIntBigInteger<LimbBuffer16> value);
+public GpuUInt512(GpuBigUInt<LimbBuffer16> value);
 ```
 
 #### Parameters
@@ -81,8 +81,8 @@ A newly created `GpuUInt512` struct.
 
 | Name                                                      | Description                                                                |
 | --------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `Implicit(GpuUInt512 to GpuUIntBigInteger<LimbBuffer16>)` | Implicitly converts a `GpuUInt512` to a `GpuUIntBigInteger<LimbBuffer16>`. |
-| `Implicit(GpuUIntBigInteger<LimbBuffer16> to GpuUInt512)` | Implicitly converts a `GpuUIntBigInteger<LimbBuffer16>` to a `GpuUInt512`. |
+| `Implicit(GpuUInt512 to GpuBigUInt<LimbBuffer16>)` | Implicitly converts a `GpuUInt512` to a `GpuBigUInt<LimbBuffer16>`. |
+| `Implicit(GpuBigUInt<LimbBuffer16> to GpuUInt512)` | Implicitly converts a `GpuBigUInt<LimbBuffer16>` to a `GpuUInt512`. |
 | `Implicit(uint to GpuUInt512)`                            | Implicitly converts a `uint` to a `GpuUInt512`.                            |
 
 ## Examples
@@ -90,12 +90,12 @@ A newly created `GpuUInt512` struct.
 ### Creating GpuUInt512 Instances
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU) or G# Kernel (GPU)
 
@@ -108,8 +108,8 @@ GpuUInt512 implicitConversion = 100u;
 // 3. Create from an array of sixteen 32-bit limbs (CollectionBuilder syntax)
 GpuUInt512 fromLimbs = [ 0x00000001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
 
-// 4. Retrieve the underlying GpuUIntBigInteger<LimbBuffer16> implicitly
-GpuUIntBigInteger<LimbBuffer16> underlyingBuffer = fromLimbs;
+// 4. Retrieve the underlying GpuBigUInt<LimbBuffer16> implicitly
+GpuBigUInt<LimbBuffer16> underlyingBuffer = fromLimbs;
 
 Console.WriteLine($"fromScalar.Value.Limbs[0] = {fromScalar.Value.Limbs[0]}");
 Console.WriteLine($"implicitConversion.Value.Limbs[0] = {implicitConversion.Value.Limbs[0]}");

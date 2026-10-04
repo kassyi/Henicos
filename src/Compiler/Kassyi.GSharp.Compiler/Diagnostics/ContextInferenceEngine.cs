@@ -14,7 +14,7 @@ public static class ContextInferenceEngine
         // Fast path for external framework methods that we cannot traverse
         if (methodSymbol.ContainingAssembly?.Name != compilation.AssemblyName &&
             methodSymbol.ContainingAssembly?.Name != TypeConstants.CoreNamespace &&
-            methodSymbol.ContainingAssembly?.Name != "Kassyi.GSharp.Stdlib.Math")
+            methodSymbol.ContainingAssembly?.Name != "Kassyi.GSharp.Stdlib.GpuMath")
         {
             return false;
         }

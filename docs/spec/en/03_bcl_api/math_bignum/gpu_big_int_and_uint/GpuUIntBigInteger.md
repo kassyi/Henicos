@@ -1,37 +1,37 @@
 ---
-title: "GpuUIntBigInteger Class (G#)"
+title: "GpuBigUInt Class (G#)"
 site: "G# Documentation"
 published: "2026-09-24T00:00:00.000Z"
 language: "en"
 description: "Represents an arbitrary-precision unsigned integer stored in NVIDIA GPU global device memory."
 ---
 
-## GpuUIntBigInteger Class
+## GpuBigUInt Class
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents an arbitrary-precision unsigned integer stored in NVIDIA GPU global device memory.
 
 ```csharp
-public class GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression
+public class GpuBigUInt : IDisposable, IGpuBigUIntExpression
 ```
 
 ## Constructors
 
 | Name                                                                       | Description                                                                                              |
 | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| [GpuUIntBigInteger(GpuWorkspace, int)](#gpuuintbigintegergpuworkspace-int)     | Allocates uninitialized GPU device memory for an integer of the specified limb length.                   |
-| [GpuUIntBigInteger(GpuWorkspace, uint[])](#gpuuintbigintegergpuworkspace-uint) | Allocates GPU device memory and initializes it with the provided host array in little-endian limb order. |
+| [GpuBigUInt(GpuWorkspace, int)](#gpuuintbigintegergpuworkspace-int)     | Allocates uninitialized GPU device memory for an integer of the specified limb length.                   |
+| [GpuBigUInt(GpuWorkspace, uint[])](#gpuuintbigintegergpuworkspace-uint) | Allocates GPU device memory and initializes it with the provided host array in little-endian limb order. |
 
-## GpuUIntBigInteger(GpuWorkspace, int)
+## GpuBigUInt(GpuWorkspace, int)
 
 Allocates uninitialized GPU device memory for an integer of the specified limb length.
 
 ```csharp
-public GpuUIntBigInteger(GpuWorkspace workspace, int numWords);
+public GpuBigUInt(GpuWorkspace workspace, int numWords);
 ```
 
 #### Parameters
@@ -53,12 +53,12 @@ Thrown when device memory allocation fails.
 `CudaException`<br>
 Thrown by the default backend when CUDA driver memory allocation fails.
 
-## GpuUIntBigInteger(GpuWorkspace, uint[])
+## GpuBigUInt(GpuWorkspace, uint[])
 
 Allocates GPU device memory and initializes it with the provided host array in little-endian limb order.
 
 ```csharp
-public GpuUIntBigInteger(GpuWorkspace workspace, uint[] hostData);
+public GpuBigUInt(GpuWorkspace workspace, uint[] hostData);
 ```
 
 #### Parameters
@@ -145,20 +145,20 @@ public GpuBigUIntExpr Value { get; set; }
 | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | [Clear(int, int?)](#clearint-int)                                                       | Clears the GPU memory (sets to 0) for the specified range.                                           |
 | [ClearWord(int)](#clearwordint)                                                         | Clears the single word at the specified index to zero on the GPU.                                    |
-| [CompareTo(GpuUIntBigInteger)](#comparetogpuuintbiginteger)                             | Compares this big integer with another `GpuUIntBigInteger` buffer.                                   |
-| [CopyFrom(GpuUIntBigInteger, int, int, int?)](#copyfromgpuuintbiginteger-int-int-int)   | Copies words from a source `GpuUIntBigInteger` to this buffer on the GPU device.                     |
-| [CreatePowerOfTwo(GpuWorkspace, int, int)](#createpoweroftwogpuworkspace-int-int)           | Creates a new `GpuUIntBigInteger` on the GPU representing `2^bitIndex`.                              |
+| [CompareTo(GpuBigUInt)](#comparetogpuuintbiginteger)                             | Compares this big integer with another `GpuBigUInt` buffer.                                   |
+| [CopyFrom(GpuBigUInt, int, int, int?)](#copyfromgpuuintbiginteger-int-int-int)   | Copies words from a source `GpuBigUInt` to this buffer on the GPU device.                     |
+| [CreatePowerOfTwo(GpuWorkspace, int, int)](#createpoweroftwogpuworkspace-int-int)           | Creates a new `GpuBigUInt` on the GPU representing `2^bitIndex`.                              |
 | [Dispose()](#dispose)                                                                   | Releases the allocated GPU device memory or returns the buffer to the workspace memory pool if pooled. |
 | [Equals(object?)](#equalsobject)                                                        | Determines whether this instance and a specified object have equivalent numerical value.             |
-| [Evaluate(GpuWorkspace, GpuUIntBigInteger?)](#evaluategpuworkspace-gpuuintbiginteger)       | Evaluates the underlying GPU expression tree into the target buffer.                                 |
-| [FromBigInteger(GpuWorkspace, BigInteger, int)](#frombigintegergpuworkspace-biginteger-int) | Creates a `GpuUIntBigInteger` by uploading a BCL `BigInteger` to the GPU.                            |
+| [Evaluate(GpuWorkspace, GpuBigUInt?)](#evaluategpuworkspace-gpuuintbiginteger)       | Evaluates the underlying GPU expression tree into the target buffer.                                 |
+| [FromBigInteger(GpuWorkspace, BigInteger, int)](#frombigintegergpuworkspace-biginteger-int) | Creates a `GpuBigUInt` by uploading a BCL `BigInteger` to the GPU.                            |
 | [GetBitLength()](#getbitlength)                                                         | Computes the total number of significant bits used to represent this integer on the GPU.             |
 | [GetByteCount()](#getbytecount)                                                         | Computes the total number of bytes required to hold this integer.                                    |
 | [GetHashCode()](#gethashcode)                                                           | Returns the hash code for this instance based on its GPU device memory address.                      |
 | [GetTopWords(int)](#gettopwordsint)                                                     | Copies the most significant limbs (top words) from GPU memory to host.                               |
 | [IsOne()](#isone)                                                                       | Checks whether this big integer equals one on the GPU.                                               |
 | [IsZero()](#iszero)                                                                     | Checks whether this big integer equals zero on the GPU.                                              |
-| [PadTo(int)](#padtoint)                                                                 | Creates a new `GpuUIntBigInteger` padded to the specified target words with zeros.                   |
+| [PadTo(int)](#padtoint)                                                                 | Creates a new `GpuBigUInt` padded to the specified target words with zeros.                   |
 | [Square(int)](#squareint)                                                               | Computes self-squaring (`A * A`) in-place on the GPU.                                                |
 | [ToBigInteger(bool)](#tobigintegerbool)                                                 | Downloads the integer from the GPU and converts it to a BCL `BigInteger`.                            |
 | [ToHostArray()](#tohostarray)                                                           | Copies the limb data from GPU device memory back to a host managed array.                            |
@@ -193,12 +193,12 @@ public void ClearWord(int wordIndex);
 `wordIndex` _int_<br>
 The zero-based limb index.
 
-## CompareTo(GpuUIntBigInteger)
+## CompareTo(GpuBigUInt)
 
-Compares this big integer with another `GpuUIntBigInteger` buffer.
+Compares this big integer with another `GpuBigUInt` buffer.
 
 ```csharp
-public int CompareTo(GpuUIntBigInteger other);
+public int CompareTo(GpuBigUInt other);
 ```
 
 #### Parameters
@@ -211,12 +211,12 @@ The target big integer to compare against.
 _int_<br>
 -1 if this is less than `other`, 0 if equal, 1 if greater.
 
-## CopyFrom(GpuUIntBigInteger, int, int, int?)
+## CopyFrom(GpuBigUInt, int, int, int?)
 
-Copies words from a source `GpuUIntBigInteger` to this buffer on the GPU device.
+Copies words from a source `GpuBigUInt` to this buffer on the GPU device.
 
 ```csharp
-public void CopyFrom(GpuUIntBigInteger source, int destOffsetWords = 0, int srcOffsetWords = 0, int? numWords = null);
+public void CopyFrom(GpuBigUInt source, int destOffsetWords = 0, int srcOffsetWords = 0, int? numWords = null);
 ```
 
 #### Parameters
@@ -235,10 +235,10 @@ The number of 32-bit limbs to copy, or `null` to copy maximum available.
 
 ## CreatePowerOfTwo(GpuWorkspace, int, int)
 
-Creates a new `GpuUIntBigInteger` on the GPU representing `2^bitIndex`.
+Creates a new `GpuBigUInt` on the GPU representing `2^bitIndex`.
 
 ```csharp
-public static GpuUIntBigInteger CreatePowerOfTwo(GpuWorkspace workspace, int numWords, int bitIndex);
+public static GpuBigUInt CreatePowerOfTwo(GpuWorkspace workspace, int numWords, int bitIndex);
 ```
 
 #### Parameters
@@ -255,7 +255,7 @@ The zero-based bit index to set.
 #### Returns
 
 _GpuUIntBigInteger_<br>
-A new `GpuUIntBigInteger` holding the power of two value.
+A new `GpuBigUInt` holding the power of two value.
 
 ## Dispose()
 
@@ -283,12 +283,12 @@ The object to compare with the current object.
 _bool_<br>
 `true` if the specified object is equal to the current object; otherwise, `false`.
 
-## Evaluate(GpuWorkspace, GpuUIntBigInteger?)
+## Evaluate(GpuWorkspace, GpuBigUInt?)
 
 Evaluates the underlying GPU expression tree into the target buffer.
 
 ```csharp
-public GpuUIntBigInteger Evaluate(GpuWorkspace workspace, GpuUIntBigInteger? targetResult = null);
+public GpuBigUInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null);
 ```
 
 #### Parameters
@@ -302,14 +302,14 @@ Optional destination buffer. If `null`, returns this instance.
 #### Returns
 
 _GpuUIntBigInteger_<br>
-The evaluated `GpuUIntBigInteger` result buffer.
+The evaluated `GpuBigUInt` result buffer.
 
 ## FromBigInteger(GpuWorkspace, BigInteger, int)
 
-Creates a `GpuUIntBigInteger` by uploading a BCL `BigInteger` to the GPU.
+Creates a `GpuBigUInt` by uploading a BCL `BigInteger` to the GPU.
 
 ```csharp
-public static GpuUIntBigInteger FromBigInteger(GpuWorkspace workspace, BigInteger val, int minWords = 0);
+public static GpuBigUInt FromBigInteger(GpuWorkspace workspace, BigInteger val, int minWords = 0);
 ```
 
 #### Parameters
@@ -326,7 +326,7 @@ The minimum number of words to allocate.
 #### Returns
 
 _GpuUIntBigInteger_<br>
-A new `GpuUIntBigInteger` containing the value on the GPU.
+A new `GpuBigUInt` containing the value on the GPU.
 
 ## GetBitLength()
 
@@ -413,10 +413,10 @@ _bool_<br>
 
 ## PadTo(int)
 
-Creates a new `GpuUIntBigInteger` padded to the specified target words with zeros.
+Creates a new `GpuBigUInt` padded to the specified target words with zeros.
 
 ```csharp
-public GpuUIntBigInteger PadTo(int targetWords);
+public GpuBigUInt PadTo(int targetWords);
 ```
 
 #### Parameters
@@ -427,7 +427,7 @@ The requested minimum number of words.
 #### Returns
 
 _GpuUIntBigInteger_<br>
-A new `GpuUIntBigInteger` instance padded to the target size.
+A new `GpuBigUInt` instance padded to the target size.
 
 ## Square(int)
 
@@ -495,46 +495,46 @@ A diagnostic string.
 
 | Name                                                       | Description                                                                                     |
 | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `Addition(GpuUIntBigInteger, GpuUIntBigInteger)`           | Adds two big integers using lazy expression evaluation.                                         |
-| `Subtraction(GpuUIntBigInteger, GpuUIntBigInteger)`        | Subtracts one big integer from another using lazy expression evaluation.                        |
-| `Increment(GpuUIntBigInteger)`                             | Increments the big integer by 1 in-place on the GPU.                                            |
-| `Decrement(GpuUIntBigInteger)`                             | Decrements the big integer by 1 in-place on the GPU.                                            |
-| `Multiply(GpuUIntBigInteger, GpuUIntBigInteger)`           | Multiplies two big integers using lazy expression evaluation.                                   |
-| `Division(GpuUIntBigInteger, GpuUIntBigInteger)`           | Divides one big integer by another using lazy expression evaluation.                            |
-| `Modulus(GpuUIntBigInteger, GpuUIntBigInteger)`            | Computes the remainder of dividing one big integer by another using lazy expression evaluation. |
-| `BitwiseAnd(GpuUIntBigInteger, GpuUIntBigInteger)`         | Performs bitwise AND on two big integers using lazy expression evaluation.                      |
-| `BitwiseOr(GpuUIntBigInteger, GpuUIntBigInteger)`          | Performs bitwise OR on two big integers using lazy expression evaluation.                       |
-| `ExclusiveOr(GpuUIntBigInteger, GpuUIntBigInteger)`        | Performs bitwise exclusive OR on two big integers using lazy expression evaluation.             |
-| `LeftShift(GpuUIntBigInteger, int)`                        | Shifts a big integer left by a specified number of bits using lazy expression evaluation.       |
-| `RightShift(GpuUIntBigInteger, int)`                       | Shifts a big integer right by a specified number of bits using lazy expression evaluation.      |
-| `OnesComplement(GpuUIntBigInteger)`                        | Performs bitwise NOT on a big integer using lazy expression evaluation.                         |
-| `Equality(GpuUIntBigInteger, GpuUIntBigInteger)`           | Determines whether two big integers represent the same value on the GPU.                        |
-| `Inequality(GpuUIntBigInteger, GpuUIntBigInteger)`         | Determines whether two big integers represent different values on the GPU.                      |
-| `LessThan(GpuUIntBigInteger, GpuUIntBigInteger)`           | Determines whether the first big integer is less than the second on the GPU.                    |
-| `GreaterThan(GpuUIntBigInteger, GpuUIntBigInteger)`        | Determines whether the first big integer is greater than the second on the GPU.                 |
-| `LessThanOrEqual(GpuUIntBigInteger, GpuUIntBigInteger)`    | Determines whether the first big integer is less than or equal to the second on the GPU.        |
-| `GreaterThanOrEqual(GpuUIntBigInteger, GpuUIntBigInteger)` | Determines whether the first big integer is greater than or equal to the second on the GPU.     |
+| `Addition(GpuBigUInt, GpuBigUInt)`           | Adds two big integers using lazy expression evaluation.                                         |
+| `Subtraction(GpuBigUInt, GpuBigUInt)`        | Subtracts one big integer from another using lazy expression evaluation.                        |
+| `Increment(GpuBigUInt)`                             | Increments the big integer by 1 in-place on the GPU.                                            |
+| `Decrement(GpuBigUInt)`                             | Decrements the big integer by 1 in-place on the GPU.                                            |
+| `Multiply(GpuBigUInt, GpuBigUInt)`           | Multiplies two big integers using lazy expression evaluation.                                   |
+| `Division(GpuBigUInt, GpuBigUInt)`           | Divides one big integer by another using lazy expression evaluation.                            |
+| `Modulus(GpuBigUInt, GpuBigUInt)`            | Computes the remainder of dividing one big integer by another using lazy expression evaluation. |
+| `BitwiseAnd(GpuBigUInt, GpuBigUInt)`         | Performs bitwise AND on two big integers using lazy expression evaluation.                      |
+| `BitwiseOr(GpuBigUInt, GpuBigUInt)`          | Performs bitwise OR on two big integers using lazy expression evaluation.                       |
+| `ExclusiveOr(GpuBigUInt, GpuBigUInt)`        | Performs bitwise exclusive OR on two big integers using lazy expression evaluation.             |
+| `LeftShift(GpuBigUInt, int)`                        | Shifts a big integer left by a specified number of bits using lazy expression evaluation.       |
+| `RightShift(GpuBigUInt, int)`                       | Shifts a big integer right by a specified number of bits using lazy expression evaluation.      |
+| `OnesComplement(GpuBigUInt)`                        | Performs bitwise NOT on a big integer using lazy expression evaluation.                         |
+| `Equality(GpuBigUInt, GpuBigUInt)`           | Determines whether two big integers represent the same value on the GPU.                        |
+| `Inequality(GpuBigUInt, GpuBigUInt)`         | Determines whether two big integers represent different values on the GPU.                      |
+| `LessThan(GpuBigUInt, GpuBigUInt)`           | Determines whether the first big integer is less than the second on the GPU.                    |
+| `GreaterThan(GpuBigUInt, GpuBigUInt)`        | Determines whether the first big integer is greater than the second on the GPU.                 |
+| `LessThanOrEqual(GpuBigUInt, GpuBigUInt)`    | Determines whether the first big integer is less than or equal to the second on the GPU.        |
+| `GreaterThanOrEqual(GpuBigUInt, GpuBigUInt)` | Determines whether the first big integer is greater than or equal to the second on the GPU.     |
 
 ## Examples
 
 ### Lazy Expression Evaluation (CPU)
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using System.Numerics;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-using var a = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(150), minWords: 4);
-using var b = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(50), minWords: 4);
-using var c = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(25), minWords: 4);
-using var result = new GpuUIntBigInteger(workspace, 8);
+using var a = GpuBigUInt.FromBigInteger(workspace, new BigInteger(150), minWords: 4);
+using var b = GpuBigUInt.FromBigInteger(workspace, new BigInteger(50), minWords: 4);
+using var c = GpuBigUInt.FromBigInteger(workspace, new BigInteger(25), minWords: 4);
+using var result = new GpuBigUInt(workspace, 8);
 
 // Construct lazy expression tree: (a + b) * c
 result.Value = (a + b) * c;
@@ -545,13 +545,13 @@ Console.WriteLine($"Result={(result).ToBigInteger(false)}");
 ### Immediate Evaluation (GPU)
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 public class Example
 {

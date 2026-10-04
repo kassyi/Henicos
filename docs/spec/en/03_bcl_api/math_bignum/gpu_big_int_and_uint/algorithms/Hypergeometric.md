@@ -10,8 +10,8 @@ description: "Reference for Hypergeometric Series (Chudnovsky algorithm) compone
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 The `GpuHypergeometricPqt` class provides specialized primitives for evaluating hypergeometric series. Its primary use case in computational mathematics is the **Chudnovsky algorithm**, which is currently the fastest known method for calculating millions (or billions) of digits of $\pi$ (Pi).
 
@@ -40,26 +40,26 @@ Because binary splitting is inherently a massive reduction tree, it is an ideal 
 This example demonstrates the core recursive step (combining left and right branches of the tree) in a binary splitting algorithm orchestrated on the GPU.
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU)
 
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
 // Initialize some placeholder values
-var pLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
-var qLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
-var tLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
+var pLeft = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
+var qLeft = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
+var tLeft = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
 
-var pRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
-var qRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
-var tRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
+var pRight = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
+var qRight = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
+var tRight = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
 
 // The binary splitting combination formula:
 // P_new = P_left * P_right
@@ -72,13 +72,13 @@ var qNewExpr = qLeft * qRight;
 var tNewExpr = (tLeft * qRight) + (pLeft * tRight);
 
 // 2. Evaluate concurrently using the Context pool
-using var pNewDest = new GpuUIntBigInteger(workspace, 8);
+using var pNewDest = new GpuBigUInt(workspace, 8);
 var pNew = pNewExpr.Evaluate(pNewDest);
 
-using var qNewDest = new GpuUIntBigInteger(workspace, 8);
+using var qNewDest = new GpuBigUInt(workspace, 8);
 var qNew = qNewExpr.Evaluate(qNewDest);
 
-using var tNewDest = new GpuUIntBigInteger(workspace, 8);
+using var tNewDest = new GpuBigUInt(workspace, 8);
 var tNew = tNewExpr.Evaluate(tNewDest);
 
 Console.WriteLine($"pNew = {pNew.Value.ToBigInteger(pNew.IsNegative)}");

@@ -10,8 +10,8 @@ description: "CUDA kernel implementations for Fermat number related operations a
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt.Kernels`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Contains native G# (CUDA) kernels used for Fermat number arithmetic, primarily large modular reductions against Fermat primes on the GPU.
 
@@ -74,11 +74,11 @@ The exponent of the Fermat number $F_n$.
 ### Internal Kernel Usage
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Kernels;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels;
 
 // Execution Context: G# Kernel (GPU)
 // This is an internal Kernel class and its methods are launched via the G# execution pipeline.
@@ -105,5 +105,5 @@ This class contains `[GpuKernel]` and `[GpuDeviceFunction]` attributed methods. 
 ### Guides
 
 - [4. Practical Guides and Best Practices](../../../../04_guides/00_index.md)
-- [Advanced: Extending GpuBigInteger with Custom Algorithms](../../../../04_guides/08_advanced_custom_math_kernels.md)
+- [Advanced: Extending GpuBigInt with Custom Algorithms](../../../../04_guides/08_advanced_custom_math_kernels.md)
 - [7. Stdlib Math and Lazy Evaluation](../../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)

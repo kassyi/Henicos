@@ -18,18 +18,18 @@ The `GpuBigInt` module provides high-performance multi-precision arithmetic on t
 
 To maximize GPU performance and avoid branching (Warp Divergence), the GSharp runtime separates the concepts of memory allocation and sign evaluation.
 
-1. **[GpuUIntBigInteger](GpuUIntBigInteger.md)**:
+1. **[GpuBigUInt](GpuBigUInt.md)**:
    The unsigned base type. This class manages the actual `IntPtr` to the GPU device memory. It contains no concept of positive or negative. All low-level arithmetic kernels (ripple-carry addition, multiplication) operate strictly on unsigned memory buffers to ensure deterministic execution paths.
 
-2. **[GpuBigInteger](GpuBigInteger.md)**:
-   The signed wrapper struct. This lightweight struct simply pairs a `GpuUIntBigInteger` reference with an `IsNegative` boolean flag. When you perform signed arithmetic (e.g., adding a negative number), the host-side operator overloads evaluate the `IsNegative` flags and dispatch the appropriate underlying unsigned kernels (e.g., dispatching a subtraction kernel instead of an addition kernel).
+2. **[GpuBigInt](GpuBigInt.md)**:
+   The signed wrapper struct. This lightweight struct simply pairs a `GpuBigUInt` reference with an `IsNegative` boolean flag. When you perform signed arithmetic (e.g., adding a negative number), the host-side operator overloads evaluate the `IsNegative` flags and dispatch the appropriate underlying unsigned kernels (e.g., dispatching a subtraction kernel instead of an addition kernel).
 
 This separation ensures that GPU kernels remain purely mathematical and branchless, leaving the orchestration and sign logic to the Host CPU.
 
 ### Core API
 
-- **[GpuUIntBigInteger.md](GpuUIntBigInteger.md)**: The underlying unsigned memory buffer on the GPU.
-- **[GpuBigInteger.md](GpuBigInteger.md)**: The signed wrapper struct for host-side orchestration.
+- **[GpuBigUInt.md](GpuBigUInt.md)**: The underlying unsigned memory buffer on the GPU.
+- **[GpuBigInt.md](GpuBigInt.md)**: The signed wrapper struct for host-side orchestration.
 - **[Operators.md](Operators.md)**: Overloads for `+`, `-`, `*`, `/`, and bitwise operators.
 - **[BigIntegerExtensions.md](BigIntegerExtensions.md)**: Host-side math extensions for `System.Numerics.BigInteger`.
 

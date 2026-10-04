@@ -10,8 +10,8 @@ description: "A value type wrapper that builds a lazy expression tree of GPU Big
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt.Expressions`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A value type wrapper that builds a lazy expression tree of GPU BigInteger arithmetic and bitwise operations.
 
@@ -57,7 +57,7 @@ A lazy AST node representing the square root.
 
 | Name                                                  | Description                                                               |
 | ----------------------------------------------------- | ------------------------------------------------------------------------- |
-| `implicit operator GpuBigUIntExpr(GpuUIntBigInteger)` | Implicitly wraps a `GpuUIntBigInteger` buffer as an expression leaf node. |
+| `implicit operator GpuBigUIntExpr(GpuBigUInt)` | Implicitly wraps a `GpuBigUInt` buffer as an expression leaf node. |
 | `operator +(GpuBigUIntExpr, GpuBigUIntExpr)`          | Constructs a lazy addition expression.                                    |
 | `operator -(GpuBigUIntExpr, GpuBigUIntExpr)`          | Constructs a lazy subtraction expression.                                 |
 | `operator *(GpuBigUIntExpr, GpuBigUIntExpr)`          | Constructs a lazy multiplication expression.                              |
@@ -78,24 +78,24 @@ This struct serves as the frontend for operator overloading on GPU Unsigned BigI
 ### Building and Evaluating AST on GPU
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
 
 // Execution Context: Host (CPU)
 // Allocate a GPU workspace with 1024 words (4KB) of memory pool.
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
 // Upload initial buffers to the GPU device
-using var uintA = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(100), minWords: 4);
-using var uintB = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(200), minWords: 4);
+using var uintA = GpuBigUInt.FromBigInteger(workspace, new BigInteger(100), minWords: 4);
+using var uintB = GpuBigUInt.FromBigInteger(workspace, new BigInteger(200), minWords: 4);
 
 // Build AST node lazy expression wrapper
 GpuBigUIntExpr exprA = uintA;
@@ -106,7 +106,7 @@ var sumExpr = exprA + exprB;
 var prodExpr = sumExpr * exprA;
 
 // Evaluate AST back to a magnitude buffer
-using var dest = new GpuUIntBigInteger(workspace, 8);
+using var dest = new GpuBigUInt(workspace, 8);
 var finalResult = prodExpr.Node.Evaluate(workspace, dest);
 
 Console.WriteLine($"Result={finalResult.ToBigInteger(false)}");
@@ -117,4 +117,4 @@ Console.WriteLine($"Result={finalResult.ToBigInteger(false)}");
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../../00_index.md)
-- [Arbitrary-Precision Integers (GpuBigInteger)](../00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)

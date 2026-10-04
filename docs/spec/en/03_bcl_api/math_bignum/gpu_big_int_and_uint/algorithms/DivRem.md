@@ -10,8 +10,8 @@ description: "Reference for calculating Quotient and Remainder simultaneously on
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 When performing division (`/`) or modulo (`%`) on massive multi-precision integers, the computational cost is extremely high. Often, an algorithm requires both the quotient and the remainder simultaneously (e.g., base conversion, Euclidean algorithms).
 
@@ -21,14 +21,14 @@ When performing division (`/`) or modulo (`%`) on massive multi-precision intege
 
 | Name                                                                        | Description                                         |
 | --------------------------------------------------------------------------- | --------------------------------------------------- |
-| [DivRem(GpuBigInteger, GpuBigInteger)](#divrem-gpubiginteger-gpubiginteger) | Computes the quotient and remainder of two numbers. |
+| [DivRem(GpuBigInt, GpuBigInt)](#divrem-gpubiginteger-gpubiginteger) | Computes the quotient and remainder of two numbers. |
 
-## DivRem(GpuBigInteger, GpuBigInteger)
+## DivRem(GpuBigInt, GpuBigInt)
 
 Returns a tuple of lazy-evaluated expression trees representing the Quotient and Remainder.
 
 ```csharp
-public static void DivRem(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger quotientBuffer, GpuUIntBigInteger remainderBuffer);
+public static void DivRem(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer);
 ```
 
 #### Parameters
@@ -53,8 +53,8 @@ A tuple containing two AST nodes. Evaluating them produces the respective quotie
 
 using var workspace = new GpuWorkspace(1024);
 
-var dividend = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, ...));
-var divisor = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, ...));
+var dividend = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, ...));
+var divisor = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, ...));
 
 // 1. Build the Expression Trees
 var (quotientExpr, remainderExpr) = GpuBigIntDivRem.DivRem(dividend, divisor);
@@ -72,4 +72,4 @@ Console.WriteLine($"Q: {quotient.ToBigInteger()}, R: {remainder.ToBigInteger()}"
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
-- [GpuBigInteger and GpuUIntBigInteger Operators (G#)](../Operators.md)
+- [GpuBigInt and GpuBigUInt Operators (G#)](../Operators.md)

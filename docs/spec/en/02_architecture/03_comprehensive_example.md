@@ -27,7 +27,7 @@ This document provides a "Rosetta Stone" example that validates all of the speci
 using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.GpuMath;
 
 namespace DebugReduc;
 
@@ -262,9 +262,9 @@ public static partial class ComprehensiveSpecKernel
     {
         using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-        using var a = new GpuUIntBigInteger(workspace, 1024);
-        using var b = new GpuUIntBigInteger(workspace, 1024);
-        using var result = new GpuUIntBigInteger(workspace, 1024);
+        using var a = new GpuBigUInt(workspace, 1024);
+        using var b = new GpuBigUInt(workspace, 1024);
+        using var result = new GpuBigUInt(workspace, 1024);
 
         // AST Construction: evaluated lazily and dispatched to GPU
         result.Value = a + b;

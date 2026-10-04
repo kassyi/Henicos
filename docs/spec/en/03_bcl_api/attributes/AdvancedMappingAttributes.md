@@ -112,4 +112,4 @@ public class KernelExample
 ### Guides
 
 - [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
-- [Advanced: Extending GpuBigInteger with Custom Algorithms](../../04_guides/08_advanced_custom_math_kernels.md)
+- [Advanced: Extending GpuBigInt with Custom Algorithms](../../04_guides/08_advanced_custom_math_kernels.md)

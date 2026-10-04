@@ -3,7 +3,7 @@
 using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.GpuMath;
 
 namespace DebugReduc;
 
@@ -128,13 +128,13 @@ public static partial class ComprehensiveSpecKernel
 
             // 4. All Math Mappings and Device Method invocation
             float mag = ComputeMagnitude(p);
-            mag = (float)System.Math.Abs(mag);
+            mag = (float)Math.Abs(mag);
 
             // 5. Automatic Loop Unrolling via Constant (for)
             for (int i = 0; i < unrollFactor; i++)
             {
                 if (i == 1) continue;
-                mag = (float)System.Math.Max(mag, p.X * i + Gravity);
+                mag = (float)Math.Max(mag, p.X * i + Gravity);
             }
 
             if (!IsPositive(mag))
@@ -146,7 +146,7 @@ public static partial class ComprehensiveSpecKernel
             int counter = 0;
             while (counter < 2)
             {
-                mag = (float)System.Math.Min(mag, mag + 1);
+                mag = (float)Math.Min(mag, mag + 1);
                 counter++;
             }
 
@@ -238,9 +238,9 @@ public static partial class ComprehensiveSpecKernel
     {
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-        using var a = new GpuUIntBigInteger(context, 1024);
-        using var b = new GpuUIntBigInteger(context, 1024);
-        using var result = new GpuUIntBigInteger(context, 1024);
+        using var a = new GpuBigUInt(context, 1024);
+        using var b = new GpuBigUInt(context, 1024);
+        using var result = new GpuBigUInt(context, 1024);
 
         // AST Construction: evaluated lazily and dispatched to GPU
         result.Value = a + b;

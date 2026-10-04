@@ -10,10 +10,10 @@ description: "Represents a 2x2 transition matrix of arbitrary-precision integers
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Represents a 2x2 transition matrix of arbitrary-precision integers (`GpuUIntBigInteger`) allocated in GPU device memory.
+Represents a 2x2 transition matrix of arbitrary-precision integers (`GpuBigUInt`) allocated in GPU device memory.
 
 ```csharp
 public class GpuBigIntMatrix2x2 : IDisposable
@@ -71,10 +71,10 @@ Thrown when GPU global memory allocation fails for any of the matrix elements.
 | --- | --- |
 | [Workspace](#workspace) | Gets the parent `GpuWorkspace` managing the GPU device memory and execution provider for this matrix. |
 | [IsOddStep](#isoddstep) | Gets a value indicating whether this matrix represents an odd number of reduction steps in the Euclidean algorithm. |
-| [M00](#m00) | Gets the `GpuUIntBigInteger` element located at row 0, column 0 in GPU device memory. |
-| [M01](#m01) | Gets the `GpuUIntBigInteger` element located at row 0, column 1 in GPU device memory. |
-| [M10](#m10) | Gets the `GpuUIntBigInteger` element located at row 1, column 0 in GPU device memory. |
-| [M11](#m11) | Gets the `GpuUIntBigInteger` element located at row 1, column 1 in GPU device memory. |
+| [M00](#m00) | Gets the `GpuBigUInt` element located at row 0, column 0 in GPU device memory. |
+| [M01](#m01) | Gets the `GpuBigUInt` element located at row 0, column 1 in GPU device memory. |
+| [M10](#m10) | Gets the `GpuBigUInt` element located at row 1, column 0 in GPU device memory. |
+| [M11](#m11) | Gets the `GpuBigUInt` element located at row 1, column 1 in GPU device memory. |
 
 ## Workspace
 
@@ -94,34 +94,34 @@ public bool IsOddStep { get; }
 
 ## M00
 
-Gets the `GpuUIntBigInteger` element located at row 0, column 0 ($M_{00}$) in GPU device memory.
+Gets the `GpuBigUInt` element located at row 0, column 0 ($M_{00}$) in GPU device memory.
 
 ```csharp
-public GpuUIntBigInteger M00 { get; }
+public GpuBigUInt M00 { get; }
 ```
 
 ## M01
 
-Gets the `GpuUIntBigInteger` element located at row 0, column 1 ($M_{01}$) in GPU device memory.
+Gets the `GpuBigUInt` element located at row 0, column 1 ($M_{01}$) in GPU device memory.
 
 ```csharp
-public GpuUIntBigInteger M01 { get; }
+public GpuBigUInt M01 { get; }
 ```
 
 ## M10
 
-Gets the `GpuUIntBigInteger` element located at row 1, column 0 ($M_{10}$) in GPU device memory.
+Gets the `GpuBigUInt` element located at row 1, column 0 ($M_{10}$) in GPU device memory.
 
 ```csharp
-public GpuUIntBigInteger M10 { get; }
+public GpuBigUInt M10 { get; }
 ```
 
 ## M11
 
-Gets the `GpuUIntBigInteger` element located at row 1, column 1 ($M_{11}$) in GPU device memory.
+Gets the `GpuBigUInt` element located at row 1, column 1 ($M_{11}$) in GPU device memory.
 
 ```csharp
-public GpuUIntBigInteger M11 { get; }
+public GpuBigUInt M11 { get; }
 ```
 
 ## Methods
@@ -130,7 +130,7 @@ public GpuUIntBigInteger M11 { get; }
 | --- | --- |
 | [Identity(GpuWorkspace, int)](#identitygpuworkspace-int) | Creates and initializes a 2x2 identity matrix in GPU device memory. |
 | [Multiply(GpuBigIntMatrix2x2, GpuBigIntMatrix2x2)](#multiplygpubigintmatrix2x2-gpubigintmatrix2x2) | Multiplies two 2x2 GPU BigInteger matrices and returns their product. |
-| [Apply(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#applygpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Applies this 2x2 reduction matrix to a pair of GPU integers. |
+| [Apply(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#applygpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Applies this 2x2 reduction matrix to a pair of GPU integers. |
 | [Dispose()](#dispose) | Disposes all four constituent instances and releases GPU memory. |
 
 ## Identity(GpuWorkspace, int)
@@ -194,21 +194,21 @@ Thrown when `v` or `u` is `null`.
 `ArgumentException`<br>
 Thrown when `v` and `u` belong to different `GpuWorkspace` instances.
 
-## Apply(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
+## Apply(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
 Applies this 2x2 reduction matrix to a pair of GPU integers (`a` and `b`), storing the reduced outputs in `outA` and `outB`.
 
 ```csharp
-public void Apply(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger outA, GpuUIntBigInteger outB);
+public void Apply(GpuBigUInt a, GpuBigUInt b, GpuBigUInt outA, GpuBigUInt outB);
 ```
 
 #### Parameters
 
 `a` _GpuUIntBigInteger_<br>
-The first operand `GpuUIntBigInteger`. Cannot be `null`.
+The first operand `GpuBigUInt`. Cannot be `null`.
 
 `b` _GpuUIntBigInteger_<br>
-The second operand `GpuUIntBigInteger`. Cannot be `null`.
+The second operand `GpuBigUInt`. Cannot be `null`.
 
 `outA` _GpuUIntBigInteger_<br>
 The destination to receive the transformed first element. Cannot be `null`.
@@ -226,7 +226,7 @@ Thrown when any argument does not belong to the same `GpuWorkspace` as this matr
 
 ## Dispose()
 
-Disposes all four constituent `GpuUIntBigInteger` instances and releases their GPU device memory allocations.
+Disposes all four constituent `GpuBigUInt` instances and releases their GPU device memory allocations.
 
 ```csharp
 public void Dispose();
@@ -237,13 +237,13 @@ public void Dispose();
 ### Using Matrix in HGCD Step
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using System.Numerics;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
@@ -252,10 +252,10 @@ using var mat1 = GpuBigIntMatrix2x2.Identity(workspace, 4);
 using var mat2 = GpuBigIntMatrix2x2.Identity(workspace, 4);
 using var matResult = GpuBigIntMatrix2x2.Multiply(mat1, mat2);
 
-using var a = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(100), minWords: 4);
-using var b = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(20), minWords: 4);
-using var outA = new GpuUIntBigInteger(workspace, 4);
-using var outB = new GpuUIntBigInteger(workspace, 4);
+using var a = GpuBigUInt.FromBigInteger(workspace, new BigInteger(100), minWords: 4);
+using var b = GpuBigUInt.FromBigInteger(workspace, new BigInteger(20), minWords: 4);
+using var outA = new GpuBigUInt(workspace, 4);
+using var outB = new GpuBigUInt(workspace, 4);
 
 matResult.Apply(a, b, outA, outB);
 Console.WriteLine($"outA = {outA.ToBigInteger(false)}");
@@ -267,4 +267,4 @@ Console.WriteLine($"outB = {outB.ToBigInteger(false)}");
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
-- [GpuUIntBigInteger](GpuUIntBigInteger.md)
+- [GpuBigUInt](GpuBigUInt.md)

@@ -10,8 +10,8 @@ description: "Represents the intermediate state (P, Q, T) of a hypergeometric se
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents the intermediate state (P, Q, T) of a hypergeometric series evaluated using Binary Splitting on the GPU.
 
@@ -23,14 +23,14 @@ public readonly struct GpuHypergeometricPqt : IDisposable
 
 | Name | Description |
 | --- | --- |
-| [GpuHypergeometricPqt(GpuBigInteger, GpuUIntBigInteger, GpuBigInteger)](#gpuhypergeometricpqtgpubiginteger-gpuuintbiginteger-gpubiginteger) | Initializes a new instance of the `GpuHypergeometricPqt` struct. |
+| [GpuHypergeometricPqt(GpuBigInt, GpuBigUInt, GpuBigInt)](#gpuhypergeometricpqtgpubiginteger-gpuuintbiginteger-gpubiginteger) | Initializes a new instance of the `GpuHypergeometricPqt` struct. |
 
-## GpuHypergeometricPqt(GpuBigInteger, GpuUIntBigInteger, GpuBigInteger)
+## GpuHypergeometricPqt(GpuBigInt, GpuBigUInt, GpuBigInt)
 
 Initializes a new instance of the `GpuHypergeometricPqt` struct.
 
 ```csharp
-public GpuHypergeometricPqt([TakesOwnership] GpuBigInteger p, [TakesOwnership] GpuUIntBigInteger q, [TakesOwnership] GpuBigInteger t);
+public GpuHypergeometricPqt([TakesOwnership] GpuBigInt p, [TakesOwnership] GpuBigUInt q, [TakesOwnership] GpuBigInt t);
 ```
 
 #### Parameters
@@ -57,7 +57,7 @@ The `T` component of the state.
 Gets the P component: `P(a, b) = \prod p(k)`
 
 ```csharp
-public GpuBigInteger P { get; }
+public GpuBigInt P { get; }
 ```
 
 ## Q
@@ -65,7 +65,7 @@ public GpuBigInteger P { get; }
 Gets the Q component: `Q(a, b) = \prod q(k)`
 
 ```csharp
-public GpuUIntBigInteger Q { get; }
+public GpuBigUInt Q { get; }
 ```
 
 ## T
@@ -73,7 +73,7 @@ public GpuUIntBigInteger Q { get; }
 Gets the T component: `T(a, b) = \sum ...`
 
 ```csharp
-public GpuBigInteger T { get; }
+public GpuBigInt T { get; }
 ```
 
 ## Methods
@@ -120,27 +120,27 @@ A newly merged `GpuHypergeometricPqt` containing the combined P, Q, and T compon
 ### Binary Splitting State Merging
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU) or G# Kernel (GPU)
 
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
 // Initialize two adjacent states for binary splitting (P=1, Q=1, T=1)
-var pLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
-var qLeft = GpuUIntBigInteger.FromBigInteger(workspace, 1, 4);
-var tLeft = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
+var pLeft = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
+var qLeft = GpuBigUInt.FromBigInteger(workspace, 1, 4);
+var tLeft = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
 using var stateLeft = new GpuHypergeometricPqt(pLeft, qLeft, tLeft);
 
-var pRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
-var qRight = GpuUIntBigInteger.FromBigInteger(workspace, 1, 4);
-var tRight = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1, 4), false);
+var pRight = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
+var qRight = GpuBigUInt.FromBigInteger(workspace, 1, 4);
+var tRight = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
 using var stateRight = new GpuHypergeometricPqt(pRight, qRight, tRight);
 
 // Merge the two states

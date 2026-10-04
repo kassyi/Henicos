@@ -93,7 +93,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         if (isStdlibKernel)
         {
             var stdlibRef = compilation.References.FirstOrDefault(r =>
-                r.Display != null && r.Display.Contains("Kassyi.GSharp.Stdlib.Math.dll"));
+                r.Display != null && r.Display.Contains("Kassyi.GSharp.Stdlib.GpuMath.dll"));
             if (stdlibRef != null)
             {
                 compilation = compilation.RemoveReferences(stdlibRef);

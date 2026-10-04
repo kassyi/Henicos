@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Stdlib.Math
+namespace Kassyi.GSharp.Stdlib.GpuMath
 {
 public partial class GpuBigIntKernels
 {

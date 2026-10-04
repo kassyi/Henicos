@@ -10,8 +10,8 @@ description: "Execution arguments for NTT-related kernels."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.Contexts`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.Contexts`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Execution arguments for NTT-related kernels.
 
@@ -24,11 +24,11 @@ public struct NumberTheoreticTransformKernelArgs
 ### Preparing Arguments for NTT Kernel Launch
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.Math.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
 
 // Prepare arguments for an NTT Kernel launch
 var kernelArgs = new NumberTheoreticTransformKernelArgs
@@ -62,4 +62,4 @@ Console.WriteLine($"NTT Kernel Args - M: {kernelArgs.M}, N1: {kernelArgs.N1}, In
 ### Guides
 
 - [4. Practical Guides and Best Practices](../../../../04_guides/00_index.md)
-- [Advanced: Extending GpuBigInteger with Custom Algorithms](../../../../04_guides/08_advanced_custom_math_kernels.md)
+- [Advanced: Extending GpuBigInt with Custom Algorithms](../../../../04_guides/08_advanced_custom_math_kernels.md)

@@ -1,37 +1,37 @@
 ---
-title: "GpuUIntBigInteger<TSize> Struct (G#)"
+title: "GpuBigUInt<TSize> Struct (G#)"
 site: "G# Documentation"
 published: "2026-09-24T00:00:00.000Z"
 language: "en"
 description: "Represents a fixed-size arbitrary-precision unsigned integer stored in value-type memory on the GPU."
 ---
 
-## GpuUIntBigInteger&lt;TSize&gt; Struct
+## GpuBigUInt&lt;TSize&gt; Struct
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents a fixed-size arbitrary-precision unsigned integer stored in value-type memory on the GPU.
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
-public struct GpuUIntBigInteger<TSize> : IEquatable<GpuUIntBigInteger<TSize>> where TSize : unmanaged
+public struct GpuBigUInt<TSize> : IEquatable<GpuBigUInt<TSize>> where TSize : unmanaged
 ```
 
 ## Constructors
 
 | Name | Description |
 | --- | --- |
-| [GpuUIntBigInteger&lt;TSize&gt;(TSize)](#gpuuintbigintegertsizetsize) | Initializes a new instance of the `GpuUIntBigInteger<TSize>` struct with specified limbs. |
+| [GpuBigUInt&lt;TSize&gt;(TSize)](#gpuuintbigintegertsizetsize) | Initializes a new instance of the `GpuBigUInt<TSize>` struct with specified limbs. |
 
-## GpuUIntBigInteger&lt;TSize&gt;(TSize)
+## GpuBigUInt&lt;TSize&gt;(TSize)
 
-Initializes a new instance of the `GpuUIntBigInteger<TSize>` struct with specified limbs.
+Initializes a new instance of the `GpuBigUInt<TSize>` struct with specified limbs.
 
 ```csharp
-public GpuUIntBigInteger(TSize limbs);
+public GpuBigUInt(TSize limbs);
 ```
 
 #### Parameters
@@ -44,8 +44,8 @@ The limb storage payload.
 | Name | Description |
 | --- | --- |
 | [Limbs](#limbs) | The fixed-size limb storage backing this big integer instance. |
-| [One](#one) | Gets the value `1` represented as a `GpuUIntBigInteger<TSize>`. |
-| [Zero](#zero) | Gets the value `0` represented as a `GpuUIntBigInteger<TSize>`. |
+| [One](#one) | Gets the value `1` represented as a `GpuBigUInt<TSize>`. |
+| [Zero](#zero) | Gets the value `0` represented as a `GpuBigUInt<TSize>`. |
 
 ## Limbs
 
@@ -57,28 +57,28 @@ public TSize Limbs;
 
 ## One
 
-Gets the value `1` represented as a `GpuUIntBigInteger<TSize>`.
+Gets the value `1` represented as a `GpuBigUInt<TSize>`.
 
 ```csharp
-public static GpuUIntBigInteger<TSize> One { get; }
+public static GpuBigUInt<TSize> One { get; }
 ```
 
 ## Zero
 
-Gets the value `0` represented as a `GpuUIntBigInteger<TSize>`.
+Gets the value `0` represented as a `GpuBigUInt<TSize>`.
 
 ```csharp
-public static GpuUIntBigInteger<TSize> Zero { get; }
+public static GpuBigUInt<TSize> Zero { get; }
 ```
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [Add(GpuUIntBigInteger&lt;TSize&gt;, out bool)](#addgpuuintbigintegertsize-out-bool) | Adds two big integers and returns the carry flag. |
-| [CompareTo(GpuUIntBigInteger&lt;TSize&gt;)](#comparetogpuuintbigintegertsize) | Compares this instance to another big integer. |
+| [Add(GpuBigUInt&lt;TSize&gt;, out bool)](#addgpuuintbigintegertsize-out-bool) | Adds two big integers and returns the carry flag. |
+| [CompareTo(GpuBigUInt&lt;TSize&gt;)](#comparetogpuuintbigintegertsize) | Compares this instance to another big integer. |
 | [CountLeadingZeros()](#countleadingzeros) | Counts the number of leading zero bits. |
-| [Equals(GpuUIntBigInteger&lt;TSize&gt;)](#equalsgpuuintbigintegertsize) | Returns a value indicating whether this instance is equal to another. |
+| [Equals(GpuBigUInt&lt;TSize&gt;)](#equalsgpuuintbigintegertsize) | Returns a value indicating whether this instance is equal to another. |
 | [Equals(object?)](#equalsobject) | Returns a value indicating whether this instance is equal to a specified object. |
 | [GetHashCode()](#gethashcode) | Returns the hash code for this instance. |
 | [IsOdd()](#isodd) | Returns a value indicating whether this big integer is an odd number. |
@@ -87,14 +87,14 @@ public static GpuUIntBigInteger<TSize> Zero { get; }
 | [ShiftLeft(int)](#shiftleftint) | Shifts the bits of the value left by a specified amount. |
 | [ShiftRight(int, out bool)](#shiftrightint-out-bool) | Shifts the bits of the value right by a specified amount, producing a sticky bit. |
 | [ShiftRight(int, out bool, out bool, out bool)](#shiftrightint-out-bool-out-bool-out-bool) | Shifts the bits of the value right, producing guard, round, and sticky bits. |
-| [Subtract(GpuUIntBigInteger&lt;TSize&gt;, out bool)](#subtractgpuuintbigintegertsize-out-bool) | Subtracts a big integer from this instance and returns the borrow flag. |
+| [Subtract(GpuBigUInt&lt;TSize&gt;, out bool)](#subtractgpuuintbigintegertsize-out-bool) | Subtracts a big integer from this instance and returns the borrow flag. |
 
-## Add(GpuUIntBigInteger&lt;TSize&gt;, out bool)
+## Add(GpuBigUInt&lt;TSize&gt;, out bool)
 
 Adds two big integers and returns the carry flag.
 
 ```csharp
-public readonly GpuUIntBigInteger<TSize> Add(GpuUIntBigInteger<TSize> other, out bool carry);
+public readonly GpuBigUInt<TSize> Add(GpuBigUInt<TSize> other, out bool carry);
 ```
 
 #### Parameters
@@ -110,12 +110,12 @@ The value to add.
 _GpuUIntBigInteger&lt;TSize&gt;_<br>
 The sum of the two values.
 
-## CompareTo(GpuUIntBigInteger&lt;TSize&gt;)
+## CompareTo(GpuBigUInt&lt;TSize&gt;)
 
 Compares this instance to another big integer.
 
 ```csharp
-public readonly int CompareTo(GpuUIntBigInteger<TSize> other);
+public readonly int CompareTo(GpuBigUInt<TSize> other);
 ```
 
 #### Parameters
@@ -141,12 +141,12 @@ public readonly int CountLeadingZeros();
 _int_<br>
 The number of leading zeros.
 
-## Equals(GpuUIntBigInteger&lt;TSize&gt;)
+## Equals(GpuBigUInt&lt;TSize&gt;)
 
 Returns a value indicating whether this instance is equal to another.
 
 ```csharp
-public readonly bool Equals(GpuUIntBigInteger<TSize> other);
+public readonly bool Equals(GpuBigUInt<TSize> other);
 ```
 
 #### Parameters
@@ -221,7 +221,7 @@ _bool_<br>
 Sets the most significant bit (MSB) of the fixed buffer to `1`.
 
 ```csharp
-public GpuUIntBigInteger<TSize> SetMsb();
+public GpuBigUInt<TSize> SetMsb();
 ```
 
 #### Returns
@@ -234,7 +234,7 @@ A new instance with the MSB set.
 Shifts the bits of the value left by a specified amount.
 
 ```csharp
-public readonly GpuUIntBigInteger<TSize> ShiftLeft(int bits);
+public readonly GpuBigUInt<TSize> ShiftLeft(int bits);
 ```
 
 #### Parameters
@@ -252,7 +252,7 @@ The shifted value.
 Shifts the bits of the value right by a specified amount, producing a sticky bit.
 
 ```csharp
-public readonly GpuUIntBigInteger<TSize> ShiftRight(int bits, out bool stickyBit);
+public readonly GpuBigUInt<TSize> ShiftRight(int bits, out bool stickyBit);
 ```
 
 #### Parameters
@@ -273,7 +273,7 @@ The shifted value.
 Shifts the bits of the value right, producing guard, round, and sticky bits.
 
 ```csharp
-public readonly GpuUIntBigInteger<TSize> ShiftRight(int bits, out bool guardBit, out bool roundBit, out bool stickyBit);
+public readonly GpuBigUInt<TSize> ShiftRight(int bits, out bool guardBit, out bool roundBit, out bool stickyBit);
 ```
 
 #### Parameters
@@ -295,12 +295,12 @@ Set to `true` if any bits after the round bit were non-zero.
 _GpuUIntBigInteger&lt;TSize&gt;_<br>
 The shifted value.
 
-## Subtract(GpuUIntBigInteger&lt;TSize&gt;, out bool)
+## Subtract(GpuBigUInt&lt;TSize&gt;, out bool)
 
 Subtracts a big integer from this instance and returns the borrow flag.
 
 ```csharp
-public readonly GpuUIntBigInteger<TSize> Subtract(GpuUIntBigInteger<TSize> other, out bool borrow);
+public readonly GpuBigUInt<TSize> Subtract(GpuBigUInt<TSize> other, out bool borrow);
 ```
 
 #### Parameters
@@ -320,30 +320,30 @@ The difference of the two values.
 
 | Name | Description |
 | --- | --- |
-| `Addition(GpuUIntBigInteger<TSize>, GpuUIntBigInteger<TSize>)` | Adds two big integers. |
-| `Subtraction(GpuUIntBigInteger<TSize>, GpuUIntBigInteger<TSize>)` | Subtracts one big integer from another. |
-| `Equality(GpuUIntBigInteger<TSize>, GpuUIntBigInteger<TSize>)` | Indicates whether two `GpuUIntBigInteger<TSize>` values are equal. |
-| `Inequality(GpuUIntBigInteger<TSize>, GpuUIntBigInteger<TSize>)` | Indicates whether two `GpuUIntBigInteger<TSize>` values are not equal. |
-| `LessThan(GpuUIntBigInteger<TSize>, GpuUIntBigInteger<TSize>)` | Returns a value indicating whether a specified `GpuUIntBigInteger<TSize>` is less than another. |
-| `GreaterThan(GpuUIntBigInteger<TSize>, GpuUIntBigInteger<TSize>)` | Returns a value indicating whether a specified `GpuUIntBigInteger<TSize>` is greater than another. |
-| `LessThanOrEqual(GpuUIntBigInteger<TSize>, GpuUIntBigInteger<TSize>)` | Returns a value indicating whether a specified `GpuUIntBigInteger<TSize>` is less than or equal to another. |
-| `GreaterThanOrEqual(GpuUIntBigInteger<TSize>, GpuUIntBigInteger<TSize>)` | Returns a value indicating whether a specified `GpuUIntBigInteger<TSize>` is greater than or equal to another. |
+| `Addition(GpuBigUInt<TSize>, GpuBigUInt<TSize>)` | Adds two big integers. |
+| `Subtraction(GpuBigUInt<TSize>, GpuBigUInt<TSize>)` | Subtracts one big integer from another. |
+| `Equality(GpuBigUInt<TSize>, GpuBigUInt<TSize>)` | Indicates whether two `GpuBigUInt<TSize>` values are equal. |
+| `Inequality(GpuBigUInt<TSize>, GpuBigUInt<TSize>)` | Indicates whether two `GpuBigUInt<TSize>` values are not equal. |
+| `LessThan(GpuBigUInt<TSize>, GpuBigUInt<TSize>)` | Returns a value indicating whether a specified `GpuBigUInt<TSize>` is less than another. |
+| `GreaterThan(GpuBigUInt<TSize>, GpuBigUInt<TSize>)` | Returns a value indicating whether a specified `GpuBigUInt<TSize>` is greater than another. |
+| `LessThanOrEqual(GpuBigUInt<TSize>, GpuBigUInt<TSize>)` | Returns a value indicating whether a specified `GpuBigUInt<TSize>` is less than or equal to another. |
+| `GreaterThanOrEqual(GpuBigUInt<TSize>, GpuBigUInt<TSize>)` | Returns a value indicating whether a specified `GpuBigUInt<TSize>` is greater than or equal to another. |
 
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 // Execution Context: Host (CPU) or G# Kernel
 using System;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
-var a = GpuUIntBigInteger<LimbBuffer4>.One;
+var a = GpuBigUInt<LimbBuffer4>.One;
 
 var buffer = new LimbBuffer4();
 buffer[0] = 42;
-var b = new GpuUIntBigInteger<LimbBuffer4>(buffer);
+var b = new GpuBigUInt<LimbBuffer4>(buffer);
 
 var sum = a + b;
 var isZero = sum.IsZero();

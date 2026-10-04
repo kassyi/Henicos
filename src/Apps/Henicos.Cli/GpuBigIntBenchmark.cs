@@ -15,13 +15,13 @@ public class GpuBigIntBenchmark : IDisposable
     private GpuWorkspace _contextJit = null!;
     private GpuWorkspace _contextLegacy = null!;
 
-    private GpuUIntBigInteger _gpuAJit;
-    private GpuUIntBigInteger _gpuBJit;
-    private GpuUIntBigInteger _gpuResultJit;
+    private GpuBigUInt _gpuAJit;
+    private GpuBigUInt _gpuBJit;
+    private GpuBigUInt _gpuResultJit;
 
-    private GpuUIntBigInteger _gpuALegacy;
-    private GpuUIntBigInteger _gpuBLegacy;
-    private GpuUIntBigInteger _gpuResultLegacy;
+    private GpuBigUInt _gpuALegacy;
+    private GpuBigUInt _gpuBLegacy;
+    private GpuBigUInt _gpuResultLegacy;
 
     private GpuKernelLoader.CudaContextScope _scope;
 
@@ -46,13 +46,13 @@ public class GpuBigIntBenchmark : IDisposable
         hostA[NumWords - 1] |= 0x40000000;
         hostB[NumWords - 1] &= 0x3FFFFFFF;
 
-        _gpuAJit = new GpuUIntBigInteger(_contextJit, hostA);
-        _gpuBJit = new GpuUIntBigInteger(_contextJit, hostB);
-        _gpuResultJit = new GpuUIntBigInteger(_contextJit, NumWords);
+        _gpuAJit = new GpuBigUInt(_contextJit, hostA);
+        _gpuBJit = new GpuBigUInt(_contextJit, hostB);
+        _gpuResultJit = new GpuBigUInt(_contextJit, NumWords);
 
-        _gpuALegacy = new GpuUIntBigInteger(_contextLegacy, hostA);
-        _gpuBLegacy = new GpuUIntBigInteger(_contextLegacy, hostB);
-        _gpuResultLegacy = new GpuUIntBigInteger(_contextLegacy, NumWords);
+        _gpuALegacy = new GpuBigUInt(_contextLegacy, hostA);
+        _gpuBLegacy = new GpuBigUInt(_contextLegacy, hostB);
+        _gpuResultLegacy = new GpuBigUInt(_contextLegacy, NumWords);
     }
 
     [GlobalCleanup]

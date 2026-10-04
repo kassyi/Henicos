@@ -10,8 +10,8 @@ description: "Reference for arbitrary-precision unsigned floating-point numbers 
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigFloat`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigFloat`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents an arbitrary-precision unsigned floating-point number on the GPU using a fixed-size significand and a separate binary exponent.
 
@@ -30,13 +30,13 @@ The unmanaged struct type representing the significand storage size (e.g., `Vect
 
 | Name                                          | Description                                                                |
 | --------------------------------------------- | -------------------------------------------------------------------------- |
-| `GpuBigUFloat(GpuUIntBigInteger<TSize>, int)` | Initializes a new unsigned float from a significand and a binary exponent. |
+| `GpuBigUFloat(GpuBigUInt<TSize>, int)` | Initializes a new unsigned float from a significand and a binary exponent. |
 
 ## Properties / Fields
 
 | Name          | Description                                                                                          |
 | ------------- | ---------------------------------------------------------------------------------------------------- |
-| `Significand` | The significand (mantissa) stored as a fixed-size unsigned big integer (`GpuUIntBigInteger<TSize>`). |
+| `Significand` | The significand (mantissa) stored as a fixed-size unsigned big integer (`GpuBigUInt<TSize>`). |
 | `Exponent`    | The binary exponent of the floating-point number.                                                    |
 
 ## Methods
@@ -153,14 +153,14 @@ The difference as a new `GpuBigUFloat<TSize>`.
 ### Unsigned Float Operations
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math, Kassyi.GSharp.Core
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath, Kassyi.GSharp.Core
 
 ```csharp
 
 
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math.BigFloat;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigFloat;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU)
 Example.ComputeUFloat();
@@ -174,13 +174,13 @@ public class Example
         // 100 * 2^0 = 100
         var bufA = new LimbBuffer8();
         bufA[0] = 100;
-        var sigA = new GpuUIntBigInteger<LimbBuffer8>(bufA);
+        var sigA = new GpuBigUInt<LimbBuffer8>(bufA);
         var uFloatA = new GpuBigUFloat<LimbBuffer8>(sigA, exponent: 0);
 
         // 50 * 2^-1 = 25
         var bufB = new LimbBuffer8();
         bufB[0] = 50;
-        var sigB = new GpuUIntBigInteger<LimbBuffer8>(bufB);
+        var sigB = new GpuBigUInt<LimbBuffer8>(bufB);
         var uFloatB = new GpuBigUFloat<LimbBuffer8>(sigB, exponent: -1);
 
         // Unsigned addition (100 + 25 = 125)

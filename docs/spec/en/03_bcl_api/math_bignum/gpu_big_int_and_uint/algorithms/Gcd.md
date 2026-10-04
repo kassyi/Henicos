@@ -1,5 +1,5 @@
 ---
-title: "GpuBigInteger.Gcd Method (G#)"
+title: "GpuBigInt.Gcd Method (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
@@ -10,8 +10,8 @@ description: "Reference for calculating the Greatest Common Divisor (GCD) using 
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Calculates the Greatest Common Divisor (GCD) of two arbitrary-precision integers using Lehmer's algorithm.
 
@@ -19,14 +19,14 @@ Calculates the Greatest Common Divisor (GCD) of two arbitrary-precision integers
 
 | Name                                                                                                                       | Description                                                  |
 | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| [Gcd(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#gcd-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes the greatest common divisor of two absolute values. |
+| [Gcd(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcd-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes the greatest common divisor of two absolute values. |
 
-## Gcd(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
+## Gcd(GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
 Executes Lehmer's GCD algorithm natively on the GPU buffer.
 
 ```csharp
-public static void Gcd(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand, GpuUIntBigInteger resultBuffer);
+public static void Gcd(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
 ```
 
 #### Parameters
@@ -49,25 +49,25 @@ This method does not return a value. The output is stored directly in the `resul
 ### Calculating GCD of massive numbers
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 // Execution Context: Host (CPU)
 
 using System;
 using System.Numerics;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 using var workspace = new GpuWorkspace(1024);
 
-var aVal = GpuUIntBigInteger.FromBigInteger(workspace, BigInteger.Parse("123456789"));
-var bVal = GpuUIntBigInteger.FromBigInteger(workspace, BigInteger.Parse("987654321"));
+var aVal = GpuBigUInt.FromBigInteger(workspace, BigInteger.Parse("123456789"));
+var bVal = GpuBigUInt.FromBigInteger(workspace, BigInteger.Parse("987654321"));
 
-var gpuA = new GpuBigInteger(aVal, false);
-var gpuB = new GpuBigInteger(bVal, false);
+var gpuA = new GpuBigInt(aVal, false);
+var gpuB = new GpuBigInt(bVal, false);
 
-using var result = new GpuUIntBigInteger(workspace, aVal.NumWords);
+using var result = new GpuBigUInt(workspace, aVal.NumWords);
 
 // Calculate GCD on the GPU
 GpuBigIntMath.Gcd(gpuA.Value, gpuB.Value, result);
@@ -81,7 +81,7 @@ This method implements Lehmer's GCD algorithm. It relies heavily on 64-bit multi
 
 ## HalfGcdCpuReference Class
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Algorithms`
 
 A CPU reference implementation of Lehmer's / Half-GCD algorithm is provided for host-side validation or testing prior to GPU execution.
 
@@ -97,6 +97,6 @@ public static class HalfGcdCpuReference
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
-- [GpuBigInteger and GpuUIntBigInteger Operators (G#)](../Operators.md)
+- [GpuBigInt and GpuBigUInt Operators (G#)](../Operators.md)
 
 W
