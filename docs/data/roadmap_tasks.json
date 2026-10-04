@@ -6701,7 +6701,7 @@
     "title": "Increment/Decrement (++, --)",
     "domain": "GBI",
     "category": "Increment/Decrement",
-    "status": "incomplete",
+    "status": "implemented",
     "metrics": {
       "blocker": 2,
       "difficulty": 2,
@@ -6710,13 +6710,13 @@
     },
     "details": {
       "csharp_example": "a++;\n--b;",
-      "current_behavior": "Can be substituted with a = a + 1, but dedicated overloads are undefined.",
-      "strategy": "Not yet implemented in GPU kernel layer. Currently incomplete."
+      "current_behavior": "Supported via in-place scalar Add/Sub on GPU.",
+      "strategy": "Implemented operator ++ and operator -- on GpuUIntBigInteger delegating to in-place GpuBigIntMath.Add/Sub."
     },
     "score": 26,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInteger.cs",
-      "tests/Kassyi.GSharp.Stdlib.Math.Tests/GBI-03_GpuBigIntTests.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.Math/GpuBigInt/GpuUIntBigInteger.cs",
+      "tests/Kassyi.GSharp.Stdlib.Math.Tests/BigInt/GpuBigIntCoreTests.cs"
     ],
     "depends_on": [
       "GBI-01",

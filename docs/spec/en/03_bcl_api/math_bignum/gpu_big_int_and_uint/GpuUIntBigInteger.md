@@ -497,6 +497,8 @@ A diagnostic string.
 | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `Addition(GpuUIntBigInteger, GpuUIntBigInteger)`           | Adds two big integers using lazy expression evaluation.                                         |
 | `Subtraction(GpuUIntBigInteger, GpuUIntBigInteger)`        | Subtracts one big integer from another using lazy expression evaluation.                        |
+| `Increment(GpuUIntBigInteger)`                             | Increments the big integer by 1 in-place on the GPU.                                            |
+| `Decrement(GpuUIntBigInteger)`                             | Decrements the big integer by 1 in-place on the GPU.                                            |
 | `Multiply(GpuUIntBigInteger, GpuUIntBigInteger)`           | Multiplies two big integers using lazy expression evaluation.                                   |
 | `Division(GpuUIntBigInteger, GpuUIntBigInteger)`           | Divides one big integer by another using lazy expression evaluation.                            |
 | `Modulus(GpuUIntBigInteger, GpuUIntBigInteger)`            | Computes the remainder of dividing one big integer by another using lazy expression evaluation. |
