@@ -51,9 +51,6 @@ switch(_state)
 {
 case 0:
 {
-_ctx->intSmem={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
-_ctx->floatSmem={ (float*)__gsharp_allocate_smem(1, (256) * sizeof(float), alignof(float)) };
-_ctx->pointSmem={ (Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint*)__gsharp_allocate_smem(2, (64) * sizeof(Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint), alignof(Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint)) };
 _ctx->tid=threadIdx.x;
 if(_ctx->tid<256)
 {
@@ -85,21 +82,36 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intOutput, float* __restrict__ floatOutput, Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint* __restrict__ pointOutput)
 {
-std::vector<__gsharp_context_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (uint32_t bz = 0; bz < gridDimZ; bz++)
-for (uint32_t by = 0; by < gridDimY; by++)
-for (uint32_t bx = 0; bx < gridDimX; bx++)
+int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+#pragma omp parallel for schedule(dynamic)
+for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+int32_t bx = _b_idx % gridDimX;
+int32_t by = (_b_idx / gridDimX) % gridDimY;
+int32_t bz = _b_idx / (gridDimX * gridDimY);
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
-bool anyActive = true;
+std::vector<__gsharp_context_MemoryAndFixedArraysKernels_SharedMemoryStaticKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+std::vector<int> _smem_buffer_intSmem(256);
+std::vector<float> _smem_buffer_floatSmem(256);
+std::vector<Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint> _smem_buffer_pointSmem(64);
+for (auto& ctx : _gsharp_contexts) {
+ctx._state = 0;
+ctx._all_contexts = _gsharp_contexts.data();
+ctx.intSmem.data = _smem_buffer_intSmem.data();
+ctx.floatSmem.data = _smem_buffer_floatSmem.data();
+ctx.pointSmem.data = _smem_buffer_pointSmem.data();
+}
+std::atomic<bool> anyActive{true};
 while (anyActive)
 {
 anyActive = false;
-for (uint32_t tz = 0; tz < blockDimZ; tz++)
-for (uint32_t ty = 0; ty < blockDimY; ty++)
-for (uint32_t tx = 0; tx < blockDimX; tx++)
+int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+#pragma omp parallel for schedule(static)
+for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+int32_t tx = _t_idx % blockDimX;
+int32_t ty = (_t_idx / blockDimX) % blockDimY;
+int32_t tz = _t_idx / (blockDimX * blockDimY);
 uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
 if (_gsharp_contexts[_ctxtid]._state != -1)
 {
