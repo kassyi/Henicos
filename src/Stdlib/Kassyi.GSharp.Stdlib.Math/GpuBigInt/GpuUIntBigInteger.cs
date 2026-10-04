@@ -89,6 +89,28 @@ public readonly struct GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression, I
     public static GpuBigUIntExpr operator ~(GpuUIntBigInteger leftOperand) =>
         new(new BitwiseNotExpression(leftOperand));
 
+    /// <summary>
+    /// Increments the specified <see cref="GpuUIntBigInteger"/> by 1 on the GPU in-place.
+    /// </summary>
+    /// <param name="operand">The big integer to increment.</param>
+    /// <returns>The incremented <see cref="GpuUIntBigInteger"/> instance.</returns>
+    public static GpuUIntBigInteger operator ++(GpuUIntBigInteger operand)
+    {
+        GpuBigIntMath.Add(operand, 1u, operand);
+        return operand;
+    }
+
+    /// <summary>
+    /// Decrements the specified <see cref="GpuUIntBigInteger"/> by 1 on the GPU in-place.
+    /// </summary>
+    /// <param name="operand">The big integer to decrement.</param>
+    /// <returns>The decremented <see cref="GpuUIntBigInteger"/> instance.</returns>
+    public static GpuUIntBigInteger operator --(GpuUIntBigInteger operand)
+    {
+        GpuBigIntMath.Sub(operand, 1u, operand);
+        return operand;
+    }
+
     public static bool operator ==(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>
         leftOperand.Equals(rightOperand);
 

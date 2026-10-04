@@ -581,11 +581,55 @@ public class GpuBigIntCoreTests
             Assert.True(gpuMsb2 < gpuMsb1);
         }
 
-        [Fact(Skip = "未実装: GBI-16 (インクリメント/デクリメント演算子 ++, --)")]
+        [SkippableTheory]
+        [InlineData(GpuExecutionEngine.GSharpAot)]
         [Trait("RoadmapId", "GBI-16")]
         [Trait("Category", "Operator")]
-        public void Test_Operator_IncrementDecrement()
+        public void Test_Operator_IncrementDecrement(GpuExecutionEngine engine)
         {
+            CudaCapability.EnsureGpuAvailable();
+            using var workspace = new GpuWorkspace(4, engine);
+
+            // 1. Basic Happy Path (Increment & Decrement)
+            var a = new GpuUIntBigInteger(workspace, new uint[] { 10, 0, 0, 0 });
+            try
+            {
+                a++;
+                Assert.Equal(11u, a.ToHostArray()[0]);
+
+                ++a;
+                Assert.Equal(12u, a.ToHostArray()[0]);
+
+                a--;
+                Assert.Equal(11u, a.ToHostArray()[0]);
+
+                --a;
+                Assert.Equal(10u, a.ToHostArray()[0]);
+            }
+            finally
+            {
+                a.Dispose();
+            }
+
+            // 2. Carry Propagation Boundary (0xFFFFFFFF -> 0x00000000 with carry to higher word)
+            var carryVal = new GpuUIntBigInteger(workspace, new uint[] { 0xFFFFFFFF, 0x00000000, 0, 0 });
+            try
+            {
+                ++carryVal;
+                var carryResult = carryVal.ToHostArray();
+                Assert.Equal(0u, carryResult[0]);
+                Assert.Equal(1u, carryResult[1]);
+
+                // 3. Borrow Propagation Boundary (0x00000000, 0x00000001 -> 0xFFFFFFFF, 0x00000000)
+                --carryVal;
+                var borrowResult = carryVal.ToHostArray();
+                Assert.Equal(0xFFFFFFFFu, borrowResult[0]);
+                Assert.Equal(0u, borrowResult[1]);
+            }
+            finally
+            {
+                carryVal.Dispose();
+            }
         }
 
 
