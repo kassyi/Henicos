@@ -1,7 +1,7 @@
 #include <cuda_runtime.h>
 #include <stdint.h>
 
-__device__ __constant__ uint32_t K[64] = {
+static __device__ __constant__ uint32_t K[64] = {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -12,13 +12,13 @@ __device__ __constant__ uint32_t K[64] = {
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
-__device__ inline uint32_t RotR(uint32_t x, int n) { return (x >> n) | (x << (32 - n)); }
-__device__ inline uint32_t Ch(uint32_t x, uint32_t y, uint32_t z) { return (x & y) ^ (~x & z); }
-__device__ inline uint32_t Maj(uint32_t x, uint32_t y, uint32_t z) { return (x & y) ^ (x & z) ^ (y & z); }
-__device__ inline uint32_t Sigma0(uint32_t x) { return RotR(x, 2) ^ RotR(x, 13) ^ RotR(x, 22); }
-__device__ inline uint32_t Sigma1(uint32_t x) { return RotR(x, 6) ^ RotR(x, 11) ^ RotR(x, 25); }
-__device__ inline uint32_t sigma0(uint32_t x) { return RotR(x, 7) ^ RotR(x, 18) ^ (x >> 3); }
-__device__ inline uint32_t sigma1(uint32_t x) { return RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10); }
+static __device__ inline uint32_t RotR(uint32_t x, int n) { return (x >> n) | (x << (32 - n)); }
+static __device__ inline uint32_t Ch(uint32_t x, uint32_t y, uint32_t z) { return (x & y) ^ (~x & z); }
+static __device__ inline uint32_t Maj(uint32_t x, uint32_t y, uint32_t z) { return (x & y) ^ (x & z) ^ (y & z); }
+static __device__ inline uint32_t Sigma0(uint32_t x) { return RotR(x, 2) ^ RotR(x, 13) ^ RotR(x, 22); }
+static __device__ inline uint32_t Sigma1(uint32_t x) { return RotR(x, 6) ^ RotR(x, 11) ^ RotR(x, 25); }
+static __device__ inline uint32_t sigma0(uint32_t x) { return RotR(x, 7) ^ RotR(x, 18) ^ (x >> 3); }
+static __device__ inline uint32_t sigma1(uint32_t x) { return RotR(x, 17) ^ RotR(x, 19) ^ (x >> 10); }
 
 // Native CUDA reference implementation for SHA-256 benchmark
 extern "C" __global__ void Sha256Kernel_Native(unsigned char* input, uint32_t* output, int numMessages)

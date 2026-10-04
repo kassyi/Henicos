@@ -6,26 +6,17 @@ namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static unsafe class NativeKernelInvoker
 {
-    private static readonly Lazy<byte[]> s_fatbinSgemm = new(() =>
-        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "sgemm_kernel.fatbin")));
+    private static readonly Lazy<byte[]> s_fatbin = new(() =>
+        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "native_benchmarks.fatbin")));
 
-    private static readonly Lazy<byte[]> s_fatbinSha256 = new(() =>
-        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "sha256_kernel.fatbin")));
-
-    private static readonly Lazy<byte[]> s_fatbinBlackScholes = new(() =>
-        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "blackscholes_kernel.fatbin")));
-
-    private static readonly Lazy<byte[]> s_fatbinReduction = new(() =>
-        File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "reduction_kernel.fatbin")));
-
-    public static IntPtr FunctionSgemm => GpuKernelLoader.LoadAotKernel(s_fatbinSgemm.Value, "SgemmKernel_Native");
-    public static IntPtr FunctionSha256 => GpuKernelLoader.LoadAotKernel(s_fatbinSha256.Value, "Sha256Kernel_Native");
+    public static IntPtr FunctionSgemm => GpuKernelLoader.LoadAotKernel(s_fatbin.Value, "SgemmKernel_Native");
+    public static IntPtr FunctionSha256 => GpuKernelLoader.LoadAotKernel(s_fatbin.Value, "Sha256Kernel_Native");
 
     public static IntPtr FunctionBlackScholes =>
-        GpuKernelLoader.LoadAotKernel(s_fatbinBlackScholes.Value, "BlackScholesKernel_Native");
+        GpuKernelLoader.LoadAotKernel(s_fatbin.Value, "BlackScholesKernel_Native");
 
     public static IntPtr FunctionReduction =>
-        GpuKernelLoader.LoadAotKernel(s_fatbinReduction.Value, "ReductionKernel_Native");
+        GpuKernelLoader.LoadAotKernel(s_fatbin.Value, "ReductionKernel_Native");
 
     public static void LaunchSgemm(
         float[] a, float[] b, float[] c, int n,
