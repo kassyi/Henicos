@@ -70,7 +70,7 @@ Thrown when `targetDigits` is negative or zero.
 using System;
 using System.IO;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.IO;
 
 using var workspace = new GpuWorkspace(2048, GpuExecutionEngine.GSharpAot);

@@ -10,7 +10,7 @@ description: "A ref struct representing a pointer to a BigInteger limb array in 
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A `ref struct` representing a pointer to a BigInteger limb array in GPU device/shared memory during G# kernel transpilation.
@@ -58,8 +58,8 @@ using System;
 using System.Numerics;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
@@ -81,7 +81,7 @@ Console.WriteLine($"Conceptually computes on GPU: 150 + 50 = {sumResult.ToBigInt
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 public class Example
 {

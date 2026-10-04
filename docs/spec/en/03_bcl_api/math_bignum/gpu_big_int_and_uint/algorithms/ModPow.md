@@ -10,7 +10,7 @@ description: "Reference for multi-precision Modular Exponentiation (RSA) on the 
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Computes the modular exponentiation $a^b \pmod m$ of extremely large integers. This is highly optimized for cryptography (e.g., RSA) using GPU-accelerated Montgomery reduction.

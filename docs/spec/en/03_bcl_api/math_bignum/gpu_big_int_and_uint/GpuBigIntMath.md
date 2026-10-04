@@ -10,7 +10,7 @@ description: "Provides static mathematical and bitwise operations for GpuBigUInt
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Provides static mathematical and bitwise operations for `GpuBigUInt` on the GPU.
@@ -386,7 +386,7 @@ Thrown if the exponent is negative or exceeds the maximum supported value.
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);

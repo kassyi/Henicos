@@ -10,7 +10,7 @@ description: "Reference for IEEE 754 compliant rounding modes in arbitrary-preci
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigFloat`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Specifies the IEEE 754 compliant rounding mode for arbitrary-precision GPU floating-point operations.
@@ -65,8 +65,8 @@ Round toward negative infinity.
 
 
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.GpuMath.BigFloat;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU)
 Example.RoundFloat(new GpuBigUFloat<LimbBuffer8>(default, 0));

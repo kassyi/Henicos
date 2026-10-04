@@ -10,7 +10,7 @@ description: "Represents a 2x2 transition matrix of arbitrary-precision integers
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents a 2x2 transition matrix of arbitrary-precision integers (`GpuBigUInt`) allocated in GPU device memory.
@@ -243,7 +243,7 @@ public void Dispose();
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);

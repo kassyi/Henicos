@@ -10,7 +10,7 @@ description: "Reference for calculating the Greatest Common Divisor (GCD) using 
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Calculates the Greatest Common Divisor (GCD) of two arbitrary-precision integers using Lehmer's algorithm.
@@ -57,7 +57,7 @@ This method does not return a value. The output is stored directly in the `resul
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 using var workspace = new GpuWorkspace(1024);
 
@@ -81,7 +81,7 @@ This method implements Lehmer's GCD algorithm. It relies heavily on 64-bit multi
 
 ## HalfGcdCpuReference Class
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Algorithms`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`
 
 A CPU reference implementation of Lehmer's / Half-GCD algorithm is provided for host-side validation or testing prior to GPU execution.
 

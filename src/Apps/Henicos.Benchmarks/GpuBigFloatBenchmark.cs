@@ -1,5 +1,5 @@
-using Kassyi.GSharp.Stdlib.GpuMath.GpuBigFloat.Providers;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Runtime;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
 
 namespace Henicos.Benchmarks;
 

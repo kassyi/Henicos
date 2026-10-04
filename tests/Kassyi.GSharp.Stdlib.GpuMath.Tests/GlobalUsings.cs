@@ -8,6 +8,6 @@ global using System.Numerics;
 global using System.Threading;
 global using System.Threading.Tasks;
 global using Kassyi.GSharp.Runtime.Aot;
-global using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+global using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 global using Kassyi.GSharp.Stdlib.GpuMath.Tests;
 global using Xunit;

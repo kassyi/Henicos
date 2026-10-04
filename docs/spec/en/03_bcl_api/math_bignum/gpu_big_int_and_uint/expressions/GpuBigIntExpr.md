@@ -10,7 +10,7 @@ description: "A value type wrapper that builds a lazy expression tree of GPU sig
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A value type wrapper that builds a lazy expression tree of GPU signed BigInteger arithmetic. Deferred sign resolution allows for robust evaluation of operations where signs depend on runtime magnitudes (e.g. addition of different signs).
@@ -98,8 +98,8 @@ This struct serves as the frontend for operator overloading on GPU BigIntegers, 
 ```csharp
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 // Execution Context: Host (CPU)
 // Allocate a GPU workspace with 1024 words (4KB) of memory pool.

@@ -10,7 +10,7 @@ description: "Represents an arbitrary-precision unsigned integer stored in NVIDI
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents an arbitrary-precision unsigned integer stored in NVIDIA GPU global device memory.
@@ -526,7 +526,7 @@ A diagnostic string.
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
@@ -551,7 +551,7 @@ Console.WriteLine($"Result={(result).ToBigInteger(false)}");
 using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 public class Example
 {

@@ -10,7 +10,7 @@ description: "CUDA kernel implementations for Number Theoretic Transform (NTT) c
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Contains the core GPU functions and constants required for performing the Number Theoretic Transform (NTT). Note that this class only defines `[GpuKernel]` methods that are explicitly designed to be called from the host.
@@ -94,7 +94,7 @@ The total number of blocks.
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
 // This is an internal Kernel class and its methods are launched via the G# execution pipeline.

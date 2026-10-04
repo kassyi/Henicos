@@ -207,7 +207,7 @@ GPU data structures automatically register with the parent workspace upon creati
 using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 void ComputeWithAutoCleanup()
 {
@@ -255,7 +255,7 @@ When designing custom classes or runner services that allocate multiple GPU reso
 ```csharp
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 public sealed class GpuTransformPipeline : IDisposable
 {

@@ -60,8 +60,8 @@ The standard library (`Kassyi.GSharp.Stdlib.GpuMath`) has been enhanced to suppo
 **Example**
 ```csharp
 // Execution Context: Host (CPU)
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 public static void EvaluateBigInt(uint[] hostData, int dynamicValue)
 {

@@ -10,7 +10,7 @@ description: "A shared generic builder for C# 12 Collection Expressions."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A shared generic builder for C# 12 Collection Expressions.
@@ -63,7 +63,7 @@ Thrown when the number of elements provided exceeds the capacity of the target f
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU) or G# Kernel (GPU)
 

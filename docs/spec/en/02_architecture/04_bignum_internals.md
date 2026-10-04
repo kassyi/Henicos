@@ -29,7 +29,7 @@ To guarantee static determinism and seamless mapping to CUDA C++ registers and s
 
 ```csharp
 // Execution Context: Host (CPU)
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct GpuBigUInt<TSize> where TSize : unmanaged
@@ -37,7 +37,7 @@ public struct GpuBigUInt<TSize> where TSize : unmanaged
     public TSize Limbs;
 }
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigFloat;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct GpuBigUFloat<TSize> where TSize : unmanaged

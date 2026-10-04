@@ -10,7 +10,7 @@ description: "Represents a fixed-size arbitrary-precision unsigned integer store
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents a fixed-size arbitrary-precision unsigned integer stored in value-type memory on the GPU.
@@ -337,7 +337,7 @@ The difference of the two values.
 ```csharp
 // Execution Context: Host (CPU) or G# Kernel
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 var a = GpuBigUInt<LimbBuffer4>.One;
 

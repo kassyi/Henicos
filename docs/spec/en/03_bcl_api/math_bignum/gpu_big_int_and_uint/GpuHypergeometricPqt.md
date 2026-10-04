@@ -10,7 +10,7 @@ description: "Represents the intermediate state (P, Q, T) of a hypergeometric se
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents the intermediate state (P, Q, T) of a hypergeometric series evaluated using Binary Splitting on the GPU.
@@ -126,7 +126,7 @@ A newly merged `GpuHypergeometricPqt` containing the combined P, Q, and T compon
 using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU) or G# Kernel (GPU)
 

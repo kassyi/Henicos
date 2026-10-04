@@ -10,7 +10,7 @@ description: "A value type wrapper that builds a lazy expression tree of GPU Big
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A value type wrapper that builds a lazy expression tree of GPU BigInteger arithmetic and bitwise operations.
@@ -86,8 +86,8 @@ using System.Numerics;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 // Execution Context: Host (CPU)
 // Allocate a GPU workspace with 1024 words (4KB) of memory pool.

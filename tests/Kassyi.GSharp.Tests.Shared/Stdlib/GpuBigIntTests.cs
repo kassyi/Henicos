@@ -1,7 +1,7 @@
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Stdlib;

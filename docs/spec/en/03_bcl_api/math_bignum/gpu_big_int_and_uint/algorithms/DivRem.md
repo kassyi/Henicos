@@ -10,7 +10,7 @@ description: "Reference for calculating Quotient and Remainder simultaneously on
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 When performing division (`/`) or modulo (`%`) on massive multi-precision integers, the computational cost is extremely high. Often, an algorithm requires both the quotient and the remainder simultaneously (e.g., base conversion, Euclidean algorithms).
