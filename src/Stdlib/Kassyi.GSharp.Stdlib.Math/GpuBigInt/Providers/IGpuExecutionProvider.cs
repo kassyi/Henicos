@@ -52,10 +52,10 @@ public interface IGpuGraphProvider
 /// <summary>
 /// Defines the contract for executing GPU-accelerated BigInteger arithmetic algorithms and managing device memory.
 /// </summary>
-public interface IGpuExecutionProvider : 
-    IGpuMemoryProvider, 
-    IGpuBasicMathProvider, 
-    IGpuAdvancedMathProvider, 
+public interface IGpuExecutionProvider :
+    IGpuMemoryProvider,
+    IGpuBasicMathProvider,
+    IGpuAdvancedMathProvider,
     IGpuGraphProvider
 {
 }

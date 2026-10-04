@@ -292,11 +292,11 @@ public static class MethodTranspiler
                 KnownAttributes.GpuNoInline or KnownAttributes.GpuNoInline + "Attribute" => "__noinline__",
                 KnownAttributes.MethodImpl or KnownAttributes.MethodImpl + "Attribute" => ExtractMethodImplOptions(attr)
                     switch
-                    {
-                        var opt when (opt & MethodImplOptions.AggressiveInlining) != 0 => "__forceinline__",
-                        var opt when (opt & MethodImplOptions.NoInlining) != 0 => "__noinline__",
-                        _ => null
-                    },
+                {
+                    var opt when (opt & MethodImplOptions.AggressiveInlining) != 0 => "__forceinline__",
+                    var opt when (opt & MethodImplOptions.NoInlining) != 0 => "__noinline__",
+                    _ => null
+                },
                 _ => null
             };
 

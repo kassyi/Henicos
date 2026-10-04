@@ -2,9 +2,18 @@ namespace Kassyi.GSharp.Stdlib.Math.GpuBigInt.Runtime;
 
 public readonly record struct GpuBigIntMemoryHandle
 {
-    internal GpuBigIntDeviceBuffer Buffer { get; }
-    public int WordOffset { get; }
-    public int NumWords { get; }
+    internal GpuBigIntDeviceBuffer Buffer
+    {
+        get;
+    }
+    public int WordOffset
+    {
+        get;
+    }
+    public int NumWords
+    {
+        get;
+    }
 
     internal GpuBigIntMemoryHandle(GpuBigIntDeviceBuffer buffer, int wordOffset, int numWords)
     {

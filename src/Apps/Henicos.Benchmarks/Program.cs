@@ -138,19 +138,19 @@ internal class Program
     private static int RunArithmeticBench(string[] args)
     {
         var target = args.Length > 0 ? args[0].ToLowerInvariant() : "all";
-        
+
         if (target is "all" or "gbf")
         {
             Logger<Program>.Info("Running GpuBigFloatBenchmark...");
             BenchmarkRunner.Run<GpuBigFloatBenchmark>();
         }
-        
+
         if (target is "all" or "gbi")
         {
             Logger<Program>.Info("Running GpuBigIntBenchmark...");
             BenchmarkRunner.Run<GpuBigIntBenchmark>();
         }
-        
+
         return 0;
     }
 

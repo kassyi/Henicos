@@ -46,7 +46,10 @@ public abstract class Logger : ILogger
 {
     private static readonly ConcurrentDictionary<string, long> s_accumulatedTimes = new();
 
-    public static LogLevel ActiveLogLevel { get; set; } =
+    public static LogLevel ActiveLogLevel
+    {
+        get; set;
+    } =
         LogLevel.Trace; // Trace by default to output everything during debugging
 
     /// <summary>

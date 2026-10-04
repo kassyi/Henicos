@@ -30,17 +30,26 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the maximum number of 32-bit limbs (words) supported in this context's fixed allocations.
     /// </summary>
-    public int MaxWords { get; }
+    public int MaxWords
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend).
     /// </summary>
-    public IntPtr WorkspacePointer { get; }
+    public IntPtr WorkspacePointer
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the active GPU execution engine type.
     /// </summary>
-    public GpuExecutionEngine Engine { get; }
+    public GpuExecutionEngine Engine
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the active GPU arithmetic execution provider implementation.
@@ -52,13 +61,19 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph capture.
     /// </summary>
-    public IntPtr Stream { get; }
+    public IntPtr Stream
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the number of streaming multiprocessors (SMs) on the active CUDA device.
     /// This value is used to clamp grid dimensions for cooperative kernel launches.
     /// </summary>
-    public int DeviceSmCount { get; internal set; /*set this value only for tests*/ }
+    public int DeviceSmCount
+    {
+        get; internal set; /*set this value only for tests*/
+    }
 
     private int _disposed;
     private readonly List<IDisposable> _trackedResources = [];
@@ -66,7 +81,10 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the memory manager for this context.
     /// </summary>
-    public IGpuMemoryManager MemoryManager { get; }
+    public IGpuMemoryManager MemoryManager
+    {
+        get;
+    }
 
     /// <summary>
     /// Registers a disposable resource to be tracked and collectively disposed by this workspace.

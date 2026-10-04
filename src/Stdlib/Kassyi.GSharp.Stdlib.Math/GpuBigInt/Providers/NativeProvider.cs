@@ -23,7 +23,7 @@ public class NativeProvider : IGpuExecutionProvider
 
     /// <inheritdoc/>
 
-        public void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream)
+    public void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream)
     {
         if (devicePointer == IntPtr.Zero || numWords <= 0)
         {

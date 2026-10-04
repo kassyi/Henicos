@@ -31,7 +31,7 @@ internal abstract class BinaryExpression : IGpuBigUIntExpression
 
         NumWords = left.NumWords;
     }
-protected abstract void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result);
+    protected abstract void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result);
 
     public abstract ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor);
 }
@@ -40,7 +40,7 @@ internal class AddExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression r
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.Add(a, b, result);
-        
+
     public override ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitAdd(this);
 }
 
@@ -48,7 +48,7 @@ internal class SubExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression r
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.Sub(a, b, result);
-        
+
     public override ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitSub(this);
 }
 
@@ -56,7 +56,7 @@ internal class MulExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression r
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.Mul(a, b, result);
-        
+
     public override ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitMul(this);
 }
 
@@ -64,7 +64,7 @@ internal class DivExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression r
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntDivRem.Div(a, b, result);
-        
+
     public override ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitDiv(this);
 }
 
@@ -73,7 +73,7 @@ internal class BitwiseAndExpression(IGpuBigUIntExpression left, IGpuBigUIntExpre
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntMath.BitwiseAnd(a, b, result);
-        
+
     public override ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitBitwiseAnd(this);
 }
 
@@ -92,7 +92,7 @@ internal class ShiftLeftExpression(IGpuBigUIntExpression target, int shiftBits) 
 {
     protected override void Execute(GpuUIntBigInteger target, GpuUIntBigInteger result) =>
         GpuBigIntMath.ShiftLeft(target, ShiftBits, result);
-        
+
     public override ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitShiftLeft(this);
 }
 
@@ -100,7 +100,7 @@ internal class ShiftRightExpression(IGpuBigUIntExpression target, int shiftBits)
 {
     protected override void Execute(GpuUIntBigInteger target, GpuUIntBigInteger result) =>
         GpuBigIntMath.ShiftRight(target, ShiftBits, result);
-        
+
     public override ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitShiftRight(this);
 }
 
@@ -108,7 +108,7 @@ internal class SqrtExpression(IGpuBigUIntExpression target) : IGpuBigUIntExpress
 {
     internal IGpuBigUIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));
     public int NumWords => Target.NumWords;
-        
+
     public ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitSqrt(this);
 }
 
@@ -116,7 +116,7 @@ internal class ModExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression r
 {
     protected override void Execute(GpuUIntBigInteger a, GpuUIntBigInteger b, GpuUIntBigInteger result) =>
         GpuBigIntDivRem.Mod(a, b, result);
-        
+
     public override ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitMod(this);
 }
 
@@ -126,7 +126,7 @@ internal class BitwiseOrExpression(IGpuBigUIntExpression left, IGpuBigUIntExpres
     protected override void Execute(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) =>
         GpuBigIntMath.BitwiseOr(leftOperand, rightOperand, resultBuffer);
-        
+
     public override ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitBitwiseOr(this);
 }
 
@@ -136,7 +136,7 @@ internal class BitwiseXorExpression(IGpuBigUIntExpression left, IGpuBigUIntExpre
     protected override void Execute(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand,
         GpuUIntBigInteger resultBuffer) =>
         GpuBigIntMath.BitwiseXor(leftOperand, rightOperand, resultBuffer);
-        
+
     public override ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitBitwiseXor(this);
 }
 
@@ -144,7 +144,7 @@ internal class BitwiseNotExpression(IGpuBigUIntExpression left) : IGpuBigUIntExp
 {
     internal IGpuBigUIntExpression Target { get; } = left;
     public int NumWords => Target.NumWords;
-        
+
     public ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) => visitor.VisitBitwiseNot(this);
 }
 

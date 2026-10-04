@@ -12,7 +12,9 @@ public static partial class GpuBigIntDivRemKernels
 {
     // Dummy kernel to force the generator to emit the DualNtt struct definition before we use it
     [GpuDeviceFunction]
-    private static void ForceEmitDualNtt_DivRem(DualNtt args) {}
+    private static void ForceEmitDualNtt_DivRem(DualNtt args)
+    {
+    }
 
     [GpuDeviceFunction]
     private static void ExecuteNttMultiplyMacro(
@@ -38,7 +40,9 @@ public static partial class GpuBigIntDivRemKernels
         var baseNtt = new DualNtt
         {
             TemporaryBuffer = ctx.Workspace.TmpBuf,
-            M = m, N1 = n1, N2 = n2
+            M = m,
+            N1 = n1,
+            N2 = n2
         };
 
         // 3. Forward NTT A (Prime 1 & 2)

@@ -67,7 +67,7 @@ public class OpsPerSecColumn : IColumn
                 return opsPerSec.ToString("N0");
             }
         }
-        
+
         return "N/A";
     }
 

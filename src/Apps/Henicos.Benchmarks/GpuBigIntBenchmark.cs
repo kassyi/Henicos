@@ -20,7 +20,7 @@ public class GpuBigIntBenchmark : GpuBigMathBenchmarkBase
             leftData[i] = (uint)rnd.Next();
             rightData[i] = (uint)rnd.Next();
         }
-        
+
         leftData[^1] |= 0x80000000;
         rightData[^1] |= 0x80000000;
 

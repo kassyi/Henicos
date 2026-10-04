@@ -11,7 +11,10 @@ public sealed class CudaStream : IDisposable
     /// <summary>
     /// The underlying CUDA stream handle.
     /// </summary>
-    public IntPtr Handle { get; }
+    public IntPtr Handle
+    {
+        get;
+    }
 
     /// <summary>
     /// Creates a new non-blocking CUDA stream.

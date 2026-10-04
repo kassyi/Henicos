@@ -159,7 +159,7 @@ public class CudaGraphExecutionTests
         }
     }
     [Trait("Category", "SadPath")]
-    [Fact(Skip = "Corrupts global device context in sequential test execution")]
+    [SkippableFact]
     public void Test_CudaGraph_SadPath_ImplicitSyncFails()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -169,7 +169,7 @@ public class CudaGraphExecutionTests
         // Run the capture and intentional failure in an isolated OS thread.
         // Failing a Thread-Local capture permanently pollutes the OS thread's capture state.
         // If we do this on the xUnit worker thread, subsequent tests will fail with CudaErrorStreamCaptureImplicit.
-        var thread = new System.Threading.Thread(() =>
+        var thread = new Thread(() =>
         {
             using var ctx = new GpuWorkspace(4, GpuExecutionEngine.GSharpAot);
             using var a = new GpuUIntBigInteger(ctx, 4);
@@ -197,4 +197,58 @@ public class CudaGraphExecutionTests
         Assert.NotNull(capturedEx);
         Assert.Equal(CUresult.CudaErrorStreamCaptureImplicit, capturedEx.Result);
     }
+
+    [Trait("Category", "SadPath")]
+    [SkippableFact]
+    public void Test_CudaGraph_WorkspaceDispose_AbortsLeakedStreamCapture_WithoutContamination()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        // 1. Abandon a stream in active capture mode inside a scoped workspace and dispose it
+        {
+            using var leakingCtx = new GpuWorkspace(4, GpuExecutionEngine.GSharpAot);
+            leakingCtx.Provider.BeginCapture(leakingCtx.Stream);
+            // Intentionally omit EndCapture before exiting scope; Dispose() should safely abort and clean up
+        }
+
+        // 2. Immediately verify that a new workspace and stream capture operate without error (no CudaErrorStreamCaptureInvalidated)
+        {
+            using var cleanCtx = new GpuWorkspace(4, GpuExecutionEngine.GSharpAot);
+            using var a = new GpuUIntBigInteger(cleanCtx, 4);
+            using var b = new GpuUIntBigInteger(cleanCtx, 4);
+            using var c = new GpuUIntBigInteger(cleanCtx, 4);
+
+            uint[] hostA = { 10, 20, 30, 40 };
+            uint[] hostB = { 1, 2, 3, 4 };
+            uint[] hostC = new uint[4];
+
+            cleanCtx.Provider.CopyHostToDevice(a.DevicePointer, hostA, 4, cleanCtx.Stream);
+            cleanCtx.Provider.CopyHostToDevice(b.DevicePointer, hostB, 4, cleanCtx.Stream);
+
+            // Warmup
+            cleanCtx.Provider.Add(cleanCtx, a, b, c);
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(cleanCtx.Stream));
+
+            // Verify stream capture works cleanly on subsequent context
+            cleanCtx.Provider.BeginCapture(cleanCtx.Stream);
+            cleanCtx.Provider.Add(cleanCtx, a, b, c);
+            var graph = cleanCtx.Provider.EndCapture(cleanCtx.Stream);
+            Assert.NotEqual(IntPtr.Zero, graph);
+
+            var graphExec = cleanCtx.Provider.InstantiateGraph(graph);
+            Assert.NotEqual(IntPtr.Zero, graphExec);
+
+            cleanCtx.Provider.LaunchGraph(graphExec, cleanCtx.Stream);
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(cleanCtx.Stream));
+
+            cleanCtx.Provider.CopyDeviceToHost(hostC, c.DevicePointer, 4, cleanCtx.Stream);
+            Assert.Equal(11u, hostC[0]);
+            Assert.Equal(22u, hostC[1]);
+            Assert.Equal(33u, hostC[2]);
+            Assert.Equal(44u, hostC[3]);
+
+            cleanCtx.Provider.DestroyGraph(graph, graphExec);
+        }
+    }
 }
+

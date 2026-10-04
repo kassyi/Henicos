@@ -10,7 +10,10 @@ public interface IGpuBigUIntExpression
     /// <summary>
     /// Gets the word length (limb count) resulting from this expression.
     /// </summary>
-    int NumWords { get; }
+    int NumWords
+    {
+        get;
+    }
 
     /// <summary>
     /// Accepts a visitor to evaluate the expression tree using a scoped memory context.
