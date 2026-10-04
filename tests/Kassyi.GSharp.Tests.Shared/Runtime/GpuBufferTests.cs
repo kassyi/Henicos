@@ -1,16 +1,15 @@
 using System;
 using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
-[Trait("Category", "GpuExecution")]
 public class GpuBufferTests : TranspilerTestBase
 {
     public GpuBufferTests()
     {
-        SkipIfCpuDialect("This test interacts directly with CUDA/Runtime components and cannot run on CPU.");
     }
 
     [SkippableTheory]

@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime;
@@ -15,6 +17,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     private readonly int _length;
     private readonly nint _byteSize;
     private readonly IntPtr _owningContext;
+    private readonly bool _isCpuFallback;
     private bool _isDisposed;
 
     private readonly struct ContextScope : IDisposable
@@ -70,6 +73,14 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
             return;
         }
 
+        if (GpuKernelLoader.IsCpuFallbackMode)
+        {
+            _isCpuFallback = true;
+            _owningContext = IntPtr.Zero;
+            _devicePointer = Marshal.AllocHGlobal((IntPtr)_byteSize);
+            return;
+        }
+
         CudaException.ThrowIfError(CudaDriverApi.cuCtxGetCurrent(out _owningContext));
         CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out _devicePointer, _byteSize));
     }
@@ -96,11 +107,17 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
             return;
         }
 
-        using var scope = new ContextScope(_owningContext);
+        var copySize = checked((ulong)(source.Length * sizeof(T)));
         fixed (T* ptr = source)
         {
-            var copySize = checked((nint)source.Length * sizeof(T));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(_devicePointer, (IntPtr)ptr, copySize));
+            if (_isCpuFallback)
+            {
+                Buffer.MemoryCopy(ptr, (void*)_devicePointer, (ulong)_byteSize, copySize);
+                return;
+            }
+
+            using var scope = new ContextScope(_owningContext);
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(_devicePointer, (IntPtr)ptr, (nint)copySize));
         }
     }
 
@@ -121,11 +138,17 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
             return;
         }
 
-        using var scope = new ContextScope(_owningContext);
+        var copySize = checked((ulong)(destination.Length * sizeof(T)));
         fixed (T* ptr = destination)
         {
-            var copySize = checked((nint)destination.Length * sizeof(T));
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, copySize));
+            if (_isCpuFallback)
+            {
+                Buffer.MemoryCopy((void*)_devicePointer, ptr, copySize, copySize);
+                return;
+            }
+
+            using var scope = new ContextScope(_owningContext);
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)ptr, _devicePointer, (nint)copySize));
         }
     }
 
@@ -133,6 +156,13 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     {
         if (_devicePointer == IntPtr.Zero)
         {
+            return CUresult.CudaSuccess;
+        }
+
+        if (_isCpuFallback)
+        {
+            Marshal.FreeHGlobal(_devicePointer);
+            _devicePointer = IntPtr.Zero;
             return CUresult.CudaSuccess;
         }
 
