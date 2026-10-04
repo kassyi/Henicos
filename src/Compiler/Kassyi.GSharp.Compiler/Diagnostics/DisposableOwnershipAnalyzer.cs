@@ -48,8 +48,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
                 _ => null
             };
 
-            if (type != null && (DisposableAnalyzerHelper.IsGpuResourceScope(type) ||
-                                 DisposableAnalyzerHelper.HasGpuResourceAttribute(type)))
+            if (type != null && DisposableAnalyzerHelper.IsDisposable(type))
             {
                 disposableMembers.Add(m);
             }
@@ -86,8 +85,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         {
             foreach (var p in ctor.Parameters)
             {
-                if ((DisposableAnalyzerHelper.IsGpuResourceScope(p.Type) ||
-                     DisposableAnalyzerHelper.HasGpuResourceAttribute(p.Type)) && !HasTakesOwnershipAttribute(p))
+                if (DisposableAnalyzerHelper.IsDisposable(p.Type) && !HasTakesOwnershipAttribute(p))
                 {
                     borrowedParamNames.Add(p.Name);
                 }
@@ -123,12 +121,18 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
             foreach (var member in typeDecl.Members)
             {
-                if (member is not ConstructorDeclarationSyntax { Body: not null } ctorDecl)
+                if (member is not ConstructorDeclarationSyntax ctorDecl)
                 {
                     continue;
                 }
 
-                foreach (var node in ctorDecl.Body.DescendantNodes())
+                var root = (SyntaxNode?)ctorDecl.Body ?? ctorDecl.ExpressionBody;
+                if (root == null)
+                {
+                    continue;
+                }
+
+                foreach (var node in root.DescendantNodes())
                 {
                     if (node is not AssignmentExpressionSyntax assign ||
                         assign.Right is not IdentifierNameSyntax id ||
@@ -176,7 +180,21 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (!hasOwnedDisposableField)
+        bool hasTakesOwnership = false;
+        foreach (var ctor in namedType.Constructors)
+        {
+            foreach (var p in ctor.Parameters)
+            {
+                if (HasTakesOwnershipAttribute(p))
+                {
+                    hasTakesOwnership = true;
+                    break;
+                }
+            }
+            if (hasTakesOwnership) break;
+        }
+
+        if (!hasOwnedDisposableField && !hasTakesOwnership)
         {
             return;
         }

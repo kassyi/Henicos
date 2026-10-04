@@ -449,5 +449,32 @@
     "category": "GSharpTestArchitecture",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "InvalidTakesOwnershipTarget",
+    "id": "GSH0051",
+    "title": "[TakesOwnership] applied to non-IDisposable type",
+    "messageFormat": "[TakesOwnership] can only be applied to types that implement IDisposable",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "TakesOwnershipOnlyAllowedOnConstructors",
+    "id": "GSH0052",
+    "title": "[TakesOwnership] is only allowed on constructor parameters",
+    "messageFormat": "[TakesOwnership] is only supported on constructor parameters for static lifecycle management",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "TakesOwnershipByRefNotSupported",
+    "id": "GSH0053",
+    "title": "Cannot take ownership of a reference parameter",
+    "messageFormat": "Cannot take ownership of a reference parameter (ref, in, out)",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
   }
 ]

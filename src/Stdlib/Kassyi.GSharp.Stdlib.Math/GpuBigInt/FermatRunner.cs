@@ -177,6 +177,13 @@ public class FermatRunner : IDisposable
 
         if (disposing)
         {
+            _valueT.Dispose();
+            _valueTReduced.Dispose();
+            _mulResult.Dispose();
+            _quotient.Dispose();
+            _remainder.Dispose();
+            _remainderMask.Dispose();
+            _temp.Dispose();
             _gpuWorkspace.Dispose();
         }
 
