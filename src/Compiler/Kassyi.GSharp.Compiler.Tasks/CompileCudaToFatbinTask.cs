@@ -9,13 +9,15 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CudaSources { get; set; } = [];
 
-    public string TargetArchitectures
-    {
-        get; set;
-    } =
+    public string TargetArchitectures { get; set; } =
         "compute_86,sm_86";
 
     public string NvccPath { get; set; } = "nvcc";
+
+    /// <summary>
+    /// When specified, bundles all <see cref="CudaSources"/> into a single fatbin with this file name.
+    /// </summary>
+    public string? CombinedFatbinName { get; set; }
 
     [Output]
     public ITaskItem[] OutputFatbins { get; set; } = [];
@@ -25,6 +27,125 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
     protected override ITaskItem[] GetSources() => CudaSources;
     protected override void SetOutputItems(ITaskItem[] outputItems) => OutputFatbins = outputItems;
+
+    public override bool Execute() =>
+        string.IsNullOrWhiteSpace(CombinedFatbinName) ? base.Execute() : ExecuteCombinedCompilation();
+
+    private bool ExecuteCombinedCompilation()
+    {
+        var sources = GetSources();
+        if (sources.Length == 0)
+        {
+            SetOutputItems([]);
+            return true;
+        }
+
+        if (!Directory.Exists(OutputDirectory))
+        {
+            Directory.CreateDirectory(OutputDirectory);
+        }
+
+        if (!OnBeforeExecute())
+        {
+            return false;
+        }
+
+        if (_skipCompilation)
+        {
+            SetOutputItems([]);
+            return true;
+        }
+
+        var outputFatbinPath = Path.Combine(OutputDirectory, CombinedFatbinName!);
+
+        if (MockCompilation)
+        {
+            File.WriteAllText(outputFatbinPath, "Mock Fatbin Content");
+            var mockTaskItem = new TaskItem(outputFatbinPath);
+            mockTaskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
+            SetOutputItems([mockTaskItem]);
+            return true;
+        }
+
+        var sourcePaths = new string[sources.Length];
+        for (var i = 0; i < sources.Length; i++)
+        {
+            sourcePaths[i] = sources[i].GetMetadata("FullPath");
+        }
+
+        if (File.Exists(outputFatbinPath))
+        {
+            var destInfo = new FileInfo(outputFatbinPath);
+            var isUpToDate = true;
+            foreach (var sp in sourcePaths)
+            {
+                if (!File.Exists(sp))
+                {
+                    continue;
+                }
+
+                var srcInfo = new FileInfo(sp);
+                if (destInfo.LastWriteTimeUtc >= srcInfo.LastWriteTimeUtc)
+                {
+                    continue;
+                }
+
+                isUpToDate = false;
+                break;
+            }
+
+            if (isUpToDate)
+            {
+                Log.LogMessage(MessageImportance.Low,
+                    $"Skipping compilation because '{outputFatbinPath}' is up-to-date.");
+                var cachedItem = new TaskItem(outputFatbinPath);
+                cachedItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
+                SetOutputItems([cachedItem]);
+                return true;
+            }
+        }
+
+        var bundleFileName = Path.GetFileNameWithoutExtension(CombinedFatbinName) + "_bundle.cu";
+        var bundleFilePath = Path.Combine(OutputDirectory, bundleFileName);
+        
+        var bundleContent = new StringBuilder();
+        var originalPathsFiltered = new List<string>();
+        foreach (var sp in sourcePaths)
+        {
+            if (string.Equals(Path.GetFileName(sp), bundleFileName, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+            originalPathsFiltered.Add(sp);
+            var escapedPath = sp.Replace("\\", "/");
+            bundleContent.AppendLine($"#include \"{escapedPath}\"");
+        }
+        
+        try
+        {
+            File.WriteAllText(bundleFilePath, bundleContent.ToString());
+        }
+        catch (Exception ex)
+        {
+            Log.LogError($"Failed to write bundle file '{bundleFilePath}': {ex.Message}");
+            return false;
+        }
+
+        if (!CompileCombinedWithNvcc([bundleFilePath], outputFatbinPath, _architectures, originalPathsFiltered))
+        {
+            return false;
+        }
+
+        if (!ArtifactHelper.ProcessArtifact(outputFatbinPath, Log))
+        {
+            return false;
+        }
+
+        var taskItem = new TaskItem(outputFatbinPath);
+        taskItem.SetMetadata("LogicalName", $"Kassyi.GSharp.Kernels.{Path.GetFileName(outputFatbinPath)}");
+        SetOutputItems([taskItem]);
+        return true;
+    }
 
     private Dictionary<string, string>? _vcvarsEnv;
 
@@ -131,10 +252,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
     private bool CompileWithNvcc(string sourcePath, string outputFatbinPath, string[] architectures)
     {
-        var args = BuildNvccArguments(sourcePath, outputFatbinPath, architectures);
+        var args = BuildNvccArguments([sourcePath], outputFatbinPath, architectures);
         Log.LogMessage(MessageImportance.Normal, $"Compiling CUDA source: {sourcePath}");
 
-        if (!RunNvccProcess(sourcePath, args))
+        if (!RunNvccProcess([sourcePath], args))
         {
             return false;
         }
@@ -148,7 +269,29 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         return false;
     }
 
-    private string BuildNvccArguments(string sourcePath, string outputFatbinPath, string[] architectures)
+    private bool CompileCombinedWithNvcc(IReadOnlyList<string> sourcePaths, string outputFatbinPath,
+        string[] architectures, IReadOnlyList<string> originalSourcePaths)
+    {
+        var args = BuildNvccArguments(sourcePaths, outputFatbinPath, architectures);
+        Log.LogMessage(MessageImportance.Normal,
+            $"Compiling {originalSourcePaths.Count} CUDA sources into combined fatbin: {outputFatbinPath}");
+
+        if (!RunNvccProcess(originalSourcePaths, args))
+        {
+            return false;
+        }
+
+        if (File.Exists(outputFatbinPath))
+        {
+            return true;
+        }
+
+        Log.LogError($"nvcc succeeded but output fatbin was not found at '{outputFatbinPath}'.");
+        return false;
+    }
+
+    private string BuildNvccArguments(IReadOnlyList<string> sourcePaths, string outputFatbinPath,
+        string[] architectures)
     {
         var args = new StringBuilder();
         args.Append("--fatbin ");
@@ -165,11 +308,21 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             }
         }
 
-        args.Append($"-o \"{outputFatbinPath}\" \"{sourcePath}\"");
+        args.Append($"-o \"{outputFatbinPath}\" ");
+        for (var i = 0; i < sourcePaths.Count; i++)
+        {
+            if (i > 0)
+            {
+                args.Append(' ');
+            }
+
+            args.Append($"\"{sourcePaths[i]}\"");
+        }
+
         return args.ToString();
     }
 
-    private bool RunNvccProcess(string sourcePath, string arguments)
+    private bool RunNvccProcess(IReadOnlyList<string> sourcePaths, string arguments)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -194,25 +347,30 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             if (NvccOutputParser.DetectRegisterSpill(output, error, out var errorMessage))
             {
                 var suppressGs0001 = false;
-                if (File.Exists(sourcePath))
+                foreach (var sourcePath in sourcePaths)
                 {
-                    try
+                    if (File.Exists(sourcePath))
                     {
-                        var content = File.ReadAllText(sourcePath);
-                        if (content.Contains("// gsharp:suppress GS0001"))
+                        try
                         {
-                            suppressGs0001 = true;
+                            var content = File.ReadAllText(sourcePath);
+                            if (content.Contains("// gsharp:suppress GS0001"))
+                            {
+                                suppressGs0001 = true;
+                                break;
+                            }
                         }
-                    }
-                    catch
-                    {
-                        // Ignore read errors
+                        catch
+                        {
+                            // Ignore read errors
+                        }
                     }
                 }
 
                 if (!suppressGs0001)
                 {
-                    Log.LogWarning(subcategory: null, warningCode: "GS0001", helpKeyword: null, file: sourcePath,
+                    var reportPath = sourcePaths.Count > 0 ? sourcePaths[0] : "";
+                    Log.LogWarning(subcategory: null, warningCode: "GS0001", helpKeyword: null, file: reportPath,
                         lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: errorMessage);
                 }
             }

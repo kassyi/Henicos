@@ -212,4 +212,57 @@ public class CompileTasksTests
             }
         }
     }
+
+    [Fact]
+    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_Specified_EmptySources_ReturnsTrue()
+    {
+        var task = new CompileCudaToFatbinTask
+        {
+            BuildEngine = new MockBuildEngine(),
+            CudaSources = [],
+            CombinedFatbinName = "bundled.fatbin",
+            OutputDirectory = "dummy",
+            TargetArchitectures = "sm_86"
+        };
+        Assert.True(task.Execute());
+        Assert.Empty(task.OutputFatbins);
+    }
+
+    [Fact]
+    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_Specified_ShouldBundleSources()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "CompileCudaBundleTest_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var src1 = Path.Combine(tempDir, "kernel1.cu");
+            var src2 = Path.Combine(tempDir, "kernel2.cu");
+            File.WriteAllText(src1, "// cuda source 1");
+            File.WriteAllText(src2, "// cuda source 2");
+
+            var task = new CompileCudaToFatbinTask
+            {
+                BuildEngine = new MockBuildEngine(),
+                CudaSources = [new TaskItem(src1), new TaskItem(src2)],
+                CombinedFatbinName = "native_benchmarks.fatbin",
+                OutputDirectory = tempDir,
+                MockCompilation = true,
+                TargetArchitectures = "sm_86"
+            };
+
+            Assert.True(task.Execute());
+            var outputItem = Assert.Single(task.OutputFatbins);
+            var expectedPath = Path.Combine(tempDir, "native_benchmarks.fatbin");
+            Assert.Equal(expectedPath, outputItem.ItemSpec);
+            Assert.True(File.Exists(expectedPath));
+            Assert.Equal("Kassyi.GSharp.Kernels.native_benchmarks.fatbin", outputItem.GetMetadata("LogicalName"));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+    }
 }

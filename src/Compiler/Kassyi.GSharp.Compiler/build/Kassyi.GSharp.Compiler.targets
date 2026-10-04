@@ -18,6 +18,7 @@
     <CompilerVisibleProperty Include="ProjectDir" />
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
     <CompilerVisibleProperty Include="GSharpMockCompilation" />
+    <CompilerVisibleProperty Include="GSharpCombinedFatbinName" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -67,6 +68,7 @@
         Condition="'@(_GSharpCudaSources)' != '' And '$(GSharpSkipCudaCompilation)' != 'true' And ('$(GSHARP_TEST_NO_CUDA)' != '1' Or '$(GSharpMockCompilation)' == 'true')"
         MockCompilation="$(GSharpMockCompilation)"
         CudaSources="@(_GSharpCudaSources)" 
+        CombinedFatbinName="$(GSharpCombinedFatbinName)"
         OutputDirectory="$(IntermediateOutputPath)GSharpFatbins" 
         TargetArchitectures="$(GSharpTargetArchitectures)" >
       <Output TaskParameter="OutputFatbins" ItemName="_GSharpCompiledFatbins" />
