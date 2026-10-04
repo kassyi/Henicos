@@ -1,8 +1,8 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigInt.Runtime;
-
-using System;
 using System.Collections.Concurrent;
-using Providers;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Providers;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Runtime;
+
+namespace Kassyi.GSharp.Stdlib.GpuMath.GpuBigInt.Runtime;
 
 internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, IntPtr stream)
     : IGpuMemoryManager, IDisposable
@@ -13,6 +13,13 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
     public GpuBigIntMemoryHandle Allocate(int numWords)
     {
+        if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated &&
+            lazyBag.Value.TryTake(out var temp))
+        {
+            _activeAllocations.TryAdd(temp.Buffer.Pointer, 0);
+            return temp;
+        }
+
         var ptr = provider.AllocateMemory(numWords);
         _activeAllocations.TryAdd(ptr, 0);
         provider.ClearMemoryAsync(ptr, numWords, stream);
@@ -24,14 +31,6 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
 
-        if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated &&
-            lazyBag.Value.TryTake(out var temp))
-        {
-            _activeAllocations.TryAdd(temp.Buffer.Pointer, 0);
-            return new ScopedBigIntMemory(this, temp);
-        }
-
-        // Delegate to standard allocation if not in pool
         var handle = Allocate(numWords);
         return new ScopedBigIntMemory(this, handle);
     }
@@ -103,16 +102,18 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
         foreach (var ptr in _activeAllocations.Keys)
         {
-            if (ptr != IntPtr.Zero)
+            if (ptr == IntPtr.Zero)
             {
-                try
-                {
-                    provider.FreeMemory(ptr);
-                }
-                catch
-                {
-                    // Best-effort during disposal
-                }
+                continue;
+            }
+
+            try
+            {
+                provider.FreeMemory(ptr);
+            }
+            catch
+            {
+                // Best-effort during disposal
             }
         }
 
