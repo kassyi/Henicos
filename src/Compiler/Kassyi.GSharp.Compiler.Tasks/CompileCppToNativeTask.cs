@@ -9,10 +9,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     [Required]
     public ITaskItem[] CppSources { get; set; } = [];
 
-    public bool GSharpMultiTarget
-    {
-        get; set;
-    }
+    public bool GSharpMultiTarget { get; set; }
 
     [Output]
     public ITaskItem[] OutputDlls { get; set; } = [];
@@ -81,7 +78,6 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             var outputDllPath = Path.Combine(OutputDirectory, $"{fileName}_{arch}.dll");
 
 
-
             if (MockCompilation)
             {
                 File.WriteAllText(outputDllPath, "Mock Native DLL Content");
@@ -92,13 +88,8 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 return;
             }
 
-            if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch))
-            {
-                Interlocked.Exchange(ref hasErrorsBox[0], 1);
-                return;
-            }
-
-            if (!ArtifactHelper.ProcessArtifact(outputDllPath, Log))
+            if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch) ||
+                !ArtifactHelper.ProcessArtifact(outputDllPath, Log))
             {
                 Interlocked.Exchange(ref hasErrorsBox[0], 1);
                 return;
@@ -132,8 +123,9 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         // /nologo = Suppress copyright message
         // /Zc:preprocessor = Fix CUDA 13.3+ fatal error C1189 with MSVC
         // /std:c++17 = Fix CUDA 13.3+ libcu++ requirement
+        // /openmp = Enable OpenMP for BSP CPU scheduler parallelism
 
-        var clArgs = $"/O2 /LD /nologo /std:c++17 /Zc:preprocessor \"{sourcePath}\" /Fe:\"{outputDllPath}\"";
+        var clArgs = $"/O2 /LD /nologo /std:c++17 /openmp /Zc:preprocessor \"{sourcePath}\" /Fe:\"{outputDllPath}\"";
 
         Log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
 

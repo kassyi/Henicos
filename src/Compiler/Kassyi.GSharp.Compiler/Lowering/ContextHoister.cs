@@ -33,6 +33,18 @@ public class ContextHoister : CSharpSyntaxRewriter
         {
             var declEnd = decl.Span.End;
 
+            var isSharedMemory = decl.Parent is VariableDeclarationSyntax
+            {
+                Type: GenericNameSyntax { Identifier.ValueText: "SharedMemory" }
+            };
+
+            if (isSharedMemory)
+            {
+                _hoistedVariables.Add(decl.Identifier.ValueText);
+                hoistedDecls.Add(decl);
+                continue;
+            }
+
             // Binary search for the first barrier that comes after the declaration.
             var index = Array.BinarySearch(barrierStarts, declEnd);
             if (index < 0)
@@ -65,7 +77,10 @@ public class ContextHoister : CSharpSyntaxRewriter
             {
                 // Hoisted variables are declared in the context struct. 
                 // We must convert their local initializations into explicit assignments.
-                if (variable.Initializer == null)
+                var typeSyntax = (variable.Parent as VariableDeclarationSyntax)?.Type;
+                var isSharedMemory = typeSyntax is GenericNameSyntax { Identifier.ValueText: "SharedMemory" };
+
+                if (variable.Initializer == null || isSharedMemory)
                 {
                     continue;
                 }

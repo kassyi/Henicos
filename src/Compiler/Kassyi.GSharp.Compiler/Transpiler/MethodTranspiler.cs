@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Compiler.Dialects;
 using Kassyi.GSharp.Compiler.Lowering;
+using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -77,7 +78,7 @@ public static class MethodTranspiler
 
         if (!isDevice && !context.Emitter.Dialect.IsCuda)
         {
-            WriteCpuLauncher(methodDecl, contextFields != null, ref context);
+            WriteCpuLauncher(methodDecl, contextFields, ref context);
         }
 
         context.Emitter.Writer = mainWriter;
@@ -428,8 +429,9 @@ public static class MethodTranspiler
         }
     }
 
-    private static void WriteCpuLauncher(MethodDeclarationSyntax method, bool hasContext, ref TranspileContext context)
+    private static void WriteCpuLauncher(MethodDeclarationSyntax method, IReadOnlyList<VariableDeclaratorSyntax>? contextFields, ref TranspileContext context)
     {
+        var hasContext = contextFields != null;
         var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
         if (methodSymbol == null)
         {
@@ -465,22 +467,36 @@ public static class MethodTranspiler
 
         using (context.Emitter.Writer.Scope())
         {
-            if (hasContext)
-            {
-                context.Emitter.Writer.AppendLine(
-                    $"std::vector<__gsharp_context_{methodName}> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);");
-            }
-
-            context.Emitter.Writer.AppendLine("for (uint32_t bz = 0; bz < gridDimZ; bz++)");
-            context.Emitter.Writer.AppendLine("for (uint32_t by = 0; by < gridDimY; by++)");
-            context.Emitter.Writer.AppendLine("for (uint32_t bx = 0; bx < gridDimX; bx++)");
+            context.Emitter.Writer.AppendLine("int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);");
+            context.Emitter.Writer.AppendLine("#pragma omp parallel for schedule(dynamic)");
+            context.Emitter.Writer.AppendLine("for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)");
             using (context.Emitter.Writer.Scope())
             {
+                context.Emitter.Writer.AppendLine("int32_t bx = _b_idx % gridDimX;");
+                context.Emitter.Writer.AppendLine("int32_t by = (_b_idx / gridDimX) % gridDimY;");
+                context.Emitter.Writer.AppendLine("int32_t bz = _b_idx / (gridDimX * gridDimY);");
                 context.Emitter.Writer.AppendLine("__gsharp_reset_smem();");
                 if (hasContext)
                 {
-                    context.Emitter.Writer.AppendLine("for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }");
-                    context.Emitter.Writer.AppendLine("bool anyActive = true;");
+                    context.Emitter.Writer.AppendLine(
+                        $"std::vector<__gsharp_context_{methodName}> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);");
+
+                    if (contextFields != null)
+                    {
+                        WriteSharedMemoryEmulationBuffers(contextFields, ref context);
+                    }
+
+                    context.Emitter.Writer.AppendLine("for (auto& ctx : _gsharp_contexts) {");
+                    context.Emitter.Writer.AppendLine("ctx._state = 0;");
+                    context.Emitter.Writer.AppendLine("ctx._all_contexts = _gsharp_contexts.data();");
+
+                    if (contextFields != null)
+                    {
+                        WriteSharedMemoryEmulationAssignments(contextFields, ref context);
+                    }
+
+                    context.Emitter.Writer.AppendLine("}");
+                    context.Emitter.Writer.AppendLine("std::atomic<bool> anyActive{true};");
                     context.Emitter.Writer.AppendLine("while (anyActive)");
                     using (context.Emitter.Writer.Scope())
                     {
@@ -496,14 +512,58 @@ public static class MethodTranspiler
         }
     }
 
+    private static void WriteSharedMemoryEmulationBuffers(IReadOnlyList<VariableDeclaratorSyntax> contextFields, ref TranspileContext context)
+    {
+        foreach (var field in contextFields)
+        {
+            var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
+            if (typeSyntax is not GenericNameSyntax genericName || genericName.Identifier.ValueText != "SharedMemory")
+            {
+                continue;
+            }
+
+            var typeSymbolField = context.Query.SemanticModel.GetTypeSymbol(typeSyntax) as INamedTypeSymbol;
+            var typeArg = typeSymbolField?.TypeArguments[0];
+            
+            var initializer = field.Initializer?.Value;
+            var sizeExpression = initializer != null && InitializationSyntaxExtractor.TryGetObjectCreationFirstArgument(initializer, out var sizeArg) ? sizeArg : null;
+
+            if (typeArg == null || sizeExpression == null)
+            {
+                continue;
+            }
+
+            context.Emitter.Writer.Append("std::vector<");
+            context.Emitter.Dialect.AppendType(ref context, typeArg);
+            context.Emitter.Writer.Append($"> _smem_buffer_{field.Identifier.ValueText}(");
+            context.Visitor.Visit(sizeExpression);
+            context.Emitter.Writer.AppendLine(");");
+        }
+    }
+
+    private static void WriteSharedMemoryEmulationAssignments(IReadOnlyList<VariableDeclaratorSyntax> contextFields, ref TranspileContext context)
+    {
+        foreach (var field in contextFields)
+        {
+            var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
+            if (typeSyntax is GenericNameSyntax { Identifier.ValueText: "SharedMemory" })
+            {
+                context.Emitter.Writer.AppendLine($"ctx.{field.Identifier.ValueText}.data = _smem_buffer_{field.Identifier.ValueText}.data();");
+            }
+        }
+    }
+
     private static void WriteBlockLoop(MethodDeclarationSyntax method, IMethodSymbol methodSymbol, string methodName,
         bool hasContext, ref TranspileContext context)
     {
-        context.Emitter.Writer.AppendLine("for (uint32_t tz = 0; tz < blockDimZ; tz++)");
-        context.Emitter.Writer.AppendLine("for (uint32_t ty = 0; ty < blockDimY; ty++)");
-        context.Emitter.Writer.AppendLine("for (uint32_t tx = 0; tx < blockDimX; tx++)");
+        context.Emitter.Writer.AppendLine("int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);");
+        context.Emitter.Writer.AppendLine("#pragma omp parallel for schedule(static)");
+        context.Emitter.Writer.AppendLine("for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)");
         using (context.Emitter.Writer.Scope())
         {
+            context.Emitter.Writer.AppendLine("int32_t tx = _t_idx % blockDimX;");
+            context.Emitter.Writer.AppendLine("int32_t ty = (_t_idx / blockDimX) % blockDimY;");
+            context.Emitter.Writer.AppendLine("int32_t tz = _t_idx / (blockDimX * blockDimY);");
             if (hasContext)
             {
                 context.Emitter.Writer.AppendLine(
