@@ -18,18 +18,22 @@ public static partial class AotContexts
 }
 public const string ImplicitArrayFormsKernel_Source = @"struct __gsharp_context_ArraySyntaxTestKernels_ImplicitArrayFormsKernel {
 int _state = 0;
+__gsharp_context_ArraySyntaxTestKernels_ImplicitArrayFormsKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ArraySyntaxTestKernels_ImplicitArrayFormsKernel(__gsharp_context_ArraySyntaxTestKernels_ImplicitArrayFormsKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int implicitStackAlloc[3]={ 1, 2, 3 };
 int implicitArray[3]={ 4, 5, 6 };
 int collectionExpr[3]={ 7, 8, 9 };
 int singleStackAlloc[1]={ 42 };
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -41,7 +45,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

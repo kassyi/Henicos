@@ -29,12 +29,15 @@ public static partial class AotContexts
 }
 public const string LoopUnrollForKernel_Source = @"struct __gsharp_context_LoopUnrollKernels_LoopUnrollForKernel {
 int _state = 0;
+__gsharp_context_LoopUnrollKernels_LoopUnrollForKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollForKernel(int* __restrict__ data, __gsharp_context_LoopUnrollKernels_LoopUnrollForKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int sum = 0;
 #pragma unroll
 for(int i = 0;i<4;i++)
@@ -44,6 +47,7 @@ sum+=i+1;
 data[0]=sum;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -55,7 +59,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -97,12 +101,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 #pragma warning restore CS8500
 public const string LoopUnrollFactorKernel_Source = @"struct __gsharp_context_LoopUnrollKernels_LoopUnrollFactorKernel {
 int _state = 0;
+__gsharp_context_LoopUnrollKernels_LoopUnrollFactorKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollFactorKernel(int* __restrict__ data, __gsharp_context_LoopUnrollKernels_LoopUnrollFactorKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int sum = 0;
 #pragma unroll 4
 for(int i = 0;i<4;i++)
@@ -112,6 +119,7 @@ sum+=(i+1)*10;
 data[0]=sum;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -123,7 +131,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -165,12 +173,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 #pragma warning restore CS8500
 public const string LoopUnrollWhileKernel_Source = @"struct __gsharp_context_LoopUnrollKernels_LoopUnrollWhileKernel {
 int _state = 0;
+__gsharp_context_LoopUnrollKernels_LoopUnrollWhileKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollWhileKernel(int* __restrict__ data, __gsharp_context_LoopUnrollKernels_LoopUnrollWhileKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int count = 0;
 int sum = 0;
 #pragma unroll
@@ -183,6 +194,7 @@ data[0]=sum;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollWhileKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
@@ -193,7 +205,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -235,12 +247,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 #pragma warning restore CS8500
 public const string LoopUnrollNestedKernel_Source = @"struct __gsharp_context_LoopUnrollKernels_LoopUnrollNestedKernel {
 int _state = 0;
+__gsharp_context_LoopUnrollKernels_LoopUnrollNestedKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollNestedKernel(int* __restrict__ data, __gsharp_context_LoopUnrollKernels_LoopUnrollNestedKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int sum = 0;
 for(int i = 0;i<2;i++)
 {
@@ -254,6 +269,7 @@ data[0]=sum;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollNestedKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
@@ -264,7 +280,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -306,12 +322,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 #pragma warning restore CS8500
 public const string LoopUnrollSingleStatementKernel_Source = @"struct __gsharp_context_LoopUnrollKernels_LoopUnrollSingleStatementKernel {
 int _state = 0;
+__gsharp_context_LoopUnrollKernels_LoopUnrollSingleStatementKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollSingleStatementKernel(int* __restrict__ data, __gsharp_context_LoopUnrollKernels_LoopUnrollSingleStatementKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int sum = 0;
 #pragma unroll
 for(int i = 0;i<4;i++)
@@ -321,6 +340,7 @@ sum+=2;
 data[0]=sum;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -332,7 +352,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

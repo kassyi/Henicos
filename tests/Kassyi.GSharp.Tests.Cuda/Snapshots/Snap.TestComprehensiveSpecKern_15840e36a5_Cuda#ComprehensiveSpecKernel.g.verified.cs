@@ -219,11 +219,15 @@ while(counter>0);
 switch(tx)
 {
 case 0:
+{
 mag+=1;
 break;
+}
 default:
+{
 mag+=0;
 break;
+}
 }
 staticCache[tx]=tid;
 dynamicCache[tx]=mag;

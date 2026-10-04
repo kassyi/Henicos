@@ -18,12 +18,15 @@ public static partial class AotContexts
 }
 public const string Kernel_MacroTest_FillAndSingle_Source = @"struct __gsharp_context_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle {
 int _state = 0;
+__gsharp_context_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue, __gsharp_context_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
 {
 outputBuffer[i]=fillValue;
@@ -39,6 +42,7 @@ outputBuffer[0]=singleValue;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue)
@@ -49,7 +53,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

@@ -29,6 +29,8 @@ public static partial class AotContexts
 }
 public const string ReverseArrayWithSharedMemoryKernel_Source = @"struct __gsharp_context_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel {
 int _state = 0;
+__gsharp_context_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 int tid;
 Kassyi_GSharp_Core_SharedMemory<int> shared;
 };
@@ -37,6 +39,7 @@ extern ""C"" __declspec(dllexport) void SharedMemoryKernels_ReverseArrayWithShar
 switch(_state)
 {
 case 0:
+{
 _ctx->tid=threadIdx.x;
 _ctx->shared={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
 if(_ctx->tid<length)
@@ -45,7 +48,9 @@ _ctx->shared[_ctx->tid]=input[_ctx->tid];
 }
 _state=1;
 return;
+}
 case 1:
+{
 if(_ctx->tid<length)
 {
 int reversedIndex = length-1-_ctx->tid;
@@ -53,6 +58,7 @@ output[_ctx->tid]=_ctx->shared[reversedIndex];
 }
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -64,7 +70,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

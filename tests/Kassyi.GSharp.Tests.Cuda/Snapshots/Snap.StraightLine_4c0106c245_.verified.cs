@@ -5,10 +5,12 @@
     switch (_state)
     {
         case 0:
+        {
             int a = 1;
             int b = a + 2;
             _state = -1;
             return;
+        }
     }
 }
 }

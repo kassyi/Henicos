@@ -29,12 +29,15 @@ public static partial class AotContexts
 }
 public const string ParenthesesKernel_Source = @"struct __gsharp_context_ParenthesesSuppressionKernels_ParenthesesKernel {
 int _state = 0;
+__gsharp_context_ParenthesesSuppressionKernels_ParenthesesKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ParenthesesSuppressionKernels_ParenthesesKernel(int* __restrict__ output, int a, int b, int c, __gsharp_context_ParenthesesSuppressionKernels_ParenthesesKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 if(a<b)
 {
 output[0]=1;
@@ -51,6 +54,7 @@ output[2]=a*(b+c);
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ParenthesesSuppressionKernels_ParenthesesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output, int a, int b, int c)
@@ -61,7 +65,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

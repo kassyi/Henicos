@@ -18,17 +18,21 @@ public static partial class AotContexts
 }
 public const string Rotate32Kernel_Source = @"struct __gsharp_context_BitOperationsKernels_Rotate32Kernel {
 int _state = 0;
+__gsharp_context_BitOperationsKernels_Rotate32Kernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void BitOperationsKernels_Rotate32Kernel(unsigned int* __restrict__ val, int* __restrict__ shift, unsigned int* __restrict__ rotLeftRes, unsigned int* __restrict__ rotRightRes, __gsharp_context_BitOperationsKernels_Rotate32Kernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 rotLeftRes[tid]=__gsharp_rotl32(val[tid],shift[tid]);
 rotRightRes[tid]=__gsharp_rotr32(val[tid],shift[tid]);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -40,7 +44,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -85,17 +89,21 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_val, p_sh
 #pragma warning restore CS8500
 public const string Rotate64Kernel_Source = @"struct __gsharp_context_BitOperationsKernels_Rotate64Kernel {
 int _state = 0;
+__gsharp_context_BitOperationsKernels_Rotate64Kernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void BitOperationsKernels_Rotate64Kernel(unsigned long long* __restrict__ val, int* __restrict__ shift, unsigned long long* __restrict__ rotLeftRes, unsigned long long* __restrict__ rotRightRes, __gsharp_context_BitOperationsKernels_Rotate64Kernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 rotLeftRes[tid]=__gsharp_rotl64(val[tid],shift[tid]);
 rotRightRes[tid]=__gsharp_rotr64(val[tid],shift[tid]);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -107,7 +115,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

@@ -52,12 +52,15 @@ int Value;
 #endif
 struct __gsharp_context_TargetTypedNewKernels_HappyPathKernel {
 int _state = 0;
+__gsharp_context_TargetTypedNewKernels_HappyPathKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void TargetTypedNewKernels_HappyPathKernel(int* __restrict__ output, __gsharp_context_TargetTypedNewKernels_HappyPathKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct c1 = Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct{};
 c1.Value=tid+100;
@@ -66,6 +69,7 @@ c2.Value=tid+200;
 output[tid]=c1.Value+c2.Value;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -77,7 +81,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -136,12 +140,15 @@ Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct Child;
 #endif
 struct __gsharp_context_TargetTypedNewKernels_NestedInitializerKernel {
 int _state = 0;
+__gsharp_context_TargetTypedNewKernels_NestedInitializerKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void TargetTypedNewKernels_NestedInitializerKernel(int* __restrict__ output, __gsharp_context_TargetTypedNewKernels_NestedInitializerKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 Kassyi_GSharp_Tests_Shared_Syntax_NestedParentStruct p = ([&]() {
 Kassyi_GSharp_Tests_Shared_Syntax_NestedParentStruct _tmp{}; _tmp.Id = tid; _tmp.Child = Kassyi_GSharp_Tests_Shared_Syntax_NestedChildStruct{}; return _tmp; }
@@ -150,6 +157,7 @@ p.Child.Value=tid*5;
 output[tid]=p.Id+p.Child.Value;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -161,7 +169,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

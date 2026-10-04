@@ -200,11 +200,91 @@ extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uin
     gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
 }
 
-namespace Warp {
-    inline int ShuffleDownSync(uint32_t mask, int var, uint32_t delta, int width = 32) { return var; }
-    inline uint32_t ShuffleDownSync(uint32_t mask, uint32_t var, uint32_t delta, int width = 32) { return var; }
-    inline float ShuffleDownSync(uint32_t mask, float var, uint32_t delta, int width = 32) { return var; }
-    inline double ShuffleDownSync(uint32_t mask, double var, uint32_t delta, int width = 32) { return var; }
+// --- Warp Shuffle CPU Polyfill Helpers ---
+#include <cstring>
+
+template<typename T>
+inline void __gsharp_warp_exchange_assign_impl(T val, uint64_t* exchange) {
+    uint64_t raw = 0;
+    std::memcpy(&raw, &val, sizeof(T));
+    *exchange = raw;
+}
+
+#define __gsharp_warp_exchange_assign(val) __gsharp_warp_exchange_assign_impl(val, &_ctx->_warpExchange)
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_shuffle_read_down_sync(TContext* _ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
+    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+    uint32_t laneId = tid % 32;
+    uint32_t warpId = tid / 32;
+    uint32_t logicalLane = laneId % width;
+    uint32_t srcLane = logicalLane + delta;
+    
+    T result;
+    if (srcLane < (uint32_t)width) {
+        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
+        std::memcpy(&result, &raw, sizeof(T));
+    } else {
+        result = val;
+    }
+    return result;
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_shuffle_read_up_sync(TContext* _ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
+    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+    uint32_t laneId = tid % 32;
+    uint32_t warpId = tid / 32;
+    uint32_t logicalLane = laneId % width;
+    
+    T result;
+    if (logicalLane >= delta) {
+        uint32_t srcLane = logicalLane - delta;
+        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
+        std::memcpy(&result, &raw, sizeof(T));
+    } else {
+        result = val;
+    }
+    return result;
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_shuffle_read_xor_sync(TContext* _ctx, uint32_t mask, T val, uint32_t laneMask, int width = 32) {
+    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+    uint32_t laneId = tid % 32;
+    uint32_t warpId = tid / 32;
+    uint32_t logicalLane = laneId % width;
+    uint32_t srcLane = logicalLane ^ laneMask;
+    
+    T result;
+    if (srcLane < (uint32_t)width) {
+        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
+        std::memcpy(&result, &raw, sizeof(T));
+    } else {
+        result = val;
+    }
+    return result;
+}
+
+template<typename TContext, typename T>
+inline T __gsharp_warp_shuffle_read_sync(TContext* _ctx, uint32_t mask, T val, uint32_t srcLane, int width = 32) {
+    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+    uint32_t laneId = tid % 32;
+    uint32_t warpId = tid / 32;
+    uint32_t logicalLane = laneId % width;
+    
+    T result;
+    if (srcLane < (uint32_t)width && (mask & (1u << srcLane))) {
+        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
+        std::memcpy(&result, &raw, sizeof(T));
+    } else {
+        result = val;
+    }
+    return result;
 }
 
 namespace Hint {

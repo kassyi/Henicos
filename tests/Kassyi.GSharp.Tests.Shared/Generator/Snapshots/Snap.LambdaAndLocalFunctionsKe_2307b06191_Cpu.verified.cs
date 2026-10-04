@@ -29,12 +29,15 @@ public static partial class AotContexts
 }
 public const string NonCapturingLambdaKernel_Source = @"struct __gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel {
 int _state = 0;
+__gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel(int* __restrict__ data, __gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 auto doubleValue = [&](int x) {
 return x*2;
@@ -43,6 +46,7 @@ return x*2;
 data[tid]=doubleValue(data[tid]);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -54,7 +58,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -96,12 +100,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 #pragma warning restore CS8500
 public const string ValueCapturingLambdaKernel_Source = @"struct __gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel {
 int _state = 0;
+__gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel(int* __restrict__ data, int factor, __gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 auto multiply = [&](int x) {
 return x*factor;
@@ -110,6 +117,7 @@ return x*factor;
 data[tid]=multiply(data[tid]);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -121,7 +129,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -163,12 +171,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, fac
 #pragma warning restore CS8500
 public const string ImmediatelyEvaluatedLambdaKernel_Source = @"struct __gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel {
 int _state = 0;
+__gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel(int* __restrict__ data, __gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 auto LocalAdd = [&](int a, int b) {
 return a+b;
@@ -177,6 +188,7 @@ return a+b;
 data[tid]=LocalAdd(data[tid],100);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -188,7 +200,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -230,12 +242,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 #pragma warning restore CS8500
 public const string ShadowedVariableCaptureKernel_Source = @"struct __gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel {
 int _state = 0;
+__gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel(int* __restrict__ data, __gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 int value = 50;
 auto calc = [&](int value) {
@@ -245,6 +260,7 @@ return value*2;
 data[tid]=calc(data[tid])+value;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -256,7 +272,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -298,6 +314,8 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 #pragma warning restore CS8500
 public const string NestedReturnsKernel_Source = @"struct __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel {
 int _state = 0;
+__gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LambdaAndLocalFunctionsKernels_NestedReturnsKernel(int someValue, __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel* _ctx, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
@@ -305,6 +323,7 @@ unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockId
 switch(_state)
 {
 case 0:
+{
 auto LocalAdd = [&](float a, float b) {
 return a+b;
 }
@@ -318,6 +337,7 @@ _state = -1;return;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LambdaAndLocalFunctionsKernels_NestedReturnsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int someValue, float* __restrict__ __gsharp_auto_result)
@@ -328,7 +348,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

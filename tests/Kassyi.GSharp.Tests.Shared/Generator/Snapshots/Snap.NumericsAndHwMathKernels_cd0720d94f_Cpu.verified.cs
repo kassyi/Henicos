@@ -29,12 +29,15 @@ public static partial class AotContexts
 }
 public const string BitOperationsTestKernel_Source = @"struct __gsharp_context_NumericsAndHwMathKernels_BitOperationsTestKernel {
 int _state = 0;
+__gsharp_context_NumericsAndHwMathKernels_BitOperationsTestKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void NumericsAndHwMathKernels_BitOperationsTestKernel(unsigned int* __restrict__ u32Data, unsigned long long* __restrict__ u64Data, __gsharp_context_NumericsAndHwMathKernels_BitOperationsTestKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 unsigned int u32Val = u32Data[0];
 u32Data[1]=(unsigned int)__gsharp_lzc_32(u32Val);
 u32Data[2]=(unsigned int)__popc((unsigned int)(u32Val));
@@ -52,6 +55,7 @@ u64Data[6]=__gsharp_rotr64(u64Val,7);
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_NumericsAndHwMathKernels_BitOperationsTestKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ u32Data, unsigned long long* __restrict__ u64Data)
@@ -62,7 +66,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

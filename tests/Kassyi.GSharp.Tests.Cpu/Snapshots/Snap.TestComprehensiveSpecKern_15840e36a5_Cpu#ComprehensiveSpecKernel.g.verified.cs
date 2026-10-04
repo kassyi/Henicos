@@ -161,6 +161,8 @@ unsigned long long Flags;
 #endif
 struct __gsharp_context_ComprehensiveSpecKernel_ProcessPhysics {
 int _state = 0;
+__gsharp_context_ComprehensiveSpecKernel_ProcessPhysics* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 float Gravity;
 int tx;
 int ty;
@@ -192,6 +194,7 @@ extern ""C"" __declspec(dllexport) void ComprehensiveSpecKernel_ProcessPhysics(D
 switch(_state)
 {
 case 0:
+{
 (*successFlag)=false;
 _ctx->Gravity=9.8f;
 _ctx->tx=threadIdx.x;
@@ -249,17 +252,23 @@ while(_ctx->counter>0);
 switch(_ctx->tx)
 {
 case 0:
+{
 _ctx->mag+=1;
 break;
+}
 default:
+{
 _ctx->mag+=0;
 break;
+}
 }
 _ctx->staticCache[_ctx->tx]=_ctx->tid;
 _ctx->dynamicCache[_ctx->tx]=_ctx->mag;
 _state=1;
 return;
+}
 case 1:
+{
 if(_ctx->tx==0)
 {
 atomicAdd((*totalMagnitude),_ctx->dynamicCache[0]);
@@ -306,6 +315,7 @@ _BranchEnd_0:
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ComprehensiveSpecKernel_ProcessPhysics(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, DebugReduc_PhysicsVector* __restrict__ particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor)
@@ -316,7 +326,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -361,17 +371,21 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_particles
 #pragma warning restore CS8500
 public const string CooperativePhysicsProcess_Source = @"struct __gsharp_context_ComprehensiveSpecKernel_CooperativePhysicsProcess {
 int _state = 0;
+__gsharp_context_ComprehensiveSpecKernel_CooperativePhysicsProcess* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ComprehensiveSpecKernel_CooperativePhysicsProcess(int* __restrict__ data, __gsharp_context_ComprehensiveSpecKernel_CooperativePhysicsProcess* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 data[tid]=tid;
 cg::this_grid().sync();
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -383,7 +397,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

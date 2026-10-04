@@ -18,16 +18,20 @@ public static partial class AotContexts
 }
 public const string SimpleTernaryKernel_Source = @"struct __gsharp_context_ControlFlowKernels_SimpleTernaryKernel {
 int _state = 0;
+__gsharp_context_ControlFlowKernels_SimpleTernaryKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ControlFlowKernels_SimpleTernaryKernel(int* __restrict__ a, int* __restrict__ b, double* __restrict__ result, __gsharp_context_ControlFlowKernels_SimpleTernaryKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 result[tid]=(a[tid]>b[tid]?a[tid]:b[tid]*1.5);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -39,7 +43,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -83,12 +87,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p
 #pragma warning restore CS8500
 public const string NestedTernaryKernel_Source = @"struct __gsharp_context_ControlFlowKernels_NestedTernaryKernel {
 int _state = 0;
+__gsharp_context_ControlFlowKernels_NestedTernaryKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ControlFlowKernels_NestedTernaryKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c, int* __restrict__ result, __gsharp_context_ControlFlowKernels_NestedTernaryKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 int x = a[tid];
 int y = b[tid];
@@ -96,6 +103,7 @@ int z = c[tid];
 result[tid]=(x>y?((y>z?1:2)):((x>z?3:4)));
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -107,7 +115,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -152,12 +160,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p
 #pragma warning restore CS8500
 public const string SwitchExpressionKernel_Source = @"struct __gsharp_context_ControlFlowKernels_SwitchExpressionKernel {
 int _state = 0;
+__gsharp_context_ControlFlowKernels_SwitchExpressionKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ControlFlowKernels_SwitchExpressionKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_ControlFlowKernels_SwitchExpressionKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 int val = input[tid];
 output[tid]=([&]() {
@@ -172,6 +183,7 @@ default: return 99;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ControlFlowKernels_SwitchExpressionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
@@ -182,7 +194,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -225,12 +237,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 #pragma warning restore CS8500
 public const string RefSwitchExpressionKernel_Source = @"struct __gsharp_context_ControlFlowKernels_RefSwitchExpressionKernel {
 int _state = 0;
+__gsharp_context_ControlFlowKernels_RefSwitchExpressionKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ControlFlowKernels_RefSwitchExpressionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ selectors, int* __restrict__ valuesToAssign, __gsharp_context_ControlFlowKernels_RefSwitchExpressionKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 if(selectors[tid]==1)
 {
@@ -243,6 +258,7 @@ b[tid]=valuesToAssign[tid];
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ControlFlowKernels_RefSwitchExpressionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ selectors, int* __restrict__ valuesToAssign)
@@ -253,7 +269,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -298,12 +314,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p
 #pragma warning restore CS8500
 public const string NullCoalescingKernel_Source = @"struct __gsharp_context_ControlFlowKernels_NullCoalescingKernel {
 int _state = 0;
+__gsharp_context_ControlFlowKernels_NullCoalescingKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ControlFlowKernels_NullCoalescingKernel(System_Nullable<int>* __restrict__ nullableInputs, int* __restrict__ fallbackValues, int* __restrict__ results, __gsharp_context_ControlFlowKernels_NullCoalescingKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 System_Nullable<int> input = nullableInputs[tid];
 results[tid]=([&]() {
@@ -312,6 +331,7 @@ return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : fallbackValues[tid];
 }());
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -323,7 +343,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -367,12 +387,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_nullableI
 #pragma warning restore CS8500
 public const string NullCoalescingAssignmentSideEffectKernel_Source = @"struct __gsharp_context_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel {
 int _state = 0;
+__gsharp_context_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel(System_Nullable<int>* __restrict__ targetArray, int* __restrict__ sideEffectTracker, int* __restrict__ values, __gsharp_context_ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 int idx = sideEffectTracker[tid];
 sideEffectTracker[tid]=idx+1;
@@ -382,6 +405,7 @@ return !__coalesce_target.HasValue ? (__coalesce_target = values[tid]) : __coale
 }());
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -393,7 +417,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

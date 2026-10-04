@@ -18,12 +18,15 @@ public static partial class AotContexts
 }
 public const string InOutKernel_Source = @"struct __gsharp_context_GEN_57_InOutArrayMarshaling_InOutKernel {
 int _state = 0;
+__gsharp_context_GEN_57_InOutArrayMarshaling_InOutKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void GEN_57_InOutArrayMarshaling_InOutKernel(float* __restrict__ data, int n, __gsharp_context_GEN_57_InOutArrayMarshaling_InOutKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int idx = threadIdx.x+blockIdx.x*blockDim.x;
 if(idx<n)
 {
@@ -31,6 +34,7 @@ data[idx]*=2.0f;
 }
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -42,7 +46,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

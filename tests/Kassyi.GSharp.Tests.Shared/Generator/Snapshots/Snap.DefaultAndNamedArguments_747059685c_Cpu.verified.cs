@@ -18,12 +18,15 @@ public static partial class AotContexts
 }
 public const string SampleKernel_Source = @"struct __gsharp_context_DefaultAndNamedArgumentsTestCase_SampleKernel {
 int _state = 0;
+__gsharp_context_DefaultAndNamedArgumentsTestCase_SampleKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void DefaultAndNamedArgumentsTestCase_SampleKernel(int* __restrict__ data, __gsharp_context_DefaultAndNamedArgumentsTestCase_SampleKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 int r1 = ComputeStep(data[tid],0,1);
 int r2 = ComputeStep(data[tid],5,2);
@@ -31,6 +34,7 @@ int r3 = ComputeStep(data[tid],0,4);
 data[tid]=r1+r2+r3;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -42,7 +46,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

@@ -210,15 +210,21 @@ int tid = threadIdx.x;
 switch(tid)
 {
 case 0:
+{
 data[tid]=10;
 break;
+}
 case 1:
 case 2:
+{
 data[tid]=20;
 break;
+}
 default:
+{
 data[tid]=30;
 break;
+}
 }
 int count = 0;
 do

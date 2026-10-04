@@ -113,6 +113,8 @@ int Data[4];
 #endif
 struct __gsharp_context_Tier1IntegrationKernels_AllInOneKernel {
 int _state = 0;
+__gsharp_context_Tier1IntegrationKernels_AllInOneKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 bool ok;
 int bitwise;
 float mag;
@@ -127,6 +129,7 @@ extern ""C"" __declspec(dllexport) void Tier1IntegrationKernels_AllInOneKernel(i
 switch(_state)
 {
 case 0:
+{
 for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < count; tid += gridDim.x * blockDim.x)
 {
 auto LocalInlineFunc = [&](int x) {
@@ -270,6 +273,7 @@ results[tid]=finalVal;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Tier1IntegrationKernels_AllInOneKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize)
@@ -280,7 +284,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

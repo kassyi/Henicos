@@ -116,18 +116,22 @@ public static partial class AotContexts
 }
 public const string Sha256Kernel_Source = @"struct __gsharp_context_Sha256Kernels_Sha256Kernel {
 int _state = 0;
+__gsharp_context_Sha256Kernels_Sha256Kernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void Sha256Kernels_Sha256Kernel(unsigned char* __restrict__ input, unsigned int* __restrict__ output, int numMessages, __gsharp_context_Sha256Kernels_Sha256Kernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < numMessages; tid += gridDim.x * blockDim.x)
 {
 ComputeBlock(tid,input,output);
 }
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -139,7 +143,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

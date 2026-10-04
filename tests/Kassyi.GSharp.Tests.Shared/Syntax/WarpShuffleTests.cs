@@ -9,7 +9,6 @@ public class WarpShuffleTests : TranspilerTestBase
 {
     public WarpShuffleTests()
     {
-        SkipIfCpuDialect();
     }
 
     [SkippableTheory]

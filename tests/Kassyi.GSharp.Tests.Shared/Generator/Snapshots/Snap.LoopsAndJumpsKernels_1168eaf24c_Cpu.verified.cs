@@ -49,12 +49,15 @@ __device__ inline int size() const { return 4; }
 #endif
 struct __gsharp_context_LoopsAndJumpsKernels_ForeachInlineArrayKernel {
 int _state = 0;
+__gsharp_context_LoopsAndJumpsKernels_ForeachInlineArrayKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LoopsAndJumpsKernels_ForeachInlineArrayKernel(int* __restrict__ output, __gsharp_context_LoopsAndJumpsKernels_ForeachInlineArrayKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4 arr = Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4{};
 arr[0]=10;
 arr[1]=20;
@@ -69,6 +72,7 @@ output[0]=total;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopsAndJumpsKernels_ForeachInlineArrayKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
@@ -79,7 +83,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -121,12 +125,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
 #pragma warning restore CS8500
 public const string ForeachCollectionExpressionKernel_Source = @"struct __gsharp_context_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel {
 int _state = 0;
+__gsharp_context_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(int* __restrict__ output, __gsharp_context_LoopsAndJumpsKernels_ForeachCollectionExpressionKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 const int arr[4]={ 10, 20, 30, 40 };
 int total = 0;
 for(auto val : arr)
@@ -136,6 +143,7 @@ total+=val;
 output[0]=total;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -147,7 +155,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -189,12 +197,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
 #pragma warning restore CS8500
 public const string ForeachStackAllocKernel_Source = @"struct __gsharp_context_LoopsAndJumpsKernels_ForeachStackAllocKernel {
 int _state = 0;
+__gsharp_context_LoopsAndJumpsKernels_ForeachStackAllocKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void LoopsAndJumpsKernels_ForeachStackAllocKernel(int* __restrict__ output, __gsharp_context_LoopsAndJumpsKernels_ForeachStackAllocKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int arr[4]={ 10, 20, 30, 40 };
 int total = 0;
 for(auto val : arr)
@@ -204,6 +215,7 @@ total+=val;
 output[0]=total;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -215,7 +227,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

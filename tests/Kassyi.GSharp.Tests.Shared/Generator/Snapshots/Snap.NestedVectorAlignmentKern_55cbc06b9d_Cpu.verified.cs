@@ -125,12 +125,15 @@ Kassyi_GSharp_Core_Double2 Field5_Double2;
 #endif
 struct __gsharp_context_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel {
 int _state = 0;
+__gsharp_context_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(int* __restrict__ offsets, __gsharp_context_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 {
 Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct s = {};
 unsigned char* basePtr = (unsigned char*)&s;
@@ -144,6 +147,7 @@ offsets[5]=64;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ offsets)
@@ -154,7 +158,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -237,16 +241,20 @@ Kassyi_GSharp_Core_Double2 Field5_Double2;
 #endif
 struct __gsharp_context_NestedVectorAlignmentKernels_RoundtripKernel {
 int _state = 0;
+__gsharp_context_NestedVectorAlignmentKernels_RoundtripKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void NestedVectorAlignmentKernels_RoundtripKernel(Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct* __restrict__  data, __gsharp_context_NestedVectorAlignmentKernels_RoundtripKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 (*data).Field1_Byte=(unsigned char)((*data).Field1_Byte+1-1);
 (*data).Field4_Short=(short)((*data).Field4_Short+1-1);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -258,7 +266,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
