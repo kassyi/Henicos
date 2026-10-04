@@ -18,6 +18,8 @@ public static partial class AotContexts
 }
 public const string BadKernel_Source = @"struct __gsharp_context_ErrorSpecKernel_BadKernel {
 int _state = 0;
+__gsharp_context_ErrorSpecKernel_BadKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ErrorSpecKernel_BadKernel(__gsharp_context_ErrorSpecKernel_BadKernel* _ctx, int* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
@@ -25,12 +27,14 @@ unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockId
 switch(_state)
 {
 case 0:
+{
 System_String s = ""hello"";
 System_Object obj = object;
 __gsharp_auto_result[__gsharp_global_tid] = 0;
 _state = -1;return;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -42,7 +46,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

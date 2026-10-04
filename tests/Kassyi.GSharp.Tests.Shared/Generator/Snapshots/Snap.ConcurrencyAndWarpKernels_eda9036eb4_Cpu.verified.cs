@@ -18,6 +18,8 @@ public static partial class AotContexts
 }
 public const string SharedMemoryKernel_Source = @"struct __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel {
 int _state = 0;
+__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 int tid;
 Kassyi_GSharp_Core_SharedMemory<int> sStatic;
 Kassyi_GSharp_Core_SharedMemory<int> sDyn1;
@@ -28,6 +30,7 @@ extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_SharedMemoryKe
 switch(_state)
 {
 case 0:
+{
 _ctx->tid=threadIdx.x;
 _ctx->sStatic={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
 _ctx->sDyn1={ (int*)__gsharp_allocate_smem(1, (dynSize) * sizeof(int), alignof(int)) };
@@ -37,10 +40,13 @@ _ctx->sDyn1[_ctx->tid]=data[_ctx->tid]*2;
 _ctx->sDyn2[_ctx->tid]=3.14f;
 _state=1;
 return;
+}
 case 1:
+{
 data[_ctx->tid]=_ctx->sStatic[_ctx->tid]+_ctx->sDyn1[_ctx->tid];
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -52,7 +58,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -94,6 +100,8 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, dyn
 #pragma warning restore CS8500
 public const string SharedMemoryReverseKernel_Source = @"struct __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel {
 int _state = 0;
+__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 int tid;
 Kassyi_GSharp_Core_SharedMemory<int> sMem;
 };
@@ -102,6 +110,7 @@ extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_SharedMemoryRe
 switch(_state)
 {
 case 0:
+{
 _ctx->tid=threadIdx.x;
 _ctx->sMem={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
 if(_ctx->tid<size)
@@ -110,13 +119,16 @@ _ctx->sMem[_ctx->tid]=data[_ctx->tid];
 }
 _state=1;
 return;
+}
 case 1:
+{
 if(_ctx->tid<size)
 {
 data[_ctx->tid]=_ctx->sMem[size-1-_ctx->tid];
 }
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -128,7 +140,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -170,6 +182,8 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, siz
 #pragma warning restore CS8500
 public const string IntrinsicsKernel_Source = @"struct __gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel {
 int _state = 0;
+__gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 int tid;
 };
 extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_IntrinsicsKernel(int* __restrict__ data, __gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel* _ctx){
@@ -177,6 +191,7 @@ extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_IntrinsicsKern
 switch(_state)
 {
 case 0:
+{
 _ctx->tid=threadIdx.x;
 if(_ctx->tid<10)
 {
@@ -184,13 +199,16 @@ atomicAdd(&data[0],_ctx->tid);
 }
 _state=1;
 return;
+}
 case 1:
+{
 if(_ctx->tid==0)
 {
 data[1]=max(data[0],100);
 }
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -202,7 +220,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -244,15 +262,19 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 #pragma warning restore CS8500
 public const string AtomicAddStressKernel_Source = @"struct __gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel {
 int _state = 0;
+__gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_AtomicAddStressKernel(int* __restrict__ globalSum, __gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 atomicAdd(&globalSum[0],1);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -264,7 +286,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -306,12 +328,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_globalSum
 #pragma warning restore CS8500
 public const string AtomicOrMaxStressKernel_Source = @"struct __gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel {
 int _state = 0;
+__gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(unsigned int* __restrict__ globalState, __gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<31)
 {
@@ -320,6 +345,7 @@ atomicOr(&globalState[0],(unsigned int)(1<<tid));
 atomicMax(&globalState[1],(unsigned int)tid);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -331,7 +357,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

@@ -29,12 +29,15 @@ public static partial class AotContexts
 }
 public const string SimpleConstantSwitchKernel_Source = @"struct __gsharp_context_SwitchExpressionKernels_SimpleConstantSwitchKernel {
 int _state = 0;
+__gsharp_context_SwitchExpressionKernels_SimpleConstantSwitchKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void SwitchExpressionKernels_SimpleConstantSwitchKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_SwitchExpressionKernels_SimpleConstantSwitchKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 int val = input[tid];
 output[tid]=([&]() {
@@ -49,6 +52,7 @@ default: return -1;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_SwitchExpressionKernels_SimpleConstantSwitchKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
@@ -59,7 +63,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -102,12 +106,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 #pragma warning restore CS8500
 public const string FloatingPointReturnSwitchKernel_Source = @"struct __gsharp_context_SwitchExpressionKernels_FloatingPointReturnSwitchKernel {
 int _state = 0;
+__gsharp_context_SwitchExpressionKernels_FloatingPointReturnSwitchKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void SwitchExpressionKernels_FloatingPointReturnSwitchKernel(int* __restrict__ input, float* __restrict__ output, __gsharp_context_SwitchExpressionKernels_FloatingPointReturnSwitchKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 int mode = input[tid];
 output[tid]=([&]() {
@@ -122,6 +129,7 @@ default: return -1.0f;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_SwitchExpressionKernels_FloatingPointReturnSwitchKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, float* __restrict__ output)
@@ -132,7 +140,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -175,12 +183,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 #pragma warning restore CS8500
 public const string MultipleArmsBoundarySwitchKernel_Source = @"struct __gsharp_context_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel {
 int _state = 0;
+__gsharp_context_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 int val = input[tid];
 output[tid]=([&]() {
@@ -197,6 +208,7 @@ default: return 0;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
@@ -207,7 +219,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

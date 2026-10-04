@@ -41,18 +41,22 @@ float C;
 #pragma pack(pop)
 struct __gsharp_context_StructLayoutKernels_ModifyStructLayoutKernel {
 int _state = 0;
+__gsharp_context_StructLayoutKernels_ModifyStructLayoutKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void StructLayoutKernels_ModifyStructLayoutKernel(Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct* __restrict__ data, __gsharp_context_StructLayoutKernels_ModifyStructLayoutKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 data[tid].A+=10;
 data[tid].B*=2.0;
 data[tid].C-=1.0f;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -64,7 +68,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -140,18 +144,22 @@ int B;
 #pragma pack(pop)
 struct __gsharp_context_StructLayoutKernels_ModifyPackedInlineArrayKernel {
 int _state = 0;
+__gsharp_context_StructLayoutKernels_ModifyPackedInlineArrayKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void StructLayoutKernels_ModifyPackedInlineArrayKernel(Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray* __restrict__ data, __gsharp_context_StructLayoutKernels_ModifyPackedInlineArrayKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 data[tid].A+=1;
 data[tid].Buffer[0]+=2;
 data[tid].B+=3;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -163,7 +171,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

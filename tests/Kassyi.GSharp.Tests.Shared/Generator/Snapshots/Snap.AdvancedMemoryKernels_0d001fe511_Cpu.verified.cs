@@ -18,18 +18,22 @@ public static partial class AotContexts
 }
 public const string FixedBufferKernel_Source = @"struct __gsharp_context_AdvancedMemoryKernels_FixedBufferKernel {
 int _state = 0;
+__gsharp_context_AdvancedMemoryKernels_FixedBufferKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_FixedBufferKernel(unsigned int* __restrict__ data, __gsharp_context_AdvancedMemoryKernels_FixedBufferKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 unsigned int* p = &data[0];
 {
 p[1]=p[0]+10;
 }
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -41,7 +45,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -83,12 +87,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 #pragma warning restore CS8500
 public const string PointerIncrementKernel_Source = @"struct __gsharp_context_AdvancedMemoryKernels_PointerIncrementKernel {
 int _state = 0;
+__gsharp_context_AdvancedMemoryKernels_PointerIncrementKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerIncrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest, __gsharp_context_AdvancedMemoryKernels_PointerIncrementKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 unsigned int* pSrc = &src[0];
 unsigned int* pDest = &dest[0];
 {
@@ -102,6 +109,7 @@ for(int i = 0;i<3;i++)
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerIncrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ src, unsigned int* __restrict__ dest)
@@ -112,7 +120,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -155,12 +163,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_src, p_de
 #pragma warning restore CS8500
 public const string PointerDecrementKernel_Source = @"struct __gsharp_context_AdvancedMemoryKernels_PointerDecrementKernel {
 int _state = 0;
+__gsharp_context_AdvancedMemoryKernels_PointerDecrementKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerDecrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest, __gsharp_context_AdvancedMemoryKernels_PointerDecrementKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 unsigned int* pSrc = &src[0];
 unsigned int* pDest = &dest[0];
 {
@@ -174,6 +185,7 @@ for(int i = 0;i<3;i++)
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerDecrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ src, unsigned int* __restrict__ dest)
@@ -184,7 +196,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -227,12 +239,15 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_src, p_de
 #pragma warning restore CS8500
 public const string PointerComplexAssignmentKernel_Source = @"struct __gsharp_context_AdvancedMemoryKernels_PointerComplexAssignmentKernel {
 int _state = 0;
+__gsharp_context_AdvancedMemoryKernels_PointerComplexAssignmentKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerComplexAssignmentKernel(unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest, __gsharp_context_AdvancedMemoryKernels_PointerComplexAssignmentKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 unsigned int* pIdx = &idx[0];
 unsigned int* pVal = &val[0];
 {
@@ -246,6 +261,7 @@ dest[*ptrI++]=*ptrV+++10u;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerComplexAssignmentKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest)
@@ -256,7 +272,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

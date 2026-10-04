@@ -29,6 +29,8 @@ public static partial class AotContexts
 }
 public const string SgemmKernel_Source = @"struct __gsharp_context_SgemmKernels_SgemmKernel {
 int _state = 0;
+__gsharp_context_SgemmKernels_SgemmKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 Kassyi_GSharp_Core_SharedMemory<float> As;
 Kassyi_GSharp_Core_SharedMemory<float> Bs;
 int bx;
@@ -46,6 +48,7 @@ extern ""C"" __declspec(dllexport) void SgemmKernels_SgemmKernel(float* __restri
 switch(_state)
 {
 case 0:
+{
 _ctx->As={ (float*)__gsharp_allocate_smem(0, (256) * sizeof(float), alignof(float)) };
 _ctx->Bs={ (float*)__gsharp_allocate_smem(1, (256) * sizeof(float), alignof(float)) };
 _ctx->bx=blockIdx.x;
@@ -80,14 +83,18 @@ _ctx->Bs[_ctx->ty*16+_ctx->tx]=0.0f;
 }
 _state=1;
 return;
+}
 case 1:
+{
 for(int k = 0;_ctx->k<16;++_ctx->k)
 {
 _ctx->cValue+=_ctx->As[_ctx->ty*16+_ctx->k]*_ctx->Bs[_ctx->k*16+_ctx->tx];
 }
 _state=2;
 return;
+}
 case 2:
+{
 _ForContinue_0:
 ;
 _ctx->m++;
@@ -101,6 +108,7 @@ c[_ctx->row*n+_ctx->col]=_ctx->cValue;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_SgemmKernels_SgemmKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n)
@@ -111,7 +119,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

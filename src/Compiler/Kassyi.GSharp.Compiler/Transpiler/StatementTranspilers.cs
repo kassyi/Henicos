@@ -200,10 +200,13 @@ internal static class StatementTranspilers
             context.Emitter.Writer.AppendLine();
         }
 
-        foreach (var stmt in node.Statements)
+        using (context.Emitter.Writer.Scope())
         {
-            context.Visitor.Visit(stmt);
-            context.Emitter.Writer.AppendLine();
+            foreach (var stmt in node.Statements)
+            {
+                context.Visitor.Visit(stmt);
+                context.Emitter.Writer.AppendLine();
+            }
         }
     }
 

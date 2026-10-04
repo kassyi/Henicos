@@ -29,28 +29,76 @@ public static partial class AotContexts
 }
 public const string WarpReductionKernel_Source = @"struct __gsharp_context_WarpShuffleKernels_WarpReductionKernel {
 int _state = 0;
+__gsharp_context_WarpShuffleKernels_WarpReductionKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
+int tid;
+int lane;
+int warpId;
+int val;
+unsigned int mask;
+int _warpTemp_0;
+int _warpTemp_1;
+int _warpTemp_2;
+int _warpTemp_3;
 };
 extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpReductionKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_WarpShuffleKernels_WarpReductionKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
-int tid = threadIdx.x;
-int lane = tid%32;
-int warpId = tid/32;
-int val = input[tid];
-unsigned int mask = 0xffffffff;
-val+=__shfl_down_sync(mask,val,16,32);
-val+=__shfl_down_sync(mask,val,8,32);
-val+=__shfl_down_sync(mask,val,4,32);
-val+=__shfl_down_sync(mask,val,2,32);
-val+=__shfl_down_sync(mask,val,1,32);
-if(lane==0)
 {
-output[warpId]=val;
+_ctx->tid=threadIdx.x;
+_ctx->lane=_ctx->tid%32;
+_ctx->warpId=_ctx->tid/32;
+_ctx->val=input[_ctx->tid];
+_ctx->mask=0xffffffff;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=1;
+return;
+}
+case 1:
+{
+_ctx->_warpTemp_0=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,16);
+_ctx->val+=_ctx->_warpTemp_0;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=2;
+return;
+}
+case 2:
+{
+_ctx->_warpTemp_1=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,8);
+_ctx->val+=_ctx->_warpTemp_1;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=3;
+return;
+}
+case 3:
+{
+_ctx->_warpTemp_2=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,4);
+_ctx->val+=_ctx->_warpTemp_2;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=4;
+return;
+}
+case 4:
+{
+_ctx->_warpTemp_3=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,2);
+_ctx->val+=_ctx->_warpTemp_3;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=5;
+return;
+}
+case 5:
+{
+auto _warpTemp_4 = __gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,1);
+_ctx->val+=_warpTemp_4;
+if(_ctx->lane==0)
+{
+output[_ctx->warpId]=_ctx->val;
 }
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -62,7 +110,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -105,20 +153,50 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 #pragma warning restore CS8500
 public const string WarpShuffleBoundaryKernel_Source = @"struct __gsharp_context_WarpShuffleKernels_WarpShuffleBoundaryKernel {
 int _state = 0;
+__gsharp_context_WarpShuffleKernels_WarpShuffleBoundaryKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
+int tid;
+unsigned int mask;
+int val;
+int _warpTemp_0;
+int _warpTemp_1;
 };
 extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpShuffleBoundaryKernel(int* __restrict__ input, int* __restrict__ outputBoundary0, int* __restrict__ outputBoundary31, int* __restrict__ outputBoundary32, __gsharp_context_WarpShuffleKernels_WarpShuffleBoundaryKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
-int tid = threadIdx.x;
-unsigned int mask = 0xffffffff;
-int val = input[tid];
-outputBoundary0[tid]=__shfl_down_sync(mask,val,0,32);
-outputBoundary31[tid]=__shfl_down_sync(mask,val,31,32);
-outputBoundary32[tid]=__shfl_down_sync(mask,val,32,32);
+{
+_ctx->tid=threadIdx.x;
+_ctx->mask=0xffffffff;
+_ctx->val=input[_ctx->tid];
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=1;
+return;
+}
+case 1:
+{
+_ctx->_warpTemp_0=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,0);
+outputBoundary0[_ctx->tid]=_ctx->_warpTemp_0;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=2;
+return;
+}
+case 2:
+{
+_ctx->_warpTemp_1=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,31);
+outputBoundary31[_ctx->tid]=_ctx->_warpTemp_1;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=3;
+return;
+}
+case 3:
+{
+auto _warpTemp_2 = __gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,32);
+outputBoundary32[_ctx->tid]=_warpTemp_2;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -130,7 +208,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -175,29 +253,52 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 #pragma warning restore CS8500
 public const string WarpDivergenceKernel_Source = @"struct __gsharp_context_WarpShuffleKernels_WarpDivergenceKernel {
 int _state = 0;
+__gsharp_context_WarpShuffleKernels_WarpDivergenceKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
+int tid;
+int lane;
+unsigned int mask;
+int val;
+int _warpTemp_0;
 };
 extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpDivergenceKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_WarpShuffleKernels_WarpDivergenceKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
-int tid = threadIdx.x;
-int lane = tid%32;
-unsigned int mask = 0xffffffff;
-int val = input[tid];
-if(lane<16)
 {
-mask=0x0000FFFF;
-val=__shfl_down_sync(mask,val,1,16);
+_ctx->tid=threadIdx.x;
+_ctx->lane=_ctx->tid%32;
+_ctx->mask=0xffffffff;
+_ctx->val=input[_ctx->tid];
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=1;
+return;
+}
+case 1:
+{
+_ctx->_warpTemp_0=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,1,16);
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=2;
+return;
+}
+case 2:
+{
+auto _warpTemp_1 = __gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,2,16);
+if(_ctx->lane<16)
+{
+_ctx->mask=0x0000FFFF;
+_ctx->val=_ctx->_warpTemp_0;
 }
 else
 {
-mask=0xFFFF0000;
-val=__shfl_down_sync(mask,val,2,16);
+_ctx->mask=0xFFFF0000;
+_ctx->val=_warpTemp_1;
 }
-output[tid]=val;
+output[_ctx->tid]=_ctx->val;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -209,7 +310,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -252,16 +353,28 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_
 #pragma warning restore CS8500
 public const string WarpShuffleExtremaKernel_Source = @"struct __gsharp_context_WarpShuffleKernels_WarpShuffleExtremaKernel {
 int _state = 0;
+__gsharp_context_WarpShuffleKernels_WarpShuffleExtremaKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
+int tid;
 };
 extern ""C"" __declspec(dllexport) void WarpShuffleKernels_WarpShuffleExtremaKernel(unsigned int mask, int* __restrict__ input, unsigned int delta, int width, int* __restrict__ output, __gsharp_context_WarpShuffleKernels_WarpShuffleExtremaKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
-int tid = threadIdx.x;
-output[tid]=__shfl_down_sync(mask,input[tid],delta,width);
+{
+_ctx->tid=threadIdx.x;
+__gsharp_warp_exchange_assign(input[_ctx->tid]);
+_state=1;
+return;
+}
+case 1:
+{
+auto _warpTemp_0 = __gsharp_warp_shuffle_read_down_sync(_ctx,mask,input[_ctx->tid],delta,width);
+output[_ctx->tid]=_warpTemp_0;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -273,7 +386,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

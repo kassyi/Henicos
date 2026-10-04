@@ -18,12 +18,15 @@ public static partial class AotContexts
 }
 public const string ComplexLogicKernel_Source = @"struct __gsharp_context_CoreSyntaxKernels_ComplexLogicKernel {
 int _state = 0;
+__gsharp_context_CoreSyntaxKernels_ComplexLogicKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void CoreSyntaxKernels_ComplexLogicKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c, __gsharp_context_CoreSyntaxKernels_ComplexLogicKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 for(int i = 0;i<5;i++)
 {
 if(a[0]>10)
@@ -38,6 +41,7 @@ c[0]=c[0]+b[0];
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_CoreSyntaxKernels_ComplexLogicKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ c)
@@ -48,7 +52,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -92,25 +96,34 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p
 #pragma warning restore CS8500
 public const string ControlFlowKernel_Source = @"struct __gsharp_context_CoreSyntaxKernels_ControlFlowKernel {
 int _state = 0;
+__gsharp_context_CoreSyntaxKernels_ControlFlowKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void CoreSyntaxKernels_ControlFlowKernel(int* __restrict__ data, __gsharp_context_CoreSyntaxKernels_ControlFlowKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 switch(tid)
 {
 case 0:
+{
 data[tid]=10;
 break;
+}
 case 1:
 case 2:
+{
 data[tid]=20;
 break;
+}
 default:
+{
 data[tid]=30;
 break;
+}
 }
 int count = 0;
 do
@@ -130,6 +143,7 @@ data[tid]=data[tid]+200;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_CoreSyntaxKernels_ControlFlowKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
@@ -140,7 +154,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -191,12 +205,15 @@ float Y;
 #endif
 struct __gsharp_context_CoreSyntaxKernels_StructKernel {
 int _state = 0;
+__gsharp_context_CoreSyntaxKernels_StructKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void CoreSyntaxKernels_StructKernel(Kassyi_GSharp_Tests_Shared_Syntax_Vector2* __restrict__ vectors, int length, __gsharp_context_CoreSyntaxKernels_StructKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 if(tid<length)
 {
@@ -208,6 +225,7 @@ vectors[tid]=v;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_CoreSyntaxKernels_StructKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Syntax_Vector2* __restrict__ vectors, int length)
@@ -218,7 +236,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -271,12 +289,15 @@ short Flag2;
 #endif
 struct __gsharp_context_CoreSyntaxKernels_PaddedStructKernel {
 int _state = 0;
+__gsharp_context_CoreSyntaxKernels_PaddedStructKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void CoreSyntaxKernels_PaddedStructKernel(Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct* __restrict__ items, int length, __gsharp_context_CoreSyntaxKernels_PaddedStructKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 if(tid<length)
 {
@@ -290,6 +311,7 @@ items[tid]=item;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_CoreSyntaxKernels_PaddedStructKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct* __restrict__ items, int length)
@@ -300,7 +322,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -342,16 +364,20 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_items, le
 #pragma warning restore CS8500
 public const string DeviceMethodKernel_Source = @"struct __gsharp_context_CoreSyntaxKernels_DeviceMethodKernel {
 int _state = 0;
+__gsharp_context_CoreSyntaxKernels_DeviceMethodKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void CoreSyntaxKernels_DeviceMethodKernel(int* __restrict__ data, __gsharp_context_CoreSyntaxKernels_DeviceMethodKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 data[tid]=MyCustomAdd(data[tid],100);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -363,7 +389,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

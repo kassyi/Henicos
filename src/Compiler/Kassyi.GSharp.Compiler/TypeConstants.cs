@@ -24,6 +24,7 @@ internal static class TypeConstants
     public const string SpanType = nameof(Span<byte>);
     public const string ReadOnlySpanType = nameof(ReadOnlySpan<byte>);
     public const string ListType = nameof(List<object>);
+    public const string WarpType = "Warp";
 
     public static class GpuMacros
     {

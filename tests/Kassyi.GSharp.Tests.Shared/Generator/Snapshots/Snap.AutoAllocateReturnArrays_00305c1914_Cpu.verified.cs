@@ -18,6 +18,8 @@ public static partial class AotContexts
 }
 public const string ComputeMag_Source = @"struct __gsharp_context_AutoAllocateReturnTest_ComputeMag {
 int _state = 0;
+__gsharp_context_AutoAllocateReturnTest_ComputeMag* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void AutoAllocateReturnTest_ComputeMag(float* __restrict__ a, __gsharp_context_AutoAllocateReturnTest_ComputeMag* _ctx, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
@@ -25,11 +27,13 @@ unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockId
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 __gsharp_auto_result[__gsharp_global_tid] = a[tid]*2.0f;
 _state = -1;return;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -41,7 +45,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -84,6 +88,8 @@ return __gsharp_auto_result;
 #pragma warning restore CS8500
 public const string ComputeInt_Source = @"struct __gsharp_context_AutoAllocateReturnTest_ComputeInt {
 int _state = 0;
+__gsharp_context_AutoAllocateReturnTest_ComputeInt* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void AutoAllocateReturnTest_ComputeInt(int* __restrict__ a, int b, __gsharp_context_AutoAllocateReturnTest_ComputeInt* _ctx, int* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
@@ -91,10 +97,12 @@ unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockId
 switch(_state)
 {
 case 0:
+{
 __gsharp_auto_result[__gsharp_global_tid] = a[0]+b;
 _state = -1;return;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -106,7 +114,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

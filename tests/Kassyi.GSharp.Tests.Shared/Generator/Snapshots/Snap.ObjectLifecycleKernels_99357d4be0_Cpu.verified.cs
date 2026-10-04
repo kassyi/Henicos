@@ -58,12 +58,15 @@ int Status;
 #endif
 struct __gsharp_context_ObjectLifecycleKernels_Kernel_LifecycleUpdate {
 int _state = 0;
+__gsharp_context_ObjectLifecycleKernels_Kernel_LifecycleUpdate* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ObjectLifecycleKernels_Kernel_LifecycleUpdate(Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState* __restrict__ states, int length, int multiplier, __gsharp_context_ObjectLifecycleKernels_Kernel_LifecycleUpdate* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<length)
 {
@@ -72,6 +75,7 @@ states[tid]=TransformState(s,multiplier);
 }
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -83,7 +87,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -135,12 +139,15 @@ int Status;
 #endif
 struct __gsharp_context_ObjectLifecycleKernels_Kernel_FactoryInitialization {
 int _state = 0;
+__gsharp_context_ObjectLifecycleKernels_Kernel_FactoryInitialization* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void ObjectLifecycleKernels_Kernel_FactoryInitialization(int* __restrict__ inputValues, Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState* __restrict__ outputStates, int length, __gsharp_context_ObjectLifecycleKernels_Kernel_FactoryInitialization* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid<length)
 {
@@ -153,6 +160,7 @@ outputStates[tid]=state;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ObjectLifecycleKernels_Kernel_FactoryInitialization(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ inputValues, Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState* __restrict__ outputStates, int length)
@@ -163,7 +171,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

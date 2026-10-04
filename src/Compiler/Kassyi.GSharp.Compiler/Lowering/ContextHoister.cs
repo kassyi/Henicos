@@ -41,11 +41,13 @@ public class ContextHoister : CSharpSyntaxRewriter
             }
 
             // If a barrier is found after the declaration and before the end of the scope, it crosses.
-            if (index < barrierCount && barrierStarts[index] < scopeEnd)
+            if (index >= barrierCount || barrierStarts[index] >= scopeEnd)
             {
-                _hoistedVariables.Add(decl.Identifier.ValueText);
-                hoistedDecls.Add(decl);
+                continue;
             }
+
+            _hoistedVariables.Add(decl.Identifier.ValueText);
+            hoistedDecls.Add(decl);
         }
 
         var rewrittenBlock = (BlockSyntax)Visit(block);
@@ -128,16 +130,6 @@ public class ContextHoister : CSharpSyntaxRewriter
         );
     }
 
-    private static bool IsSyncThreads(InvocationExpressionSyntax inv)
-    {
-        return inv.Expression switch
-        {
-            MemberAccessExpressionSyntax ma => ma.Name.Identifier.ValueText == "SyncThreads" &&
-                                               (ma.Expression as IdentifierNameSyntax)?.Identifier.ValueText == "Gpu",
-            IdentifierNameSyntax id => id.Identifier.ValueText == "SyncThreads",
-            _ => false
-        };
-    }
 
     private sealed class HoistAnalyzer : CSharpSyntaxWalker
     {
@@ -148,7 +140,7 @@ public class ContextHoister : CSharpSyntaxRewriter
 
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            if (IsSyncThreads(node))
+            if (BarrierHelper.IsPhaseBarrier(node))
             {
                 BarrierSpans.Add(node.Span);
             }

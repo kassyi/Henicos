@@ -102,12 +102,15 @@ return this->Data;
 #endif
 struct __gsharp_context_TestKernels_MacroKernel {
 int _state = 0;
+__gsharp_context_TestKernels_MacroKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void TestKernels_MacroKernel(TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, __gsharp_context_TestKernels_MacroKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 TestNamespace_DummyRef a = dA;
 TestNamespace_DummyRef b = dB;
 TestNamespace_DummyRef c = dResult;
@@ -116,6 +119,7 @@ DummyUnaryOp(c,a);
 DummyShiftOp(ctx,c,a,5);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -127,7 +131,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

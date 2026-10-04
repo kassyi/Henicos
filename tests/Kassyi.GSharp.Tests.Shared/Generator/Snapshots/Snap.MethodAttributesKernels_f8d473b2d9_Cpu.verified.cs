@@ -41,17 +41,21 @@ public static partial class AotContexts
 }
 public const string MethodAttributesKernel_Source = @"struct __gsharp_context_MethodAttributesKernels_MethodAttributesKernel {
 int _state = 0;
+__gsharp_context_MethodAttributesKernels_MethodAttributesKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void MethodAttributesKernels_MethodAttributesKernel(int* __restrict__ input, int* __restrict__ result, __gsharp_context_MethodAttributesKernels_MethodAttributesKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 int tid = threadIdx.x;
 int sum = InlinedAdd(input[tid],100);
 result[tid]=MultiAttributeMultiply(sum,2);
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -63,7 +67,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

@@ -95,6 +95,8 @@ public static class MethodTranspiler
     {
         context.Emitter.Writer.AppendLine($"struct __gsharp_context_{methodName} {{");
         context.Emitter.Writer.AppendLine("int _state = 0;");
+        context.Emitter.Writer.AppendLine($"__gsharp_context_{methodName}* _all_contexts = nullptr;");
+        context.Emitter.Writer.AppendLine("uint64_t _warpExchange = 0;");
         foreach (var field in fields)
         {
             var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
@@ -104,6 +106,16 @@ public static class MethodTranspiler
             }
 
             var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(typeSyntax);
+            if (typeSymbol == null && typeSyntax.IsVar)
+            {
+                // Fallback for dynamically generated AST nodes (e.g., _warpTemp_X)
+                // Since they are not in the semantic model, default to 'int' for now.
+                context.Emitter.Writer.Append("int");
+                context.Emitter.Writer.Append($" {field.Identifier.ValueText};");
+                context.Emitter.Writer.AppendLine();
+                continue;
+            }
+
             if (typeSymbol == null)
             {
                 continue;
@@ -467,7 +479,7 @@ public static class MethodTranspiler
                 context.Emitter.Writer.AppendLine("__gsharp_reset_smem();");
                 if (hasContext)
                 {
-                    context.Emitter.Writer.AppendLine("for (auto& ctx : _gsharp_contexts) ctx._state = 0;");
+                    context.Emitter.Writer.AppendLine("for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }");
                     context.Emitter.Writer.AppendLine("bool anyActive = true;");
                     context.Emitter.Writer.AppendLine("while (anyActive)");
                     using (context.Emitter.Writer.Scope())

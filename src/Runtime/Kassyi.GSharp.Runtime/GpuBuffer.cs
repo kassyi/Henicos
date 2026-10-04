@@ -14,7 +14,6 @@ namespace Kassyi.GSharp.Runtime;
 public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
 {
     private IntPtr _devicePointer;
-    private readonly int _length;
     private readonly nint _byteSize;
     private readonly IntPtr _owningContext;
     private readonly bool _isCpuFallback;
@@ -54,7 +53,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     /// <summary>
     /// Gets the number of elements this buffer can hold.
     /// </summary>
-    public int Length => _length;
+    public int Length { get; }
 
     /// <summary>
     /// Allocates a new device buffer capable of holding <paramref name="length"/> elements.
@@ -64,7 +63,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
-        _length = length;
+        Length = length;
         var byteSize = checked((nint)length * sizeof(T));
         _byteSize = byteSize;
 
@@ -97,7 +96,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     public unsafe void CopyToDevice(ReadOnlySpan<T> source)
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
-        if (source.Length > _length)
+        if (source.Length > Length)
         {
             throw new ArgumentException("Source span is larger than the allocated device buffer.");
         }
@@ -128,7 +127,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     public unsafe void CopyToHost(Span<T> destination)
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
-        if (destination.Length > _length)
+        if (destination.Length > Length)
         {
             throw new ArgumentException("Destination span is larger than the allocated device buffer.");
         }

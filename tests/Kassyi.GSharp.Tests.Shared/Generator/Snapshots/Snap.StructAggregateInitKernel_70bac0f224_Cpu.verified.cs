@@ -38,18 +38,22 @@ int B;
 #endif
 struct __gsharp_context_StructAggregateInitKernels_AggregateInitKernel {
 int _state = 0;
+__gsharp_context_StructAggregateInitKernels_AggregateInitKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_AggregateInitKernel(int* __restrict__ output, __gsharp_context_StructAggregateInitKernels_AggregateInitKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct s = ([&]() {
 Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct _tmp{}; _tmp.A = 1; _tmp.B = 2; return _tmp; }
 ());
 output[0]=s.A+s.B;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -61,7 +65,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {
@@ -120,12 +124,15 @@ int Y;
 #endif
 struct __gsharp_context_StructAggregateInitKernels_DeeplyNestedInitKernel {
 int _state = 0;
+__gsharp_context_StructAggregateInitKernels_DeeplyNestedInitKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_DeeplyNestedInitKernel(int* __restrict__ output, __gsharp_context_StructAggregateInitKernels_DeeplyNestedInitKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct outer = ([&]() {
 Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct _tmp{}; _tmp.B = ([&]() {
 Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct _tmp{}; _tmp.X = 1; return _tmp; }
@@ -134,6 +141,7 @@ Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct _tmp{}; _tmp.X = 1; return _tmp; }
 output[0]=outer.B.X+outer.Y;
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -145,7 +153,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

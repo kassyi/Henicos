@@ -40,6 +40,8 @@ float W;
 #endif
 struct __gsharp_context_ReductionKernels_ReductionKernel {
 int _state = 0;
+__gsharp_context_ReductionKernels_ReductionKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 Kassyi_GSharp_Core_SharedMemory<float> sdata;
 int tid;
 int i;
@@ -52,6 +54,7 @@ extern ""C"" __declspec(dllexport) void ReductionKernels_ReductionKernel(Kassyi_
 switch(_state)
 {
 case 0:
+{
 _ctx->sdata={ (float*)__gsharp_allocate_smem(0, (8) * sizeof(float), alignof(float)) };
 _ctx->tid=threadIdx.x;
 _ctx->i=blockIdx.x*(blockDim.x*2)+_ctx->tid;
@@ -79,7 +82,9 @@ _ctx->sdata[_ctx->warpId]=_ctx->sum;
 }
 _state=1;
 return;
+}
 case 1:
+{
 if(_ctx->warpId==0)
 {
 auto val = ((_ctx->tid<8)?_ctx->sdata[_ctx->tid]:0.0f);
@@ -94,6 +99,7 @@ output[blockIdx.x]=val;
 _state=-1;
 return;
 }
+}
 #undef _state
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ReductionKernels_ReductionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n)
@@ -104,7 +110,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

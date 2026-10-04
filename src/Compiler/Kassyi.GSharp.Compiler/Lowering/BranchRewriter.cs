@@ -17,9 +17,7 @@ public class BranchRewriter : CSharpSyntaxRewriter
                 continue;
             }
 
-            if ((inv.Expression is MemberAccessExpressionSyntax { Name.Identifier.ValueText: "SyncThreads" } ma &&
-                 (ma.Expression as IdentifierNameSyntax)?.Identifier.ValueText == "Gpu") ||
-                inv.Expression is IdentifierNameSyntax { Identifier.ValueText: "SyncThreads" })
+            if (BarrierHelper.IsPhaseBarrier(inv))
             {
                 return true;
             }

@@ -29,15 +29,19 @@ public static partial class AotContexts
 }
 public const string MyTestKernel_Source = @"struct __gsharp_context_SourceGeneratorTestKernels_MyTestKernel {
 int _state = 0;
+__gsharp_context_SourceGeneratorTestKernels_MyTestKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
 };
 extern ""C"" __declspec(dllexport) void SourceGeneratorTestKernels_MyTestKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ c, __gsharp_context_SourceGeneratorTestKernels_MyTestKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
 case 0:
+{
 c[0]=a[0]+b[0];
 _state=-1;
 return;
+}
 }
 #undef _state
 }
@@ -49,7 +53,7 @@ for (uint32_t by = 0; by < gridDimY; by++)
 for (uint32_t bx = 0; bx < gridDimX; bx++)
 {
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) ctx._state = 0;
+for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
 bool anyActive = true;
 while (anyActive)
 {

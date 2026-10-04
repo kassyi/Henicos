@@ -191,7 +191,10 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
                     break;
                 }
             }
-            if (hasTakesOwnership) break;
+            if (hasTakesOwnership)
+            {
+                break;
+            }
         }
 
         if (!hasOwnedDisposableField && !hasTakesOwnership)
