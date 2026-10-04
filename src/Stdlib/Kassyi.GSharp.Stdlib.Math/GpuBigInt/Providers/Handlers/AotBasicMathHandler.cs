@@ -2,7 +2,7 @@ using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Stdlib.Math.GpuBigInt.Providers.Handlers;
 
-public sealed class AotBasicMathHandler
+public sealed class AotBasicMathHandler : IGpuBasicMathProvider
 {
 
 

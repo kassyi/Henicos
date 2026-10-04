@@ -3,7 +3,7 @@ using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math.GpuBigInt.Providers.Handlers;
 
-public sealed class AotAdvancedMathHandler
+public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 {
     private readonly ConcurrentDictionary<int, Lazy<TwiddleCache>> _twiddleCache = new();
 
