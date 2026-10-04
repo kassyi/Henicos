@@ -119,21 +119,28 @@ public class GpuWorkspace : IGpuResourceScope
         GpuKernelLoader.CudaContextScope? scope = null;
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
-            if (useIsolatedContext)
+            if (GpuKernelLoader.IsCpuFallbackMode)
             {
-                CudaDriverApi.cuInit(0);
-                CudaDriverApi.cuDeviceGet(out var dev, 0);
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out _isolatedContext, 0, dev));
+                DeviceSmCount = 1;
             }
+            else
+            {
+                if (useIsolatedContext)
+                {
+                    CudaDriverApi.cuInit(0);
+                    CudaDriverApi.cuDeviceGet(out var dev, 0);
+                    CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out _isolatedContext, 0, dev));
+                }
 
-            scope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
-            CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
-            Stream = stream;
+                scope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
+                CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
+                Stream = stream;
 
-            CudaDriverApi.cuCtxGetDevice(out var device);
-            CudaDriverApi.cuDeviceGetAttribute(out var smCount, CudaDriverApi.CuDeviceAttribute.MultiprocessorCount,
-                device);
-            DeviceSmCount = smCount > 0 ? smCount : 16; // fallback if query fails
+                CudaDriverApi.cuCtxGetDevice(out var device);
+                CudaDriverApi.cuDeviceGetAttribute(out var smCount, CudaDriverApi.CuDeviceAttribute.MultiprocessorCount,
+                    device);
+                DeviceSmCount = smCount > 0 ? smCount : 16; // fallback if query fails
+            }
         }
         else
         {

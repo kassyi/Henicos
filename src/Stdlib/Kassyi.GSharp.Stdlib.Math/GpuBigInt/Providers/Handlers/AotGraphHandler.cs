@@ -3,7 +3,7 @@ using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Stdlib.Math.GpuBigInt.Providers.Handlers;
 
-public sealed class AotGraphHandler
+public sealed class AotGraphHandler : IGpuGraphProvider
 {
     public void BeginCapture(IntPtr stream)
     {

@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
 using MSLogLevel = Microsoft.Extensions.Logging.LogLevel;
 
