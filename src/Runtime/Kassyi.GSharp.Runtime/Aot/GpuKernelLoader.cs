@@ -11,14 +11,34 @@ public sealed class GpuKernelLoader
     private static volatile bool s_isGlobalInit;
     private static IntPtr s_globalContext;
     private static readonly Lock s_initLock = new();
+    private static volatile bool s_isCpuFallbackMode;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to forcibly emulate GPU runtime on CPU host memory.
+    /// </summary>
+    public static bool ForceCpuFallback { get; set; }
+
+    /// <summary>
+    /// Gets a value indicating whether the runtime is operating in CPU host fallback mode.
+    /// </summary>
+    public static bool IsCpuFallbackMode => ForceCpuFallback || s_isCpuFallbackMode;
 
     public readonly struct CudaContextScope : IDisposable
     {
         private readonly IntPtr _prevContext;
+        private readonly bool _isFallback;
 
         public CudaContextScope()
         {
             EnsureInitialized();
+            if (IsCpuFallbackMode)
+            {
+                _isFallback = true;
+                _prevContext = IntPtr.Zero;
+                return;
+            }
+
+            _isFallback = false;
             CudaDriverApi.cuCtxGetCurrent(out _prevContext);
             if (_prevContext != s_globalContext)
             {
@@ -28,6 +48,11 @@ public sealed class GpuKernelLoader
 
         public void Dispose()
         {
+            if (_isFallback)
+            {
+                return;
+            }
+
             if (_prevContext != s_globalContext)
             {
                 CudaDriverApi.cuCtxSetCurrent(_prevContext);
@@ -43,7 +68,7 @@ public sealed class GpuKernelLoader
             try
             {
                 EnsureInitialized();
-                return true;
+                return !s_isCpuFallbackMode;
             }
             catch (DllNotFoundException)
             {
@@ -73,10 +98,30 @@ public sealed class GpuKernelLoader
                 return;
             }
 
-            CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
-            CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
+            if (ForceCpuFallback)
+            {
+                s_isCpuFallbackMode = true;
+                s_isGlobalInit = true;
+                return;
+            }
 
-            CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
+            try
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
+                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
+
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
+                s_isCpuFallbackMode = false;
+            }
+            catch (DllNotFoundException)
+            {
+                s_isCpuFallbackMode = true;
+            }
+            catch (CudaException)
+            {
+                s_isCpuFallbackMode = true;
+            }
+
             s_isGlobalInit = true;
         }
     }
