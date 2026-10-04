@@ -78,28 +78,6 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             return visitedNode;
         }
 
-        private static bool IsWarpPrimitive(InvocationExpressionSyntax inv)
-        {
-            var name = "";
-            switch (inv.Expression)
-            {
-                case MemberAccessExpressionSyntax ma:
-                    {
-                        if (ma.Expression is IdentifierNameSyntax { Identifier.ValueText: "Gpu" })
-                        {
-                            name = ma.Name.Identifier.ValueText;
-                        }
-
-                        break;
-                    }
-
-                case IdentifierNameSyntax id:
-
-                    name = id.Identifier.ValueText;
-                    break;
-            }
-
-            return name.StartsWith("Warp");
-        }
+        private static bool IsWarpPrimitive(InvocationExpressionSyntax inv) => BarrierHelper.IsWarpShuffle(inv);
     }
 }
