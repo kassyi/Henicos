@@ -288,21 +288,39 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
-    // --- IGpuGraphProvider ---
+    // --- IGpuGraphProvider (No-op on CPU fallback) ---
 
+    /// <summary>
+    /// No-op in CPU fallback mode; CUDA Graph stream capture is not supported or required on CPU.
+    /// </summary>
     public void BeginCapture(IntPtr stream)
     {
+        // No-op
     }
 
+    /// <summary>
+    /// Returns <see cref="IntPtr.Zero"/> as a dummy graph handle in CPU fallback mode.
+    /// </summary>
     public IntPtr EndCapture(IntPtr stream) => IntPtr.Zero;
 
+    /// <summary>
+    /// Returns <see cref="IntPtr.Zero"/> as a dummy executable graph handle in CPU fallback mode.
+    /// </summary>
     public IntPtr InstantiateGraph(IntPtr graph) => IntPtr.Zero;
 
+    /// <summary>
+    /// No-op in CPU fallback mode.
+    /// </summary>
     public void LaunchGraph(IntPtr graphExec, IntPtr stream)
     {
+        // No-op
     }
 
+    /// <summary>
+    /// No-op in CPU fallback mode.
+    /// </summary>
     public void DestroyGraph(IntPtr graph, IntPtr graphExec)
     {
+        // No-op
     }
 }
