@@ -10,7 +10,7 @@ description: "A disposable stack-only ref struct representing a scoped allocatio
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Providers`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A disposable stack-only ref struct representing a scoped allocation of GPU global device memory.
@@ -100,7 +100,7 @@ Ensures deterministic deallocation of temporary GPU memory buffers upon exiting 
 ```csharp
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Providers;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 // Initialize GPU workspace
 using var workspace = new GpuWorkspace(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);

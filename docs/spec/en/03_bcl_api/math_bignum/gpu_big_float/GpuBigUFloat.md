@@ -10,7 +10,7 @@ description: "Reference for arbitrary-precision unsigned floating-point numbers 
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigFloat`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents an arbitrary-precision unsigned floating-point number on the GPU using a fixed-size significand and a separate binary exponent.
@@ -159,8 +159,8 @@ The difference as a new `GpuBigUFloat<TSize>`.
 
 
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.GpuMath.BigFloat;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU)
 Example.ComputeUFloat();

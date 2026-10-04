@@ -10,7 +10,7 @@ description: "Represents a signed GPU BigInteger AST node."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents a signed GPU BigInteger AST node.
@@ -74,8 +74,8 @@ The evaluated result with its sign.
 // Execution Context: Host (CPU)
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 using var aUint = new GpuBigUInt(workspace, new uint[] { 10 });

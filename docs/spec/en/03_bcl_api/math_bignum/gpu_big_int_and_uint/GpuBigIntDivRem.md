@@ -10,7 +10,7 @@ description: "Provides static division and remainder operations, including Newto
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Provides static division and remainder operations, including Newton-Raphson approximation for `GpuBigUInt`.
@@ -188,7 +188,7 @@ Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(2048, GpuExecutionEngine.GSharpAot);

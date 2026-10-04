@@ -8,7 +8,7 @@ description: "Reference for Fermat primality testing on the GPU."
 
 ## FermatRunner Class
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Provides highly optimized algorithms for executing Probable Prime (PRP) tests based on Fermat's Little Theorem. The runner is explicitly tuned to handle massive numbers over millions of loop iterations completely within GPU VRAM, bypassing the host CPU to eliminate PCIe transfer bottlenecks.

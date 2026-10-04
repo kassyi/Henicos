@@ -10,7 +10,7 @@ description: "Reference for standard arithmetic operators on GpuBigInt and GpuBi
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 `GpuBigInt` (Signed) and `GpuBigUInt` (Unsigned) provide standard C# operator overloads (`+`, `-`, `*`, `/`, `%`).

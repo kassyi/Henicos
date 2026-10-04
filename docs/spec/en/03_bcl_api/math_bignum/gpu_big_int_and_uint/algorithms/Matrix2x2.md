@@ -10,7 +10,7 @@ description: "Reference for 2x2 Matrix operations for multi-precision integers."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Provides specialized orchestration for a $2 \times 2$ matrix of `GpuBigInt` values.

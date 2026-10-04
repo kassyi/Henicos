@@ -10,7 +10,7 @@ description: "A 256-bit (8 limbs * 32-bit) zero-allocation inline array buffer."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A 256-bit (8 limbs * 32-bit) zero-allocation inline array buffer.
@@ -33,7 +33,7 @@ No remarks available.
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Create an 8-limb inline array buffer (256-bit)
 var buffer = new LimbBuffer8();

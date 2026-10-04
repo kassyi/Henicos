@@ -10,7 +10,7 @@ description: "Defines the contract for an abstract syntax tree (AST) node repres
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Defines the contract for an abstract syntax tree (AST) node representing a lazily evaluated GPU BigInteger expression.
@@ -74,8 +74,8 @@ The evaluated `GpuBigUInt` result buffer.
 // Execution Context: Host (CPU)
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 using var left = new GpuBigUInt(workspace, new uint[] { 500 });

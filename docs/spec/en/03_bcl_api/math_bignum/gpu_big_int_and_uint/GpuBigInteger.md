@@ -10,7 +10,7 @@ description: "A lightweight value type wrapping a GpuBigUInt with a sign bit, us
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A lightweight value type wrapping a `GpuBigUInt` with a sign bit, used for tracking alternating series or arbitrary signed integers on the GPU.
@@ -176,8 +176,8 @@ using System;
 using System.Numerics;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 // Execution Context: Host (CPU)
 try {
@@ -211,7 +211,7 @@ try {
 using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU)
 Example.ComputeBigIntMath();

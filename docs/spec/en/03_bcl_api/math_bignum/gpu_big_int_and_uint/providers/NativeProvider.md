@@ -10,7 +10,7 @@ description: "Execution provider implementing arbitrary-precision arithmetic via
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Providers`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Execution provider implementing arbitrary-precision arithmetic via pre-compiled native CUDA C++ dynamic libraries.
@@ -571,8 +571,8 @@ No remarks available.
 // Execution Context: Host (CPU)
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Providers;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 using var workspace = new GpuWorkspace(maxWords: 1024, engine: GpuExecutionEngine.LegacyNative);
 IGpuExecutionProvider provider = workspace.Provider;

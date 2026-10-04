@@ -10,7 +10,7 @@ description: "Reference for Hypergeometric Series (Chudnovsky algorithm) compone
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 The `GpuHypergeometricPqt` class provides specialized primitives for evaluating hypergeometric series. Its primary use case in computational mathematics is the **Chudnovsky algorithm**, which is currently the fastest known method for calculating millions (or billions) of digits of $\pi$ (Pi).
@@ -46,7 +46,7 @@ This example demonstrates the core recursive step (combining left and right bran
 using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU)
 

@@ -10,7 +10,7 @@ description: "Reference for the Number Theoretic Transform (NTT) for O(N log N) 
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 When multiplying two numbers, the standard "schoolbook" multiplication algorithm operates in $O(N^2)$ time. This is acceptable for numbers up to a few thousand bits. However, when multiplying numbers with **millions of bits**, $O(N^2)$ becomes impossibly slow.
@@ -41,7 +41,7 @@ When searching for massive prime numbers or calculating millions of digits of $\
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Allocate a workspace capable of handling 2-Megabyte numbers
 using var workspace = new GpuWorkspace(maxWords: 524288); // ~16.7 million bits!
@@ -72,7 +72,7 @@ The standard `*` operator automatically falls back to NTT if the operand sizes c
 
 ## NttCpuReference Class
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Algorithms`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`
 
 A pure CPU reference implementation combining the 3-Prime NTT (Number Theoretic Transform) and Garner's CRT algorithm for large integer multiplication. It is used for host-side validation against the GPU results.
 

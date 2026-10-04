@@ -10,7 +10,7 @@ description: "CUDA kernel implementations for large integer operations involving
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Contains native G# (CUDA) kernels used for arithmetic operations between arbitrary-precision integers and scalar 32-bit values.
@@ -136,7 +136,7 @@ The number of words processed per block.
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
 // This is an internal Kernel class and its methods are launched via the G# execution pipeline.

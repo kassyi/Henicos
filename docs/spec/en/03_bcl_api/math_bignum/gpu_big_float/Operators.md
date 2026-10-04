@@ -10,7 +10,7 @@ description: "Reference for standard arithmetic operators on GpuBigFloat."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigFloat`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 `GpuBigFloat<TSize>` provides standard C# operator overloads (`+`, `-`). These evaluate **immediately** and do not construct an Abstract Syntax Tree (AST), making them suitable for zero-allocation execution inside GPU kernels.
@@ -124,8 +124,8 @@ An expression tree node that computes the quotient when evaluated.
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.GpuMath.BigFloat;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU)
 Example.ComputeFloatOperators();

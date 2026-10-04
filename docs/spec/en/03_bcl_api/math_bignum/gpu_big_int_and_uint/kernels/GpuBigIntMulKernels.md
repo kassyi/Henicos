@@ -10,7 +10,7 @@ description: "CUDA kernel implementations for large integer multiplication using
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Contains the native G# (CUDA) kernels used for multi-million digit multiplications using a Global Non-Cooperative NTT approach on the GPU.
@@ -207,7 +207,7 @@ The length of the NTT transform.
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
 // This is an internal Kernel class and its methods are launched via the G# execution pipeline.

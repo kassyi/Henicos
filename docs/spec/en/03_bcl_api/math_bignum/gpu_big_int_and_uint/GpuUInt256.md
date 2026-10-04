@@ -10,7 +10,7 @@ description: "Represents a 256-bit unsigned integer stored on the GPU."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents a 256-bit unsigned integer stored on the GPU.
@@ -95,7 +95,7 @@ A newly created `GpuUInt256` struct.
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU) or G# Kernel (GPU)
 

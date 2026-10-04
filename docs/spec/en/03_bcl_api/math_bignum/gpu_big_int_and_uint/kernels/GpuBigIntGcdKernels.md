@@ -10,7 +10,7 @@ description: "CUDA kernel implementations for Greatest Common Divisor (GCD) algo
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Contains native G# (CUDA) kernels used for GCD computations, particularly Lehmer's GCD algorithm matrix reductions on the GPU.
@@ -73,7 +73,7 @@ The total number of words.
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Kernels;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
 // This is an internal Kernel class and its methods are launched via the G# execution pipeline.

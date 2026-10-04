@@ -10,7 +10,7 @@ description: "Defines the contract for executing GPU-accelerated BigInteger arit
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Providers`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Defines the contract for executing GPU-accelerated BigInteger arithmetic algorithms and managing device memory.
@@ -552,8 +552,8 @@ A signed integer that indicates the relative values of the operands.
 // Execution Context: Host (CPU)
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
-using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Providers;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 using var workspace = new GpuWorkspace(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
 IGpuExecutionProvider provider = workspace.Provider;
