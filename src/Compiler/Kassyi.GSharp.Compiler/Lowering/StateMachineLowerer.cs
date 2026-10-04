@@ -14,29 +14,31 @@ public class StateMachineLowerer
 
         foreach (var stmt in statements)
         {
-            if (IsSyncThreads(stmt))
+            var barrierInv = BarrierHelper.GetPhaseBarrierInvocation(stmt);
+            if (barrierInv != null)
             {
-                // The C++ emulator relies on returning to the scheduler at each barrier.
-                currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
-                    SyntaxFactory.AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        SyntaxFactory.IdentifierName("_state"),
-                        SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state + 1))
-                    )
-                ));
-                currentCaseStatements.Add(SyntaxFactory.ReturnStatement()
-                    .WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn")));
+                if (BarrierHelper.IsWarpShuffle(barrierInv))
+                {
+                    // 1. _ctx->_warpExchange = val; (__gsharp_warp_exchange_assign(val))
+                    var valArg = barrierInv.ArgumentList.Arguments[1].Expression;
+                    currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
+                        SyntaxFactory.InvocationExpression(
+                            SyntaxFactory.IdentifierName("__gsharp_warp_exchange_assign"),
+                            SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(valArg)))
+                        )
+                    ));
 
+                    // 2. State Split & Return
+                    commitState(state + 1);
 
-                cases.Add(SyntaxFactory.SwitchSection(
-                    SyntaxFactory.SingletonList<SwitchLabelSyntax>(SyntaxFactory.CaseSwitchLabel(
-                        SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state))
-                    )),
-                    SyntaxFactory.List(currentCaseStatements)
-                ));
-
-                currentCaseStatements.Clear();
-                state++;
+                    // 3. Rewrite original Warp.ShuffleXXX(...) to __gsharp_warp_shuffle_read_XXX(...)
+                    currentCaseStatements.Add(RewriteWarpShuffleRead(stmt, barrierInv));
+                }
+                else
+                {
+                    // Regular SyncThreads
+                    commitState(state + 1);
+                }
             }
             else
             {
@@ -45,22 +47,7 @@ public class StateMachineLowerer
         }
 
         // State -1 signals the emulator that this kernel execution thread has reached its end.
-        currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
-            SyntaxFactory.AssignmentExpression(
-                SyntaxKind.SimpleAssignmentExpression,
-                SyntaxFactory.IdentifierName("_state"),
-                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-1))
-            )
-        ));
-        currentCaseStatements.Add(SyntaxFactory.ReturnStatement()
-            .WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn")));
-
-        cases.Add(SyntaxFactory.SwitchSection(
-            SyntaxFactory.SingletonList<SwitchLabelSyntax>(SyntaxFactory.CaseSwitchLabel(
-                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state))
-            )),
-            SyntaxFactory.List(currentCaseStatements)
-        ));
+        commitState(-1);
 
         var switchStmt = SyntaxFactory.SwitchStatement(
             SyntaxFactory.IdentifierName("_state"),
@@ -68,22 +55,64 @@ public class StateMachineLowerer
         );
 
         return SyntaxFactory.Block(switchStmt);
+
+        void commitState(int nextState)
+        {
+            currentCaseStatements.Add(CreateStateAssignment(nextState));
+            currentCaseStatements.Add(SyntaxFactory.ReturnStatement()
+                .WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn")));
+
+            cases.Add(SyntaxFactory.SwitchSection(
+                SyntaxFactory.SingletonList<SwitchLabelSyntax>(SyntaxFactory.CaseSwitchLabel(
+                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state))
+                )),
+                SyntaxFactory.SingletonList<StatementSyntax>(SyntaxFactory.Block(currentCaseStatements))
+            ));
+
+            currentCaseStatements.Clear();
+            state++;
+        }
     }
 
-    private static bool IsSyncThreads(StatementSyntax stmt)
+    private static StatementSyntax CreateStateAssignment(int stateValue)
     {
-        if (stmt is not ExpressionStatementSyntax exprStmt ||
-            exprStmt.Expression is not InvocationExpressionSyntax inv)
+        return SyntaxFactory.ExpressionStatement(
+            SyntaxFactory.AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                SyntaxFactory.IdentifierName("_state"),
+                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(stateValue))
+            )
+        );
+    }
+
+    private static StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv)
+    {
+        var methodName = (barrierInv.Expression as MemberAccessExpressionSyntax)?.Name.Identifier.ValueText ?? "ShuffleDownSync";
+        var readMethodName = methodName switch
         {
-            return false;
+            "ShuffleDownSync" => "__gsharp_warp_shuffle_read_down_sync",
+            "ShuffleUpSync" => "__gsharp_warp_shuffle_read_up_sync",
+            "ShuffleXorSync" => "__gsharp_warp_shuffle_read_xor_sync",
+            "ShuffleSync" => "__gsharp_warp_shuffle_read_sync",
+            _ => "__gsharp_warp_shuffle_read"
+        };
+
+        var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>();
+        // Arguments are: _ctx, mask, val, delta, width [optional]
+        newArgs = newArgs.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_ctx")));
+        newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[0]);
+        newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[1]); // pass val for type inference
+        newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[2]);
+        if (barrierInv.ArgumentList.Arguments.Count > 3)
+        {
+            newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[3]);
         }
 
-        return inv.Expression switch
-        {
-            MemberAccessExpressionSyntax ma => ma.Name.Identifier.ValueText == "SyncThreads" &&
-                                               (ma.Expression as IdentifierNameSyntax)?.Identifier.ValueText == "Gpu",
-            IdentifierNameSyntax id => id.Identifier.ValueText == "SyncThreads",
-            _ => false
-        };
+        var rewrittenInv = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.IdentifierName(readMethodName),
+            SyntaxFactory.ArgumentList(newArgs)
+        );
+
+        return stmt.ReplaceNode(barrierInv, rewrittenInv);
     }
 }
