@@ -12,6 +12,7 @@ public const string Source = @"// GSharp CPU/Standard C++ Prelude Header
 #include <intrin.h>
 #include <vector>
 #include <functional>
+#include <atomic>
 
 struct float2 { float x, y; };
 struct float3 { float x, y, z; };
@@ -119,23 +120,52 @@ thread_local uint3 blockIdx;
 thread_local dim3 blockDim;
 thread_local dim3 gridDim;
 
-// Basic atomics polyfill
-inline int atomicAdd(int* address, int val) { int old = *address; *address += val; return old; }
-inline unsigned int atomicAdd(unsigned int* address, unsigned int val) { unsigned int old = *address; *address += val; return old; }
-inline unsigned long long atomicAdd(unsigned long long* address, unsigned long long val) { unsigned long long old = *address; *address += val; return old; }
-inline int atomicMax(int* address, int val) { int old = *address; if (val > old) *address = val; return old; }
-inline unsigned int atomicMax(unsigned int* address, unsigned int val) { unsigned int old = *address; if (val > old) *address = val; return old; }
-inline unsigned long long atomicMax(unsigned long long* address, unsigned long long val) { unsigned long long old = *address; if (val > old) *address = val; return old; }
-inline int atomicOr(int* address, int val) { int old = *address; *address |= val; return old; }
-inline unsigned int atomicOr(unsigned int* address, unsigned int val) { unsigned int old = *address; *address |= val; return old; }
-inline unsigned long long atomicOr(unsigned long long* address, unsigned long long val) { unsigned long long old = *address; *address |= val; return old; }
-inline int atomicCAS(int* address, int compare, int val) { int old = *address; if (old == compare) *address = val; return old; }
-inline unsigned int atomicCAS(unsigned int* address, unsigned int compare, unsigned int val) { unsigned int old = *address; if (old == compare) *address = val; return old; }
-inline unsigned long long atomicCAS(unsigned long long* address, unsigned long long compare, unsigned long long val) { unsigned long long old = *address; if (old == compare) *address = val; return old; }
+template<typename T>
+inline T __gsharp_atomic_fetch_add(T* address, T val) {
+    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_add(val, std::memory_order_relaxed);
+}
 
-inline int atomicExch(int* address, int val) { int old = *address; *address = val; return old; }
-inline unsigned int atomicExch(unsigned int* address, unsigned int val) { unsigned int old = *address; *address = val; return old; }
-inline unsigned long long atomicExch(unsigned long long* address, unsigned long long val) { unsigned long long old = *address; *address = val; return old; }
+template<typename T>
+inline T __gsharp_atomic_max(T* address, T val) {
+    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+    T old = atom->load(std::memory_order_relaxed);
+    while (old < val && !atom->compare_exchange_weak(old, val, std::memory_order_relaxed)) { }
+    return old;
+}
+
+template<typename T>
+inline T __gsharp_atomic_or(T* address, T val) {
+    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_or(val, std::memory_order_relaxed);
+}
+
+template<typename T>
+inline T __gsharp_atomic_cas(T* address, T compare, T val) {
+    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+    T expected = compare;
+    atom->compare_exchange_strong(expected, val, std::memory_order_relaxed);
+    return expected;
+}
+
+template<typename T>
+inline T __gsharp_atomic_exch(T* address, T val) {
+    return reinterpret_cast<volatile std::atomic<T>*>(address)->exchange(val, std::memory_order_relaxed);
+}
+
+inline int atomicAdd(int* address, int val) { return __gsharp_atomic_fetch_add(address, val); }
+inline unsigned int atomicAdd(unsigned int* address, unsigned int val) { return __gsharp_atomic_fetch_add(address, val); }
+inline unsigned long long atomicAdd(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_fetch_add(address, val); }
+inline int atomicMax(int* address, int val) { return __gsharp_atomic_max(address, val); }
+inline unsigned int atomicMax(unsigned int* address, unsigned int val) { return __gsharp_atomic_max(address, val); }
+inline unsigned long long atomicMax(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_max(address, val); }
+inline int atomicOr(int* address, int val) { return __gsharp_atomic_or(address, val); }
+inline unsigned int atomicOr(unsigned int* address, unsigned int val) { return __gsharp_atomic_or(address, val); }
+inline unsigned long long atomicOr(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_or(address, val); }
+inline int atomicCAS(int* address, int compare, int val) { return __gsharp_atomic_cas(address, compare, val); }
+inline unsigned int atomicCAS(unsigned int* address, unsigned int compare, unsigned int val) { return __gsharp_atomic_cas(address, compare, val); }
+inline unsigned long long atomicCAS(unsigned long long* address, unsigned long long compare, unsigned long long val) { return __gsharp_atomic_cas(address, compare, val); }
+inline int atomicExch(int* address, int val) { return __gsharp_atomic_exch(address, val); }
+inline unsigned int atomicExch(unsigned int* address, unsigned int val) { return __gsharp_atomic_exch(address, val); }
+inline unsigned long long atomicExch(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_exch(address, val); }
 
 inline thread_local char __gsharp_dynamic_smem[65536];
 inline thread_local size_t __gsharp_smem_offsets[64];

@@ -32,9 +32,6 @@ switch(_state)
 case 0:
 {
 _ctx->tid=threadIdx.x;
-_ctx->sStatic={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
-_ctx->sDyn1={ (int*)__gsharp_allocate_smem(1, (dynSize) * sizeof(int), alignof(int)) };
-_ctx->sDyn2={ (float*)__gsharp_allocate_smem(2, (dynSize) * sizeof(float), alignof(float)) };
 _ctx->sStatic[_ctx->tid]=data[_ctx->tid];
 _ctx->sDyn1[_ctx->tid]=data[_ctx->tid]*2;
 _ctx->sDyn2[_ctx->tid]=3.14f;
@@ -52,21 +49,36 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_SharedMemoryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int dynSize)
 {
-std::vector<__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (uint32_t bz = 0; bz < gridDimZ; bz++)
-for (uint32_t by = 0; by < gridDimY; by++)
-for (uint32_t bx = 0; bx < gridDimX; bx++)
+int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+#pragma omp parallel for schedule(dynamic)
+for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+int32_t bx = _b_idx % gridDimX;
+int32_t by = (_b_idx / gridDimX) % gridDimY;
+int32_t bz = _b_idx / (gridDimX * gridDimY);
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
-bool anyActive = true;
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+std::vector<int> _smem_buffer_sStatic(256);
+std::vector<int> _smem_buffer_sDyn1(dynSize);
+std::vector<float> _smem_buffer_sDyn2(dynSize);
+for (auto& ctx : _gsharp_contexts) {
+ctx._state = 0;
+ctx._all_contexts = _gsharp_contexts.data();
+ctx.sStatic.data = _smem_buffer_sStatic.data();
+ctx.sDyn1.data = _smem_buffer_sDyn1.data();
+ctx.sDyn2.data = _smem_buffer_sDyn2.data();
+}
+std::atomic<bool> anyActive{true};
 while (anyActive)
 {
 anyActive = false;
-for (uint32_t tz = 0; tz < blockDimZ; tz++)
-for (uint32_t ty = 0; ty < blockDimY; ty++)
-for (uint32_t tx = 0; tx < blockDimX; tx++)
+int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+#pragma omp parallel for schedule(static)
+for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+int32_t tx = _t_idx % blockDimX;
+int32_t ty = (_t_idx / blockDimX) % blockDimY;
+int32_t tz = _t_idx / (blockDimX * blockDimY);
 uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
 if (_gsharp_contexts[_ctxtid]._state != -1)
 {
@@ -112,7 +124,6 @@ switch(_state)
 case 0:
 {
 _ctx->tid=threadIdx.x;
-_ctx->sMem={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
 if(_ctx->tid<size)
 {
 _ctx->sMem[_ctx->tid]=data[_ctx->tid];
@@ -134,21 +145,32 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int size)
 {
-std::vector<__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (uint32_t bz = 0; bz < gridDimZ; bz++)
-for (uint32_t by = 0; by < gridDimY; by++)
-for (uint32_t bx = 0; bx < gridDimX; bx++)
+int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+#pragma omp parallel for schedule(dynamic)
+for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+int32_t bx = _b_idx % gridDimX;
+int32_t by = (_b_idx / gridDimX) % gridDimY;
+int32_t bz = _b_idx / (gridDimX * gridDimY);
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
-bool anyActive = true;
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+std::vector<int> _smem_buffer_sMem(256);
+for (auto& ctx : _gsharp_contexts) {
+ctx._state = 0;
+ctx._all_contexts = _gsharp_contexts.data();
+ctx.sMem.data = _smem_buffer_sMem.data();
+}
+std::atomic<bool> anyActive{true};
 while (anyActive)
 {
 anyActive = false;
-for (uint32_t tz = 0; tz < blockDimZ; tz++)
-for (uint32_t ty = 0; ty < blockDimY; ty++)
-for (uint32_t tx = 0; tx < blockDimX; tx++)
+int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+#pragma omp parallel for schedule(static)
+for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+int32_t tx = _t_idx % blockDimX;
+int32_t ty = (_t_idx / blockDimX) % blockDimY;
+int32_t tz = _t_idx / (blockDimX * blockDimY);
 uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
 if (_gsharp_contexts[_ctxtid]._state != -1)
 {
@@ -214,21 +236,30 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_IntrinsicsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
-std::vector<__gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (uint32_t bz = 0; bz < gridDimZ; bz++)
-for (uint32_t by = 0; by < gridDimY; by++)
-for (uint32_t bx = 0; bx < gridDimX; bx++)
+int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+#pragma omp parallel for schedule(dynamic)
+for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+int32_t bx = _b_idx % gridDimX;
+int32_t by = (_b_idx / gridDimX) % gridDimY;
+int32_t bz = _b_idx / (gridDimX * gridDimY);
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
-bool anyActive = true;
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+for (auto& ctx : _gsharp_contexts) {
+ctx._state = 0;
+ctx._all_contexts = _gsharp_contexts.data();
+}
+std::atomic<bool> anyActive{true};
 while (anyActive)
 {
 anyActive = false;
-for (uint32_t tz = 0; tz < blockDimZ; tz++)
-for (uint32_t ty = 0; ty < blockDimY; ty++)
-for (uint32_t tx = 0; tx < blockDimX; tx++)
+int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+#pragma omp parallel for schedule(static)
+for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+int32_t tx = _t_idx % blockDimX;
+int32_t ty = (_t_idx / blockDimX) % blockDimY;
+int32_t tz = _t_idx / (blockDimX * blockDimY);
 uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
 if (_gsharp_contexts[_ctxtid]._state != -1)
 {
@@ -280,21 +311,30 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_AtomicAddStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ globalSum)
 {
-std::vector<__gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (uint32_t bz = 0; bz < gridDimZ; bz++)
-for (uint32_t by = 0; by < gridDimY; by++)
-for (uint32_t bx = 0; bx < gridDimX; bx++)
+int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+#pragma omp parallel for schedule(dynamic)
+for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+int32_t bx = _b_idx % gridDimX;
+int32_t by = (_b_idx / gridDimX) % gridDimY;
+int32_t bz = _b_idx / (gridDimX * gridDimY);
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
-bool anyActive = true;
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+for (auto& ctx : _gsharp_contexts) {
+ctx._state = 0;
+ctx._all_contexts = _gsharp_contexts.data();
+}
+std::atomic<bool> anyActive{true};
 while (anyActive)
 {
 anyActive = false;
-for (uint32_t tz = 0; tz < blockDimZ; tz++)
-for (uint32_t ty = 0; ty < blockDimY; ty++)
-for (uint32_t tx = 0; tx < blockDimX; tx++)
+int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+#pragma omp parallel for schedule(static)
+for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+int32_t tx = _t_idx % blockDimX;
+int32_t ty = (_t_idx / blockDimX) % blockDimY;
+int32_t tz = _t_idx / (blockDimX * blockDimY);
 uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
 if (_gsharp_contexts[_ctxtid]._state != -1)
 {
@@ -351,21 +391,30 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ globalState)
 {
-std::vector<__gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (uint32_t bz = 0; bz < gridDimZ; bz++)
-for (uint32_t by = 0; by < gridDimY; by++)
-for (uint32_t bx = 0; bx < gridDimX; bx++)
+int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+#pragma omp parallel for schedule(dynamic)
+for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+int32_t bx = _b_idx % gridDimX;
+int32_t by = (_b_idx / gridDimX) % gridDimY;
+int32_t bz = _b_idx / (gridDimX * gridDimY);
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
-bool anyActive = true;
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+for (auto& ctx : _gsharp_contexts) {
+ctx._state = 0;
+ctx._all_contexts = _gsharp_contexts.data();
+}
+std::atomic<bool> anyActive{true};
 while (anyActive)
 {
 anyActive = false;
-for (uint32_t tz = 0; tz < blockDimZ; tz++)
-for (uint32_t ty = 0; ty < blockDimY; ty++)
-for (uint32_t tx = 0; tx < blockDimX; tx++)
+int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+#pragma omp parallel for schedule(static)
+for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+int32_t tx = _t_idx % blockDimX;
+int32_t ty = (_t_idx / blockDimX) % blockDimY;
+int32_t tz = _t_idx / (blockDimX * blockDimY);
 uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
 if (_gsharp_contexts[_ctxtid]._state != -1)
 {

@@ -29,7 +29,7 @@ public sealed class GpuKernelLoader
     public readonly struct CudaContextScope : IDisposable
     {
         [ThreadStatic]
-        private static IntPtr t_activeContext;
+        private static IntPtr s_tActiveContext;
 
         private readonly IntPtr _prevContext;
         private readonly IntPtr _targetContext;
@@ -53,13 +53,13 @@ public sealed class GpuKernelLoader
             }
 
             _isFallback = false;
-            _prevActiveContext = t_activeContext;
+            _prevActiveContext = s_tActiveContext;
 
             _targetContext = customContext != IntPtr.Zero
                 ? customContext
-                : (t_activeContext != IntPtr.Zero ? t_activeContext : s_globalContext);
+                : (s_tActiveContext != IntPtr.Zero ? s_tActiveContext : s_globalContext);
 
-            t_activeContext = _targetContext;
+            s_tActiveContext = _targetContext;
 
             CudaDriverApi.cuCtxGetCurrent(out _prevContext);
             if (_prevContext != _targetContext)
@@ -75,7 +75,7 @@ public sealed class GpuKernelLoader
                 return;
             }
 
-            t_activeContext = _prevActiveContext;
+            s_tActiveContext = _prevActiveContext;
 
             if (_prevContext != _targetContext)
             {

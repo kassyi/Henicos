@@ -231,7 +231,6 @@ if(_ctx->ok&&config.BoolVal)
 {
 atomicAdd(&globalCounter[0],(unsigned long long)_ctx->bitwise);
 }
-_ctx->dynamicSharedMem={ (float*)__gsharp_allocate_smem(0, (dynamicSharedSize) * sizeof(float), alignof(float)) };
 _ctx->dynamicSharedMem[threadIdx.x]=_ctx->sum;
 __syncthreads();
 float finalVal = ((_ctx->bitwise>0)?((_ctx->dynamicSharedMem[threadIdx.x]>10.0f?10.0f:_ctx->dynamicSharedMem[threadIdx.x])):0.0f);
@@ -278,21 +277,32 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Tier1IntegrationKernels_AllInOneKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize)
 {
-std::vector<__gsharp_context_Tier1IntegrationKernels_AllInOneKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (uint32_t bz = 0; bz < gridDimZ; bz++)
-for (uint32_t by = 0; by < gridDimY; by++)
-for (uint32_t bx = 0; bx < gridDimX; bx++)
+int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+#pragma omp parallel for schedule(dynamic)
+for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+int32_t bx = _b_idx % gridDimX;
+int32_t by = (_b_idx / gridDimX) % gridDimY;
+int32_t bz = _b_idx / (gridDimX * gridDimY);
 __gsharp_reset_smem();
-for (auto& ctx : _gsharp_contexts) { ctx._state = 0; ctx._all_contexts = _gsharp_contexts.data(); }
-bool anyActive = true;
+std::vector<__gsharp_context_Tier1IntegrationKernels_AllInOneKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+std::vector<float> _smem_buffer_dynamicSharedMem(dynamicSharedSize);
+for (auto& ctx : _gsharp_contexts) {
+ctx._state = 0;
+ctx._all_contexts = _gsharp_contexts.data();
+ctx.dynamicSharedMem.data = _smem_buffer_dynamicSharedMem.data();
+}
+std::atomic<bool> anyActive{true};
 while (anyActive)
 {
 anyActive = false;
-for (uint32_t tz = 0; tz < blockDimZ; tz++)
-for (uint32_t ty = 0; ty < blockDimY; ty++)
-for (uint32_t tx = 0; tx < blockDimX; tx++)
+int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+#pragma omp parallel for schedule(static)
+for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+int32_t tx = _t_idx % blockDimX;
+int32_t ty = (_t_idx / blockDimX) % blockDimY;
+int32_t tz = _t_idx / (blockDimX * blockDimY);
 uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
 if (_gsharp_contexts[_ctxtid]._state != -1)
 {

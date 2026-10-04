@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Numerics;
+using System.Runtime.ExceptionServices;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.Math.GpuBigInt;
@@ -155,7 +156,7 @@ public class CudaGraphExecutionTests
 
         if (threadEx != null)
         {
-            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(threadEx).Throw();
+            ExceptionDispatchInfo.Capture(threadEx).Throw();
         }
     }
     [Trait("Category", "SadPath")]
