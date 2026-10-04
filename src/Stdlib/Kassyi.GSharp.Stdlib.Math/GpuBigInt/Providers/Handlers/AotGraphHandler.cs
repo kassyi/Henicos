@@ -13,7 +13,7 @@ public sealed class AotGraphHandler
     }
 
 
- 
+
     public IntPtr EndCapture(IntPtr stream)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();

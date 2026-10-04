@@ -16,7 +16,10 @@ public sealed class GpuKernelLoader
     /// <summary>
     /// Gets or sets a value indicating whether to forcibly emulate GPU runtime on CPU host memory.
     /// </summary>
-    public static bool ForceCpuFallback { get; set; }
+    public static bool ForceCpuFallback
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Gets a value indicating whether the runtime is operating in CPU host fallback mode.

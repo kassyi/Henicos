@@ -621,15 +621,27 @@ public static partial class GpuBigIntNttKernels
     {
         var args1 = new NumberTheoreticTransform
         {
-            Buffer = ctx.Buffer1, TemporaryBuffer = ctx.TemporaryBuffer,
-            Twiddle = ctx.Twiddle1, M = ctx.M, N1 = ctx.N1, N2 = ctx.N2, P = Prime1, Pm = BarrettMagic1
+            Buffer = ctx.Buffer1,
+            TemporaryBuffer = ctx.TemporaryBuffer,
+            Twiddle = ctx.Twiddle1,
+            M = ctx.M,
+            N1 = ctx.N1,
+            N2 = ctx.N2,
+            P = Prime1,
+            Pm = BarrettMagic1
         };
         ExecuteForwardNtt(args1);
 
         var args2 = new NumberTheoreticTransform
         {
-            Buffer = ctx.Buffer2, TemporaryBuffer = ctx.TemporaryBuffer,
-            Twiddle = ctx.Twiddle2, M = ctx.M, N1 = ctx.N1, N2 = ctx.N2, P = Prime2, Pm = BarrettMagic2
+            Buffer = ctx.Buffer2,
+            TemporaryBuffer = ctx.TemporaryBuffer,
+            Twiddle = ctx.Twiddle2,
+            M = ctx.M,
+            N1 = ctx.N1,
+            N2 = ctx.N2,
+            P = Prime2,
+            Pm = BarrettMagic2
         };
         ExecuteForwardNtt(args2);
     }
@@ -639,16 +651,28 @@ public static partial class GpuBigIntNttKernels
     {
         var args1 = new NumberTheoreticTransform
         {
-            Buffer = ctx.Buffer1, TemporaryBuffer = ctx.TemporaryBuffer,
-            Twiddle = ctx.Twiddle1, M = ctx.M, N1 = ctx.N1, N2 = ctx.N2, P = Prime1, Pm = BarrettMagic1,
+            Buffer = ctx.Buffer1,
+            TemporaryBuffer = ctx.TemporaryBuffer,
+            Twiddle = ctx.Twiddle1,
+            M = ctx.M,
+            N1 = ctx.N1,
+            N2 = ctx.N2,
+            P = Prime1,
+            Pm = BarrettMagic1,
             IsInverse = true
         };
         ExecuteInverseNtt(args1);
 
         var args2 = new NumberTheoreticTransform
         {
-            Buffer = ctx.Buffer2, TemporaryBuffer = ctx.TemporaryBuffer,
-            Twiddle = ctx.Twiddle2, M = ctx.M, N1 = ctx.N1, N2 = ctx.N2, P = Prime2, Pm = BarrettMagic2,
+            Buffer = ctx.Buffer2,
+            TemporaryBuffer = ctx.TemporaryBuffer,
+            Twiddle = ctx.Twiddle2,
+            M = ctx.M,
+            N1 = ctx.N1,
+            N2 = ctx.N2,
+            P = Prime2,
+            Pm = BarrettMagic2,
             IsInverse = true
         };
         ExecuteInverseNtt(args2);

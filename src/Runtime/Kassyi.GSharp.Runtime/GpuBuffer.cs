@@ -53,7 +53,10 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     /// <summary>
     /// Gets the number of elements this buffer can hold.
     /// </summary>
-    public int Length { get; }
+    public int Length
+    {
+        get;
+    }
 
     /// <summary>
     /// Allocates a new device buffer capable of holding <paramref name="length"/> elements.

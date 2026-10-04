@@ -21,7 +21,7 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
                 .WithWarmupCount(5)      // Ensure GPU JIT and PTX compilation overhead is completely eliminated
                 .WithIterationCount(15)   // Minimize measurement standard deviation
                 .AsDefault());
-            
+
             AddColumn(new BitsColumn());
             AddColumn(new OpsPerSecColumn());
         }
@@ -33,18 +33,24 @@ public abstract class GpuBigMathBenchmarkBase : IDisposable
 
     // Precision parameter (word count / bit width)
     [Params(2048)]
-    public int NumWords { get; set; } // 65,536 bits
+    public int NumWords
+    {
+        get; set;
+    } // 65,536 bits
 
     // Batch size parameter (currently 1 for latency evaluation under serial processing)
     [Params(1)]
-    public int BatchSize { get; set; }
+    public int BatchSize
+    {
+        get; set;
+    }
 
     [GlobalSetup]
     public void Setup()
     {
         Scope = new GpuKernelLoader.CudaContextScope();
         Ctx = new GpuWorkspace(16);
-        
+
         Stream = Ctx.Stream;
 
         // 1. Pre-allocate all buffers (Pinned Memory / Device Memory Arena)

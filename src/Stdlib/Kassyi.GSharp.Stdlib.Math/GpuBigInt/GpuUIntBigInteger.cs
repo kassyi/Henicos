@@ -11,14 +11,23 @@ namespace Kassyi.GSharp.Stdlib.Math.GpuBigInt;
 public readonly struct GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression, IEquatable<GpuUIntBigInteger>,
     IComparable<GpuUIntBigInteger>
 {
-    public GpuWorkspace Workspace { get; }
-    public GpuBigIntMemoryHandle Handle { get; }
+    public GpuWorkspace Workspace
+    {
+        get;
+    }
+    public GpuBigIntMemoryHandle Handle
+    {
+        get;
+    }
 
     public IntPtr DevicePointer =>
         Handle.IsDefault ? IntPtr.Zero : IntPtr.Add(Handle.Buffer.Pointer, Handle.WordOffset * 4);
 
     public int NumWords => Handle.IsDefault ? 0 : Handle.NumWords;
-    public bool IsTemp { get; }
+    public bool IsTemp
+    {
+        get;
+    }
 
     internal GpuUIntBigInteger(GpuWorkspace workspace, GpuBigIntMemoryHandle handle, bool isTemp = false)
     {
@@ -77,7 +86,7 @@ public readonly struct GpuUIntBigInteger : IDisposable, IGpuBigUIntExpression, I
     public static GpuBigUIntExpr operator <<(GpuUIntBigInteger leftOperand, int shiftBits) =>
         new(new ShiftLeftExpression(leftOperand, shiftBits));
 
-    public static GpuBigUIntExpr operator >> (GpuUIntBigInteger leftOperand, int shiftBits) =>
+    public static GpuBigUIntExpr operator >>(GpuUIntBigInteger leftOperand, int shiftBits) =>
         new(new ShiftRightExpression(leftOperand, shiftBits));
 
     public static GpuBigUIntExpr operator |(GpuUIntBigInteger leftOperand, GpuUIntBigInteger rightOperand) =>

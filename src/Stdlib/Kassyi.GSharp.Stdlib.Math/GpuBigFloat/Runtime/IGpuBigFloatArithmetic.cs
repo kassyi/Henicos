@@ -4,46 +4,46 @@ using Kassyi.GSharp.Stdlib.Math.GpuBigInt.Runtime;
 
 public interface IGpuBigFloatArithmetic
 {
-    void Normalize(ref GpuBigIntExecutionContext context, 
+    void Normalize(ref GpuBigIntExecutionContext context,
                    GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
                    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
 
-    void Add(ref GpuBigIntExecutionContext context, 
+    void Add(ref GpuBigIntExecutionContext context,
              GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
              GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
              GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
 
-    void Multiply(ref GpuBigIntExecutionContext context, 
+    void Multiply(ref GpuBigIntExecutionContext context,
                   GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
                   GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
                   GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
 
-    void Divide(ref GpuBigIntExecutionContext context, 
+    void Divide(ref GpuBigIntExecutionContext context,
                 GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
                 GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
                 GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
 
-    void Reciprocal(ref GpuBigIntExecutionContext context, 
+    void Reciprocal(ref GpuBigIntExecutionContext context,
                     GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
                     GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
 
-    void Sqrt(ref GpuBigIntExecutionContext context, 
+    void Sqrt(ref GpuBigIntExecutionContext context,
               GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
               GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
 
-    void Rsqrt(ref GpuBigIntExecutionContext context, 
+    void Rsqrt(ref GpuBigIntExecutionContext context,
                GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
                GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
 
-    void Exp(ref GpuBigIntExecutionContext context, 
+    void Exp(ref GpuBigIntExecutionContext context,
              GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
              GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
 
-    void Log(ref GpuBigIntExecutionContext context, 
+    void Log(ref GpuBigIntExecutionContext context,
              GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
              GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
 
-    void Pow(ref GpuBigIntExecutionContext context, 
+    void Pow(ref GpuBigIntExecutionContext context,
              GpuBigIntMemoryHandle baseSig, int baseExp, bool baseSign,
              GpuBigIntMemoryHandle expSig, int exponentExp, bool exponentSign,
              GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);

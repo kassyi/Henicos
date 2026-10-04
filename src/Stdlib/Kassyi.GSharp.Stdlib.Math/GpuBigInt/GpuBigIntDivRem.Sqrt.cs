@@ -143,7 +143,7 @@ public static partial class GpuBigIntDivRem
 
         var currentRoot = new GpuUIntBigInteger(leftOperand.Workspace, n);
         currentRoot.CopyFrom(shiftedRNorm, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);
-        
+
         if (GetActualBits(currentRoot) == 0)
         {
             currentRoot.Workspace.Provider.CopyHostToDevice(currentRoot.DevicePointer, [1u], 1, currentRoot.Workspace.Stream);

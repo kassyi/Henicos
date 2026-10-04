@@ -26,7 +26,7 @@ public static class LaunchDimension
 
         var block = (uint)threadsPerBlock;
         var grid = (uint)((totalThreads + threadsPerBlock - 1) / threadsPerBlock);
-        
+
         return (grid, block);
     }
 }

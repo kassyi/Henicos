@@ -22,7 +22,7 @@ internal static class BarrierHelper
             return true;
         }
 
-        return (className == TypeConstants.WarpType && name.StartsWith("Shuffle")) || 
+        return (className == TypeConstants.WarpType && name.StartsWith("Shuffle")) ||
                (className == TypeConstants.GpuType && name.StartsWith(TypeConstants.WarpType));
     }
 
@@ -41,7 +41,7 @@ internal static class BarrierHelper
                 break;
         }
 
-        return (className == TypeConstants.WarpType && name.StartsWith("Shuffle")) || 
+        return (className == TypeConstants.WarpType && name.StartsWith("Shuffle")) ||
                (className == TypeConstants.GpuType && name.StartsWith(TypeConstants.WarpType));
     }
 
@@ -57,15 +57,15 @@ internal static class BarrierHelper
             case ExpressionStatementSyntax { Expression: InvocationExpressionSyntax inv } when IsPhaseBarrier(inv):
                 return inv;
             case LocalDeclarationStatementSyntax localDecl:
-            {
-                var initializer = localDecl.Declaration.Variables.FirstOrDefault()?.Initializer;
-                if (initializer?.Value is InvocationExpressionSyntax inv && IsPhaseBarrier(inv))
                 {
-                    return inv;
-                }
+                    var initializer = localDecl.Declaration.Variables.FirstOrDefault()?.Initializer;
+                    if (initializer?.Value is InvocationExpressionSyntax inv && IsPhaseBarrier(inv))
+                    {
+                        return inv;
+                    }
 
-                break;
-            }
+                    break;
+                }
         }
 
         return null;

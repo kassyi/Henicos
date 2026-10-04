@@ -11,12 +11,18 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
     /// <summary>
     /// The underlying unsigned floating-point value payload.
     /// </summary>
-    public GpuBigUFloat UFloat { get; }
+    public GpuBigUFloat UFloat
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether the floating-point number is negative.
     /// </summary>
-    public bool IsNegative { get; }
+    public bool IsNegative
+    {
+        get;
+    }
 
     /// <summary>
     /// Disposes the underlying GPU memory.

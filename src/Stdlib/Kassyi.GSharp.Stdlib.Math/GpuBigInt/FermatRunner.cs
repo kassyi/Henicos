@@ -21,7 +21,10 @@ public class FermatRunner : IDisposable
     }
 
     /// <summary>Gets the number of 32-bit words in the output buffer.</summary>
-    public int OutNumWords { get; }
+    public int OutNumWords
+    {
+        get;
+    }
 
     private int _numWords;
 

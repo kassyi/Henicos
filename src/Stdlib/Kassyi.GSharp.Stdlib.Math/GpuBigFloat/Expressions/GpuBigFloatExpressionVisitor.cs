@@ -10,7 +10,10 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
 {
     public GpuWorkspace Workspace = workspace;
 
-    public IGpuBigFloatArithmetic Arithmetic { get; } = arithmetic ?? (workspace.Engine == GpuExecutionEngine.GSharpAot
+    public IGpuBigFloatArithmetic Arithmetic
+    {
+        get;
+    } = arithmetic ?? (workspace.Engine == GpuExecutionEngine.GSharpAot
         ? GSharpAotFloatProvider.Instance
         : CSharpCpuBigFloatArithmetic.Instance);
 
