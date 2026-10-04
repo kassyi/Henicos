@@ -9,7 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
-namespace Kassyi.GSharp.Stdlib.Math.Tests.Kernels
+namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels
 {
 public partial class GpuMacroTestKernels
 {
@@ -189,7 +189,7 @@ public static void Warmup()
 {
 // Force load the module first
 GetOrLoadModule();
-global::Kassyi.GSharp.Stdlib.Math.Tests.Kernels.GpuMacroTestKernels.WarmupFunctionPointerKernel_MacroTest_FillAndSingle();
+global::Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels.GpuMacroTestKernels.WarmupFunctionPointerKernel_MacroTest_FillAndSingle();
 }}}
 
 

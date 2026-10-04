@@ -38,7 +38,7 @@ Thrown when evaluated on the host CPU.
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 // Execution Context: G# Kernel (GPU) or Host (CPU fallback)

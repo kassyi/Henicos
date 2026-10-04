@@ -1,17 +1,17 @@
 ---
-title: "GpuBigInteger.NttMultiply Method (G#)"
+title: "GpuBigInt.NttMultiply Method (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
 description: "Reference for the Number Theoretic Transform (NTT) for O(N log N) multiplication."
 ---
 
-## GpuBigInteger.NttMultiply Method
+## GpuBigInt.NttMultiply Method
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 When multiplying two numbers, the standard "schoolbook" multiplication algorithm operates in $O(N^2)$ time. This is acceptable for numbers up to a few thousand bits. However, when multiplying numbers with **millions of bits**, $O(N^2)$ becomes impossibly slow.
 
@@ -33,15 +33,15 @@ var expr = gpuA * gpuB;
 When searching for massive prime numbers or calculating millions of digits of $\pi$, you are often required to multiply two numbers that are megabytes in size.
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 // Execution Context: Host (CPU)
 
 using System;
 using System.Numerics;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Allocate a workspace capable of handling 2-Megabyte numbers
 using var workspace = new GpuWorkspace(maxWords: 524288); // ~16.7 million bits!
@@ -50,11 +50,11 @@ using var workspace = new GpuWorkspace(maxWords: 524288); // ~16.7 million bits!
 byte[] massiveDataA = new byte[1024]; // dummy implementation for test
 byte[] massiveDataB = new byte[1024]; // dummy implementation for test
 
-using var gpuDataA = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(massiveDataA));
-using var gpuDataB = GpuUIntBigInteger.FromBigInteger(workspace, new BigInteger(massiveDataB));
+using var gpuDataA = GpuBigUInt.FromBigInteger(workspace, new BigInteger(massiveDataA));
+using var gpuDataB = GpuBigUInt.FromBigInteger(workspace, new BigInteger(massiveDataB));
 
-var a = new GpuBigInteger(gpuDataA, false);
-var b = new GpuBigInteger(gpuDataB, false);
+var a = new GpuBigInt(gpuDataA, false);
+var b = new GpuBigInt(gpuDataB, false);
 
 // Using the standard * operator builds an AST Node
 var expr = a * b;
@@ -72,7 +72,7 @@ The standard `*` operator automatically falls back to NTT if the operand sizes c
 
 ## NttCpuReference Class
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt.Algorithms`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt.Algorithms`
 
 A pure CPU reference implementation combining the 3-Prime NTT (Number Theoretic Transform) and Garner's CRT algorithm for large integer multiplication. It is used for host-side validation against the GPU results.
 
@@ -106,4 +106,4 @@ public static class NttCpuReference
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
-- [GpuBigInteger and GpuUIntBigInteger Operators (G#)](../Operators.md)
+- [GpuBigInt and GpuBigUInt Operators (G#)](../Operators.md)

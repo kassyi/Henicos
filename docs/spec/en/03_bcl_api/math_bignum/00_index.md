@@ -3,20 +3,20 @@ title: "Standard Math Library (Stdlib.Math)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
-description: "Overview of the Kassyi.GSharp.Stdlib.Math namespace, providing arbitrary-precision arithmetic and high-performance algorithms for the GPU."
+description: "Overview of the Kassyi.GSharp.Stdlib.GpuMath namespace, providing arbitrary-precision arithmetic and high-performance algorithms for the GPU."
 ---
 
 # Standard Math Library (Stdlib.Math)
 
-The `Kassyi.GSharp.Stdlib.Math` namespace provides high-performance, arbitrary-precision arithmetic (`GpuBigInteger`, `GpuBigFloat`) and advanced mathematical algorithms designed for the GPU.
+The `Kassyi.GSharp.Stdlib.GpuMath` namespace provides high-performance, arbitrary-precision arithmetic (`GpuBigInt`, `GpuBigFloat`) and advanced mathematical algorithms designed for the GPU.
 
 > [!NOTE]
 > **Dual Architecture: Host-Orchestrated vs GPU-Direct**
 >
 > The `Stdlib.Math` library offers two distinct execution models:
 >
-> 1. **Host-Orchestrated (Dynamic Precision)**: Types like the non-generic `GpuBigInteger` rely on `GpuWorkspace` memory pools and coordinate thousands of limbs for million-bit arithmetic. These are **Host-Side Only** and cannot be used inside `[GpuKernel]`.
-> 2. **GPU-Direct (Fixed Precision)**: Types like `GpuBigFloat<TSize>` and `GpuUIntBigInteger<TSize>` use C# 12 `[InlineArray]` (e.g., `LimbBuffer8`) to allocate fixed-size buffers directly on the stack/registers. These are **100% Zero-Allocation** and execute natively _inside_ `[GpuKernel]`.
+> 1. **Host-Orchestrated (Dynamic Precision)**: Types like the non-generic `GpuBigInt` rely on `GpuWorkspace` memory pools and coordinate thousands of limbs for million-bit arithmetic. These are **Host-Side Only** and cannot be used inside `[GpuKernel]`.
+> 2. **GPU-Direct (Fixed Precision)**: Types like `GpuBigFloat<TSize>` and `GpuBigUInt<TSize>` use C# 12 `[InlineArray]` (e.g., `LimbBuffer8`) to allocate fixed-size buffers directly on the stack/registers. These are **100% Zero-Allocation** and execute natively _inside_ `[GpuKernel]`.
 
 ## Namespaces and Components
 
@@ -26,7 +26,7 @@ This module is split into several logical sub-components:
    The core memory pool and execution state manager required for all lazy-evaluated expressions and multi-precision operations.
 
 2. **[Arbitrary-Precision Integers (GpuBigInt)](gpu_big_int_and_uint/00_index.md)**
-   Provides `GpuUIntBigInteger` (unsigned) and `GpuBigInteger` (signed) types capable of handling numbers with millions of bits.
+   Provides `GpuBigUInt` (unsigned) and `GpuBigInt` (signed) types capable of handling numbers with millions of bits.
 
 3. **[Arbitrary-Precision Floats (GpuBigFloat)](gpu_big_float/00_index.md)**
    Provides `GpuBigFloat` for floating-point calculations requiring extreme precision.

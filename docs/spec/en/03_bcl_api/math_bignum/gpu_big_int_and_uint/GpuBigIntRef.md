@@ -10,8 +10,8 @@ description: "A ref struct representing a pointer to a BigInteger limb array in 
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A `ref struct` representing a pointer to a BigInteger limb array in GPU device/shared memory during G# kernel transpilation.
 
@@ -57,18 +57,18 @@ public readonly ref struct GpuBigIntRef
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
 
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
-using var uintA = GpuUIntBigInteger.FromBigInteger(workspace, new System.Numerics.BigInteger(150), 4);
-using var uintB = GpuUIntBigInteger.FromBigInteger(workspace, new System.Numerics.BigInteger(50), 4);
+using var uintA = GpuBigUInt.FromBigInteger(workspace, new System.Numerics.BigInteger(150), 4);
+using var uintB = GpuBigUInt.FromBigInteger(workspace, new System.Numerics.BigInteger(50), 4);
 
 // GpuBigIntRef operators throw on CPU. We use AST expression evaluation to simulate the result.
 var sumExpr = uintA + uintB;
-using var sumResult = (GpuUIntBigInteger)sumExpr.Node.Evaluate(workspace, null);
+using var sumResult = (GpuBigUInt)sumExpr.Node.Evaluate(workspace, null);
 
 Console.WriteLine($"Conceptually computes on GPU: 150 + 50 = {sumResult.ToBigInteger()}");
 ```
@@ -76,12 +76,12 @@ Console.WriteLine($"Conceptually computes on GPU: 150 + 50 = {sumResult.ToBigInt
 ### Immediate Evaluation (GPU)
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 public class Example
 {

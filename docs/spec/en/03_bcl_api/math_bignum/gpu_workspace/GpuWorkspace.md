@@ -10,8 +10,8 @@ description: "Represents a GPU execution workspace managing memory allocation po
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents a GPU execution workspace managing memory allocation pools, device workspaces, composite resource tracking, and backend providers for large integer computations.
 
@@ -172,7 +172,7 @@ protected virtual void Dispose(bool disposing);
 `GpuWorkspace` implements `IGpuResourceScope`, introducing a unified **composite scope (tray) pattern** for GPU memory and resource lifecycle management.
 
 Prior to this architecture, GPU data structures required granular, per-field manual `.Dispose()` chains in constructor `catch` blocks and tear-down methods. Under the `Track()` model:
-- **Automatic Registration**: Constructors of GPU data types (such as <see cref="GpuUIntBigInteger"/> and <see cref="GpuBigIntMatrix2x2"/>) automatically register newly allocated instances into their parent `GpuWorkspace` via `Track(this)`.
+- **Automatic Registration**: Constructors of GPU data types (such as <see cref="GpuBigUInt"/> and <see cref="GpuBigIntMatrix2x2"/>) automatically register newly allocated instances into their parent `GpuWorkspace` via `Track(this)`.
 - **Deterministic Bulk Disposal**: When `GpuWorkspace.Dispose()` is invoked (typically via a `using` statement), all tracked GPU buffers, streams, and scratchpads are reclaimed collectively within a guarded <c>CudaContextScope</c>, eliminating manual disposal boilerplate and leak risks.
 - **Double-Free Safety**: The underlying memory manager maintains active allocation registries to ensure that if a tracked resource is manually disposed early by the caller, redundant teardown during workspace disposal is safely ignored.
 
@@ -183,12 +183,12 @@ Prior to this architecture, GPU data structures required granular, per-field man
 ### Allocating a Workspace and Native Compilation Engine
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.GpuMath;
 
 // 1. Create a GpuWorkspace with a specific capacity
 using var workspace = new GpuWorkspace(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
@@ -206,8 +206,8 @@ GPU data structures automatically register with the parent workspace upon creati
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 void ComputeWithAutoCleanup()
 {
@@ -215,8 +215,8 @@ void ComputeWithAutoCleanup()
     using var workspace = new GpuWorkspace(maxWords: 4096);
 
     // Instances auto-register via workspace.Track(this) inside their constructors
-    var a = new GpuUIntBigInteger(workspace, 128);
-    var b = new GpuUIntBigInteger(workspace, 128);
+    var a = new GpuBigUInt(workspace, 128);
+    var b = new GpuBigUInt(workspace, 128);
     var matrix = GpuBigIntMatrix2x2.Identity(workspace, 128);
 
     // Custom disposable GPU resources can also be tracked explicitly:
@@ -236,8 +236,8 @@ When a `using` statement cannot be used (e.g., long-lived operations or manual l
 var workspace = new GpuWorkspace(maxWords: 2048);
 try
 {
-    var x = new GpuUIntBigInteger(workspace, 64);
-    var y = new GpuUIntBigInteger(workspace, 64);
+    var x = new GpuBigUInt(workspace, 64);
+    var y = new GpuBigUInt(workspace, 64);
 
     // Compute...
 }
@@ -254,14 +254,14 @@ When designing custom classes or runner services that allocate multiple GPU reso
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 public sealed class GpuTransformPipeline : IDisposable
 {
     private readonly GpuWorkspace _workspace;
-    private readonly GpuUIntBigInteger _source;
-    private readonly GpuUIntBigInteger _target;
+    private readonly GpuBigUInt _source;
+    private readonly GpuBigUInt _target;
     private readonly GpuBigIntMatrix2x2 _matrix;
     private bool _disposed;
 
@@ -270,8 +270,8 @@ public sealed class GpuTransformPipeline : IDisposable
         try
         {
             _workspace = new GpuWorkspace(numWords);
-            _source = new GpuUIntBigInteger(_workspace, numWords);
-            _target = new GpuUIntBigInteger(_workspace, numWords);
+            _source = new GpuBigUInt(_workspace, numWords);
+            _target = new GpuBigUInt(_workspace, numWords);
             _matrix = GpuBigIntMatrix2x2.Identity(_workspace, numWords);
         }
         catch

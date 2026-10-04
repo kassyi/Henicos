@@ -10,10 +10,10 @@ description: "Reference for 2x2 Matrix operations for multi-precision integers."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Provides specialized orchestration for a $2 \times 2$ matrix of `GpuBigInteger` values.
+Provides specialized orchestration for a $2 \times 2$ matrix of `GpuBigInt` values.
 
 The primary use case for this structure is computing linear recurrence relations in $O(\log N)$ time using **Matrix Exponentiation**. For example, calculating the $N$-th Fibonacci number for a massive $N$ (e.g., $N = 10,000,000$) can be done exponentially faster on the GPU by computing:
 
@@ -25,9 +25,9 @@ $$
 
 | Name                                                                                                                                                          | Description                                           |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| [GpuBigIntMatrix2x2(GpuBigInteger, GpuBigInteger, GpuBigInteger, GpuBigInteger)](#gpubigintmatrix2x2-gpubiginteger-gpubiginteger-gpubiginteger-gpubiginteger) | Initializes a new matrix with the specified elements. |
+| [GpuBigIntMatrix2x2(GpuBigInt, GpuBigInt, GpuBigInt, GpuBigInt)](#gpubigintmatrix2x2-gpubiginteger-gpubiginteger-gpubiginteger-gpubiginteger) | Initializes a new matrix with the specified elements. |
 
-## GpuBigIntMatrix2x2(GpuBigInteger, GpuBigInteger, GpuBigInteger, GpuBigInteger)
+## GpuBigIntMatrix2x2(GpuBigInt, GpuBigInt, GpuBigInt, GpuBigInt)
 
 Initializes a new instance of the 2x2 matrix.
 
@@ -86,8 +86,8 @@ A struct holding AST nodes for the resulting multiplication.
 using var workspace = new GpuWorkspace(maxWords: 1024);
 
 // Initial transition matrix for Fibonacci: [[1, 1], [1, 0]]
-var gpuOne = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 1));
-var gpuZero = new GpuBigInteger(GpuUIntBigInteger.FromBigInteger(workspace, 0));
+var gpuOne = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1));
+var gpuZero = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 0));
 
 var transitionMatrix = new GpuBigIntMatrix2x2(
     m00: gpuOne, m01: gpuOne,
@@ -108,4 +108,4 @@ Console.WriteLine($"Fibonacci({N}): {fibN.ToBigInteger()}");
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
-- [GpuBigInteger and GpuUIntBigInteger Operators (G#)](../Operators.md)
+- [GpuBigInt and GpuBigUInt Operators (G#)](../Operators.md)

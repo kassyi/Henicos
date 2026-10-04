@@ -55,21 +55,21 @@ using var gpuResult = ((gpuA + gpuB) * gpuC - gpuA).Node.Evaluate(workspace, nul
 
 ## 4.3 Dynamic Sign Resolution (`SignResolutionKind`)
 
-The standard library (`Kassyi.GSharp.Stdlib.Math`) has been enhanced to support runtime sign evaluation for the `GpuBigIntExpr` type without requiring kernel recompilation.
+The standard library (`Kassyi.GSharp.Stdlib.GpuMath`) has been enhanced to support runtime sign evaluation for the `GpuBigIntExpr` type without requiring kernel recompilation.
 
 **Example**
 ```csharp
 // Execution Context: Host (CPU)
-using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Stdlib.Math.BigInt.Expressions;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions;
 
 public static void EvaluateBigInt(uint[] hostData, int dynamicValue)
 {
     // 'a' has a dynamically resolved sign at runtime based on 'dynamicValue'
-    using var gpuA = new GpuUIntBigInteger<L1024>(workspace);
+    using var gpuA = new GpuBigUInt<L1024>(workspace);
     gpuA.SetFrom(dynamicValue);
     GpuBigIntExpr a = gpuA;
-    using var gpuB = new GpuUIntBigInteger<L1024>(workspace);
+    using var gpuB = new GpuBigUInt<L1024>(workspace);
     gpuB.SetFrom(42);
     GpuBigIntExpr b = gpuB; 
     

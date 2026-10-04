@@ -30,7 +30,7 @@ public static class MegaCompilationCache
         }
 
         // Implicitly reference Math library if present in the same directory, to support standard library tests
-        var mathDllPath = Path.Combine(Path.GetDirectoryName(coreDllPath)!, "Kassyi.GSharp.Stdlib.Math.dll");
+        var mathDllPath = Path.Combine(Path.GetDirectoryName(coreDllPath)!, "Kassyi.GSharp.Stdlib.GpuMath.dll");
         if (File.Exists(mathDllPath) && !references.Any(r => string.Equals(r.Display, mathDllPath, StringComparison.OrdinalIgnoreCase)))
         {
             references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(mathDllPath)));

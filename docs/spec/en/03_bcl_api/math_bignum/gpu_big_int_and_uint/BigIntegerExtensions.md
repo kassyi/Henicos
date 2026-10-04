@@ -10,8 +10,8 @@ description: "Provides mathematical extension methods for System.Numerics.BigInt
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Provides mathematical extension methods for `BigInteger`.
 
@@ -51,14 +51,14 @@ Thrown if `value` is negative.
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 // Execution Context: Host (CPU)
 
 using System;
 using System.Numerics;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 var bigValue = BigInteger.Parse("123456789012345678901234567890");
 var root = bigValue.Sqrt();

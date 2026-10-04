@@ -83,7 +83,7 @@ The Roslyn Zero-Leak Analyzer (`DisposableOwnershipAnalyzer`) verifies `[TakesOw
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.GpuMath;
 
 // Execution Context: Host (CPU)
 public class ComputePipeline : IDisposable

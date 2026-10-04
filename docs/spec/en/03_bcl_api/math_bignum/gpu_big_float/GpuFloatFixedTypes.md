@@ -8,7 +8,7 @@ description: "High-level fixed-size arbitrary-precision floating-point wrappers 
 
 # Fixed-Precision GPU Floats (128/256/512)
 
-The `Kassyi.GSharp.Stdlib.Math.BigFloat` namespace provides several high-level wrapper structs for `GpuBigFloat<TSize>`, which make it easier to work with fixed-precision arbitrary-precision floats without having to specify the generic `TSize` limb buffer type explicitly.
+The `Kassyi.GSharp.Stdlib.GpuMath.BigFloat` namespace provides several high-level wrapper structs for `GpuBigFloat<TSize>`, which make it easier to work with fixed-precision arbitrary-precision floats without having to specify the generic `TSize` limb buffer type explicitly.
 
 Currently, the following fixed-precision structs are supported:
 
@@ -69,15 +69,15 @@ The generic 128-bit floating point structure.
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math, Kassyi.GSharp.Core
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath, Kassyi.GSharp.Core
 
 These structs fully support C# 12 collection expressions to initialize their unsigned significand with zero heap allocation on the GPU.
 
 ```csharp
 
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math.BigFloat;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigFloat;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU)
 Example.ComputeFloat128();

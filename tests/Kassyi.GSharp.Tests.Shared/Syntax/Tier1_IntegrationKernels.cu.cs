@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.Math;
+using Kassyi.GSharp.Stdlib.GpuMath;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -27,7 +27,7 @@ public static partial class Tier1IntegrationKernels
     [GpuDeviceFunction]
     public static float HelperMath(float x, float y)
     {
-        return (float)System.Math.Max(x * x, y * y);
+        return (float)Math.Max(x * x, y * y);
     }
 
     [GpuDeviceFunction]
@@ -46,7 +46,7 @@ public static partial class Tier1IntegrationKernels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static float HelperMathAggressive(float x)
     {
-        return (float)System.Math.Abs(x);
+        return (float)Math.Abs(x);
     }
 
     [GpuKernel]
@@ -80,7 +80,7 @@ public static partial class Tier1IntegrationKernels
             // Math & Hardware Math (SYN-68)
             float mag = HelperMath(floatInput[tid], (float)processed);
             mag = HelperMathAggressive(mag); // SYN-28
-            mag = (float)System.Math.Max(mag, config.FloatVal);
+            mag = (float)Math.Max(mag, config.FloatVal);
 
             // SYN-01: Switch expression
             mag += (tid % 3) switch

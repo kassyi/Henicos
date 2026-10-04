@@ -16,9 +16,9 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(compilationContext =>
         {
             var type1 = compilationContext.Compilation.GetTypeByMetadataName(
-                "Kassyi.GSharp.Stdlib.Math.GpuBigInt.Expressions.GpuBigIntExpr");
+                "Kassyi.GSharp.Stdlib.GpuMath.BigInt.Expressions.GpuBigIntExpr");
             var type2 = compilationContext.Compilation.GetTypeByMetadataName(
-                "Kassyi.GSharp.Stdlib.Math.Expressions.GpuBigIntExpr");
+                "Kassyi.GSharp.Stdlib.GpuMath.Expressions.GpuBigIntExpr");
             var type3 = compilationContext.Compilation.GetTypeByMetadataName(
                 "Kassyi.GSharp.GpuBigInt.Expressions.GpuBigIntExpr");
 

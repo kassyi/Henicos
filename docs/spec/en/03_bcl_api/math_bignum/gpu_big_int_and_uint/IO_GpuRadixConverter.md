@@ -3,17 +3,17 @@ title: "GpuRadixConverter Class (G#)"
 site: "G# Documentation"
 published: "2026-09-24T00:00:00.000Z"
 language: "en"
-description: "Provides high-performance GPU-accelerated Divide and Conquer (D&C) radix conversion for streaming arbitrary-precision GpuUIntBigInteger to decimal text."
+description: "Provides high-performance GPU-accelerated Divide and Conquer (D&C) radix conversion for streaming arbitrary-precision GpuBigUInt to decimal text."
 ---
 
 ## GpuRadixConverter Class
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.IO`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.IO`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Provides high-performance GPU-accelerated Divide and Conquer (D&C) radix conversion for streaming arbitrary-precision `GpuUIntBigInteger` to decimal text.
+Provides high-performance GPU-accelerated Divide and Conquer (D&C) radix conversion for streaming arbitrary-precision `GpuBigUInt` to decimal text.
 
 ```csharp
 public static class GpuRadixConverter
@@ -23,14 +23,14 @@ public static class GpuRadixConverter
 
 | Name | Description |
 | --- | --- |
-| [ConvertAndWrite(GpuWorkspace, GpuUIntBigInteger, int, TextWriter, bool)](#convertandwritegpuworkspace-gpuuintbiginteger-int-textwriter-bool) | Converts a `GpuUIntBigInteger` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`. |
+| [ConvertAndWrite(GpuWorkspace, GpuBigUInt, int, TextWriter, bool)](#convertandwritegpuworkspace-gpuuintbiginteger-int-textwriter-bool) | Converts a `GpuBigUInt` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`. |
 
-## ConvertAndWrite(GpuWorkspace, GpuUIntBigInteger, int, TextWriter, bool)
+## ConvertAndWrite(GpuWorkspace, GpuBigUInt, int, TextWriter, bool)
 
-Converts a `GpuUIntBigInteger` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`.
+Converts a `GpuBigUInt` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`.
 
 ```csharp
-public static void ConvertAndWrite(GpuWorkspace workspace, GpuUIntBigInteger value, int targetDigits, TextWriter writer, bool isMostSignificant = false);
+public static void ConvertAndWrite(GpuWorkspace workspace, GpuBigUInt value, int targetDigits, TextWriter writer, bool isMostSignificant = false);
 ```
 
 #### Parameters
@@ -61,7 +61,7 @@ Thrown when `targetDigits` is negative or zero.
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ### Printing a 10,000 Digit Number
 
@@ -69,14 +69,14 @@ Thrown when `targetDigits` is negative or zero.
 // Execution Context: Host (CPU)
 using System;
 using System.IO;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
-using Kassyi.GSharp.Stdlib.Math.IO;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.IO;
 
 using var workspace = new GpuWorkspace(2048, GpuExecutionEngine.GSharpAot);
 
 // Assume we just finished calculating a massive factorial or Pi
-GpuUIntBigInteger resultGpu = GpuUIntBigInteger.FromBigInteger(workspace, System.Numerics.BigInteger.Parse("12345678901234567890"), minWords: 2);
+GpuBigUInt resultGpu = GpuBigUInt.FromBigInteger(workspace, System.Numerics.BigInteger.Parse("12345678901234567890"), minWords: 2);
 
 Console.WriteLine("Starting base-10 conversion...");
 
@@ -102,4 +102,4 @@ Because the conversion involves hundreds of recursive Division and Remainder (`D
 - [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
 - [GpuWorkspace](../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
-- [GpuUIntBigInteger](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuUIntBigInteger.md)
+- [GpuBigUInt](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuBigUInt.md)

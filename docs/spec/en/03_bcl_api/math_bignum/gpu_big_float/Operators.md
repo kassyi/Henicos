@@ -10,12 +10,12 @@ description: "Reference for standard arithmetic operators on GpuBigFloat."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigFloat`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigFloat`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 `GpuBigFloat<TSize>` provides standard C# operator overloads (`+`, `-`). These evaluate **immediately** and do not construct an Abstract Syntax Tree (AST), making them suitable for zero-allocation execution inside GPU kernels.
 
-Additionally, for host-side (CPU) code, the non-generic `GpuBigFloat` class (currently tracked in Issue #194) provides a **Lazy Evaluation** architecture similar to `GpuBigInteger`, constructing an AST to optimize execution on the GPU.
+Additionally, for host-side (CPU) code, the non-generic `GpuBigFloat` class (currently tracked in Issue #194) provides a **Lazy Evaluation** architecture similar to `GpuBigInt`, constructing an AST to optimize execution on the GPU.
 
 > [!WARNING]
 > **Host-Side Allocations Occur Here**
@@ -119,13 +119,13 @@ An expression tree node that computes the quotient when evaluated.
 ### Immediate Evaluation (GPU)
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math, Kassyi.GSharp.Core
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath, Kassyi.GSharp.Core
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math.BigFloat;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigFloat;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU)
 Example.ComputeFloatOperators();

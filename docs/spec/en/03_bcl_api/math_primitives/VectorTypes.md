@@ -38,7 +38,7 @@ Since these types map directly to CUDA native built-in vector types (e.g., `floa
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 // Execution Context: G# Kernel (GPU) or Host (CPU fallback)

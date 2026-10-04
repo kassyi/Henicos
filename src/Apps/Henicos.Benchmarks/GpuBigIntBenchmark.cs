@@ -2,15 +2,15 @@ namespace Henicos.Benchmarks;
 
 public class GpuBigIntBenchmark : GpuBigMathBenchmarkBase
 {
-    private GpuUIntBigInteger[] _leftSigs = null!;
-    private GpuUIntBigInteger[] _rightSigs = null!;
-    private GpuUIntBigInteger[] _resultSigs = null!;
+    private GpuBigUInt[] _leftSigs = null!;
+    private GpuBigUInt[] _rightSigs = null!;
+    private GpuBigUInt[] _resultSigs = null!;
 
     protected override void OnSetup()
     {
-        _leftSigs = new GpuUIntBigInteger[BatchSize];
-        _rightSigs = new GpuUIntBigInteger[BatchSize];
-        _resultSigs = new GpuUIntBigInteger[BatchSize];
+        _leftSigs = new GpuBigUInt[BatchSize];
+        _rightSigs = new GpuBigUInt[BatchSize];
+        _resultSigs = new GpuBigUInt[BatchSize];
 
         var rnd = new Random(42);
         var leftData = new uint[NumWords];
@@ -26,9 +26,9 @@ public class GpuBigIntBenchmark : GpuBigMathBenchmarkBase
 
         for (var i = 0; i < BatchSize; i++)
         {
-            _leftSigs[i] = new GpuUIntBigInteger(Ctx, NumWords);
-            _rightSigs[i] = new GpuUIntBigInteger(Ctx, NumWords);
-            _resultSigs[i] = new GpuUIntBigInteger(Ctx, NumWords);
+            _leftSigs[i] = new GpuBigUInt(Ctx, NumWords);
+            _rightSigs[i] = new GpuBigUInt(Ctx, NumWords);
+            _resultSigs[i] = new GpuBigUInt(Ctx, NumWords);
 
             Ctx.Provider.CopyHostToDevice(_leftSigs[i].DevicePointer, leftData, NumWords, Stream);
             Ctx.Provider.CopyHostToDevice(_rightSigs[i].DevicePointer, rightData, NumWords, Stream);

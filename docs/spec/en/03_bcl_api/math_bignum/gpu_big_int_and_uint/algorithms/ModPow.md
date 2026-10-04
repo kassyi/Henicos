@@ -1,5 +1,5 @@
 ---
-title: "GpuBigInteger.ModPow Method (G#)"
+title: "GpuBigInt.ModPow Method (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
@@ -10,8 +10,8 @@ description: "Reference for multi-precision Modular Exponentiation (RSA) on the 
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Computes the modular exponentiation $a^b \pmod m$ of extremely large integers. This is highly optimized for cryptography (e.g., RSA) using GPU-accelerated Montgomery reduction.
 
@@ -19,14 +19,14 @@ Computes the modular exponentiation $a^b \pmod m$ of extremely large integers. T
 
 | Name                                                                                          | Description                                      |
 | --------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| [ModPow(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)](#modpow) | Computes the modular exponentiation of a number. |
+| [ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modpow) | Computes the modular exponentiation of a number. |
 
-## GpuBigIntDivRem.ModPow(GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger, GpuUIntBigInteger)
+## GpuBigIntDivRem.ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
 Computes the modular exponentiation eagerly into the provided result buffer.
 
 ```csharp
-public static void ModPow(GpuUIntBigInteger baseVal, GpuUIntBigInteger exp, GpuUIntBigInteger mod, GpuUIntBigInteger resultBuffer);
+public static void ModPow(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer);
 ```
 
 #### Parameters
@@ -66,12 +66,12 @@ byte[] privateKeyD = GetRsaPrivateKey();
 byte[] ciphertextBytes = GetIncomingCiphertext();
 
 // 2. Upload to GPU VRAM
-using var gpuModulus = GpuUIntBigInteger.FromByteArray(workspace, modulusN);
-using var gpuPrivateKey = GpuUIntBigInteger.FromByteArray(workspace, privateKeyD);
-using var gpuCiphertext = GpuUIntBigInteger.FromByteArray(workspace, ciphertextBytes);
+using var gpuModulus = GpuBigUInt.FromByteArray(workspace, modulusN);
+using var gpuPrivateKey = GpuBigUInt.FromByteArray(workspace, privateKeyD);
+using var gpuCiphertext = GpuBigUInt.FromByteArray(workspace, ciphertextBytes);
 
 // 3. Eagerly evaluate: c^d mod n
-using var decryptedResult = new GpuUIntBigInteger(workspace, 64);
+using var decryptedResult = new GpuBigUInt(workspace, 64);
 GpuBigIntDivRem.ModPow(gpuCiphertext, gpuPrivateKey, gpuModulus, decryptedResult);
 
 // 5. Download the decrypted message back to the CPU

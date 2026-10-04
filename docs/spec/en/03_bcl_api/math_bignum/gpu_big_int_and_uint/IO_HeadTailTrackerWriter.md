@@ -10,8 +10,8 @@ description: "A memory-efficient TextWriter that only keeps track of the first N
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.IO`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.IO`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A memory-efficient `TextWriter` that only keeps track of the first N (Head) and last N (Tail) characters. Intermediate characters are discarded to prevent OutOfMemory exceptions on massive outputs (e.g. 100M+ digits).
 
@@ -142,11 +142,11 @@ public override void Write(string? value);
 ### Tracking Output Stream Limits
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.Math.IO;
+using Kassyi.GSharp.Stdlib.GpuMath.IO;
 
 var tracker = new HeadTailTrackerWriter(headCapacity: 5, tailCapacity: 3);
 
@@ -170,4 +170,4 @@ Console.WriteLine(tracker.GetPreview());
 - [Standard Math Library (Stdlib.Math)](../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
 - [GpuWorkspace](../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
-- [GpuUIntBigInteger](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuUIntBigInteger.md)
+- [GpuBigUInt](../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/GpuBigUInt.md)

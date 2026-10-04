@@ -21,7 +21,7 @@ This section details the inner workings of the transpilation engine, binary veri
 - **[2.3 Comprehensive End-to-End Pipeline Example](03_comprehensive_example.md)**
   A complete walkthrough from C# source code to generated CUDA `.cu`, native `.fatbin`/`.dll`, and host invocation.
 - **[2.4 Bignum Transpiler Internals](04_bignum_internals.md)**
-  Architecture and compilation strategy for arbitrary-precision arithmetic (`GpuBigInteger`, `GpuBigFloat`) and lazy expression evaluation.
+  Architecture and compilation strategy for arbitrary-precision arithmetic (`GpuBigInt`, `GpuBigFloat`) and lazy expression evaluation.
 
 ## See also
 

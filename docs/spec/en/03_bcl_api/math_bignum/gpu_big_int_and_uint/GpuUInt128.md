@@ -10,8 +10,8 @@ description: "Represents a 128-bit unsigned integer stored on the GPU."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.Math.BigInt`  
-**Assembly:** `Kassyi.GSharp.Stdlib.Math.dll`
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigInt`  
+**Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents a 128-bit unsigned integer stored on the GPU.
 
@@ -24,15 +24,15 @@ public struct GpuUInt128
 
 | Name | Description |
 | --- | --- |
-| [GpuUInt128(GpuUIntBigInteger&lt;LimbBuffer4&gt;)](#gpuuint128gpuuintbiginteger-limbbuffer4) | Initializes a new instance of the `GpuUInt128` struct. |
+| [GpuUInt128(GpuBigUInt&lt;LimbBuffer4&gt;)](#gpuuint128gpuuintbiginteger-limbbuffer4) | Initializes a new instance of the `GpuUInt128` struct. |
 | [GpuUInt128(uint)](#gpuuint128uint) | Initializes a new instance of the `GpuUInt128` struct. |
 
-## GpuUInt128(GpuUIntBigInteger&lt;LimbBuffer4&gt;)
+## GpuUInt128(GpuBigUInt&lt;LimbBuffer4&gt;)
 
 Initializes a new instance of the `GpuUInt128` struct from an existing buffer.
 
 ```csharp
-public GpuUInt128(GpuUIntBigInteger<LimbBuffer4> value);
+public GpuUInt128(GpuBigUInt<LimbBuffer4> value);
 ```
 
 #### Parameters
@@ -81,8 +81,8 @@ A newly created `GpuUInt128` struct.
 
 | Name | Description |
 | --- | --- |
-| `Implicit(GpuUInt128 to GpuUIntBigInteger<LimbBuffer4>)` | Implicitly converts a `GpuUInt128` to a `GpuUIntBigInteger<LimbBuffer4>`. |
-| `Implicit(GpuUIntBigInteger<LimbBuffer4> to GpuUInt128)` | Implicitly converts a `GpuUIntBigInteger<LimbBuffer4>` to a `GpuUInt128`. |
+| `Implicit(GpuUInt128 to GpuBigUInt<LimbBuffer4>)` | Implicitly converts a `GpuUInt128` to a `GpuBigUInt<LimbBuffer4>`. |
+| `Implicit(GpuBigUInt<LimbBuffer4> to GpuUInt128)` | Implicitly converts a `GpuBigUInt<LimbBuffer4>` to a `GpuUInt128`. |
 | `Implicit(uint to GpuUInt128)` | Implicitly converts a `uint` to a `GpuUInt128`. |
 
 ## Examples
@@ -90,12 +90,12 @@ A newly created `GpuUInt128` struct.
 ### Creating GpuUInt128 Instances
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.Math
+> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.Math.BigInt;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 
 // Execution Context: Host (CPU) or G# Kernel (GPU)
 
@@ -108,8 +108,8 @@ GpuUInt128 implicitConversion = 100u;
 // 3. Create from an array of four 32-bit limbs (CollectionBuilder syntax)
 GpuUInt128 fromLimbs = [ 0x00000001, 0x00000000, 0x00000000, 0x00000000 ];
 
-// 4. Retrieve the underlying GpuUIntBigInteger<LimbBuffer4> implicitly
-GpuUIntBigInteger<LimbBuffer4> underlyingBuffer = fromLimbs;
+// 4. Retrieve the underlying GpuBigUInt<LimbBuffer4> implicitly
+GpuBigUInt<LimbBuffer4> underlyingBuffer = fromLimbs;
 
 Console.WriteLine($"fromScalar.Value.Limbs[0] = {fromScalar.Value.Limbs[0]}");
 Console.WriteLine($"implicitConversion.Value.Limbs[0] = {implicitConversion.Value.Limbs[0]}");

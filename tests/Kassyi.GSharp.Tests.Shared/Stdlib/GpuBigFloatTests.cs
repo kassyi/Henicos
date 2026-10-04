@@ -1,8 +1,8 @@
 using System;
 using Kassyi.GSharp.Runtime.Aot;
-using Kassyi.GSharp.Stdlib.Math;
-using Kassyi.GSharp.Stdlib.Math.GpuBigFloat;
-using Kassyi.GSharp.Stdlib.Math.GpuBigInt;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.GpuBigFloat;
+using Kassyi.GSharp.Stdlib.GpuMath.BigInt;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 
@@ -20,8 +20,8 @@ public class GpuBigFloatTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-        using var sigA = new GpuUIntBigInteger(context, new uint[] { 10, 0, 0, 0 });
-        using var sigB = new GpuUIntBigInteger(context, new uint[] { 2, 0, 0, 0 });
+        using var sigA = new GpuBigUInt(context, new uint[] { 10, 0, 0, 0 });
+        using var sigB = new GpuBigUInt(context, new uint[] { 2, 0, 0, 0 });
 
         var floatA = new GpuBigFloat(sigA, 5, isNegA);
         var floatB = new GpuBigFloat(sigB, 5, isNegB);
@@ -42,7 +42,7 @@ public class GpuBigFloatTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-        using var sig = new GpuUIntBigInteger(context, new uint[] { 0xAAAAAAAA, 0x55555555, 0xFFFFFFFF, 0x80000000 });
+        using var sig = new GpuBigUInt(context, new uint[] { 0xAAAAAAAA, 0x55555555, 0xFFFFFFFF, 0x80000000 });
         var floatVal = new GpuBigFloat(sig, exp, isNegative: false);
         
         // Assert creation preserves exponent boundaries without corrupting significand
@@ -57,8 +57,8 @@ public class GpuBigFloatTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-        using var zeroSig = new GpuUIntBigInteger(context, new uint[] { 0, 0, 0, 0 });
-        using var valSig = new GpuUIntBigInteger(context, new uint[] { 42, 0, 0, 0 });
+        using var zeroSig = new GpuBigUInt(context, new uint[] { 0, 0, 0, 0 });
+        using var valSig = new GpuBigUInt(context, new uint[] { 42, 0, 0, 0 });
 
         var floatZero = new GpuBigFloat(zeroSig, 100, isNegative: true);
         var floatVal = new GpuBigFloat(valSig, 50, isNegative: false);
@@ -78,7 +78,7 @@ public class GpuBigFloatTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-        using var zeroSig = new GpuUIntBigInteger(context, new uint[] { 0, 0, 0, 0 });
+        using var zeroSig = new GpuBigUInt(context, new uint[] { 0, 0, 0, 0 });
         var floatZero = new GpuBigFloat(zeroSig, 0, isNegative: false);
 
         Assert.True(floatZero.UFloat.Significand.IsZero());
