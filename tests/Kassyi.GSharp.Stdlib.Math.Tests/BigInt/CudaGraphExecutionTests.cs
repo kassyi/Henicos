@@ -166,14 +166,12 @@ public class CudaGraphExecutionTests
 
         CudaException? capturedEx = null;
 
-        // Run the capture and intentional failure in an isolated OS thread.
-        // Failing a Thread-Local capture permanently pollutes the OS thread's capture state.
-        // If we do this on the xUnit worker thread, subsequent tests will fail with CudaErrorStreamCaptureImplicit.
-        var thread = new Thread(() =>
+        // Use an isolated CUDA context to ensure that the unrecoverable capture failure state
+        // does not contaminate the shared global context or sequential test executions.
+        using (var ctx = new GpuWorkspace(4, GpuExecutionEngine.GSharpAot, useIsolatedContext: true))
+        using (ctx.ActivateContext())
+        using (var a = new GpuUIntBigInteger(ctx, 4))
         {
-            using var ctx = new GpuWorkspace(4, GpuExecutionEngine.GSharpAot);
-            using var a = new GpuUIntBigInteger(ctx, 4);
-
             try
             {
                 ctx.Provider.BeginCapture(ctx.Stream);
@@ -190,9 +188,7 @@ public class CudaGraphExecutionTests
                 // Cleanup the broken capture state by forcing EndCapture which will return NULL/Error
                 CudaDriverApi.cuStreamEndCapture(ctx.Stream, out _);
             }
-        });
-        thread.Start();
-        thread.Join();
+        }
 
         Assert.NotNull(capturedEx);
         Assert.Equal(CUresult.CudaErrorStreamCaptureImplicit, capturedEx.Result);

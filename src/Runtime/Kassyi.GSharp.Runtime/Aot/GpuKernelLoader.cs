@@ -28,24 +28,43 @@ public sealed class GpuKernelLoader
 
     public readonly struct CudaContextScope : IDisposable
     {
+        [ThreadStatic]
+        private static IntPtr t_activeContext;
+
         private readonly IntPtr _prevContext;
+        private readonly IntPtr _targetContext;
+        private readonly IntPtr _prevActiveContext;
         private readonly bool _isFallback;
 
-        public CudaContextScope()
+        public CudaContextScope() : this(IntPtr.Zero)
+        {
+        }
+
+        public CudaContextScope(IntPtr customContext)
         {
             EnsureInitialized();
             if (IsCpuFallbackMode)
             {
                 _isFallback = true;
                 _prevContext = IntPtr.Zero;
+                _targetContext = IntPtr.Zero;
+                _prevActiveContext = IntPtr.Zero;
                 return;
             }
 
             _isFallback = false;
+            _prevActiveContext = t_activeContext;
+
+            _targetContext = customContext != IntPtr.Zero
+                ? customContext
+                : (t_activeContext != IntPtr.Zero ? t_activeContext : s_globalContext);
+
+            t_activeContext = _targetContext;
+
             CudaDriverApi.cuCtxGetCurrent(out _prevContext);
-            if (_prevContext != s_globalContext)
+            if (_prevContext != _targetContext)
             {
-                CudaException.ThrowIfError(CudaDriverApi.cuCtxSetCurrent(s_globalContext));
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxSetCurrent(_targetContext));
             }
         }
 
@@ -56,7 +75,9 @@ public sealed class GpuKernelLoader
                 return;
             }
 
-            if (_prevContext != s_globalContext)
+            t_activeContext = _prevActiveContext;
+
+            if (_prevContext != _targetContext)
             {
                 CudaDriverApi.cuCtxSetCurrent(_prevContext);
             }

@@ -76,6 +76,7 @@ public class GpuWorkspace : IGpuResourceScope
     }
 
     private int _disposed;
+    private readonly IntPtr _isolatedContext;
     private readonly List<IDisposable> _trackedResources = [];
 
     /// <summary>
@@ -108,15 +109,24 @@ public class GpuWorkspace : IGpuResourceScope
     /// </summary>
     /// <param name="maxWords">The maximum word count for BigInteger operations.</param>
     /// <param name="engine">The GPU execution backend engine to utilize.</param>
+    /// <param name="useIsolatedContext">Whether to create and use an isolated CUDA context instead of the shared global context.</param>
     /// <exception cref="InvalidOperationException">Thrown when CUDA context or native workspace allocation fails.</exception>
-    public GpuWorkspace(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot)
+    public GpuWorkspace(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot, bool useIsolatedContext = false)
     {
         MaxWords = maxWords;
         Engine = engine;
 
+        GpuKernelLoader.CudaContextScope? scope = null;
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
-            using var scope = new GpuKernelLoader.CudaContextScope();
+            if (useIsolatedContext)
+            {
+                CudaDriverApi.cuInit(0);
+                CudaDriverApi.cuDeviceGet(out var dev, 0);
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out _isolatedContext, 0, dev));
+            }
+
+            scope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
             CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
             Stream = stream;
 
@@ -144,8 +154,20 @@ public class GpuWorkspace : IGpuResourceScope
             }
         }
 
-        MemoryManager = new DefaultGpuMemoryManager(Provider, Stream);
+        try
+        {
+            MemoryManager = new DefaultGpuMemoryManager(Provider, Stream);
+        }
+        finally
+        {
+            scope?.Dispose();
+        }
     }
+
+    /// <summary>
+    /// Activates the CUDA context associated with this workspace for the lifetime of the returned scope.
+    /// </summary>
+    public IDisposable ActivateContext() => new GpuKernelLoader.CudaContextScope(_isolatedContext);
 
     /// <summary>
     /// Releases all device memory resources, temporary pooled buffers, and workspace handles held by this context.
@@ -168,7 +190,7 @@ public class GpuWorkspace : IGpuResourceScope
         {
             try
             {
-                contextScope = new GpuKernelLoader.CudaContextScope();
+                contextScope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
             }
             catch
             {
@@ -250,6 +272,11 @@ public class GpuWorkspace : IGpuResourceScope
                 }
 
                 CudaDriverApi.cuStreamDestroy(Stream);
+
+                if (_isolatedContext != IntPtr.Zero)
+                {
+                    CudaDriverApi.cuCtxDestroy_v2(_isolatedContext);
+                }
             }
             catch
             {
