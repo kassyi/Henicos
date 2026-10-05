@@ -24,7 +24,7 @@ public static partial class NativeKernelInvoker
         [In] byte[] input, [Out] uint[] output, int numMessages,
         uint gridDimX, uint blockDimX);
 
-    [CudaImport(FatbinName, EntryPoint = NativeCudaKernels.BlackScholesKernel_Native)]
+    [CudaImport(FatbinName, EntryPoint = NativeCudaKernels.BlackScholesKernel_Native, PackContext = true)]
     public static partial void LaunchBlackScholes(
         [In] float[] s, [In] float[] x, [In] float[] t, float r, float v,
         [Out] float[] callResult, [Out] float[] putResult, int n,
