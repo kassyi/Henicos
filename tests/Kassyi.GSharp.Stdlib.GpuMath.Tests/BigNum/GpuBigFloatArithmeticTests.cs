@@ -69,7 +69,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Divide(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Divide(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
@@ -157,7 +157,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuBigUInt(ctx, 2048);
 
-        GSharpAotFloatProvider.Instance.Divide(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Divide(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
@@ -223,7 +223,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Multiply(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Multiply(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
@@ -287,7 +287,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Add(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Add(ref execCtx,
             leftSig.Handle, leftExp, leftSign,
             rightSig.Handle, rightExp, rightSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
@@ -342,7 +342,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Reciprocal(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Reciprocal(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -400,13 +400,13 @@ public class GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuBigUInt(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Sqrt(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Sqrt(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -463,13 +463,13 @@ public class GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuBigUInt(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Rsqrt(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Rsqrt(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -525,7 +525,7 @@ public class GpuBigFloatArithmeticTests
         // Target: 4 words (128 bits). 1 is at bit 0. It should be shifted to bit 127.
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Normalize(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -582,13 +582,13 @@ public class GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuBigUInt(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Exp(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Exp(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -645,13 +645,13 @@ public class GpuBigFloatArithmeticTests
         bool rawValueSign = false;
 
         using var valueSig = new GpuBigUInt(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Normalize(ref execCtx,
             rawValueSig.Handle, rawValueExp, rawValueSign,
             valueSig.Handle, out int valueExp, out bool valueSign);
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Log(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Log(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
 
@@ -714,19 +714,20 @@ public class GpuBigFloatArithmeticTests
         int rawBaseExp = 0;
         bool rawBaseSign = false;
         using var baseSig = new GpuBigUInt(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, rawBaseSig.Handle, rawBaseExp, rawBaseSign,
+        GSharpAotFloatProvider.CreateGSharpKernel().Normalize(ref execCtx, rawBaseSig.Handle, rawBaseExp, rawBaseSign,
             baseSig.Handle, out int baseExp, out bool baseSign);
 
         using var rawExpSig = new GpuBigUInt(ctx, new uint[] { 3, 0, 0, 0 });
         int rawExpExp = 0;
         bool rawExpSign = false;
         using var expSig = new GpuBigUInt(ctx, 4);
-        GSharpAotFloatProvider.Instance.Normalize(ref execCtx, rawExpSig.Handle, rawExpExp, rawExpSign, expSig.Handle,
+        GSharpAotFloatProvider.CreateGSharpKernel().Normalize(ref execCtx, rawExpSig.Handle, rawExpExp, rawExpSign,
+            expSig.Handle,
             out int expExp, out bool expSign);
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.Pow(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().Pow(ref execCtx,
             baseSig.Handle, baseExp, baseSign,
             expSig.Handle, expExp, expSign,
             resultSig.Handle, out int resultExp, out bool resultSign);
@@ -783,7 +784,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.DivideByUInt32(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().DivideByUInt32(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             3,
             resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);
@@ -841,7 +842,7 @@ public class GpuBigFloatArithmeticTests
 
         using var resultSig = new GpuBigUInt(ctx, 4);
 
-        GSharpAotFloatProvider.Instance.DivideByUInt32(ref execCtx,
+        GSharpAotFloatProvider.CreateGSharpKernel().DivideByUInt32(ref execCtx,
             valueSig.Handle, valueExp, valueSign,
             0xFFFFFFFF, // Max uint
             resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);
@@ -887,7 +888,7 @@ public class GpuBigFloatArithmeticTests
         Assert.Throws<InvalidOperationException>(() =>
         {
             var execCtx = CreateContext(ctx);
-            GSharpAotFloatProvider.Instance.DivideByUInt32(ref execCtx,
+            GSharpAotFloatProvider.CreateGSharpKernel().DivideByUInt32(ref execCtx,
                 valueSig.Handle, 0, false,
                 0, // Divide by zero
                 resultSig.Handle, out int resultExp, out bool resultSign, out uint remainder);

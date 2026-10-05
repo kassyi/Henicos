@@ -43,7 +43,7 @@ public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
         var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
         for (var i = 0; i < BatchSize; i++)
         {
-            GSharpAotFloatProvider.Instance.Multiply(ref execCtx, _leftSigs[i].Handle, 1000, false,
+            GSharpAotFloatProvider.CreateGSharpKernel().Multiply(ref execCtx, _leftSigs[i].Handle, 1000, false,
                 _rightSigs[i].Handle, 1000, false, _resultSigs[i].Handle, out _, out _);
         }
     }
@@ -53,7 +53,8 @@ public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
         var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
         for (var i = 0; i < BatchSize; i++)
         {
-            GSharpAotFloatProvider.Instance.Divide(ref execCtx, _leftSigs[i].Handle, 1000, false, _rightSigs[i].Handle,
+            GSharpAotFloatProvider.CreateGSharpKernel().Divide(ref execCtx, _leftSigs[i].Handle, 1000, false,
+                _rightSigs[i].Handle,
                 1000, false, _resultSigs[i].Handle, out _, out _);
         }
     }
@@ -63,7 +64,8 @@ public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
         var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
         for (var i = 0; i < BatchSize; i++)
         {
-            GSharpAotFloatProvider.Instance.Sqrt(ref execCtx, _leftSigs[i].Handle, 1000, false, _resultSigs[i].Handle,
+            GSharpAotFloatProvider.CreateGSharpKernel().Sqrt(ref execCtx, _leftSigs[i].Handle, 1000, false,
+                _resultSigs[i].Handle,
                 out _, out _);
         }
     }

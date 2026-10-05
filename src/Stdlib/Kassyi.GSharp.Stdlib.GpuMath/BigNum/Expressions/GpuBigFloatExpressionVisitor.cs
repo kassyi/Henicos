@@ -26,7 +26,9 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     /// Gets the active arbitrary-precision float arithmetic provider.
     /// </summary>
     public IGpuBigFloatArithmetic Arithmetic { get; } = arithmetic ?? (workspace.Engine == GpuExecutionEngine.GSharpAot
-        ? GSharpAotFloatProvider.Instance
+        ? (workspace.Provider is NativeProvider
+            ? GSharpAotFloatProvider.CreateNativeCuda()
+            : GSharpAotFloatProvider.CreateGSharpKernel())
         : CSharpCpuBigFloatArithmetic.Instance);
 
 
