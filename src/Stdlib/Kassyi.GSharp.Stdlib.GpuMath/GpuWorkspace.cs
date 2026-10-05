@@ -30,26 +30,17 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the maximum number of 32-bit limbs (words) supported in this context's fixed allocations.
     /// </summary>
-    public int MaxWords
-    {
-        get;
-    }
+    public int MaxWords { get; }
 
     /// <summary>
     /// Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend).
     /// </summary>
-    public IntPtr WorkspacePointer
-    {
-        get;
-    }
+    public IntPtr WorkspacePointer { get; }
 
     /// <summary>
     /// Gets the active GPU execution engine type.
     /// </summary>
-    public GpuExecutionEngine Engine
-    {
-        get;
-    }
+    public GpuExecutionEngine Engine { get; }
 
     /// <summary>
     /// Gets the active GPU arithmetic execution provider implementation.
@@ -61,19 +52,13 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph capture.
     /// </summary>
-    public IntPtr Stream
-    {
-        get;
-    }
+    public IntPtr Stream { get; }
 
     /// <summary>
     /// Gets the number of streaming multiprocessors (SMs) on the active CUDA device.
     /// This value is used to clamp grid dimensions for cooperative kernel launches.
     /// </summary>
-    public int DeviceSmCount
-    {
-        get; internal set; /*set this value only for tests*/
-    }
+    public int DeviceSmCount { get; internal set; /*set this value only for tests*/ }
 
     private int _disposed;
     private readonly IntPtr _isolatedContext;
@@ -82,14 +67,12 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the memory manager for this context.
     /// </summary>
-    public IGpuMemoryManager MemoryManager
-    {
-        get;
-    }
+    public IGpuMemoryManager MemoryManager { get; }
 
     /// <summary>
-    /// Registers a disposable resource to be tracked and collectively disposed by this workspace.
+    /// Registers a disposable resource to be tracked and deterministically disposed upon workspace disposal.
     /// </summary>
+    /// <param name="resource">The disposable resource to track.</param>
     public void Track(IDisposable resource)
     {
         lock (_trackedResources)
@@ -99,8 +82,10 @@ public class GpuWorkspace : IGpuResourceScope
     }
 
     /// <summary>
-    /// Creates a nested scope. Not currently implemented for the root workspace.
+    /// Creates a nested GPU resource scope. Not currently supported on the root workspace.
     /// </summary>
+    /// <returns>A new <see cref="IGpuResourceScope"/> instance.</returns>
+    /// <exception cref="NotImplementedException">Thrown unconditionally as nested scopes are not yet supported on the root workspace.</exception>
     public IGpuResourceScope CreateScope() =>
         throw new NotImplementedException("Nested scopes are not yet supported on GpuWorkspace.");
 
@@ -111,7 +96,8 @@ public class GpuWorkspace : IGpuResourceScope
     /// <param name="engine">The GPU execution backend engine to utilize.</param>
     /// <param name="useIsolatedContext">Whether to create and use an isolated CUDA context instead of the shared global context.</param>
     /// <exception cref="InvalidOperationException">Thrown when CUDA context or native workspace allocation fails.</exception>
-    public GpuWorkspace(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot, bool useIsolatedContext = false)
+    public GpuWorkspace(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot,
+        bool useIsolatedContext = false)
     {
         MaxWords = maxWords;
         Engine = engine;
@@ -174,6 +160,7 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Activates the CUDA context associated with this workspace for the lifetime of the returned scope.
     /// </summary>
+    /// <returns>An <see cref="IDisposable"/> token restoring the previous CUDA context upon disposal.</returns>
     public IDisposable ActivateContext() => new GpuKernelLoader.CudaContextScope(_isolatedContext);
 
     /// <summary>
@@ -313,8 +300,6 @@ public class GpuWorkspace : IGpuResourceScope
         Dispose(false);
     }
 
-    // Temporary shim to maintain compatibility during Phase 3 migration
-    // TODO: Phase out GpuBigUInt entirely from internal AST nodes
     internal GpuBigUInt RentTemp(int numWords)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);

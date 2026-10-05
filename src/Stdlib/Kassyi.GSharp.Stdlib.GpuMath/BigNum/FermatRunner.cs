@@ -4,27 +4,23 @@ using Kassyi.GSharp.Runtime.Aot;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
-/// Executes accelerated Fermat number Probable Prime (PRP) tests and NTT-based big integer squaring kernels on the GPU.
+/// Executes accelerated Fermat number Probable Prime (PRP) tests and NTT-based big integer squaring kernels on NVIDIA GPUs.
 /// </summary>
+/// <remarks>
+/// <para>Performs iterative squaring and modular reduction modulo $F_E = 2^{2^E} + 1$ using GPU mega-kernels and host orchestration.</para>
+/// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to release all underlying GPU buffers and workspace allocations.</para>
+/// </remarks>
 public class FermatRunner : IDisposable
 {
-    /// <summary>Gets the Fermat exponent parameter.</summary>
-    /// <remarks>
-    /// Defined according to the Fermat number Probable Prime (PRP) test:
-    /// <list type="bullet">
-    ///   <item><description><see cref="E"/>: <c>F_n = 2^(2^E) + 1</c></description></item>
-    /// </list>
-    /// </remarks>
-    public int E
-    {
-        get;
-    }
+    /// <summary>
+    /// Gets the Fermat number exponent parameter $E$, where the target test number is $F_E = 2^{2^E} + 1$.
+    /// </summary>
+    public int E { get; }
 
-    /// <summary>Gets the number of 32-bit words in the output buffer.</summary>
-    public int OutNumWords
-    {
-        get;
-    }
+    /// <summary>
+    /// Gets the number of 32-bit words allocated in the output state buffer.
+    /// </summary>
+    public int OutNumWords { get; }
 
     private int _numWords;
 
@@ -42,7 +38,11 @@ public class FermatRunner : IDisposable
 
     private int _exponent;
 
-    /// <summary>Initializes a new instance of the <see cref="FermatRunner"/> class for exponent <paramref name="e"/>.</summary>
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FermatRunner"/> class configured for Fermat exponent <paramref name="e"/>.
+    /// </summary>
+    /// <param name="e">The Fermat exponent $E$.</param>
+    /// <exception cref="InvalidOperationException">Thrown when GPU context initialization fails.</exception>
     public FermatRunner(int e)
     {
         E = e;
@@ -89,10 +89,14 @@ public class FermatRunner : IDisposable
             maskArray[word2E1] = (1U << rem2E1) - 1;
         }
 
-        _gpuWorkspace.Provider.CopyHostToDevice(_remainderMask.DevicePointer, maskArray, OutNumWords, _gpuWorkspace.Stream);
+        _gpuWorkspace.Provider.CopyHostToDevice(_remainderMask.DevicePointer, maskArray, OutNumWords,
+            _gpuWorkspace.Stream);
     }
 
-    /// <summary>Gets a copy of the current state buffer (ValueT).</summary>
+    /// <summary>
+    /// Copies and returns the current state buffer (<c>ValueT</c>) from GPU device memory to host memory.
+    /// </summary>
+    /// <returns>An array of 32-bit words containing the current state.</returns>
     public uint[] GetState()
     {
         var copy = new uint[OutNumWords];
@@ -100,7 +104,11 @@ public class FermatRunner : IDisposable
         return copy;
     }
 
-    /// <summary>Loads a previously saved state buffer (ValueT) into the context.</summary>
+    /// <summary>
+    /// Loads a previously saved state buffer (<c>ValueT</c>) into the GPU device execution context.
+    /// </summary>
+    /// <param name="valueT">An array containing the state buffer words to load.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="valueT"/> length does not equal <see cref="OutNumWords"/>.</exception>
     public void LoadState(uint[] valueT)
     {
         if (valueT.Length != OutNumWords)
@@ -114,7 +122,8 @@ public class FermatRunner : IDisposable
     private void MultiplySquareAndReduceHost()
     {
         // Copy the lower _numWords of _valueT into _valueTReduced
-        _gpuWorkspace.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, _valueT.DevicePointer, _numWords, _gpuWorkspace.Stream);
+        _gpuWorkspace.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, _valueT.DevicePointer, _numWords,
+            _gpuWorkspace.Stream);
 
         // Square it using host-side NTT multiplication orchestration
         GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
@@ -138,11 +147,13 @@ public class FermatRunner : IDisposable
             gridDimX: 1, blockDimX: 256
         );
 
-        // FIX: The Mega-Kernel writes the reduced output to _remainder, but it was never swapped back to _valueT.
         (_valueT, _remainder) = (_remainder, _valueT);
     }
 
-    /// <summary>Executes the full Fermat Probable Prime (PRP) loop on the GPU and returns the final value.</summary>
+    /// <summary>
+    /// Executes the full Fermat Probable Prime (PRP) loop on the GPU and returns the final result words and elapsed time.
+    /// </summary>
+    /// <returns>A tuple containing the final state array and the elapsed execution time in milliseconds.</returns>
     public (uint[] Result, long ElapsedMs) RunFermatPrp()
     {
         var sw = Stopwatch.StartNew();
@@ -158,7 +169,10 @@ public class FermatRunner : IDisposable
         return (GetState(), sw.ElapsedMilliseconds);
     }
 
-    /// <summary>Executes a specified number of squaring iterations on the GPU for benchmarking purposes.</summary>
+    /// <summary>
+    /// Executes a specified number of squaring iterations on the GPU for benchmarking purposes.
+    /// </summary>
+    /// <param name="chunkSize">The number of squaring iterations to execute.</param>
     public void RunBenchmarkChunk(int chunkSize = 100)
     {
         for (var i = 0; i < chunkSize; i++)
@@ -171,6 +185,10 @@ public class FermatRunner : IDisposable
 
     private bool _disposed;
 
+    /// <summary>
+    /// Releases unmanaged and optionally managed resources.
+    /// </summary>
+    /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources; <see langword="false"/> to release only unmanaged resources.</param>
     protected virtual void Dispose(bool disposing)
     {
         if (_disposed)
@@ -193,6 +211,7 @@ public class FermatRunner : IDisposable
         _disposed = true;
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
         Dispose(true);
@@ -204,3 +223,4 @@ public class FermatRunner : IDisposable
         Dispose(false);
     }
 }
+

@@ -7,23 +7,46 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <summary>
 /// Represents an arbitrary-precision unsigned integer stored in NVIDIA GPU global device memory.
 /// </summary>
+/// <remarks>
+/// <para><b>Performance:</b> Backed by GPU device memory handles allocated from <see cref="GpuWorkspace.MemoryManager"/>.</para>
+/// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to return allocated GPU device memory to the pool.</para>
+/// <para><b>Expression Trees:</b> Supports deferred expression compilation and operator fusion via overloaded arithmetic operators.</para>
+/// <para><b>Thread Safety:</b> Value-type wrapper semantics; safe for concurrent reads across threads when distinct instances are used.</para>
+/// </remarks>
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatable<GpuBigUInt>,
     IComparable<GpuBigUInt>
 {
+    /// <summary>
+    /// Gets the <see cref="GpuWorkspace"/> associated with this GPU integer instance.
+    /// </summary>
     public GpuWorkspace Workspace
     {
         get;
     }
+
+    /// <summary>
+    /// Gets the underlying GPU memory handle tracking device buffer allocation and lifetime.
+    /// </summary>
     public GpuBigIntMemoryHandle Handle
     {
         get;
     }
 
+    /// <summary>
+    /// Gets the raw 64-bit device memory pointer to the first limb word in GPU global address space.
+    /// </summary>
     public IntPtr DevicePointer =>
         Handle.IsDefault ? IntPtr.Zero : IntPtr.Add(Handle.Buffer.Pointer, Handle.WordOffset * 4);
 
+    /// <summary>
+    /// Gets the number of 32-bit unsigned integer limbs (words) allocated for this big integer.
+    /// </summary>
     public int NumWords => Handle.IsDefault ? 0 : Handle.NumWords;
+
+    /// <summary>
+    /// Gets a value indicating whether this buffer represents an intermediate temporary buffer managed by expression evaluation.
+    /// </summary>
     public bool IsTemp
     {
         get;
@@ -44,6 +67,12 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         IsTemp = isTemp;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GpuBigUInt"/> struct allocating uninitialized GPU device memory.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace managing memory allocations and kernel dispatch.</param>
+    /// <param name="numWords">The number of 32-bit words to allocate.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace"/> is <see langword="null"/>.</exception>
     public GpuBigUInt(GpuWorkspace workspace, int numWords)
     {
         Workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
@@ -51,50 +80,125 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         IsTemp = false;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GpuBigUInt"/> struct initialized with data copied from host memory.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace managing memory allocations and kernel dispatch.</param>
+    /// <param name="hostData">An array of 32-bit limb words in little-endian order to copy to device memory.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace"/> or <paramref name="hostData"/> is <see langword="null"/>.</exception>
     public GpuBigUInt(GpuWorkspace workspace, uint[] hostData)
     {
         Workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
+        ArgumentNullException.ThrowIfNull(hostData);
         Handle = Workspace.MemoryManager.Allocate(hostData.Length);
         IsTemp = false;
         Workspace.Provider.CopyHostToDevice(DevicePointer, hostData, NumWords, Workspace.Stream);
     }
 
+    /// <summary>
+    /// Gets a deferred expression representing this instance, or evaluates and assigns a deferred expression into this instance in-place.
+    /// </summary>
     public GpuBigUIntExpr Value
     {
         get => new(this);
         set => value.Node.Evaluate(Workspace, this);
     }
 
+    /// <summary>
+    /// Creates a deferred expression representing the addition of two unsigned big integers.
+    /// </summary>
+    /// <param name="leftOperand">The first operand.</param>
+    /// <param name="rightOperand">The second operand.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the addition.</returns>
     public static GpuBigUIntExpr operator +(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         new(new AddExpression(leftOperand, rightOperand));
 
+    /// <summary>
+    /// Creates a deferred expression representing the subtraction of two unsigned big integers.
+    /// </summary>
+    /// <param name="leftOperand">The minuend operand.</param>
+    /// <param name="rightOperand">The subtrahend operand.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the subtraction.</returns>
     public static GpuBigUIntExpr operator -(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         new(new SubExpression(leftOperand, rightOperand));
 
+    /// <summary>
+    /// Creates a deferred expression representing the multiplication of two unsigned big integers.
+    /// </summary>
+    /// <param name="leftOperand">The multiplicand operand.</param>
+    /// <param name="rightOperand">The multiplier operand.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the multiplication.</returns>
     public static GpuBigUIntExpr operator *(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         new(new MulExpression(leftOperand, rightOperand));
 
+    /// <summary>
+    /// Creates a deferred expression representing the division of two unsigned big integers.
+    /// </summary>
+    /// <param name="leftOperand">The dividend operand.</param>
+    /// <param name="rightOperand">The divisor operand.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the division.</returns>
     public static GpuBigUIntExpr operator /(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         new(new DivExpression(leftOperand, rightOperand));
 
+    /// <summary>
+    /// Creates a deferred expression representing the modulo (remainder) operation of two unsigned big integers.
+    /// </summary>
+    /// <param name="leftOperand">The dividend operand.</param>
+    /// <param name="rightOperand">The divisor operand.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the remainder operation.</returns>
     public static GpuBigUIntExpr operator %(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         new(new ModExpression(leftOperand, rightOperand));
 
+    /// <summary>
+    /// Creates a deferred expression representing the bitwise AND of two unsigned big integers.
+    /// </summary>
+    /// <param name="leftOperand">The first operand.</param>
+    /// <param name="rightOperand">The second operand.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the bitwise AND operation.</returns>
     public static GpuBigUIntExpr operator &(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         new(new BitwiseAndExpression(leftOperand, rightOperand));
 
+    /// <summary>
+    /// Creates a deferred expression representing the bitwise left shift of an unsigned big integer.
+    /// </summary>
+    /// <param name="leftOperand">The value to shift.</param>
+    /// <param name="shiftBits">The number of bit positions to shift left.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the left shift operation.</returns>
     public static GpuBigUIntExpr operator <<(GpuBigUInt leftOperand, int shiftBits) =>
         new(new ShiftLeftExpression(leftOperand, shiftBits));
 
+    /// <summary>
+    /// Creates a deferred expression representing the bitwise right shift of an unsigned big integer.
+    /// </summary>
+    /// <param name="leftOperand">The value to shift.</param>
+    /// <param name="shiftBits">The number of bit positions to shift right.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the right shift operation.</returns>
     public static GpuBigUIntExpr operator >>(GpuBigUInt leftOperand, int shiftBits) =>
         new(new ShiftRightExpression(leftOperand, shiftBits));
 
+    /// <summary>
+    /// Creates a deferred expression representing the bitwise OR of two unsigned big integers.
+    /// </summary>
+    /// <param name="leftOperand">The first operand.</param>
+    /// <param name="rightOperand">The second operand.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the bitwise OR operation.</returns>
     public static GpuBigUIntExpr operator |(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         new(new BitwiseOrExpression(leftOperand, rightOperand));
 
+    /// <summary>
+    /// Creates a deferred expression representing the bitwise XOR of two unsigned big integers.
+    /// </summary>
+    /// <param name="leftOperand">The first operand.</param>
+    /// <param name="rightOperand">The second operand.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the bitwise XOR operation.</returns>
     public static GpuBigUIntExpr operator ^(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         new(new BitwiseXorExpression(leftOperand, rightOperand));
 
+    /// <summary>
+    /// Creates a deferred expression representing the bitwise NOT (one's complement) of an unsigned big integer.
+    /// </summary>
+    /// <param name="leftOperand">The operand to invert.</param>
+    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the bitwise NOT operation.</returns>
     public static GpuBigUIntExpr operator ~(GpuBigUInt leftOperand) =>
         new(new BitwiseNotExpression(leftOperand));
 
@@ -120,24 +224,64 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         return operand;
     }
 
+    /// <summary>
+    /// Determines whether two specified <see cref="GpuBigUInt"/> instances are equal.
+    /// </summary>
+    /// <param name="leftOperand">The first value to compare.</param>
+    /// <param name="rightOperand">The second value to compare.</param>
+    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> equals <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
     public static bool operator ==(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         leftOperand.Equals(rightOperand);
 
+    /// <summary>
+    /// Determines whether two specified <see cref="GpuBigUInt"/> instances are not equal.
+    /// </summary>
+    /// <param name="leftOperand">The first value to compare.</param>
+    /// <param name="rightOperand">The second value to compare.</param>
+    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> does not equal <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
     public static bool operator !=(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         !(leftOperand == rightOperand);
 
+    /// <summary>
+    /// Determines whether one specified <see cref="GpuBigUInt"/> is less than another specified <see cref="GpuBigUInt"/>.
+    /// </summary>
+    /// <param name="leftOperand">The first value to compare.</param>
+    /// <param name="rightOperand">The second value to compare.</param>
+    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> is less than <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
     public static bool operator <(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         leftOperand.CompareTo(rightOperand) < 0;
 
+    /// <summary>
+    /// Determines whether one specified <see cref="GpuBigUInt"/> is greater than another specified <see cref="GpuBigUInt"/>.
+    /// </summary>
+    /// <param name="leftOperand">The first value to compare.</param>
+    /// <param name="rightOperand">The second value to compare.</param>
+    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> is greater than <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
     public static bool operator >(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         leftOperand.CompareTo(rightOperand) > 0;
 
+    /// <summary>
+    /// Determines whether one specified <see cref="GpuBigUInt"/> is less than or equal to another specified <see cref="GpuBigUInt"/>.
+    /// </summary>
+    /// <param name="leftOperand">The first value to compare.</param>
+    /// <param name="rightOperand">The second value to compare.</param>
+    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> is less than or equal to <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
     public static bool operator <=(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         leftOperand.CompareTo(rightOperand) <= 0;
 
+    /// <summary>
+    /// Determines whether one specified <see cref="GpuBigUInt"/> is greater than or equal to another specified <see cref="GpuBigUInt"/>.
+    /// </summary>
+    /// <param name="leftOperand">The first value to compare.</param>
+    /// <param name="rightOperand">The second value to compare.</param>
+    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> is greater than or equal to <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
     public static bool operator >=(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         leftOperand.CompareTo(rightOperand) >= 0;
 
+    /// <summary>
+    /// Copies all limb words from GPU device memory to a newly allocated host array.
+    /// </summary>
+    /// <returns>An array of 32-bit unsigned integers representing the limbs in little-endian order.</returns>
     public uint[] ToHostArray()
     {
         var hostData = new uint[NumWords];
@@ -145,6 +289,11 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         return hostData;
     }
 
+    /// <summary>
+    /// Clears (zeros out) a range of limb words in GPU device memory.
+    /// </summary>
+    /// <param name="offsetWords">The word offset within this buffer from which to start clearing.</param>
+    /// <param name="numWords">The number of words to clear, or <see langword="null"/> to clear until the end of the buffer.</param>
     public void Clear(int offsetWords = 0, int? numWords = null)
     {
         var wordsToClear = numWords ?? (NumWords - offsetWords);
@@ -166,6 +315,13 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         }
     }
 
+    /// <summary>
+    /// Copies limb words from another <see cref="GpuBigUInt"/> instance to this instance in GPU device memory.
+    /// </summary>
+    /// <param name="source">The source <see cref="GpuBigUInt"/> buffer.</param>
+    /// <param name="destOffsetWords">The word offset within this destination buffer.</param>
+    /// <param name="srcOffsetWords">The word offset within the source buffer.</param>
+    /// <param name="numWords">The number of words to copy, or <see langword="null"/> to copy as many words as fit.</param>
     public void CopyFrom(GpuBigUInt source, int destOffsetWords = 0, int srcOffsetWords = 0,
         int? numWords = null)
     {
@@ -180,6 +336,11 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         Workspace.Provider.CopyDeviceToDevice(destPtr, srcPtr, wordsToCopy, Workspace.Stream);
     }
 
+    /// <summary>
+    /// Copies the most significant limb words from GPU device memory to a host array.
+    /// </summary>
+    /// <param name="wordCount">The number of top words to copy.</param>
+    /// <returns>A host array containing the most significant limb words.</returns>
     public uint[] GetTopWords(int wordCount)
     {
         if (wordCount > NumWords)
@@ -193,21 +354,62 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         return hostData;
     }
 
+    /// <summary>
+    /// Compares this instance to another <see cref="GpuBigUInt"/> and returns an integer indicating their relative magnitude.
+    /// </summary>
+    /// <param name="other">The <see cref="GpuBigUInt"/> to compare with this instance.</param>
+    /// <returns>
+    /// A signed integer that indicates the relative values of this instance and <paramref name="other"/>:
+    /// Less than zero if this instance is less than <paramref name="other"/>,
+    /// Zero if this instance equals <paramref name="other"/>,
+    /// Greater than zero if this instance is greater than <paramref name="other"/>.
+    /// </returns>
     public int CompareTo(GpuBigUInt other) => Workspace.Provider.CompareTo(Workspace, this, other);
+
+    /// <summary>
+    /// Determines whether the specified object is equal to the current instance.
+    /// </summary>
+    /// <param name="obj">The object to compare with the current instance.</param>
+    /// <returns><see langword="true"/> if <paramref name="obj"/> is a <see cref="GpuBigUInt"/> and equals the current instance; otherwise, <see langword="false"/>.</returns>
     public override bool Equals(object? obj) => obj is GpuBigUInt other && Equals(other);
 
+    /// <summary>
+    /// Indicates whether the current instance is equal to another <see cref="GpuBigUInt"/> instance.
+    /// </summary>
+    /// <param name="other">A <see cref="GpuBigUInt"/> to compare with this instance.</param>
+    /// <returns><see langword="true"/> if the current instance is equal to the <paramref name="other"/> parameter; otherwise, <see langword="false"/>.</returns>
     public bool Equals(GpuBigUInt other) =>
         Handle.Equals(other.Handle) || (Workspace != null && CompareTo(other) == 0);
 
+    /// <summary>
+    /// Returns the hash code for this instance.
+    /// </summary>
+    /// <returns>A 32-bit signed integer hash code.</returns>
     public override int GetHashCode() => Handle.GetHashCode();
-    public override string ToString() => "GpuBigUInt(Words={NumWords}, DevicePointer=0x{DevicePointer:X})";
 
+    /// <summary>
+    /// Returns a string representation of the <see cref="GpuBigUInt"/> instance for debugging.
+    /// </summary>
+    /// <returns>A string containing word count and device pointer address.</returns>
+    public override string ToString() => $"GpuBigUInt(Words={NumWords}, DevicePointer=0x{DevicePointer:X})";
+
+    /// <summary>
+    /// Clears a single 32-bit limb word at the specified word index in GPU device memory.
+    /// </summary>
+    /// <param name="wordIndex">The 0-based word index to clear.</param>
     public void ClearWord(int wordIndex)
     {
         var destPtr = IntPtr.Add(DevicePointer, wordIndex * 4);
         Workspace.Provider.CopyHostToDevice(destPtr, [0], 1, Workspace.Stream);
     }
 
+    /// <summary>
+    /// Creates a new <see cref="GpuBigUInt"/> initialized to $2^{\text{bitIndex}}$ ($1 \ll \text{bitIndex}$).
+    /// </summary>
+    /// <param name="workspace">The GPU workspace managing memory and device copy.</param>
+    /// <param name="numWords">The total word capacity of the resulting big integer.</param>
+    /// <param name="bitIndex">The 0-based bit position to set to 1.</param>
+    /// <returns>A newly allocated <see cref="GpuBigUInt"/> representing $2^{\text{bitIndex}}$.</returns>
     public static GpuBigUInt CreatePowerOfTwo(GpuWorkspace workspace, int numWords, int bitIndex)
     {
         var result = new GpuBigUInt(workspace, numWords);
@@ -232,6 +434,9 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         return result;
     }
 
+    /// <summary>
+    /// Releases the underlying GPU global device memory handle back to the workspace memory pool.
+    /// </summary>
     public void Dispose()
     {
         if (Workspace != null && !Handle.IsDefault && !IsTemp)
@@ -240,28 +445,58 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         }
     }
 
+    /// <summary>
+    /// Determines whether the value of this instance is 0 (zero).
+    /// </summary>
+    /// <returns><see langword="true"/> if all limb words equal 0; otherwise, <see langword="false"/>.</returns>
     public bool IsZero() => Workspace.Provider.IsZero(Workspace, this);
+
+    /// <summary>
+    /// Determines whether the value of this instance is 1 (one).
+    /// </summary>
+    /// <returns><see langword="true"/> if the value equals 1; otherwise, <see langword="false"/>.</returns>
     public bool IsOne() => Workspace.Provider.IsOne(Workspace, this);
+
+    /// <summary>
+    /// Calculates the minimum number of bits required to represent this big integer without leading zeros.
+    /// </summary>
+    /// <returns>The bit length of the number, or 0 if the value is zero.</returns>
     public int GetBitLength() => Workspace.Provider.GetBitLength(Workspace, this);
 
+    /// <summary>
+    /// Calculates the minimum number of bytes required to represent this big integer.
+    /// </summary>
+    /// <returns>The byte length of the number, or 1 if the value is zero.</returns>
     public int GetByteCount()
     {
         var bitLength = GetBitLength();
         return bitLength == 0 ? 1 : (bitLength + 7) / 8;
     }
 
+    /// <summary>
+    /// Determines whether the value is an even integer.
+    /// </summary>
+    /// <returns><see langword="true"/> if the least significant bit is 0; otherwise, <see langword="false"/>.</returns>
     public bool GetIsEven()
     {
         var word = Workspace.Provider.ReadWord(DevicePointer);
         return (word & 1) == 0;
     }
 
+    /// <summary>
+    /// Determines whether the most significant bit in the highest word is set (used for two's complement sign tracking).
+    /// </summary>
+    /// <returns><see langword="true"/> if the MSB of the highest word is set; otherwise, <see langword="false"/>.</returns>
     public bool GetIsNegative()
     {
         var word = Workspace.Provider.ReadWord(DevicePointer, NumWords - 1);
         return (word & 0x80000000) != 0;
     }
 
+    /// <summary>
+    /// Sets or clears the most significant bit in the highest word (used for two's complement sign tracking).
+    /// </summary>
+    /// <param name="value"><see langword="true"/> to set the sign bit; <see langword="false"/> to clear it.</param>
     public void SetIsNegative(bool value)
     {
         var word = Workspace.Provider.ReadWord(DevicePointer, NumWords - 1);
@@ -277,6 +512,12 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         Workspace.Provider.WriteWord(DevicePointer, NumWords - 1, word);
     }
 
+    /// <summary>
+    /// Computes the square of this number in-place on the GPU.
+    /// </summary>
+    /// <param name="logicalWords">The logical number of limb words in the input operand.</param>
+    /// <returns><see langword="true"/> if the square operation succeeded; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when <see cref="NumWords"/> is less than <c>logicalWords * 2</c>.</exception>
     public bool Square(int logicalWords)
     {
         if (NumWords < logicalWords * 2)
@@ -288,6 +529,11 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         return Workspace.Provider.Square(Workspace, DevicePointer, logicalWords);
     }
 
+    /// <summary>
+    /// Allocates a new <see cref="GpuBigUInt"/> with the specified target word capacity and copies this instance's limbs into it.
+    /// </summary>
+    /// <param name="targetWords">The target word capacity of the new buffer.</param>
+    /// <returns>A new <see cref="GpuBigUInt"/> padded or truncated to <paramref name="targetWords"/>.</returns>
     public GpuBigUInt PadTo(int targetWords)
     {
         var result = new GpuBigUInt(Workspace, targetWords);
@@ -296,6 +542,13 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         return result;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="GpuBigUInt"/> instance from a .NET standard <see cref="BigInteger"/> value.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace managing memory allocations.</param>
+    /// <param name="val">The <see cref="BigInteger"/> value to convert.</param>
+    /// <param name="minWords">The minimum word capacity to allocate on the GPU.</param>
+    /// <returns>A newly allocated <see cref="GpuBigUInt"/> containing the magnitude of <paramref name="val"/>.</returns>
     public static GpuBigUInt FromBigInteger(GpuWorkspace workspace, BigInteger val, int minWords = 0)
     {
         val = BigInteger.Abs(val);
@@ -323,6 +576,11 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         }
     }
 
+    /// <summary>
+    /// Copies limb data from GPU device memory and reconstructs a .NET standard <see cref="BigInteger"/>.
+    /// </summary>
+    /// <param name="isNegative"><see langword="true"/> to return a negative <see cref="BigInteger"/>; otherwise, <see langword="false"/>.</param>
+    /// <returns>A .NET <see cref="BigInteger"/> representing the value stored in GPU memory.</returns>
     public BigInteger ToBigInteger(bool isNegative = false)
     {
         var hostData = ArrayPool<uint>.Shared.Rent(NumWords);
@@ -342,6 +600,8 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
     /// <summary>
     /// Computes the modular multiplicative inverse of this instance modulo <paramref name="modulus"/>.
     /// </summary>
+    /// <param name="modulus">The modulus operand.</param>
+    /// <returns>A new <see cref="GpuBigUInt"/> containing the modular inverse ($x \equiv \text{this}^{-1} \pmod{\text{modulus}}$).</returns>
     public GpuBigUInt ModInverse(GpuBigUInt modulus)
     {
         var result = new GpuBigUInt(Workspace, NumWords);
@@ -349,6 +609,11 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         return result;
     }
 
+    /// <summary>
+    /// Dispatches the visitor to evaluate or process this <see cref="GpuBigUInt"/> node in an expression tree.
+    /// </summary>
+    /// <param name="visitor">The expression visitor instance.</param>
+    /// <returns>A <see cref="ScopedBigIntMemory"/> wrapping the evaluated memory handle.</returns>
     public ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) =>
         visitor.VisitGpuUIntBigInteger(this);
 }
