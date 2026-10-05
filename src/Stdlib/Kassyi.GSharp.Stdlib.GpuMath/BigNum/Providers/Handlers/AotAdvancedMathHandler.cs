@@ -17,7 +17,6 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// </remarks>
 public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 {
-
     private readonly ConcurrentDictionary<int, Lazy<TwiddleCache>> _twiddleCache = new();
 
     private class TwiddleCache
@@ -85,7 +84,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
                     gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
             }
 
-            var status = (int)workspace.Provider.ReadWord(statusBuf.DevicePointer, 0);
+            var status = (int)workspace.Provider.ReadWord(statusBuf.DevicePointer);
 
             if (status == 2)
             {
@@ -106,8 +105,8 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
     {
         var numWords = value.NumWords;
 
-        var hostVal0 = workspace.Provider.ReadWord(value.DevicePointer, 0);
-        var hostMod0 = workspace.Provider.ReadWord(modulus.DevicePointer, 0);
+        var hostVal0 = workspace.Provider.ReadWord(value.DevicePointer);
+        var hostMod0 = workspace.Provider.ReadWord(modulus.DevicePointer);
 
         if ((hostVal0 & 1) == 0 && (hostMod0 & 1) == 0)
         {
@@ -154,18 +153,19 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             ctx,
             gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
 
-        var statusHost = (int)workspace.Provider.ReadWord(statusBuf.DevicePointer, 0);
+        var statusHost = (int)workspace.Provider.ReadWord(statusBuf.DevicePointer);
 
-        if (statusHost == 2)
+        switch (statusHost)
         {
-            throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
+            case 2:
+                throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
+            case 0:
+                throw new Exception("ModInverse failed: Macro kernel did not converge within max iterations.");
+            default:
+                workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, x1.DevicePointer, numWords,
+                    workspace.Stream);
+                break;
         }
-        else if (statusHost == 0)
-        {
-            throw new Exception("ModInverse failed: Macro kernel did not converge within max iterations.");
-        }
-
-        workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, x1.DevicePointer, numWords, workspace.Stream);
     }
 
     private void ModInverseHostOrchestrated(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus,

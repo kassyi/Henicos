@@ -250,7 +250,8 @@ public interface IGpuAdvancedMathProvider
     /// <param name="marginWords">The safety limb margin allocated for intermediate expansion.</param>
     /// <param name="actualBits">The target precision in bits.</param>
     /// <param name="iterations">The number of Newton-Raphson refinement iterations.</param>
-    void InverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords, int actualBits, int iterations);
+    void InverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
+        int actualBits, int iterations);
 
     /// <summary>
     /// Executes a high-precision reciprocal division algorithm using Newton-Raphson approximation kernels on the GPU.
@@ -263,7 +264,8 @@ public interface IGpuAdvancedMathProvider
     /// <param name="marginBits">Additional precision guard bits.</param>
     /// <param name="iterations">The number of Newton-Raphson iterations.</param>
     /// <param name="targetBits">The final desired precision in bits.</param>
-    void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords, int numBits, int marginBits, int iterations, int targetBits);
+    void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords,
+        int numBits, int marginBits, int iterations, int targetBits);
 
     /// <summary>
     /// Computes the greatest common divisor (GCD) of two arbitrary-precision integers using Lehmer / Binary GCD kernels on the GPU.
@@ -331,7 +333,5 @@ public interface IGpuExecutionProvider :
     IGpuMemoryProvider,
     IGpuBasicMathProvider,
     IGpuAdvancedMathProvider,
-    IGpuGraphProvider
-{
-}
+    IGpuGraphProvider;
 
