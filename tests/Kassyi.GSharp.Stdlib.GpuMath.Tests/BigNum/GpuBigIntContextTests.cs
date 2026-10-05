@@ -92,4 +92,27 @@ public class GpuBigIntContextTests
             using var temp2 = ctx.RentTemp(32);
         });
     }
+
+    [SkippableFact]
+    public void Test_Dispose_WhenTrackedResourceThrows_ShouldThrowAggregateException()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        // Arrange
+        var context = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+        var expectedEx1 = new InvalidOperationException("Resource 1 failed to dispose.");
+        var expectedEx2 = new InvalidOperationException("Resource 2 failed to dispose.");
+
+        context.Track(new ThrowingDisposable(expectedEx1));
+        context.Track(new ThrowingDisposable(expectedEx2));
+
+        // Act & Assert
+        var aggEx = Assert.Throws<AggregateException>(() => context.Dispose());
+        Assert.Contains(expectedEx1, aggEx.InnerExceptions);
+        Assert.Contains(expectedEx2, aggEx.InnerExceptions);
+    }
+
+    private sealed class ThrowingDisposable(Exception exceptionToThrow) : IDisposable
+    {
+        public void Dispose() => throw exceptionToThrow;
+    }
 }
