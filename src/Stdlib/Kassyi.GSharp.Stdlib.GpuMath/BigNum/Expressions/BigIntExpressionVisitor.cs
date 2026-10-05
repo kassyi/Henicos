@@ -67,107 +67,114 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
         return Context.MemoryManager.AllocateTemp(numWords);
     }
 
-    internal ScopedBigIntMemory VisitAdd(AddExpression node)
+    private enum BinaryOp
     {
-        using var left = Visit(node.Left);
-        using var right = Visit(node.Right);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.Add(ref Context, left, right, result);
+        Add,
+        Sub,
+        Mul,
+        Div,
+        Mod,
+        And,
+        Or,
+        Xor
+    }
+
+    private ScopedBigIntMemory VisitBinaryOperation(IGpuBigUIntExpression leftNode, IGpuBigUIntExpression rightNode,
+        int numWords, BinaryOp op)
+    {
+        using var left = Visit(leftNode);
+        using var right = Visit(rightNode);
+        var result = GetResultBuffer(numWords, _isRoot);
+
+        switch (op)
+        {
+            case BinaryOp.Add: Context.Arithmetic.Add(ref Context, left, right, result); break;
+            case BinaryOp.Sub: Context.Arithmetic.Sub(ref Context, left, right, result); break;
+            case BinaryOp.Mul: Context.Arithmetic.Mul(ref Context, left, right, result); break;
+            case BinaryOp.Div: Context.Arithmetic.Div(ref Context, left, right, result); break;
+            case BinaryOp.Mod: Context.Arithmetic.Mod(ref Context, left, right, result); break;
+            case BinaryOp.And: Context.Arithmetic.BitwiseAnd(ref Context, left, right, result); break;
+            case BinaryOp.Or: Context.Arithmetic.BitwiseOr(ref Context, left, right, result); break;
+            case BinaryOp.Xor: Context.Arithmetic.BitwiseXor(ref Context, left, right, result); break;
+        }
+
         return result;
     }
 
-    internal ScopedBigIntMemory VisitSub(SubExpression node)
+    internal ScopedBigIntMemory VisitAdd(AddExpression node) =>
+        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Add);
+
+    internal ScopedBigIntMemory VisitSub(SubExpression node) =>
+        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Sub);
+
+    internal ScopedBigIntMemory VisitMul(MulExpression node) =>
+        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Mul);
+
+    internal ScopedBigIntMemory VisitDiv(DivExpression node) =>
+        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Div);
+
+    internal ScopedBigIntMemory VisitMod(ModExpression node) =>
+        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Mod);
+
+    internal ScopedBigIntMemory VisitBitwiseAnd(BitwiseAndExpression node) =>
+        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.And);
+
+    internal ScopedBigIntMemory VisitBitwiseOr(BitwiseOrExpression node) =>
+        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Or);
+
+    internal ScopedBigIntMemory VisitBitwiseXor(BitwiseXorExpression node) =>
+        VisitBinaryOperation(node.Left, node.Right, node.NumWords, BinaryOp.Xor);
+
+    private enum UnaryOp
     {
-        using var left = Visit(node.Left);
-        using var right = Visit(node.Right);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.Sub(ref Context, left, right, result);
+        Not,
+        Sqrt
+    }
+
+    private ScopedBigIntMemory VisitUnaryOperation(IGpuBigUIntExpression targetNode, int numWords, UnaryOp op)
+    {
+        using var target = Visit(targetNode);
+        var result = GetResultBuffer(numWords, _isRoot);
+
+        switch (op)
+        {
+            case UnaryOp.Not: Context.Arithmetic.BitwiseNot(ref Context, target, result); break;
+            case UnaryOp.Sqrt: Context.Arithmetic.Sqrt(ref Context, target, result); break;
+        }
+
         return result;
     }
 
-    internal ScopedBigIntMemory VisitMul(MulExpression node)
+    internal ScopedBigIntMemory VisitBitwiseNot(BitwiseNotExpression node) =>
+        VisitUnaryOperation(node.Target, node.NumWords, UnaryOp.Not);
+
+    internal ScopedBigIntMemory VisitSqrt(SqrtExpression node) =>
+        VisitUnaryOperation(node.Target, node.NumWords, UnaryOp.Sqrt);
+
+    private enum ShiftOp
     {
-        using var left = Visit(node.Left);
-        using var right = Visit(node.Right);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.Mul(ref Context, left, right, result);
+        Left,
+        Right
+    }
+
+    private ScopedBigIntMemory VisitShiftOperation(IGpuBigUIntExpression targetNode, int numWords, int shiftBits,
+        ShiftOp op)
+    {
+        using var target = Visit(targetNode);
+        var result = GetResultBuffer(numWords, _isRoot);
+
+        switch (op)
+        {
+            case ShiftOp.Left: Context.Arithmetic.ShiftLeft(ref Context, target, shiftBits, result); break;
+            case ShiftOp.Right: Context.Arithmetic.ShiftRight(ref Context, target, shiftBits, result); break;
+        }
+
         return result;
     }
 
-    internal ScopedBigIntMemory VisitDiv(DivExpression node)
-    {
-        using var left = Visit(node.Left);
-        using var right = Visit(node.Right);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.Div(ref Context, left, right, result);
-        return result;
-    }
+    internal ScopedBigIntMemory VisitShiftLeft(ShiftLeftExpression node) =>
+        VisitShiftOperation(node.Target, node.NumWords, node.ShiftBits, ShiftOp.Left);
 
-    internal ScopedBigIntMemory VisitMod(ModExpression node)
-    {
-        using var left = Visit(node.Left);
-        using var right = Visit(node.Right);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.Mod(ref Context, left, right, result);
-        return result;
-    }
-
-    internal ScopedBigIntMemory VisitBitwiseAnd(BitwiseAndExpression node)
-    {
-        using var left = Visit(node.Left);
-        using var right = Visit(node.Right);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.BitwiseAnd(ref Context, left, right, result);
-        return result;
-    }
-
-    internal ScopedBigIntMemory VisitBitwiseOr(BitwiseOrExpression node)
-    {
-        using var left = Visit(node.Left);
-        using var right = Visit(node.Right);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.BitwiseOr(ref Context, left, right, result);
-        return result;
-    }
-
-    internal ScopedBigIntMemory VisitBitwiseXor(BitwiseXorExpression node)
-    {
-        using var left = Visit(node.Left);
-        using var right = Visit(node.Right);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.BitwiseXor(ref Context, left, right, result);
-        return result;
-    }
-
-    internal ScopedBigIntMemory VisitBitwiseNot(BitwiseNotExpression node)
-    {
-        using var target = Visit(node.Target);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.BitwiseNot(ref Context, target, result);
-        return result;
-    }
-
-    internal ScopedBigIntMemory VisitShiftLeft(ShiftLeftExpression node)
-    {
-        using var target = Visit(node.Target);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.ShiftLeft(ref Context, target, node.ShiftBits, result);
-        return result;
-    }
-
-    internal ScopedBigIntMemory VisitShiftRight(ShiftRightExpression node)
-    {
-        using var target = Visit(node.Target);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.ShiftRight(ref Context, target, node.ShiftBits, result);
-        return result;
-    }
-
-    internal ScopedBigIntMemory VisitSqrt(SqrtExpression node)
-    {
-        using var target = Visit(node.Target);
-        var result = GetResultBuffer(node.NumWords, _isRoot);
-        Context.Arithmetic.Sqrt(ref Context, target, result);
-        return result;
-    }
+    internal ScopedBigIntMemory VisitShiftRight(ShiftRightExpression node) =>
+        VisitShiftOperation(node.Target, node.NumWords, node.ShiftBits, ShiftOp.Right);
 }
