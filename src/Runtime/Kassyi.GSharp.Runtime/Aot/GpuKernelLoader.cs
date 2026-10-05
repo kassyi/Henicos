@@ -26,6 +26,9 @@ public sealed class GpuKernelLoader
     /// </summary>
     public static bool IsCpuFallbackMode => ForceCpuFallback || s_isCpuFallbackMode;
 
+    /// <summary>
+    /// Scoped RAII structure that activates a CUDA context on the current thread and restores the previous context upon disposal.
+    /// </summary>
     public readonly struct CudaContextScope : IDisposable
     {
         [ThreadStatic]
@@ -36,10 +39,17 @@ public sealed class GpuKernelLoader
         private readonly IntPtr _prevActiveContext;
         private readonly bool _isFallback;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CudaContextScope"/> struct using the global primary context.
+        /// </summary>
         public CudaContextScope() : this(IntPtr.Zero)
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CudaContextScope"/> struct with a custom CUDA context.
+        /// </summary>
+        /// <param name="customContext">The explicit CUDA context handle to activate.</param>
         public CudaContextScope(IntPtr customContext)
         {
             EnsureInitialized();
@@ -68,6 +78,7 @@ public sealed class GpuKernelLoader
             }
         }
 
+        /// <inheritdoc/>
         public void Dispose()
         {
             if (_isFallback)
@@ -84,6 +95,9 @@ public sealed class GpuKernelLoader
         }
     }
 
+    /// <summary>
+    /// Gets a value indicating whether the CUDA driver is available and initialized.
+    /// </summary>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static bool IsDriverAvailable
     {
@@ -163,6 +177,9 @@ public sealed class GpuKernelLoader
         new();
 
 #pragma warning disable IDE0051 // Justification: Public API for library
+    /// <summary>
+    /// Unloads all cached GPU modules and clears the module cache.
+    /// </summary>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void Shutdown()
     {
@@ -204,6 +221,9 @@ public sealed class GpuKernelLoader
         }
     }
 
+    /// <summary>
+    /// Blocks until the device has completed all preceding requested tasks.
+    /// </summary>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static void SynchronizeDevice()
     {
@@ -214,6 +234,9 @@ public sealed class GpuKernelLoader
     /// <summary>
     /// Loads an Ahead-Of-Time (AOT) compiled Fatbin directly into the CUDA driver.
     /// </summary>
+    /// <param name="aotFatbin">The raw byte span of the AOT Fatbin binary.</param>
+    /// <param name="kernelName">The name of the kernel entry point to load.</param>
+    /// <returns>A native handle (<see cref="IntPtr"/>) to the loaded CUDA kernel function (<c>CUfunction</c>).</returns>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static IntPtr LoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName)
     {
@@ -273,6 +296,8 @@ public sealed class GpuKernelLoader
     /// <summary>
     /// Loads a fatbin module directly into the CUDA driver and returns the module handle.
     /// </summary>
+    /// <param name="binaryData">The raw byte array containing the Fatbin module binary.</param>
+    /// <returns>A native handle (<see cref="IntPtr"/>) to the loaded CUDA module (<c>CUmodule</c>).</returns>
     public static unsafe IntPtr LoadModule(byte[] binaryData)
     {
         EnsureInitialized();
@@ -299,6 +324,9 @@ public sealed class GpuKernelLoader
     /// <summary>
     /// Retrieves a function pointer from a loaded CUDA module.
     /// </summary>
+    /// <param name="hModule">The handle to the loaded CUDA module (<c>CUmodule</c>).</param>
+    /// <param name="kernelName">The entry point function name to retrieve.</param>
+    /// <returns>A native handle (<see cref="IntPtr"/>) to the CUDA kernel function (<c>CUfunction</c>).</returns>
     public static IntPtr GetFunction(IntPtr hModule, string kernelName)
     {
         EnsureInitialized();
@@ -309,6 +337,10 @@ public sealed class GpuKernelLoader
     /// <summary>
     /// Represents hardware and register resources consumed by a compiled kernel function.
     /// </summary>
+    /// <param name="NumRegs">The number of registers used by each thread in the kernel.</param>
+    /// <param name="LocalSizeBytes">The amount of local memory used by each thread in bytes.</param>
+    /// <param name="SharedSizeBytes">The amount of shared memory used by each block in bytes.</param>
+    /// <param name="ConstSizeBytes">The amount of constant memory used by the kernel in bytes.</param>
     public readonly record struct KernelResourceAttributes(
         int NumRegs,
         int LocalSizeBytes,
@@ -318,6 +350,8 @@ public sealed class GpuKernelLoader
     /// <summary>
     /// Queries the hardware resource attributes of a compiled kernel function from the CUDA driver.
     /// </summary>
+    /// <param name="hfunc">The native handle to the CUDA kernel function (<c>CUfunction</c>).</param>
+    /// <returns>A <see cref="KernelResourceAttributes"/> containing hardware register and memory resource metrics.</returns>
     public static KernelResourceAttributes GetKernelAttributes(IntPtr hfunc)
     {
         if (hfunc == IntPtr.Zero)
