@@ -1,10 +1,9 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-/// <summary>
-/// Emits Marshal and Unmarshal helper methods for custom structs, mapping between C# and Aot_* structs.
-/// </summary>
+/// <summary>Emits custom struct marshal and unmarshal helper methods between managed and native shadow representations.</summary>
 internal static class StructMarshalingEmitter
 {
+    /// <summary>Emits marshal and unmarshal routines for all custom structs used in kernel signatures.</summary>
     internal static void WriteStructMarshaling(SourceWriter writer, IEnumerable<(IMethodSymbol Method, string Source)> methods)
     {
         var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
