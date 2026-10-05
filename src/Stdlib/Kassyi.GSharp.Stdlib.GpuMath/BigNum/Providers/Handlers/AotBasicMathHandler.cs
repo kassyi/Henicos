@@ -17,6 +17,26 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// </remarks>
 public sealed class AotBasicMathHandler : IGpuBasicMathProvider
 {
+    private unsafe T EvaluateKernelResult<T>(GpuWorkspace workspace, int resultWords, Action<IntPtr> launchKernel) where T : unmanaged
+    {
+        var byteSize = sizeof(T);
+        using var resultBuf = workspace.RentTemp(resultWords);
+        
+        using (new GpuKernelLoader.CudaContextScope())
+        {
+            CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, byteSize));
+        }
+
+        launchKernel(resultBuf.DevicePointer);
+
+        T result;
+        using (new GpuKernelLoader.CudaContextScope())
+        {
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&result), resultBuf.DevicePointer, byteSize));
+        }
+        
+        return result;
+    }
     /// <inheritdoc/>
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
@@ -77,43 +97,35 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
 
 
     /// <inheritdoc/>
-    public unsafe bool IsZero(GpuWorkspace workspace, GpuBigUInt leftOperand)
+    public bool IsZero(GpuWorkspace workspace, GpuBigUInt leftOperand)
     {
         var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
-        using var resultBuf = workspace.RentTemp(1);
-        using var scopeMemset1 = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
-
-        GpuBigIntCmpKernels.LaunchIsZeroKernelPtr(
-            leftOperand.DevicePointer, resultBuf.DevicePointer, leftOperand.NumWords,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
-
-        var res = stackalloc uint[1];
-        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)res, resultBuf.DevicePointer, 4));
-        return res[0] == 0;
+        var res = EvaluateKernelResult<uint>(workspace, 1, resultPtr =>
+        {
+            GpuBigIntCmpKernels.LaunchIsZeroKernelPtr(
+                leftOperand.DevicePointer, resultPtr, leftOperand.NumWords,
+                gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
+        });
+        return res == 0;
     }
 
 
     /// <inheritdoc/>
-    public unsafe bool IsOne(GpuWorkspace workspace, GpuBigUInt leftOperand)
+    public bool IsOne(GpuWorkspace workspace, GpuBigUInt leftOperand)
     {
         var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
-        using var resultBuf = workspace.RentTemp(1);
-        using var scopeMemset2 = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
-
-        GpuBigIntCmpKernels.LaunchIsOneKernelPtr(
-            leftOperand.DevicePointer, resultBuf.DevicePointer, leftOperand.NumWords,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
-
-        var res = stackalloc uint[1];
-        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)res, resultBuf.DevicePointer, 4));
-        return res[0] == 0;
+        var res = EvaluateKernelResult<uint>(workspace, 1, resultPtr =>
+        {
+            GpuBigIntCmpKernels.LaunchIsOneKernelPtr(
+                leftOperand.DevicePointer, resultPtr, leftOperand.NumWords,
+                gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
+        });
+        return res == 0;
     }
 
 
     /// <inheritdoc/>
-    public unsafe int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand)
+    public int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand)
     {
         var numWords = Math.Max(leftOperand.NumWords, rightOperand.NumWords);
         var dims = AotGraphHandler.CalculateGridDim(numWords);
@@ -135,19 +147,13 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
             var leftPtr = leftPad?.DevicePointer ?? leftOperand.DevicePointer;
             var rightPtr = rightPad?.DevicePointer ?? rightOperand.DevicePointer;
 
-            // Rent 2 words since the result is a ulong (8 bytes)
-            using var resultBuf = workspace.RentTemp(2);
-            using var scopeMemset3 = new GpuKernelLoader.CudaContextScope();
-            CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 8));
+            var val = EvaluateKernelResult<ulong>(workspace, 2, resultPtr =>
+            {
+                GpuBigIntCmpKernels.LaunchCompareToKernelPtr(
+                    leftPtr, rightPtr, resultPtr, numWords,
+                    gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
+            });
 
-            GpuBigIntCmpKernels.LaunchCompareToKernelPtr(
-                leftPtr, rightPtr, resultBuf.DevicePointer, numWords,
-                gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
-
-            var res = stackalloc ulong[1];
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)res, resultBuf.DevicePointer, 8));
-
-            var val = res[0];
             if (val == 0)
             {
                 return 0;
@@ -165,20 +171,16 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
 
 
     /// <inheritdoc/>
-    public unsafe int GetBitLength(GpuWorkspace workspace, GpuBigUInt leftOperand)
+    public int GetBitLength(GpuWorkspace workspace, GpuBigUInt leftOperand)
     {
         var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
-        using var resultBuf = workspace.RentTemp(1);
-        using var scopeMemset4 = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, 4));
-
-        GpuBigIntCmpKernels.LaunchGetBitLengthKernelPtr(
-            leftOperand.DevicePointer, resultBuf.DevicePointer, leftOperand.NumWords,
-            gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
-
-        var res = stackalloc uint[1];
-        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)res, resultBuf.DevicePointer, 4));
-        return (int)res[0];
+        var res = EvaluateKernelResult<uint>(workspace, 1, resultPtr =>
+        {
+            GpuBigIntCmpKernels.LaunchGetBitLengthKernelPtr(
+                leftOperand.DevicePointer, resultPtr, leftOperand.NumWords,
+                gridDimX: dims.GridSize, blockDimX: dims.BlockSize, hStream: workspace.Stream);
+        });
+        return (int)res;
     }
 
 
