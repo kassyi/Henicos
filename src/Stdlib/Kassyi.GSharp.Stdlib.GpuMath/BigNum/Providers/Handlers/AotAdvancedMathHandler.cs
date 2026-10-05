@@ -80,6 +80,130 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, a.DevicePointer, numWords, workspace.Stream);
     }
 
+    public unsafe void ModInverse(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer)
+    {
+        var numWords = value.NumWords;
+
+        var hostVal0 = stackalloc uint[1];
+        var hostMod0 = stackalloc uint[1];
+        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)hostVal0, value.DevicePointer, 4));
+        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)hostMod0, modulus.DevicePointer, 4));
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+
+        if ((hostVal0[0] & 1) == 0 && (hostMod0[0] & 1) == 0)
+        {
+            throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is at least 2).");
+        }
+
+        if ((hostMod0[0] & 1) == 0)
+        {
+            // Binary GCD algorithm requires an odd modulus.
+            // Fall back to host-orchestrated Euclidean algorithm.
+            ModInverseHostOrchestrated(workspace, value, modulus, resultBuffer);
+            return;
+        }
+
+        using var u = workspace.RentTemp(numWords);
+        using var v = workspace.RentTemp(numWords);
+        using var x1 = workspace.RentTemp(numWords);
+        using var x2 = workspace.RentTemp(numWords);
+        using var statusBuf = workspace.RentTemp(1);
+        statusBuf.Clear();
+
+        workspace.Provider.CopyDeviceToDevice(u.DevicePointer, value.DevicePointer, numWords, workspace.Stream);
+        workspace.Provider.CopyDeviceToDevice(v.DevicePointer, modulus.DevicePointer, numWords, workspace.Stream);
+
+        x1.Clear();
+        x2.Clear();
+        var hostOne = new uint[] { 1 };
+        workspace.Provider.CopyHostToDevice(x1.DevicePointer, hostOne, 1, workspace.Stream);
+
+        // Max iterations for binary GCD is up to 4 * bits
+        int maxIterations = numWords * 32 * 4 + 100;
+
+        GpuBigIntGcdKernels.LaunchExecuteExtendedBinaryGcdMacroKernelPtr(
+            modulus.DevicePointer, u.DevicePointer, v.DevicePointer, x1.DevicePointer, x2.DevicePointer, statusBuf.DevicePointer,
+            numWords, maxIterations,
+            gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
+
+        var statusHost = stackalloc int[1];
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)statusHost, statusBuf.DevicePointer, 4));
+
+        if (statusHost[0] == 2)
+        {
+            throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
+        }
+        else if (statusHost[0] == 0)
+        {
+            throw new Exception("ModInverse failed: Macro kernel did not converge within max iterations.");
+        }
+
+        workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, x1.DevicePointer, numWords, workspace.Stream);
+    }
+
+    private void ModInverseHostOrchestrated(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer)
+    {
+        var numWords = value.NumWords;
+
+        using var i = workspace.RentTemp(numWords);
+        using var a = workspace.RentTemp(numWords);
+        using var v = workspace.RentTemp(numWords);
+        using var d = workspace.RentTemp(numWords);
+        using var t = workspace.RentTemp(numWords);
+        using var rem = workspace.RentTemp(numWords);
+        using var tx = workspace.RentTemp(numWords * 2);
+        using var modulus2x = workspace.RentTemp(numWords * 2);
+        modulus2x.Clear();
+        workspace.Provider.CopyDeviceToDevice(modulus2x.DevicePointer, modulus.DevicePointer, numWords, workspace.Stream);
+        using var txMod2x = workspace.RentTemp(numWords * 2);
+        using var txMod = workspace.RentTemp(numWords);
+        using var nextD = workspace.RentTemp(numWords);
+
+        workspace.Provider.CopyDeviceToDevice(i.DevicePointer, modulus.DevicePointer, numWords, workspace.Stream);
+        workspace.Provider.CopyDeviceToDevice(a.DevicePointer, value.DevicePointer, numWords, workspace.Stream);
+
+        v.Clear();
+        d.Clear();
+        using var one = workspace.RentTemp(numWords);
+        one.Clear();
+        var hostOne = new uint[] { 1 };
+        workspace.Provider.CopyHostToDevice(one.DevicePointer, hostOne, 1, workspace.Stream);
+        workspace.Provider.CopyDeviceToDevice(d.DevicePointer, one.DevicePointer, numWords, workspace.Stream);
+
+        while (true)
+        {
+            if (a.IsZero()) break;
+            GpuBigIntDivRem.DivRem(i, a, t, rem);
+            workspace.Provider.CopyDeviceToDevice(i.DevicePointer, a.DevicePointer, numWords, workspace.Stream);
+            workspace.Provider.CopyDeviceToDevice(a.DevicePointer, rem.DevicePointer, numWords, workspace.Stream);
+            tx.Clear();
+            GpuBigIntMath.Mul(t, d, tx);
+            txMod2x.Clear();
+            GpuBigIntDivRem.Mod(tx, modulus2x, txMod2x);
+            workspace.Provider.CopyDeviceToDevice(txMod.DevicePointer, txMod2x.DevicePointer, numWords, workspace.Stream);
+            int cmp = v.CompareTo(txMod);
+            if (cmp >= 0)
+            {
+                GpuBigIntMath.Sub(v, txMod, nextD);
+            }
+            else
+            {
+                GpuBigIntMath.Sub(txMod, v, nextD); 
+                GpuBigIntMath.Sub(modulus, nextD, nextD);
+            }
+            workspace.Provider.CopyDeviceToDevice(v.DevicePointer, d.DevicePointer, numWords, workspace.Stream);
+            workspace.Provider.CopyDeviceToDevice(d.DevicePointer, nextD.DevicePointer, numWords, workspace.Stream);
+        }
+
+        if (i.CompareTo(one) != 0)
+        {
+            throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
+        }
+
+        workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, v.DevicePointer, numWords, workspace.Stream);
+    }
+
     public void InverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
         int marginWords, int actualBits, int iterations)
     {
