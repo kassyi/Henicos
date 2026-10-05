@@ -884,11 +884,82 @@ public class GpuBigIntCoreTests
         Assert.Equal(expectedGcd, actualGcd);
     }
 
-    [Fact(Skip = "未実装: GBI-21 (GpuBigUInt.ModInverse モジュラ逆数)")]
-    [Trait("RoadmapId", "GBI-21")]
-    [Trait("Category", "Function")]
-    public void Test_Function_ModInverse()
+    [SkippableTheory]
+    [InlineData(GpuExecutionEngine.GSharpAot)]
+    public void Test_Function_ModInverse_Correctness(GpuExecutionEngine engine)
     {
+        CudaCapability.EnsureGpuAvailable();
+        using var context = new GpuWorkspace(TestSizeWords * 2, engine);
+
+        // Find a coprime pair (a, m)
+        BigInteger bigA, bigM;
+        uint[] arrA, arrM;
+        do
+        {
+            arrA = GenerateRandomArray(TestSizeWords, 60);
+            arrM = GenerateRandomArray(TestSizeWords, 61);
+            // Ensure m > 1 and a > 0
+            arrM[0] |= 3;
+            arrA[0] |= 1;
+            bigA = ToBigInteger(arrA);
+            bigM = ToBigInteger(arrM);
+        } while (BigInteger.GreatestCommonDivisor(bigA, bigM) != 1);
+
+        var expectedInverse = ModInverseCpu(bigA, bigM);
+
+        using var gpuA = new GpuBigUInt(context, arrA);
+        using var gpuM = new GpuBigUInt(context, arrM);
+        using var gpuResult = new GpuBigUInt(context, TestSizeWords);
+
+        GpuBigIntMath.ModInverse(gpuA, gpuM, gpuResult);
+        var actualInverseMath = ToBigInteger(gpuResult.ToHostArray());
+        Assert.Equal(expectedInverse, actualInverseMath);
+
+        using var gpuResult2 = gpuA.ModInverse(gpuM);
+        var actualInverseStruct = ToBigInteger(gpuResult2.ToHostArray());
+        Assert.Equal(expectedInverse, actualInverseStruct);
+    }
+
+    [Trait("RoadmapId", "GBI-21")]
+    [SkippableTheory]
+    [InlineData(GpuExecutionEngine.GSharpAot)]
+    public void Test_Function_ModInverse_NotCoprime_Throws(GpuExecutionEngine engine)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var context = new GpuWorkspace(TestSizeWords * 2, engine);
+
+        // Create a non-coprime pair (e.g., both even)
+        var arrA = GenerateRandomArray(TestSizeWords, 62);
+        var arrM = GenerateRandomArray(TestSizeWords, 63);
+        arrA[0] &= ~1u; // Make even
+        arrM[0] &= ~1u; // Make even
+        arrA[0] |= 2u;
+        arrM[0] |= 2u;
+
+        using var gpuA = new GpuBigUInt(context, arrA);
+        using var gpuM = new GpuBigUInt(context, arrM);
+        using var gpuResult = new GpuBigUInt(context, TestSizeWords);
+
+        Assert.Throws<ArithmeticException>(() => GpuBigIntMath.ModInverse(gpuA, gpuM, gpuResult));
+    }
+
+    private static BigInteger ModInverseCpu(BigInteger a, BigInteger n)
+    {
+        BigInteger i = n, v = 0, d = 1;
+        while (a > 0)
+        {
+            BigInteger t = i / a, x = a;
+            a = i % x;
+            i = x;
+            x = d;
+            d = v - t * x;
+            v = x;
+        }
+
+        if (i != 1) throw new ArithmeticException("Not coprime.");
+        v %= n;
+        if (v < 0) v = (v + n) % n;
+        return v;
     }
 
     [Trait("RoadmapId", "GBI-22")]
