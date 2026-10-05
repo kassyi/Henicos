@@ -11,6 +11,30 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [Trait("Category", "GpuExecution")]
 public class FermatRunnerTests
 {
+    [Theory]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    public void FermatRunner_RunFermatPrp_MatchesCpuBigInteger_SmallE(int e)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var runner = new FermatRunner(e);
+
+        var (resultArray, _) = runner.RunFermatPrp();
+
+        var actual = GetBigIntegerFromResult(resultArray, e);
+
+        var x = BigInteger.One << e;
+        var n = (BigInteger.One << (2 * e + 1)) - x + 11;
+        BigInteger expected = 2;
+        for (int i = 0; i < e; i++)
+        {
+            expected = (expected * expected) % n;
+        }
+
+        Assert.Equal(expected, actual);
+    }
+
     [Fact]
     public void FermatRunner_RunFermatPrp_MatchesCpuBigInteger_E10()
     {
