@@ -252,4 +252,13 @@ dotnet_diagnostic.SA1611.severity = none
 dotnet_diagnostic.SA1615.severity = none
 dotnet_diagnostic.SA1618.severity = none
 
-
+# ==============================================================================
+# コンパイラ・インフラ (src/Compiler) の制約緩和 (Pragmatic C# Style)
+# ==============================================================================
+[src/Compiler/**/*.cs]
+# 自明なパラメータや戻り値のXMLコメント (<param>, <returns>) を強制しない
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
+# 内部メンバーのドキュメントを強制しない (警告レベルを下げるか無効化)
+dotnet_diagnostic.SA1600.severity = none
