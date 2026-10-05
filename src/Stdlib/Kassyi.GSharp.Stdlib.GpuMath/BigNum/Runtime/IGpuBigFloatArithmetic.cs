@@ -1,7 +1,5 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
 
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
-
 public interface IGpuBigFloatArithmetic
 {
     void Normalize(ref GpuBigIntExecutionContext context,
