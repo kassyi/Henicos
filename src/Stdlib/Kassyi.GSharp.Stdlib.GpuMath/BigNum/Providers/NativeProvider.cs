@@ -5,9 +5,20 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// <summary>
 /// Execution provider implementing arbitrary-precision arithmetic via pre-compiled native CUDA C++ dynamic libraries.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Interops directly with native C++/CUDA shared libraries (`GpuBigInt.dll` / `libGpuBigInt.so`)
+/// for legacy benchmark comparison and high-performance native math library integration.
+/// </para>
+/// <para>
+/// <b>Zero-Allocation:</b> Direct P/Invoke bindings communicate with unmanaged GPU memory without managed array allocation overhead.
+/// </para>
+/// </remarks>
 public class NativeProvider : IGpuExecutionProvider
 {
-    /// <summary>Gets the singleton instance of the <see cref="NativeProvider"/>.</summary>
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="NativeProvider"/>.
+    /// </summary>
     public static readonly NativeProvider Instance = new();
 
     private const string ErrorNotImplemented =
@@ -20,6 +31,7 @@ public class NativeProvider : IGpuExecutionProvider
     private NativeProvider()
     {
     }
+
 
     /// <inheritdoc/>
 
@@ -65,6 +77,7 @@ public class NativeProvider : IGpuExecutionProvider
         }
     }
 
+    /// <inheritdoc/>
     public void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0)
     {
         if (!NativeMethods.GpuBigInt_CopyDeviceToHost(hostData, devicePointer, numWords))
@@ -72,6 +85,7 @@ public class NativeProvider : IGpuExecutionProvider
             throw new InvalidOperationException(string.Format(ErrorCopyDeviceToHostFailed, devicePointer));
         }
     }
+
 
     /// <inheritdoc/>
     public uint ReadWord(IntPtr devicePointer, int wordOffset = 0)
@@ -127,81 +141,87 @@ public class NativeProvider : IGpuExecutionProvider
      * Even if monolithic single-kernel dispatch incurs slightly less kernel-launch overhead, sacrificing that in favor
      * of host-orchestrated chunked execution is an intentional, architectural decision to scale beyond physical VRAM limits.
      */
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void InverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords, int actualBits, int iterations) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords, int numBits, int marginBits, int iterations, int targetBits) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
-    /// <inheritdoc/>
-
+    /// <inheritdoc />
     public void BitwiseAnd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
         => NativeMethods.GpuBigInt_BitwiseAnd(workspace.WorkspacePointer, leftOperand.DevicePointer,
             rightOperand.DevicePointer,
             resultBuffer.DevicePointer, leftOperand.NumWords);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void BitwiseOr(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void BitwiseXor(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void BitwiseNot(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <inheritdoc/>
-
     public void ShiftLeft(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer) =>
         NativeMethods.GpuBigInt_ShiftLeft(workspace.WorkspacePointer, leftOperand.DevicePointer, shiftBits,
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
     /// <inheritdoc/>
-
     public void ShiftRight(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer) =>
         NativeMethods.GpuBigInt_ShiftRight(workspace.WorkspacePointer, leftOperand.DevicePointer, shiftBits,
             resultBuffer.DevicePointer,
             leftOperand.NumWords);
 
     /// <inheritdoc/>
-
     public bool Square(GpuWorkspace workspace, IntPtr devicePointer, int logicalWords) =>
         NativeMethods.GpuBigInt_Square(workspace.WorkspacePointer, devicePointer, logicalWords);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public bool IsZero(GpuWorkspace workspace, GpuBigUInt leftOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public bool IsOne(GpuWorkspace workspace, GpuBigUInt leftOperand) => throw new NotImplementedException();
 
     /// <inheritdoc/>
-
     public int GetBitLength(GpuWorkspace workspace, GpuBigUInt leftOperand)
     {
         var words = new uint[leftOperand.NumWords];
@@ -217,24 +237,37 @@ public class NativeProvider : IGpuExecutionProvider
         return 0;
     }
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Gcd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void ModInverse(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer) =>
         throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <inheritdoc/>
     public void BeginCapture(IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <inheritdoc/>
     public IntPtr EndCapture(IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <inheritdoc/>
     public IntPtr InstantiateGraph(IntPtr graph) => throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <inheritdoc/>
     public void LaunchGraph(IntPtr graphExec, IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
+
+    /// <inheritdoc/>
     public void DestroyGraph(IntPtr graph, IntPtr graphExec) => throw new NotImplementedException(ErrorNotImplemented);
 }
+
 
 
 

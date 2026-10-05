@@ -1,11 +1,22 @@
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
+/// <summary>
+/// Dispatches elementary GPU BigInteger arithmetic, bitwise logic, and comparison operations to compiled GSharp device kernels.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Separates basic arithmetic kernel launches (add, sub, scalar, bitwise) from memory management and graph sequencing
+/// as part of the <see cref="GSharpAotProvider"/> facade decomposition.
+/// </para>
+/// <para>
+/// <b>Zero-Allocation:</b> Directly invokes CUDA kernel launchers without managed allocation.
+/// </para>
+/// </remarks>
 public sealed class AotBasicMathHandler : IGpuBasicMathProvider
 {
-
-
     /// <inheritdoc/>
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
@@ -153,7 +164,6 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     }
 
 
-
     /// <inheritdoc/>
     public unsafe int GetBitLength(GpuWorkspace workspace, GpuBigUInt leftOperand)
     {
@@ -172,6 +182,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     }
 
 
+    /// <inheritdoc />
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -187,6 +198,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     }
 
 
+    /// <inheritdoc />
     public void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -253,5 +265,4 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
             workspace.Stream);
         return true;
     }
-
 }
