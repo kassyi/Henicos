@@ -127,6 +127,7 @@ public struct WorkspaceStateContext
     public uint[] UncarriedHigh;
     /// <summary>Block-level carry propagation array.</summary>
     public uint[] BlockCarries;
+    public uint[] ModulusExpanded;
 }
 
 /// <summary>
@@ -257,4 +258,58 @@ public struct ReciprocalNewtonRaphson
     public WorkspaceStateContext Workspace;
     /// <summary>Carry accumulation buffer.</summary>
     public long[] CarryBuffer;
+}
+
+/// <summary>
+/// Encapsulates static constant parameters for RNS base extension and modular reductions.
+/// </summary>
+public struct ModPowNttContext
+{
+    public OperandContext Operands;
+    public uint[] ReciprocalMod;
+    public uint[] Exponent;
+    public int ExponentWords;
+    public DimensionContext Dimensions;
+    public Ntt Ntt;
+    public WorkspaceStateContext Workspace;
+    public long[] CarryBuffer;
+}
+
+public struct RnsConstantsContext
+{
+    [GpuReadOnly] public uint[] ModuliB1;
+    [GpuReadOnly] public uint[] ModuliB2;
+    public uint ModSk;
+    [GpuReadOnly] public uint[] GammaB1;
+    [GpuReadOnly] public uint[] GammaB2;
+    [GpuReadOnly] public uint[] M1OverMiModMsk;
+    public uint M1InvModMsk;
+    [GpuReadOnly] public uint[] M2OverMjModMsk;
+    public uint M2InvModMsk;
+    [GpuReadOnly] public uint[] M1OverMiModMj;
+    [GpuReadOnly] public uint[] M2OverMjModMi;
+    [GpuReadOnly] public uint[] M1ModMj;
+    [GpuReadOnly] public uint[] M2ModMi;
+    public int KSize;
+}
+
+/// <summary>
+/// Represents a multi-precision integer decomposed into Residue Number System spaces.
+/// </summary>
+public struct RnsBigInt
+{
+    public uint[] B1;
+    public uint[] B2;
+    public uint Sk;
+}
+
+/// <summary>
+/// Encapsulates dynamic constants dependent on the modulus N for Montgomery reduction.
+/// </summary>
+public struct RnsMontgomeryContext
+{
+    [GpuReadOnly] public uint[] NRnsB2;
+    public uint NSk;
+    [GpuReadOnly] public uint[] NegNInvB1;
+    [GpuReadOnly] public uint[] RInvB2;
 }

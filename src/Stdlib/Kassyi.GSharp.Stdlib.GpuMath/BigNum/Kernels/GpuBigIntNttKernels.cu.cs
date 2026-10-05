@@ -337,11 +337,11 @@ public static partial class GpuBigIntNttKernels
                     ulong c = uncarriedLow[idx] | ((ulong)uncarriedHigh[idx] << 32);
                     if (step == 0)
                     {
-                        localSum += (uint)(c << 16);
+                        localSum += (c & 0xFFFFul) << 16;
                     }
                     else
                     {
-                        localSum += (uint)(c >> ((step - 1) * 16));
+                        localSum += (c >> ((step - 1) * 16)) & 0xFFFFFFFFul;
                     }
                 }
             });
@@ -354,11 +354,14 @@ public static partial class GpuBigIntNttKernels
     public static void ExecuteResolveNttCarriesBlocked(uint[] uncarriedLow, uint[] uncarriedHigh,
         uint[] outputBuffer, uint[] blockCarries, int transformLength, int maxWordCount, int chunkSize)
     {
-        var bIdx = BlockIndex.X;
         var tIdx = ThreadIndex.X;
-
+        var bDim = BlockDimension.X;
         var numBlocks = (maxWordCount + chunkSize - 1) / chunkSize;
-        if (bIdx < numBlocks)
+
+        SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
+        SharedMemory<uint> sharedH = new SharedMemory<uint>(32);
+        
+        for (int bIdx = BlockIndex.X; bIdx < numBlocks; bIdx += GridDimension.X)
         {
             int startIdx = bIdx * chunkSize;
             int i = startIdx + tIdx;
@@ -368,12 +371,8 @@ public static partial class GpuBigIntNttKernels
             uint L = (uint)(localSum & 0xFFFFFFFFul);
             uint H = (uint)(localSum >> 32);
 
-            SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
-            SharedMemory<uint> sharedH = new SharedMemory<uint>(32);
-
             int laneId = tIdx % 32;
             int warpId = tIdx / 32;
-            int bDim = BlockDimension.X;
 
             uint prevH = ResolveOverlapH(H, sharedH, laneId, warpId);
 
@@ -487,18 +486,15 @@ public static partial class GpuBigIntNttKernels
     public static void ExecuteResolveNttCarriesApply(uint[] outputBuffer, uint[] blockCarries, int maxWordCount,
         int chunkSize, int numBlocks)
     {
-        var globalBlockIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-        if (globalBlockIdx >= numBlocks)
+        Gpu.GridStrideLoop(numBlocks, globalBlockIdx => 
         {
-            return;
-        }
-
-        var carry = blockCarries[globalBlockIdx];
-        if (carry > 0)
-        {
-            int startIdx = (globalBlockIdx + 1) * chunkSize;
-            AtomicAddWithCarry(outputBuffer, startIdx, carry, maxWordCount);
-        }
+            var carry = blockCarries[globalBlockIdx];
+            if (carry > 0)
+            {
+                int startIdx = (globalBlockIdx + 1) * chunkSize;
+                AtomicAddWithCarry(outputBuffer, startIdx, carry, maxWordCount);
+            }
+        });
     }
 
     [GpuKernel]
@@ -596,13 +592,13 @@ public static partial class GpuBigIntNttKernels
         var argsRow1 = args;
         argsRow1.CurrentL = length2;
         argsRow1.ApplyTwiddleBefore = false;
-        argsRow1.ApplyTwiddleAfter = true;
+        argsRow1.ApplyTwiddleAfter = false;
         argsRow1.MaxBlocks = length1;
 
         var argsRow2 = args;
         argsRow2.Buffer = temporaryBuffer;
         argsRow2.CurrentL = length1;
-        argsRow2.ApplyTwiddleBefore = false;
+        argsRow2.ApplyTwiddleBefore = true;
         argsRow2.ApplyTwiddleAfter = false;
         argsRow2.MaxBlocks = length2;
 

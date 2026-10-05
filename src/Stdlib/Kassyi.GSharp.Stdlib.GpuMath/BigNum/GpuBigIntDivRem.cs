@@ -120,6 +120,19 @@ public static partial class GpuBigIntDivRem
         using var reciprocalOfB = new GpuBigUInt(rightOperand.Workspace, targetWords);
         GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
 
+        Reduce(leftOperand, rightOperand, reciprocalOfB, targetBits, aActualWords, quotientBuffer, remainderBuffer);
+    }
+
+    /// <summary>
+    /// Performs a Barrett reduction using a precomputed reciprocal.
+    /// </summary>
+    public static void Reduce(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt reciprocalOfB,
+        int targetBits, int aActualWords, GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
+    {
+        var nA = leftOperand.NumWords;
+        var n = rightOperand.NumWords;
+        var targetWords = reciprocalOfB.NumWords;
+        
         using var productWithReciprocal = new GpuBigUInt(rightOperand.Workspace, nA + targetWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
 
@@ -149,7 +162,7 @@ public static partial class GpuBigIntDivRem
         {
             using var bPaddedExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
             bPaddedExtended.Clear();
-            bPaddedExtended.Clear();
+            bPaddedExtended.Clear(); // intentional double clear from original code just in case
             bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(n, evalWords));
 
             CorrectUnderflow(rightOperand.Workspace, evalWords, quotientBuffer, remainderExtended, bPaddedExtended);

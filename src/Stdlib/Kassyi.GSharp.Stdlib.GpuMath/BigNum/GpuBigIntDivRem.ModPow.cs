@@ -16,7 +16,7 @@ public static partial class GpuBigIntDivRem
     public static void ModPow(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(baseVal, mod, resultBuffer);
-
-        ModPowHostLoopController.Execute(baseVal, exp, mod, resultBuffer);
+        // Use the optimized NTT Host Controller (computing reciprocal once)
+        ModPowNttHostController.Execute(baseVal, exp, mod, resultBuffer);
     }
 }

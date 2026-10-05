@@ -31,6 +31,8 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     private readonly AotAdvancedMathHandler _advancedMath = new();
     private readonly AotGraphHandler _graph = new();
 
+    internal AotAdvancedMathHandler AotAdvancedMath => _advancedMath;
+
     private IGpuMemoryProvider MemoryProvider =>
         GpuKernelLoader.IsCpuFallbackMode ? CSharpCpuBigIntProvider.Instance : _memory;
 
