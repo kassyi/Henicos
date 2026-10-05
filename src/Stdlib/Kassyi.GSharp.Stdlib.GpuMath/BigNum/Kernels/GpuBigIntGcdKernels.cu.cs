@@ -88,32 +88,24 @@ public static partial class GpuBigIntGcdKernels
 
         while (y != 0)
         {
-            if (y + 1 == 0 || x == ~0ul)
-            {
-                break; // Overflow protection
-            }
+            ulong q = x / y;
+            ulong r = x - q * y;
 
-            var qMin = x / (y + 1);
-            var qMax = (x + 1) / y;
+            long nextU = u0 - (long)q * u1;
+            long nextV = v0 - (long)q * v1;
 
-            if (qMin != qMax)
-            {
-                break;
-            }
-
-            var q = (long)qMin;
-            if (q == 0)
-            {
-                break;
-            }
-
-            var r = x - (ulong)q * y;
-
-            var nextU = u0 - q * u1;
-            var nextV = v0 - q * v1;
-
+            // Overflow protection for matrix elements
             if (nextU > 0x7FFFFFFF || nextU < -0x7FFFFFFF ||
                 nextV > 0x7FFFFFFF || nextV < -0x7FFFFFFF)
+            {
+                break;
+            }
+
+            ulong absNextU = (ulong)(nextU >= 0 ? nextU : -nextU);
+            ulong absNextV = (ulong)(nextV >= 0 ? nextV : -nextV);
+
+            // Knuth Algorithm L single crossover condition
+            if (r < absNextV || r + absNextU > y)
             {
                 break;
             }
