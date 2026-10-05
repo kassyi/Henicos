@@ -3,7 +3,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <!-- 自動生成コード(Source Generator)等の未使用プライベートフィールド警告を抑制 -->
-    <NoWarn>$(NoWarn);CS0169</NoWarn>
+    <NoWarn>$(NoWarn);CS0169;CS1591</NoWarn>
+    <!-- StyleCop.Analyzers の XML ドキュメント構文解析を有効化 -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +18,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!-- Root stylecop.json -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Condition="Exists('$(MSBuildThisFileDirectory)stylecop.json')" />
     <!-- Root BannedSymbols.txt -->
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" Condition="Exists('$(MSBuildThisFileDirectory)BannedSymbols.txt')" />
     <!-- Per-project BannedSymbols.txt (if present in project directory and distinct from root) -->

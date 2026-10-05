@@ -1,16 +1,11 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-/// <summary>
-/// Encapsulates CUDA memory layout computations, including size and alignment determination.
-/// </summary>
+/// <summary>Computes memory layout and alignment for types according to CUDA ABI rules.</summary>
 internal static class CudaLayoutRules
 {
     internal record struct CudaLayoutInfo(int Size, int Alignment);
 
-    /// <summary>
-    /// Determines whether the type requires custom native struct generation.
-    /// Excludes built-in System types and GSharp Core vectors.
-    /// </summary>
+    /// <summary>Determines whether the type requires custom native struct generation.</summary>
     internal static bool IsCustomStruct(ITypeSymbol type)
     {
         return type is INamedTypeSymbol { TypeKind: TypeKind.Struct } named &&
@@ -18,9 +13,7 @@ internal static class CudaLayoutRules
                !named.ContainingNamespace.IsCoreNamespace();
     }
 
-    /// <summary>
-    /// Recursively collects all custom structs involved in the type tree.
-    /// </summary>
+    /// <summary>Recursively collects all custom structs referenced within the type tree.</summary>
     internal static void CollectStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
     {
         if (type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } named ||
@@ -44,9 +37,7 @@ internal static class CudaLayoutRules
         }
     }
 
-    /// <summary>
-    /// Calculates the memory layout (Size and Alignment) according to CUDA ABI rules.
-    /// </summary>
+    /// <summary>Calculates the size and alignment requirements for a type according to CUDA ABI rules.</summary>
     internal static CudaLayoutInfo GetCudaLayout(ITypeSymbol type)
     {
         if (TryGetPredefinedLayout(type, out var layout))
@@ -108,14 +99,13 @@ internal static class CudaLayoutRules
         return new CudaLayoutInfo(Math.Max(size, 1), maxAlign);
     }
 
-    /// <summary>
-    /// Aligns a given offset to the specified alignment boundary.
-    /// </summary>
+    /// <summary>Aligns a given byte offset up to the specified boundary.</summary>
     internal static int AlignUp(int offset, int alignment)
     {
         var remainder = offset % alignment;
         return remainder == 0 ? offset : offset + (alignment - remainder);
     }
+
 
     private static bool TryGetPredefinedLayout(ITypeSymbol type, out CudaLayoutInfo layout)
     {

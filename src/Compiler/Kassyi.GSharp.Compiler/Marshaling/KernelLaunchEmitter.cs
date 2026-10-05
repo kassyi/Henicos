@@ -1,10 +1,9 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-/// <summary>
-/// Emits the main kernel P/Invoke wrapper body, handling argument marshaling, the kernel launch, and cleanup.
-/// </summary>
+/// <summary>Emits P/Invoke wrapper logic for launching CUDA kernels, including memory allocation, marshaling, and stream synchronization.</summary>
 internal static class KernelLaunchEmitter
 {
+    /// <summary>Emits local variable declarations for device pointers and tracking lists.</summary>
     internal static void WriteVariablesInitialization(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
         foreach (var p in method.Parameters)
@@ -41,6 +40,7 @@ internal static class KernelLaunchEmitter
         }
     }
 
+    /// <summary>Emits argument marshaling, device memory transfers, kernel launch, and result copyback.</summary>
     internal static void WriteMarshalAndLaunchKernel(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
         var nonJitParamCount = method.Parameters.Length;
@@ -122,8 +122,10 @@ internal static class KernelLaunchEmitter
         }
     }
 
+    /// <summary>Emits cleanup code to asynchronously free allocated device memory buffers.</summary>
     internal static void WriteCleanup(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
+
         foreach (var p in method.Parameters)
         {
             WriteParameterFree(writer, p, isDevicePtr);

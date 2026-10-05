@@ -1,15 +1,33 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
-/// <summary>3-Prime NTT (Number Theoretic Transform) and Garner's CRT combination for large integer multiplication CPU reference.</summary>
+/// <summary>
+/// Provides a host (CPU) reference implementation of 3-Prime Number Theoretic Transform (NTT) and Garner's Chinese Remainder Theorem (CRT) reconstruction.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Employs Solinas-like Proth primes ($P_1, P_2, P_3$) for 64-bit non-overflowing arithmetic during NTT convolution,
+/// providing an exact CPU validation reference for <c>GpuBigIntNttKernels</c>.
+/// </para>
+/// <para>
+/// <b>Execution Target:</b> Host-only (CPU) reference calculation.
+/// </para>
+/// </remarks>
 public static class NttCpuReference
 {
+
     // [WHY] Solinas-like Proth primes chosen for 64-bit non-overflowing arithmetic in NTT.
+    /// <summary>First NTT prime modulus ($P_1 = 2^{24} \times 127 + 1$).</summary>
     public const uint P1 = 2130706433; // 2^24 * 127 + 1
+    /// <summary>Second NTT prime modulus ($P_2 = 73 \times 2^{24} + 1$).</summary>
     public const uint P2 = 1224736769; // 73 * 2^24 + 1
+    /// <summary>Third NTT prime modulus ($P_3 = 45 \times 2^{24} + 1$).</summary>
     public const uint P3 = 754974721; // 45 * 2^24 + 1
 
+    /// <summary>Primitive root of unity for <see cref="P1"/>.</summary>
     public const uint G1 = 3;
+    /// <summary>Primitive root of unity for <see cref="P2"/>.</summary>
     public const uint G2 = 3;
+    /// <summary>Primitive root of unity for <see cref="P3"/>.</summary>
     public const uint G3 = 11;
 
     /// <summary>Computes modular exponentiation (baseValue^exponent % modulus).</summary>

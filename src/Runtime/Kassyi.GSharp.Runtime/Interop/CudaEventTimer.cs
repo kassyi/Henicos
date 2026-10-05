@@ -17,6 +17,9 @@ public sealed class CudaEventTimer : IDisposable
 #pragma warning disable IDE0051 // Intended for external kernel consumers
     // ReSharper disable UnusedMember.Global
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CudaEventTimer"/> class.
+    /// </summary>
     public CudaEventTimer()
     {
         if (GpuKernelLoader.IsCpuFallbackMode)
@@ -42,6 +45,7 @@ public sealed class CudaEventTimer : IDisposable
     /// <summary>
     /// Records the start event in the specified stream.
     /// </summary>
+    /// <param name="hStream">The stream to record the event in.</param>
     public void Start(IntPtr hStream = 0)
     {
         ThrowIfDisposed();
@@ -86,8 +90,9 @@ public sealed class CudaEventTimer : IDisposable
 
     /// <summary>
     /// Computes the elapsed time between Start and Stop events in milliseconds.
-    /// Note: Both events must have been recorded before calling this.
     /// </summary>
+    /// <returns>The elapsed execution time in milliseconds.</returns>
+    /// <remarks>Both start and stop events must have been recorded and synchronized before calling this method.</remarks>
     public float GetElapsedTimeMilliseconds()
     {
         ThrowIfDisposed();
@@ -110,6 +115,7 @@ public sealed class CudaEventTimer : IDisposable
         throw new ObjectDisposedException(nameof(CudaEventTimer));
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         if (_disposed)

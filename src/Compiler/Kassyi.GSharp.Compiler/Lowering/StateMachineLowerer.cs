@@ -1,10 +1,9 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-/// <summary>
-/// Phase 2: Lowers C# AST into a flat state machine separated by Gpu.SyncThreads().
-/// </summary>
+/// <summary>Lowers flat C# AST statements into a switch-based state machine separated by thread barriers.</summary>
 public class StateMachineLowerer
 {
+    /// <summary>Transforms statements into switch sections keyed by state indices across barrier boundaries.</summary>
     public BlockSyntax Lower(BlockSyntax block)
     {
         var statements = block.Statements;
@@ -46,7 +45,7 @@ public class StateMachineLowerer
             }
         }
 
-        // State -1 signals the emulator that this kernel execution thread has reached its end.
+        // [WHY] State -1 signals the CPU emulator that this thread has completed its execution.
         commitState(-1);
 
         var switchStmt = SyntaxFactory.SwitchStatement(
@@ -116,3 +115,4 @@ public class StateMachineLowerer
         return stmt.ReplaceNode(barrierInv, rewrittenInv);
     }
 }
+

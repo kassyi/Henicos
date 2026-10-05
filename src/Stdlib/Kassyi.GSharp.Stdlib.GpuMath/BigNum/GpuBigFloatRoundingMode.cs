@@ -3,6 +3,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <summary>
 /// Specifies the IEEE 754 compliant rounding mode for arbitrary-precision GPU floating-point operations.
 /// </summary>
+/// <remarks>
+/// <para>These rounding modes dictate the behavior of arbitrary-precision floating-point arithmetic (e.g. <see cref="GpuBigFloat"/> and <see cref="GpuBigUFloat"/>) when rounding significands to the target precision.</para>
+/// <para><b>Execution Target:</b> Usable across both host and GPU execution environments.</para>
+/// </remarks>
 public enum GpuBigFloatRoundingMode
 {
     /// <summary>
@@ -25,3 +29,4 @@ public enum GpuBigFloatRoundingMode
     /// </summary>
     RoundTowardNegativeInfinity = 3
 }
+

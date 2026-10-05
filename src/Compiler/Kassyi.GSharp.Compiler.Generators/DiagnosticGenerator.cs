@@ -3,24 +3,41 @@ using System.Text.RegularExpressions;
 
 namespace Kassyi.GSharp.Compiler.Generators;
 
+/// <summary>Represents a diagnostic definition entry deserialized from diagnostics.json.</summary>
 public sealed class DiagnosticDefinition
 {
+    /// <summary>Gets or sets the identifier name for the diagnostic descriptor property.</summary>
     public string Name { get; set; } = "";
+
+    /// <summary>Gets or sets the diagnostic ID (e.g. GSH0001).</summary>
     public string Id { get; set; } = "";
+
+    /// <summary>Gets or sets the diagnostic title.</summary>
     public string Title { get; set; } = "";
+
+    /// <summary>Gets or sets the message format string.</summary>
     public string MessageFormat { get; set; } = "";
+
+    /// <summary>Gets or sets the diagnostic category.</summary>
     public string Category { get; set; } = "";
+
+    /// <summary>Gets or sets the default severity string.</summary>
     public string DefaultSeverity { get; set; } = "";
+
+    /// <summary>Gets or sets a value indicating whether the diagnostic is enabled by default.</summary>
     public bool IsEnabledByDefault
     {
         get; set;
     }
+
+    /// <summary>Gets or sets a value indicating whether this diagnostic is obsolete.</summary>
     public bool IsObsolete
     {
         get; set;
     }
 }
 
+/// <summary>Generates strongly-typed DiagnosticDescriptor C# definitions from diagnostics.json.</summary>
 public static partial class DiagnosticGenerator
 {
     private static readonly JsonSerializerOptions s_jsonOptions = new()
@@ -28,6 +45,7 @@ public static partial class DiagnosticGenerator
         PropertyNameCaseInsensitive = true,
     };
 
+    /// <summary>Reads diagnostic definitions from the input JSON file and emits generated source files.</summary>
     public static void Run(string inputFile, string outputDir)
     {
         Directory.CreateDirectory(outputDir);
@@ -43,6 +61,7 @@ public static partial class DiagnosticGenerator
         File.WriteAllText(Path.Combine(outputDir, "GSharpDiagnostics.g.cs"), source, Encoding.UTF8);
     }
 
+    /// <summary>Generates the C# source code string containing GSharpDiagnostics descriptors.</summary>
     public static string GenerateSource(IReadOnlyList<DiagnosticDefinition> diagnostics)
     {
         using var writer = new SourceWriter();

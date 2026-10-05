@@ -3,22 +3,34 @@ using System.Diagnostics;
 namespace Kassyi.GSharp.Stdlib.GpuMath.IO;
 
 /// <summary>
-/// Provides high-performance GPU-accelerated Divide and Conquer (D&amp;C) radix conversion
-/// for streaming arbitrary-precision <see cref="GpuBigUInt"/> to decimal text.
+/// Provides high-performance GPU-accelerated Divide-and-Conquer (D&amp;C) radix conversion
+/// for streaming arbitrary-precision <see cref="BigNum.GpuBigUInt"/> to decimal text.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Serial base-10 radix conversion of multi-million-digit numbers is inherently $O(N^2)$ on CPU.
+/// <see cref="GpuRadixConverter"/> splits the integer into sub-radix segments using GPU-accelerated $O(M(N)\log N)$ NTT division,
+/// switching to fast CPU formatting at a configurable leaf threshold.
+/// </para>
+/// <para>
+/// <b>Performance:</b> Achieves linearithmic radix conversion scaling up to 100M+ decimal digits.
+/// </para>
+/// </remarks>
 public static class GpuRadixConverter
 {
     private const int LeafThresholdDigits = 10_000;
 
     /// <summary>
-    /// Converts a <see cref="GpuBigUInt"/> to decimal digits using GPU-accelerated divide-and-conquer division,
-    /// streaming the output directly to a <see cref="TextWriter"/>.
+    /// Converts an arbitrary-precision unsigned integer (<see cref="BigNum.GpuBigUInt"/>) to decimal digits using GPU-accelerated divide-and-conquer division,
+    /// streaming the formatted characters directly to the specified <see cref="TextWriter"/>.
     /// </summary>
-    /// <param name="workspace">The GPU computation workspace.</param>
-    /// <param name="value">The integer to convert.</param>
-    /// <param name="targetDigits">The number of digits to generate.</param>
-    /// <param name="writer">The output stream writer.</param>
-    /// <param name="isMostSignificant">True if formatting the integer part with a decimal point (e.g. "3.1415...").</param>
+    /// <param name="workspace">The GPU computation workspace managing memory and kernel dispatches.</param>
+    /// <param name="value">The unsigned large integer to convert.</param>
+    /// <param name="targetDigits">The expected or target number of decimal digits to generate.</param>
+    /// <param name="writer">The output stream writer receiving the formatted decimal text.</param>
+    /// <param name="isMostSignificant"><see langword="true"/> if formatting the integer part with a decimal point (e.g. <c>"3.1415..."</c>); otherwise, <see langword="false"/>.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace"/> or <paramref name="writer"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="targetDigits"/> is less than or equal to zero.</exception>
     public static void ConvertAndWrite(
         GpuWorkspace workspace,
         GpuBigUInt value,
@@ -26,6 +38,7 @@ public static class GpuRadixConverter
         TextWriter writer,
         bool isMostSignificant = false)
     {
+
         ArgumentNullException.ThrowIfNull(workspace);
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetDigits);

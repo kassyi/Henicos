@@ -1,17 +1,35 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 /// <summary>
-/// Host (CPU) fallback execution provider for arbitrary-precision BigInteger arithmetic.
-/// Operates on unmanaged host memory using System.Numerics.BigInteger.
+/// Provides a reference host (CPU) execution provider for arbitrary-precision large integer arithmetic.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Implements <see cref="IGpuExecutionProvider"/> by delegating computations to <see cref="System.Numerics.BigInteger"/> on host memory.
+/// Used for Tier-1 deterministic unit testing, golden-master verification, and systems without CUDA-capable GPUs.
+/// </para>
+/// <para>
+/// <b>Zero-Allocation:</b> Memory allocation methods allocate unmanaged host heap blocks via <see cref="Marshal.AllocHGlobal(nint)"/>.
+/// </para>
+/// <para>
+/// <b>Thread Safety:</b> Stateless and thread-safe. Graph provider operations are no-ops.
+/// </para>
+/// </remarks>
 public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
 {
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="CSharpCpuBigIntProvider"/>.
+    /// </summary>
     public static readonly CSharpCpuBigIntProvider Instance = new();
 
     private CSharpCpuBigIntProvider()
     {
     }
 
+    /// <summary>
+    /// Reads an unsigned big integer from unmanaged host memory.
+    /// </summary>
+    // [WHY]: Converts raw limb memory buffers into System.Numerics.BigInteger for CPU reference arithmetic.
     private static unsafe BigInteger Read(IntPtr ptr, int numWords)
     {
         if (numWords <= 0)
@@ -23,6 +41,10 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         return new BigInteger(span, isUnsigned: true, isBigEndian: false);
     }
 
+    /// <summary>
+    /// Writes an unsigned big integer to unmanaged host memory, zero-padding to the maximum word count.
+    /// </summary>
+    // [WHY]: Serializes System.Numerics.BigInteger back to limb format in host memory buffers.
     private static unsafe void Write(BigInteger value, IntPtr ptr, int maxWords)
     {
         if (maxWords <= 0)
@@ -44,10 +66,13 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         value.TryWriteBytes(destSpan, out var _, isUnsigned: true, isBigEndian: false);
     }
 
+
     // --- IGpuMemoryProvider ---
 
+    /// <inheritdoc/>
     public IntPtr AllocateMemory(int numWords) => Marshal.AllocHGlobal(numWords * 4);
 
+    /// <inheritdoc/>
     public void FreeMemory(IntPtr devicePointer)
     {
         if (devicePointer != IntPtr.Zero)
@@ -56,6 +81,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         }
     }
 
+    /// <inheritdoc/>
     public unsafe void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream)
     {
         if (numWords > 0 && devicePointer != IntPtr.Zero)
@@ -64,6 +90,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         }
     }
 
+    /// <inheritdoc/>
     public unsafe void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords, IntPtr stream = 0)
     {
         if (numWords <= 0 || hostData.Length == 0)
@@ -78,6 +105,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         }
     }
 
+    /// <inheritdoc/>
     public unsafe void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0)
     {
         if (numWords <= 0 || hostData.Length == 0)
@@ -92,6 +120,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         }
     }
 
+    /// <inheritdoc/>
     public unsafe void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords, IntPtr stream = 0)
     {
         if (numWords > 0 && destPointer != srcPointer)
@@ -100,14 +129,17 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         }
     }
 
+    /// <inheritdoc/>
     public unsafe uint ReadWord(IntPtr devicePointer, int wordOffset = 0) =>
         *(uint*)IntPtr.Add(devicePointer, wordOffset * 4);
 
+    /// <inheritdoc/>
     public unsafe void WriteWord(IntPtr devicePointer, int wordOffset, uint value) =>
         *(uint*)IntPtr.Add(devicePointer, wordOffset * 4) = value;
 
     // --- IGpuBasicMathProvider ---
 
+    /// <inheritdoc/>
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -116,6 +148,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -124,6 +157,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -131,6 +165,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -138,6 +173,8 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+
+    /// <inheritdoc/>
     public void BitwiseAnd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -146,6 +183,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void BitwiseOr(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -154,6 +192,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void BitwiseXor(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -162,12 +201,14 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void BitwiseNot(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
         var val = ~Read(leftOperand.DevicePointer, leftOperand.NumWords);
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void ShiftLeft(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits,
         GpuBigUInt resultBuffer)
     {
@@ -175,6 +216,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void ShiftRight(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits,
         GpuBigUInt resultBuffer)
     {
@@ -182,6 +224,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public bool Square(GpuWorkspace workspace, IntPtr devicePointer, int logicalWords)
     {
         var val = Read(devicePointer, logicalWords);
@@ -189,15 +232,19 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         return true;
     }
 
+    /// <inheritdoc/>
     public bool IsZero(GpuWorkspace workspace, GpuBigUInt leftOperand) =>
         Read(leftOperand.DevicePointer, leftOperand.NumWords).IsZero;
 
+    /// <inheritdoc/>
     public bool IsOne(GpuWorkspace workspace, GpuBigUInt leftOperand) =>
         Read(leftOperand.DevicePointer, leftOperand.NumWords).IsOne;
 
+    /// <inheritdoc/>
     public int GetBitLength(GpuWorkspace workspace, GpuBigUInt leftOperand) =>
         (int)Read(leftOperand.DevicePointer, leftOperand.NumWords).GetBitLength();
 
+    /// <inheritdoc/>
     public int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand)
     {
         return Read(leftOperand.DevicePointer, leftOperand.NumWords)
@@ -206,6 +253,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
 
     // --- IGpuAdvancedMathProvider ---
 
+    /// <inheritdoc/>
     public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -214,6 +262,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -221,6 +270,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void InverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
         int marginWords, int actualBits, int iterations)
     {
@@ -236,6 +286,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(result, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
         int marginWords, int numBits, int marginBits, int iterations, int targetBits)
     {
@@ -280,6 +331,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         }
     }
 
+    /// <inheritdoc/>
     public void Gcd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -288,7 +340,9 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    /// <inheritdoc/>
     public void ModInverse(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer)
+
     {
         var a = Read(value.DevicePointer, value.NumWords);
         var n = Read(modulus.DevicePointer, modulus.NumWords);
@@ -319,34 +373,68 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
     // --- IGpuGraphProvider (No-op on CPU fallback) ---
 
     /// <summary>
-    /// No-op in CPU fallback mode; CUDA Graph stream capture is not supported or required on CPU.
+    /// Performs no operation. CUDA Graph stream capture is not supported or required in CPU fallback mode.
     /// </summary>
+    /// <param name="stream">The unmanaged stream handle (ignored in CPU fallback mode).</param>
+    /// <remarks>
+    /// <para>
+    /// <b>Execution Target:</b> Host-only CPU fallback. In CPU mode, all operations execute immediately and synchronously.
+    /// </para>
+    /// </remarks>
     public void BeginCapture(IntPtr stream)
     {
         // No-op
     }
 
     /// <summary>
-    /// Returns <see cref="IntPtr.Zero"/> as a dummy graph handle in CPU fallback mode.
+    /// Ends graph capture in CPU fallback mode and returns a dummy handle.
     /// </summary>
+    /// <param name="stream">The unmanaged stream handle being captured (ignored in CPU fallback mode).</param>
+    /// <returns>Always returns <see cref="IntPtr.Zero"/> as a dummy graph handle in CPU fallback mode.</returns>
+    /// <remarks>
+    /// <para>
+    /// <b>Execution Target:</b> Host-only CPU fallback. No unmanaged CUDA graph topology is instantiated on the host.
+    /// </para>
+    /// </remarks>
     public IntPtr EndCapture(IntPtr stream) => IntPtr.Zero;
 
     /// <summary>
-    /// Returns <see cref="IntPtr.Zero"/> as a dummy executable graph handle in CPU fallback mode.
+    /// Instantiates an executable graph instance in CPU fallback mode and returns a dummy handle.
     /// </summary>
+    /// <param name="graph">The captured graph handle (ignored in CPU fallback mode).</param>
+    /// <returns>Always returns <see cref="IntPtr.Zero"/> as a dummy executable graph handle.</returns>
+    /// <remarks>
+    /// <para>
+    /// <b>Execution Target:</b> Host-only CPU fallback.
+    /// </para>
+    /// </remarks>
     public IntPtr InstantiateGraph(IntPtr graph) => IntPtr.Zero;
 
     /// <summary>
-    /// No-op in CPU fallback mode.
+    /// Performs no operation. Graph execution is not applicable in CPU fallback mode.
     /// </summary>
+    /// <param name="graphExec">The executable graph handle (ignored in CPU fallback mode).</param>
+    /// <param name="stream">The target stream for execution (ignored in CPU fallback mode).</param>
+    /// <remarks>
+    /// <para>
+    /// <b>Execution Target:</b> Host-only CPU fallback. Operations are evaluated synchronously during expression evaluation.
+    /// </para>
+    /// </remarks>
     public void LaunchGraph(IntPtr graphExec, IntPtr stream)
     {
         // No-op
     }
 
     /// <summary>
-    /// No-op in CPU fallback mode.
+    /// Performs no operation. Destroys dummy graph handles in CPU fallback mode.
     /// </summary>
+    /// <param name="graph">The captured graph handle (ignored in CPU fallback mode).</param>
+    /// <param name="graphExec">The executable graph handle (ignored in CPU fallback mode).</param>
+    /// <remarks>
+    /// <para>
+    /// <b>Execution Target:</b> Host-only CPU fallback. No unmanaged memory or native CUDA driver resources are held.
+    /// </para>
+    /// </remarks>
     public void DestroyGraph(IntPtr graph, IntPtr graphExec)
     {
         // No-op

@@ -86,6 +86,10 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
         CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out _devicePointer, _byteSize));
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="GpuBuffer{T}"/> class with the specified byte size.
+    /// </summary>
+    /// <param name="byteSize">The raw byte size of the buffer.</param>
     public GpuBuffer(IntPtr byteSize)
     {
         _byteSize = byteSize;
@@ -187,6 +191,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
         return res;
     }
 
+    /// <inheritdoc/>
     public void Dispose()
     {
         if (!_isDisposed)
@@ -202,6 +207,9 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
         }
     }
 
+    /// <summary>
+    /// Finalizes an instance of the <see cref="GpuBuffer{T}"/> class.
+    /// </summary>
     ~GpuBuffer()
     {
         if (!_isDisposed)

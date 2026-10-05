@@ -1,10 +1,9 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-/// <summary>
-/// Emits the native shadow structs ([StructLayout(Explicit)]) that correspond to C# custom structs.
-/// </summary>
+/// <summary>Emits explicit layout shadow structs representing C# structs in native CUDA memory.</summary>
 internal static class NativeStructEmitter
 {
+    /// <summary>Emits the explicit struct declaration with computed field offsets.</summary>
     internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s)
     {
         var layout = CudaLayoutRules.GetCudaLayout(s);

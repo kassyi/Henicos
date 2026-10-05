@@ -4,10 +4,15 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
-/// Provides static division and remainder operations, including Newton-Raphson approximation for <see cref="GpuBigUInt"/>.
+/// Provides static arbitrary-precision division, remainder, modulo, and root extraction algorithms on the GPU using Newton-Raphson approximation and reciprocal multiplication.
 /// </summary>
+/// <remarks>
+/// <para><b>Algorithms:</b> Division is evaluated as $A / B \approx A \times \text{Reciprocal}(B)$ using parallel Newton-Raphson reciprocals on the GPU, followed by fine-grained underflow/remainder correction loops.</para>
+/// <para><b>Thread Safety:</b> Static methods are thread-safe given distinct GPU memory buffers.</para>
+/// </remarks>
 public static partial class GpuBigIntDivRem
 {
+    // [WHY] Validates buffer lengths at the host boundary before GPU kernel dispatch to avoid silent CUDA out-of-bounds writes.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
@@ -67,6 +72,17 @@ public static partial class GpuBigIntDivRem
         return iterations + 1; // One extra iteration for safety to ensure full convergence
     }
 
+    /// <summary>
+    /// Computes both the quotient and the remainder of two arbitrary-precision unsigned integers on the GPU.
+    /// </summary>
+    /// <param name="leftOperand">The dividend operand ($A$).</param>
+    /// <param name="rightOperand">The divisor operand ($B$).</param>
+    /// <param name="quotientBuffer">The destination buffer receiving the quotient ($\lfloor A / B \rfloor$).</param>
+    /// <param name="remainderBuffer">The destination buffer receiving the remainder ($A \bmod B$).</param>
+    /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
+    /// <remarks>
+    /// <para><b>Algorithm:</b> Evaluates division via normalized reciprocal multiplication on GPU followed by quotient-remainder correction.</para>
+    /// </remarks>
     public static void DivRem(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
     {
@@ -228,6 +244,11 @@ public static partial class GpuBigIntDivRem
         }
     }
 
+    /// <summary>
+    /// Calculates the exact number of significant bits in the specified <see cref="GpuBigUInt"/> by inspecting the highest non-zero bit.
+    /// </summary>
+    /// <param name="gpuBigInt">The big integer to inspect.</param>
+    /// <returns>The bit length of the big integer, or 0 if the value is zero.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int GetActualBits(GpuBigUInt gpuBigInt)
     {
@@ -263,7 +284,14 @@ public static partial class GpuBigIntDivRem
         }
     }
 
-    /// <summary>Computes arbitrary-precision division (<c>leftOperand / rightOperand</c>) on the GPU.</summary>
+    /// <summary>
+    /// Computes the arbitrary-precision integer quotient of two numbers on the GPU (<c>resultBuffer = leftOperand / rightOperand</c>).
+    /// </summary>
+    /// <param name="leftOperand">The dividend operand.</param>
+    /// <param name="rightOperand">The divisor operand.</param>
+    /// <param name="resultBuffer">The destination buffer receiving the quotient.</param>
+    /// <exception cref="ArgumentException">Thrown when buffer sizes do not match.</exception>
+    /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
     public static void Div(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -283,7 +311,14 @@ public static partial class GpuBigIntDivRem
             numWords: n);
     }
 
-    /// <summary>Computes arbitrary-precision modulo (<c>leftOperand % rightOperand</c>) on the GPU.</summary>
+    /// <summary>
+    /// Computes the arbitrary-precision remainder (modulo) of two numbers on the GPU (<c>resultBuffer = leftOperand % rightOperand</c>).
+    /// </summary>
+    /// <param name="leftOperand">The dividend operand.</param>
+    /// <param name="rightOperand">The divisor operand.</param>
+    /// <param name="resultBuffer">The destination buffer receiving the remainder.</param>
+    /// <exception cref="ArgumentException">Thrown when buffer sizes do not match.</exception>
+    /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
     public static void Mod(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {

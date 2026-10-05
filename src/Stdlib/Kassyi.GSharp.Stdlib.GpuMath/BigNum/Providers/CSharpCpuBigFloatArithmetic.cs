@@ -5,15 +5,28 @@ using System.Numerics;
 using Runtime;
 
 /// <summary>
-/// Host (CPU) fallback execution provider for arbitrary-precision floating-point arithmetic.
+/// Provides a reference host (CPU) execution implementation for arbitrary-precision floating-point arithmetic.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Implements <see cref="IGpuBigFloatArithmetic"/> using host-side <see cref="System.Numerics.BigInteger"/> mantissa scaling
+/// and bit shifts to validate GPU kernel calculations and support execution on non-GPU host environments.
+/// </para>
+/// <para>
+/// <b>Thread Safety:</b> Stateless and thread-safe.
+/// </para>
+/// </remarks>
 public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
 {
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="CSharpCpuBigFloatArithmetic"/>.
+    /// </summary>
     public static readonly CSharpCpuBigFloatArithmetic Instance = new();
 
     private CSharpCpuBigFloatArithmetic()
     {
     }
+
 
     private static BigInteger ToBigInteger(uint[] words, int count)
     {
@@ -40,6 +53,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
         Buffer.BlockCopy(bytes, 0, destination, 0, bytesToCopy);
     }
 
+    /// <inheritdoc/>
     public void Normalize(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -75,6 +89,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             resultWords, resultSig.NumWords, context.Stream);
     }
 
+    /// <inheritdoc/>
     public void Add(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
         GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
@@ -149,6 +164,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             resultWords, resultSig.NumWords, context.Stream);
     }
 
+    /// <inheritdoc/>
     public void Multiply(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
         GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
@@ -194,6 +210,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             resultWords, resultSig.NumWords, context.Stream);
     }
 
+    /// <inheritdoc/>
     public void Divide(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
         GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
@@ -239,6 +256,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
         Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Reciprocal(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -273,6 +291,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
         Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Sqrt(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -326,6 +345,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             resultWords, resultSig.NumWords, context.Stream);
     }
 
+    /// <inheritdoc/>
     public void Rsqrt(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -344,6 +364,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
         Reciprocal(ref context, sqrtHandle, sqrtExp, sqrtSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Exp(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -418,6 +439,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
         Normalize(ref context, tempHandle, tempExpFixed, resultSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Log(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -499,6 +521,7 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
         Normalize(ref context, tempHandle, tempExpFixed, resultSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Pow(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle baseSig, int baseExp, bool baseSign,
         GpuBigIntMemoryHandle expSig, int exponentExp, bool exponentSign,
@@ -523,10 +546,12 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
         Exp(ref context, mulHandle, mulExp, mulSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void DivideByUInt32(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         uint divisor,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign, out uint remainder)
+
     {
         if (divisor == 0)
         {

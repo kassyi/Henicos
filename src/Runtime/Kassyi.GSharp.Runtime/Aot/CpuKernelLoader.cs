@@ -58,6 +58,9 @@ public sealed class CpuKernelLoader
     /// <summary>
     /// Loads an AOT-compiled native CPU library and returns a raw function pointer.
     /// </summary>
+    /// <param name="kernelName">The name of the exported kernel function.</param>
+    /// <param name="dllPath">The file path to the native dynamic library.</param>
+    /// <returns>A native function pointer (<see cref="IntPtr"/>) to the exported kernel.</returns>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static IntPtr LoadAotKernelPtr(string kernelName, string dllPath)
     {
@@ -79,6 +82,10 @@ public sealed class CpuKernelLoader
     /// <summary>
     /// Loads an AOT-compiled native CPU library and returns a strongly-typed delegate.
     /// </summary>
+    /// <typeparam name="TDelegate">The delegate type matching the native kernel signature.</typeparam>
+    /// <param name="kernelName">The name of the exported kernel function.</param>
+    /// <param name="dllPath">The file path to the native dynamic library.</param>
+    /// <returns>A strongly-typed delegate of type <typeparamref name="TDelegate"/> wrapping the native kernel function.</returns>
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static TDelegate LoadAotKernel<TDelegate>(string kernelName, string dllPath)
         where TDelegate : Delegate

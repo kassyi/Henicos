@@ -3,14 +3,31 @@ using Kassyi.GSharp.Stdlib.GpuMath.Interop;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
+/// <summary>
+/// Execution provider implementing arbitrary-precision floating-point arithmetic via native GPU kernels and fallback providers.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Dispatches high-precision floating-point operations (<see cref="IGpuBigFloatArithmetic"/>) to native CUDA kernels
+/// (<see cref="NativeMethods"/>) when GPU acceleration is active, and routes to <see cref="CSharpCpuBigFloatArithmetic"/> in CPU fallback mode.
+/// </para>
+/// <para>
+/// <b>Zero-Allocation:</b> Scratch buffers are managed deterministically via workspace pools without managed heap allocations.
+/// </para>
+/// </remarks>
 public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
 {
+    /// <summary>
+    /// Gets the singleton instance of the <see cref="GSharpAotFloatProvider"/>.
+    /// </summary>
     public static readonly GSharpAotFloatProvider Instance = new();
 
     private GSharpAotFloatProvider()
     {
     }
 
+
+    /// <inheritdoc/>
     public void Normalize(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -45,6 +62,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
             out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Add(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
         GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
@@ -86,6 +104,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
             resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Multiply(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
         GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
@@ -118,6 +137,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
             rightSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Divide(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
         GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
@@ -197,6 +217,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         Normalize(ref context, tempHandle, tempExp, tempSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Reciprocal(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -242,6 +263,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Sqrt(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -311,6 +333,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Rsqrt(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -329,6 +352,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         Reciprocal(ref context, sqrtHandle, sqrtExp, sqrtSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Exp(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -339,6 +363,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
             out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Log(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
@@ -348,6 +373,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
             out resultSign);
     }
 
+    /// <inheritdoc/>
     public void Pow(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle baseSig, int baseExp, bool baseSign,
         GpuBigIntMemoryHandle expSig, int exponentExp, bool exponentSign,
@@ -358,6 +384,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
             exponentSign, resultSig, out resultExp, out resultSign);
     }
 
+    /// <inheritdoc/>
     public void DivideByUInt32(ref GpuBigIntExecutionContext context,
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         uint divisor,

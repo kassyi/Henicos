@@ -2,8 +2,18 @@ using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
+/// <summary>
+/// Manages unmanaged CUDA device memory allocations, memory clearing, and host-device/device-device asynchronous copies.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Bridges low-level CUDA Driver API memory operations (<c>cuMemAlloc_v2</c>, <c>cuMemFree_v2</c>, <c>cuMemcpyHtoDAsync_v2</c>)
+/// into the <see cref="IGpuMemoryProvider"/> contract for GSharp execution pipelines.
+/// </para>
+/// </remarks>
 public sealed class AotMemoryHandler : IGpuMemoryProvider
 {
+
 
     /// <inheritdoc/>
     public void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream)

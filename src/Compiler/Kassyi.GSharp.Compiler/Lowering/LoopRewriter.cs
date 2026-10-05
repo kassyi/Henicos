@@ -1,8 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-/// <summary>
-/// Phase 2.4: Lowers loop constructs (for, while, do-while, break, continue) into flat goto sequences.
-/// </summary>
+/// <summary>Lowers loop constructs (for, while, do-while) into flat goto sequences for linear state machine generation.</summary>
 public class LoopRewriter : CSharpSyntaxRewriter
 {
     private int _labelCounter;
@@ -26,6 +24,7 @@ public class LoopRewriter : CSharpSyntaxRewriter
         return false;
     }
 
+    /// <summary>Rewrites loops within the block into flat goto sequences.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
@@ -132,11 +131,7 @@ public class LoopRewriter : CSharpSyntaxRewriter
             incrementors: incrementors.Count > 0 ? incrementors : null);
     }
 
-    /// <summary>
-    /// Flattens a loop construct into a linear sequence of statements using labels and gotos.
-    /// By centralizing the control flow flattening, we guarantee consistent behavior for continue/break stack 
-    /// tracking across all loop types (while, do-while, for) without redundant AST manipulations.
-    /// </summary>
+    /// <summary>Flattens a loop construct into a linear sequence of statements using labels and gotos.</summary>
     private BlockSyntax RewriteLoop(
         string prefix,
         ExpressionSyntax? condition,
@@ -145,6 +140,7 @@ public class LoopRewriter : CSharpSyntaxRewriter
         IEnumerable<StatementSyntax>? initializers = null,
         IEnumerable<StatementSyntax>? incrementors = null)
     {
+        // [WHY] Centralizing control flow flattening ensures consistent break/continue stack tracking across all loop types.
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
         var id = _labelCounter++;
         var startLabel = $"_{prefix}Start_{id}";
@@ -206,3 +202,4 @@ public class LoopRewriter : CSharpSyntaxRewriter
         return SyntaxFactory.Block(statements);
     }
 }
+

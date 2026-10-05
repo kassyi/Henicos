@@ -4,8 +4,21 @@ using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
+/// <summary>
+/// Dispatches advanced arbitrary-precision arithmetic operations (NTT multiplication, Lehmer GCD, iterative reciprocal/rsqrt solvers) to GPU device kernels.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Houses high-complexity GPU kernel orchestrations, including twiddle factor caches for NTT convolution
+/// and GPU-side Lehmer GCD reduction loops, isolated from basic arithmetic primitives.
+/// </para>
+/// <para>
+/// <b>Zero-Allocation:</b> Scratch memory for intermediate NTT and division passes is acquired through <see cref="GpuWorkspace"/> buffer pooling.
+/// </para>
+/// </remarks>
 public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 {
+
     private readonly ConcurrentDictionary<int, Lazy<TwiddleCache>> _twiddleCache = new();
 
     private class TwiddleCache
@@ -16,6 +29,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         public IntPtr Inverse2;
     }
 
+    /// <inheritdoc />
     public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -27,6 +41,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
     }
 
 
+    /// <inheritdoc />
     public void Gcd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
@@ -89,6 +104,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, a.DevicePointer, numWords, workspace.Stream);
     }
 
+    /// <inheritdoc />
     public unsafe void ModInverse(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer)
     {
         var numWords = value.NumWords;
@@ -231,6 +247,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, v.DevicePointer, numWords, workspace.Stream);
     }
 
+    /// <inheritdoc />
     public void InverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
         int marginWords, int actualBits, int iterations)
     {
@@ -334,6 +351,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes, hStream: workspace.Stream);
     }
 
+    /// <inheritdoc />
     public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
         int marginWords, int numBits, int marginBits, int iterations, int targetBits)
     {
@@ -434,6 +452,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             , hStream: workspace.Stream);
     }
 
+    /// <inheritdoc />
     public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {

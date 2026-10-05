@@ -2,13 +2,23 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
+/// <summary>
+/// Defines CUDA GPU device kernels for large-integer multiplication using NTT, Comba, and Karatsuba algorithms.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Emits device-side kernels transpiled via GSharp source generators for parallel multiplication pipelines.
+/// </para>
+/// <para>
+/// <b>Execution Target:</b> GPU Device Kernels (<c>[GpuKernel]</c> / <c>[GpuDevice]</c>).
+/// </para>
+/// </remarks>
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 [Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
 public static partial class GpuBigIntMulKernels
 {
     // Global Non-Cooperative NTT approach for Multi-Million digit multiplications
-
     public struct NttUnpackContext
     {
         [GpuReadOnly]

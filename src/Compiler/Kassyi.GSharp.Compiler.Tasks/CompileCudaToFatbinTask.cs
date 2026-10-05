@@ -4,14 +4,18 @@ using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
+/// <summary>MSBuild task that compiles CUDA C++ (.cu) kernel sources into GPU fatbin binaries using NVCC.</summary>
 public class CompileCudaToFatbinTask : CompileKernelTaskBase
 {
+    /// <summary>Gets or sets the CUDA (.cu) source files to compile.</summary>
     [Required]
     public ITaskItem[] CudaSources { get; set; } = [];
 
+    /// <summary>Gets or sets the target GPU architectures (e.g. compute_86,sm_86).</summary>
     public string TargetArchitectures { get; set; } =
         "compute_86,sm_86";
 
+    /// <summary>Gets or sets the path or executable name for the NVIDIA CUDA compiler (nvcc).</summary>
     public string NvccPath { get; set; } = "nvcc";
 
     /// <summary>
@@ -19,15 +23,20 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     /// </summary>
     public string? CombinedFatbinName { get; set; }
 
+    /// <summary>Gets or sets the resulting compiled fatbin task items.</summary>
     [Output]
     public ITaskItem[] OutputFatbins { get; set; } = [];
 
     private string[] _architectures = [];
     private bool _skipCompilation;
 
+    /// <inheritdoc />
     protected override ITaskItem[] GetSources() => CudaSources;
+
+    /// <inheritdoc />
     protected override void SetOutputItems(ITaskItem[] outputItems) => OutputFatbins = outputItems;
 
+    /// <inheritdoc />
     public override bool Execute() =>
         string.IsNullOrWhiteSpace(CombinedFatbinName) ? base.Execute() : ExecuteCombinedCompilation();
 

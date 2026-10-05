@@ -2,17 +2,19 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Kassyi.GSharp.Compiler.Lowering;
 
+/// <summary>Hoists local variables that cross execution barriers into a shared context struct.</summary>
 public class ContextHoister : CSharpSyntaxRewriter
 {
     private readonly HashSet<string> _hoistedVariables = [];
 
+    /// <summary>Analyzes barrier crossings and rewrites variable accesses to point to the hoisted context structure.</summary>
     public (BlockSyntax RewrittenBlock, IReadOnlyList<VariableDeclaratorSyntax> HoistedVariables) Hoist(
         BlockSyntax block)
     {
         _hoistedVariables.Clear();
         var hoistedDecls = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
 
-        // One-pass AST traversal to collect barriers and variables efficiently. (O(N))
+        // [WHY] One-pass AST traversal to collect barriers and variables efficiently in O(N).
         var analyzer = new HoistAnalyzer();
         analyzer.Visit(block);
 
@@ -28,7 +30,7 @@ public class ContextHoister : CSharpSyntaxRewriter
             barrierStarts[i] = analyzer.BarrierSpans[i].Start;
         }
 
-        // Determine which variables cross a barrier using Binary Search. (O(V log B))
+        // [WHY] Binary search (O(V log B)) is used to determine if variables cross any synchronization barriers.
         foreach (var (decl, scopeEnd) in analyzer.Variables)
         {
             var declEnd = decl.Span.End;
@@ -75,8 +77,7 @@ public class ContextHoister : CSharpSyntaxRewriter
         {
             if (_hoistedVariables.Contains(variable.Identifier.ValueText))
             {
-                // Hoisted variables are declared in the context struct. 
-                // We must convert their local initializations into explicit assignments.
+                // [WHY] Hoisted variables reside in the context struct, so initializations must become explicit member assignments.
                 var typeSyntax = (variable.Parent as VariableDeclarationSyntax)?.Type;
                 var isSharedMemory = typeSyntax is GenericNameSyntax { Identifier.ValueText: "SharedMemory" };
 
@@ -117,9 +118,7 @@ public class ContextHoister : CSharpSyntaxRewriter
             return newLocalDecl;
         }
 
-        // If both hoisted and unhoisted variables existed in the same declaration, 
-        // we wrap the separated assignments and remaining local declarations into a block 
-        // to preserve C# syntax validity.
+        // [WHY] Wraps separated assignments and remaining declarations in a block to preserve C# syntax validity.
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
         statements.Add(newLocalDecl);
         statements.AddRange(assignments);
@@ -144,7 +143,6 @@ public class ContextHoister : CSharpSyntaxRewriter
             SyntaxFactory.IdentifierName(variableName)
         );
     }
-
 
     private sealed class HoistAnalyzer : CSharpSyntaxWalker
     {
@@ -175,3 +173,4 @@ public class ContextHoister : CSharpSyntaxRewriter
         }
     }
 }
+

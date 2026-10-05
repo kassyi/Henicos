@@ -1,14 +1,28 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
-/// <summary>CPU reference implementation of Lehmer's / Half-GCD algorithm for validation before GPU kernel execution.</summary>
+/// <summary>
+/// Provides a host (CPU) reference implementation of Lehmer's / Half-GCD algorithm for verification and unit testing of GPU kernels.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Truncates leading 64-bit words of large integers to compute Euclidean 2x2 transition matrices on CPU,
+/// matching the exact matrix transformation logic executed across GPU threads in <c>GpuBigIntGcdKernels</c>.
+/// </para>
+/// <para>
+/// <b>Execution Target:</b> Host-only (CPU) verification baseline.
+/// </para>
+/// </remarks>
 public static class HalfGcdCpuReference
 {
-    /// <summary>Computes the greatest common divisor using Lehmer's 2x2 matrix reduction on truncated leading words.</summary>
+    /// <summary>
+    /// Computes the greatest common divisor (GCD) of two arbitrary-precision integers using Lehmer's 2x2 matrix reduction.
+    /// </summary>
     /// <param name="a">The first operand.</param>
     /// <param name="b">The second operand.</param>
     /// <returns>The greatest common divisor of <paramref name="a"/> and <paramref name="b"/>.</returns>
     public static BigInteger Gcd(BigInteger a, BigInteger b)
+
     {
         if (a < b)
         {
