@@ -25,6 +25,7 @@
   
   <ItemGroup>
     <NativeBenchmarkCudaSources Include="ComputeBenchmarks\Native\*.cu" />
+    <AdditionalFiles Include="ComputeBenchmarks\Native\*.cu" />
   </ItemGroup>
 
   <Target Name="CompileNativeBenchmarks" BeforeTargets="GSharpAddGeneratedItemsToOutputDirectory">
