@@ -137,6 +137,12 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
     public unsafe void WriteWord(IntPtr devicePointer, int wordOffset, uint value) =>
         *(uint*)IntPtr.Add(devicePointer, wordOffset * 4) = value;
 
+    /// <inheritdoc/>
+    public void SynchronizeStream(IntPtr stream)
+    {
+        // No-op in CPU mode
+    }
+
     // --- IGpuBasicMathProvider ---
 
     /// <inheritdoc/>
