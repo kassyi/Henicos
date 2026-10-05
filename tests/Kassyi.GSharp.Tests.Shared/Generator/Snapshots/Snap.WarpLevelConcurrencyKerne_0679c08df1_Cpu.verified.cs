@@ -31,6 +31,15 @@ public const string WarpReduceSumKernel_Source = @"struct __gsharp_context_WarpL
 int _state = 0;
 __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+int tid;
+int lane;
+int warpId;
+int val;
+unsigned int mask;
+int _warpTemp_0;
+int _warpTemp_1;
+int _warpTemp_2;
+int _warpTemp_3;
 };
 extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpReduceSumKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel* _ctx){
 #define _state _ctx->_state
@@ -38,19 +47,54 @@ switch(_state)
 {
 case 0:
 {
-int tid = threadIdx.x;
-int lane = tid%32;
-int warpId = tid/32;
-int val = input[tid];
-unsigned int mask = 0xffffffff;
-val+=__shfl_down_sync(mask,val,16,32);
-val+=__shfl_down_sync(mask,val,8,32);
-val+=__shfl_down_sync(mask,val,4,32);
-val+=__shfl_down_sync(mask,val,2,32);
-val+=__shfl_down_sync(mask,val,1,32);
-if(lane==0)
+_ctx->tid=threadIdx.x;
+_ctx->lane=_ctx->tid%32;
+_ctx->warpId=_ctx->tid/32;
+_ctx->val=input[_ctx->tid];
+_ctx->mask=0xffffffff;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=1;
+return;
+}
+case 1:
 {
-output[warpId]=val;
+_ctx->_warpTemp_0=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,16);
+_ctx->val+=_ctx->_warpTemp_0;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=2;
+return;
+}
+case 2:
+{
+_ctx->_warpTemp_1=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,8);
+_ctx->val+=_ctx->_warpTemp_1;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=3;
+return;
+}
+case 3:
+{
+_ctx->_warpTemp_2=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,4);
+_ctx->val+=_ctx->_warpTemp_2;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=4;
+return;
+}
+case 4:
+{
+_ctx->_warpTemp_3=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,2);
+_ctx->val+=_ctx->_warpTemp_3;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=5;
+return;
+}
+case 5:
+{
+auto _warpTemp_4 = __gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,1);
+_ctx->val+=_warpTemp_4;
+if(_ctx->lane==0)
+{
+output[_ctx->warpId]=_ctx->val;
 }
 _state=-1;
 return;
@@ -120,6 +164,14 @@ public const string WarpPrimitivesKernel_Source = @"struct __gsharp_context_Warp
 int _state = 0;
 __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+int tid;
+unsigned int mask;
+int val;
+int _warpTemp_0;
+int _warpTemp_1;
+int _warpTemp_2;
+int _warpTemp_3;
+int _warpTemp_4;
 };
 extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpPrimitivesKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel* _ctx){
 #define _state _ctx->_state
@@ -127,16 +179,58 @@ switch(_state)
 {
 case 0:
 {
-int tid = threadIdx.x;
-unsigned int mask = __activemask();
-int val = input[tid];
-val=__shfl_sync(mask,val,0,32);
-val=(int)__shfl_sync(mask,(unsigned int)val,0,32);
-val=__shfl_down_sync(mask,val,1,32);
-val=(int)__shfl_down_sync(mask,(unsigned int)val,1,32);
-val=__shfl_up_sync(mask,val,1,32);
-val=__shfl_xor_sync(mask,val,1,32);
-output[tid]=val;
+_ctx->tid=threadIdx.x;
+_ctx->mask=__activemask();
+_ctx->val=input[_ctx->tid];
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=1;
+return;
+}
+case 1:
+{
+_ctx->_warpTemp_0=__gsharp_warp_shuffle_read_sync(_ctx,_ctx->mask,_ctx->val,0);
+_ctx->val=_ctx->_warpTemp_0;
+__gsharp_warp_exchange_assign((unsigned int)_ctx->val);
+_state=2;
+return;
+}
+case 2:
+{
+_ctx->_warpTemp_1=__gsharp_warp_shuffle_read_sync(_ctx,_ctx->mask,(unsigned int)_ctx->val,0);
+_ctx->val=(int)_ctx->_warpTemp_1;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=3;
+return;
+}
+case 3:
+{
+_ctx->_warpTemp_2=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,1);
+_ctx->val=_ctx->_warpTemp_2;
+__gsharp_warp_exchange_assign((unsigned int)_ctx->val);
+_state=4;
+return;
+}
+case 4:
+{
+_ctx->_warpTemp_3=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,(unsigned int)_ctx->val,1);
+_ctx->val=(int)_ctx->_warpTemp_3;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=5;
+return;
+}
+case 5:
+{
+_ctx->_warpTemp_4=__gsharp_warp_shuffle_read_up_sync(_ctx,_ctx->mask,_ctx->val,1);
+_ctx->val=_ctx->_warpTemp_4;
+__gsharp_warp_exchange_assign(_ctx->val);
+_state=6;
+return;
+}
+case 6:
+{
+auto _warpTemp_5 = __gsharp_warp_shuffle_read_xor_sync(_ctx,_ctx->mask,_ctx->val,1);
+_ctx->val=_warpTemp_5;
+output[_ctx->tid]=_ctx->val;
 _state=-1;
 return;
 }

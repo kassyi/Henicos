@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>12</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsRoslynComponent>true</IsRoslynComponent>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="System" />
+    <Using Include="System.Text" />
+    <Using Include="System.Diagnostics.CodeAnalysis" />
+    <Using Include="System.Runtime.CompilerServices" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\SourceWriter.cs" Link="SourceWriter.cs" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\UnscopedRefAttribute.cs" Link="UnscopedRefAttribute.cs" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\InterpolatedStringHandlerAttribute.cs" Link="InterpolatedStringHandlerAttribute.cs" />
+  </ItemGroup>
+
+</Project>

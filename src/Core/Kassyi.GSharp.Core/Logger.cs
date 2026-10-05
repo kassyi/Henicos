@@ -34,10 +34,10 @@ public enum LogLevel
 }
 
 /// <summary>
-/// Provides high-throughput, non-blocking asynchronous logging and performance interval tracking.
+/// Provides logging and performance interval tracking.
 /// </summary>
 /// <remarks>
-/// <para>Log messages are queued into a bounded lock-free channel and processed in a dedicated background task to eliminate I/O blocking in performance-critical execution paths.</para>
+/// <para>Log messages are written synchronously to the standard output, delegating actual I/O responsibility to the console host.</para>
 /// </remarks>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
@@ -48,10 +48,7 @@ public abstract class Logger : ILogger
     /// <summary>
     /// Gets or sets the minimum active log level for message processing.
     /// </summary>
-    public static LogLevel ActiveLogLevel
-    {
-        get; set;
-    } =
+    public static LogLevel ActiveLogLevel { get; set; } =
         LogLevel.Trace; // Trace by default to output everything during debugging
 
     /// <summary>
@@ -110,39 +107,6 @@ public abstract class Logger : ILogger
         where TState : notnull =>
         null;
 
-    /// <summary>
-    /// Asynchronously flushes the log queue and shuts down the background logging task.
-    /// </summary>
-    /// <returns>A task that represents the asynchronous shutdown operation.</returns>
-    public static Task ShutdownAsync()
-    {
-        return Task.CompletedTask;
-    }
-
-    /// <summary>
-    /// Gets the approximate number of messages currently waiting in the log queue.
-    /// </summary>
-    public static int PendingMessageCount => 0;
-
-    /// <summary>
-    /// Gets a value indicating whether the logger is currently writing to the file system.
-    /// </summary>
-    public static bool IsWritingToFile => false;
-
-    /// <summary>
-    /// Asynchronously waits for all currently pending log messages to be written to the file system.
-    /// </summary>
-    /// <param name="timeoutMs">Maximum milliseconds to wait for the flush.</param>
-    /// <returns>A task that represents the asynchronous flush operation.</returns>
-    public static Task FlushAsync(int timeoutMs = 30000) => Task.CompletedTask;
-
-    /// <summary>
-    /// Synchronously flushes the log queue without shutting down the logger.
-    /// </summary>
-    /// <param name="timeoutMs">Maximum milliseconds to wait for the flush.</param>
-    public static void Flush(int timeoutMs = 30000)
-    {
-    }
 
     /// <summary>
     /// Queues a formatted log message to the background logging channel and writes to console if enabled.
@@ -221,13 +185,6 @@ public abstract class Logger : ILogger
         Log(LogLevel.Error, tag,
             $"{message}\nException: {ex.GetType().FullName} - {ex.Message}\nStack Trace: {ex.StackTrace}");
 
-
-    /// <summary>
-    /// Queues a command to clear the physical log file and flush the internal buffer.
-    /// </summary>
-    public static void Clear()
-    {
-    }
 
     /// <summary>
     /// Accumulates the elapsed time for a given performance metric key.
