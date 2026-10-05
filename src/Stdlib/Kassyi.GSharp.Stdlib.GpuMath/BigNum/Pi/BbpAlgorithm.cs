@@ -1,12 +1,12 @@
 using System.Text;
 
-namespace Henicos.Benchmarks;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
 
 /// <summary>
 /// Implements the Bailey-Borwein-Plouffe (BBP) spigot algorithm for direct extraction of arbitrary hexadecimal Pi digits.
 /// Reference: David H. Bailey's official piqpr8.c implementation.
 /// </summary>
-public static class BbpDigitExtractor
+public static class BbpAlgorithm
 {
     private const double Epsilon = 1e-17;
     private const int SafeChunkSize = 8; // Max digits extracted in a single double precision pass

@@ -1,5 +1,4 @@
-
-namespace Henicos.Benchmarks;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
 
 /// <summary>
 /// Provides verification functionality for computed Pi digits.
@@ -16,14 +15,12 @@ public static class PiVerification
     {
         if (string.IsNullOrEmpty(computedHexTail))
         {
-            Logger.Error("Verification", "FAIL: Empty computed string provided.");
             return false;
         }
 
         var count = computedHexTail.Length;
-        Logger.Info("Verification", $"Extracting {count} hex digits at offset {offset} via BBP...");
 
-        var expectedHex = BbpDigitExtractor.ExtractHexDigits(offset, count);
+        var expectedHex = BbpAlgorithm.ExtractHexDigits(offset, count);
         expectedHex = expectedHex.ToUpperInvariant();
         computedHexTail = computedHexTail.ToUpperInvariant();
 

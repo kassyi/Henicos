@@ -2,6 +2,7 @@ using System.Globalization;
 using BenchmarkDotNet.Running;
 using Henicos.Benchmarks.ComputeBenchmarks;
 using Kassyi.GSharp.Stdlib.GpuMath.IO;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
 
 namespace Henicos.Benchmarks;
 
@@ -191,7 +192,7 @@ internal class Program
             ? new StreamWriter(outPath, append: false)
             : new HeadTailTrackerWriter();
 
-        GpuChudnovskyPi.ComputePi(targetDigits, writer, thresholdTerms, asHex);
+        GpuChudnovskyAlgorithm.ComputePi(targetDigits, writer, thresholdTerms, asHex);
 
         if (outPath == null && writer is HeadTailTrackerWriter ht)
         {
@@ -222,7 +223,7 @@ internal class Program
         Logger<Program>.Info($"Calculating {digits:N0} digits of Pi...");
 
         var sw = Stopwatch.StartNew();
-        var pi = ChudnovskyPi.ComputePi(digits);
+        var pi = ChudnovskyAlgorithm.ComputePi(digits);
         sw.Stop();
 
         Logger<Program>.Info(pi.Length > 100
@@ -289,7 +290,7 @@ internal class Program
         Logger<Program>.Info(
             $"Extracting {count} hexadecimal digits of Pi starting at position {offset} (BBP Algorithm)...");
         var sw = Stopwatch.StartNew();
-        var hex = BbpDigitExtractor.ExtractHexDigits(offset, count);
+        var hex = BbpAlgorithm.ExtractHexDigits(offset, count);
         sw.Stop();
 
         Logger<Program>.Info($"Hex Digits : {hex}");
