@@ -339,6 +339,16 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         }
     }
 
+    /// <summary>
+    /// Computes the modular multiplicative inverse of this instance modulo <paramref name="modulus"/>.
+    /// </summary>
+    public GpuBigUInt ModInverse(GpuBigUInt modulus)
+    {
+        var result = new GpuBigUInt(Workspace, NumWords);
+        GpuBigIntMath.ModInverse(this, modulus, result);
+        return result;
+    }
+
     public ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) =>
         visitor.VisitGpuUIntBigInteger(this);
 }

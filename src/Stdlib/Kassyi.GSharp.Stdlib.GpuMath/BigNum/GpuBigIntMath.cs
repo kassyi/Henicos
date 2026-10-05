@@ -106,6 +106,16 @@ public static class GpuBigIntMath
         leftOperand.Workspace.Provider.Gcd(leftOperand.Workspace, leftOperand, rightOperand, resultBuffer);
     }
 
+    /// <summary>
+    /// Computes the modular multiplicative inverse such that (value * result) % modulus == 1.
+    /// Throws ArithmeticException if the inverse does not exist (i.e. gcd(value, modulus) != 1).
+    /// </summary>
+    public static void ModInverse(GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer)
+    {
+        ThrowIfSizeMismatch(value, modulus, resultBuffer);
+        value.Workspace.Provider.ModInverse(value.Workspace, value, modulus, resultBuffer);
+    }
+
     /// <summary>Shifts the big integer left by the specified bit count on the GPU.</summary>
     public static void ShiftLeft(GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer)
     {

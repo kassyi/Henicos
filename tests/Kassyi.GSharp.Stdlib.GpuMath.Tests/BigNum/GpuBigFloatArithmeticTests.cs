@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Xunit;
 using VerifyXunit;

@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using Kassyi.GSharp.Runtime.Interop;
 
@@ -7,15 +8,11 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 {
     private readonly ConcurrentDictionary<int, Lazy<TwiddleCache>> _twiddleCache = new();
 
-
     private class TwiddleCache
     {
         public IntPtr Forward1;
-
         public IntPtr Forward2;
-
         public IntPtr Inverse1;
-
         public IntPtr Inverse2;
     }
 
@@ -59,10 +56,22 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             workspace.Provider.CopyHostToDevice(statusBuf.DevicePointer, statusArray, 1, workspace.Stream);
 
             // Execute Lehmer GCD loop entirely on GPU up to 1000 iterations per launch
-            GpuBigIntGcdKernels.LaunchExecuteLehmerGcdMacroKernelPtr(
-                a.DevicePointer, b.DevicePointer, newA.DevicePointer, newB.DevicePointer, statusBuf.DevicePointer,
-                numWords,
-                gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
+            unsafe
+            {
+                var ctx = new GpuBigIntGcdKernels.AotContexts.LehmerGcdContext
+                {
+                    A = (uint*)a.DevicePointer,
+                    B = (uint*)b.DevicePointer,
+                    NewA = (uint*)newA.DevicePointer,
+                    NewB = (uint*)newB.DevicePointer,
+                    Status = (int*)statusBuf.DevicePointer,
+                    NumWords = numWords,
+                    MaxIterations = 1000
+                };
+                GpuBigIntGcdKernels.LaunchExecuteLehmerGcdMacroKernel(
+                    ctx,
+                    gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
+            }
 
             workspace.Provider.CopyDeviceToHost(statusArray, statusBuf.DevicePointer, 1, workspace.Stream);
 
@@ -80,6 +89,148 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, a.DevicePointer, numWords, workspace.Stream);
     }
 
+    public unsafe void ModInverse(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer)
+    {
+        var numWords = value.NumWords;
+
+        var hostVal0 = stackalloc uint[1];
+        var hostMod0 = stackalloc uint[1];
+        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)hostVal0, value.DevicePointer, 4));
+        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)hostMod0, modulus.DevicePointer, 4));
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+
+        if ((hostVal0[0] & 1) == 0 && (hostMod0[0] & 1) == 0)
+        {
+            throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is at least 2).");
+        }
+
+        if ((hostMod0[0] & 1) == 0)
+        {
+            // Binary GCD algorithm requires an odd modulus.
+            // Fall back to host-orchestrated Euclidean algorithm.
+            ModInverseHostOrchestrated(workspace, value, modulus, resultBuffer);
+            return;
+        }
+
+        using var u = workspace.RentTemp(numWords);
+        using var v = workspace.RentTemp(numWords);
+        using var x1 = workspace.RentTemp(numWords);
+        using var x2 = workspace.RentTemp(numWords);
+        using var statusBuf = workspace.RentTemp(1);
+        statusBuf.Clear();
+
+        workspace.Provider.CopyDeviceToDevice(u.DevicePointer, value.DevicePointer, numWords, workspace.Stream);
+        workspace.Provider.CopyDeviceToDevice(v.DevicePointer, modulus.DevicePointer, numWords, workspace.Stream);
+
+        x1.Clear();
+        x2.Clear();
+        var hostOne = new uint[] { 1 };
+        workspace.Provider.CopyHostToDevice(x1.DevicePointer, hostOne, 1, workspace.Stream);
+
+        // Max iterations for binary GCD is up to 4 * bits
+        int maxIterations = numWords * 32 * 4 + 100;
+
+        var ctx = new GpuBigIntGcdKernels.AotContexts.ExtendedBinaryGcdContext
+        {
+            M = (uint*)modulus.DevicePointer,
+            U = (uint*)u.DevicePointer,
+            V = (uint*)v.DevicePointer,
+            X1 = (uint*)x1.DevicePointer,
+            X2 = (uint*)x2.DevicePointer,
+            Status = (int*)statusBuf.DevicePointer,
+            NumWords = numWords,
+            MaxIterations = maxIterations
+        };
+        GpuBigIntGcdKernels.LaunchExecuteExtendedBinaryGcdMacroKernel(
+            ctx,
+            gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
+
+        var statusHost = stackalloc int[1];
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)statusHost, statusBuf.DevicePointer, 4));
+
+        if (statusHost[0] == 2)
+        {
+            throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
+        }
+        else if (statusHost[0] == 0)
+        {
+            throw new Exception("ModInverse failed: Macro kernel did not converge within max iterations.");
+        }
+
+        workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, x1.DevicePointer, numWords, workspace.Stream);
+    }
+
+    private void ModInverseHostOrchestrated(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus,
+        GpuBigUInt resultBuffer)
+    {
+        var numWords = value.NumWords;
+
+        using var i = workspace.RentTemp(numWords);
+        using var a = workspace.RentTemp(numWords);
+        using var v = workspace.RentTemp(numWords);
+        using var d = workspace.RentTemp(numWords);
+        using var t = workspace.RentTemp(numWords);
+        using var rem = workspace.RentTemp(numWords);
+        using var tx = workspace.RentTemp(numWords * 2);
+        using var modulus2X = workspace.RentTemp(numWords * 2);
+        modulus2X.Clear();
+        workspace.Provider.CopyDeviceToDevice(modulus2X.DevicePointer, modulus.DevicePointer, numWords,
+            workspace.Stream);
+        using var txMod2X = workspace.RentTemp(numWords * 2);
+        using var txMod = workspace.RentTemp(numWords);
+        using var nextD = workspace.RentTemp(numWords);
+
+        workspace.Provider.CopyDeviceToDevice(i.DevicePointer, modulus.DevicePointer, numWords, workspace.Stream);
+        workspace.Provider.CopyDeviceToDevice(a.DevicePointer, value.DevicePointer, numWords, workspace.Stream);
+
+        v.Clear();
+        d.Clear();
+        using var one = workspace.RentTemp(numWords);
+        one.Clear();
+        var hostOne = new uint[] { 1 };
+        workspace.Provider.CopyHostToDevice(one.DevicePointer, hostOne, 1, workspace.Stream);
+        workspace.Provider.CopyDeviceToDevice(d.DevicePointer, one.DevicePointer, numWords, workspace.Stream);
+
+        while (true)
+        {
+            if (a.IsZero())
+            {
+                break;
+            }
+
+            GpuBigIntDivRem.DivRem(i, a, t, rem);
+            workspace.Provider.CopyDeviceToDevice(i.DevicePointer, a.DevicePointer, numWords, workspace.Stream);
+            workspace.Provider.CopyDeviceToDevice(a.DevicePointer, rem.DevicePointer, numWords, workspace.Stream);
+            tx.Clear();
+            GpuBigIntMath.Mul(t, d, tx);
+            txMod2X.Clear();
+            GpuBigIntDivRem.Mod(tx, modulus2X, txMod2X);
+            workspace.Provider.CopyDeviceToDevice(txMod.DevicePointer, txMod2X.DevicePointer, numWords,
+                workspace.Stream);
+            var cmp = v.CompareTo(txMod);
+            if (cmp >= 0)
+            {
+                GpuBigIntMath.Sub(v, txMod, nextD);
+            }
+            else
+            {
+                GpuBigIntMath.Sub(txMod, v, nextD);
+                GpuBigIntMath.Sub(modulus, nextD, nextD);
+            }
+
+            workspace.Provider.CopyDeviceToDevice(v.DevicePointer, d.DevicePointer, numWords, workspace.Stream);
+            workspace.Provider.CopyDeviceToDevice(d.DevicePointer, nextD.DevicePointer, numWords, workspace.Stream);
+        }
+
+        if (i.CompareTo(one) != 0)
+        {
+            throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
+        }
+
+        workspace.Provider.CopyDeviceToDevice(resultBuffer.DevicePointer, v.DevicePointer, numWords, workspace.Stream);
+    }
+
     public void InverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
         int marginWords, int actualBits, int iterations)
     {
@@ -89,7 +240,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         var constant3Words = 3 * n + 2 * marginWords;
         using var constant3 = new GpuBigUInt(workspace, constant3Words);
         constant3.Clear();
-        var hostConstant3 = System.Buffers.ArrayPool<uint>.Shared.Rent(constant3Words);
+        var hostConstant3 = ArrayPool<uint>.Shared.Rent(constant3Words);
         try
         {
             Array.Clear(hostConstant3, 0, constant3Words);
@@ -102,7 +253,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(hostConstant3);
+            ArrayPool<uint>.Shared.Return(hostConstant3);
         }
 
         using var xSquared = new GpuBigUInt(workspace, 2 * n + 2 * marginWords);
@@ -113,31 +264,14 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 
         var maxOutWords = 4 * n + 3 * marginWords;
         var requiredLen = maxOutWords * 2;
-        var m = 1;
-        while (m < requiredLen)
-        {
-            m *= 2;
-        }
 
-        var twiddle = GetOrCreateTwiddleFactors(workspace, m);
-
-        using var buf1A = workspace.RentTemp(m);
-        using var buf2A = workspace.RentTemp(m);
-        using var buf1B = workspace.RentTemp(m);
-        using var buf2B = workspace.RentTemp(m);
-        using var tmpBuf = workspace.RentTemp(m);
-
-        using var uncarriedLow = workspace.RentTemp(m);
-        using var uncarriedHigh = workspace.RentTemp(m);
-
-        var chunkSize = 1024;
-        var numBlocks = (maxOutWords + chunkSize - 1) / chunkSize;
-        using var blockCarries = workspace.RentTemp(numBlocks);
-
+        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, maxOutWords, this);
         using var carryBuffer = workspace.RentTemp(2); // long array for carry
 
-        var blockDim = 1024u;
-        var gridDim = (uint)((m + blockDim - 1) / blockDim);
+        var m = buffers.TransformLength;
+
+        const uint BlockDim = 1024u;
+        var gridDim = (uint)((m + BlockDim - 1) / BlockDim);
         var maxResidentBlocks = (uint)workspace.DeviceSmCount;
         if (gridDim > maxResidentBlocks)
         {
@@ -170,10 +304,10 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
                 TransformLength = m,
                 TwiddleFactors = new GpuBigIntSqrtKernels.AotContexts.TwiddleFactor
                 {
-                    Forward1 = twiddle.Forward1,
-                    Forward2 = twiddle.Forward2,
-                    Inverse1 = twiddle.Inverse1,
-                    Inverse2 = twiddle.Inverse2
+                    Forward1 = buffers.Twiddle.Forward1,
+                    Forward2 = buffers.Twiddle.Forward2,
+                    Inverse1 = buffers.Twiddle.Inverse1,
+                    Inverse2 = buffers.Twiddle.Inverse2
                 }
             },
             Workspace = new GpuBigIntSqrtKernels.AotContexts.WorkspaceState
@@ -183,21 +317,21 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
                 Diff = diff.DevicePointer,
                 NextXUnshifted = nextXUnshifted.DevicePointer,
                 NextXShifted = nextXShifted.DevicePointer,
-                NttBuf1A = buf1A.DevicePointer,
-                NttBuf2A = buf2A.DevicePointer,
-                NttBuf1B = buf1B.DevicePointer,
-                NttBuf2B = buf2B.DevicePointer,
-                TmpBuf = tmpBuf.DevicePointer,
-                UncarriedLow = uncarriedLow.DevicePointer,
-                UncarriedHigh = uncarriedHigh.DevicePointer,
-                BlockCarries = blockCarries.DevicePointer
+                NttBuf1A = buffers.Buf1A.DevicePointer,
+                NttBuf2A = buffers.Buf2A.DevicePointer,
+                NttBuf1B = buffers.Buf1B.DevicePointer,
+                NttBuf2B = buffers.Buf2B.DevicePointer,
+                TmpBuf = buffers.TmpBuf.DevicePointer,
+                UncarriedLow = buffers.UncarriedLow.DevicePointer,
+                UncarriedHigh = buffers.UncarriedHigh.DevicePointer,
+                BlockCarries = buffers.BlockCarries.DevicePointer
             },
             CarryBuffer = carryBuffer.DevicePointer
         };
 
         GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
             ctx,
-            gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes, hStream: workspace.Stream);
+            gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes, hStream: workspace.Stream);
     }
 
     public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer,
@@ -209,7 +343,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         var constantWords = n + 2 * resultWords; // Prevent OOB access during ExecuteSub
         using var constant = new GpuBigUInt(workspace, constantWords);
         constant.Clear();
-        var hostConstant = System.Buffers.ArrayPool<uint>.Shared.Rent(constantWords);
+        var hostConstant = ArrayPool<uint>.Shared.Rent(constantWords);
         try
         {
             Array.Clear(hostConstant, 0, constantWords);
@@ -221,7 +355,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         }
         finally
         {
-            System.Buffers.ArrayPool<uint>.Shared.Return(hostConstant);
+            ArrayPool<uint>.Shared.Return(hostConstant);
         }
 
         using var currentProduct = new GpuBigUInt(workspace, n + resultWords);
@@ -230,32 +364,14 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 
         var maxOutWords = n + 2 * resultWords;
         var requiredLen = maxOutWords * 2;
-        var m = 1;
-        while (m < requiredLen)
-        {
-            m *= 2;
-        }
 
-        var twiddle = GetOrCreateTwiddleFactors(workspace, m);
-
-        using var buf1A = workspace.RentTemp(m);
-        using var buf2A = workspace.RentTemp(m);
-        using var buf1B = workspace.RentTemp(m);
-        using var buf2B = workspace.RentTemp(m);
-
-        using var uncarriedLow = workspace.RentTemp(m);
-        using var uncarriedHigh = workspace.RentTemp(m);
-
-        using var tmpBuf = workspace.RentTemp(m);
-
-        var chunkSize = 1024;
-        var numBlocks = (maxOutWords + chunkSize - 1) / chunkSize;
-        using var blockCarries = workspace.RentTemp(numBlocks);
-
+        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, maxOutWords, this);
         using var carryBuffer = workspace.RentTemp(2);
 
-        var blockDim = 1024u;
-        var gridDim = (uint)((m + blockDim - 1) / blockDim);
+        var m = buffers.TransformLength;
+
+        const uint BlockDim = 1024u;
+        var gridDim = (uint)((m + BlockDim - 1) / BlockDim);
         var maxResidentBlocks = (uint)workspace.DeviceSmCount;
         if (gridDim > maxResidentBlocks)
         {
@@ -264,8 +380,8 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 
         var currentL = m <= 512 ? m : (m / 32);
         var sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
-        uint sharedMemBytesTranspose = 4224; // 33 * 32 * 4
-        var sharedMemBytes = Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
+        const uint SharedMemBytesTranspose = 4224; // 33 * 32 * 4
+        var sharedMemBytes = Math.Max(sharedMemBytesNtt, SharedMemBytesTranspose);
 
         var ctx = new GpuBigIntDivRemKernels.AotContexts.ReciprocalNewtonRaphson
         {
@@ -289,10 +405,10 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
                 TransformLength = m,
                 TwiddleFactors = new GpuBigIntDivRemKernels.AotContexts.TwiddleFactor
                 {
-                    Forward1 = twiddle.Forward1,
-                    Forward2 = twiddle.Forward2,
-                    Inverse1 = twiddle.Inverse1,
-                    Inverse2 = twiddle.Inverse2
+                    Forward1 = buffers.Twiddle.Forward1,
+                    Forward2 = buffers.Twiddle.Forward2,
+                    Inverse1 = buffers.Twiddle.Inverse1,
+                    Inverse2 = buffers.Twiddle.Inverse2
                 }
             },
             Workspace = new GpuBigIntDivRemKernels.AotContexts.WorkspaceState
@@ -300,21 +416,21 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
                 CurrentProduct = currentProduct.DevicePointer,
                 Diff = diff.DevicePointer,
                 NextIter = nextIter.DevicePointer,
-                NttBuf1A = buf1A.DevicePointer,
-                NttBuf2A = buf2A.DevicePointer,
-                NttBuf1B = buf1B.DevicePointer,
-                NttBuf2B = buf2B.DevicePointer,
-                TmpBuf = tmpBuf.DevicePointer,
-                UncarriedLow = uncarriedLow.DevicePointer,
-                UncarriedHigh = uncarriedHigh.DevicePointer,
-                BlockCarries = blockCarries.DevicePointer
+                NttBuf1A = buffers.Buf1A.DevicePointer,
+                NttBuf2A = buffers.Buf2A.DevicePointer,
+                NttBuf1B = buffers.Buf1B.DevicePointer,
+                NttBuf2B = buffers.Buf2B.DevicePointer,
+                TmpBuf = buffers.TmpBuf.DevicePointer,
+                UncarriedLow = buffers.UncarriedLow.DevicePointer,
+                UncarriedHigh = buffers.UncarriedHigh.DevicePointer,
+                BlockCarries = buffers.BlockCarries.DevicePointer
             },
             CarryBuffer = carryBuffer.DevicePointer
         };
 
         GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
             ctx,
-            gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes
+            gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes
             , hStream: workspace.Stream);
     }
 
@@ -323,22 +439,10 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
     {
         var outWords = leftOperand.NumWords + rightOperand.NumWords;
         var requiredLen = outWords * 2;
-        var m = 1;
-        while (m < requiredLen)
-        {
-            m *= 2;
-        }
 
-        var twiddle = GetOrCreateTwiddleFactors(workspace, m);
-
-        using var buf1A = workspace.RentTemp(m);
-        using var buf2A = workspace.RentTemp(m);
-        using var buf1B = workspace.RentTemp(m);
-        using var buf2B = workspace.RentTemp(m);
-        using var tmpBuf = workspace.RentTemp(m);
-
-        using var uncarriedLow = workspace.RentTemp(m);
-        using var uncarriedHigh = workspace.RentTemp(m);
+        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, outWords, this);
+        var m = buffers.TransformLength;
+        var twiddle = buffers.Twiddle;
 
         var n2 = 1;
         while (n2 * n2 < m)
@@ -361,10 +465,10 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             {
                 OpA = leftOperand.DevicePointer,
                 OpB = rightOperand.DevicePointer,
-                NttBuf1A = buf1A.DevicePointer,
-                NttBuf2A = buf2A.DevicePointer,
-                NttBuf1B = buf1B.DevicePointer,
-                NttBuf2B = buf2B.DevicePointer,
+                NttBuf1A = buffers.Buf1A.DevicePointer,
+                NttBuf2A = buffers.Buf2A.DevicePointer,
+                NttBuf1B = buffers.Buf1B.DevicePointer,
+                NttBuf2B = buffers.Buf2B.DevicePointer,
                 TransformLength = m,
                 NumWordsA = leftOperand.NumWords,
                 NumWordsB = rightOperand.NumWords
@@ -373,54 +477,54 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             , hStream: workspace.Stream);
 
         // 2. Forward NTTs
-        LaunchNttHost(workspace, buf1A.DevicePointer, tmpBuf.DevicePointer, twiddle.Forward1, m, n1, n2,
+        LaunchNttHost(workspace, buffers.Buf1A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward1, m, n1, n2,
             GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
-        LaunchNttHost(workspace, buf2A.DevicePointer, tmpBuf.DevicePointer, twiddle.Forward2, m, n1, n2,
+        LaunchNttHost(workspace, buffers.Buf2A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward2, m, n1, n2,
             GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
-        LaunchNttHost(workspace, buf1B.DevicePointer, tmpBuf.DevicePointer, twiddle.Forward1, m, n1, n2,
+        LaunchNttHost(workspace, buffers.Buf1B.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward1, m, n1, n2,
             GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
-        LaunchNttHost(workspace, buf2B.DevicePointer, tmpBuf.DevicePointer, twiddle.Forward2, m, n1, n2,
+        LaunchNttHost(workspace, buffers.Buf2B.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward2, m, n1, n2,
             GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
 
         // 3. Pointwise Multiply
         GpuBigIntMulKernels.LaunchMultiplyNttPointwiseMultiplyKernelPtr(
-            buf1A.DevicePointer, buf2A.DevicePointer, buf1B.DevicePointer, buf2B.DevicePointer, m,
+            buffers.Buf1A.DevicePointer, buffers.Buf2A.DevicePointer, buffers.Buf1B.DevicePointer,
+            buffers.Buf2B.DevicePointer, m,
             gridDimX: gridDim, blockDimX: blockDim
             , hStream: workspace.Stream);
 
         // 4. Inverse NTTs
-        LaunchNttHost(workspace, buf1A.DevicePointer, tmpBuf.DevicePointer, twiddle.Inverse1, m, n1, n2,
+        LaunchNttHost(workspace, buffers.Buf1A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Inverse1, m, n1, n2,
             GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, true);
-        LaunchNttHost(workspace, buf2A.DevicePointer, tmpBuf.DevicePointer, twiddle.Inverse2, m, n1, n2,
+        LaunchNttHost(workspace, buffers.Buf2A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Inverse2, m, n1, n2,
             GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, true);
 
         // 5. CRT Coefficients
         GpuBigIntMulKernels.LaunchMultiplyNttComputeCrtKernelPtr(
-            buf1A.DevicePointer, buf2A.DevicePointer, uncarriedLow.DevicePointer, uncarriedHigh.DevicePointer, m,
+            buffers.Buf1A.DevicePointer, buffers.Buf2A.DevicePointer, buffers.UncarriedLow.DevicePointer,
+            buffers.UncarriedHigh.DevicePointer, m,
             gridDimX: gridDim, blockDimX: blockDim
             , hStream: workspace.Stream);
 
         // 6. Resolve Carries (Cooperative Block)
-        const int ChunkSize = 1024;
-        var numBlocks = (outWords + ChunkSize - 1) / ChunkSize;
-        using var blockCarries = workspace.RentTemp(numBlocks);
-
+        var numBlocks = buffers.NumBlocks;
         var writeWords = Math.Min(outWords, resultBuffer.NumWords);
         GpuBigIntNttKernels.LaunchResolveNttCarriesBlockedKernelPtr(
-            uncarriedLow: uncarriedLow.DevicePointer,
-            uncarriedHigh: uncarriedHigh.DevicePointer,
+            uncarriedLow: buffers.UncarriedLow.DevicePointer,
+            uncarriedHigh: buffers.UncarriedHigh.DevicePointer,
             outputBuffer: resultBuffer.DevicePointer,
-            blockCarries: blockCarries.DevicePointer,
+            blockCarries: buffers.BlockCarries.DevicePointer,
             transformLength: m,
             maxWordCount: writeWords,
-            chunkSize: ChunkSize,
-            gridDimX: (uint)numBlocks, blockDimX: ChunkSize, sharedMemBytes: ChunkSize * 8, hStream: workspace.Stream);
+            chunkSize: buffers.ChunkSize,
+            gridDimX: (uint)numBlocks, blockDimX: (uint)buffers.ChunkSize,
+            sharedMemBytes: (uint)(buffers.ChunkSize * 8), hStream: workspace.Stream);
 
         var applyBlockDim = (uint)Math.Min(1024, Math.Max(256, numBlocks));
         var applyGridDim = (uint)((numBlocks + applyBlockDim - 1) / applyBlockDim);
 
         GpuBigIntNttKernels.LaunchResolveNttCarriesApplyKernelPtr(
-            resultBuffer.DevicePointer, blockCarries.DevicePointer, writeWords, ChunkSize, numBlocks,
+            resultBuffer.DevicePointer, buffers.BlockCarries.DevicePointer, writeWords, buffers.ChunkSize, numBlocks,
             gridDimX: applyGridDim, blockDimX: applyBlockDim
             , hStream: workspace.Stream);
     }
@@ -593,5 +697,59 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             input, output, width, height,
             gridDimX: totalGrid, gridDimY: 1, blockDimX: 256, blockDimY: 1,
             sharedMemBytes: 32 * 33 * 4, hStream: workspace.Stream);
+    }
+
+    private readonly struct NttWorkspaceBuffers : IDisposable
+    {
+        public readonly int TransformLength;
+        public readonly TwiddleCache Twiddle;
+        public readonly GpuBigUInt Buf1A;
+        public readonly GpuBigUInt Buf2A;
+        public readonly GpuBigUInt Buf1B;
+        public readonly GpuBigUInt Buf2B;
+        public readonly GpuBigUInt TmpBuf;
+        public readonly GpuBigUInt UncarriedLow;
+        public readonly GpuBigUInt UncarriedHigh;
+        public readonly GpuBigUInt BlockCarries;
+        public readonly int NumBlocks;
+        public readonly int ChunkSize;
+
+        public NttWorkspaceBuffers(GpuWorkspace workspace, int requiredLen, int maxOutWords,
+            AotAdvancedMathHandler handler)
+        {
+            var m = 1;
+            while (m < requiredLen)
+            {
+                m *= 2;
+            }
+
+            TransformLength = m;
+            Twiddle = handler.GetOrCreateTwiddleFactors(workspace, m);
+
+            Buf1A = workspace.RentTemp(m);
+            Buf2A = workspace.RentTemp(m);
+            Buf1B = workspace.RentTemp(m);
+            Buf2B = workspace.RentTemp(m);
+            TmpBuf = workspace.RentTemp(m);
+
+            UncarriedLow = workspace.RentTemp(m);
+            UncarriedHigh = workspace.RentTemp(m);
+
+            ChunkSize = 1024;
+            NumBlocks = (maxOutWords + ChunkSize - 1) / ChunkSize;
+            BlockCarries = workspace.RentTemp(NumBlocks);
+        }
+
+        public void Dispose()
+        {
+            Buf1A.Dispose();
+            Buf2A.Dispose();
+            Buf1B.Dispose();
+            Buf2B.Dispose();
+            TmpBuf.Dispose();
+            UncarriedLow.Dispose();
+            UncarriedHigh.Dispose();
+            BlockCarries.Dispose();
+        }
     }
 }

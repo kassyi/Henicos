@@ -127,6 +127,9 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     public void Gcd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer) => AdvancedMathProvider.Gcd(workspace, leftOperand, rightOperand, resultBuffer);
 
+    public void ModInverse(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer) =>
+        AdvancedMathProvider.ModInverse(workspace, value, modulus, resultBuffer);
+
     #endregion
 
     #region IGpuGraphProvider

@@ -225,6 +225,10 @@ public class NativeProvider : IGpuExecutionProvider
     public void Gcd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);
 
+    /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
+    public void ModInverse(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer) =>
+        throw new NotImplementedException(ErrorNotImplemented);
+
     public void BeginCapture(IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
     public IntPtr EndCapture(IntPtr stream) => throw new NotImplementedException(ErrorNotImplemented);
     public IntPtr InstantiateGraph(IntPtr graph) => throw new NotImplementedException(ErrorNotImplemented);

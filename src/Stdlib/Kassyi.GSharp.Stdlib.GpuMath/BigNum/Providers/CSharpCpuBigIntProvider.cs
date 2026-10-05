@@ -288,6 +288,34 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(val, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
+    public void ModInverse(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer)
+    {
+        var a = Read(value.DevicePointer, value.NumWords);
+        var n = Read(modulus.DevicePointer, modulus.NumWords);
+        
+        BigInteger i = n, v = 0, d = 1;
+        while (a > 0)
+        {
+            BigInteger t = i / a, x = a;
+            a = i % x;
+            i = x;
+            x = d;
+            d = v - t * x;
+            v = x;
+        }
+        if (i != 1)
+        {
+            throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
+        }
+        v %= n;
+        if (v < 0)
+        {
+            v = (v + n) % n;
+        }
+
+        Write(v, resultBuffer.DevicePointer, resultBuffer.NumWords);
+    }
+
     // --- IGpuGraphProvider (No-op on CPU fallback) ---
 
     /// <summary>
