@@ -308,8 +308,11 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
             throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
         }
         v %= n;
-        if (v < 0) v = (v + n) % n;
-        
+        if (v < 0)
+        {
+            v = (v + n) % n;
+        }
+
         Write(v, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
