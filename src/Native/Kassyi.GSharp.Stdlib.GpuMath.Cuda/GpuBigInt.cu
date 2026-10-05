@@ -447,6 +447,10 @@ extern "C" {
         if (ptr) cudaFree(ptr);
     }
 
+    EXPORT_API bool GpuBigInt_ClearMemory(unsigned int* d_ptr, int numWords, cudaStream_t stream) {
+        return cudaMemsetAsync(d_ptr, 0, sizeof(unsigned int) * numWords, stream) == cudaSuccess;
+    }
+
     EXPORT_API bool GpuBigInt_CopyHostToDevice(unsigned int* d_dst, const unsigned int* h_src, int numWords, cudaStream_t stream) {
         return cudaMemcpyAsync(d_dst, h_src, sizeof(unsigned int) * numWords, cudaMemcpyHostToDevice, stream) == cudaSuccess;
     }

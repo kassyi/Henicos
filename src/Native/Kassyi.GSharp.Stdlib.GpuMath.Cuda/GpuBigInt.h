@@ -15,6 +15,7 @@ extern "C" {
     // Memory Management
     EXPORT_API unsigned int* GpuBigInt_Alloc(int numWords);
     EXPORT_API void GpuBigInt_Free(unsigned int* ptr);
+    EXPORT_API bool GpuBigInt_ClearMemory(unsigned int* ptr, int numWords, cudaStream_t stream = 0);
     EXPORT_API bool GpuBigInt_CopyHostToDevice(unsigned int* d_dst, const unsigned int* h_src, int numWords, cudaStream_t stream = 0);
     EXPORT_API bool GpuBigInt_CopyDeviceToHost(unsigned int* h_dst, const unsigned int* d_src, int numWords, cudaStream_t stream = 0);
     EXPORT_API bool GpuBigInt_CopyDeviceToDevice(unsigned int* d_dst, const unsigned int* d_src, int numWords, cudaStream_t stream = 0);
