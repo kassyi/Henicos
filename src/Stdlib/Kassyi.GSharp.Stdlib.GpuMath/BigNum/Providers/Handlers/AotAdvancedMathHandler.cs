@@ -648,8 +648,10 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         // For Ntt
         var m = buffers.TransformLength;
         var n2 = 1;
-        while (n2 * n2 < m) n2 *= 2;
-        var n1 = m / n2;
+        while (n2 * n2 < m)
+        {
+            n2 *= 2;
+        }
 
         var ctx = new GpuBigIntDivRemKernels.AotContexts.ModPowNtt
         {

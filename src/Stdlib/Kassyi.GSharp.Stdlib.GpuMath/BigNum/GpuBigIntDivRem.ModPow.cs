@@ -16,7 +16,20 @@ public static partial class GpuBigIntDivRem
     public static void ModPow(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(baseVal, mod, resultBuffer);
-        // Use the optimized NTT Host Controller (computing reciprocal once)
-        ModPowNttHostController.Execute(baseVal, exp, mod, resultBuffer);
+
+        var bitLength = baseVal.NumWords * 32;
+
+        if (bitLength <= baseVal.Workspace.PolyAlgorithmThreshold)
+        {
+            // MegaKernel (NTT-Barrett) is highly optimized and avoids kernel launch overheads.
+            // It runs entirely within registers up to ~1024 bits.
+            ModPowNttHostController.Execute(baseVal, exp, mod, resultBuffer);
+        }
+        else
+        {
+            // For giant-scale numbers (>1024 bits), MegaKernel suffers catastrophic performance degradation
+            // due to register spilling into local memory. We fall back to the HostLoop which uses standard Global Memory efficiently.
+            ModPowHostLoopController.Execute(baseVal, exp, mod, resultBuffer);
+        }
     }
 }

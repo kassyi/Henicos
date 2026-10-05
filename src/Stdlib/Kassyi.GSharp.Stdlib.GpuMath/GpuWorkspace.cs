@@ -70,6 +70,14 @@ public class GpuWorkspace : IGpuResourceScope
     public IGpuMemoryManager MemoryManager { get; }
 
     /// <summary>
+    /// Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow.
+    /// Values smaller than the threshold will use intermediate-scale algorithms (e.g., Host-Loop or RNS),
+    /// while values greater than or equal to the threshold will dispatch to giant-scale MegaKernels (e.g., NTT).
+    /// Default is 1024 bits.
+    /// </summary>
+    public int PolyAlgorithmThreshold { get; set; } = 1024;
+
+    /// <summary>
     /// Registers a disposable resource to be tracked and deterministically disposed upon workspace disposal.
     /// </summary>
     /// <param name="resource">The disposable resource to track.</param>
