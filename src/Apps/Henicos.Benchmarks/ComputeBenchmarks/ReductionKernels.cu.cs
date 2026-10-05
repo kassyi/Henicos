@@ -24,11 +24,11 @@ public static partial class ReductionKernels
             sum += v.X + v.Y + v.Z + v.W;
         }
 
-        sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 16);
-        sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 8);
-        sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 4);
-        sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 2);
-        sum += Gpu.ShuffleDownSync(0xFFFFFFFF, sum, 1);
+        sum += Warp.ShuffleDownSync(0xFFFFFFFF, sum, 16);
+        sum += Warp.ShuffleDownSync(0xFFFFFFFF, sum, 8);
+        sum += Warp.ShuffleDownSync(0xFFFFFFFF, sum, 4);
+        sum += Warp.ShuffleDownSync(0xFFFFFFFF, sum, 2);
+        sum += Warp.ShuffleDownSync(0xFFFFFFFF, sum, 1);
 
         var lane = tid % 32;
         var warpId = tid / 32;
@@ -44,9 +44,9 @@ public static partial class ReductionKernels
         {
             var val = (tid < 8) ? sdata[tid] : 0.0f;
 
-            val += Gpu.ShuffleDownSync(0xFFFFFFFF, val, 4);
-            val += Gpu.ShuffleDownSync(0xFFFFFFFF, val, 2);
-            val += Gpu.ShuffleDownSync(0xFFFFFFFF, val, 1);
+            val += Warp.ShuffleDownSync(0xFFFFFFFF, val, 4);
+            val += Warp.ShuffleDownSync(0xFFFFFFFF, val, 2);
+            val += Warp.ShuffleDownSync(0xFFFFFFFF, val, 1);
 
             if (tid == 0)
             {

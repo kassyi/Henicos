@@ -114,22 +114,22 @@ public class CoreIntrinsicsTests
     public void Test_GpuShuffleAndMask_HostInvocation_ThrowsGpuOnlyException()
     {
         // Sad Path: Shuffle and active mask intrinsics on Gpu class must throw GpuOnlyException
-        Assert.Throws<GpuOnlyException>(() => Gpu.ActiveMask());
+        Assert.Throws<GpuOnlyException>(() => Warp.ActiveMask());
 
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleSync(0xFFFFFFFF, 42, 1));
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleSync(0xFFFFFFFF, 42u, 1));
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleSync(0xFFFFFFFF, 42.0f, 1));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleSync(0xFFFFFFFF, 42, 1));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleSync(0xFFFFFFFF, 42u, 1));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleSync(0xFFFFFFFF, 42.0f, 1));
 
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleDownSync(0xFFFFFFFF, 42, 1u));
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleDownSync(0xFFFFFFFF, 42u, 1u));
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleDownSync(0xFFFFFFFF, 42.0f, 1u));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleDownSync(0xFFFFFFFF, 42, 1u));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleDownSync(0xFFFFFFFF, 42u, 1u));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleDownSync(0xFFFFFFFF, 42.0f, 1u));
 
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleUpSync(0xFFFFFFFF, 42, 1u));
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleUpSync(0xFFFFFFFF, 42u, 1u));
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleUpSync(0xFFFFFFFF, 42.0f, 1u));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleUpSync(0xFFFFFFFF, 42, 1u));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleUpSync(0xFFFFFFFF, 42u, 1u));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleUpSync(0xFFFFFFFF, 42.0f, 1u));
 
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleXorSync(0xFFFFFFFF, 42, 1));
-        Assert.Throws<GpuOnlyException>(() => Gpu.ShuffleXorSync(0xFFFFFFFF, 42.0f, 1));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleXorSync(0xFFFFFFFF, 42, 1));
+        Assert.Throws<GpuOnlyException>(() => Warp.ShuffleXorSync(0xFFFFFFFF, 42.0f, 1));
     }
 
     [Fact]

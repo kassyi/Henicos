@@ -9,6 +9,6 @@ public static class SYN_95_WarpShuffleSadPath
     {
         uint mask = 0xffffffff;
         int val = 10;
-        int res = Gpu.ShuffleDownSync(mask, val, 1);
+        int res = Warp.ShuffleDownSync(mask, val, 1);
     }
 }

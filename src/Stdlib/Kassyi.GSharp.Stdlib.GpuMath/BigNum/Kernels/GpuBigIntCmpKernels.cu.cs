@@ -13,10 +13,10 @@ public static partial class GpuBigIntCmpKernels
         Gpu.GridStrideLoop(numWords, i =>
         {
             uint notZero = dA[i] != 0 ? 1u : 0u;
-            uint mask = Gpu.ActiveMask();
+            uint mask = Warp.ActiveMask();
             for (uint offset = 16; offset > 0; offset /= 2)
             {
-                notZero |= Gpu.ShuffleDownSync(mask, notZero, offset);
+                notZero |= Warp.ShuffleDownSync(mask, notZero, offset);
             }
             if ((ThreadIndex.X & 31) == 0 && notZero != 0)
             {
@@ -40,10 +40,10 @@ public static partial class GpuBigIntCmpKernels
                 notOne = dA[i] != 0 ? 1u : 0u;
             }
 
-            uint mask = Gpu.ActiveMask();
+            uint mask = Warp.ActiveMask();
             for (uint offset = 16; offset > 0; offset /= 2)
             {
-                notOne |= Gpu.ShuffleDownSync(mask, notOne, offset);
+                notOne |= Warp.ShuffleDownSync(mask, notOne, offset);
             }
 
             if ((ThreadIndex.X & 31) == 0 && notOne != 0)
@@ -70,11 +70,11 @@ public static partial class GpuBigIntCmpKernels
                 val = ((ulong)i << 32) | resultBits;
             }
 
-            uint mask = Gpu.ActiveMask();
+            uint mask = Warp.ActiveMask();
             for (uint offset = 16; offset > 0; offset /= 2)
             {
-                uint high = Gpu.ShuffleDownSync(mask, (uint)(val >> 32), offset);
-                uint low = Gpu.ShuffleDownSync(mask, (uint)val, offset);
+                uint high = Warp.ShuffleDownSync(mask, (uint)(val >> 32), offset);
+                uint low = Warp.ShuffleDownSync(mask, (uint)val, offset);
                 ulong otherVal = ((ulong)high << 32) | low;
                 if (otherVal > val)
                 {
@@ -108,10 +108,10 @@ public static partial class GpuBigIntCmpKernels
                 totalBits = (uint)(i * 32) + bitLen;
             }
 
-            uint mask = Gpu.ActiveMask();
+            uint mask = Warp.ActiveMask();
             for (uint offset = 16; offset > 0; offset /= 2)
             {
-                uint otherVal = Gpu.ShuffleDownSync(mask, totalBits, offset);
+                uint otherVal = Warp.ShuffleDownSync(mask, totalBits, offset);
                 if (otherVal > totalBits)
                 {
                     totalBits = otherVal;

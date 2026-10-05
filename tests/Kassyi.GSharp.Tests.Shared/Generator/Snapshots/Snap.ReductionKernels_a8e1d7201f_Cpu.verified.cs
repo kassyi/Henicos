@@ -46,8 +46,15 @@ Kassyi_GSharp_Core_SharedMemory<float> sdata;
 int tid;
 int i;
 float sum;
+int _warpTemp_0;
+int _warpTemp_1;
+int _warpTemp_2;
+int _warpTemp_3;
+int _warpTemp_4;
 int lane;
 int warpId;
+int _warpTemp_5;
+int _warpTemp_6;
 };
 extern ""C"" __declspec(dllexport) void ReductionKernels_ReductionKernel(Kassyi_GSharp_Core_Float4* __restrict__ input, float* __restrict__ output, int n, __gsharp_context_ReductionKernels_ReductionKernel* _ctx){
 #define _state _ctx->_state
@@ -68,28 +75,84 @@ if(_ctx->i+blockDim.x<n)
 auto v = input[_ctx->i+blockDim.x];
 _ctx->sum+=v.x+v.y+v.z+v.w;
 }
-_ctx->sum+=__shfl_down_sync(0xFFFFFFFF,_ctx->sum,16,32);
-_ctx->sum+=__shfl_down_sync(0xFFFFFFFF,_ctx->sum,8,32);
-_ctx->sum+=__shfl_down_sync(0xFFFFFFFF,_ctx->sum,4,32);
-_ctx->sum+=__shfl_down_sync(0xFFFFFFFF,_ctx->sum,2,32);
-_ctx->sum+=__shfl_down_sync(0xFFFFFFFF,_ctx->sum,1,32);
+__gsharp_warp_exchange_assign(_ctx->sum);
+_state=1;
+return;
+}
+case 1:
+{
+_ctx->_warpTemp_0=__gsharp_warp_shuffle_read_down_sync(_ctx,0xFFFFFFFF,_ctx->sum,16);
+_ctx->sum+=_ctx->_warpTemp_0;
+__gsharp_warp_exchange_assign(_ctx->sum);
+_state=2;
+return;
+}
+case 2:
+{
+_ctx->_warpTemp_1=__gsharp_warp_shuffle_read_down_sync(_ctx,0xFFFFFFFF,_ctx->sum,8);
+_ctx->sum+=_ctx->_warpTemp_1;
+__gsharp_warp_exchange_assign(_ctx->sum);
+_state=3;
+return;
+}
+case 3:
+{
+_ctx->_warpTemp_2=__gsharp_warp_shuffle_read_down_sync(_ctx,0xFFFFFFFF,_ctx->sum,4);
+_ctx->sum+=_ctx->_warpTemp_2;
+__gsharp_warp_exchange_assign(_ctx->sum);
+_state=4;
+return;
+}
+case 4:
+{
+_ctx->_warpTemp_3=__gsharp_warp_shuffle_read_down_sync(_ctx,0xFFFFFFFF,_ctx->sum,2);
+_ctx->sum+=_ctx->_warpTemp_3;
+__gsharp_warp_exchange_assign(_ctx->sum);
+_state=5;
+return;
+}
+case 5:
+{
+_ctx->_warpTemp_4=__gsharp_warp_shuffle_read_down_sync(_ctx,0xFFFFFFFF,_ctx->sum,1);
+_ctx->sum+=_ctx->_warpTemp_4;
 _ctx->lane=_ctx->tid%32;
 _ctx->warpId=_ctx->tid/32;
 if(_ctx->lane==0)
 {
 _ctx->sdata[_ctx->warpId]=_ctx->sum;
 }
-_state=1;
+_state=6;
 return;
 }
-case 1:
+case 6:
 {
+__gsharp_warp_exchange_assign(val);
+_state=7;
+return;
+}
+case 7:
+{
+_ctx->_warpTemp_5=__gsharp_warp_shuffle_read_down_sync(_ctx,0xFFFFFFFF,val,4);
+__gsharp_warp_exchange_assign(val);
+_state=8;
+return;
+}
+case 8:
+{
+_ctx->_warpTemp_6=__gsharp_warp_shuffle_read_down_sync(_ctx,0xFFFFFFFF,val,2);
+__gsharp_warp_exchange_assign(val);
+_state=9;
+return;
+}
+case 9:
+{
+auto _warpTemp_7 = __gsharp_warp_shuffle_read_down_sync(_ctx,0xFFFFFFFF,val,1);
 if(_ctx->warpId==0)
 {
 auto val = ((_ctx->tid<8)?_ctx->sdata[_ctx->tid]:0.0f);
-val+=__shfl_down_sync(0xFFFFFFFF,val,4,32);
-val+=__shfl_down_sync(0xFFFFFFFF,val,2,32);
-val+=__shfl_down_sync(0xFFFFFFFF,val,1,32);
+val+=_ctx->_warpTemp_5;
+val+=_ctx->_warpTemp_6;
+val+=_warpTemp_7;
 if(_ctx->tid==0)
 {
 output[blockIdx.x]=val;
