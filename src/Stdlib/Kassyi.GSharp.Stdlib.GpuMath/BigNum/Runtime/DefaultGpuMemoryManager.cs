@@ -3,6 +3,18 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
 
+/// <summary>
+/// Provides a pooled device memory manager implementation for GPU large-integer operations.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Frequent small device allocations (<c>cuMemAlloc</c>) introduce significant driver overhead and host-device synchronization stalls.
+/// <see cref="DefaultGpuMemoryManager"/> maintains size-segregated concurrent pools of reusable device buffers to minimize allocation latency.
+/// </para>
+/// <para>
+/// <b>Thread Safety:</b> Thread-safe across concurrent GPU stream staging and disposal operations.
+/// </para>
+/// </remarks>
 internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, IntPtr stream)
     : IGpuMemoryManager, IDisposable
 {
@@ -10,6 +22,11 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     private readonly ConcurrentDictionary<IntPtr, byte> _activeAllocations = new();
     private int _disposed;
 
+    /// <summary>
+    /// Allocates or reuses a device memory handle for the specified word count.
+    /// </summary>
+    /// <param name="numWords">The number of 32-bit limbs to allocate.</param>
+    /// <returns>A <see cref="GpuBigIntMemoryHandle"/> referencing the device buffer.</returns>
     public GpuBigIntMemoryHandle Allocate(int numWords)
     {
         if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated &&
@@ -26,6 +43,11 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         return new GpuBigIntMemoryHandle(buffer, 0, numWords);
     }
 
+    /// <summary>
+    /// Allocates a temporary, scope-bound device memory handle.
+    /// </summary>
+    /// <param name="numWords">The required word count.</param>
+    /// <returns>A <see cref="ScopedBigIntMemory"/> managing the scoped allocation.</returns>
     public ScopedBigIntMemory AllocateTemp(int numWords)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) == 1, this);
@@ -34,6 +56,10 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         return new ScopedBigIntMemory(this, handle);
     }
 
+    /// <summary>
+    /// Recycles the specified memory handle back into the internal pool or releases it if disposed.
+    /// </summary>
+    /// <param name="handle">The memory handle to free or recycle.</param>
     public void Free(GpuBigIntMemoryHandle handle)
     {
         if (handle.IsDefault)
@@ -71,6 +97,9 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         bag.Add(handle);
     }
 
+    /// <summary>
+    /// Releases all pooled device buffers and unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1)
@@ -119,3 +148,4 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
         _activeAllocations.Clear();
     }
 }
+

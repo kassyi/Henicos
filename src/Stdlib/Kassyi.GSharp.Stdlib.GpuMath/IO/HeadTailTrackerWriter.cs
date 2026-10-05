@@ -3,9 +3,18 @@ using System.Text;
 namespace Kassyi.GSharp.Stdlib.GpuMath.IO;
 
 /// <summary>
-/// A memory-efficient TextWriter that only keeps track of the first N (Head) and last N (Tail) characters.
-/// Intermediate characters are discarded to prevent OutOfMemory exceptions on massive outputs (e.g. 100M+ digits).
+/// A memory-efficient <see cref="TextWriter"/> that records only the first <c>N</c> (head) and last <c>N</c> (tail) characters of streaming text.
 /// </summary>
+/// <param name="headCapacity">The maximum number of leading characters to retain (defaults to 50).</param>
+/// <param name="tailCapacity">The maximum number of trailing characters to retain in a circular buffer (defaults to 50).</param>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Discards intermediate characters to prevent memory exhaustion when formatting and logging massive numbers (e.g. 100M+ digits of Pi/Fermat).
+/// </para>
+/// <para>
+/// <b>Zero-Allocation:</b> Uses fixed internal ring buffers and string builders without unbounded array resizing.
+/// </para>
+/// </remarks>
 public class HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50) : TextWriter
 {
     private readonly StringBuilder _head = new(headCapacity);
@@ -15,8 +24,12 @@ public class HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50)
     private bool _tailFull;
     private long _totalWritten;
 
+    /// <inheritdoc/>
     public override Encoding Encoding => Encoding.UTF8;
 
+    /// <summary>
+    /// Gets the total number of characters streamed through this writer.
+    /// </summary>
     public long TotalCharactersWritten => _totalWritten;
 
     public override void Write(char value)
