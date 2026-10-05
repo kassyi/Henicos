@@ -16,12 +16,18 @@ public static class NttCpuReference
 {
 
     // [WHY] Solinas-like Proth primes chosen for 64-bit non-overflowing arithmetic in NTT.
+    /// <summary>First NTT prime modulus ($P_1 = 2^{24} \times 127 + 1$).</summary>
     public const uint P1 = 2130706433; // 2^24 * 127 + 1
+    /// <summary>Second NTT prime modulus ($P_2 = 73 \times 2^{24} + 1$).</summary>
     public const uint P2 = 1224736769; // 73 * 2^24 + 1
+    /// <summary>Third NTT prime modulus ($P_3 = 45 \times 2^{24} + 1$).</summary>
     public const uint P3 = 754974721; // 45 * 2^24 + 1
 
+    /// <summary>Primitive root of unity for <see cref="P1"/>.</summary>
     public const uint G1 = 3;
+    /// <summary>Primitive root of unity for <see cref="P2"/>.</summary>
     public const uint G2 = 3;
+    /// <summary>Primitive root of unity for <see cref="P3"/>.</summary>
     public const uint G3 = 11;
 
     /// <summary>Computes modular exponentiation (baseValue^exponent % modulus).</summary>

@@ -32,6 +32,7 @@ public class HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50)
     /// </summary>
     public long TotalCharactersWritten => _totalWritten;
 
+    /// <inheritdoc/>
     public override void Write(char value)
     {
         if (_head.Length < headCapacity)
@@ -53,6 +54,7 @@ public class HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50)
         _totalWritten++;
     }
 
+    /// <inheritdoc/>
     public override void Write(string? value)
     {
         if (string.IsNullOrEmpty(value))
@@ -66,6 +68,7 @@ public class HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50)
         }
     }
 
+    /// <inheritdoc/>
     public override void Write(char[] buffer, int index, int count)
     {
         for (var i = 0; i < count; i++)
@@ -74,8 +77,16 @@ public class HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50)
         }
     }
 
+    /// <summary>
+    /// Gets the leading characters captured by the head buffer.
+    /// </summary>
+    /// <returns>A string containing up to <c>headCapacity</c> initial characters.</returns>
     public string GetHead() => _head.ToString();
 
+    /// <summary>
+    /// Gets the trailing characters captured by the circular tail buffer.
+    /// </summary>
+    /// <returns>A string containing up to <c>tailCapacity</c> most recent characters.</returns>
     public string GetTail()
     {
         if (tailCapacity == 0)
@@ -101,6 +112,8 @@ public class HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50)
     /// <summary>
     /// Returns an abbreviated string like "Head...Tail" for preview display.
     /// </summary>
+    /// <param name="separator">The ellipsis separator to insert between head and tail strings. Defaults to <c>"..."</c>.</param>
+    /// <returns>An abbreviated preview string.</returns>
     public string GetPreview(string separator = "...")
     {
         if (_totalWritten <= headCapacity + tailCapacity)
@@ -120,5 +133,6 @@ public class HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50)
         return $"{GetHead()}{separator}{GetTail()}";
     }
 
+    /// <inheritdoc/>
     public override string ToString() => GetPreview();
 }

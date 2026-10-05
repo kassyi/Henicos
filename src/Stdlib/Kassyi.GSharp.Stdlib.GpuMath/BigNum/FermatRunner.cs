@@ -218,6 +218,9 @@ public class FermatRunner : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Finalizes an instance of the <see cref="FermatRunner"/> class.
+    /// </summary>
     ~FermatRunner()
     {
         Dispose(false);

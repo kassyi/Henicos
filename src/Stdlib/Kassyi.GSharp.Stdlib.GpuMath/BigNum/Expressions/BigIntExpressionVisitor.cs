@@ -43,6 +43,11 @@ public ref struct BigIntExpressionVisitor(GpuBigIntExecutionContext context, Sco
     private bool _isRoot = true;
 
 
+    /// <summary>
+    /// Visits a leaf constant GPU BigInteger and wraps it in a non-owning scoped memory handle.
+    /// </summary>
+    /// <param name="node">The GPU BigInteger node.</param>
+    /// <returns>A scoped memory segment referencing the GPU BigInteger buffer.</returns>
     public ScopedBigIntMemory VisitGpuUIntBigInteger(GpuBigUInt node)
     {
         // Wrapper without transferring ownership

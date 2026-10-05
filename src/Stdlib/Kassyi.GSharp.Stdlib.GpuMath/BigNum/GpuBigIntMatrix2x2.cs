@@ -298,6 +298,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
 
     private bool _disposed;
 
+    /// <summary>
+    /// Releases the unmanaged resources used by the <see cref="GpuBigIntMatrix2x2"/> and optionally releases the managed resources.
+    /// </summary>
+    /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources; <see langword="false"/> to release only unmanaged resources.</param>
     protected virtual void Dispose(bool disposing)
     {
         if (_disposed)
@@ -326,6 +330,9 @@ public class GpuBigIntMatrix2x2 : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Finalizes an instance of the <see cref="GpuBigIntMatrix2x2"/> class.
+    /// </summary>
     ~GpuBigIntMatrix2x2()
     {
         Dispose(false);

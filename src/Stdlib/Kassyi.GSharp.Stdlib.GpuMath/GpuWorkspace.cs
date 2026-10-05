@@ -172,6 +172,10 @@ public class GpuWorkspace : IGpuResourceScope
         GC.SuppressFinalize(this);
     }
 
+    /// <summary>
+    /// Releases the unmanaged resources used by the <see cref="GpuWorkspace"/> and optionally releases the managed resources.
+    /// </summary>
+    /// <param name="disposing"><see langword="true"/> to release both managed and unmanaged resources; <see langword="false"/> to release only unmanaged resources.</param>
     protected virtual void Dispose(bool disposing)
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1)
@@ -295,6 +299,9 @@ public class GpuWorkspace : IGpuResourceScope
         }
     }
 
+    /// <summary>
+    /// Finalizes an instance of the <see cref="GpuWorkspace"/> class.
+    /// </summary>
     ~GpuWorkspace()
     {
         Dispose(false);
