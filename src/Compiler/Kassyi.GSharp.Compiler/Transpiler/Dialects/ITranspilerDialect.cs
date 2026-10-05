@@ -74,7 +74,7 @@ public interface ITranspilerDialect
     /// <param name="context">The active transpilation context used for source output and symbol lookup.</param>
     /// <param name="typeSymbol">The Roslyn type symbol to convert, or <see langword="null"/> for unresolved or void types.</param>
     /// <remarks>
-    /// <para><b>Performance:</b> Emits directly into <see cref="TranspileContext.Writer"/> without intermediate heap string allocations.</para>
+    /// <para><b>Performance:</b> Emits directly into the output stream without intermediate heap string allocations.</para>
     /// </remarks>
     void AppendType(ref TranspileContext context, ITypeSymbol? typeSymbol);
 

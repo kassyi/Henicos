@@ -2,7 +2,7 @@ using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;/// <summary>
 /// Transpiles a C# argument into equivalent CUDA C++ representation.
-/// Specifically handles reference arguments (`ref`, `out`) by prefixing them with the address-of operator `&`.
+/// Specifically handles reference arguments (<c>ref</c>, <c>out</c>) by prefixing them with the address-of operator <c>&amp;</c>.
 /// </summary>
 /// <remarks>
 /// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>

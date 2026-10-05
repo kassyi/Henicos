@@ -367,7 +367,7 @@ public readonly ref struct SourceWriterInlineScope
     public void Dispose() => _writer.Append(_closingText);
 }
 
-/// <summary>A zero-allocation scope that wraps content in a C++ immediately invoked lambda ([&]() { ... }()).</summary>
+/// <summary>A zero-allocation scope that wraps content in a C++ immediately invoked lambda expression.</summary>
 public readonly ref struct SourceWriterImmediatelyInvokedLambdaScope
 {
     private readonly SourceWriter _writer;
