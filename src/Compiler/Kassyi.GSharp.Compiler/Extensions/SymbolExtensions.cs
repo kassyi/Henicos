@@ -234,6 +234,53 @@ internal static class SymbolExtensions
         _ => null
     };
 
+    /// <summary>
+    /// Returns the C# primitive keyword (e.g. "int", "float", "bool") for the specified <see cref="SpecialType"/>, or null if none.
+    /// </summary>
+    public static string? GetCsharpKeyword(this SpecialType specialType) => specialType switch
+    {
+        SpecialType.System_Boolean => "bool",
+        SpecialType.System_Byte => "byte",
+        SpecialType.System_SByte => "sbyte",
+        SpecialType.System_Char => "char",
+        SpecialType.System_Int16 => "short",
+        SpecialType.System_UInt16 => "ushort",
+        SpecialType.System_Int32 => "int",
+        SpecialType.System_UInt32 => "uint",
+        SpecialType.System_Int64 => "long",
+        SpecialType.System_UInt64 => "ulong",
+        SpecialType.System_Single => "float",
+        SpecialType.System_Double => "double",
+        SpecialType.System_Decimal => "decimal",
+        SpecialType.System_String => "string",
+        SpecialType.System_Object => "object",
+        SpecialType.System_Void => "void",
+        _ => null
+    };
+
+    /// <summary>
+    /// Appends the C# type name to the source writer, using language keywords (e.g. "int", "float[]") for primitives
+    /// and fully-qualified names for complex types.
+    /// </summary>
+    public static ref readonly SourceWriter AppendCsharpTypeName(this in SourceWriter writer, ITypeSymbol type)
+    {
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            writer.AppendCsharpTypeName(arrayType.ElementType);
+            writer.Append("[]");
+            return ref writer;
+        }
+
+        var keyword = type.SpecialType.GetCsharpKeyword();
+        if (keyword != null)
+        {
+            writer.Append(keyword);
+            return ref writer;
+        }
+
+        return ref writer.AppendFullyQualifiedCsharpName(type);
+    }
+
     public static ref readonly SourceWriter AppendFullyQualifiedCsharpName(this in SourceWriter writer,
         ITypeSymbol symbol)
     {
