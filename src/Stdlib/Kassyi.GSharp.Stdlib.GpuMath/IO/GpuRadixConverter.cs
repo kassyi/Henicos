@@ -20,6 +20,22 @@ public static class GpuRadixConverter
 {
     private const int LeafThresholdDigits = 10_000;
 
+    private struct WorkItem : IDisposable
+    {
+        public GpuBigUInt Value;
+        public int TargetDigits;
+        public bool IsMostSignificant;
+        public bool OwnsValue;
+
+        public void Dispose()
+        {
+            if (OwnsValue)
+            {
+                Value.Dispose();
+            }
+        }
+    }
+
     /// <summary>
     /// Converts an arbitrary-precision unsigned integer (<see cref="BigNum.GpuBigUInt"/>) to decimal digits using GPU-accelerated divide-and-conquer division,
     /// streaming the formatted characters directly to the specified <see cref="TextWriter"/>.
@@ -38,17 +54,75 @@ public static class GpuRadixConverter
         TextWriter writer,
         bool isMostSignificant = false)
     {
-
         ArgumentNullException.ThrowIfNull(workspace);
         ArgumentNullException.ThrowIfNull(writer);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(targetDigits);
 
         var radixCache = new Dictionary<int, GpuBigUInt>();
         var activePointers = new List<GpuBigUInt>();
+        var stack = new Stack<WorkItem>();
+
+        stack.Push(new WorkItem
+        {
+            Value = value,
+            TargetDigits = targetDigits,
+            IsMostSignificant = isMostSignificant,
+            OwnsValue = false
+        });
 
         try
         {
-            ConvertAndWriteInternal(workspace, value, targetDigits, writer, radixCache, activePointers, isMostSignificant);
+            while (stack.Count > 0)
+            {
+                var item = stack.Pop();
+
+                var actualWords = (GpuBigIntDivRem.GetActualBits(item.Value) + 31) / 32;
+                if (actualWords == 0)
+                {
+                    actualWords = 1;
+                }
+
+                if (item.TargetDigits <= LeafThresholdDigits)
+                {
+                    FormatLeafNode(item.Value, item.TargetDigits, writer, item.IsMostSignificant);
+                    item.Dispose();
+                    continue;
+                }
+
+                var lowerDigits = item.TargetDigits / 2;
+                var upperDigits = item.TargetDigits - lowerDigits;
+
+                var divisorGpu = GetOrCreateRadixDivisor(workspace, lowerDigits, radixCache, activePointers);
+
+                var targetWords = Math.Max(actualWords, divisorGpu.NumWords);
+
+                var quotient = new GpuBigUInt(workspace, targetWords);
+                var remainder = new GpuBigUInt(workspace, targetWords);
+
+                using (var paddedValue = item.Value.PadTo(targetWords))
+                using (var paddedDivisor = divisorGpu.PadTo(targetWords))
+                {
+                    GpuBigIntDivRem.DivRem(paddedValue, paddedDivisor, quotient, remainder);
+                }
+
+                item.Dispose();
+
+                stack.Push(new WorkItem
+                {
+                    Value = remainder,
+                    TargetDigits = lowerDigits,
+                    IsMostSignificant = false,
+                    OwnsValue = true
+                });
+
+                stack.Push(new WorkItem
+                {
+                    Value = quotient,
+                    TargetDigits = upperDigits,
+                    IsMostSignificant = item.IsMostSignificant,
+                    OwnsValue = true
+                });
+            }
         }
         finally
         {
@@ -56,48 +130,13 @@ public static class GpuRadixConverter
             {
                 ptr.Dispose();
             }
+
+            while (stack.Count > 0)
+            {
+                var item = stack.Pop();
+                item.Dispose();
+            }
         }
-    }
-
-    private static void ConvertAndWriteInternal(
-        GpuWorkspace workspace,
-        GpuBigUInt value,
-        int targetDigits,
-        TextWriter writer,
-        Dictionary<int, GpuBigUInt> radixCache,
-        List<GpuBigUInt> activePointers,
-        bool isMostSignificant)
-    {
-        var actualWords = (GpuBigIntDivRem.GetActualBits(value) + 31) / 32;
-        if (actualWords == 0)
-        {
-            actualWords = 1;
-        }
-
-        // Leaf threshold: CPU formatting is fast enough for <= 10,000 digits.
-        if (targetDigits <= LeafThresholdDigits)
-        {
-            FormatLeafNode(value, targetDigits, writer, isMostSignificant);
-            return;
-        }
-
-        var lowerDigits = targetDigits / 2;
-        var upperDigits = targetDigits - lowerDigits;
-
-        var divisorGpu = GetOrCreateRadixDivisor(workspace, lowerDigits, radixCache, activePointers);
-
-        // Align dimensions for GPU division
-        var targetWords = Math.Max(actualWords, divisorGpu.NumWords);
-        using var paddedValue = value.PadTo(targetWords);
-        using var paddedDivisor = divisorGpu.PadTo(targetWords);
-
-        using var quotient = new GpuBigUInt(workspace, targetWords);
-        using var remainder = new GpuBigUInt(workspace, targetWords);
-
-        GpuBigIntDivRem.DivRem(paddedValue, paddedDivisor, quotient, remainder);
-
-        ConvertAndWriteInternal(workspace, quotient, upperDigits, writer, radixCache, activePointers, isMostSignificant);
-        ConvertAndWriteInternal(workspace, remainder, lowerDigits, writer, radixCache, activePointers, false);
     }
 
     private static void FormatLeafNode(

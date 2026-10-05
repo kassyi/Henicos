@@ -357,8 +357,18 @@ __global__ void ReciprocalKernel(const unsigned int* __restrict__ d_a,
         int shiftInTruncated = topBits - 62;
         unsigned long long originalBigTop = (shiftInTruncated >= 0) ? (topBig >> shiftInTruncated) : (topBig << (-shiftInTruncated));
 
-        unsigned __int128 one124 = ((unsigned __int128)1) << 124;
-        unsigned __int128 approx128 = one124 / originalBigTop;
+        // We need to compute 2^124 / originalBigTop.
+        // Since 2^61 <= originalBigTop < 2^62, the quotient will be around 2^63, which fits in 64 bits.
+        unsigned long long rem = 1ULL << 60; // High 64 bits of 2^124
+        unsigned long long approx64 = 0;
+        for (int i = 0; i < 64; i++) {
+            approx64 <<= 1;
+            rem <<= 1;
+            if (rem >= originalBigTop) {
+                rem -= originalBigTop;
+                approx64 |= 1;
+            }
+        }
 
         int numBits = numWords * 32;
         int marginBits = marginWords * 32;
@@ -367,9 +377,9 @@ __global__ void ReciprocalKernel(const unsigned int* __restrict__ d_a,
         if (finalShift >= 0) {
             int wordShift = finalShift / 32;
             int bitShift = finalShift % 32;
-            unsigned int a0 = (unsigned int)approx128;
-            unsigned int a1 = (unsigned int)(approx128 >> 32);
-            unsigned int a2 = (unsigned int)(approx128 >> 64);
+            unsigned int a0 = (unsigned int)approx64;
+            unsigned int a1 = (unsigned int)(approx64 >> 32);
+            unsigned int a2 = 0;
 
             unsigned long long s0 = (unsigned long long)a0 << bitShift;
             unsigned long long s1 = ((unsigned long long)a1 << bitShift) | (s0 >> 32);

@@ -127,6 +127,11 @@ internal static partial class NativeMethods
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial void GpuBigInt_Free(IntPtr devicePointer);
 
+    [LibraryImport(DllName, EntryPoint = nameof(GpuBigInt_ClearMemory))]
+    [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
+    [return: MarshalAs(UnmanagedType.I1)]
+    public static partial bool GpuBigInt_ClearMemory(IntPtr devicePointer, int numWords, IntPtr stream = 0);
+
     [LibraryImport(DllName, EntryPoint = nameof(GpuBigInt_Cleanup))]
     [UnmanagedCallConv(CallConvs = [typeof(CallConvCdecl)])]
     public static partial void GpuBigInt_Cleanup(IntPtr workspace);

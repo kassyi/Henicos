@@ -42,15 +42,9 @@ public class NativeProvider : IGpuExecutionProvider
             return;
         }
 
-        var zeroArray = System.Buffers.ArrayPool<uint>.Shared.Rent(numWords);
-        try
+        if (!NativeMethods.GpuBigInt_ClearMemory(devicePointer, numWords, stream))
         {
-            Array.Clear(zeroArray, 0, numWords);
-            CopyHostToDevice(devicePointer, zeroArray, numWords, stream);
-        }
-        finally
-        {
-            System.Buffers.ArrayPool<uint>.Shared.Return(zeroArray);
+            throw new InvalidOperationException($"Failed to clear memory on GPU device pointer 0x{devicePointer.ToInt64():X}.");
         }
     }
 

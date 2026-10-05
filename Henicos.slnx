@@ -9,6 +9,9 @@
     <Project Path="src/Compiler/Kassyi.GSharp.Compiler.Tasks/Kassyi.GSharp.Compiler.Tasks.csproj" />
     <Project Path="src/Compiler/Kassyi.GSharp.Compiler.Generators/Kassyi.GSharp.Compiler.Generators.csproj" />
   </Folder>
+  <Folder Name="/src/Stdlib/">
+    <Project Path="src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Generators/Kassyi.GSharp.Stdlib.GpuMath.Generators.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kassyi.GSharp.Tests.Shared/Kassyi.GSharp.Tests.Shared.shproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj" />

@@ -13,7 +13,18 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// </remarks>
 public sealed class AotMemoryHandler : IGpuMemoryProvider
 {
+    private static void InvokeCuda(Func<CUresult> action)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(action());
+    }
 
+    private static T InvokeCuda<T>(Func<CUresult> action, Func<T> resultSelector)
+    {
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(action());
+        return resultSelector();
+    }
 
     /// <inheritdoc/>
     public void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream)
@@ -25,31 +36,25 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
 
         if (devicePointer != IntPtr.Zero)
         {
-            using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8Async(devicePointer, 0, numWords * 4, stream));
+            InvokeCuda(() => CudaDriverApi.cuMemsetD8Async(devicePointer, 0, numWords * 4, stream));
         }
     }
-
 
     /// <inheritdoc/>
     public IntPtr AllocateMemory(int numWords)
     {
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out var dPtr, numWords * 4));
-        return dPtr;
+        var dPtr = IntPtr.Zero;
+        return InvokeCuda(() => CudaDriverApi.cuMemAlloc_v2(out dPtr, numWords * 4), () => dPtr);
     }
-
 
     /// <inheritdoc/>
     public void FreeMemory(IntPtr devicePointer)
     {
         if (devicePointer != IntPtr.Zero)
         {
-            using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaDriverApi.cuMemFree_v2(devicePointer);
+            InvokeCuda(() => CudaDriverApi.cuMemFree_v2(devicePointer));
         }
     }
-
 
     /// <inheritdoc/>
     public unsafe void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords, IntPtr stream = 0)
@@ -61,12 +66,10 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
 
         fixed (uint* pHost = hostData)
         {
-            using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(devicePointer, (IntPtr)pHost,
-                Math.Min(hostData.Length, numWords) * 4, stream));
+            var hostPtr = (IntPtr)pHost;
+            InvokeCuda(() => CudaDriverApi.cuMemcpyHtoDAsync_v2(devicePointer, hostPtr, Math.Min(hostData.Length, numWords) * 4, stream));
         }
     }
-
 
     /// <inheritdoc/>
     public unsafe void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0)
@@ -78,34 +81,27 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
 
         fixed (uint* pHost = hostData)
         {
-            using var scope = new GpuKernelLoader.CudaContextScope();
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)pHost, devicePointer, numWords * 4, stream));
+            var hostPtr = (IntPtr)pHost;
+            InvokeCuda(() => CudaDriverApi.cuMemcpyDtoHAsync_v2(hostPtr, devicePointer, numWords * 4, stream));
         }
     }
-
 
     /// <inheritdoc/>
     public unsafe uint ReadWord(IntPtr devicePointer, int wordOffset = 0)
     {
         var pWord = stackalloc uint[1];
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(
-            CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)pWord, IntPtr.Add(devicePointer, wordOffset * 4), 4));
-        return *pWord;
+        var ptr = (IntPtr)pWord;
+        return InvokeCuda(() => CudaDriverApi.cuMemcpyDtoH_v2(ptr, IntPtr.Add(devicePointer, wordOffset * 4), 4), () => *pWord);
     }
-
 
     /// <inheritdoc/>
     public unsafe void WriteWord(IntPtr devicePointer, int wordOffset, uint value)
     {
         var pWord = stackalloc uint[1];
         *pWord = value;
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(
-            CudaDriverApi.cuMemcpyHtoD_v2(IntPtr.Add(devicePointer, wordOffset * 4), (IntPtr)pWord, 4));
+        var ptr = (IntPtr)pWord;
+        InvokeCuda(() => CudaDriverApi.cuMemcpyHtoD_v2(IntPtr.Add(devicePointer, wordOffset * 4), ptr, 4));
     }
-
 
     /// <inheritdoc/>
     public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords, IntPtr stream = 0)
@@ -115,8 +111,7 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
             return;
         }
 
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoDAsync_v2(destPointer, srcPointer, numWords * 4, stream));
+        InvokeCuda(() => CudaDriverApi.cuMemcpyDtoDAsync_v2(destPointer, srcPointer, numWords * 4, stream));
     }
 
     /// <inheritdoc/>
@@ -127,7 +122,6 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
             return;
         }
 
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));
+        InvokeCuda(() => CudaDriverApi.cuStreamSynchronize(stream));
     }
 }

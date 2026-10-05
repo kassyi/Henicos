@@ -78,7 +78,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
         {
             _isCpuFallback = true;
             _owningContext = IntPtr.Zero;
-            _devicePointer = Marshal.AllocHGlobal((IntPtr)_byteSize);
+            _devicePointer = Marshal.AllocHGlobal(_byteSize);
             return;
         }
 

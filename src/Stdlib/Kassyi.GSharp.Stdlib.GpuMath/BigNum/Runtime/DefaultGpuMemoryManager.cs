@@ -107,6 +107,8 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
             return;
         }
 
+        var exceptions = new List<Exception>();
+
         foreach (var lazyBag in _tempPool.Values)
         {
             if (!lazyBag.IsValueCreated)
@@ -121,8 +123,15 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
                     continue;
                 }
 
-                provider.FreeMemory(handle.Buffer.Pointer);
-                handle.Buffer.Dispose();
+                try
+                {
+                    provider.FreeMemory(handle.Buffer.Pointer);
+                    handle.Buffer.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    exceptions.Add(ex);
+                }
             }
         }
 
@@ -139,13 +148,18 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
             {
                 provider.FreeMemory(ptr);
             }
-            catch
+            catch (Exception ex)
             {
-                // Best-effort during disposal
+                exceptions.Add(ex);
             }
         }
 
         _activeAllocations.Clear();
+
+        if (exceptions.Count > 0)
+        {
+            throw new AggregateException("Errors occurred during GPU memory disposal.", exceptions);
+        }
     }
 }
 

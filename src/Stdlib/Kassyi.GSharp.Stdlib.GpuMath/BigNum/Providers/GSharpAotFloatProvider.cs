@@ -15,17 +15,20 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// <b>Zero-Allocation:</b> Scratch buffers are managed deterministically via workspace pools without managed heap allocations.
 /// </para>
 /// </remarks>
-public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
+public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArithmetic fallbackStrategy)
+    : IGpuBigFloatArithmetic
 {
     /// <summary>
-    /// Gets the singleton instance of the <see cref="GSharpAotFloatProvider"/>.
+    /// Creates an interop provider that uses native CUDA kernels for high-precision floating-point operations.
     /// </summary>
-    public static readonly GSharpAotFloatProvider Instance = new();
+    /// <returns>A new <see cref="GSharpAotFloatProvider"/> instance configured for native CUDA operations.</returns>
+    public static GSharpAotFloatProvider CreateNativeCuda() => new(true, CSharpCpuBigFloatArithmetic.Instance);
 
-    private GSharpAotFloatProvider()
-    {
-    }
-
+    /// <summary>
+    /// Creates an AOT-compiled provider that uses G# kernels for high-precision floating-point operations.
+    /// </summary>
+    /// <returns>A new <see cref="GSharpAotFloatProvider"/> instance configured for G# kernel operations.</returns>
+    public static GSharpAotFloatProvider CreateGSharpKernel() => new(false, CSharpCpuBigFloatArithmetic.Instance);
 
     /// <inheritdoc/>
     public void Normalize(ref GpuBigIntExecutionContext context,
@@ -38,7 +41,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var dA = IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4);
         var dResult = IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4);
 
-        if (context.GpuWorkspace.Provider is NativeProvider)
+        if (useNativeCuda)
         {
             if (!NativeMethods.GpuBigFloat_Normalize(
                     context.GpuWorkspace.WorkspacePointer,
@@ -58,7 +61,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         }
 
         // Fallback for CPU / Interpreter modes
-        CSharpCpuBigFloatArithmetic.Instance.Normalize(ref context, valueSig, valueExp, valueSign, resultSig,
+        fallbackStrategy.Normalize(ref context, valueSig, valueExp, valueSign, resultSig,
             out resultExp, out resultSign);
     }
 
@@ -73,7 +76,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         var shiftWords = expDiff / 32 + 1;
         var maxSize = Math.Max(leftSig.NumWords, rightSig.NumWords) + shiftWords + 1;
 
-        if (context.GpuWorkspace.Provider is NativeProvider)
+        if (useNativeCuda)
         {
             // Allocate workspace buffers
             using var shiftedBuffer = context.GpuWorkspace.RentTemp(maxSize);
@@ -100,7 +103,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         }
 
         // Fallback for CPU / Interpreter modes
-        CSharpCpuBigFloatArithmetic.Instance.Add(ref context, leftSig, leftExp, leftSign, rightSig, rightExp, rightSign,
+        fallbackStrategy.Add(ref context, leftSig, leftExp, leftSign, rightSig, rightExp, rightSign,
             resultSig, out resultExp, out resultSign);
     }
 
@@ -110,7 +113,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
-        if (context.GpuWorkspace.Provider is NativeProvider)
+        if (useNativeCuda)
         {
             var stream = context.Stream;
             var tempExp = leftExp + rightExp;
@@ -133,7 +136,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         }
 
         // Fallback for CPU / Interpreter modes
-        CSharpCpuBigFloatArithmetic.Instance.Multiply(ref context, leftSig, leftExp, leftSign, rightSig, rightExp,
+        fallbackStrategy.Multiply(ref context, leftSig, leftExp, leftSign, rightSig, rightExp,
             rightSign, resultSig, out resultExp, out resultSign);
     }
 
@@ -160,7 +163,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         // 2. Hybrid Routing
         // Fast Path: A / B = A * Reciprocal(B)
         // Only if NativeProvider is available and size is within Comba multiplication limits (<= 1024)
-        if (context.GpuWorkspace.Provider is NativeProvider && resultSig.NumWords <= 1024)
+        if (useNativeCuda && resultSig.NumWords <= 1024)
         {
             var marginWords = 2;
             var reciprocalWords = 2 * rightSig.NumWords + marginWords;
@@ -222,10 +225,9 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
-        if (context.GpuWorkspace.Provider is not GSharpAotProvider &&
-            context.GpuWorkspace.Provider is not NativeProvider)
+        if (!useNativeCuda && context.GpuWorkspace.Provider is not GSharpAotProvider)
         {
-            CSharpCpuBigFloatArithmetic.Instance.Reciprocal(ref context, valueSig, valueExp, valueSign, resultSig,
+            fallbackStrategy.Reciprocal(ref context, valueSig, valueExp, valueSign, resultSig,
                 out resultExp, out resultSign);
             return;
         }
@@ -241,7 +243,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         using var reciprocalResult = context.GpuWorkspace.RentTemp(reciprocalWords);
         context.GpuWorkspace.Provider.ClearMemoryAsync(reciprocalResult.DevicePointer, reciprocalWords, stream);
 
-        if (context.GpuWorkspace.Provider is NativeProvider)
+        if (useNativeCuda)
         {
             NativeMethods.GpuBigFloat_Reciprocal(context.GpuWorkspace.WorkspacePointer, valueOperand.DevicePointer,
                 reciprocalResult.DevicePointer, valueSig.NumWords, marginWords, stream);
@@ -273,10 +275,9 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
             throw new InvalidOperationException("Cannot compute square root of a negative number.");
         }
 
-        if (context.GpuWorkspace.Provider is not GSharpAotProvider &&
-            context.GpuWorkspace.Provider is not NativeProvider)
+        if (!useNativeCuda && context.GpuWorkspace.Provider is not GSharpAotProvider)
         {
-            CSharpCpuBigFloatArithmetic.Instance.Sqrt(ref context, valueSig, valueExp, valueSign, resultSig,
+            fallbackStrategy.Sqrt(ref context, valueSig, valueExp, valueSign, resultSig,
                 out resultExp, out resultSign);
             return;
         }
@@ -359,7 +360,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
     {
         // TODO: Implement fully native GPU kernel for Exp (Taylor series with GPU buffers)
         // Currently delegates to CPU fallback since scalar division on GPU is not exposed.
-        CSharpCpuBigFloatArithmetic.Instance.Exp(ref context, valueSig, valueExp, valueSign, resultSig, out resultExp,
+        fallbackStrategy.Exp(ref context, valueSig, valueExp, valueSign, resultSig, out resultExp,
             out resultSign);
     }
 
@@ -369,7 +370,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
         // TODO: Implement fully native GPU kernel for Log (AGM with GPU buffers)
-        CSharpCpuBigFloatArithmetic.Instance.Log(ref context, valueSig, valueExp, valueSign, resultSig, out resultExp,
+        fallbackStrategy.Log(ref context, valueSig, valueExp, valueSign, resultSig, out resultExp,
             out resultSign);
     }
 
@@ -380,7 +381,7 @@ public sealed class GSharpAotFloatProvider : IGpuBigFloatArithmetic
         GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign)
     {
         // TODO: Implement Pow natively
-        CSharpCpuBigFloatArithmetic.Instance.Pow(ref context, baseSig, baseExp, baseSign, expSig, exponentExp,
+        fallbackStrategy.Pow(ref context, baseSig, baseExp, baseSign, expSig, exponentExp,
             exponentSign, resultSig, out resultExp, out resultSign);
     }
 
