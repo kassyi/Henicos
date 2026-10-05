@@ -14,24 +14,18 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Thread Safety:</b> Value-type wrapper semantics; safe for concurrent reads across threads when distinct instances are used.</para>
 /// </remarks>
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatable<GpuBigUInt>,
-    IComparable<GpuBigUInt>
+[GenerateGpuNumberOperators]
+public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IGpuNumber<GpuBigUInt>
 {
     /// <summary>
     /// Gets the <see cref="GpuWorkspace"/> associated with this GPU integer instance.
     /// </summary>
-    public GpuWorkspace Workspace
-    {
-        get;
-    }
+    public GpuWorkspace Workspace { get; }
 
     /// <summary>
     /// Gets the underlying GPU memory handle tracking device buffer allocation and lifetime.
     /// </summary>
-    public GpuBigIntMemoryHandle Handle
-    {
-        get;
-    }
+    public GpuBigIntMemoryHandle Handle { get; }
 
     /// <summary>
     /// Gets the raw 64-bit device memory pointer to the first limb word in GPU global address space.
@@ -47,10 +41,7 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
     /// <summary>
     /// Gets a value indicating whether this buffer represents an intermediate temporary buffer managed by expression evaluation.
     /// </summary>
-    public bool IsTemp
-    {
-        get;
-    }
+    public bool IsTemp { get; }
 
     internal GpuBigUInt(GpuWorkspace workspace, GpuBigIntMemoryHandle handle, bool isTemp = false)
     {
@@ -105,96 +96,6 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
     }
 
     /// <summary>
-    /// Creates a deferred expression representing the addition of two unsigned big integers.
-    /// </summary>
-    /// <param name="leftOperand">The first operand.</param>
-    /// <param name="rightOperand">The second operand.</param>
-    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the addition.</returns>
-    public static GpuBigUIntExpr operator +(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        new(new AddExpression(leftOperand, rightOperand));
-
-    /// <summary>
-    /// Creates a deferred expression representing the subtraction of two unsigned big integers.
-    /// </summary>
-    /// <param name="leftOperand">The minuend operand.</param>
-    /// <param name="rightOperand">The subtrahend operand.</param>
-    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the subtraction.</returns>
-    public static GpuBigUIntExpr operator -(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        new(new SubExpression(leftOperand, rightOperand));
-
-    /// <summary>
-    /// Creates a deferred expression representing the multiplication of two unsigned big integers.
-    /// </summary>
-    /// <param name="leftOperand">The multiplicand operand.</param>
-    /// <param name="rightOperand">The multiplier operand.</param>
-    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the multiplication.</returns>
-    public static GpuBigUIntExpr operator *(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        new(new MulExpression(leftOperand, rightOperand));
-
-    /// <summary>
-    /// Creates a deferred expression representing the division of two unsigned big integers.
-    /// </summary>
-    /// <param name="leftOperand">The dividend operand.</param>
-    /// <param name="rightOperand">The divisor operand.</param>
-    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the division.</returns>
-    public static GpuBigUIntExpr operator /(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        new(new DivExpression(leftOperand, rightOperand));
-
-    /// <summary>
-    /// Creates a deferred expression representing the modulo (remainder) operation of two unsigned big integers.
-    /// </summary>
-    /// <param name="leftOperand">The dividend operand.</param>
-    /// <param name="rightOperand">The divisor operand.</param>
-    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the remainder operation.</returns>
-    public static GpuBigUIntExpr operator %(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        new(new ModExpression(leftOperand, rightOperand));
-
-    /// <summary>
-    /// Creates a deferred expression representing the bitwise AND of two unsigned big integers.
-    /// </summary>
-    /// <param name="leftOperand">The first operand.</param>
-    /// <param name="rightOperand">The second operand.</param>
-    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the bitwise AND operation.</returns>
-    public static GpuBigUIntExpr operator &(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        new(new BitwiseAndExpression(leftOperand, rightOperand));
-
-    /// <summary>
-    /// Creates a deferred expression representing the bitwise left shift of an unsigned big integer.
-    /// </summary>
-    /// <param name="leftOperand">The value to shift.</param>
-    /// <param name="shiftBits">The number of bit positions to shift left.</param>
-    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the left shift operation.</returns>
-    public static GpuBigUIntExpr operator <<(GpuBigUInt leftOperand, int shiftBits) =>
-        new(new ShiftLeftExpression(leftOperand, shiftBits));
-
-    /// <summary>
-    /// Creates a deferred expression representing the bitwise right shift of an unsigned big integer.
-    /// </summary>
-    /// <param name="leftOperand">The value to shift.</param>
-    /// <param name="shiftBits">The number of bit positions to shift right.</param>
-    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the right shift operation.</returns>
-    public static GpuBigUIntExpr operator >>(GpuBigUInt leftOperand, int shiftBits) =>
-        new(new ShiftRightExpression(leftOperand, shiftBits));
-
-    /// <summary>
-    /// Creates a deferred expression representing the bitwise OR of two unsigned big integers.
-    /// </summary>
-    /// <param name="leftOperand">The first operand.</param>
-    /// <param name="rightOperand">The second operand.</param>
-    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the bitwise OR operation.</returns>
-    public static GpuBigUIntExpr operator |(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        new(new BitwiseOrExpression(leftOperand, rightOperand));
-
-    /// <summary>
-    /// Creates a deferred expression representing the bitwise XOR of two unsigned big integers.
-    /// </summary>
-    /// <param name="leftOperand">The first operand.</param>
-    /// <param name="rightOperand">The second operand.</param>
-    /// <returns>A <see cref="GpuBigUIntExpr"/> representing the bitwise XOR operation.</returns>
-    public static GpuBigUIntExpr operator ^(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        new(new BitwiseXorExpression(leftOperand, rightOperand));
-
-    /// <summary>
     /// Creates a deferred expression representing the bitwise NOT (one's complement) of an unsigned big integer.
     /// </summary>
     /// <param name="leftOperand">The operand to invert.</param>
@@ -224,59 +125,6 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         return operand;
     }
 
-    /// <summary>
-    /// Determines whether two specified <see cref="GpuBigUInt"/> instances are equal.
-    /// </summary>
-    /// <param name="leftOperand">The first value to compare.</param>
-    /// <param name="rightOperand">The second value to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> equals <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator ==(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        leftOperand.Equals(rightOperand);
-
-    /// <summary>
-    /// Determines whether two specified <see cref="GpuBigUInt"/> instances are not equal.
-    /// </summary>
-    /// <param name="leftOperand">The first value to compare.</param>
-    /// <param name="rightOperand">The second value to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> does not equal <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator !=(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        !(leftOperand == rightOperand);
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuBigUInt"/> is less than another specified <see cref="GpuBigUInt"/>.
-    /// </summary>
-    /// <param name="leftOperand">The first value to compare.</param>
-    /// <param name="rightOperand">The second value to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> is less than <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator <(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        leftOperand.CompareTo(rightOperand) < 0;
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuBigUInt"/> is greater than another specified <see cref="GpuBigUInt"/>.
-    /// </summary>
-    /// <param name="leftOperand">The first value to compare.</param>
-    /// <param name="rightOperand">The second value to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> is greater than <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator >(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        leftOperand.CompareTo(rightOperand) > 0;
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuBigUInt"/> is less than or equal to another specified <see cref="GpuBigUInt"/>.
-    /// </summary>
-    /// <param name="leftOperand">The first value to compare.</param>
-    /// <param name="rightOperand">The second value to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> is less than or equal to <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator <=(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        leftOperand.CompareTo(rightOperand) <= 0;
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuBigUInt"/> is greater than or equal to another specified <see cref="GpuBigUInt"/>.
-    /// </summary>
-    /// <param name="leftOperand">The first value to compare.</param>
-    /// <param name="rightOperand">The second value to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="leftOperand"/> is greater than or equal to <paramref name="rightOperand"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator >=(GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
-        leftOperand.CompareTo(rightOperand) >= 0;
 
     /// <summary>
     /// Copies all limb words from GPU device memory to a newly allocated host array.
@@ -424,7 +272,8 @@ public readonly struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IEquatab
         try
         {
             word[0] = 1u << bitOffset;
-            workspace.Provider.CopyHostToDevice(IntPtr.Add(result.DevicePointer, wordIndex * 4), word, 1, workspace.Stream);
+            workspace.Provider.CopyHostToDevice(IntPtr.Add(result.DevicePointer, wordIndex * 4), word, 1,
+                workspace.Stream);
         }
         finally
         {

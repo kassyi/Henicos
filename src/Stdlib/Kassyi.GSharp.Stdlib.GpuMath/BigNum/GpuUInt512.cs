@@ -9,7 +9,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Thread Safety:</b> Immutable-style value semantics; concurrent reads are safe.</para>
 /// </remarks>
 [CollectionBuilder(typeof(GpuUInt512), nameof(Create))]
-public struct GpuUInt512(GpuBigUInt<LimbBuffer16> value) : IEquatable<GpuUInt512>, IComparable<GpuUInt512>
+[GenerateGpuNumberOperators]
+public partial struct GpuUInt512(GpuBigUInt<LimbBuffer16> value) : IEquatable<GpuUInt512>, IComparable<GpuUInt512>
 {
     /// <summary>
     /// The underlying 512-bit fixed-size unsigned big integer storage.
@@ -42,6 +43,7 @@ public struct GpuUInt512(GpuBigUInt<LimbBuffer16> value) : IEquatable<GpuUInt512
     /// <param name="val">The 32-bit unsigned integer.</param>
     /// <returns>A new <see cref="GpuUInt512"/> initialized with the specified value.</returns>
     public static implicit operator GpuUInt512(uint val) => new(val);
+
 
     /// <summary>
     /// Returns a dummy enumerator to enable C# collection expression support.
@@ -88,51 +90,5 @@ public struct GpuUInt512(GpuBigUInt<LimbBuffer16> value) : IEquatable<GpuUInt512
     /// <returns>A 32-bit signed integer hash code.</returns>
     public readonly override int GetHashCode() => Value.GetHashCode();
 
-    /// <summary>
-    /// Determines whether two specified <see cref="GpuUInt512"/> instances are equal.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt512"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt512"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> equals <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator ==(GpuUInt512 left, GpuUInt512 right) => left.Equals(right);
 
-    /// <summary>
-    /// Determines whether two specified <see cref="GpuUInt512"/> instances are not equal.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt512"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt512"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> does not equal <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator !=(GpuUInt512 left, GpuUInt512 right) => !left.Equals(right);
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuUInt512"/> is less than another specified <see cref="GpuUInt512"/>.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt512"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt512"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> is less than <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator <(GpuUInt512 left, GpuUInt512 right) => left.CompareTo(right) < 0;
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuUInt512"/> is greater than another specified <see cref="GpuUInt512"/>.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt512"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt512"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> is greater than <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator >(GpuUInt512 left, GpuUInt512 right) => left.CompareTo(right) > 0;
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuUInt512"/> is less than or equal to another specified <see cref="GpuUInt512"/>.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt512"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt512"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> is less than or equal to <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator <=(GpuUInt512 left, GpuUInt512 right) => left.CompareTo(right) <= 0;
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuUInt512"/> is greater than or equal to another specified <see cref="GpuUInt512"/>.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt512"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt512"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> is greater than or equal to <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator >=(GpuUInt512 left, GpuUInt512 right) => left.CompareTo(right) >= 0;
 }

@@ -9,7 +9,8 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Thread Safety:</b> Immutable-style value semantics; concurrent reads are safe.</para>
 /// </remarks>
 [CollectionBuilder(typeof(GpuUInt256), nameof(Create))]
-public struct GpuUInt256(GpuBigUInt<LimbBuffer8> value) : IEquatable<GpuUInt256>, IComparable<GpuUInt256>
+[GenerateGpuNumberOperators]
+public partial struct GpuUInt256(GpuBigUInt<LimbBuffer8> value) : IEquatable<GpuUInt256>, IComparable<GpuUInt256>
 {
     /// <summary>
     /// The underlying 256-bit fixed-size unsigned big integer storage.
@@ -20,7 +21,9 @@ public struct GpuUInt256(GpuBigUInt<LimbBuffer8> value) : IEquatable<GpuUInt256>
     /// Initializes a new instance of the <see cref="GpuUInt256"/> struct initialized with a 32-bit unsigned integer value.
     /// </summary>
     /// <param name="value">The 32-bit unsigned integer value.</param>
-    public GpuUInt256(uint value) : this(GpuBigUIntBuilder.Create<LimbBuffer8>([value])) { }
+    public GpuUInt256(uint value) : this(GpuBigUIntBuilder.Create<LimbBuffer8>([value]))
+    {
+    }
 
     /// <summary>
     /// Implicitly converts a <see cref="GpuUInt256"/> instance to its underlying <see cref="GpuBigUInt{LimbBuffer8}"/> representation.
@@ -54,7 +57,8 @@ public struct GpuUInt256(GpuBigUInt<LimbBuffer8> value) : IEquatable<GpuUInt256>
     /// </summary>
     /// <param name="elements">A read-only span containing the 32-bit unsigned limbs in little-endian order.</param>
     /// <returns>A new <see cref="GpuUInt256"/> instance containing the specified elements.</returns>
-    public static GpuUInt256 Create(ReadOnlySpan<uint> elements) => new(GpuBigUIntBuilder.Create<LimbBuffer8>(elements));
+    public static GpuUInt256 Create(ReadOnlySpan<uint> elements) =>
+        new(GpuBigUIntBuilder.Create<LimbBuffer8>(elements));
 
     /// <summary>
     /// Indicates whether the current instance is equal to another <see cref="GpuUInt256"/> instance.
@@ -87,52 +91,4 @@ public struct GpuUInt256(GpuBigUInt<LimbBuffer8> value) : IEquatable<GpuUInt256>
     /// </summary>
     /// <returns>A 32-bit signed integer hash code.</returns>
     public readonly override int GetHashCode() => Value.GetHashCode();
-
-    /// <summary>
-    /// Determines whether two specified <see cref="GpuUInt256"/> instances are equal.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt256"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt256"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> equals <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator ==(GpuUInt256 left, GpuUInt256 right) => left.Equals(right);
-
-    /// <summary>
-    /// Determines whether two specified <see cref="GpuUInt256"/> instances are not equal.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt256"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt256"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> does not equal <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator !=(GpuUInt256 left, GpuUInt256 right) => !left.Equals(right);
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuUInt256"/> is less than another specified <see cref="GpuUInt256"/>.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt256"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt256"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> is less than <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator <(GpuUInt256 left, GpuUInt256 right) => left.CompareTo(right) < 0;
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuUInt256"/> is greater than another specified <see cref="GpuUInt256"/>.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt256"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt256"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> is greater than <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator >(GpuUInt256 left, GpuUInt256 right) => left.CompareTo(right) > 0;
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuUInt256"/> is less than or equal to another specified <see cref="GpuUInt256"/>.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt256"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt256"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> is less than or equal to <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator <=(GpuUInt256 left, GpuUInt256 right) => left.CompareTo(right) <= 0;
-
-    /// <summary>
-    /// Determines whether one specified <see cref="GpuUInt256"/> is greater than or equal to another specified <see cref="GpuUInt256"/>.
-    /// </summary>
-    /// <param name="left">The first <see cref="GpuUInt256"/> to compare.</param>
-    /// <param name="right">The second <see cref="GpuUInt256"/> to compare.</param>
-    /// <returns><see langword="true"/> if <paramref name="left"/> is greater than or equal to <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
-    public static bool operator >=(GpuUInt256 left, GpuUInt256 right) => left.CompareTo(right) >= 0;
 }
