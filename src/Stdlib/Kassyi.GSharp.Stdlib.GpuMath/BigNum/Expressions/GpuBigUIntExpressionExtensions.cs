@@ -3,20 +3,25 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 using Runtime;
 
 /// <summary>
-/// Extension methods for evaluating GPU BigInteger expressions.
+/// Provides extension methods for evaluating GPU BigInteger AST expressions.
 /// </summary>
 public static class GpuBigUIntExpressionExtensions
 {
     /// <summary>
-    /// Evaluates this expression on the GPU into the specified target buffer using the Visitor pattern.
+    /// Evaluates an arbitrary-precision integer expression AST on the GPU into a new or provided target buffer using the Visitor pattern.
     /// </summary>
+    /// <param name="expr">The root expression AST node to evaluate.</param>
+    /// <param name="workspace">The GPU workspace managing kernel parameters and memory pools.</param>
+    /// <param name="targetResult">An optional destination buffer. If <see langword="null"/>, a temporary buffer is rented.</param>
+    /// <returns>A <see cref="GpuBigUInt"/> containing the evaluated unsigned large integer.</returns>
     public static GpuBigUInt Evaluate(this IGpuBigUIntExpression expr, GpuWorkspace workspace,
         GpuBigUInt? targetResult = null)
     {
+
         var execContext = new GpuBigIntExecutionContext(workspace, workspace.MemoryManager,
             new LegacyProviderArithmeticAdapter(), workspace.Stream);
 
-        ScopedBigIntMemory targetMem = default;
+        ScopedBigIntMemory targetMem;
         GpuBigUInt finalResult;
 
         if (targetResult != null)

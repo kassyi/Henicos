@@ -3,7 +3,14 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
-/// <summary>Abstract base AST node representing a binary GPU BigInteger operation.</summary>
+/// <summary>
+/// Abstract base AST node representing a binary GPU BigInteger operation between two operand subtrees.
+/// </summary>
+/// <remarks>
+/// <para>
+/// <b>[WHY]:</b> Enforces dimension validation between operands (<see cref="NumWords"/> equality) and standardizes binary AST dispatch.
+/// </para>
+/// </remarks>
 internal abstract class BinaryExpression : IGpuBigUIntExpression
 {
     internal IGpuBigUIntExpression Left
@@ -35,6 +42,7 @@ internal abstract class BinaryExpression : IGpuBigUIntExpression
 
     public abstract ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor);
 }
+
 
 internal class AddExpression(IGpuBigUIntExpression left, IGpuBigUIntExpression right) : BinaryExpression(left, right)
 {
