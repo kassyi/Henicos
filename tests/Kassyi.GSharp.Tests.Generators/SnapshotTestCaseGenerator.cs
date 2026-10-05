@@ -52,7 +52,7 @@ public class SnapshotTestCaseGenerator : IIncrementalGenerator
                             file.Contains("/obj/")) continue;
 
                         var text = File.ReadAllText(file);
-                        if (!text.Contains("GpuKernel")) continue;
+                        if (!text.Contains("GpuKernel") && !text.Contains("CudaImport")) continue;
                         if (text.Contains("[Fact]") || text.Contains("[Theory]") ||
                             text.Contains("[SkippableTheory]")) continue;
 
