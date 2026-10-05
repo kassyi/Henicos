@@ -37,7 +37,7 @@ internal static class ModPowNttHostController
         using var reciprocalOfB = new GpuBigUInt(workspace, targetWords);
         GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
 
-        // 2. Square and Multiply MegaKernel (Zero-Sync GPU Offloading)
+        // 2. Square and Multiply MegaKernel (Zero-Sync GPU Offloading) - Chunked for TDR avoidance
         if (workspace.Provider is GSharpAotProvider aot)
         {
             aot.AotAdvancedMath.ExecuteModPowNttMegaKernel(

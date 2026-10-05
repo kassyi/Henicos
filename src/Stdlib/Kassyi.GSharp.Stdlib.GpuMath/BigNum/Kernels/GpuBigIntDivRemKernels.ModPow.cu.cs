@@ -175,19 +175,22 @@ public static partial class GpuBigIntDivRemKernels
         int outWords = aActualWords + targetWords;
 
         // Initialize tempResult = 1, tempBase = Base, ModulusExpanded = Constant
-        Gpu.GridStrideLoop(outWords, idx =>
+        if (ctx.ExponentStartWord == 0)
         {
-            if (idx < 2 * n)
+            Gpu.GridStrideLoop(outWords, idx =>
             {
-                ctx.Workspace.AxSquared[idx] = idx == 0 ? 1u : 0u; // TempResult
-                ctx.Workspace.XSquared[idx] = idx < n ? ctx.Operands.TargetOperand[idx] : 0u; // TempBase
-            }
+                if (idx < 2 * n)
+                {
+                    ctx.Workspace.AxSquared[idx] = idx == 0 ? 1u : 0u; // TempResult
+                    ctx.Workspace.XSquared[idx] = idx < n ? ctx.Operands.TargetOperand[idx] : 0u; // TempBase
+                }
 
-            ctx.Workspace.ModulusExpanded[idx] = idx < n ? ctx.Operands.Constant[idx] : 0u;
-        });
-        Gpu.SyncGrid();
+                ctx.Workspace.ModulusExpanded[idx] = idx < n ? ctx.Operands.Constant[idx] : 0u;
+            });
+            Gpu.SyncGrid();
+        }
 
-        for (int i = 0; i < expWords; i++)
+        for (int i = ctx.ExponentStartWord; i < ctx.ExponentEndWord; i++)
         {
             uint e = ctx.Exponent[i];
 
@@ -219,10 +222,13 @@ public static partial class GpuBigIntDivRemKernels
         }
 
         // Copy final result
-        Gpu.GridStrideLoop(n, idx =>
+        if (ctx.ExponentEndWord == expWords)
         {
-            ctx.Operands.ResultBuffer[idx] = ctx.Workspace.AxSquared[idx];
-        });
-        Gpu.SyncGrid();
+            Gpu.GridStrideLoop(n, idx =>
+            {
+                ctx.Operands.ResultBuffer[idx] = ctx.Workspace.AxSquared[idx];
+            });
+            Gpu.SyncGrid();
+        }
     }
 }

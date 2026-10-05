@@ -1,6 +1,6 @@
 using System.Buffers;
 using System.Collections.Concurrent;
-
+using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 /// <summary>
@@ -664,6 +664,8 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             ReciprocalMod = reciprocalMod.DevicePointer,
             Exponent = exponent.DevicePointer,
             ExponentWords = exponent.NumWords,
+            ExponentStartWord = 0,
+            ExponentEndWord = 0,
             Dimensions = new GpuBigIntDivRemKernels.AotContexts.Dimension
             {
                 NumberOfWords = n,
@@ -703,11 +705,24 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             CarryBuffer = IntPtr.Zero
         };
 
+        int totalWords = exponent.NumWords;
+        int chunkWords = 8;
         var sharedMemBytes = (uint)((m + (m >> 5)) * 4);
-        GpuBigIntDivRemKernels.LaunchModPowNttMegaKernelPtr(
-            ctx,
-            gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes,
-            hStream: workspace.Stream);
+
+        for (int start = 0; start < totalWords; start += chunkWords)
+        {
+            int end = Math.Min(start + chunkWords, totalWords);
+            ctx.ExponentStartWord = start;
+            ctx.ExponentEndWord = end;
+
+            GpuBigIntDivRemKernels.LaunchModPowNttMegaKernelPtr(
+                ctx,
+                gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes,
+                hStream: workspace.Stream);
+            
+            // Sync after each chunk to let the TDR watchdog reset
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+        }
     }
 
     private void LaunchSharedRow(GpuWorkspace workspace, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m,

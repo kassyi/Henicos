@@ -269,6 +269,8 @@ public struct ModPowNttContext
     public uint[] ReciprocalMod;
     public uint[] Exponent;
     public int ExponentWords;
+    public int ExponentStartWord;
+    public int ExponentEndWord;
     public DimensionContext Dimensions;
     public Ntt Ntt;
     public WorkspaceStateContext Workspace;
