@@ -241,5 +241,159 @@ public static partial class GpuBigIntGcdKernels
             }
         });
     }
+
+    [GpuDeviceFunction]
+    private static void DeviceShiftRight1(uint[] data, int numWords)
+    {
+        uint carry = 0;
+        for (int i = numWords - 1; i >= 0; i--)
+        {
+            uint w = data[i];
+            data[i] = (w >> 1) | carry;
+            carry = (w & 1) << 31;
+        }
+    }
+
+    [GpuDeviceFunction]
+    private static uint DeviceAdd(uint[] a, uint[] b, uint[] dst, int numWords)
+    {
+        ulong carry = 0;
+        for (int i = 0; i < numWords; i++)
+        {
+            ulong sum = (ulong)a[i] + b[i] + carry;
+            dst[i] = (uint)sum;
+            carry = sum >> 32;
+        }
+        return (uint)carry;
+    }
+
+    [GpuDeviceFunction]
+    private static void DeviceSub(uint[] a, uint[] b, uint[] dst, int numWords)
+    {
+        long borrow = 0;
+        for (int i = 0; i < numWords; i++)
+        {
+            long diff = (long)a[i] - b[i] - borrow;
+            dst[i] = (uint)diff;
+            borrow = (diff < 0) ? 1 : 0;
+        }
+    }
+
+    [GpuDeviceFunction]
+    private static bool DeviceIsZero(uint[] data, int numWords)
+    {
+        for (int i = 0; i < numWords; i++)
+        {
+            if (data[i] != 0) return false;
+        }
+        return true;
+    }
+
+    [GpuDeviceFunction]
+    private static bool DeviceIsOne(uint[] data, int numWords)
+    {
+        if (data[0] != 1) return false;
+        for (int i = 1; i < numWords; i++)
+        {
+            if (data[i] != 0) return false;
+        }
+        return true;
+    }
+
+    [GpuKernel]
+    public static void ExecuteExtendedBinaryGcdMacroKernel(
+        uint[] m, uint[] u, uint[] v, uint[] x1, uint[] x2, int[] status, int numWords, int maxIterations)
+    {
+        Gpu.SingleThread(() =>
+        {
+            for (int iter = 0; iter < maxIterations; iter++)
+            {
+                if (DeviceIsZero(u, numWords) || DeviceIsZero(v, numWords))
+                {
+                    bool uIsOne = DeviceIsOne(u, numWords);
+                    bool vIsOne = DeviceIsOne(v, numWords);
+                    if (uIsOne || vIsOne)
+                    {
+                        if (vIsOne)
+                        {
+                            for (int i = 0; i < numWords; i++) x1[i] = x2[i];
+                        }
+                        status[0] = 1; // Success
+                    }
+                    else
+                    {
+                        status[0] = 2; // Failed (not coprime)
+                    }
+                    return;
+                }
+
+                if ((u[0] & 1) == 0) // u is even
+                {
+                    DeviceShiftRight1(u, numWords);
+                    if ((x1[0] & 1) == 0)
+                    {
+                        DeviceShiftRight1(x1, numWords);
+                    }
+                    else
+                    {
+                        uint carry = DeviceAdd(x1, m, x1, numWords);
+                        DeviceShiftRight1(x1, numWords);
+                        if (carry != 0)
+                        {
+                            x1[numWords - 1] |= 0x80000000u;
+                        }
+                    }
+                    continue;
+                }
+
+                if ((v[0] & 1) == 0) // v is even
+                {
+                    DeviceShiftRight1(v, numWords);
+                    if ((x2[0] & 1) == 0)
+                    {
+                        DeviceShiftRight1(x2, numWords);
+                    }
+                    else
+                    {
+                        uint carry = DeviceAdd(x2, m, x2, numWords);
+                        DeviceShiftRight1(x2, numWords);
+                        if (carry != 0)
+                        {
+                            x2[numWords - 1] |= 0x80000000u;
+                        }
+                    }
+                    continue;
+                }
+
+                // Both odd
+                if (DeviceCompareTo(u, v, numWords) >= 0)
+                {
+                    DeviceSub(u, v, u, numWords); // u = u - v
+                    if (DeviceCompareTo(x1, x2, numWords) >= 0)
+                    {
+                        DeviceSub(x1, x2, x1, numWords);
+                    }
+                    else
+                    {
+                        DeviceAdd(x1, m, x1, numWords);
+                        DeviceSub(x1, x2, x1, numWords);
+                    }
+                }
+                else
+                {
+                    DeviceSub(v, u, v, numWords); // v = v - u
+                    if (DeviceCompareTo(x2, x1, numWords) >= 0)
+                    {
+                        DeviceSub(x2, x1, x2, numWords);
+                    }
+                    else
+                    {
+                        DeviceAdd(x2, m, x2, numWords);
+                        DeviceSub(x2, x1, x2, numWords);
+                    }
+                }
+            }
+        });
+    }
 }
 
