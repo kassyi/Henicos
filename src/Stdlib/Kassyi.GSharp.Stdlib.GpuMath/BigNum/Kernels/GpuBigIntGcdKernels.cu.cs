@@ -300,6 +300,38 @@ public static partial class GpuBigIntGcdKernels
         return true;
     }
 
+    [GpuDeviceFunction]
+    private static void DeviceUpdateXShift(uint[] x, uint[] m, int numWords)
+    {
+        if ((x[0] & 1) == 0)
+        {
+            DeviceShiftRight1(x, numWords);
+        }
+        else
+        {
+            uint carry = DeviceAdd(x, m, x, numWords);
+            DeviceShiftRight1(x, numWords);
+            if (carry != 0)
+            {
+                x[numWords - 1] |= 0x80000000u;
+            }
+        }
+    }
+
+    [GpuDeviceFunction]
+    private static void DeviceUpdateXSub(uint[] x1, uint[] x2, uint[] m, int numWords)
+    {
+        if (DeviceCompareTo(x1, x2, numWords) >= 0)
+        {
+            DeviceSub(x1, x2, x1, numWords);
+        }
+        else
+        {
+            DeviceAdd(x1, m, x1, numWords);
+            DeviceSub(x1, x2, x1, numWords);
+        }
+    }
+
     [GpuKernel]
     public static void ExecuteExtendedBinaryGcdMacroKernel(
         uint[] m, uint[] u, uint[] v, uint[] x1, uint[] x2, int[] status, int numWords, int maxIterations)
@@ -330,38 +362,14 @@ public static partial class GpuBigIntGcdKernels
                 if ((u[0] & 1) == 0) // u is even
                 {
                     DeviceShiftRight1(u, numWords);
-                    if ((x1[0] & 1) == 0)
-                    {
-                        DeviceShiftRight1(x1, numWords);
-                    }
-                    else
-                    {
-                        uint carry = DeviceAdd(x1, m, x1, numWords);
-                        DeviceShiftRight1(x1, numWords);
-                        if (carry != 0)
-                        {
-                            x1[numWords - 1] |= 0x80000000u;
-                        }
-                    }
+                    DeviceUpdateXShift(x1, m, numWords);
                     continue;
                 }
 
                 if ((v[0] & 1) == 0) // v is even
                 {
                     DeviceShiftRight1(v, numWords);
-                    if ((x2[0] & 1) == 0)
-                    {
-                        DeviceShiftRight1(x2, numWords);
-                    }
-                    else
-                    {
-                        uint carry = DeviceAdd(x2, m, x2, numWords);
-                        DeviceShiftRight1(x2, numWords);
-                        if (carry != 0)
-                        {
-                            x2[numWords - 1] |= 0x80000000u;
-                        }
-                    }
+                    DeviceUpdateXShift(x2, m, numWords);
                     continue;
                 }
 
@@ -369,28 +377,12 @@ public static partial class GpuBigIntGcdKernels
                 if (DeviceCompareTo(u, v, numWords) >= 0)
                 {
                     DeviceSub(u, v, u, numWords); // u = u - v
-                    if (DeviceCompareTo(x1, x2, numWords) >= 0)
-                    {
-                        DeviceSub(x1, x2, x1, numWords);
-                    }
-                    else
-                    {
-                        DeviceAdd(x1, m, x1, numWords);
-                        DeviceSub(x1, x2, x1, numWords);
-                    }
+                    DeviceUpdateXSub(x1, x2, m, numWords);
                 }
                 else
                 {
                     DeviceSub(v, u, v, numWords); // v = v - u
-                    if (DeviceCompareTo(x2, x1, numWords) >= 0)
-                    {
-                        DeviceSub(x2, x1, x2, numWords);
-                    }
-                    else
-                    {
-                        DeviceAdd(x2, m, x2, numWords);
-                        DeviceSub(x2, x1, x2, numWords);
-                    }
+                    DeviceUpdateXSub(x2, x1, m, numWords);
                 }
             }
         });
