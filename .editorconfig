@@ -159,15 +159,42 @@ indent_size = 2
 trim_trailing_whitespace = false
 
 # ==============================================================================
+# StyleCop.Analyzers 設定 (XML ドキュメンテーション検証の厳格化 & ノイズ抑制)
+# ==============================================================================
+[*.cs]
+# 不要なフォーマット・スタイル規則 (既存の Roslyn / ReSharper 設定と競合するもの) を一括無効化
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.SpecialRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.SpacingRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.ReadabilityRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.OrderingRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.NamingRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.MaintainabilityRules.severity = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.LayoutRules.severity = none
+
+# ドキュメンテーション規則 (DocumentationRules) を有効化
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.DocumentationRules.severity = warning
+
+# 冗長・過度な制約ルールの個別無効化
+dotnet_diagnostic.SA1633.severity = none
+dotnet_diagnostic.SA1649.severity = none
+dotnet_diagnostic.SA1601.severity = none
+dotnet_diagnostic.SA1623.severity = none
+dotnet_diagnostic.SA1629.severity = none
+dotnet_diagnostic.SA1642.severity = none
+dotnet_diagnostic.SA1604.severity = none
+
+# ==============================================================================
 # 自動生成コードの警告抑制・整形除外 (ReSharper / Roslyn Analyzers)
 # ==============================================================================
 [**/*.{g,i,designer,generated}.cs]
 generated_code = true
 dotnet_analyzer_diagnostic.severity = none
+dotnet_diagnostic.severity = none
 
 [**/obj/**/*.cs]
 generated_code = true
 dotnet_analyzer_diagnostic.severity = none
+dotnet_diagnostic.severity = none
 
 # ==============================================================================
 # テストコード・スナップショットテストの解析除外 (ReSharper / Rider / Roslyn)
@@ -197,6 +224,12 @@ resharper_method_has_async_overload_highlighting = none
 resharper_unused_parameter_local_highlighting = none
 resharper_unused_parameter_global_highlighting = none
 resharper_redundant_type_declaration_body_highlighting = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.DocumentationRules.severity = none
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
 
 # ==============================================================================
 # G# Kernels (*.cu.cs) の制約設定
@@ -212,3 +245,11 @@ resharper_class_never_instantiated_global_highlighting = none
 resharper_unaccessed_global_value_highlighting = none
 resharper_not_accessed_variable_highlighting = none
 resharper_redundant_assignment_highlighting = none
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.DocumentationRules.severity = none
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
+
+
