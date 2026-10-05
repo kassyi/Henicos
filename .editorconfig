@@ -1,7 +1,7 @@
 root = true
 
 # ==============================================================================
-# グローバル設定 (すべてのファイル)
+# Global Settings (All Files)
 # ==============================================================================
 [*]
 charset = utf-8
@@ -13,10 +13,10 @@ trim_trailing_whitespace = true
 max_line_length = 120
 
 # ==============================================================================
-# C# ファイル固有の設定
+# C# Specific Settings
 # ==============================================================================
 [*.cs]
-# インデントサイズ・右マージン（折り返し）設定
+# Indentation size and margin line wrap settings
 indent_size = 4
 max_line_length = 120
 resharper_csharp_max_line_length = 120
@@ -24,9 +24,9 @@ resharper_csharp_wrap_lines = true
 resharper_csharp_wrap_long_lines = true
 
 # ------------------------------------------------------------------------------
-# コードスタイル・最新構文ルール (MS標準 & C# 14対応)
+# Code Style & Modern Syntax Rules (MS Standard & C# 14)
 # ------------------------------------------------------------------------------
-# if/for/foreach等の制御文で波括弧を必須とし、改行を強制する
+# Enforce braces for control statements (if/for/foreach) with mandatory line breaks
 csharp_prefer_braces = true:warning
 resharper_csharp_braces_for_ifeach = required
 resharper_csharp_simple_embedded_statement_style = line_break
@@ -36,7 +36,7 @@ resharper_csharp_place_simple_property_indexer_event_declaration_on_single_line 
 resharper_csharp_place_abstract_accessorholder_on_single_line = true
 resharper_csharp_place_attribute_on_same_line = never
 
-# 生文字列リテラルのインデント設定 (右に深くアライメントせず、改行時は通常インデント)
+# Raw string literal indentation settings (standard indentation on newlines)
 csharp_indent_raw_literal_string = indent
 resharper_csharp_indent_raw_literal_string = indent
 resharper_xmldoc_indent_child_elements = zero_indent
@@ -49,27 +49,27 @@ dotnet_style_qualification_for_field = false:warning
 dotnet_style_qualification_for_property = false:warning
 dotnet_style_qualification_for_method = false:warning
 
-# 式形式 (Expression-bodied) のメンバー推奨度 (サンプルコードの get => field などのスタイル)
+# Expression-bodied members preferences
 csharp_style_expression_bodied_properties = true:suggestion
 csharp_style_expression_bodied_methods = when_on_single_line:suggestion
 csharp_style_expression_bodied_accessors = true:suggestion
 
 # ------------------------------------------------------------------------------
-# 新しい構文のスペース・改行制御 (ReSharper / Roslyn フォーマッタ用)
+# Spacing & Line Break Controls for Modern Syntax (ReSharper / Roslyn Formatter)
 # ------------------------------------------------------------------------------
-# アロー演算子 (=>) が長くて改行される場合、=> の前で改行する (Wrap before =>)
+# Wrap before arrow operator (=>) when long
 resharper_csharp_wrap_before_arrow = true
 
-# 波括弧（ブレース）は常に新しい行から開始 (Allman Style)
+# Open braces always start on a new line (Allman Style)
 csharp_new_line_before_open_brace = all
 
-# コレクション式 [...] の内部スペース制御（括弧の直後はスペースなし、要素間は1スペース）
+# Collection expression [...] internal spacing controls
 csharp_space_between_parentheses = none
 csharp_space_after_comma = true
 csharp_space_before_comma = false
 
 # ------------------------------------------------------------------------------
-# 1. 命名スタイル (Styles) の定義
+# 1. Naming Style Definitions
 # ------------------------------------------------------------------------------
 dotnet_naming_style.pascal_case.capitalization = pascal_case
 dotnet_naming_style.camel_case.capitalization = camel_case
@@ -81,32 +81,32 @@ dotnet_naming_style.interface_style.capitalization = pascal_case
 dotnet_naming_style.interface_style.required_prefix = I
 
 # ------------------------------------------------------------------------------
-# 2. 対象シンボル (Symbols) のグループ定義
+# 2. Target Symbol Group Definitions
 # ------------------------------------------------------------------------------
 dotnet_naming_symbols.interface_symbols.applicable_kinds = interface
 
-# プライベートインスタンスフィールド (_camelCase)
+# Private instance fields (_camelCase)
 dotnet_naming_symbols.private_instance_fields.applicable_kinds = field
 dotnet_naming_symbols.private_instance_fields.applicable_accessibilities = private, protected, internal, private_protected, protected_internal
 dotnet_naming_symbols.private_instance_fields.required_modifiers = instance
 
-# プライベート静的フィールド (s_camelCase)
+# Private static fields (s_camelCase)
 dotnet_naming_symbols.non_public_static_fields.applicable_kinds = field
 dotnet_naming_symbols.non_public_static_fields.applicable_accessibilities = private, protected, internal, private_protected, protected_internal
 dotnet_naming_symbols.non_public_static_fields.required_modifiers = static
 
-# 定数 (PascalCase)
+# Constants (PascalCase)
 dotnet_naming_symbols.constants_and_statics.applicable_kinds = local, field
 dotnet_naming_symbols.constants_and_statics.required_modifiers = const
 
-# ローカル変数・メソッド引数・例外変数 (camelCase)
+# Local variables, parameters, and local functions (camelCase)
 dotnet_naming_symbols.local_variables_and_parameters.applicable_kinds = local, parameter, local_function
 
-# PascalCase を適用するメンバー限定グループ
+# General members requiring PascalCase
 dotnet_naming_symbols.pascal_case_members.applicable_kinds = class, struct, enum, method, property, event, delegate, namespace
 
 # ------------------------------------------------------------------------------
-# 3. 命名規則ルール (Rules) のマッピング
+# 3. Naming Rule Mappings
 # ------------------------------------------------------------------------------
 dotnet_naming_rule.interfaces_must_have_i.symbols = interface_symbols
 dotnet_naming_rule.interfaces_must_have_i.style = interface_style
@@ -139,7 +139,7 @@ dotnet_naming_rule.general_members_must_be_pascal_case.severity = warning
 dotnet_naming_rule.general_members_must_be_pascal_case.import_to_resharper = as_predefined
 
 # ------------------------------------------------------------------------------
-# 4. ReSharper 固有の古い設定の上書き
+# 4. ReSharper Legacy Rule Overrides
 # ------------------------------------------------------------------------------
 resharper_csharp_naming_rule.private_instance_fields = _+aaBb
 resharper_csharp_naming_rule.private_static_fields = s_+aaBb
@@ -147,22 +147,22 @@ resharper_csharp_naming_rule.constants = AaBb
 resharper_csharp_naming_rule.local_constants = AaBb
 
 # ==============================================================================
-# JSON, XML, YAML, HTML 等の設定
+# JSON, XML, YAML, HTML Settings
 # ==============================================================================
 [*.{json,xml,yaml,yml,html,js,ts}]
 indent_size = 2
 
 # ==============================================================================
-# Markdown の設定
+# Markdown Settings
 # ==============================================================================
 [*.md]
 trim_trailing_whitespace = false
 
 # ==============================================================================
-# StyleCop.Analyzers 設定 (XML ドキュメンテーション検証の厳格化 & ノイズ抑制)
+# StyleCop.Analyzers Configuration (Strict XML Documentation & Noise Suppression)
 # ==============================================================================
 [*.cs]
-# 不要なフォーマット・スタイル規則 (既存の Roslyn / ReSharper 設定と競合するもの) を一括無効化
+# Disable formatting/styling rules that conflict with existing Roslyn / ReSharper settings
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.SpecialRules.severity = none
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.SpacingRules.severity = none
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.ReadabilityRules.severity = none
@@ -171,20 +171,21 @@ dotnet_analyzer_diagnostic.category-StyleCop.CSharp.NamingRules.severity = none
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.MaintainabilityRules.severity = none
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.LayoutRules.severity = none
 
-# ドキュメンテーション規則 (DocumentationRules) を有効化
+# Enable StyleCop Documentation Rules
 dotnet_analyzer_diagnostic.category-StyleCop.CSharp.DocumentationRules.severity = warning
 
-# 冗長・過度な制約ルールの個別無効化
+# Selectively disable redundant or overly restrictive documentation rules
 dotnet_diagnostic.SA1633.severity = none
 dotnet_diagnostic.SA1649.severity = none
 dotnet_diagnostic.SA1601.severity = none
+dotnet_diagnostic.SA1602.severity = none
 dotnet_diagnostic.SA1623.severity = none
 dotnet_diagnostic.SA1629.severity = none
 dotnet_diagnostic.SA1642.severity = none
 dotnet_diagnostic.SA1604.severity = none
 
 # ==============================================================================
-# 自動生成コードの警告抑制・整形除外 (ReSharper / Roslyn Analyzers)
+# Generated Code Analyzer Exclusions (ReSharper / Roslyn Analyzers)
 # ==============================================================================
 [**/*.{g,i,designer,generated}.cs]
 generated_code = true
@@ -197,7 +198,7 @@ dotnet_analyzer_diagnostic.severity = none
 dotnet_diagnostic.severity = none
 
 # ==============================================================================
-# テストコード・スナップショットテストの解析除外 (ReSharper / Rider / Roslyn)
+# Test Code & Snapshot Verification Exclusions (ReSharper / Rider / Roslyn)
 # ==============================================================================
 [tests/**]
 generated_code = true
@@ -232,7 +233,7 @@ dotnet_diagnostic.SA1615.severity = none
 dotnet_diagnostic.SA1618.severity = none
 
 # ==============================================================================
-# G# Kernels (*.cu.cs) の制約設定
+# G# Kernels (*.cu.cs) Constraints
 # ==============================================================================
 [**/*.cu.cs]
 csharp_style_expression_bodied_methods = false:none
@@ -253,12 +254,31 @@ dotnet_diagnostic.SA1615.severity = none
 dotnet_diagnostic.SA1618.severity = none
 
 # ==============================================================================
-# コンパイラ・インフラ (src/Compiler) の制約緩和 (Pragmatic C# Style)
+# Compiler & Internal Infrastructure (src/Compiler) Documentation Rules
+# Pragmatic C# Style: Omit trivial <param>/<returns> and non-public member doc enforcement
 # ==============================================================================
 [src/Compiler/**/*.cs]
-# 自明なパラメータや戻り値のXMLコメント (<param>, <returns>) を強制しない
 dotnet_diagnostic.SA1611.severity = none
 dotnet_diagnostic.SA1615.severity = none
 dotnet_diagnostic.SA1618.severity = none
-# 内部メンバーのドキュメントを強制しない (警告レベルを下げるか無効化)
 dotnet_diagnostic.SA1600.severity = none
+
+# ==============================================================================
+# Low-Level Interop & P/Invoke (src/Runtime/Interop) Documentation Rules
+# ==============================================================================
+[**/Interop/**.cs]
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
+
+# ==============================================================================
+# Applications & Benchmarks (src/Apps) Documentation Exclusions
+# ==============================================================================
+[src/Apps/**/*.cs]
+dotnet_analyzer_diagnostic.category-StyleCop.CSharp.DocumentationRules.severity = none
+dotnet_diagnostic.SA1600.severity = none
+dotnet_diagnostic.SA1602.severity = none
+dotnet_diagnostic.SA1611.severity = none
+dotnet_diagnostic.SA1615.severity = none
+dotnet_diagnostic.SA1618.severity = none
