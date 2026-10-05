@@ -73,6 +73,12 @@ public interface IGpuMemoryProvider
     /// <param name="wordOffset">The zero-based 32-bit word offset.</param>
     /// <param name="value">The 32-bit unsigned integer value to write.</param>
     void WriteWord(IntPtr devicePointer, int wordOffset, uint value);
+
+    /// <summary>
+    /// Blocks the host thread until all previously submitted tasks in the specified CUDA stream have completed.
+    /// </summary>
+    /// <param name="stream">The unmanaged stream handle to synchronize.</param>
+    void SynchronizeStream(IntPtr stream);
 }
 
 /// <summary>

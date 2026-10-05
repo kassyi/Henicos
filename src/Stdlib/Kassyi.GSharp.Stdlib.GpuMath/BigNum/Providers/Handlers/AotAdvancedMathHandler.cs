@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Collections.Concurrent;
-using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
@@ -62,13 +61,11 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         using var r = new GpuBigUInt(workspace, numWords);
         using var newA = new GpuBigUInt(workspace, numWords);
         using var newB = new GpuBigUInt(workspace, numWords);
-        using var statusBuf = new GpuBigUInt(workspace, 1);
-        var statusArray = new uint[1];
+        using var statusBuf = workspace.RentTemp(1);
 
         while (!b.IsZero())
         {
-            statusArray[0] = 0; // 0 = Running
-            workspace.Provider.CopyHostToDevice(statusBuf.DevicePointer, statusArray, 1, workspace.Stream);
+            workspace.Provider.WriteWord(statusBuf.DevicePointer, 0, 0); // 0 = Running
 
             // Execute Lehmer GCD loop entirely on GPU up to 1000 iterations per launch
             unsafe
@@ -88,9 +85,9 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
                     gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
             }
 
-            workspace.Provider.CopyDeviceToHost(statusArray, statusBuf.DevicePointer, 1, workspace.Stream);
+            var status = (int)workspace.Provider.ReadWord(statusBuf.DevicePointer, 0);
 
-            if (statusArray[0] == 2)
+            if (status == 2)
             {
                 break; // Finished (b == 0)
             }
@@ -109,18 +106,15 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
     {
         var numWords = value.NumWords;
 
-        var hostVal0 = stackalloc uint[1];
-        var hostMod0 = stackalloc uint[1];
-        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)hostVal0, value.DevicePointer, 4));
-        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)hostMod0, modulus.DevicePointer, 4));
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+        var hostVal0 = workspace.Provider.ReadWord(value.DevicePointer, 0);
+        var hostMod0 = workspace.Provider.ReadWord(modulus.DevicePointer, 0);
 
-        if ((hostVal0[0] & 1) == 0 && (hostMod0[0] & 1) == 0)
+        if ((hostVal0 & 1) == 0 && (hostMod0 & 1) == 0)
         {
             throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is at least 2).");
         }
 
-        if ((hostMod0[0] & 1) == 0)
+        if ((hostMod0 & 1) == 0)
         {
             // Binary GCD algorithm requires an odd modulus.
             // Fall back to host-orchestrated Euclidean algorithm.
@@ -140,8 +134,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 
         x1.Clear();
         x2.Clear();
-        var hostOne = new uint[] { 1 };
-        workspace.Provider.CopyHostToDevice(x1.DevicePointer, hostOne, 1, workspace.Stream);
+        workspace.Provider.WriteWord(x1.DevicePointer, 0, 1);
 
         // Max iterations for binary GCD is up to 4 * bits
         int maxIterations = numWords * 32 * 4 + 100;
@@ -161,15 +154,13 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             ctx,
             gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
 
-        var statusHost = stackalloc int[1];
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
-        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)statusHost, statusBuf.DevicePointer, 4));
+        var statusHost = (int)workspace.Provider.ReadWord(statusBuf.DevicePointer, 0);
 
-        if (statusHost[0] == 2)
+        if (statusHost == 2)
         {
             throw new ArithmeticException("ModInverse failed: The two numbers are not coprime (GCD is not 1).");
         }
-        else if (statusHost[0] == 0)
+        else if (statusHost == 0)
         {
             throw new Exception("ModInverse failed: Macro kernel did not converge within max iterations.");
         }
@@ -204,8 +195,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         d.Clear();
         using var one = workspace.RentTemp(numWords);
         one.Clear();
-        var hostOne = new uint[] { 1 };
-        workspace.Provider.CopyHostToDevice(one.DevicePointer, hostOne, 1, workspace.Stream);
+        workspace.Provider.WriteWord(one.DevicePointer, 0, 1);
         workspace.Provider.CopyDeviceToDevice(d.DevicePointer, one.DevicePointer, numWords, workspace.Stream);
 
         while (true)
@@ -266,7 +256,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             hostConstant3[(bit2B + 1) / 32] |= 1u << ((bit2B + 1) % 32);
             workspace.Provider.CopyHostToDevice(constant3.DevicePointer, hostConstant3, constant3Words,
                 workspace.Stream);
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+            workspace.Provider.SynchronizeStream(workspace.Stream);
         }
         finally
         {
@@ -300,7 +290,21 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         uint sharedMemBytesTranspose = 4224; // 33 * 32 * 4
         var sharedMemBytes = Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
 
-        var ctx = new GpuBigIntSqrtKernels.AotContexts.SqrtNewtonRaphson
+        var ctx = BuildSqrtContext(targetOperand, resultBuffer, constant3, n, marginWords, actualBits, marginBits,
+            iterations, buffers, xSquared, axSquared, diff, nextXUnshifted, nextXShifted, carryBuffer);
+
+        GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
+            ctx,
+            gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes, hStream: workspace.Stream);
+    }
+
+    private static GpuBigIntSqrtKernels.AotContexts.SqrtNewtonRaphson BuildSqrtContext(
+        GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant3,
+        int n, int marginWords, int actualBits, int marginBits, int iterations,
+        in NttWorkspaceBuffers buffers, GpuBigUInt xSquared, GpuBigUInt axSquared,
+        GpuBigUInt diff, GpuBigUInt nextXUnshifted, GpuBigUInt nextXShifted, GpuBigUInt carryBuffer)
+    {
+        return new GpuBigIntSqrtKernels.AotContexts.SqrtNewtonRaphson
         {
             Operands = new GpuBigIntSqrtKernels.AotContexts.Operand
             {
@@ -318,7 +322,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             },
             Ntt = new GpuBigIntSqrtKernels.AotContexts.Ntt
             {
-                TransformLength = m,
+                TransformLength = buffers.TransformLength,
                 TwiddleFactors = new GpuBigIntSqrtKernels.AotContexts.TwiddleFactor
                 {
                     Forward1 = buffers.Twiddle.Forward1,
@@ -345,10 +349,6 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             },
             CarryBuffer = carryBuffer.DevicePointer
         };
-
-        GpuBigIntSqrtKernels.LaunchInverseSqrtNewtonRaphsonMegaKernelPtr(
-            ctx,
-            gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes, hStream: workspace.Stream);
     }
 
     /// <inheritdoc />
@@ -368,8 +368,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             var bitTarget = targetBits + 1;
             hostConstant[bitTarget / 32] |= 1u << (bitTarget % 32);
             workspace.Provider.CopyHostToDevice(constant.DevicePointer, hostConstant, constantWords, workspace.Stream);
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+            workspace.Provider.SynchronizeStream(workspace.Stream);
         }
         finally
         {
@@ -401,7 +400,22 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         const uint SharedMemBytesTranspose = 4224; // 33 * 32 * 4
         var sharedMemBytes = Math.Max(sharedMemBytesNtt, SharedMemBytesTranspose);
 
-        var ctx = new GpuBigIntDivRemKernels.AotContexts.ReciprocalNewtonRaphson
+        var ctx = BuildReciprocalContext(targetOperand, resultBuffer, constant, n, marginWords, targetBits,
+            iterations, buffers, currentProduct, diff, nextIter, carryBuffer);
+
+        GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
+            ctx,
+            gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes
+            , hStream: workspace.Stream);
+    }
+
+    private static GpuBigIntDivRemKernels.AotContexts.ReciprocalNewtonRaphson BuildReciprocalContext(
+        GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant,
+        int n, int marginWords, int targetBits, int iterations,
+        in NttWorkspaceBuffers buffers, GpuBigUInt currentProduct, GpuBigUInt diff,
+        GpuBigUInt nextIter, GpuBigUInt carryBuffer)
+    {
+        return new GpuBigIntDivRemKernels.AotContexts.ReciprocalNewtonRaphson
         {
             Operands = new GpuBigIntDivRemKernels.AotContexts.Operand
             {
@@ -420,7 +434,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             },
             Ntt = new GpuBigIntDivRemKernels.AotContexts.Ntt
             {
-                TransformLength = m,
+                TransformLength = buffers.TransformLength,
                 TwiddleFactors = new GpuBigIntDivRemKernels.AotContexts.TwiddleFactor
                 {
                     Forward1 = buffers.Twiddle.Forward1,
@@ -445,11 +459,6 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             },
             CarryBuffer = carryBuffer.DevicePointer
         };
-
-        GpuBigIntDivRemKernels.LaunchReciprocalNewtonRaphsonMegaKernelPtr(
-            ctx,
-            gridDimX: gridDim, blockDimX: BlockDim, sharedMemBytes: sharedMemBytes
-            , hStream: workspace.Stream);
     }
 
     /// <inheritdoc />

@@ -77,45 +77,14 @@ public static class GpuRadixConverter
         // Leaf threshold: CPU formatting is fast enough for <= 10,000 digits.
         if (targetDigits <= LeafThresholdDigits)
         {
-            var cpuVal = value.ToBigInteger();
-            var str = cpuVal.ToString();
-
-            if (!isMostSignificant && str.Length < targetDigits)
-            {
-                str = new string('0', targetDigits - str.Length) + str;
-            }
-
-            if (isMostSignificant && str.Length > 0)
-            {
-                str = str[..1] + "." + str[1..];
-            }
-
-            writer.Write(str);
+            FormatLeafNode(value, targetDigits, writer, isMostSignificant);
             return;
         }
 
         var lowerDigits = targetDigits / 2;
         var upperDigits = targetDigits - lowerDigits;
 
-        if (!radixCache.TryGetValue(lowerDigits, out var divisorGpu))
-        {
-            var swCache = Stopwatch.StartNew();
-            if (lowerDigits > 1_000_000)
-            {
-                Logger.Info("RadixConverter", $"Radix Cache: Computing 10^{lowerDigits} on GPU...");
-            }
-
-            divisorGpu = GpuBigIntMath.Pow10(workspace, lowerDigits);
-            radixCache[lowerDigits] = divisorGpu;
-            activePointers.Add(divisorGpu);
-            swCache.Stop();
-
-            if (lowerDigits > 1_000_000)
-            {
-                Logger.Info("RadixConverter",
-                    $"Radix Cache: 10^{lowerDigits} computed in {swCache.ElapsedMilliseconds} ms");
-            }
-        }
+        var divisorGpu = GetOrCreateRadixDivisor(workspace, lowerDigits, radixCache, activePointers);
 
         // Align dimensions for GPU division
         var targetWords = Math.Max(actualWords, divisorGpu.NumWords);
@@ -129,5 +98,58 @@ public static class GpuRadixConverter
 
         ConvertAndWriteInternal(workspace, quotient, upperDigits, writer, radixCache, activePointers, isMostSignificant);
         ConvertAndWriteInternal(workspace, remainder, lowerDigits, writer, radixCache, activePointers, false);
+    }
+
+    private static void FormatLeafNode(
+        GpuBigUInt value,
+        int targetDigits,
+        TextWriter writer,
+        bool isMostSignificant)
+    {
+        var cpuVal = value.ToBigInteger();
+        var str = cpuVal.ToString();
+
+        if (!isMostSignificant && str.Length < targetDigits)
+        {
+            str = new string('0', targetDigits - str.Length) + str;
+        }
+
+        if (isMostSignificant && str.Length > 0)
+        {
+            str = str[..1] + "." + str[1..];
+        }
+
+        writer.Write(str);
+    }
+
+    private static GpuBigUInt GetOrCreateRadixDivisor(
+        GpuWorkspace workspace,
+        int lowerDigits,
+        Dictionary<int, GpuBigUInt> radixCache,
+        List<GpuBigUInt> activePointers)
+    {
+        if (radixCache.TryGetValue(lowerDigits, out var divisorGpu))
+        {
+            return divisorGpu;
+        }
+
+        var swCache = Stopwatch.StartNew();
+        if (lowerDigits > 1_000_000)
+        {
+            Logger.Info("RadixConverter", $"Radix Cache: Computing 10^{lowerDigits} on GPU...");
+        }
+
+        divisorGpu = GpuBigIntMath.Pow10(workspace, lowerDigits);
+        radixCache[lowerDigits] = divisorGpu;
+        activePointers.Add(divisorGpu);
+        swCache.Stop();
+
+        if (lowerDigits > 1_000_000)
+        {
+            Logger.Info("RadixConverter",
+                $"Radix Cache: 10^{lowerDigits} computed in {swCache.ElapsedMilliseconds} ms");
+        }
+
+        return divisorGpu;
     }
 }

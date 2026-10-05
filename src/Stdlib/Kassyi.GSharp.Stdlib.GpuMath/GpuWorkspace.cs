@@ -196,21 +196,35 @@ public class GpuWorkspace : IGpuResourceScope
             }
         }
 
+        List<Exception>? exceptions = disposing ? [] : null;
+
         try
         {
-            DisposeTrackedResources();
-            DisposeMemoryManager();
-            DisposeEngineResources();
+            DisposeTrackedResources(exceptions);
+            DisposeMemoryManager(exceptions);
+            DisposeEngineResources(exceptions);
         }
         finally
         {
-            contextScope?.Dispose();
+            try
+            {
+                contextScope?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                exceptions?.Add(ex);
+            }
+        }
+
+        if (exceptions is { Count: > 0 })
+        {
+            throw new AggregateException("One or more errors occurred while disposing GpuWorkspace.", exceptions);
         }
     }
 
-    private void DisposeTrackedResources()
+    private void DisposeTrackedResources(List<Exception>? exceptions)
     {
-        // Enforce safe teardown. Never let exceptions escape the finalizer thread.
+        // Enforce safe teardown. Never let unhandled exceptions escape the finalizer thread.
         lock (_trackedResources)
         {
             foreach (var res in _trackedResources)
@@ -219,9 +233,9 @@ public class GpuWorkspace : IGpuResourceScope
                 {
                     res.Dispose();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Best-effort cleanup during finalization / disposal
+                    exceptions?.Add(ex);
                 }
             }
 
@@ -229,7 +243,7 @@ public class GpuWorkspace : IGpuResourceScope
         }
     }
 
-    private void DisposeMemoryManager()
+    private void DisposeMemoryManager(List<Exception>? exceptions)
     {
         if (MemoryManager is not IDisposable disposableManager)
         {
@@ -240,13 +254,13 @@ public class GpuWorkspace : IGpuResourceScope
         {
             disposableManager.Dispose();
         }
-        catch
+        catch (Exception ex)
         {
-            // Best-effort
+            exceptions?.Add(ex);
         }
     }
 
-    private void DisposeEngineResources()
+    private void DisposeEngineResources(List<Exception>? exceptions)
     {
         if (Engine == GpuExecutionEngine.GSharpAot)
         {
@@ -276,9 +290,9 @@ public class GpuWorkspace : IGpuResourceScope
                     CudaDriverApi.cuCtxDestroy_v2(_isolatedContext);
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Best-effort cleanup during disposal
+                exceptions?.Add(ex);
             }
         }
         else
@@ -292,9 +306,9 @@ public class GpuWorkspace : IGpuResourceScope
             {
                 NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
             }
-            catch
+            catch (Exception ex)
             {
-                // Best-effort
+                exceptions?.Add(ex);
             }
         }
     }

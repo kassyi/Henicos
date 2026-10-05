@@ -130,84 +130,6 @@ public static partial class GpuBigIntGcdKernels
         return progress;
     }
 
-    [GpuDeviceFunction]
-    private static unsafe int DeviceGetBitLength(uint* data, int numWords)
-    {
-        for (int i = numWords - 1; i >= 0; i--)
-        {
-            if (data[i] == 0)
-            {
-                continue;
-            }
-
-            uint w = data[i];
-            int b = 31;
-            while ((w & (1u << b)) == 0)
-            {
-                b--;
-            }
-
-            return i * 32 + b + 1;
-        }
-
-        return 0;
-    }
-
-    [GpuDeviceFunction]
-    private static unsafe ulong DeviceExtract64(uint* data, int shift, int numWords)
-    {
-        int wordShift = shift / 32;
-        int bitShift = shift % 32;
-        if (wordShift >= numWords)
-        {
-            return 0;
-        }
-
-        ulong result = 0;
-
-        uint w0 = data[wordShift];
-        uint w1 = (wordShift + 1 < numWords) ? data[wordShift + 1] : 0u;
-        uint w2 = (wordShift + 2 < numWords) ? data[wordShift + 2] : 0u;
-
-        if (bitShift == 0)
-        {
-            result = w0 | ((ulong)w1 << 32);
-        }
-        else
-        {
-            uint low = (w0 >> bitShift) | (w1 << (32 - bitShift));
-            uint high = (w1 >> bitShift) | (w2 << (32 - bitShift));
-            result = low | ((ulong)high << 32);
-        }
-
-        return result;
-    }
-
-    [GpuDeviceFunction]
-    private static unsafe int DeviceCompareTo(uint* a, uint* b, int numWords)
-    {
-        for (int i = numWords - 1; i >= 0; i--)
-        {
-            if (a[i] > b[i])
-            {
-                return 1;
-            }
-
-            if (a[i] < b[i])
-            {
-                return -1;
-            }
-        }
-
-        return 0;
-    }
-
-    [GpuDeviceFunction]
-    private static unsafe bool DeviceIsNegative(uint* data, int numWords)
-    {
-        return (data[numWords - 1] & 0x80000000u) != 0;
-    }
-
     [GpuKernel]
     public static void ExecuteLehmerGcdMacroKernel(AotContexts.LehmerGcdContext ctx)
     {
@@ -217,8 +139,8 @@ public static partial class GpuBigIntGcdKernels
             {
                 unsafe
                 {
-                    int bitsA = DeviceGetBitLength(ctx.A, ctx.NumWords);
-                    int bitsB = DeviceGetBitLength(ctx.B, ctx.NumWords);
+                    int bitsA = GpuBigIntPrimitiveOps.DeviceGetBitLength(ctx.A, ctx.NumWords);
+                    int bitsB = GpuBigIntPrimitiveOps.DeviceGetBitLength(ctx.B, ctx.NumWords);
 
                     if (bitsB == 0)
                     {
@@ -238,8 +160,8 @@ public static partial class GpuBigIntGcdKernels
                         shift = 0;
                     }
 
-                    ulong x = DeviceExtract64(ctx.A, shift, ctx.NumWords);
-                    ulong y = DeviceExtract64(ctx.B, shift, ctx.NumWords);
+                    ulong x = GpuBigIntPrimitiveOps.DeviceExtract64(ctx.A, shift, ctx.NumWords);
+                    ulong y = GpuBigIntPrimitiveOps.DeviceExtract64(ctx.B, shift, ctx.NumWords);
 
                     long u0, v0, u1, v1;
                     bool progress = ComputeLehmerMatrix(x, y, out u0, out v0, out u1, out v1);
@@ -267,8 +189,9 @@ public static partial class GpuBigIntGcdKernels
                         carryB = nextB >> 32;
                     }
 
-                    if (DeviceIsNegative(ctx.NewA, ctx.NumWords) || DeviceIsNegative(ctx.NewB, ctx.NumWords) ||
-                        DeviceCompareTo(ctx.NewB, ctx.NewA, ctx.NumWords) > 0)
+                    if (GpuBigIntPrimitiveOps.DeviceIsNegative(ctx.NewA, ctx.NumWords) ||
+                        GpuBigIntPrimitiveOps.DeviceIsNegative(ctx.NewB, ctx.NumWords) ||
+                        GpuBigIntPrimitiveOps.DeviceCompareTo(ctx.NewB, ctx.NewA, ctx.NumWords) > 0)
                     {
                         ctx.Status[0] = 1; // 1: NeedMod
                         break;
@@ -285,77 +208,16 @@ public static partial class GpuBigIntGcdKernels
     }
 
     [GpuDeviceFunction]
-    private static unsafe void DeviceShiftRight1(uint* data, int numWords)
-    {
-        uint carry = 0;
-        for (int i = numWords - 1; i >= 0; i--)
-        {
-            uint w = data[i];
-            data[i] = (w >> 1) | carry;
-            carry = (w & 1) << 31;
-        }
-    }
-
-    [GpuDeviceFunction]
-    private static unsafe uint DeviceAdd(uint* a, uint* b, uint* dst, int numWords)
-    {
-        ulong carry = 0;
-        for (int i = 0; i < numWords; i++)
-        {
-            ulong sum = (ulong)a[i] + b[i] + carry;
-            dst[i] = (uint)sum;
-            carry = sum >> 32;
-        }
-
-        return (uint)carry;
-    }
-
-    [GpuDeviceFunction]
-    private static unsafe void DeviceSub(uint* a, uint* b, uint* dst, int numWords)
-    {
-        long borrow = 0;
-        for (int i = 0; i < numWords; i++)
-        {
-            long diff = (long)a[i] - b[i] - borrow;
-            dst[i] = (uint)diff;
-            borrow = (diff < 0) ? 1 : 0;
-        }
-    }
-
-    [GpuDeviceFunction]
-    private static unsafe bool DeviceIsZero(uint* data, int numWords)
-    {
-        for (int i = 0; i < numWords; i++)
-        {
-            if (data[i] != 0) return false;
-        }
-
-        return true;
-    }
-
-    [GpuDeviceFunction]
-    private static unsafe bool DeviceIsOne(uint* data, int numWords)
-    {
-        if (data[0] != 1) return false;
-        for (int i = 1; i < numWords; i++)
-        {
-            if (data[i] != 0) return false;
-        }
-
-        return true;
-    }
-
-    [GpuDeviceFunction]
     private static unsafe void DeviceUpdateXShift(uint* x, uint* m, int numWords)
     {
         if ((x[0] & 1) == 0)
         {
-            DeviceShiftRight1(x, numWords);
+            GpuBigIntPrimitiveOps.DeviceShiftRight1(x, numWords);
         }
         else
         {
-            uint carry = DeviceAdd(x, m, x, numWords);
-            DeviceShiftRight1(x, numWords);
+            uint carry = GpuBigIntPrimitiveOps.DeviceAdd(x, m, x, numWords);
+            GpuBigIntPrimitiveOps.DeviceShiftRight1(x, numWords);
             if (carry != 0)
             {
                 x[numWords - 1] |= 0x80000000u;
@@ -366,14 +228,14 @@ public static partial class GpuBigIntGcdKernels
     [GpuDeviceFunction]
     private static unsafe void DeviceUpdateXSub(uint* x1, uint* x2, uint* m, int numWords)
     {
-        if (DeviceCompareTo(x1, x2, numWords) >= 0)
+        if (GpuBigIntPrimitiveOps.DeviceCompareTo(x1, x2, numWords) >= 0)
         {
-            DeviceSub(x1, x2, x1, numWords);
+            GpuBigIntPrimitiveOps.DeviceSub(x1, x2, x1, numWords);
         }
         else
         {
-            DeviceAdd(x1, m, x1, numWords);
-            DeviceSub(x1, x2, x1, numWords);
+            GpuBigIntPrimitiveOps.DeviceAdd(x1, m, x1, numWords);
+            GpuBigIntPrimitiveOps.DeviceSub(x1, x2, x1, numWords);
         }
     }
 
@@ -386,10 +248,10 @@ public static partial class GpuBigIntGcdKernels
             {
                 unsafe
                 {
-                    if (DeviceIsZero(ctx.U, ctx.NumWords) || DeviceIsZero(ctx.V, ctx.NumWords))
+                    if (GpuBigIntPrimitiveOps.DeviceIsZero(ctx.U, ctx.NumWords) || GpuBigIntPrimitiveOps.DeviceIsZero(ctx.V, ctx.NumWords))
                     {
-                        bool uIsOne = DeviceIsOne(ctx.U, ctx.NumWords);
-                        bool vIsOne = DeviceIsOne(ctx.V, ctx.NumWords);
+                        bool uIsOne = GpuBigIntPrimitiveOps.DeviceIsOne(ctx.U, ctx.NumWords);
+                        bool vIsOne = GpuBigIntPrimitiveOps.DeviceIsOne(ctx.V, ctx.NumWords);
                         if (uIsOne || vIsOne)
                         {
                             if (vIsOne)
@@ -409,27 +271,27 @@ public static partial class GpuBigIntGcdKernels
 
                     if ((ctx.U[0] & 1) == 0) // u is even
                     {
-                        DeviceShiftRight1(ctx.U, ctx.NumWords);
+                        GpuBigIntPrimitiveOps.DeviceShiftRight1(ctx.U, ctx.NumWords);
                         DeviceUpdateXShift(ctx.X1, ctx.M, ctx.NumWords);
                         continue;
                     }
 
                     if ((ctx.V[0] & 1) == 0) // v is even
                     {
-                        DeviceShiftRight1(ctx.V, ctx.NumWords);
+                        GpuBigIntPrimitiveOps.DeviceShiftRight1(ctx.V, ctx.NumWords);
                         DeviceUpdateXShift(ctx.X2, ctx.M, ctx.NumWords);
                         continue;
                     }
 
                     // Both odd
-                    if (DeviceCompareTo(ctx.U, ctx.V, ctx.NumWords) >= 0)
+                    if (GpuBigIntPrimitiveOps.DeviceCompareTo(ctx.U, ctx.V, ctx.NumWords) >= 0)
                     {
-                        DeviceSub(ctx.U, ctx.V, ctx.U, ctx.NumWords); // u = u - v
+                        GpuBigIntPrimitiveOps.DeviceSub(ctx.U, ctx.V, ctx.U, ctx.NumWords); // u = u - v
                         DeviceUpdateXSub(ctx.X1, ctx.X2, ctx.M, ctx.NumWords);
                     }
                     else
                     {
-                        DeviceSub(ctx.V, ctx.U, ctx.V, ctx.NumWords); // v = v - u
+                        GpuBigIntPrimitiveOps.DeviceSub(ctx.V, ctx.U, ctx.V, ctx.NumWords); // v = v - u
                         DeviceUpdateXSub(ctx.X2, ctx.X1, ctx.M, ctx.NumWords);
                     }
                 }

@@ -103,6 +103,12 @@ public class NativeProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
+    public void SynchronizeStream(IntPtr stream)
+    {
+        // No-op for legacy native synchronous calls
+    }
+
+    /// <inheritdoc/>
 
     public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords, IntPtr stream = 0)
     {

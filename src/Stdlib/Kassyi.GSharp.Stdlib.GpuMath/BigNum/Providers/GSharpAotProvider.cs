@@ -76,6 +76,10 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     public void WriteWord(IntPtr devicePointer, int wordOffset, uint value) =>
         MemoryProvider.WriteWord(devicePointer, wordOffset, value);
 
+    /// <inheritdoc />
+    public void SynchronizeStream(IntPtr stream) =>
+        MemoryProvider.SynchronizeStream(stream);
+
     #endregion
 
     #region IGpuBasicMathProvider

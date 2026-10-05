@@ -119,4 +119,15 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
         CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoDAsync_v2(destPointer, srcPointer, numWords * 4, stream));
     }
 
+    /// <inheritdoc/>
+    public void SynchronizeStream(IntPtr stream)
+    {
+        if (stream == IntPtr.Zero)
+        {
+            return;
+        }
+
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));
+    }
 }
