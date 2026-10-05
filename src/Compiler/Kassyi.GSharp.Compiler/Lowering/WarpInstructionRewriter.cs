@@ -1,13 +1,11 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-/// <summary>
-/// Phase 2.5: Hoists Warp-level primitives (like Gpu.WarpShuffle) into pre-assignment statements.
-/// This ensures they can be properly suspended/resumed by the state machine emulator.
-/// </summary>
+/// <summary>Hoists nested warp-level primitives into standalone variable declarations for state machine compatibility.</summary>
 public class WarpInstructionRewriter : CSharpSyntaxRewriter
 {
     private int _tempCounter;
 
+    /// <summary>Rewrites expressions containing warp primitives by hoisting them into prior statements.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
@@ -81,3 +79,4 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
         private static bool IsWarpPrimitive(InvocationExpressionSyntax inv) => BarrierHelper.IsWarpShuffle(inv);
     }
 }
+

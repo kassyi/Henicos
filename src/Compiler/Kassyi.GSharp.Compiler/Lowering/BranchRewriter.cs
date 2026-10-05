@@ -1,9 +1,6 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-/// <summary>
-/// Lowers control flow branches (if/else) into a flat sequence of statements using conditional goto and labels.
-/// This guarantees that StateMachineLowerer can process SyncThreads() linearly.
-/// </summary>
+/// <summary>Lowers control flow branches (if/else) into a flat sequence of statements using conditional goto and labels.</summary>
 public class BranchRewriter : CSharpSyntaxRewriter
 {
     private int _labelCounter;
@@ -26,6 +23,7 @@ public class BranchRewriter : CSharpSyntaxRewriter
         return false;
     }
 
+    /// <summary>Rewrites branching statements within the block into flat goto sequences.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
@@ -38,8 +36,7 @@ public class BranchRewriter : CSharpSyntaxRewriter
 
             if (visited is BlockSyntax nestedBlock)
             {
-                // Only inline blocks that contain a barrier. Other blocks can remain nested 
-                // to preserve variable scopes and prevent unnecessary hoisting.
+                // [WHY] Only inline blocks that contain a barrier to preserve variable scopes and prevent unnecessary hoisting.
                 if (ContainsBarrier(statement))
                 {
                     newStatements.AddRange(nestedBlock.Statements);
@@ -129,8 +126,7 @@ public class BranchRewriter : CSharpSyntaxRewriter
             var elseStmt = (StatementSyntax)Visit(node.Else.Statement);
             if (elseStmt is BlockSyntax elseBlock)
             {
-                // We add the label to an empty statement and then inline the block.
-                // This prevents LabeledStatement from creating an implicit local block scope.
+                // [WHY] We add the label to an empty statement and then inline the block to avoid creating an implicit local block scope.
                 statements.Add(SyntaxFactory.LabeledStatement(elseLabelName, SyntaxFactory.EmptyStatement()));
                 statements.AddRange(elseBlock.Statements);
             }
@@ -147,3 +143,4 @@ public class BranchRewriter : CSharpSyntaxRewriter
         return SyntaxFactory.Block(statements);
     }
 }
+

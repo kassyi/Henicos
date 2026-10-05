@@ -1,11 +1,9 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-/// <summary>
-/// Connects all AST Lowering passes into a single pipeline.
-/// This transforms standard C# kernel bodies into a flat state machine suitable for CPU emulation.
-/// </summary>
+/// <summary>Connects all AST lowering passes into a pipeline that transforms standard C# kernel bodies into a flat state machine.</summary>
 public static class AstLoweringPipeline
 {
+    /// <summary>Lowers a kernel block into a flat state machine block and extracts hoisted context fields.</summary>
     public static (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields) Lower(
         BlockSyntax body)
     {
@@ -26,8 +24,10 @@ public static class AstLoweringPipeline
     }
 }
 
+/// <summary>Provides extension methods for chaining syntax rewriter passes on a block.</summary>
 internal static class BlockSyntaxLoweringExtensions
 {
     public static BlockSyntax LowerWith<T>(this BlockSyntax block) where T : CSharpSyntaxRewriter, new() =>
         (BlockSyntax)new T().Visit(block);
 }
+
