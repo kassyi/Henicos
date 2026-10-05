@@ -177,7 +177,7 @@ internal static class KernelLaunchEmitter
     {
         writer.AppendAotStructPath(p.Type);
         writer.AppendLine($" native_{p.Name} = default;");
-        writer.Append($"AotContexts.Marshal_");
+        writer.Append("AotContexts.Marshal_");
         writer.AppendNestedCppName(p.Type);
         using (writer.Parentheses())
         {

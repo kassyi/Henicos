@@ -119,7 +119,7 @@ internal static class StructMarshalingEmitter
 
                     if (CudaLayoutRules.IsCustomStruct(arrayType.ElementType))
                     {
-                        writer.Append($"var tempArray = new ");
+                        writer.Append("var tempArray = new ");
                         writer.AppendAotStructPath(arrayType.ElementType);
                         writer.AppendLine($"[host.{member.Name}.Length];");
 

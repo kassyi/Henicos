@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 using System;
 using System.Numerics;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
+using Runtime;
 
 /// <summary>
 /// Host (CPU) fallback execution provider for arbitrary-precision floating-point arithmetic.

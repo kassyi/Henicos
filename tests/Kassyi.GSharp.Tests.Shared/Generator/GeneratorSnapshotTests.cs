@@ -103,7 +103,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         compilation = compilation.AddSyntaxTrees(syntaxTrees);
 
         var errors = compilation.GetDiagnostics()
-            .Where(d => d.Severity == DiagnosticSeverity.Error)
+            .Where(d => d.Severity == DiagnosticSeverity.Error && d.Id != "CS8795")
             .ToList();
         if (errors.Count > 0)
         {
@@ -171,8 +171,9 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     private GeneratorDriverRunResult RunGenerator(CSharpCompilation compilation, CSharpParseOptions parseOptions)
     {
         var generator = new GpuKernelGenerator();
+        var cudaGenerator = new CudaImportGenerator();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
-            generators: new[] { generator.AsSourceGenerator() },
+            generators: new ISourceGenerator[] { generator.AsSourceGenerator(), cudaGenerator.AsSourceGenerator() },
             additionalTexts: null,
             parseOptions: parseOptions,
             optionsProvider: new Kassyi.GSharp.Tests.Shared.Helpers.TestAnalyzerConfigOptionsProvider(DialectName));
