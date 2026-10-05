@@ -34,15 +34,14 @@ Here’s a self-contained C# program that renders a 1080p Mandelbrot set (over 5
 
 ```csharp
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Generated;
 
 int width = 1920, height = 1080;
 int[] image = new int[width * height];
 
-// Launch on the GPU
-MandelbrotWrapper.LaunchRender(image, width, height, gridDimX: 128, blockDimX: 256);
+// Launch on the GPU (auto-generated partial method on the same class)
+Mandelbrot.LaunchRender(image, width, height, gridDimX: 128, blockDimX: 256);
 
-public static class Mandelbrot
+public static partial class Mandelbrot
 {
     [GpuKernel]
     public static void Render(int[] output, int width, int height)
@@ -67,7 +66,24 @@ public static class Mandelbrot
         });
     }
 }
+```
 
+### Native CUDA Interop (`[CudaImport]`)
+
+Need to integrate existing, highly tuned CUDA C++ (`.cu`) kernels into your .NET application? G# seamlessly binds native `.fatbin` or `.ptx` binaries with zero P/Invoke boilerplate. Kernel entry point constants are automatically parsed from `.cu` files and exposed via `NativeCudaKernels`:
+
+```csharp
+using System.Runtime.InteropServices;
+
+public static partial class NativeInterop
+{
+    public const string FatbinName = "native_kernels.fatbin";
+
+    [CudaImport(FatbinName, EntryPoint = NativeCudaKernels.ReductionKernel_Native)]
+    public static partial void LaunchReduction(
+        [In] Float4[] input, [Out] float[] output, int n,
+        uint gridDimX, uint blockDimX);
+}
 ```
 
 ---
