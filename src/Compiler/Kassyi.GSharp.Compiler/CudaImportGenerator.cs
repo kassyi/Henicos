@@ -24,7 +24,29 @@ public class CudaImportGenerator : IIncrementalGenerator
                 transform: static (ctx, _) => ctx)
             .Where(static m => m.TargetSymbol is IMethodSymbol);
 
-        context.RegisterSourceOutput(methodDeclarations, GenerateCudaImport);
+        var classGroups = methodDeclarations.Collect().SelectMany(static (items, _) =>
+        {
+            var groups = new Dictionary<INamedTypeSymbol, ImmutableArray<GeneratorAttributeSyntaxContext>.Builder>(SymbolEqualityComparer.Default);
+            foreach (var item in items)
+            {
+                var type = item.TargetSymbol.ContainingType;
+                if (!groups.TryGetValue(type, out var builder))
+                {
+                    builder = ImmutableArray.CreateBuilder<GeneratorAttributeSyntaxContext>();
+                    groups[type] = builder;
+                }
+                builder.Add(item);
+            }
+
+            var result = ImmutableArray.CreateBuilder<KeyValuePair<INamedTypeSymbol, ImmutableArray<GeneratorAttributeSyntaxContext>>>();
+            foreach (var kvp in groups)
+            {
+                result.Add(new KeyValuePair<INamedTypeSymbol, ImmutableArray<GeneratorAttributeSyntaxContext>>(kvp.Key, kvp.Value.ToImmutable()));
+            }
+            return result.ToImmutable();
+        });
+
+        context.RegisterSourceOutput(classGroups, GenerateCudaImportForClass);
     }
 
     private static bool HasPartialModifier(MethodDeclarationSyntax method)
@@ -40,35 +62,58 @@ public class CudaImportGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static void GenerateCudaImport(SourceProductionContext context,
-        GeneratorAttributeSyntaxContext syntaxContext)
+    private static void GenerateCudaImportForClass(SourceProductionContext context,
+        KeyValuePair<INamedTypeSymbol, ImmutableArray<GeneratorAttributeSyntaxContext>> group)
     {
-        var methodSymbol = (IMethodSymbol)syntaxContext.TargetSymbol;
-        var methodSyntax = (MethodDeclarationSyntax)syntaxContext.TargetNode;
-
-        var attributeSyntax = FindCudaImportAttribute(methodSyntax);
-        if (attributeSyntax == null)
-        {
-            return;
-        }
-
-        ExtractAttributeArguments(attributeSyntax, methodSymbol.Name, out var moduleName, out var entryPoint);
+        var containingClass = group.Key;
+        var contexts = group.Value;
 
         using var writer = new SourceWriter();
         EmitFileHeader(writer);
 
-        EmitNamespace(writer, methodSymbol.ContainingNamespace);
+        EmitNamespace(writer, containingClass.ContainingNamespace);
 
-        var containingClass = methodSymbol.ContainingType;
         EmitClassDeclaration(writer, containingClass);
         using (writer.Scope())
         {
-            EmitModuleCacheField(writer, moduleName);
-            EmitNativeContextStruct(writer, methodSymbol);
-            EmitMethodImplementation(writer, methodSyntax, methodSymbol, moduleName, entryPoint);
+            var generatedFatbins = new HashSet<string>();
+
+            foreach (var ctx in contexts)
+            {
+                var methodSymbol = (IMethodSymbol)ctx.TargetSymbol;
+                var attributeData = ctx.Attributes.FirstOrDefault(a => a.AttributeClass?.Name == CudaImportAttribute);
+                if (attributeData == null)
+                {
+                    continue;
+                }
+
+                ExtractAttributeArguments(attributeData, methodSymbol.Name, out var moduleName, out var _);
+
+                if (generatedFatbins.Add(moduleName))
+                {
+                    EmitModuleCacheField(writer, moduleName);
+                }
+            }
+
+            foreach (var ctx in contexts)
+            {
+                var methodSymbol = (IMethodSymbol)ctx.TargetSymbol;
+                var methodSyntax = (MethodDeclarationSyntax)ctx.TargetNode;
+
+                var attributeData = ctx.Attributes.FirstOrDefault(a => a.AttributeClass?.Name == CudaImportAttribute);
+                if (attributeData == null)
+                {
+                    continue;
+                }
+
+                ExtractAttributeArguments(attributeData, methodSymbol.Name, out var moduleName, out var entryPoint);
+
+                EmitNativeContextStruct(writer, methodSymbol);
+                EmitMethodImplementation(writer, methodSyntax, methodSymbol, moduleName, entryPoint);
+            }
         }
 
-        context.AddSource($"{containingClass.Name}_{methodSymbol.Name}_CudaImport.g.cs", writer.ToString());
+        context.AddSource($"{containingClass.Name}_CudaImport.g.cs", writer.ToString());
     }
 
     private static void EmitFileHeader(SourceWriter writer)
@@ -349,15 +394,17 @@ public class CudaImportGenerator : IIncrementalGenerator
                 continue;
             }
 
-            if (param.Type is IArrayTypeSymbol)
+            if (param.Type is not IArrayTypeSymbol)
             {
-                var hasIn = param.HasAttribute("In");
-                var hasOut = param.HasAttribute("Out");
+                continue;
+            }
 
-                if (hasOut || (!hasIn && !hasOut))
-                {
-                    writer.AppendLine($"d_{param.Name}.CopyToHost({param.Name});");
-                }
+            var hasIn = param.HasAttribute("In");
+            var hasOut = param.HasAttribute("Out");
+
+            if (hasOut || (!hasIn && !hasOut))
+            {
+                writer.AppendLine($"d_{param.Name}.CopyToHost({param.Name});");
             }
         }
     }
@@ -381,34 +428,8 @@ public class CudaImportGenerator : IIncrementalGenerator
         return defaultValue;
     }
 
-    private static AttributeSyntax? FindCudaImportAttribute(MethodDeclarationSyntax methodSyntax)
-    {
-        foreach (var attributeList in methodSyntax.AttributeLists)
-        {
-            foreach (var attribute in attributeList.Attributes)
-            {
-                if (IsCudaImportAttributeName(attribute.Name))
-                {
-                    return attribute;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private static bool IsCudaImportAttributeName(NameSyntax name)
-    {
-        return name switch
-        {
-            IdentifierNameSyntax id => id.Identifier.ValueText is AttributeShortName or nameof(CudaImportAttribute),
-            QualifiedNameSyntax q => q.Right.Identifier.ValueText is AttributeShortName or nameof(CudaImportAttribute),
-            _ => false
-        };
-    }
-
     private static void ExtractAttributeArguments(
-        AttributeSyntax attributeSyntax,
+        AttributeData attributeData,
         string defaultEntryPoint,
         out string moduleName,
         out string entryPoint)
@@ -416,44 +437,24 @@ public class CudaImportGenerator : IIncrementalGenerator
         moduleName = "unknown_module";
         entryPoint = defaultEntryPoint;
 
-        if (attributeSyntax.ArgumentList is null)
+        if (attributeData.ConstructorArguments.Length > 0)
         {
-            return;
-        }
-
-        var arguments = attributeSyntax.ArgumentList.Arguments;
-        if (arguments.Count > 0 && arguments[0].NameEquals is null)
-        {
-            if (arguments[0].Expression is LiteralExpressionSyntax strLit &&
-                strLit.IsKind(SyntaxKind.StringLiteralExpression))
+            if (attributeData.ConstructorArguments[0].Value is string argValue)
             {
-                moduleName = strLit.Token.ValueText;
+                moduleName = argValue;
             }
         }
 
-        foreach (var arg in arguments)
+        foreach (var namedArg in attributeData.NamedArguments)
         {
-            if (arg.NameEquals?.Name.Identifier.ValueText != "EntryPoint")
+            if (namedArg.Key == "EntryPoint")
             {
-                continue;
+                if (namedArg.Value.Value is string argValue)
+                {
+                    entryPoint = argValue;
+                }
+                break;
             }
-
-            if (arg.Expression is LiteralExpressionSyntax entryLit &&
-                entryLit.IsKind(SyntaxKind.StringLiteralExpression))
-            {
-                entryPoint = entryLit.Token.ValueText;
-            }
-            else if (arg.Expression is InvocationExpressionSyntax
-                     {
-                         Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" },
-                         ArgumentList.Arguments.Count: > 0
-                     } nameofInvocation &&
-                     nameofInvocation.ArgumentList.Arguments[0].Expression is IdentifierNameSyntax targetId)
-            {
-                entryPoint = targetId.Identifier.ValueText;
-            }
-
-            break;
         }
     }
 
