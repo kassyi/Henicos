@@ -125,6 +125,11 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
         var parentDir = Path.GetFullPath(Path.Combine(sourceDir, ".."));
         var globalUsingsPath = Path.Combine(parentDir, "GlobalUsings.cs");
+        if (!File.Exists(globalUsingsPath))
+        {
+            globalUsingsPath = Path.Combine(parentDir, "..", "GlobalUsings.cs");
+        }
+
         if (File.Exists(globalUsingsPath))
         {
             syntaxTrees.Add(CSharpSyntaxTree.ParseText(
@@ -136,6 +141,11 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         if (isStdlibKernel)
         {
             var contextsDir = Path.Combine(parentDir, "Contexts");
+            if (!Directory.Exists(contextsDir))
+            {
+                contextsDir = Path.Combine(parentDir, "..", "Contexts");
+            }
+
             if (Directory.Exists(contextsDir))
             {
                 foreach (var f in Directory.GetFiles(contextsDir, "*.cs"))

@@ -14,7 +14,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
         _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+        _context = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot) { PolyAlgorithmThreshold = 8192 };
     }
 
     public void Dispose()
