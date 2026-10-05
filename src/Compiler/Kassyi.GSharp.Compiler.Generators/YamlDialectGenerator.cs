@@ -3,6 +3,7 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Kassyi.GSharp.Compiler.Generators;
 
+/// <summary>Generates C# dialect classes implementing ITranspilerDialect from YAML configuration files.</summary>
 public static class YamlDialectGenerator
 {
     private static readonly IDeserializer s_deserializer = new DeserializerBuilder()
@@ -10,6 +11,7 @@ public static class YamlDialectGenerator
         .IgnoreUnmatchedProperties()
         .Build();
 
+    /// <summary>Discovers YAML dialect files in inputDir and generates dialect C# classes in outputDir.</summary>
     public static void Run(string inputDir, string outputDir)
     {
         Directory.CreateDirectory(outputDir);

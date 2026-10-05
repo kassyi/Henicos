@@ -2,10 +2,13 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Kassyi.GSharp.Compiler.Tasks.Helpers;
 
+/// <summary>Standard process execution helper that prevents stdout/stderr pipe buffer deadlocks.</summary>
 public class ProcessRunner : IProcessRunner
 {
+    /// <summary>Gets the default shared process runner instance.</summary>
     public static readonly ProcessRunner Default = new();
 
+    /// <inheritdoc />
     public async Task<ProcessResult> RunAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
     {
         startInfo.UseShellExecute = false;

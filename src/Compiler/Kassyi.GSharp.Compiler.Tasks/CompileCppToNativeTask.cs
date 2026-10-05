@@ -4,22 +4,30 @@ using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
+/// <summary>MSBuild task that compiles C++ host shadow implementations into native platform dynamic-link libraries (.dll) via MSVC.</summary>
 public class CompileCppToNativeTask : CompileKernelTaskBase
 {
+    /// <summary>Gets or sets the C++ source files to compile.</summary>
     [Required]
     public ITaskItem[] CppSources { get; set; } = [];
 
+    /// <summary>Gets or sets a value indicating whether to compile for multiple architectures (x64 and arm64).</summary>
     public bool GSharpMultiTarget { get; set; }
 
+    /// <summary>Gets or sets the resulting compiled native DLL task items.</summary>
     [Output]
     public ITaskItem[] OutputDlls { get; set; } = [];
 
     private string[] _architectures = [];
     private readonly Dictionary<string, Dictionary<string, string>> _vcvarsEnvs = [];
 
+    /// <inheritdoc />
     protected override ITaskItem[] GetSources() => CppSources;
+
+    /// <inheritdoc />
     protected override void SetOutputItems(ITaskItem[] outputItems) => OutputDlls = outputItems;
 
+    /// <inheritdoc />
     protected override bool OnBeforeExecute()
     {
         _architectures = GetTargetArchitectures();

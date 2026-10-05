@@ -3,20 +3,29 @@ using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
+/// <summary>Base MSBuild task providing parallel compilation, Visual Studio environment resolution, and artifact dispatching for kernel sources.</summary>
 public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
 {
+    /// <summary>Gets or sets the target directory where compiled artifacts are placed.</summary>
     [Required]
     public string OutputDirectory { get; set; } = string.Empty;
 
+    /// <summary>Gets or sets a value indicating whether to generate mock compilation outputs during testing.</summary>
     public bool MockCompilation
     {
         get; set;
     }
 
+    /// <summary>Retrieves source items to be processed by this compilation task.</summary>
     protected abstract ITaskItem[] GetSources();
+
+    /// <summary>Compiles or transforms an individual source item into output artifacts.</summary>
     protected abstract ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem);
+
+    /// <summary>Sets the output task items produced by compilation.</summary>
     protected abstract void SetOutputItems(ITaskItem[] outputItems);
 
+    /// <inheritdoc />
     public override bool Execute()
     {
         var sources = GetSources();
