@@ -21,10 +21,6 @@ internal class Program
             Logger<Program>.Error(ex, "An unhandled exception occurred");
             return 1;
         }
-        finally
-        {
-            Logger.Flush();
-        }
     }
 
     private static int Execute(string[] args)
