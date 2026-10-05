@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
@@ -144,10 +145,68 @@ public class FermatRunner : IDisposable
                 TotalShiftBits = 2 * E + 1,
                 Exponent = _exponent
             },
-            gridDimX: 1, blockDimX: 256
+            gridDimX: 1, blockDimX: 256, hStream: _gpuWorkspace.Stream
         );
 
         (_valueT, _remainder) = (_remainder, _valueT);
+    }
+
+    private void RunWithGraph(int iterations)
+    {
+        if (iterations <= 0)
+        {
+            return;
+        }
+
+        var stream = _gpuWorkspace.Stream;
+        if (_gpuWorkspace.Provider is IGpuGraphProvider graphProvider)
+        {
+            // Warm-up to ensure allocations and static cache transfers complete outside capture
+            MultiplySquareAndReduceHost();
+            iterations--;
+
+            if (iterations == 0)
+            {
+                return;
+            }
+
+            graphProvider.BeginCapture(stream);
+            IntPtr graph;
+            try
+            {
+                for (var i = 0; i < iterations; i++)
+                {
+                    MultiplySquareAndReduceHost();
+                }
+            }
+            finally
+            {
+                graph = graphProvider.EndCapture(stream);
+            }
+
+            if (graph == IntPtr.Zero)
+            {
+                return;
+            }
+
+            var graphExec = graphProvider.InstantiateGraph(graph);
+
+            try
+            {
+                graphProvider.LaunchGraph(graphExec, stream);
+            }
+            finally
+            {
+                graphProvider.DestroyGraph(graph, graphExec);
+            }
+        }
+        else
+        {
+            for (var i = 0; i < iterations; i++)
+            {
+                MultiplySquareAndReduceHost();
+            }
+        }
     }
 
     /// <summary>
@@ -158,10 +217,7 @@ public class FermatRunner : IDisposable
     {
         var sw = Stopwatch.StartNew();
 
-        for (var i = 0; i < E; i++)
-        {
-            MultiplySquareAndReduceHost();
-        }
+        RunWithGraph(E);
 
         GpuKernelLoader.SynchronizeDevice();
         sw.Stop();
@@ -175,10 +231,7 @@ public class FermatRunner : IDisposable
     /// <param name="chunkSize">The number of squaring iterations to execute.</param>
     public void RunBenchmarkChunk(int chunkSize = 100)
     {
-        for (var i = 0; i < chunkSize; i++)
-        {
-            MultiplySquareAndReduceHost();
-        }
+        RunWithGraph(chunkSize);
 
         GpuKernelLoader.SynchronizeDevice();
     }
