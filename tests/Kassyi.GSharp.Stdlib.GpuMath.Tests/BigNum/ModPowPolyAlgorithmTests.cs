@@ -108,5 +108,13 @@ public class ModPowPolyAlgorithmTests : IDisposable
         using var gpuBase1 = GpuBigUInt.FromBigInteger(_context, BigInteger.One, numWords);
         GpuBigIntDivRem.ModPow(gpuBase1, gpuExp, gpuMod, gpuResult);
         Assert.Equal(BigInteger.ModPow(BigInteger.One, 5, modValue), gpuResult.ToBigInteger());
+
+        // 4. Modulus 0 (DivideByZeroException)
+        using var gpuMod0 = GpuBigUInt.FromBigInteger(_context, BigInteger.Zero, numWords);
+        Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.ModPow(gpuBase5, gpuExp, gpuMod0, gpuResult));
+
+        // 5. Size Mismatch (ArgumentException)
+        using var gpuMismatch = new GpuBigUInt(_context, numWords + 1);
+        Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.ModPow(gpuMismatch, gpuExp, gpuMod, gpuResult));
     }
 }
