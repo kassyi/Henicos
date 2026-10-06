@@ -153,3 +153,6 @@ Specs, guides, and API references are available in [`docs/spec/en/`](https://www
 ## License
 
 MIT License. See [LICENSE](https://www.google.com/search?q=LICENSE&utm_source=gemini) for details.
+
+## Trademark Notice
+CUDA and NVIDIA are trademarks or registered trademarks of NVIDIA Corporation. Henicos (G#) is an independent open-source project and is not affiliated with, sponsored, or endorsed by NVIDIA Corporation.
