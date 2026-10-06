@@ -114,8 +114,14 @@ public static class GridDimension
 // ReSharper disable once UnusedType.Global -- Public API exposed for GPU kernels
 // ReSharper disable once UnusedMember.Global -- Public API exposed for GPU kernels
 #pragma warning disable IDE0051 // Justification: Public API exposed for library consumers
-public static class Gpu
+public static partial class Gpu
 {
+    // NOTE FOR AI AGENTS & DEVELOPERS:
+    // DO NOT declare hardware or warp intrinsics manually in this file.
+    // All GPU and Warp intrinsics are code-generated from 'src/NativeApi/ptx_intrinsics.yml' at compile time.
+    // To add or modify hardware intrinsics, declare them in the YAML file instead.
+    // This file is strictly reserved for compiler macros (e.g., ForUnroll, Hint) and managed simulation hooks.
+
     /// <summary>
     /// Provides compiler optimization hints for kernel code generation.
     /// </summary>
@@ -150,13 +156,6 @@ public static class Gpu
     }
 
     /// <summary>
-    /// Synchronizes all threads across the entire cooperative grid (<c>cg::this_grid().sync()</c>).
-    /// </summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    [CudaIntrinsic("cg::this_grid().sync")]
-    public static void SyncGrid() => GpuOnlyException.Throw();
-
-    /// <summary>
     /// Executes the provided action, automatically inserting a grid synchronization (<c>cg::this_grid().sync()</c>)
     /// between each statement in the action body.
     /// </summary>
@@ -170,129 +169,6 @@ public static class Gpu
     /// <returns>A typed placeholder evaluated at GPU compile-time.</returns>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     public static int Constant(string macroName) => GpuOnlyException.Throw<int>();
-
-    /// <summary>Atomically adds an integer value to the target address and returns the old value.</summary>
-    /// <param name="address">The reference to the memory location to modify.</param>
-    /// <param name="val">The value to add.</param>
-    /// <returns>The original value stored at <paramref name="address"/> before the addition.</returns>
-    [CudaIntrinsic("atomicAdd")]
-    public static int AtomicAdd(ref int address, int val) => GpuOnlyException.Throw<int>();
-
-    /// <summary>Atomically adds an unsigned integer value to the target address and returns the old value.</summary>
-    /// <param name="address">The reference to the memory location to modify.</param>
-    /// <param name="val">The value to add.</param>
-    /// <returns>The original value stored at <paramref name="address"/> before the addition.</returns>
-    [CudaIntrinsic("atomicAdd")]
-    public static uint AtomicAdd(ref uint address, uint val) => GpuOnlyException.Throw<uint>();
-
-    /// <summary>Atomically adds an unsigned 64-bit integer to the target address and returns the old value.</summary>
-    /// <param name="address">The reference to the memory location to modify.</param>
-    /// <param name="val">The value to add.</param>
-    /// <returns>The original value stored at <paramref name="address"/> before the addition.</returns>
-    [CudaIntrinsic("atomicAdd")]
-    public static ulong AtomicAdd(ref ulong address, ulong val) => GpuOnlyException.Throw<ulong>();
-
-    /// <summary>Atomically adds a floating-point value to the target address and returns the old value.</summary>
-    /// <param name="address">The reference to the memory location to modify.</param>
-    /// <param name="val">The value to add.</param>
-    /// <returns>The original value stored at <paramref name="address"/> before the addition.</returns>
-    [CudaIntrinsic("atomicAdd")]
-    public static float AtomicAdd(ref float address, float val) => GpuOnlyException.Throw<float>();
-
-    /// <summary>Atomically subtracts an integer value from the target address and returns the old value.</summary>
-    /// <param name="address">The reference to the memory location to modify.</param>
-    /// <param name="val">The value to subtract.</param>
-    /// <returns>The original value stored at <paramref name="address"/> before the subtraction.</returns>
-    [CudaIntrinsic("atomicSub")]
-    public static int AtomicSub(ref int address, int val) => GpuOnlyException.Throw<int>();
-
-    /// <summary>Atomically subtracts an unsigned integer value from the target address and returns the old value.</summary>
-    /// <param name="address">The reference to the memory location to modify.</param>
-    /// <param name="val">The value to subtract.</param>
-    /// <returns>The original value stored at <paramref name="address"/> before the subtraction.</returns>
-    [CudaIntrinsic("atomicSub")]
-    public static uint AtomicSub(ref uint address, uint val) => GpuOnlyException.Throw<uint>();
-
-    /// <summary>Adds two unsigned 32-bit integers with carry-in and carry-out propagation.</summary>
-    /// <param name="a">The first operand.</param>
-    /// <param name="b">The second operand.</param>
-    /// <param name="carry">The carry-in value (0 or 1), updated with the carry-out result.</param>
-    /// <returns>The 32-bit addition result.</returns>
-    [CudaIntrinsic("__gsharp_add_cc")]
-    public static uint AddWithCarry(uint a, uint b, ref ulong carry) => GpuOnlyException.Throw<uint>();
-
-    /// <summary>Subtracts two unsigned 32-bit integers with borrow-in and borrow-out propagation.</summary>
-    /// <param name="a">The minuend operand.</param>
-    /// <param name="b">The subtrahend operand.</param>
-    /// <param name="borrow">The borrow-in value (0 or 1), updated with the borrow-out result.</param>
-    /// <returns>The 32-bit subtraction result.</returns>
-    [CudaIntrinsic("__gsharp_sub_cc")]
-    public static uint SubWithBorrow(uint a, uint b, ref long borrow) => GpuOnlyException.Throw<uint>();
-
-    /// <summary>Atomically computes bitwise OR on the target unsigned 32-bit integer address.</summary>
-    /// <param name="address">The reference to the memory location to modify.</param>
-    /// <param name="val">The value to OR.</param>
-    /// <returns>The original value stored at <paramref name="address"/> before the operation.</returns>
-    [CudaIntrinsic("atomicOr")]
-    public static uint AtomicOr(ref uint address, uint val) => GpuOnlyException.Throw<uint>();
-
-    /// <summary>Atomically computes bitwise OR on the target unsigned 64-bit integer address.</summary>
-    /// <param name="address">The reference to the memory location to modify.</param>
-    /// <param name="val">The value to OR.</param>
-    /// <returns>The original value stored at <paramref name="address"/> before the operation.</returns>
-    [CudaIntrinsic("atomicOr")]
-    public static ulong AtomicOr(ref ulong address, ulong val) => GpuOnlyException.Throw<ulong>();
-
-    /// <summary>Atomically computes the maximum value between the address content and the supplied value.</summary>
-    /// <param name="address">The reference to the memory location to modify.</param>
-    /// <param name="val">The value to compare.</param>
-    /// <returns>The original value stored at <paramref name="address"/> before the operation.</returns>
-    [CudaIntrinsic("atomicMax")]
-    public static uint AtomicMax(ref uint address, uint val) => GpuOnlyException.Throw<uint>();
-
-    /// <summary>Atomically computes the maximum value between the address content and the supplied value (64-bit).</summary>
-    /// <param name="address">The reference to the memory location to modify.</param>
-    /// <param name="val">The value to compare.</param>
-    /// <returns>The original value stored at <paramref name="address"/> before the operation.</returns>
-    [CudaIntrinsic("atomicMax")]
-    public static ulong AtomicMax(ref ulong address, ulong val) => GpuOnlyException.Throw<ulong>();
-
-    /// <summary>Reverses the bit order of a 32-bit unsigned integer using the <c>__brev</c> hardware instruction.</summary>
-    /// <param name="val">The 32-bit unsigned integer whose bits are to be reversed.</param>
-    /// <returns>The bit-reversed 32-bit unsigned integer.</returns>
-    [CudaIntrinsic("__brev")]
-    public static uint BitReverse(uint val) => GpuOnlyException.Throw<uint>();
-
-    /// <summary>Computes the full 64-bit product of two 32-bit unsigned integers without overflow.</summary>
-    /// <param name="a">The first 32-bit unsigned multiplicand.</param>
-    /// <param name="b">The second 32-bit unsigned multiplicand.</param>
-    /// <returns>The 64-bit product of <paramref name="a"/> and <paramref name="b"/>.</returns>
-    [CudaIntrinsic("__gsharp_mul_wide")]
-    public static ulong MultiplyWide(uint a, uint b) => GpuOnlyException.Throw<ulong>();
-
-    /// <summary>Computes the high 64 bits of the product of two 64-bit unsigned integers (<c>__umul64hi</c>).</summary>
-    /// <param name="a">The first 64-bit unsigned multiplicand.</param>
-    /// <param name="b">The second 64-bit unsigned multiplicand.</param>
-    /// <returns>The most significant 64 bits of the 128-bit product.</returns>
-    [CudaIntrinsic("__umul64hi")]
-    public static ulong MultiplyHigh(ulong a, ulong b) => GpuOnlyException.Throw<ulong>();
-
-    /// <summary>Concatenates hi and lo, shifts left by shift, and extracts the most significant 32 bits.</summary>
-    /// <param name="lo">The least significant 32 bits.</param>
-    /// <param name="hi">The most significant 32 bits.</param>
-    /// <param name="shift">The shift amount in bits (0-31).</param>
-    /// <returns>The most significant 32 bits of the shifted 64-bit pair.</returns>
-    [CudaIntrinsic("__funnelshift_l")]
-    public static uint FunnelShiftLeft(uint lo, uint hi, uint shift) => GpuOnlyException.Throw<uint>();
-
-    /// <summary>Concatenates hi and lo, shifts right by shift, and extracts the least significant 32 bits.</summary>
-    /// <param name="lo">The least significant 32 bits.</param>
-    /// <param name="hi">The most significant 32 bits.</param>
-    /// <param name="shift">The shift amount in bits (0-31).</param>
-    /// <returns>The least significant 32 bits of the shifted 64-bit pair.</returns>
-    [CudaIntrinsic("__funnelshift_r")]
-    public static uint FunnelShiftRight(uint lo, uint hi, uint shift) => GpuOnlyException.Throw<uint>();
-
     /// <summary>
     /// Injects raw inline PTX assembly or CUDA C++ instructions directly into the transpiled output.
     /// </summary>
