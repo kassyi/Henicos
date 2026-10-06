@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
 /// Executes accelerated Fermat number Probable Prime (PRP) tests and NTT-based big integer squaring kernels on NVIDIA GPUs.
@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para>Performs iterative squaring and modular reduction modulo $F_E = 2^{2^E} + 1$ using GPU mega-kernels and host orchestration.</para>
 /// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to release all underlying GPU buffers and workspace allocations.</para>
 /// </remarks>
-public class FermatRunner : IDisposable
+public class FermatAlgorithm : IDisposable
 {
     /// <summary>
     /// Gets the Fermat number exponent parameter $E$, where the target test number is $F_E = 2^{2^E} + 1$.
@@ -40,11 +40,11 @@ public class FermatRunner : IDisposable
     private int _exponent;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="FermatRunner"/> class configured for Fermat exponent <paramref name="e"/>.
+    /// Initializes a new instance of the <see cref="FermatAlgorithm"/> class configured for Fermat exponent <paramref name="e"/>.
     /// </summary>
     /// <param name="e">The Fermat exponent $E$.</param>
     /// <exception cref="InvalidOperationException">Thrown when GPU context initialization fails.</exception>
-    public FermatRunner(int e)
+    public FermatAlgorithm(int e)
     {
         E = e;
 
@@ -272,11 +272,10 @@ public class FermatRunner : IDisposable
     }
 
     /// <summary>
-    /// Finalizes an instance of the <see cref="FermatRunner"/> class.
+    /// Finalizes an instance of the <see cref="FermatAlgorithm"/> class.
     /// </summary>
-    ~FermatRunner()
+    ~FermatAlgorithm()
     {
         Dispose(false);
     }
 }
-

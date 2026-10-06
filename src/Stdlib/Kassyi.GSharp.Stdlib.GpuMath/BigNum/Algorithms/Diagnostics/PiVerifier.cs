@@ -1,9 +1,11 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
+
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Diagnostics;
 
 /// <summary>
 /// Provides verification functionality for computed Pi digits.
 /// </summary>
-public static class PiVerification
+public static class PiVerifier
 {
     /// <summary>
     /// Verifies the trailing hexadecimal digits of the computed Pi against the BBP algorithm.

@@ -1,17 +1,17 @@
 using System.Numerics;
 using System.Security.Cryptography;
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
 /// Provides high-performance prime generation utilizing CPU trial factoring and GPU Fermat PRP testing.
 /// </summary>
-public static class GpuPrimeGenerator
+public static class PrimeSearchAlgorithm
 {
     /// <summary>
     /// Generates a strictly positive probable prime (PRP) of the specified bit length.
     /// Uses CPU trial division for small primes, followed by robust Miller-Rabin / Fermat PRP testing.
-    /// (Automatically offloads to GPU FermatRunner for extremely large bit lengths > 4096).
+    /// (Automatically offloads to GPU FermatAlgorithm for extremely large bit lengths > 4096).
     /// </summary>
     /// <returns></returns>
     public static BigInteger Generate(int bitLength)

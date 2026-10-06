@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Runtime.Interop;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 namespace Henicos.Cli;
 
@@ -12,7 +14,7 @@ public class FermatBenchmark
         get; set;
     }
 
-    private FermatRunner _runner = null!;
+    private FermatAlgorithm _runner = null!;
 
     private BigInteger _baseValueX;
     private BigInteger _modulusN;
@@ -28,19 +30,16 @@ public class FermatBenchmark
         _baseA = 2;
         _exponentValue = _modulusN - 1;
 
-        _runner = new FermatRunner(E);
+        _runner = new FermatAlgorithm(E);
     }
 
     [IterationSetup]
-    public void IterationSetup()
-    {
-        Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemGetInfo_v2(out _vramBefore, out _);
-    }
+    public void IterationSetup() => CudaDriverApi.cuMemGetInfo_v2(out _vramBefore, out _);
 
     [IterationCleanup]
     public void IterationCleanup()
     {
-        Kassyi.GSharp.Runtime.Interop.CudaDriverApi.cuMemGetInfo_v2(out var vramAfter, out _);
+        CudaDriverApi.cuMemGetInfo_v2(out var vramAfter, out _);
         long leakedMb = (_vramBefore - vramAfter) / 1024 / 1024;
         if (leakedMb > 0)
         {

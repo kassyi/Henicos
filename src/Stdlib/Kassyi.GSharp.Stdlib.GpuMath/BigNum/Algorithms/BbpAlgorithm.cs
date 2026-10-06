@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
 /// Implements the Bailey-Borwein-Plouffe (BBP) spigot algorithm for direct extraction of arbitrary hexadecimal Pi digits.

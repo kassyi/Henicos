@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
 /// Defines the memory allocation and lifetime management contract for large-integer device buffers.

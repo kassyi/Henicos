@@ -3,22 +3,23 @@ using System.Numerics;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [Collection("GpuWorkspace")]
 [Trait("Category", "GpuExecution")]
-public class FermatRunnerTests
+public class FermatAlgorithmTests
 {
     [Theory]
     [InlineData(4)]
     [InlineData(5)]
     [InlineData(6)]
-    public void FermatRunner_RunFermatPrp_MatchesCpuBigInteger_SmallE(int e)
+    public void FermatAlgorithm_RunFermatPrp_MatchesCpuBigInteger_SmallE(int e)
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var runner = new FermatRunner(e);
+        using var runner = new FermatAlgorithm(e);
 
         var (resultArray, _) = runner.RunFermatPrp();
 
@@ -36,11 +37,11 @@ public class FermatRunnerTests
     }
 
     [Fact]
-    public void FermatRunner_RunFermatPrp_MatchesCpuBigInteger_E10()
+    public void FermatAlgorithm_RunFermatPrp_MatchesCpuBigInteger_E10()
     {
         int e = 10;
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var runner = new FermatRunner(e);
+        using var runner = new FermatAlgorithm(e);
 
         var (resultArray, _) = runner.RunFermatPrp();
 
@@ -63,20 +64,20 @@ public class FermatRunnerTests
 
     [Fact(Skip =
         "cuMemGetInfo_v2 measures global device VRAM and is extremely flaky on shared GPUs. Use Benchmark CLI to measure leaks instead.")]
-    public void FermatRunner_VramLeak_Test()
+    public void FermatAlgorithm_VramLeak_Test()
     {
         int e = 12;
         using var scope = new GpuKernelLoader.CudaContextScope();
 
         // Force JIT compilation overhead before tracking memory
-        using (var warmupRunner = new FermatRunner(5))
+        using (var warmupRunner = new FermatAlgorithm(5))
         {
             warmupRunner.RunBenchmarkChunk(2);
         }
 
         CudaDriverApi.cuMemGetInfo_v2(out nint vramBefore, out _);
 
-        using (var runner = new FermatRunner(e))
+        using (var runner = new FermatAlgorithm(e))
         {
             runner.RunFermatPrp();
         }

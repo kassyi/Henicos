@@ -1,6 +1,7 @@
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 using Xunit;
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Pi;
+namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Algorithms;
 
 [Trait("Category", "CpuExecution")]
 public class PiAlgorithmsTests
@@ -11,10 +12,10 @@ public class PiAlgorithmsTests
         // Pi in hex: 3.243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89...
         // Offset 0 starts from the first fractional digit '2'
         
-        var first10 = Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi.BbpAlgorithm.ExtractHexDigits(0, 10);
+        var first10 = BbpAlgorithm.ExtractHexDigits(0, 10);
         Assert.Equal("243F6A8885", first10.ToUpperInvariant());
         
-        var next10 = Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi.BbpAlgorithm.ExtractHexDigits(10, 10);
+        var next10 = BbpAlgorithm.ExtractHexDigits(10, 10);
         Assert.Equal("A308D31319", next10.ToUpperInvariant());
     }
 
@@ -23,7 +24,7 @@ public class PiAlgorithmsTests
     [InlineData(50, "314159265358979323846264338327950288419716939937510")]
     public void Test_ChudnovskyAlgorithm_ComputesPiCorrectly(int digits, string expectedDecimal)
     {
-        var piString = Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi.ChudnovskyAlgorithm.ComputePi(digits);
+        var piString = ChudnovskyAlgorithm.ComputePi(digits);
         Assert.Equal(expectedDecimal, piString);
     }
 }

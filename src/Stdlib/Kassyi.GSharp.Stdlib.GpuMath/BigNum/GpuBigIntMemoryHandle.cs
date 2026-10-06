@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
 /// Represents a structured handle to a slice of device memory storing large integer limbs.

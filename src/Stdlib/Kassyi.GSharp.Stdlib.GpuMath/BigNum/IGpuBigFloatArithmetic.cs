@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
 /// Defines the contract for arbitrary-precision floating-point arithmetic operations executed across GPU and CPU backends.

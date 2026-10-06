@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
 /// Represents a 2x2 transition matrix of arbitrary-precision integers (<see cref="GpuBigUInt"/>) allocated in GPU device memory.

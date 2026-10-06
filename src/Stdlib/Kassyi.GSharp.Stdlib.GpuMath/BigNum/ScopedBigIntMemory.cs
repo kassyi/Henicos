@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
 /// Provides a deterministic, stack-scoped RAII wrapper for temporary device memory allocations.

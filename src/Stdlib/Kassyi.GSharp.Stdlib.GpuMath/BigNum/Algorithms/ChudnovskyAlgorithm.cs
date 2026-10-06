@@ -2,15 +2,16 @@ using System.Diagnostics;
 using System.Numerics;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Diagnostics;
 using Kassyi.GSharp.Stdlib.GpuMath.IO;
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
 /// GPU-accelerated Chudnovsky binary splitting algorithm for ultra-fast high-precision Pi computation.
 /// Utilizes G# <see cref="GpuBigUInt"/> and NTT multiplication kernels with Zero-PCIe intermediate merges.
 /// </summary>
-public static class GpuChudnovskyAlgorithm
+public partial class ChudnovskyAlgorithm
 {
     /// <summary>
     /// Average number of decimal digits contributed per hypergeometric series term in the Chudnovsky algorithm.
@@ -139,7 +140,7 @@ public static class GpuChudnovskyAlgorithm
     /// Pi = (426880 * Sqrt(10005 * 10^(2*totalDigits)) * Q) / T
     /// using GPU-accelerated NTT multiplication, Sqrt, and Newton-Raphson division.
     /// </summary>
-    private static GpuBigUInt ComputeFinalPiFraction(GpuWorkspace workspace, GpuHypergeometricPqt pqt, int digits,
+    private static GpuBigUInt ComputeFinalPiFraction(GpuWorkspace workspace, HypergeometricTerms pqt, int digits,
         int totalDigits,
         bool asHex)
     {
@@ -299,7 +300,7 @@ public static class GpuChudnovskyAlgorithm
                 hostData[CheckIndex + 1].ToString("X8") + hostData[CheckIndex].ToString("X8");
             var offset = (actualTopIndex - CheckIndex - 2) * 8;
 
-            PiVerification.VerifyWithBbp(computedHexTail, offset);
+            PiVerifier.VerifyWithBbp(computedHexTail, offset);
         }
         else
         {
@@ -337,14 +338,14 @@ public static class GpuChudnovskyAlgorithm
         writer.Flush();
     }
 
-    private static GpuHypergeometricPqt ComputeTree(int a, int b, GpuWorkspace workspace, int thresholdTerms,
+    private static HypergeometricTerms ComputeTree(int a, int b, GpuWorkspace workspace, int thresholdTerms,
         ProgressState state)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(thresholdTerms);
         var terms = b - a;
         if (terms <= thresholdTerms)
         {
-            var cpuResult = ChudnovskyAlgorithm.ComputeSubtree(a, b);
+            var cpuResult = ComputeSubtree(a, b);
             var gpuResult = UploadToGpu(workspace, cpuResult);
             state.Report(b);
             return gpuResult;
@@ -359,7 +360,7 @@ public static class GpuChudnovskyAlgorithm
         swRight.Stop();
 
         var swMerge = Stopwatch.StartNew();
-        var result = GpuHypergeometricPqt.Merge(workspace, left, right);
+        var result = HypergeometricTerms.Merge(workspace, left, right);
         swMerge.Stop();
 
         state.Report(b);
@@ -367,7 +368,7 @@ public static class GpuChudnovskyAlgorithm
     }
 
 
-    private static GpuHypergeometricPqt UploadToGpu(GpuWorkspace workspace, ChudnovskyAlgorithm.ChudnovskyPqt cpu)
+    private static HypergeometricTerms UploadToGpu(GpuWorkspace workspace, ChudnovskyPqt cpu)
     {
         var sw = Stopwatch.StartNew();
         var pNeg = cpu.P < 0;
@@ -380,7 +381,7 @@ public static class GpuChudnovskyAlgorithm
         var absT = BigInteger.Abs(cpu.T);
         var gpuT = GpuBigUInt.FromBigInteger(workspace, absT, 0);
 
-        var result = new GpuHypergeometricPqt(
+        var result = new HypergeometricTerms(
             new GpuBigInt(gpuP, pNeg),
             gpuQ,
             new GpuBigInt(gpuT, tNeg)
@@ -390,3 +391,15 @@ public static class GpuChudnovskyAlgorithm
         return result;
     }
 }
+
+/// <summary>
+/// Obsolete compatibility type for <see cref="ChudnovskyAlgorithm"/>.
+/// </summary>
+[Obsolete("Use ChudnovskyAlgorithm instead.")]
+public static class GpuChudnovskyAlgorithm
+{
+    /// <inheritdoc cref="ChudnovskyAlgorithm.ComputePi(int, TextWriter, int, bool)" />
+    public static void ComputePi(int digits, TextWriter outputWriter, int thresholdTerms = 8192, bool asHex = false)
+        => ChudnovskyAlgorithm.ComputePi(digits, outputWriter, thresholdTerms, asHex);
+}
+

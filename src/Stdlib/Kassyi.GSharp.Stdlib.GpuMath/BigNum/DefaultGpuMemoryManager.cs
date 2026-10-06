@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
 /// Provides a pooled device memory manager implementation for GPU large-integer operations.

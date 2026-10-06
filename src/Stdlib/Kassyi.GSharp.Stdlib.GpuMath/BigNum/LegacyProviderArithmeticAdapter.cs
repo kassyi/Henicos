@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Runtime;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
 /// Adapts the legacy <see cref="Providers.IGpuExecutionProvider"/> interface to the new <see cref="IGpuBigIntArithmetic"/> contract.

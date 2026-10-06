@@ -1,5 +1,4 @@
-
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.References;
 
 /// <summary>
 /// Provides a host (CPU) reference implementation of Lehmer's / Half-GCD algorithm for verification and unit testing of GPU kernels.
@@ -13,7 +12,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 /// <b>Execution Target:</b> Host-only (CPU) verification baseline.
 /// </para>
 /// </remarks>
-public static class HalfGcdCpuReference
+internal static class HalfGcdCpuReference
 {
     /// <summary>
     /// Computes the greatest common divisor (GCD) of two arbitrary-precision integers using Lehmer's 2x2 matrix reduction.

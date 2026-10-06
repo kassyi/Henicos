@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
 /// Represents the intermediate tuple state $(P, Q, T)$ of a hypergeometric series evaluated using Binary Splitting on the GPU.
@@ -18,7 +18,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Memory Management:</b> Implements <see cref="IDisposable"/> to release underlying GPU memory allocated for <see cref="P"/>, <see cref="Q"/>, and <see cref="T"/>.</para>
 /// <para><b>Thread Safety:</b> Value-type wrapper semantics; distinct instances are safe for concurrent read operations.</para>
 /// </remarks>
-public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInt p, [TakesOwnership] GpuBigUInt q, [TakesOwnership] GpuBigInt t) : IDisposable
+public readonly struct HypergeometricTerms([TakesOwnership] GpuBigInt p, [TakesOwnership] GpuBigUInt q, [TakesOwnership] GpuBigInt t) : IDisposable
 {
     /// <summary>
     /// Gets the cumulative product term $P(a, b)$.
@@ -46,17 +46,17 @@ public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInt p, [Takes
     }
 
     /// <summary>
-    /// Merges two adjacent <see cref="GpuHypergeometricPqt"/> states $(P_l, Q_l, T_l)$ and $(P_r, Q_r, T_r)$ on the GPU.
+    /// Merges two adjacent <see cref="HypergeometricTerms"/> states $(P_l, Q_l, T_l)$ and $(P_r, Q_r, T_r)$ on the GPU.
     /// </summary>
     /// <param name="workspace">The parent GPU execution context managing memory and kernel execution.</param>
     /// <param name="left">The left child binary splitting state $(P_l, Q_l, T_l)$.</param>
     /// <param name="right">The right child binary splitting state $(P_r, Q_r, T_r)$.</param>
-    /// <returns>A new <see cref="GpuHypergeometricPqt"/> state where $P = P_l P_r$, $Q = Q_l Q_r$, and $T = T_l Q_r + P_l T_r$.</returns>
+    /// <returns>A new <see cref="HypergeometricTerms"/> state where $P = P_l P_r$, $Q = Q_l Q_r$, and $T = T_l Q_r + P_l T_r$.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="workspace"/> is <see langword="null"/>.</exception>
     /// <remarks>
     /// <para><b>Performance:</b> Dispatches high-throughput GPU multiplication and signed addition kernels.</para>
     /// </remarks>
-    public static GpuHypergeometricPqt Merge(GpuWorkspace workspace, GpuHypergeometricPqt left, GpuHypergeometricPqt right)
+    public static HypergeometricTerms Merge(GpuWorkspace workspace, HypergeometricTerms left, HypergeometricTerms right)
     {
         ArgumentNullException.ThrowIfNull(workspace);
 
@@ -89,7 +89,7 @@ public readonly struct GpuHypergeometricPqt([TakesOwnership] GpuBigInt p, [Takes
 
         var tNegative = GpuBigIntMath.AddSignedMagnitude(termA, signA, termB, signB, resultT);
 
-        return new GpuHypergeometricPqt(
+        return new HypergeometricTerms(
             new GpuBigInt(resultP, pNegative),
             resultQ,
             new GpuBigInt(resultT, tNegative)

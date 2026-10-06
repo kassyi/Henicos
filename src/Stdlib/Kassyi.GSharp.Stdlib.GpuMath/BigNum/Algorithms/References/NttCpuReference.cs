@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.References;
 
 /// <summary>
 /// Provides a host (CPU) reference implementation of 3-Prime Number Theoretic Transform (NTT) and Garner's Chinese Remainder Theorem (CRT) reconstruction.
@@ -12,7 +12,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 /// <b>Execution Target:</b> Host-only (CPU) reference calculation.
 /// </para>
 /// </remarks>
-public static class NttCpuReference
+internal static class NttCpuReference
 {
 
     // [WHY] Solinas-like Proth primes chosen for 64-bit non-overflowing arithmetic in NTT.
