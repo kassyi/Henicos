@@ -15,5 +15,26 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\Kassyi.GSharp.Core\Kassyi.GSharp.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="$(IntermediateOutputPath)GeneratedNativeApi\**\*.g.cs" />
+  </ItemGroup>
+
+  <Target Name="GenerateNativeApi" BeforeTargets="CoreCompile" Outputs="$(IntermediateOutputPath)GeneratedNativeApi.stamp">
+    <MakeDir Directories="$(IntermediateOutputPath)GeneratedNativeApi" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)..\..\Compiler\Kassyi.GSharp.Compiler.Generators\bin\$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)..\..\NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
+    <Touch Files="$(IntermediateOutputPath)GeneratedNativeApi.stamp" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="IncludeNativeApi" BeforeTargets="CoreCompile" DependsOnTargets="GenerateNativeApi">
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)GeneratedNativeApi\CudaDriverApi.g.cs" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedNativeApi\CudaDriverApi.g.cs" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedNativeApi.stamp" />
+    </ItemGroup>
+  </Target>
 
 </Project>
