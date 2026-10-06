@@ -1,0 +1,856 @@
+namespace: Kassyi.GSharp.Runtime.Interop
+className: CudaDriverApi
+libraryName: nvcuda.dll
+
+methods:
+  - name: cuInit
+    returnType: CUresult
+    summary: Initializes the CUDA driver API.
+    returnDescription: CudaSuccess if initialization succeeded; otherwise, an error code.
+    parameters:
+      - name: flags
+        type: uint
+        description: Initialization flags (must be 0).
+
+  - name: cuDeviceGet
+    returnType: CUresult
+    summary: Returns a handle to a compute device.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: device
+        type: out int
+        description: Returned device handle.
+      - name: ordinal
+        type: int
+        description: Device ordinal number.
+
+  - name: cuDeviceGetAttribute
+    returnType: CUresult
+    summary: Returns information about the device.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pi
+        type: out int
+        description: Returned attribute value.
+      - name: attrib
+        type: CuDeviceAttribute
+        description: Device attribute to query.
+      - name: dev
+        type: int
+        description: Device handle.
+
+  - name: cuCtxGetDevice
+    returnType: CUresult
+    summary: Returns the device for the current context.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: device
+        type: out int
+        description: Returned device handle for the current context.
+
+  - name: cuMemGetInfo_v2
+    returnType: CUresult
+    summary: Gets free and total memory.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: free
+        type: out nint
+        description: Returned free memory in bytes.
+      - name: total
+        type: out nint
+        description: Returned total memory in bytes.
+
+  - name: cuCtxCreate_v2
+    returnType: CUresult
+    summary: Creates a new CUDA context.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pctx
+        type: out IntPtr
+        description: Returned context handle.
+      - name: flags
+        type: uint
+        description: Context creation flags.
+      - name: dev
+        type: int
+        description: Device handle.
+
+  - name: cuCtxDestroy_v2
+    returnType: CUresult
+    summary: Destroys a CUDA context.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: ctx
+        type: IntPtr
+        description: Context handle to destroy.
+
+  - name: cuCtxPushCurrent_v2
+    returnType: CUresult
+    summary: Pushes the given context onto the CPU thread's stack.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: ctx
+        type: IntPtr
+        description: Context handle to push.
+
+  - name: cuCtxPopCurrent_v2
+    returnType: CUresult
+    summary: Pops the current CUDA context from the CPU thread.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pctx
+        type: out IntPtr
+        description: Returned previous context handle.
+
+  - name: cuCtxSetCurrent
+    returnType: CUresult
+    summary: Sets the current CUDA context.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: ctx
+        type: IntPtr
+        description: Context handle to set as current.
+
+  - name: cuCtxGetCurrent
+    returnType: CUresult
+    summary: Gets the current CUDA context.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pctx
+        type: out IntPtr
+        description: Returned current context handle.
+
+  - name: cuCtxSynchronize
+    returnType: CUresult
+    summary: Blocks until the device has completed all preceding requested tasks.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+
+  - name: cuEventCreate
+    returnType: CUresult
+    summary: Creates an event.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: phEvent
+        type: out IntPtr
+        description: Returned event handle.
+      - name: flags
+        type: uint
+        description: Event creation flags.
+
+  - name: cuEventRecord
+    returnType: CUresult
+    summary: Records an event.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hEvent
+        type: IntPtr
+        description: Event to record.
+      - name: hStream
+        type: IntPtr
+        description: Stream to record event in.
+
+  - name: cuEventSynchronize
+    returnType: CUresult
+    summary: Waits for an event to complete.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hEvent
+        type: IntPtr
+        description: Event to wait for.
+
+  - name: cuEventElapsedTime
+    returnType: CUresult
+    summary: Computes the elapsed time between two events.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pMilliseconds
+        type: out float
+        description: Returned elapsed time in milliseconds.
+      - name: hStart
+        type: IntPtr
+        description: Starting event.
+      - name: hEnd
+        type: IntPtr
+        description: Ending event.
+
+  - name: cuEventDestroy_v2
+    returnType: CUresult
+    summary: Destroys an event.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hEvent
+        type: IntPtr
+        description: Event to destroy.
+
+  - name: cuModuleLoadDataEx
+    returnType: CUresult
+    summary: Loads a module with options from byte array.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: module
+        type: out IntPtr
+        description: Returned module handle.
+      - name: image
+        type: byte[]
+        description: Module data as byte array.
+      - name: numOptions
+        type: uint
+        description: Number of JIT options.
+      - name: options
+        type: IntPtr[]?
+        description: Array of JIT options.
+      - name: optionValues
+        type: IntPtr[]?
+        description: Array of option values.
+
+  - name: cuModuleLoadDataEx
+    returnType: CUresult
+    summary: Loads a module with options from pointer.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: module
+        type: out IntPtr
+        description: Returned module handle.
+      - name: image
+        type: IntPtr
+        description: Pointer to module data in memory.
+      - name: numOptions
+        type: uint
+        description: Number of JIT options.
+      - name: options
+        type: IntPtr[]?
+        description: Array of JIT options.
+      - name: optionValues
+        type: IntPtr[]?
+        description: Array of option values.
+
+  - name: cuModuleGetFunction
+    returnType: CUresult
+    summary: Returns a function handle.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    stringMarshalling: Utf8
+    parameters:
+      - name: hfunc
+        type: out IntPtr
+        description: Returned function handle.
+      - name: hmod
+        type: IntPtr
+        description: Module to retrieve function from.
+      - name: name
+        type: string
+        description: Name of the function.
+
+  - name: cuModuleUnload
+    returnType: CUresult
+    summary: Unloads a module.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hmod
+        type: IntPtr
+        description: Module handle to unload.
+
+  - name: cuMemAlloc_v2
+    returnType: CUresult
+    summary: Allocates device memory.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dptr
+        type: out IntPtr
+        description: Returned device allocation pointer.
+      - name: bytesize
+        type: IntPtr
+        description: Requested allocation size in bytes.
+
+  - name: cuMemFree_v2
+    returnType: CUresult
+    summary: Frees device memory.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dptr
+        type: IntPtr
+        description: Pointer to device memory to free.
+
+  - name: cuMemsetD8_v2
+    returnType: CUresult
+    summary: Sets device memory to a byte value.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dptr
+        type: IntPtr
+        description: Destination device pointer.
+      - name: uc
+        type: byte
+        description: Value to set.
+      - name: byteCount
+        type: IntPtr
+        description: Number of bytes to set.
+
+  - name: cuMemcpyHtoD_v2
+    returnType: CUresult
+    summary: Copies memory from Host to Device.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dstDevice
+        type: IntPtr
+        description: Destination device pointer.
+      - name: srcHost
+        type: IntPtr
+        description: Source host pointer.
+      - name: byteCount
+        type: IntPtr
+        description: Number of bytes to copy.
+
+  - name: cuMemcpyDtoH_v2
+    returnType: CUresult
+    summary: Copies memory from Device to Host.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dstHost
+        type: IntPtr
+        description: Destination host pointer.
+      - name: srcDevice
+        type: IntPtr
+        description: Source device pointer.
+      - name: byteCount
+        type: IntPtr
+        description: Number of bytes to copy.
+
+  - name: cuMemcpyDtoD_v2
+    returnType: CUresult
+    summary: Copies memory from Device to Device.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dstDevice
+        type: IntPtr
+        description: Destination device pointer.
+      - name: srcDevice
+        type: IntPtr
+        description: Source device pointer.
+      - name: byteCount
+        type: IntPtr
+        description: Number of bytes to copy.
+
+  - name: cuMemcpyDtoDAsync_v2
+    returnType: CUresult
+    summary: Copies memory from Device to Device asynchronously.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dstDevice
+        type: IntPtr
+        description: Destination device pointer.
+      - name: srcDevice
+        type: IntPtr
+        description: Source device pointer.
+      - name: byteCount
+        type: IntPtr
+        description: Number of bytes to copy.
+      - name: hStream
+        type: IntPtr
+        description: Stream identifier.
+
+  - name: cuLaunchKernel
+    isUnsafe: true
+    returnType: CUresult
+    summary: Launches a CUDA function.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: f
+        type: IntPtr
+        description: Kernel function handle.
+      - name: gridDimX
+        type: uint
+        description: Width of grid in blocks.
+      - name: gridDimY
+        type: uint
+        description: Height of grid in blocks.
+      - name: gridDimZ
+        type: uint
+        description: Depth of grid in blocks.
+      - name: blockDimX
+        type: uint
+        description: X dimension of each thread block.
+      - name: blockDimY
+        type: uint
+        description: Y dimension of each thread block.
+      - name: blockDimZ
+        type: uint
+        description: Z dimension of each thread block.
+      - name: sharedMemBytes
+        type: uint
+        description: Dynamic shared-memory size per thread block in bytes.
+      - name: hStream
+        type: IntPtr
+        description: Stream identifier.
+      - name: kernelParams
+        type: void**
+        description: Array of pointers to kernel parameters.
+      - name: extra
+        type: IntPtr
+        description: Extra options (must be IntPtr.Zero).
+
+  - name: cuLaunchCooperativeKernel
+    isUnsafe: true
+    returnType: CUresult
+    summary: Launches a cooperative CUDA function.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: f
+        type: IntPtr
+        description: Kernel function handle.
+      - name: gridDimX
+        type: uint
+        description: Width of grid in blocks.
+      - name: gridDimY
+        type: uint
+        description: Height of grid in blocks.
+      - name: gridDimZ
+        type: uint
+        description: Depth of grid in blocks.
+      - name: blockDimX
+        type: uint
+        description: X dimension of each thread block.
+      - name: blockDimY
+        type: uint
+        description: Y dimension of each thread block.
+      - name: blockDimZ
+        type: uint
+        description: Z dimension of each thread block.
+      - name: sharedMemBytes
+        type: uint
+        description: Dynamic shared-memory size per thread block in bytes.
+      - name: hStream
+        type: IntPtr
+        description: Stream identifier.
+      - name: kernelParams
+        type: void**
+        description: Array of pointers to kernel parameters.
+
+  - name: cuStreamCreate
+    returnType: CUresult
+    summary: Creates a stream.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: phStream
+        type: out IntPtr
+        description: Returned stream handle.
+      - name: flags
+        type: uint
+        description: Stream creation flags.
+
+  - name: cuStreamDestroy
+    returnType: CUresult
+    summary: Destroys a stream.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream handle to destroy.
+
+  - name: cuStreamSynchronize
+    returnType: CUresult
+    summary: Waits for a stream's tasks to complete.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream identifier.
+
+  - name: cuMemAllocAsync
+    returnType: CUresult
+    summary: Allocates device memory asynchronously.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dptr
+        type: out IntPtr
+        description: Returned device allocation pointer.
+      - name: bytesize
+        type: IntPtr
+        description: Number of bytes to allocate.
+      - name: hStream
+        type: IntPtr
+        description: Stream in which allocation takes place.
+
+  - name: cuMemFreeAsync
+    returnType: CUresult
+    summary: Frees device memory asynchronously.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dptr
+        type: IntPtr
+        description: Device pointer to free.
+      - name: hStream
+        type: IntPtr
+        description: Stream in which deallocation takes place.
+
+  - name: cuMemsetD8Async
+    returnType: CUresult
+    summary: Sets device memory asynchronously.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dptr
+        type: IntPtr
+        description: Destination device pointer.
+      - name: uc
+        type: byte
+        description: Value to set.
+      - name: byteCount
+        type: IntPtr
+        description: Number of bytes to set.
+      - name: hStream
+        type: IntPtr
+        description: Stream identifier.
+
+  - name: cuMemcpyHtoDAsync_v2
+    returnType: CUresult
+    summary: Copies memory from Host to Device asynchronously.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dstDevice
+        type: IntPtr
+        description: Destination device pointer.
+      - name: srcHost
+        type: IntPtr
+        description: Source host pointer.
+      - name: byteCount
+        type: IntPtr
+        description: Number of bytes to copy.
+      - name: hStream
+        type: IntPtr
+        description: Stream identifier.
+
+  - name: cuMemcpyDtoHAsync_v2
+    returnType: CUresult
+    summary: Copies memory from Device to Host asynchronously.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dstHost
+        type: IntPtr
+        description: Destination host pointer.
+      - name: srcDevice
+        type: IntPtr
+        description: Source device pointer.
+      - name: byteCount
+        type: IntPtr
+        description: Number of bytes to copy.
+      - name: hStream
+        type: IntPtr
+        description: Stream identifier.
+
+  - name: cuStreamBeginCapture
+    returnType: CUresult
+    summary: Begins graph capture on a stream.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream in which to initiate capture.
+      - name: mode
+        type: int
+        description: Stream capture mode.
+
+  - name: cuStreamIsCapturing
+    returnType: CUresult
+    summary: Returns stream capture status.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream to query.
+      - name: captureStatus
+        type: out CUstreamCaptureStatus
+        description: Returned capture status.
+
+  - name: cuStreamEndCapture
+    returnType: CUresult
+    summary: Ends graph capture on a stream.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream to end capture on.
+      - name: phGraph
+        type: out IntPtr
+        description: Returned captured graph handle.
+
+  - name: cuGraphInstantiate
+    entryPoint: cuGraphInstantiate_v2
+    returnType: CUresult
+    summary: Creates an executable graph from a graph.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: phGraphExec
+        type: out IntPtr
+        description: Returned executable graph handle.
+      - name: hGraph
+        type: IntPtr
+        description: Graph to instantiate.
+      - name: phErrorNode
+        type: IntPtr
+        description: Returned node that caused failure, if any.
+      - name: logBuffer
+        type: IntPtr
+        description: Buffer for diagnostic messages.
+      - name: bufferSize
+        type: nuint
+        description: Size of logBuffer in bytes.
+
+  - name: cuGraphLaunch
+    returnType: CUresult
+    summary: Launches an executable graph in a stream.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hGraphExec
+        type: IntPtr
+        description: Executable graph to launch.
+      - name: hStream
+        type: IntPtr
+        description: Stream to launch in.
+
+  - name: cuGraphExecDestroy
+    returnType: CUresult
+    summary: Destroys an executable graph.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hGraphExec
+        type: IntPtr
+        description: Executable graph to destroy.
+
+  - name: cuGraphDestroy
+    returnType: CUresult
+    summary: Destroys a graph.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hGraph
+        type: IntPtr
+        description: Graph to destroy.
+
+  - name: cuFuncGetAttribute
+    returnType: CUresult
+    summary: Returns information about a function.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pi
+        type: out int
+        description: Returned attribute value.
+      - name: attrib
+        type: CuFunctionAttribute
+        description: Function attribute to query.
+      - name: hfunc
+        type: IntPtr
+        description: Function to query.
+
+  - name: cuDeviceTotalMem
+    returnType: CUresult
+    summary: Returns the total amount of memory on the device.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: bytes
+        type: out nuint
+        description: Returned total memory in bytes.
+      - name: dev
+        type: int
+        description: Device handle.
+
+  - name: cuDeviceCanAccessPeer
+    returnType: CUresult
+    summary: Queries if a device may directly access a peer device's memory.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: canAccessPeer
+        type: out int
+        description: Returned peer access capability (1 if accessible, 0 otherwise).
+      - name: dev
+        type: int
+        description: Device from which memory access is queried.
+      - name: peerDev
+        type: int
+        description: Device being accessed.
+
+  - name: cuCtxEnablePeerAccess
+    returnType: CUresult
+    summary: Enables direct access to memory allocations in a peer context.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: peerContext
+        type: IntPtr
+        description: Context to enable access to.
+      - name: flags
+        type: uint
+        description: Reserved for future use (must be 0).
+
+  - name: cuCtxDisablePeerAccess
+    returnType: CUresult
+    summary: Disables direct access to memory allocations in a peer context.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: peerContext
+        type: IntPtr
+        description: Context to disable access to.
+
+  - name: cuMemAllocManaged
+    returnType: CUresult
+    summary: Allocates memory that will be automatically managed by the Unified Memory system.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dptr
+        type: out IntPtr
+        description: Returned device allocation pointer.
+      - name: bytesize
+        type: IntPtr
+        description: Allocation size in bytes.
+      - name: flags
+        type: uint
+        description: Allocation flags.
+
+  - name: cuMemPrefetchAsync
+    returnType: CUresult
+    summary: Prefetches memory to the specified destination device.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: devPtr
+        type: IntPtr
+        description: Pointer to memory range to prefetch.
+      - name: count
+        type: IntPtr
+        description: Number of bytes to prefetch.
+      - name: dstDevice
+        type: int
+        description: Destination device handle.
+      - name: hStream
+        type: IntPtr
+        description: Stream identifier.
+
+  - name: cuMemAdvise
+    returnType: CUresult
+    summary: Advises the Unified Memory subsystem about the usage pattern for the specified memory range.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: devPtr
+        type: IntPtr
+        description: Pointer to memory range.
+      - name: count
+        type: IntPtr
+        description: Number of bytes in memory range.
+      - name: advice
+        type: int
+        description: Usage advice hint.
+      - name: device
+        type: int
+        description: Device to apply advice to.
+
+  - name: cuMemAllocHost
+    returnType: CUresult
+    summary: Allocates page-locked host memory.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pp
+        type: out IntPtr
+        description: Returned page-locked host allocation pointer.
+      - name: bytesize
+        type: IntPtr
+        description: Allocation size in bytes.
+
+  - name: cuMemFreeHost
+    returnType: CUresult
+    summary: Frees page-locked host memory.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: p
+        type: IntPtr
+        description: Host pointer to free.
+
+  - name: cuMemHostAlloc
+    returnType: CUresult
+    summary: Allocates page-locked host memory with flags.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pp
+        type: out IntPtr
+        description: Returned host allocation pointer.
+      - name: bytesize
+        type: IntPtr
+        description: Allocation size in bytes.
+      - name: flags
+        type: uint
+        description: Allocation flags.
+
+  - name: cuMemHostRegister
+    returnType: CUresult
+    summary: Registers an existing host memory range for use with CUDA.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: p
+        type: IntPtr
+        description: Host pointer to register.
+      - name: bytesize
+        type: IntPtr
+        description: Size of range in bytes.
+      - name: flags
+        type: uint
+        description: Registration flags.
+
+  - name: cuMemHostUnregister
+    returnType: CUresult
+    summary: Unregisters a host memory range.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: p
+        type: IntPtr
+        description: Host pointer to unregister.
+
+  - name: cuMemHostGetDevicePointer
+    returnType: CUresult
+    summary: Passes back the device pointer mapped to host pinned memory.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pdptr
+        type: out IntPtr
+        description: Returned mapped device pointer.
+      - name: p
+        type: IntPtr
+        description: Host pointer.
+      - name: flags
+        type: uint
+        description: Flags (must be 0).
+
+  - name: cuOccupancyMaxActiveBlocksPerMultiprocessor
+    returnType: CUresult
+    summary: Returns occupancy for a device function.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: numBlocks
+        type: out int
+        description: Returned occupancy (number of active blocks per multiprocessor).
+      - name: func
+        type: IntPtr
+        description: Kernel function handle.
+      - name: blockSize
+        type: int
+        description: Block size in threads.
+      - name: dynamicSMemSize
+        type: nuint
+        description: Dynamic shared memory size in bytes per block.
+
+  - name: cuOccupancyMaxPotentialBlockSize
+    returnType: CUresult
+    summary: Suggests a launch configuration with maximum occupancy.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: minGridSize
+        type: out int
+        description: Returned suggested minimum grid size.
+      - name: blockSize
+        type: out int
+        description: Returned suggested block size.
+      - name: func
+        type: IntPtr
+        description: Kernel function handle.
+      - name: blockSizeToDynamicSMemSize
+        type: IntPtr
+        description: Function pointer calculating dynamic shared memory size from block size.
+      - name: dynamicSMemSize
+        type: nuint
+        description: Dynamic shared memory size in bytes per block.
+      - name: blockSizeLimit
+        type: int
+        description: Maximum block size limit (0 for no limit).
