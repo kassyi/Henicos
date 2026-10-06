@@ -1,9 +1,9 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules;
 
-using Microsoft.CodeAnalysis.CSharp;
+using System.Collections.Generic;
 using DeclarationRules;
 using ExpressionRules;
-using System.Collections.Generic;
+using Microsoft.CodeAnalysis.CSharp;
 
 /// <summary>
 /// Provides an O(1) array-based resolution registry for transpiler rules.
