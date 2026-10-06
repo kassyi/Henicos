@@ -14,6 +14,7 @@ internal static class ModPowHostLoopController
         var n = baseVal.NumWords;
         var expWords = exp.NumWords;
         using var mod2N = new GpuBigUInt(baseVal.Workspace, 2 * n);
+        mod2N.Clear();
         mod2N.CopyFrom(mod, numWords: n);
 
         using var tempResult = new GpuBigUInt(baseVal.Workspace, 2 * n);
@@ -21,21 +22,18 @@ internal static class ModPowHostLoopController
         tempResult.Workspace.Provider.CopyHostToDevice(tempResult.DevicePointer, [1u], 1, tempResult.Workspace.Stream);
 
         using var tempBase = new GpuBigUInt(baseVal.Workspace, 2 * n);
+        tempBase.Clear();
         tempBase.CopyFrom(baseVal, numWords: n);
 
-        // Precompute Reciprocal for mod4N to avoid MegaKernel invocations inside the loop
-        using var mod4N = new GpuBigUInt(baseVal.Workspace, 4 * n);
-        mod4N.CopyFrom(mod, numWords: n);
-
-        var modActualBits = GpuBigIntDivRem.GetActualBits(mod4N);
+        var modActualBits = GpuBigIntDivRem.GetActualBits(mod);
         if (modActualBits == 0)
         {
             throw new DivideByZeroException();
         }
 
-        var lz = 4 * n * 32 - modActualBits;
-        using var bNorm = new GpuBigUInt(baseVal.Workspace, 4 * n);
-        GpuBigIntMath.ShiftLeft(mod4N, lz, bNorm);
+        var lz = n * 32 - modActualBits;
+        using var bNorm = new GpuBigUInt(baseVal.Workspace, n);
+        GpuBigIntMath.ShiftLeft(mod, lz, bNorm);
 
         var marginBits = 512;
         var marginWords = marginBits / 32;
@@ -47,8 +45,8 @@ internal static class ModPowHostLoopController
         reciprocalNorm.Clear();
         GpuBigIntDivRem.Reciprocal(bNorm, reciprocalNorm, targetBits, marginWords);
 
-        using var reciprocalOfMod4N = new GpuBigUInt(baseVal.Workspace, targetWords);
-        GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfMod4N);
+        using var reciprocalOfMod = new GpuBigUInt(baseVal.Workspace, targetWords);
+        GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfMod);
 
         // Initial reduction of base using the precomputed reciprocal
         using var tempBaseQ = new GpuBigUInt(baseVal.Workspace, 4 * n);
@@ -56,7 +54,7 @@ internal static class ModPowHostLoopController
         using var extendedTempBase = new GpuBigUInt(baseVal.Workspace, 4 * n);
         extendedTempBase.Clear();
         extendedTempBase.CopyFrom(tempBase, numWords: 2 * n);
-        GpuBigIntDivRem.Reduce(extendedTempBase, mod4N, reciprocalOfMod4N, targetBits, aActualWords, tempBaseQ, tempBaseR);
+        GpuBigIntDivRem.Reduce(extendedTempBase, mod, reciprocalOfMod, targetBits, aActualWords, tempBaseQ, tempBaseR);
         tempBase.CopyFrom(tempBaseR, numWords: 2 * n);
 
         using var tempMul = new GpuBigUInt(baseVal.Workspace, 4 * n);
@@ -99,12 +97,12 @@ internal static class ModPowHostLoopController
                     if ((e & 1) == 1)
                     {
                         GpuBigIntMath.Mul(tempResult, tempBase, tempMul);
-                        GpuBigIntDivRem.Reduce(tempMul, mod4N, reciprocalOfMod4N, targetBits, aActualWords, tempQ, tempR);
+                        GpuBigIntDivRem.Reduce(tempMul, mod, reciprocalOfMod, targetBits, aActualWords, tempQ, tempR);
                         tempResult.CopyFrom(tempR, numWords: 2 * n);
                     }
 
                     GpuBigIntMath.Mul(tempBase, tempBase, tempMul);
-                    GpuBigIntDivRem.Reduce(tempMul, mod4N, reciprocalOfMod4N, targetBits, aActualWords, tempQ, tempR);
+                    GpuBigIntDivRem.Reduce(tempMul, mod, reciprocalOfMod, targetBits, aActualWords, tempQ, tempR);
                     tempBase.CopyFrom(tempR, numWords: 2 * n);
 
                     e >>= 1;
