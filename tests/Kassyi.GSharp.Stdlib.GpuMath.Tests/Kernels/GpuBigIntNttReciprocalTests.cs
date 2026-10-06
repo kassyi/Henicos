@@ -68,7 +68,7 @@ public class GpuBigIntNttReciprocalTests
         Assert.Equal(expectedReciprocal, X);
     }
 
-    [Fact]
+    [SkippableFact]
     public void TestReciprocalMega_GpuExecution()
     {
         // Require actual GPU
