@@ -86,6 +86,15 @@ public static partial class GpuBigIntKernels
 
         var sharedCarry = new SharedMemory<uint>(32); // Max 1024 threads / 32 = 32 warps
 
+        if (BlockIndex.X != 0)
+        {
+            if (syncThreads)
+            {
+                Gpu.SyncThreads();
+            }
+            return;
+        }
+
         var blockCarryIn = sign == 1 ? 0u : 1u;
 
         for (int offset = 0; offset < numWords; offset += bDim)

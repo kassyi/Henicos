@@ -1,9 +1,9 @@
-using System.Numerics;
+using System.Diagnostics;
 
-namespace Henicos.Benchmarks;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
 
 /// <summary>Computes high-precision Pi digits using the Chudnovsky binary splitting algorithm on CPU.</summary>
-public class ChudnovskyPi
+public class ChudnovskyAlgorithm
 {
     public struct ChudnovskyPqt
     {
@@ -35,7 +35,7 @@ public class ChudnovskyPi
         var pi = piExt / BigInteger.Pow(10, extraDigits);
         sw.Stop();
 
-        Logger<ChudnovskyPi>.Info($"Computed {digits} digits in {sw.ElapsedMilliseconds} ms");
+        Logger<ChudnovskyAlgorithm>.Info($"Computed {digits} digits in {sw.ElapsedMilliseconds} ms");
         return pi.ToString();
     }
 

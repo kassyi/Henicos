@@ -1,14 +1,16 @@
+using System.Diagnostics;
 using System.Numerics;
+using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.IO;
 
-namespace Henicos.Benchmarks;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
 
 /// <summary>
 /// GPU-accelerated Chudnovsky binary splitting algorithm for ultra-fast high-precision Pi computation.
 /// Utilizes G# <see cref="GpuBigUInt"/> and NTT multiplication kernels with Zero-PCIe intermediate merges.
 /// </summary>
-public static class GpuChudnovskyPi
+public static class GpuChudnovskyAlgorithm
 {
     /// <summary>
     /// Average number of decimal digits contributed per hypergeometric series term in the Chudnovsky algorithm.
@@ -42,7 +44,7 @@ public static class GpuChudnovskyPi
         public long LastReportTimeMs
         {
             get; set;
-        } = 0;
+        }
 
         public void Report(int currentB)
         {
@@ -342,7 +344,7 @@ public static class GpuChudnovskyPi
         var terms = b - a;
         if (terms <= thresholdTerms)
         {
-            var cpuResult = ChudnovskyPi.ComputeSubtree(a, b);
+            var cpuResult = ChudnovskyAlgorithm.ComputeSubtree(a, b);
             var gpuResult = UploadToGpu(workspace, cpuResult);
             state.Report(b);
             return gpuResult;
@@ -365,7 +367,7 @@ public static class GpuChudnovskyPi
     }
 
 
-    private static GpuHypergeometricPqt UploadToGpu(GpuWorkspace workspace, ChudnovskyPi.ChudnovskyPqt cpu)
+    private static GpuHypergeometricPqt UploadToGpu(GpuWorkspace workspace, ChudnovskyAlgorithm.ChudnovskyPqt cpu)
     {
         var sw = Stopwatch.StartNew();
         var pNeg = cpu.P < 0;

@@ -1,6 +1,6 @@
 using System.Buffers;
 using System.Collections.Concurrent;
-
+using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 /// <summary>
@@ -401,7 +401,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         GpuBigUInt resultBuffer)
     {
         var outWords = leftOperand.NumWords + rightOperand.NumWords;
-        var requiredLen = outWords * 2;
+        var requiredLen = outWords;
 
         using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, outWords, this);
         var m = buffers.TransformLength;
@@ -621,6 +621,110 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         return (uint)res;
     }
 
+    public void ExecuteModPowNttMegaKernel(
+        GpuWorkspace workspace,
+        GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant,
+        GpuBigUInt reciprocalMod, GpuBigUInt exponent,
+        int n, int targetBits, uint gridDim, uint blockDim)
+    {
+        var aActualWords = 2 * n;
+        var marginBits = 512;
+        var targetBitsForBarrett = aActualWords * 32 + marginBits;
+        var targetWords = (targetBitsForBarrett + 31) / 32;
+
+        var outWords = aActualWords + targetWords;
+        var requiredLen = outWords;
+
+        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, outWords, this);
+        using var currentProduct = workspace.RentTemp(outWords);
+        using var diff = workspace.RentTemp(outWords);
+        using var nextIter = workspace.RentTemp(outWords);
+        using var nextXUnshifted = workspace.RentTemp(outWords);
+        using var nextXShifted = workspace.RentTemp(outWords);
+        using var axSquared = workspace.RentTemp(2 * n);
+        using var xSquared = workspace.RentTemp(2 * n);
+        using var modulusExpanded = workspace.RentTemp(outWords);
+
+        // For Ntt
+        var m = buffers.TransformLength;
+        var n2 = 1;
+        while (n2 * n2 < m)
+        {
+            n2 *= 2;
+        }
+
+        var ctx = new GpuBigIntDivRemKernels.AotContexts.ModPowNtt
+        {
+            Operands = new GpuBigIntDivRemKernels.AotContexts.Operand
+            {
+                TargetOperand = targetOperand.DevicePointer,
+                ResultBuffer = resultBuffer.DevicePointer,
+                Constant = constant.DevicePointer
+            },
+            ReciprocalMod = reciprocalMod.DevicePointer,
+            Exponent = exponent.DevicePointer,
+            ExponentWords = exponent.NumWords,
+            ExponentStartWord = 0,
+            ExponentEndWord = 0,
+            Dimensions = new GpuBigIntDivRemKernels.AotContexts.Dimension
+            {
+                NumberOfWords = n,
+                TargetBits = targetBits,
+                Iterations = 1
+            },
+            Ntt = new GpuBigIntDivRemKernels.AotContexts.Ntt
+            {
+                TransformLength = m,
+                TwiddleFactors = new GpuBigIntDivRemKernels.AotContexts.TwiddleFactor
+                {
+                    Forward1 = buffers.Twiddle.Forward1,
+                    Forward2 = buffers.Twiddle.Forward2,
+                    Inverse1 = buffers.Twiddle.Inverse1,
+                    Inverse2 = buffers.Twiddle.Inverse2
+                }
+            },
+            Workspace = new GpuBigIntDivRemKernels.AotContexts.WorkspaceState
+            {
+                TmpBuf = buffers.TmpBuf.DevicePointer,
+                NttBuf1A = buffers.Buf1A.DevicePointer,
+                NttBuf2A = buffers.Buf2A.DevicePointer,
+                NttBuf1B = buffers.Buf1B.DevicePointer,
+                NttBuf2B = buffers.Buf2B.DevicePointer,
+                UncarriedLow = buffers.UncarriedLow.DevicePointer,
+                UncarriedHigh = buffers.UncarriedHigh.DevicePointer,
+                BlockCarries = buffers.BlockCarries.DevicePointer,
+                CurrentProduct = currentProduct.DevicePointer,
+                Diff = diff.DevicePointer,
+                NextIter = nextIter.DevicePointer,
+                NextXUnshifted = nextXUnshifted.DevicePointer,
+                NextXShifted = nextXShifted.DevicePointer,
+                AxSquared = axSquared.DevicePointer,
+                XSquared = xSquared.DevicePointer,
+                ModulusExpanded = modulusExpanded.DevicePointer
+            },
+            CarryBuffer = IntPtr.Zero
+        };
+
+        int totalWords = exponent.NumWords;
+        int chunkWords = 8;
+        var sharedMemBytes = (uint)((m + (m >> 5)) * 4);
+
+        for (int start = 0; start < totalWords; start += chunkWords)
+        {
+            int end = Math.Min(start + chunkWords, totalWords);
+            ctx.ExponentStartWord = start;
+            ctx.ExponentEndWord = end;
+
+            GpuBigIntDivRemKernels.LaunchModPowNttMegaKernelPtr(
+                ctx,
+                gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes,
+                hStream: workspace.Stream);
+            
+            // Sync after each chunk to let the TDR watchdog reset
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
+        }
+    }
+
     private void LaunchSharedRow(GpuWorkspace workspace, IntPtr buffer, IntPtr tempBuffer, IntPtr twiddle, int m,
         int n1,
         int n2, uint p,
@@ -681,7 +785,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             AotAdvancedMathHandler handler)
         {
             var m = 1;
-            while (m < requiredLen)
+            while (m < requiredLen * 2)
             {
                 m *= 2;
             }
@@ -700,7 +804,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 
             ChunkSize = 1024;
             NumBlocks = (maxOutWords + ChunkSize - 1) / ChunkSize;
-            BlockCarries = workspace.RentTemp(NumBlocks);
+            BlockCarries = workspace.RentTemp(NumBlocks * 2);
         }
 
         public void Dispose()

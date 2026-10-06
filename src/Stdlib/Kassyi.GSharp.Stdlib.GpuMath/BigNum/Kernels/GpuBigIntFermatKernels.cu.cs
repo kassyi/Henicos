@@ -61,59 +61,57 @@ public static partial class GpuBigIntFermatKernels
 
         var gridX = (width + 31) / 32;
         var gridY = (height + 31) / 32;
-        if (BlockIndex.X >= gridX * gridY)
-        {
-            return;
-        }
+        var totalBlocks = gridX * gridY;
 
-        var bx = BlockIndex.X % gridX;
-        var by = BlockIndex.X / gridX;
+    for (int bIdx = BlockIndex.X; bIdx < totalBlocks; bIdx += GridDimension.X)
+    {
+            var bx = bIdx % gridX;
+            var by = bIdx / gridX;
 
-        if (ThreadIndex.X < 256)
-        {
-            var tx = ThreadIndex.X % 32;
-            var ty = ThreadIndex.X / 32;
-
-            var xIndex = bx * 32 + tx;
-            var yIndex = by * 32 + ty;
-
-            Gpu.ForUnroll(0, 4, iter =>
+            if (ThreadIndex.X < 256)
             {
-                var i = iter * 8;
-                if (xIndex < width && yIndex + i < height)
+                var tx = ThreadIndex.X % 32;
+                var ty = ThreadIndex.X / 32;
+
+                var xIndex = bx * 32 + tx;
+                var yIndex = by * 32 + ty;
+
+                Gpu.ForUnroll(0, 4, iter =>
                 {
-                    Gpu.InlinePtx($"s_mem[({ty} + {i}) * 33 + {tx}] = {idata[(yIndex + i) * width + xIndex]};");
-                }
-            });
-        }
+                    var i = iter * 8;
+                    if (xIndex < width && yIndex + i < height)
+                    {
+                        Gpu.InlinePtx($"s_mem[({ty} + {i}) * 33 + {tx}] = {idata[(yIndex + i) * width + xIndex]};");
+                    }
+                });
+            }
 
-        Gpu.SyncThreads();
-
-        if (ThreadIndex.X < 256)
-        {
-            var tx = ThreadIndex.X % 32;
-            var ty = ThreadIndex.X / 32;
-
-            var outXIndex = by * 32 + tx;
-            var outYIndex = bx * 32 + ty;
-
-            Gpu.ForUnroll(0, 4, iter =>
-            {
-                var i = iter * 8;
-                if (outXIndex >= height || outYIndex + i >= width)
-                {
-                    return;
-                }
-
-                uint val = 0;
-                Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
-                odata[(outYIndex + i) * height + outXIndex] = val;
-            });
-        }
-
-        if (syncThreads)
-        {
             Gpu.SyncThreads();
+
+            if (ThreadIndex.X < 256)
+            {
+                var tx = ThreadIndex.X % 32;
+                var ty = ThreadIndex.X / 32;
+
+                var outXIndex = by * 32 + tx;
+                var outYIndex = bx * 32 + ty;
+
+                Gpu.ForUnroll(0, 4, iter =>
+                {
+                    var i = iter * 8;
+                    if (outXIndex < height && outYIndex + i < width)
+                    {
+                        uint val = 0;
+                        Gpu.InlinePtx($"{val} = s_mem[{tx} * 33 + ({ty} + {i})];");
+                        odata[(outYIndex + i) * height + outXIndex] = val;
+                    }
+                });
+            }
+
+            if (syncThreads)
+            {
+                Gpu.SyncThreads();
+            }
         }
     }
 

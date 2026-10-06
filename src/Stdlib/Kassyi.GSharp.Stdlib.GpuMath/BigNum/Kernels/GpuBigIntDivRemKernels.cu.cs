@@ -79,13 +79,11 @@ public static partial class GpuBigIntDivRemKernels
 
         // 7-8. Resolve Carries (Blocked & Apply)
         int numBlocks = (numWordsResult + 1023) / 1024;
-        Gpu.SyncGrid(() =>
-        {
-            GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(ctx.Workspace.UncarriedLow, ctx.Workspace.UncarriedHigh,
-                resultDest, ctx.Workspace.BlockCarries, m, numWordsResult, 1024);
-            GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, ctx.Workspace.BlockCarries, numWordsResult,
-                1024, numBlocks);
-        });
+        GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(ctx.Workspace.UncarriedLow, ctx.Workspace.UncarriedHigh,
+            resultDest, ctx.Workspace.BlockCarries, m, numWordsResult, 1024);
+        Gpu.SyncGrid();
+        GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, ctx.Workspace.BlockCarries, numWordsResult,
+            1024, numBlocks);
         Gpu.SyncGrid();
     }
 
@@ -134,6 +132,44 @@ public static partial class GpuBigIntDivRemKernels
                 ctx.Operands.ResultBuffer[idx] = shiftedValue;
             });
             Gpu.SyncGrid();
+        }
+    }
+
+    [GpuKernel]
+    public static void BarrettCorrectionKernel(uint[] diff, uint[] rightOperand, int evalWords)
+    {
+        for (int iter = 0; iter < 1000; iter++)
+        {
+            uint topWord = diff[evalWords - 1];
+            bool underflow = (topWord & 0x80000000u) != 0;
+            Gpu.SyncThreads();
+
+            if (underflow)
+            {
+                GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, 1, false);
+            }
+            else
+            {
+                GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, -1, false);
+            }
+            Gpu.SyncThreads();
+
+            uint top2 = diff[evalWords - 1];
+            bool underflow2 = (top2 & 0x80000000u) != 0;
+            Gpu.SyncThreads();
+
+            bool done = false;
+            if (!underflow && underflow2)
+            {
+                GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, 1, false);
+                done = true;
+            }
+            Gpu.SyncThreads();
+
+            if (done)
+            {
+                break;
+            }
         }
     }
 }

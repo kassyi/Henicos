@@ -54,6 +54,7 @@ Thrown when CUDA context or native workspace allocation fails.
 | [Engine](#engine) | Gets the active GPU execution engine type. |
 | [MaxWords](#maxwords) | Gets the maximum number of 32-bit limbs (words) supported in this workspace's fixed allocations. |
 | [MemoryManager](#memorymanager) | Gets the memory manager for this workspace. |
+| [PolyAlgorithmThreshold](#polyalgorithmthreshold) | Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow. |
 | [Provider](#provider) | Gets the active GPU arithmetic execution provider implementation. |
 | [Stream](#stream) | Gets the dedicated CUDA Stream for this workspace, used for operations and CUDA Graph capture. |
 | [WorkspacePointer](#workspacepointer) | Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend). |
@@ -88,6 +89,15 @@ Gets the memory manager for this workspace.
 
 ```csharp
 public IGpuMemoryManager MemoryManager { get; }
+```
+
+## PolyAlgorithmThreshold
+
+Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow.
+Values smaller than the threshold will use intermediate-scale algorithms (e.g., Host-Loop or RNS), while values greater than or equal to the threshold will dispatch to giant-scale MegaKernels (e.g., NTT). Default is 1024 bits.
+
+```csharp
+public int PolyAlgorithmThreshold { get; set; }
 ```
 
 ## Provider

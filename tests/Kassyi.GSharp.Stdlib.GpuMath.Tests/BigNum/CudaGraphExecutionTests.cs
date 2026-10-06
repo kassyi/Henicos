@@ -247,5 +247,67 @@ public class CudaGraphExecutionTests
             cleanCtx.Provider.DestroyGraph(graph, graphExec);
         }
     }
-}
 
+    [Trait("Category", "GpuExecution")]
+    [SkippableFact]
+    public void Test_CudaGraph_ReduceZeroSync_IsCaptureSafe()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        int n = 4;
+        using var ctx = new GpuWorkspace(n * 4, GpuExecutionEngine.GSharpAot);
+        
+        // Arrange
+        using var a = new GpuBigUInt(ctx, new uint[] { 100, 0, 0, 0 });
+        using var mod = new GpuBigUInt(ctx, new uint[] { 7, 0, 0, 0 });
+        
+        var targetBits = n * 32 + 512;
+        var targetWords = (targetBits + 31) / 32;
+        using var bNorm = new GpuBigUInt(ctx, n);
+        
+        var modActualBits = GpuBigIntDivRem.GetActualBits(mod);
+        var lz = n * 32 - modActualBits;
+        GpuBigIntMath.ShiftLeft(mod, lz, bNorm);
+        
+        using var reciprocalNorm = new GpuBigUInt(ctx, targetWords);
+        reciprocalNorm.Clear();
+        GpuBigIntDivRem.Reciprocal(bNorm, reciprocalNorm, targetBits, 512 / 32);
+        
+        using var reciprocalOfMod = new GpuBigUInt(ctx, targetWords);
+        GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfMod);
+
+        using var quotient = new GpuBigUInt(ctx, n * 2);
+        using var remainder = new GpuBigUInt(ctx, n * 2);
+
+        // Act 1: Warmup
+        // The first execution will perform pooled memory allocations (cudaMalloc).
+        // This must be done outside the capture block.
+        GpuBigIntDivRem.ReduceZeroSync(a, mod, reciprocalOfMod, targetBits, n, quotient, remainder);
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
+
+        // Act 2: Capture
+        // If ReduceZeroSync contains any hidden syncs or unpooled cudaMallocs, BeginCapture/EndCapture will fail.
+        ctx.Provider.BeginCapture(ctx.Stream);
+        GpuBigIntDivRem.ReduceZeroSync(a, mod, reciprocalOfMod, targetBits, n, quotient, remainder);
+        var graph = ctx.Provider.EndCapture(ctx.Stream);
+        
+        Assert.NotEqual(IntPtr.Zero, graph);
+
+        var graphExec = ctx.Provider.InstantiateGraph(graph);
+        Assert.NotEqual(IntPtr.Zero, graphExec);
+
+        // Act 3: Launch
+        ctx.Provider.LaunchGraph(graphExec, ctx.Stream);
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
+
+        // Assert
+        var hostRemainder = new uint[n * 2];
+        ctx.Provider.CopyDeviceToHost(hostRemainder, remainder.DevicePointer, n * 2, ctx.Stream);
+        
+        // 100 % 7 = 2
+        Assert.Equal(2u, hostRemainder[0]);
+        Assert.Equal(0u, hostRemainder[1]);
+
+        ctx.Provider.DestroyGraph(graph, graphExec);
+    }
+}

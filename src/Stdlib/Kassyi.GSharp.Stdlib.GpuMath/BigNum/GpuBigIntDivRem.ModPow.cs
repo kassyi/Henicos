@@ -17,6 +17,19 @@ public static partial class GpuBigIntDivRem
     {
         ThrowIfSizeMismatch(baseVal, mod, resultBuffer);
 
-        ModPowHostLoopController.Execute(baseVal, exp, mod, resultBuffer);
+        var bitLength = baseVal.NumWords * 32;
+
+        if (bitLength <= baseVal.Workspace.PolyAlgorithmThreshold)
+        {
+            // MegaKernel (NTT-Barrett) is highly optimized and avoids kernel launch overheads.
+            // It runs entirely within registers up to ~1024 bits.
+            ModPowNttHostController.Execute(baseVal, exp, mod, resultBuffer);
+        }
+        else
+        {
+            // For giant-scale numbers (>1024 bits), MegaKernel suffers catastrophic performance degradation
+            // due to register spilling into local memory. We fall back to the Zero-Sync HostLoop which queues kernels asynchronously.
+            ModPowZeroSyncController.Execute(baseVal, exp, mod, resultBuffer);
+        }
     }
 }

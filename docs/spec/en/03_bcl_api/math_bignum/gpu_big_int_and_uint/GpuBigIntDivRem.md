@@ -153,7 +153,7 @@ The buffer to store the result.
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when operand and result buffer word counts do not match.
+Thrown when `baseVal`, `mod`, and `resultBuffer` have mismatched word lengths.
 
 `DivideByZeroException`<br>
 Thrown when the modulus (`mod`) is zero.

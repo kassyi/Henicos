@@ -72,15 +72,12 @@ public static partial class GpuBigIntSqrtKernels
         Gpu.SyncGrid();
 
         // 7-8. Resolve Carries (Blocked & Apply)
-        var numBlocks = (numWordsResult + 1023) / 1024;
-        Gpu.SyncGrid(() =>
-        {
-            GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(ctx.Workspace.UncarriedLow, ctx.Workspace.UncarriedHigh,
-                resultDest, ctx.Workspace.BlockCarries, m, numWordsResult, 1024);
-            GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, ctx.Workspace.BlockCarries, numWordsResult,
-                1024,
-                numBlocks);
-        });
+        var numBlocks = (numWordsResult + 255) / 256;
+        GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(ctx.Workspace.UncarriedLow, ctx.Workspace.UncarriedHigh,
+            resultDest, ctx.Workspace.BlockCarries, m, numWordsResult, 256);
+        Gpu.SyncGrid();
+        GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, ctx.Workspace.BlockCarries, numWordsResult,
+            256, numBlocks);
         Gpu.SyncGrid();
     }
 

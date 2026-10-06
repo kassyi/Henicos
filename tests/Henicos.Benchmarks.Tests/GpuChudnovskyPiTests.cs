@@ -2,6 +2,7 @@ using Kassyi.GSharp.Runtime.Interop;
 using Xunit;
 
 namespace Henicos.Benchmarks.Tests;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
 
 [Trait("Category", "GpuExecution")]
 public class GpuChudnovskyPiTests
@@ -16,7 +17,7 @@ public class GpuChudnovskyPiTests
         
         // Act
         // This will initialize the CudaContextScope internally and use the StringWriter
-        GpuChudnovskyPi.ComputePi(targetDigits, sw, thresholdTerms: 8, asHex: false);
+        GpuChudnovskyAlgorithm.ComputePi(targetDigits, sw, thresholdTerms: 8, asHex: false);
 
         // Assert
         var result = sw.ToString().Trim();
@@ -38,7 +39,7 @@ public class GpuChudnovskyPiTests
         using var sw = new StringWriter();
         
         // Act
-        GpuChudnovskyPi.ComputePi(targetDigits, sw, thresholdTerms: 8, asHex: true);
+        GpuChudnovskyAlgorithm.ComputePi(targetDigits, sw, thresholdTerms: 8, asHex: true);
 
         // Assert
         var result = sw.ToString().Trim();
