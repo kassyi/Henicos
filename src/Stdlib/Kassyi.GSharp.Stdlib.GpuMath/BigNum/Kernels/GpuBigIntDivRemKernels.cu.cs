@@ -134,4 +134,42 @@ public static partial class GpuBigIntDivRemKernels
             Gpu.SyncGrid();
         }
     }
+
+    [GpuKernel]
+    public static void BarrettCorrectionKernel(uint[] diff, uint[] rightOperand, int evalWords)
+    {
+        for (int iter = 0; iter < 1000; iter++)
+        {
+            uint topWord = diff[evalWords - 1];
+            bool underflow = (topWord & 0x80000000u) != 0;
+            Gpu.SyncThreads();
+
+            if (underflow)
+            {
+                GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, 1, false);
+            }
+            else
+            {
+                GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, -1, false);
+            }
+            Gpu.SyncThreads();
+
+            uint top2 = diff[evalWords - 1];
+            bool underflow2 = (top2 & 0x80000000u) != 0;
+            Gpu.SyncThreads();
+
+            bool done = false;
+            if (!underflow && underflow2)
+            {
+                GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, 1, false);
+                done = true;
+            }
+            Gpu.SyncThreads();
+
+            if (done)
+            {
+                break;
+            }
+        }
+    }
 }

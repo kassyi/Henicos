@@ -180,6 +180,54 @@ public static partial class GpuBigIntDivRem
         remainderBuffer.CopyFrom(remainderExtended, numWords: Math.Min(remainderBuffer.NumWords, evalWords));
     }
 
+    /// <summary>
+    /// Performs a zero-sync Barrett reduction using a precomputed reciprocal.
+    /// This method does not synchronize with the CPU for remainder correction, enabling CUDA Graph capture.
+    /// </summary>
+    public static void ReduceZeroSync(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt reciprocalOfB,
+        int targetBits, int aActualWords, GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
+    {
+        var nA = leftOperand.NumWords;
+        var n = rightOperand.NumWords;
+        var targetWords = reciprocalOfB.NumWords;
+        
+        using var productWithReciprocal = new GpuBigUInt(rightOperand.Workspace, nA + targetWords);
+        GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
+
+        quotientBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: targetBits / 32,
+            numWords: Math.Min(quotientBuffer.NumWords, nA));
+
+        using var qb = new GpuBigUInt(rightOperand.Workspace, quotientBuffer.NumWords + n);
+        GpuBigIntMath.Mul(quotientBuffer, rightOperand, qb);
+
+        // Zero-sync safe bound: use the full allocated size of qb instead of dynamically reading actual bits
+        var evalWords = quotientBuffer.NumWords + n + 1;
+
+        using var qbTrunc = new GpuBigUInt(rightOperand.Workspace, evalWords);
+        qbTrunc.Clear();
+        qbTrunc.CopyFrom(qb, numWords: Math.Min(quotientBuffer.NumWords + n, evalWords));
+
+        using var leftOperandExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
+        leftOperandExtended.Clear();
+        leftOperandExtended.CopyFrom(leftOperand, numWords: Math.Min(nA, evalWords));
+
+        using var remainderExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
+        GpuBigIntMath.Sub(leftOperandExtended, qbTrunc, remainderExtended);
+
+        using var bPaddedExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
+        bPaddedExtended.Clear();
+        bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(n, evalWords));
+
+        // Zero-sync correction using single block kernel
+        GpuBigIntDivRemKernels.LaunchBarrettCorrectionKernelPtr(
+            remainderExtended.DevicePointer, bPaddedExtended.DevicePointer, evalWords,
+            gridDimX: 1, blockDimX: 1024, hStream: rightOperand.Workspace.Stream);
+
+        remainderBuffer.Clear();
+        remainderBuffer.CopyFrom(remainderExtended, numWords: Math.Min(remainderBuffer.NumWords, evalWords));
+    }
+
+
     private static void CorrectUnderflow(GpuWorkspace workspace, int evalWords, GpuBigUInt quotientBuffer,
         GpuBigUInt remainderExtended, GpuBigUInt bPaddedExtended)
     {
