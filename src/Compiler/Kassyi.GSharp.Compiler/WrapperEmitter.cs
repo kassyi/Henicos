@@ -77,81 +77,38 @@ internal static class WrapperEmitter
         switch (isDevicePtr)
         {
             case true when (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out):
+            {
+                if (p.HasExplicitDefaultValue)
                 {
-                    if (p.HasExplicitDefaultValue)
-                    {
-                        defaultValue = "default";
-                    }
-
-                    return new InteropParameterInfo(string.Empty, null, true, defaultValue);
+                    defaultValue = "default";
                 }
+
+                return new InteropParameterInfo(string.Empty, null, true, defaultValue);
+            }
             case true when CudaLayoutRules.IsCustomStruct(p.Type):
-                {
-                    var tempWriter = new SourceWriter();
-                    tempWriter.AppendAotStructPath(p.Type);
-                    var rawTypeName = tempWriter.ToString();
-                    return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
-                }
+            {
+                var tempWriter = new SourceWriter();
+                tempWriter.AppendAotStructPath(p.Type);
+                var rawTypeName = tempWriter.ToString();
+                return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
+            }
             default:
+            {
+                var modifier = p.RefKind switch
                 {
-                    var modifier = p.RefKind switch
-                    {
-                        RefKind.Ref => "ref",
-                        RefKind.Out => "out",
-                        _ => string.Empty
-                    };
+                    RefKind.Ref => "ref",
+                    RefKind.Out => "out",
+                    _ => string.Empty
+                };
 
-                    return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
-                }
+                return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
+            }
         }
     }
 
-    private static unsafe string GetFlatTypeName(ITypeSymbol typeSymbol)
-    {
-        var length = 0;
-        var partsCount = 0;
-
-        var currentType = typeSymbol;
-        while (currentType != null)
-        {
-            length += currentType.Name.Length;
-            partsCount++;
-            currentType = currentType.ContainingType;
-        }
-
-        if (partsCount > 1)
-        {
-            length += partsCount - 1; // underscores
-        }
-
-        var buffer = stackalloc char[length];
-        var currentIndex = length;
-
-        currentType = typeSymbol;
-        while (currentType != null)
-        {
-            var name = currentType.Name;
-            currentIndex -= name.Length;
-            for (var i = 0; i < name.Length; i++)
-            {
-                buffer[currentIndex + i] = name[i];
-            }
-
-            currentType = currentType.ContainingType;
-            if (currentType == null)
-            {
-                continue;
-            }
-
-            currentIndex--;
-            buffer[currentIndex] = '_';
-        }
-
-        return new string(buffer, 0, length);
-    }
 
     public static string GenerateKernelExtensions(INamedTypeSymbol classSymbol,
-        IEnumerable<(IMethodSymbol Method, string Source)> methods, GeneratorConfig config)
+        IEnumerable<(IMethodSymbol Method, string Source, string ManagedCSharpSource)> methods, GeneratorConfig config)
     {
         var className = classSymbol.Name;
 
@@ -167,6 +124,7 @@ internal static class WrapperEmitter
             using System.Runtime.InteropServices;
             using global::Kassyi.GSharp.Core;
             using global::Kassyi.GSharp.Runtime.Interop;
+            using static global::Kassyi.GSharp.Core.ManagedGpuContext;
             """);
 
         writer.AppendLine();
@@ -187,10 +145,12 @@ internal static class WrapperEmitter
             writer.AppendLine("public static partial class AotContexts");
             using (writer.Scope())
             {
+                // ReSharper disable once PossibleMultipleEnumeration
                 StructMarshalingEmitter.WriteStructMarshaling(writer, methods);
             }
 
-            foreach (var (method, source) in methods)
+            // ReSharper disable once PossibleMultipleEnumeration
+            foreach (var (method, source, managedCSharpSource) in methods)
             {
                 WriteKernelSource(writer, method, source, config);
 
@@ -203,6 +163,7 @@ internal static class WrapperEmitter
                 }
                 else
                 {
+                    writer.AppendLine(managedCSharpSource);
                     WriteCpuDelegateDeclaration(writer, method);
                     WriteLaunchMethodCpu(writer, method);
                 }
@@ -286,6 +247,7 @@ internal static class WrapperEmitter
             WriteOutParameterDefaults(writer, method);
             WriteEmptyArrayGuards(writer, method);
             WriteAutoResultAllocation(writer, method);
+            WriteManagedExecutionFallback(writer, method);
             WriteCpuDelegateGetOrCompile(writer, method);
             WriteCpuFixedBlocksAndInvoke(writer, method);
         }
@@ -476,7 +438,8 @@ internal static class WrapperEmitter
             {
             if (s_hModule.HasValue) return s_hModule.Value;
 
-            var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_{{safeAssemblyName}}).Assembly.Location) ?? System.AppContext.BaseDirectory;
+            var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_{{safeAssemblyName}}).Assembly.Location) ??
+                System.AppContext.BaseDirectory;
             var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_{{safeAssemblyName}}.fatbin");
             if (!System.IO.File.Exists(fatbinPath))
             {
@@ -565,17 +528,117 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method)
+    private static void WriteManagedExecutionFallback(SourceWriter writer, IMethodSymbol method)
     {
         var safeAssemblyName = IdentifierHelper.ToSafeIdentifier(method.ContainingAssembly.Name);
         var mangledName = GetMangledKernelName(method);
 
         writer.AppendLine(
-            "var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
+            "var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==" +
+            " System.Runtime.InteropServices.Architecture.Arm64 ? \"_arm64\" : \"_x64\";");
         writer.AppendLine(
             $"var dllName = $\"Kassyi.GSharp.Kernels_{safeAssemblyName}{{archSuffix}}.dll\";");
         writer.AppendLine(
             "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
+
+        writer.AppendLine($"if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))");
+        using (writer.Scope())
+        {
+            writer.AppendLine("int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);");
+            writer.AppendLine("for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)");
+            using (writer.Scope())
+            {
+                writer.AppendLine("int bx = _b_idx % (int)gridDimX;");
+                writer.AppendLine("int by = (_b_idx / (int)gridDimX) % (int)gridDimY;");
+                writer.AppendLine("int bz = _b_idx / (int)(gridDimX * gridDimY);");
+
+                writer.AppendLine(
+                    $"var _gsharp_contexts = new __gsharp_context_{mangledName}[blockDimX * blockDimY * blockDimZ];");
+
+                writer.AppendLine("for (int i = 0; i < _gsharp_contexts.Length; i++) {");
+                writer.AppendLine($"  _gsharp_contexts[i] = new __gsharp_context_{mangledName}();");
+                writer.AppendLine("}");
+
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;");
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;");
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;");
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;");
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;");
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;");
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;");
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;");
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;");
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;");
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();");
+
+                writer.AppendLine("bool anyActive = true;");
+                writer.AppendLine("while (anyActive)");
+                using (writer.Scope())
+                {
+                    writer.AppendLine("anyActive = false;");
+                    writer.AppendLine("for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine("int tx = _t_idx % (int)blockDimX;");
+                        writer.AppendLine("int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;");
+                        writer.AppendLine("int tz = _t_idx / (int)(blockDimX * blockDimY);");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;");
+
+                        writer.AppendLine("if (_gsharp_contexts[_t_idx]._state != -1)");
+                        using (writer.Scope())
+                        {
+                            writer.AppendLine("anyActive = true;");
+                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();");
+                            writer.Append($"__gsharp_statemachine_{mangledName}(");
+                            bool isFirst = true;
+                            foreach (var p in method.Parameters)
+                            {
+                                if (!isFirst)
+                                {
+                                    writer.Append(", ");
+                                }
+
+                                isFirst = false;
+                                if (p.RefKind == RefKind.Ref)
+                                {
+                                    writer.Append("ref ");
+                                }
+                                else if (p.RefKind == RefKind.Out)
+                                {
+                                    writer.Append("out ");
+                                }
+
+                                writer.Append(p.Name);
+                            }
+
+                            if (!isFirst)
+                            {
+                                writer.Append(", ");
+                            }
+
+                            writer.Append("_gsharp_contexts[_t_idx]");
+                            writer.AppendLine(");");
+                        }
+                    }
+                }
+
+                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;");
+            }
+
+            WriteAutoResultReturn(writer, method);
+            if (method.ReturnType.SpecialType == SpecialType.System_Void)
+            {
+                writer.AppendLine("return;");
+            }
+        }
+    }
+
+    private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method)
+    {
+        var mangledName = GetMangledKernelName(method);
+
         writer.AppendLine(
             $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{mangledName}\", dllPath);");
     }
@@ -669,7 +732,8 @@ internal static class WrapperEmitter
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
         {
             writer.AppendLine(
-                "if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0) throw new global::System.ArgumentOutOfRangeException(\"Dimensions\", \"Launch dimensions must be greater than 0.\");");
+                "if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0)" +
+                " throw new global::System.ArgumentOutOfRangeException(\"Dimensions\", \"Launch dimensions must be greater than 0.\");");
             writer.AppendLine(
                 "uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }");
             writer.Append("var __gsharp_auto_result = new ");

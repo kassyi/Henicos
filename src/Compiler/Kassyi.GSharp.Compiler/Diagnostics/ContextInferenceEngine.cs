@@ -49,7 +49,7 @@ public static class ContextInferenceEngine
 
 
         // AST Check: Get Syntax Reference
-        var syntaxRef = methodSymbol.DeclaringSyntaxReferences.FirstOrDefault();
+        var syntaxRef = methodSymbol.DeclaringSyntaxReferences.Length > 0 ? methodSymbol.DeclaringSyntaxReferences[0] : null;
         if (syntaxRef == null)
         {
             // No source available. Fallback to false.

@@ -88,7 +88,17 @@ public class CudaImportGenerator : IIncrementalGenerator
             {
                 var methodSymbol = (IMethodSymbol)ctx.TargetSymbol;
                 var methodSyntax = (MethodDeclarationSyntax)ctx.TargetNode;
-                var attributeData = ctx.Attributes.FirstOrDefault(a => a.AttributeClass?.Name == CudaImportAttribute);
+                AttributeData? attributeData = null;
+                foreach (var a in ctx.Attributes)
+                {
+                    if (a.AttributeClass?.Name != CudaImportAttribute)
+                    {
+                        continue;
+                    }
+
+                    attributeData = a;
+                    break;
+                }
                 if (attributeData == null)
                 {
                     continue;
@@ -108,7 +118,17 @@ public class CudaImportGenerator : IIncrementalGenerator
                 var methodSymbol = (IMethodSymbol)ctx.TargetSymbol;
                 var methodSyntax = (MethodDeclarationSyntax)ctx.TargetNode;
 
-                var attributeData = ctx.Attributes.FirstOrDefault(a => a.AttributeClass?.Name == CudaImportAttribute);
+                AttributeData? attributeData = null;
+                foreach (var a in ctx.Attributes)
+                {
+                    if (a.AttributeClass?.Name != CudaImportAttribute)
+                    {
+                        continue;
+                    }
+
+                    attributeData = a;
+                    break;
+                }
                 if (attributeData == null)
                 {
                     continue;

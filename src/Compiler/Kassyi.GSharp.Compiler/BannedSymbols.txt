@@ -51,3 +51,7 @@ M:System.String.Replace(System.String,System.String);String replacement is prohi
 M:System.String.Replace(System.Char,System.Char);String replacement is prohibited. Use AST/Symbol formatting or builder instead.
 
 T:System.Collections.Generic.List`1;Dynamic lists are prohibited in the compiler for performance and allocation reasons. Use ImmutableArray, Array, ArrayPool, or recursion with StringBuilder instead.
+
+# 5. LINQ prohibition (Enforces Zero-Allocation / High Performance in Compiler)
+N:System.Linq;LINQ is strictly prohibited in the compiler (Zero-Allocation policy).
+T:System.Linq.Enumerable;LINQ is strictly prohibited in the compiler (Zero-Allocation policy).
