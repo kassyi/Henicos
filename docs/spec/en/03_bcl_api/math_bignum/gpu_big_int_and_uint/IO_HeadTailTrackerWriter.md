@@ -10,7 +10,7 @@ description: "A memory-efficient TextWriter that only keeps track of the first N
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.IO`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 A memory-efficient `TextWriter` that only keeps track of the first N (Head) and last N (Tail) characters. Intermediate characters are discarded to prevent OutOfMemory exceptions on massive outputs (e.g. 100M+ digits).
@@ -146,7 +146,7 @@ public override void Write(string? value);
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.IO;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 var tracker = new HeadTailTrackerWriter(headCapacity: 5, tailCapacity: 3);
 

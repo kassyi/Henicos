@@ -10,7 +10,7 @@ description: "Provides high-performance GPU-accelerated Divide and Conquer (D&C)
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.IO`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Provides high-performance GPU-accelerated Divide and Conquer (D&C) radix conversion for streaming arbitrary-precision `GpuBigUInt` to decimal text.
@@ -71,7 +71,7 @@ using System;
 using System.IO;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-using Kassyi.GSharp.Stdlib.GpuMath.IO;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 using var workspace = new GpuWorkspace(2048, GpuExecutionEngine.GSharpAot);
 

@@ -10,7 +10,7 @@ description: "Encapsulates parameter buffers, dimensions, and twiddle factor poi
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.Contexts`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Encapsulates parameter buffers, dimensions, and twiddle factor pointers for NTT-based big integer multiplication kernels.
@@ -28,7 +28,7 @@ public struct NttMulContext
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 var context = new NttMulContext
 {

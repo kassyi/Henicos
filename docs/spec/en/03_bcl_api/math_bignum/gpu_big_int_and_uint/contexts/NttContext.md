@@ -10,7 +10,7 @@ description: "Context parameters for NTT-related operations in Fermat sequences.
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.Contexts`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Context parameters for NTT-related operations in Fermat sequences.
@@ -28,7 +28,7 @@ public struct NttContext
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 // Configure an NTT Context
 var context = new NttContext

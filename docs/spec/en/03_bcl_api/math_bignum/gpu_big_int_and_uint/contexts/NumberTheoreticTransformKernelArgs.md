@@ -10,7 +10,7 @@ description: "Execution arguments for NTT-related kernels."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.Contexts`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Execution arguments for NTT-related kernels.
@@ -28,7 +28,7 @@ public struct NumberTheoreticTransformKernelArgs
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 // Prepare arguments for an NTT Kernel launch
 var kernelArgs = new NumberTheoreticTransformKernelArgs

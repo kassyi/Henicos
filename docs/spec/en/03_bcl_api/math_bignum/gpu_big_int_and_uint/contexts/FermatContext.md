@@ -10,7 +10,7 @@ description: "Context parameters for the Fermat sequence computation."
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.Contexts`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Context parameters for the Fermat sequence computation.
@@ -28,7 +28,7 @@ public struct FermatContext
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 // Initialize dimensions for a Fermat transform context
 var dimensions = new FermatContext.DimensionsContext

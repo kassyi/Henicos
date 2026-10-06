@@ -10,7 +10,7 @@ description: "Context parameters for basic BigInt GPU kernels and MacroTranspile
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.Contexts`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Context parameters for basic BigInt GPU kernels and MacroTranspiler expansions.
@@ -28,7 +28,7 @@ public struct BigIntKernelContext
 
 ```csharp
 using System;
-using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 // Create and initialize a context for a basic BigInt kernel
 var context = new BigIntKernelContext
