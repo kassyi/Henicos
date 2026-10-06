@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />
-    <AdditionalFiles Include="BigNum\Kernels\DefaultRnsPrimes.json" />
+    <AdditionalFiles Include="BigNum\Algorithms\Constants\DefaultRnsPrimes.json" />
   </ItemGroup>
 
   <ItemGroup>

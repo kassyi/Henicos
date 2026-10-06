@@ -3,6 +3,7 @@ using BenchmarkDotNet.Running;
 using Cocona;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 namespace Henicos.Cli;
 
@@ -26,7 +27,7 @@ internal class Program
         var expected = BigInteger.ModPow(a, exponent, n);
 
         Logger<Program>.Info("Executing GPU GSharp Runner...");
-        var runner = new FermatRunner(e);
+        var runner = new FermatAlgorithm(e);
         var (resultArray, _) = runner.RunFermatPrp();
 
         var actual = GetBigIntegerFromResult(resultArray, n);
@@ -41,13 +42,13 @@ internal class Program
         [Option('i', Description = "Number of warmup/profile iterations")]
         int iterations = 2)
     {
-        Logger<Program>.Info($"Profiling GSharp FermatRunner for E={e} (Iterations: {iterations})...");
+        Logger<Program>.Info($"Profiling GSharp FermatAlgorithm for E={e} (Iterations: {iterations})...");
 
         // Output for AI schedule hints
         var estimatedSeconds = 15 + (iterations * e / 500);
         Logger<Program>.Info($"Estimated max execution time: {estimatedSeconds} seconds.");
 
-        var runner = new FermatRunner(e);
+        var runner = new FermatAlgorithm(e);
 
         var numBits = (2 * e + 1);
         var numDigits = numBits * Math.Log10(2);
@@ -87,7 +88,7 @@ internal class Program
         var estimatedSeconds = 15 + (iterations * 2); // JIT comp (15s) + fast chunks (2s per iter)
         Logger<Program>.Info($"Estimated max execution time: {estimatedSeconds} seconds.");
 
-        var runner = new FermatRunner(e);
+        var runner = new FermatAlgorithm(e);
 
         var numBits = (2 * e + 1);
         var numDigits = numBits * Math.Log10(2);
@@ -153,7 +154,7 @@ public class FermatBenchmarks
     private BigInteger _n;
     private BigInteger _a;
     private BigInteger _exponent;
-    private FermatRunner _gsharpRunner = null!;
+    private FermatAlgorithm _gsharpRunner = null!;
     private nint _vramBefore;
 
     [GlobalSetup]
@@ -163,7 +164,7 @@ public class FermatBenchmarks
         _n = (BigInteger.One << (2 * E + 1)) - x + 11;
         _a = 2;
         _exponent = _n - 1;
-        _gsharpRunner = new FermatRunner(E);
+        _gsharpRunner = new FermatAlgorithm(E);
     }
 
     [IterationSetup]

@@ -5,6 +5,7 @@ using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.BigMath;

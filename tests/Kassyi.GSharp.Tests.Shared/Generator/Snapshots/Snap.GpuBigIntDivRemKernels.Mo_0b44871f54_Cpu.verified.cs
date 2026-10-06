@@ -19,7 +19,7 @@ public static partial class AotContexts
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 392)]
 public unsafe partial struct ModPowNtt
 {
-public const string DebugName_Operands = "global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.OperandContext";
+public const string DebugName_Operands = "global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public AotContexts.Operand Operands;
 public const string DebugName_ReciprocalMod = "global::System.UInt32[]";
@@ -37,20 +37,20 @@ public global::System.Int32 ExponentStartWord;
 public const string DebugName_ExponentEndWord = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(80)]
 public global::System.Int32 ExponentEndWord;
-public const string DebugName_Dimensions = "global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.DimensionContext";
+public const string DebugName_Dimensions = "global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext";
 [System.Runtime.InteropServices.FieldOffset(84)]
 public AotContexts.Dimension Dimensions;
-public const string DebugName_Ntt = "global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.Ntt";
+public const string DebugName_Ntt = "global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt";
 [System.Runtime.InteropServices.FieldOffset(128)]
 public AotContexts.Ntt Ntt;
-public const string DebugName_Workspace = "global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.WorkspaceStateContext";
+public const string DebugName_Workspace = "global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext";
 [System.Runtime.InteropServices.FieldOffset(256)]
 public AotContexts.WorkspaceState Workspace;
 public const string DebugName_CarryBuffer = "global::System.Int64[]";
 [System.Runtime.InteropServices.FieldOffset(384)]
 public IntPtr CarryBuffer;
 }
-public static unsafe void Marshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 Marshal_OperandContext(ref host.Operands, ref native.Operands, isDevicePtr, allocatedPtrs, hStream);
 if (host.ReciprocalMod != null)
@@ -135,7 +135,7 @@ handle.Free();
 }
 }
 }
-public static unsafe void Unmarshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, IntPtr hStream = default)
+public static unsafe void Unmarshal_ModPowNttContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext host, ref AotContexts.ModPowNtt native, bool isDevicePtr, IntPtr hStream = default)
 {
 Unmarshal_OperandContext(ref host.Operands, ref native.Operands, isDevicePtr, hStream);
 if (host.ReciprocalMod != null && !isDevicePtr && native.ReciprocalMod != IntPtr.Zero)
@@ -218,7 +218,7 @@ public const string DebugName_CarryBuffer = "global::System.Int64[]";
 [System.Runtime.InteropServices.FieldOffset(48)]
 public IntPtr CarryBuffer;
 }
-public static unsafe void Marshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 if (host.LeftOperand != null)
 {
@@ -396,7 +396,7 @@ handle.Free();
 }
 }
 }
-public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, IntPtr hStream = default)
+public static unsafe void Unmarshal_OperandContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.OperandContext host, ref AotContexts.Operand native, bool isDevicePtr, IntPtr hStream = default)
 {
 if (host.LeftOperand != null && !isDevicePtr && native.LeftOperand != IntPtr.Zero)
 {
@@ -545,7 +545,7 @@ public const string DebugName_NumBits = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(36)]
 public global::System.Int32 NumBits;
 }
-public static unsafe void Marshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.DimensionContext host, ref AotContexts.Dimension native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext host, ref AotContexts.Dimension native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 native.NumberOfWords = host.NumberOfWords;
 native.NumberOfWordsExtended = host.NumberOfWordsExtended;
@@ -558,7 +558,7 @@ native.Iterations = host.Iterations;
 native.TargetBits = host.TargetBits;
 native.NumBits = host.NumBits;
 }
-public static unsafe void Unmarshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.DimensionContext host, ref AotContexts.Dimension native, bool isDevicePtr, IntPtr hStream = default)
+public static unsafe void Unmarshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext host, ref AotContexts.Dimension native, bool isDevicePtr, IntPtr hStream = default)
 {
 host.NumberOfWords = native.NumberOfWords;
 host.NumberOfWordsExtended = native.NumberOfWordsExtended;
@@ -577,20 +577,20 @@ public unsafe partial struct Ntt
 public const string DebugName_TransformLength = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 TransformLength;
-public const string DebugName_Buffers = "global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.BufferContext";
+public const string DebugName_Buffers = "global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext";
 [System.Runtime.InteropServices.FieldOffset(8)]
 public AotContexts.Buffer Buffers;
-public const string DebugName_TwiddleFactors = "global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.TwiddleFactorContext";
+public const string DebugName_TwiddleFactors = "global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext";
 [System.Runtime.InteropServices.FieldOffset(80)]
 public AotContexts.TwiddleFactor TwiddleFactors;
 }
-public static unsafe void Marshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.Ntt host, ref AotContexts.Ntt native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, ref AotContexts.Ntt native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 native.TransformLength = host.TransformLength;
 Marshal_BufferContext(ref host.Buffers, ref native.Buffers, isDevicePtr, allocatedPtrs, hStream);
 Marshal_TwiddleFactorContext(ref host.TwiddleFactors, ref native.TwiddleFactors, isDevicePtr, allocatedPtrs, hStream);
 }
-public static unsafe void Unmarshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.Ntt host, ref AotContexts.Ntt native, bool isDevicePtr, IntPtr hStream = default)
+public static unsafe void Unmarshal_Ntt(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Ntt host, ref AotContexts.Ntt native, bool isDevicePtr, IntPtr hStream = default)
 {
 host.TransformLength = native.TransformLength;
 Unmarshal_BufferContext(ref host.Buffers, ref native.Buffers, isDevicePtr, hStream);
@@ -627,7 +627,7 @@ public const string DebugName_CarryBuffer = "global::System.Int64[]";
 [System.Runtime.InteropServices.FieldOffset(64)]
 public IntPtr CarryBuffer;
 }
-public static unsafe void Marshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 if (host.Buffer1 != null)
 {
@@ -855,7 +855,7 @@ handle.Free();
 }
 }
 }
-public static unsafe void Unmarshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, IntPtr hStream = default)
+public static unsafe void Unmarshal_BufferContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.BufferContext host, ref AotContexts.Buffer native, bool isDevicePtr, IntPtr hStream = default)
 {
 if (host.Buffer1 != null && !isDevicePtr && native.Buffer1 != IntPtr.Zero)
 {
@@ -1024,7 +1024,7 @@ public const string DebugName_Inverse3 = "global::System.UInt32[]";
 [System.Runtime.InteropServices.FieldOffset(40)]
 public IntPtr Inverse3;
 }
-public static unsafe void Marshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 if (host.Forward1 != null)
 {
@@ -1177,7 +1177,7 @@ handle.Free();
 }
 }
 }
-public static unsafe void Unmarshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, IntPtr hStream = default)
+public static unsafe void Unmarshal_TwiddleFactorContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.TwiddleFactorContext host, ref AotContexts.TwiddleFactor native, bool isDevicePtr, IntPtr hStream = default)
 {
 if (host.Forward1 != null && !isDevicePtr && native.Forward1 != IntPtr.Zero)
 {
@@ -1328,7 +1328,7 @@ public const string DebugName_ModulusExpanded = "global::System.UInt32[]";
 [System.Runtime.InteropServices.FieldOffset(120)]
 public IntPtr ModulusExpanded;
 }
-public static unsafe void Marshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
+public static unsafe void Marshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
 if (host.XSquared != null)
 {
@@ -1731,7 +1731,7 @@ handle.Free();
 }
 }
 }
-public static unsafe void Unmarshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, bool isDevicePtr, IntPtr hStream = default)
+public static unsafe void Unmarshal_WorkspaceStateContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.WorkspaceStateContext host, ref AotContexts.WorkspaceState native, bool isDevicePtr, IntPtr hStream = default)
 {
 if (host.XSquared != null && !isDevicePtr && native.XSquared != IntPtr.Zero)
 {
@@ -1992,9 +1992,9 @@ handle.Free();
 }
 #pragma warning restore CS8500
 }
-public const string ModPowNttMegaKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext
+public const string ModPowNttMegaKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext
 {
 const unsigned int* LeftOperand;
 const unsigned int* RightOperand;
@@ -2006,9 +2006,9 @@ long long* CarryBuffer;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext
 {
 int NumberOfWords;
 int NumberOfWordsExtended;
@@ -2023,9 +2023,9 @@ int NumBits;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext
 {
 unsigned int* Buffer1;
 unsigned int* Buffer2;
@@ -2039,9 +2039,9 @@ long long* CarryBuffer;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext
 {
 const unsigned int* Forward1;
 const unsigned int* Forward2;
@@ -2052,19 +2052,19 @@ const unsigned int* Inverse3;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt
 {
 int TransformLength;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext Buffers;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext TwiddleFactors;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext Buffers;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext TwiddleFactors;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext
 {
 unsigned int* XSquared;
 unsigned int* AxSquared;
@@ -2085,19 +2085,19 @@ unsigned int* ModulusExpanded;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext Operands;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext Operands;
 unsigned int* ReciprocalMod;
 unsigned int* Exponent;
 int ExponentWords;
 int ExponentStartWord;
 int ExponentEndWord;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext Dimensions;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt Ntt;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext Workspace;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext Dimensions;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt Ntt;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext Workspace;
 long long* CarryBuffer;
 }
 ;
@@ -2107,7 +2107,7 @@ int _state = 0;
 __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
 };
-extern ""C"" __declspec(dllexport) void GpuBigIntDivRemKernels_ModPowNttMegaKernel(Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext ctx, __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel* _ctx){
+extern ""C"" __declspec(dllexport) void GpuBigIntDivRemKernels_ModPowNttMegaKernel(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx, __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel* _ctx){
 #define _state _ctx->_state
 switch(_state)
 {
@@ -2165,7 +2165,7 @@ return;
 }
 #undef _state
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_GpuBigIntDivRemKernels_ModPowNttMegaKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext ctx)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GpuBigIntDivRemKernels_ModPowNttMegaKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -2205,9 +2205,9 @@ GpuBigIntDivRemKernels_ModPowNttMegaKernel(ctx, &_gsharp_contexts[_ctxtid]);
 ";
 public static readonly string ModPowNttMegaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ModPowNttMegaKernel_Source;
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ModPowNttMegaKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.ModPowNttContext ctx);
+private unsafe delegate void ModPowNttMegaKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext ctx);
 #pragma warning disable CS8500
-public static unsafe void LaunchModPowNttMegaKernel(global::Kassyi.GSharp.Stdlib.GpuMath.Contexts.ModPowNttContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+public static unsafe void LaunchModPowNttMegaKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -2226,27 +2226,27 @@ namespace Kassyi.GSharp.Generated
 {
 internal static class GSharpSharedCpuDeviceCode
 {
-public const string Source = @"struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext;
-inline void ExecuteNttMultiplyMacroModPow(Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext ctx, unsigned int* opA, unsigned int* opB, unsigned int* resultDest, int numWordsA, int numWordsB, int numWordsResult);
+public const string Source = @"struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext;
+inline void ExecuteNttMultiplyMacroModPow(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx, unsigned int* opA, unsigned int* opB, unsigned int* resultDest, int numWordsA, int numWordsB, int numWordsResult);
 
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext;
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext;
-inline void ExecuteBarrettReductionMacro(Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext ctx, unsigned int* leftOperand, unsigned int* rightOperand, unsigned int* reciprocalOfB, int targetBits, int aActualWords, unsigned int* quotientBuffer, unsigned int* remainderBuffer);
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext;
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext;
+inline void ExecuteBarrettReductionMacro(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx, unsigned int* leftOperand, unsigned int* rightOperand, unsigned int* reciprocalOfB, int targetBits, int aActualWords, unsigned int* quotientBuffer, unsigned int* remainderBuffer);
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext
 {
 const unsigned int* LeftOperand;
 const unsigned int* RightOperand;
@@ -2258,9 +2258,9 @@ long long* CarryBuffer;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext
 {
 int NumberOfWords;
 int NumberOfWordsExtended;
@@ -2275,9 +2275,9 @@ int NumBits;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext
 {
 unsigned int* Buffer1;
 unsigned int* Buffer2;
@@ -2291,9 +2291,9 @@ long long* CarryBuffer;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext
 {
 const unsigned int* Forward1;
 const unsigned int* Forward2;
@@ -2304,19 +2304,19 @@ const unsigned int* Inverse3;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt
 {
 int TransformLength;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext Buffers;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext TwiddleFactors;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext Buffers;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext TwiddleFactors;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext
 {
 unsigned int* XSquared;
 unsigned int* AxSquared;
@@ -2337,26 +2337,26 @@ unsigned int* ModulusExpanded;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext Operands;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext Operands;
 unsigned int* ReciprocalMod;
 unsigned int* Exponent;
 int ExponentWords;
 int ExponentStartWord;
 int ExponentEndWord;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext Dimensions;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt Ntt;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext Workspace;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext Dimensions;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt Ntt;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext Workspace;
 long long* CarryBuffer;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_DualNtt__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_DualNtt__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_DualNtt
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt
 {
 unsigned int* Buffer1;
 unsigned int* Buffer2;
@@ -2369,7 +2369,7 @@ int N2;
 }
 ;
 #endif
-inline void ExecuteNttMultiplyMacroModPow(Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext ctx, unsigned int* opA, unsigned int* opB, unsigned int* resultDest, int numWordsA, int numWordsB, int numWordsResult){
+inline void ExecuteNttMultiplyMacroModPow(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx, unsigned int* opA, unsigned int* opB, unsigned int* resultDest, int numWordsA, int numWordsB, int numWordsResult){
 auto m = ctx.Ntt.TransformLength;
 int n1 = 32;
 int n2 = m/32;
@@ -2382,7 +2382,7 @@ DeviceUnpack16(opA,ctx.Workspace.NttBuf1A,ctx.Workspace.NttBuf2A,m,numWordsA,tru
 DeviceUnpack16(opB,ctx.Workspace.NttBuf1B,ctx.Workspace.NttBuf2B,m,numWordsB,true);
 cg::this_grid().sync();
 auto baseNtt = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_DualNtt _tmp{}; _tmp.TemporaryBuffer = ctx.Workspace.TmpBuf; _tmp.M = m; _tmp.N1 = n1; _tmp.N2 = n2; return _tmp; }
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt _tmp{}; _tmp.TemporaryBuffer = ctx.Workspace.TmpBuf; _tmp.M = m; _tmp.N1 = n1; _tmp.N2 = n2; return _tmp; }
 ());
 auto forwardA = baseNtt;
 forwardA.Buffer1=ctx.Workspace.NttBuf1A;
@@ -2412,9 +2412,9 @@ ExecuteResolveNttCarriesApply(resultDest,ctx.Workspace.BlockCarries,numWordsResu
 cg::this_grid().sync();
 }
 
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext
 {
 const unsigned int* LeftOperand;
 const unsigned int* RightOperand;
@@ -2426,9 +2426,9 @@ long long* CarryBuffer;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext
 {
 int NumberOfWords;
 int NumberOfWordsExtended;
@@ -2443,9 +2443,9 @@ int NumBits;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext
 {
 unsigned int* Buffer1;
 unsigned int* Buffer2;
@@ -2459,9 +2459,9 @@ long long* CarryBuffer;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext
 {
 const unsigned int* Forward1;
 const unsigned int* Forward2;
@@ -2472,19 +2472,19 @@ const unsigned int* Inverse3;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt
 {
 int TransformLength;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_BufferContext Buffers;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_TwiddleFactorContext TwiddleFactors;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext Buffers;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext TwiddleFactors;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext
 {
 unsigned int* XSquared;
 unsigned int* AxSquared;
@@ -2505,33 +2505,33 @@ unsigned int* ModulusExpanded;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext Operands;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext Operands;
 unsigned int* ReciprocalMod;
 unsigned int* Exponent;
 int ExponentWords;
 int ExponentStartWord;
 int ExponentEndWord;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_DimensionContext Dimensions;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_Ntt Ntt;
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_WorkspaceStateContext Workspace;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext Dimensions;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt Ntt;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext Workspace;
 long long* CarryBuffer;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_GpuBigIntContext__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_Contexts_GpuBigIntContext__
-struct Kassyi_GSharp_Stdlib_GpuMath_Contexts_GpuBigIntContext
+#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext__
+#define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext__
+struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext Operands;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext Operands;
 int NumberOfWords;
 }
 ;
 #endif
-inline void ExecuteBarrettReductionMacro(Kassyi_GSharp_Stdlib_GpuMath_Contexts_ModPowNttContext ctx, unsigned int* leftOperand, unsigned int* rightOperand, unsigned int* reciprocalOfB, int targetBits, int aActualWords, unsigned int* quotientBuffer, unsigned int* remainderBuffer){
+inline void ExecuteBarrettReductionMacro(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx, unsigned int* leftOperand, unsigned int* rightOperand, unsigned int* reciprocalOfB, int targetBits, int aActualWords, unsigned int* quotientBuffer, unsigned int* remainderBuffer){
 auto nA = aActualWords;
 auto n = ctx.Dimensions.NumberOfWords;
 auto targetWords = (targetBits+31)/32;
@@ -2551,8 +2551,8 @@ cg::this_grid().sync();
 ExecuteNttMultiplyMacroModPow(ctx,quotientBuffer,rightOperand,ctx.Workspace.NextIter,destWords,n,destWords+n);
 int evalWords = aActualWords+1;
 auto subCtx = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_GpuBigIntContext _tmp{}; _tmp.Operands = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_Contexts_OperandContext _tmp{}; _tmp.CarryBuffer = ctx.CarryBuffer; return _tmp; }
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext _tmp{}; _tmp.Operands = ([&]() {
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext _tmp{}; _tmp.CarryBuffer = ctx.CarryBuffer; return _tmp; }
 ()); _tmp.NumberOfWords = evalWords; return _tmp; }
 ());
 for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < evalWords; idx += gridDim.x * blockDim.x)

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
+
 namespace Henicos.Benchmarks;
 
 public class FermatPrpBenchmark
@@ -8,7 +10,7 @@ public class FermatPrpBenchmark
     public static void RunFermatTest(int E, int iterations)
     {
         Logger<FermatPrpBenchmark>.Info("==================================================");
-        Logger<FermatPrpBenchmark>.Info(" G# Native Fermat PRP Test (Stdlib FermatRunner)");
+        Logger<FermatPrpBenchmark>.Info(" G# Native Fermat PRP Test (Stdlib FermatAlgorithm)");
         Logger<FermatPrpBenchmark>.Info("==================================================");
         Logger<FermatPrpBenchmark>.Info($"E       = {E}");
         Logger<FermatPrpBenchmark>.Info($"Digits  = {(2 * E * Math.Log10(2)):N0}");
@@ -16,7 +18,7 @@ public class FermatPrpBenchmark
 
         using var scope = new GpuKernelLoader.CudaContextScope();
 
-        var runner = new FermatRunner(E);
+        var runner = new FermatAlgorithm(E);
         var repository = new Repositories.FileCheckpointRepository(CheckpointFile, TempCheckpointFile);
 
         var startIter = 0;

@@ -21,7 +21,7 @@ Here is the architectural template for a new algorithm, let's call it `MyCustomM
 
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 public static class MyCustomMath
 {
@@ -72,7 +72,7 @@ If your new algorithm can be expressed purely as a combination of existing basic
 // Execution Context: Host (CPU)
 
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 public static class MyCustomMath_StrategyA
 {
@@ -154,7 +154,7 @@ Allocate `GpuBigUInt` buffers once, outside of your hot loops, and reuse them ac
 // Execution Context: Host (CPU)
 
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 public static class MyCustomMath_StrategyB
 {

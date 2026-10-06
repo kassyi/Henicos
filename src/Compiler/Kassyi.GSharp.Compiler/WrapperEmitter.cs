@@ -1,5 +1,5 @@
-using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Compiler.Marshaling;
+using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler;
 

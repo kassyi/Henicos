@@ -1,8 +1,7 @@
 using System.Globalization;
 using BenchmarkDotNet.Running;
 using Henicos.Benchmarks.ComputeBenchmarks;
-using Kassyi.GSharp.Stdlib.GpuMath.IO;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Pi;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 namespace Henicos.Benchmarks;
 
@@ -192,7 +191,7 @@ internal class Program
             ? new StreamWriter(outPath, append: false)
             : new HeadTailTrackerWriter();
 
-        GpuChudnovskyAlgorithm.ComputePi(targetDigits, writer, thresholdTerms, asHex);
+        ChudnovskyAlgorithm.ComputePi(targetDigits, writer, thresholdTerms, asHex);
 
         if (outPath == null && writer is HeadTailTrackerWriter ht)
         {
