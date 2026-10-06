@@ -33,16 +33,16 @@ public struct Dim3
 public static class ThreadIndex
 {
     /// <summary>Gets the thread index along the X axis (<c>threadIdx.x</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int X => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int X => ManagedGpuContext.IsActive ? ManagedGpuContext.ThreadIdxX : GpuOnlyException.Throw<int>();
 
     /// <summary>Gets the thread index along the Y axis (<c>threadIdx.y</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int Y => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int Y => ManagedGpuContext.IsActive ? ManagedGpuContext.ThreadIdxY : GpuOnlyException.Throw<int>();
 
     /// <summary>Gets the thread index along the Z axis (<c>threadIdx.z</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int Z => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int Z => ManagedGpuContext.IsActive ? ManagedGpuContext.ThreadIdxZ : GpuOnlyException.Throw<int>();
 }
 
 /// <summary>
@@ -54,16 +54,16 @@ public static class ThreadIndex
 public static class BlockIndex
 {
     /// <summary>Gets the block index along the X axis (<c>blockIdx.x</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int X => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int X => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockIdxX : GpuOnlyException.Throw<int>();
 
     /// <summary>Gets the block index along the Y axis (<c>blockIdx.y</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int Y => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int Y => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockIdxY : GpuOnlyException.Throw<int>();
 
     /// <summary>Gets the block index along the Z axis (<c>blockIdx.z</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int Z => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int Z => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockIdxZ : GpuOnlyException.Throw<int>();
 }
 
 /// <summary>
@@ -75,16 +75,16 @@ public static class BlockIndex
 public static class BlockDimension
 {
     /// <summary>Gets the number of threads per block along the X axis (<c>blockDim.x</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int X => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int X => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockDimX : GpuOnlyException.Throw<int>();
 
     /// <summary>Gets the number of threads per block along the Y axis (<c>blockDim.y</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int Y => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int Y => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockDimY : GpuOnlyException.Throw<int>();
 
     /// <summary>Gets the number of threads per block along the Z axis (<c>blockDim.z</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int Z => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int Z => ManagedGpuContext.IsActive ? ManagedGpuContext.BlockDimZ : GpuOnlyException.Throw<int>();
 }
 
 /// <summary>
@@ -96,16 +96,16 @@ public static class BlockDimension
 public static class GridDimension
 {
     /// <summary>Gets the number of blocks per grid along the X axis (<c>gridDim.x</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int X => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int X => ManagedGpuContext.IsActive ? ManagedGpuContext.GridDimX : GpuOnlyException.Throw<int>();
 
     /// <summary>Gets the number of blocks per grid along the Y axis (<c>gridDim.y</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int Y => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown inside of a managed execution context if disabled.</exception>
+    public static int Y => ManagedGpuContext.IsActive ? ManagedGpuContext.GridDimY : GpuOnlyException.Throw<int>();
 
     /// <summary>Gets the number of blocks per grid along the Z axis (<c>gridDim.z</c>).</summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public static int Z => GpuOnlyException.Throw<int>();
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
+    public static int Z => ManagedGpuContext.IsActive ? ManagedGpuContext.GridDimZ : GpuOnlyException.Throw<int>();
 }
 
 /// <summary>
@@ -139,9 +139,15 @@ public static class Gpu
     /// <summary>
     /// Synchronizes all threads in the current block barrier (<c>__syncthreads()</c>).
     /// </summary>
-    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
+    /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU outside of a managed execution context.</exception>
     [CudaIntrinsic("__syncthreads")]
-    public static void SyncThreads() => GpuOnlyException.Throw();
+    public static void SyncThreads()
+    {
+        if (!ManagedGpuContext.IsActive)
+        {
+            GpuOnlyException.Throw();
+        }
+    }
 
     /// <summary>
     /// Synchronizes all threads across the entire cooperative grid (<c>cg::this_grid().sync()</c>).

@@ -14,8 +14,22 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// Declares static or dynamic shared memory with the specified element capacity.
     /// </summary>
     /// <param name="size">The number of elements allocated in shared memory.</param>
+    private readonly System.Span<T> _span;
+
+    /// <summary>
+    /// Declares static or dynamic shared memory with the specified element capacity.
+    /// </summary>
+    /// <param name="size">The number of elements allocated in shared memory.</param>
     public SharedMemory(int size)
     {
+        if (ManagedGpuContext.IsActive)
+        {
+            _span = ManagedGpuContext.AllocateSharedMemory<T>(size);
+        }
+        else
+        {
+            _span = default;
+        }
     }
 
     /// <summary>
@@ -26,7 +40,17 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     public T this[int index]
     {
-        get => GpuOnlyException.Throw<T>();
-        set => GpuOnlyException.Throw();
+        get => ManagedGpuContext.IsActive ? _span[index] : GpuOnlyException.Throw<T>();
+        set
+        {
+            if (ManagedGpuContext.IsActive)
+            {
+                _span[index] = value;
+            }
+            else
+            {
+                GpuOnlyException.Throw();
+            }
+        }
     }
 }

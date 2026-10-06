@@ -5,6 +5,15 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// </summary>
 public sealed class CpuKernelLoader
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether to forcefully bypass native AOT DLL execution and use pure C# managed execution.
+    /// </summary>
+    public static bool ForceManagedExecution { get; set; }
+
+    /// <summary>
+    /// Determines whether the managed execution fallback should be used.
+    /// </summary>
+    public static bool ShouldUseManagedExecution(string dllPath) => ForceManagedExecution || !File.Exists(dllPath);
 
     // Cache for loaded delegates: Hash of Source and Args -> Lazy<Delegate>
     private static readonly ConcurrentDictionary<string, Lazy<Delegate>> s_functionCache = new();
@@ -12,8 +21,6 @@ public sealed class CpuKernelLoader
     // Maintain a list of loaded module handles to free during Shutdown
     private static readonly ConcurrentBag<IntPtr> s_loadedModules = [];
 
-    // Maintain a list of temporary files to delete during Shutdown
-    private static readonly ConcurrentBag<string> s_tempFiles = [];
 
     /// <summary>
     /// Unloads all cached CPU modules and clears the in-memory cache to reclaim memory.
@@ -36,23 +43,6 @@ public sealed class CpuKernelLoader
         }
 
         s_loadedModules.Clear();
-
-        foreach (var tempFile in s_tempFiles)
-        {
-            try
-            {
-                if (File.Exists(tempFile))
-                {
-                    File.Delete(tempFile);
-                }
-            }
-            catch
-            {
-                // Best-effort cleanup during AppDomain shutdown; exceptions are intentionally ignored.
-            }
-        }
-
-        s_tempFiles.Clear();
     }
 
     /// <summary>
@@ -108,7 +98,7 @@ public sealed class CpuKernelLoader
         var fileData = File.ReadAllBytes(dllPath);
 
         // Validate embedded signature. Throws InvalidOperationException on mismatch.
-        var _ = AotSignatureValidator.ExtractAndVerify(fileData);
+        _ = AotSignatureValidator.ExtractAndVerify(fileData);
 
         var loadPath = dllPath;
 
