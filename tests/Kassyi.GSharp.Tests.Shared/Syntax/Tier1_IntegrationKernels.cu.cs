@@ -141,7 +141,7 @@ public static partial class Tier1IntegrationKernels
             }
 
             // SYN-08: Lambda expressions (Expanded to C++ auto lambdas)
-            var multiplier = (float x, float m) => x * m;
+            Func<float, float, float> multiplier = (float x, float m) => x * m;
             sum = multiplier(sum, 2.0f);
 
             // Atomic Operations (SYN-49)

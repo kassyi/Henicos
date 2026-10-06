@@ -20,6 +20,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class SharedMemoryKernels
@@ -101,6 +102,46 @@ SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel(input, output, length, &_
 }
 ";
 public static readonly string ReverseArrayWithSharedMemoryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReverseArrayWithSharedMemoryKernel_Source;
+public class __gsharp_context_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel {
+public int _state;
+public uint _warpExchange;
+public int tid;
+}
+public static unsafe void __gsharp_statemachine_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel(int[] input, int[] output, int length, __gsharp_context_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel _ctx) {
+        var shared = new SharedMemory<int>(256);
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            _ctx.tid = ThreadIndex.X;
+            
+            // Load into shared memory
+            if (_ctx.tid < length)
+            {
+                shared[_ctx.tid] = input[_ctx.tid];
+            }
+
+            _ctx._state = 1;
+            return;
+        }
+
+        case 1:
+        {
+            // Write to output in reverse order
+            if (_ctx.tid < length)
+            {
+                int reversedIndex = length - 1 - _ctx.tid;
+                output[_ctx.tid] = shared[reversedIndex];
+            }
+
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ReverseArrayWithSharedMemoryKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output, global::System.Int32 length);
 #pragma warning disable CS8500
@@ -112,6 +153,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel(input, output, length, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReverseArrayWithSharedMemoryKernel_Delegate>("__gsharp_launch_SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)

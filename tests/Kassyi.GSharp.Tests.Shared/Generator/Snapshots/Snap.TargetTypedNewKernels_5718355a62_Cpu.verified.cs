@@ -35,6 +35,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class TargetTypedNewKernels
@@ -112,6 +113,29 @@ TargetTypedNewKernels_HappyPathKernel(output, &_gsharp_contexts[_ctxtid]);
 }
 ";
 public static readonly string HappyPathKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +HappyPathKernel_Source;
+public class __gsharp_context_TargetTypedNewKernels_HappyPathKernel {
+public int _state;
+public uint _warpExchange;
+}
+public static unsafe void __gsharp_statemachine_TargetTypedNewKernels_HappyPathKernel(int[] output, __gsharp_context_TargetTypedNewKernels_HappyPathKernel _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            int tid = ThreadIndex.X;
+            NestedChildStruct c1 = new();
+            c1.Value = tid + 100;
+            NestedChildStruct c2 = CreateChild(new());
+            c2.Value = tid + 200;
+            output[tid] = c1.Value + c2.Value;
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void HappyPathKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output);
 #pragma warning disable CS8500
@@ -123,6 +147,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_TargetTypedNewKernels_HappyPathKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_TargetTypedNewKernels_HappyPathKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_TargetTypedNewKernels_HappyPathKernel(output, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<HappyPathKernel_Delegate>("__gsharp_launch_TargetTypedNewKernels_HappyPathKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
@@ -209,6 +280,31 @@ TargetTypedNewKernels_NestedInitializerKernel(output, &_gsharp_contexts[_ctxtid]
 }
 ";
 public static readonly string NestedInitializerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +NestedInitializerKernel_Source;
+public class __gsharp_context_TargetTypedNewKernels_NestedInitializerKernel {
+public int _state;
+public uint _warpExchange;
+}
+public static unsafe void __gsharp_statemachine_TargetTypedNewKernels_NestedInitializerKernel(int[] output, __gsharp_context_TargetTypedNewKernels_NestedInitializerKernel _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            int tid = ThreadIndex.X;
+            NestedParentStruct p = new NestedParentStruct
+            {
+                Id = tid,
+                Child = new()
+            };
+            p.Child.Value = tid * 5;
+            output[tid] = p.Id + p.Child.Value;
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void NestedInitializerKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output);
 #pragma warning disable CS8500
@@ -220,6 +316,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_TargetTypedNewKernels_NestedInitializerKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_TargetTypedNewKernels_NestedInitializerKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_TargetTypedNewKernels_NestedInitializerKernel(output, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedInitializerKernel_Delegate>("__gsharp_launch_TargetTypedNewKernels_NestedInitializerKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {

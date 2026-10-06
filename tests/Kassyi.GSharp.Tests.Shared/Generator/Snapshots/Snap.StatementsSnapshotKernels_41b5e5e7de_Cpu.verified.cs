@@ -20,6 +20,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class StatementsSnapshotKernels
@@ -126,6 +127,66 @@ StatementsSnapshotKernels_BasicStatementsKernel(output, n, &_gsharp_contexts[_ct
 }
 ";
 public static readonly string BasicStatementsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BasicStatementsKernel_Source;
+public class __gsharp_context_StatementsSnapshotKernels_BasicStatementsKernel {
+public int _state;
+public uint _warpExchange;
+}
+public static unsafe void __gsharp_statemachine_StatementsSnapshotKernels_BasicStatementsKernel(int[] output, int n, __gsharp_context_StatementsSnapshotKernels_BasicStatementsKernel _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            int total = 0;
+            // IfStatement & ReturnStatement
+            if (n <= 0)
+            {
+                return;
+            }
+            else if (n == 1)
+            {
+                output[0] = 1;
+                return;
+            }
+            else
+            {
+                total += 1;
+            }
+
+            // ForStatement
+            for (int i = 0; i < n; i++)
+            {
+                total += i;
+                if (i > 100)
+                    break;
+                if (i % 2 == 0)
+                    continue;
+            }
+
+            // WhileStatement
+            int j = n;
+            while (j > 0)
+            {
+                total *= 2;
+                j--;
+            }
+
+            // DoStatement
+            int k = 0;
+            do
+            {
+                total -= 1;
+                k++;
+            }
+            while (k < 10);
+            output[0] = total;
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void BasicStatementsKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output, global::System.Int32 n);
 #pragma warning disable CS8500
@@ -137,6 +198,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_StatementsSnapshotKernels_BasicStatementsKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_StatementsSnapshotKernels_BasicStatementsKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_StatementsSnapshotKernels_BasicStatementsKernel(output, n, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BasicStatementsKernel_Delegate>("__gsharp_launch_StatementsSnapshotKernels_BasicStatementsKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {

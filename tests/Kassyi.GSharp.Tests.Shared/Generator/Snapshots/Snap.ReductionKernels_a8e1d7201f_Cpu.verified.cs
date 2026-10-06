@@ -20,6 +20,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 namespace Henicos.Benchmarks.ComputeBenchmarks
 {
 public partial class ReductionKernels
@@ -205,6 +206,145 @@ ReductionKernels_ReductionKernel(input, output, n, &_gsharp_contexts[_ctxtid]);
 }
 ";
 public static readonly string ReductionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ReductionKernel_Source;
+public class __gsharp_context_ReductionKernels_ReductionKernel {
+public int _state;
+public uint _warpExchange;
+public int tid;
+public int i;
+public int sum;
+public int _warpTemp_0;
+public int _warpTemp_1;
+public int _warpTemp_2;
+public int _warpTemp_3;
+public int _warpTemp_4;
+public int lane;
+public int warpId;
+public int _warpTemp_5;
+public int _warpTemp_6;
+}
+public static unsafe void __gsharp_statemachine_ReductionKernels_ReductionKernel(global::Kassyi.GSharp.Core.Float4[] input, float[] output, int n, __gsharp_context_ReductionKernels_ReductionKernel _ctx) {
+        SharedMemory<float> sdata = new(8);
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            _ctx.tid = ThreadIndex.X;
+            _ctx.i = BlockIndex.X * (BlockDimension.X * 2) + _ctx.tid;
+            _ctx.sum = 0.0f;
+            if (_ctx.i < n)
+            {
+                var v = input[_ctx.i];
+                _ctx.sum = v.X + v.Y + v.Z + v.W;
+            }
+
+            if (_ctx.i + BlockDimension.X < n)
+            {
+                var v = input[_ctx.i + BlockDimension.X];
+                _ctx.sum += v.X + v.Y + v.Z + v.W;
+            }
+
+            __gsharp_warp_exchange_assign(_ctx.sum);
+            _ctx._state = 1;
+            return;
+        }
+
+        case 1:
+        {
+            _ctx._warpTemp_0 = __gsharp_warp_shuffle_read_down_sync(_ctx, 0xFFFFFFFF, _ctx.sum, 16);
+            _ctx.sum += _ctx._warpTemp_0;
+            __gsharp_warp_exchange_assign(_ctx.sum);
+            _ctx._state = 2;
+            return;
+        }
+
+        case 2:
+        {
+            _ctx._warpTemp_1 = __gsharp_warp_shuffle_read_down_sync(_ctx, 0xFFFFFFFF, _ctx.sum, 8);
+            _ctx.sum += _ctx._warpTemp_1;
+            __gsharp_warp_exchange_assign(_ctx.sum);
+            _ctx._state = 3;
+            return;
+        }
+
+        case 3:
+        {
+            _ctx._warpTemp_2 = __gsharp_warp_shuffle_read_down_sync(_ctx, 0xFFFFFFFF, _ctx.sum, 4);
+            _ctx.sum += _ctx._warpTemp_2;
+            __gsharp_warp_exchange_assign(_ctx.sum);
+            _ctx._state = 4;
+            return;
+        }
+
+        case 4:
+        {
+            _ctx._warpTemp_3 = __gsharp_warp_shuffle_read_down_sync(_ctx, 0xFFFFFFFF, _ctx.sum, 2);
+            _ctx.sum += _ctx._warpTemp_3;
+            __gsharp_warp_exchange_assign(_ctx.sum);
+            _ctx._state = 5;
+            return;
+        }
+
+        case 5:
+        {
+            _ctx._warpTemp_4 = __gsharp_warp_shuffle_read_down_sync(_ctx, 0xFFFFFFFF, _ctx.sum, 1);
+            _ctx.sum += _ctx._warpTemp_4;
+            _ctx.lane = _ctx.tid % 32;
+            _ctx.warpId = _ctx.tid / 32;
+            if (_ctx.lane == 0)
+            {
+                sdata[_ctx.warpId] = _ctx.sum;
+            }
+
+            _ctx._state = 6;
+            return;
+        }
+
+        case 6:
+        {
+            __gsharp_warp_exchange_assign(val);
+            _ctx._state = 7;
+            return;
+        }
+
+        case 7:
+        {
+            _ctx._warpTemp_5 = __gsharp_warp_shuffle_read_down_sync(_ctx, 0xFFFFFFFF, val, 4);
+            __gsharp_warp_exchange_assign(val);
+            _ctx._state = 8;
+            return;
+        }
+
+        case 8:
+        {
+            _ctx._warpTemp_6 = __gsharp_warp_shuffle_read_down_sync(_ctx, 0xFFFFFFFF, val, 2);
+            __gsharp_warp_exchange_assign(val);
+            _ctx._state = 9;
+            return;
+        }
+
+        case 9:
+        {
+            var _warpTemp_7 = __gsharp_warp_shuffle_read_down_sync(_ctx, 0xFFFFFFFF, val, 1);
+            if (_ctx.warpId == 0)
+            {
+                var val = (_ctx.tid < 8) ? sdata[_ctx.tid] : 0.0f;
+                val += _ctx._warpTemp_5;
+                val += _ctx._warpTemp_6;
+                val += _warpTemp_7;
+                if (_ctx.tid == 0)
+                {
+                    output[BlockIndex.X] = val;
+                }
+            }
+
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ReductionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Core.Float4* input, global::System.Single* output, global::System.Int32 n);
 #pragma warning disable CS8500
@@ -216,6 +356,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_ReductionKernels_ReductionKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_ReductionKernels_ReductionKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_ReductionKernels_ReductionKernel(input, output, n, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ReductionKernel_Delegate>("__gsharp_launch_ReductionKernels_ReductionKernel", dllPath);
 fixed (global::Kassyi.GSharp.Core.Float4* p_input = input)
 fixed (global::System.Single* p_output = output)

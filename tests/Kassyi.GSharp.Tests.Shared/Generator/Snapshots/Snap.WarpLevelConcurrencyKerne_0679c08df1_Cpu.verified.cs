@@ -20,6 +20,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 namespace Kassyi.GSharp.Tests.Shared.Core
 {
 public partial class WarpLevelConcurrencyKernels
@@ -141,6 +142,89 @@ WarpLevelConcurrencyKernels_WarpReduceSumKernel(input, output, &_gsharp_contexts
 }
 ";
 public static readonly string WarpReduceSumKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpReduceSumKernel_Source;
+public class __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel {
+public int _state;
+public uint _warpExchange;
+public int tid;
+public int lane;
+public int warpId;
+public int val;
+public // Warp synchronous reduction
+        uint mask;
+public int _warpTemp_0;
+public int _warpTemp_1;
+public int _warpTemp_2;
+public int _warpTemp_3;
+}
+public static unsafe void __gsharp_statemachine_WarpLevelConcurrencyKernels_WarpReduceSumKernel(int[] input, int[] output, __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            _ctx.tid = ThreadIndex.X;
+            _ctx.lane = _ctx.tid % 32;
+            _ctx.warpId = _ctx.tid / 32;
+            _ctx.val = input[_ctx.tid];
+            _ctx.mask = 0xffffffff;
+            __gsharp_warp_exchange_assign(_ctx.val);
+            _ctx._state = 1;
+            return;
+        }
+
+        case 1:
+        {
+            _ctx._warpTemp_0 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 16);
+            _ctx.val += _ctx._warpTemp_0;
+            __gsharp_warp_exchange_assign(_ctx.val);
+            _ctx._state = 2;
+            return;
+        }
+
+        case 2:
+        {
+            _ctx._warpTemp_1 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 8);
+            _ctx.val += _ctx._warpTemp_1;
+            __gsharp_warp_exchange_assign(_ctx.val);
+            _ctx._state = 3;
+            return;
+        }
+
+        case 3:
+        {
+            _ctx._warpTemp_2 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 4);
+            _ctx.val += _ctx._warpTemp_2;
+            __gsharp_warp_exchange_assign(_ctx.val);
+            _ctx._state = 4;
+            return;
+        }
+
+        case 4:
+        {
+            _ctx._warpTemp_3 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 2);
+            _ctx.val += _ctx._warpTemp_3;
+            __gsharp_warp_exchange_assign(_ctx.val);
+            _ctx._state = 5;
+            return;
+        }
+
+        case 5:
+        {
+            var _warpTemp_4 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 1);
+            _ctx.val += _warpTemp_4;
+            // First thread of each warp writes the result
+            if (_ctx.lane == 0)
+            {
+                output[_ctx.warpId] = _ctx.val;
+            }
+
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void WarpReduceSumKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output);
 #pragma warning disable CS8500
@@ -152,6 +236,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_WarpLevelConcurrencyKernels_WarpReduceSumKernel(input, output, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpReduceSumKernel_Delegate>("__gsharp_launch_WarpLevelConcurrencyKernels_WarpReduceSumKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
@@ -276,6 +407,90 @@ WarpLevelConcurrencyKernels_WarpPrimitivesKernel(input, output, &_gsharp_context
 }
 ";
 public static readonly string WarpPrimitivesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpPrimitivesKernel_Source;
+public class __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel {
+public int _state;
+public uint _warpExchange;
+public int tid;
+public uint mask;
+public int val;
+public int _warpTemp_0;
+public int _warpTemp_1;
+public int _warpTemp_2;
+public int _warpTemp_3;
+public int _warpTemp_4;
+}
+public static unsafe void __gsharp_statemachine_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(int[] input, int[] output, __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            _ctx.tid = ThreadIndex.X;
+            _ctx.mask = Warp.ActiveMask();
+            _ctx.val = input[_ctx.tid];
+            __gsharp_warp_exchange_assign(_ctx.val);
+            _ctx._state = 1;
+            return;
+        }
+
+        case 1:
+        {
+            _ctx._warpTemp_0 = __gsharp_warp_shuffle_read_sync(_ctx, _ctx.mask, _ctx.val, 0);
+            // Test all primitives to ensure they emit correct C++ intrinsics
+            _ctx.val = _ctx._warpTemp_0;
+            __gsharp_warp_exchange_assign((uint)_ctx.val);
+            _ctx._state = 2;
+            return;
+        }
+
+        case 2:
+        {
+            _ctx._warpTemp_1 = __gsharp_warp_shuffle_read_sync(_ctx, _ctx.mask, (uint)_ctx.val, 0);
+            _ctx.val = (int)_ctx._warpTemp_1;
+            __gsharp_warp_exchange_assign(_ctx.val);
+            _ctx._state = 3;
+            return;
+        }
+
+        case 3:
+        {
+            _ctx._warpTemp_2 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 1);
+            _ctx.val = _ctx._warpTemp_2;
+            __gsharp_warp_exchange_assign((uint)_ctx.val);
+            _ctx._state = 4;
+            return;
+        }
+
+        case 4:
+        {
+            _ctx._warpTemp_3 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, (uint)_ctx.val, 1);
+            _ctx.val = (int)_ctx._warpTemp_3;
+            __gsharp_warp_exchange_assign(_ctx.val);
+            _ctx._state = 5;
+            return;
+        }
+
+        case 5:
+        {
+            _ctx._warpTemp_4 = __gsharp_warp_shuffle_read_up_sync(_ctx, _ctx.mask, _ctx.val, 1);
+            _ctx.val = _ctx._warpTemp_4;
+            __gsharp_warp_exchange_assign(_ctx.val);
+            _ctx._state = 6;
+            return;
+        }
+
+        case 6:
+        {
+            var _warpTemp_5 = __gsharp_warp_shuffle_read_xor_sync(_ctx, _ctx.mask, _ctx.val, 1);
+            _ctx.val = _warpTemp_5;
+            output[_ctx.tid] = _ctx.val;
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void WarpPrimitivesKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output);
 #pragma warning disable CS8500
@@ -287,6 +502,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(input, output, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<WarpPrimitivesKernel_Delegate>("__gsharp_launch_WarpLevelConcurrencyKernels_WarpPrimitivesKernel", dllPath);
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)

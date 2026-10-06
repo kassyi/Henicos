@@ -9,6 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 namespace Kassyi.GSharp.Tests
 {
 public partial class BitOpsTestKernels
@@ -86,6 +87,37 @@ BitOpsTestKernels_BitOpsKernel(u32Data, u64Data, &_gsharp_contexts[_ctxtid]);
 }
 ";
 public static readonly string BitOpsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +BitOpsKernel_Source;
+public class __gsharp_context_BitOpsTestKernels_BitOpsKernel {
+public int _state;
+public uint _warpExchange;
+}
+public static unsafe void __gsharp_statemachine_BitOpsTestKernels_BitOpsKernel(uint[] u32Data, ulong[] u64Data, __gsharp_context_BitOpsTestKernels_BitOpsKernel _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            uint u32Val = u32Data[0];
+            u32Data[1] = (uint)System.Numerics.BitOperations.LeadingZeroCount(u32Val);
+            u32Data[2] = (uint)System.Numerics.BitOperations.PopCount(u32Val);
+            u32Data[3] = (uint)System.Numerics.BitOperations.TrailingZeroCount(u32Val);
+            u32Data[4] = (uint)System.Numerics.BitOperations.Log2(u32Val);
+            u32Data[5] = System.Numerics.BitOperations.RotateLeft(u32Val, 5);
+            u32Data[6] = System.Numerics.BitOperations.RotateRight(u32Val, 3);
+            ulong u64Val = u64Data[0];
+            u64Data[1] = (ulong)System.Numerics.BitOperations.LeadingZeroCount(u64Val);
+            u64Data[2] = (ulong)System.Numerics.BitOperations.PopCount(u64Val);
+            u64Data[3] = (ulong)System.Numerics.BitOperations.TrailingZeroCount(u64Val);
+            u64Data[4] = (ulong)System.Numerics.BitOperations.Log2(u64Val);
+            u64Data[5] = System.Numerics.BitOperations.RotateLeft(u64Val, 10);
+            u64Data[6] = System.Numerics.BitOperations.RotateRight(u64Val, 7);
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void BitOpsKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* u32Data, global::System.UInt64* u64Data);
 #pragma warning disable CS8500
@@ -97,6 +129,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_BitOpsTestKernels_BitOpsKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_BitOpsTestKernels_BitOpsKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_BitOpsTestKernels_BitOpsKernel(u32Data, u64Data, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<BitOpsKernel_Delegate>("__gsharp_launch_BitOpsTestKernels_BitOpsKernel", dllPath);
 fixed (global::System.UInt32* p_u32Data = u32Data)
 fixed (global::System.UInt64* p_u64Data = u64Data)
