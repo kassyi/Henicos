@@ -9,6 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 namespace DebugReduc
 {
 public partial class ComprehensiveSpecKernel
@@ -360,6 +361,177 @@ ComprehensiveSpecKernel_ProcessPhysics(particles, totalMagnitude, successFlag, l
 }
 ";
 public static readonly string ProcessPhysics_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ProcessPhysics_Source;
+public class __gsharp_context_ComprehensiveSpecKernel_ProcessPhysics {
+public int _state;
+public uint _warpExchange;
+public float Gravity;
+public // 1. All Intrinsics Indexing
+        int tx;
+public int ty;
+public int tz;
+public int bx;
+public int by;
+public int bz;
+public int bdimX;
+public int bdimY;
+public int bdimZ;
+public int gdimX;
+public int gdimY;
+public int gdimZ;
+public int tid;
+public // 3. Custom Struct extraction & Array pointer dereferencing
+            PhysicsVector p;
+public SpecTypes types;
+public int origin;
+public int distance;
+public int nested;
+public // 4. All Math Mappings and Device Method invocation
+            float mag;
+public int i;
+public // 6. Other Loop Syntaxes
+            int counter;
+}
+public static unsafe void __gsharp_statemachine_ComprehensiveSpecKernel_ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, out bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, __gsharp_context_ComprehensiveSpecKernel_ProcessPhysics _ctx) {
+        successFlag = default;
+        // 2. Shared Memory (Static & Dynamic)
+        SharedMemory<int> staticCache = new SharedMemory<int>(10000);
+        SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
+        SharedMemory<int> targetTypedCache = new(256);
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            successFlag = false;
+            _ctx.Gravity = 9.8f;
+            _ctx.tx = ThreadIndex.X;
+            _ctx.ty = ThreadIndex.Y;
+            _ctx.tz = ThreadIndex.Z;
+            _ctx.bx = BlockIndex.X;
+            _ctx.by = BlockIndex.Y;
+            _ctx.bz = BlockIndex.Z;
+            _ctx.bdimX = BlockDimension.X;
+            _ctx.bdimY = BlockDimension.Y;
+            _ctx.bdimZ = BlockDimension.Z;
+            _ctx.gdimX = GridDimension.X;
+            _ctx.gdimY = GridDimension.Y;
+            _ctx.gdimZ = GridDimension.Z;
+            _ctx.tid = _ctx.tx + _ctx.bx * _ctx.bdimX;
+            if (!(_ctx.tid < particleCount))
+                goto _BranchEnd_0;
+            _ctx.p = particles[_ctx.tid];
+            _ctx.types = largeStructVal;
+            _ctx.origin = new Point(0, 0);
+            _ctx.distance = _ctx.origin.X + _ctx.p.X;
+            _ctx.nested = new NestedPhysicsState
+            {
+                Position = _ctx.p,
+                Velocity = _ctx.p,
+                StatusFlag = 1
+            };
+            _ctx.mag = ComputeMagnitude(_ctx.p);
+            _ctx.mag = (float)Math.Abs(_ctx.mag);
+            // 5. Automatic Loop Unrolling via Constant (for)
+            for (int i = 0; _ctx.i < unrollFactor; _ctx.i++)
+            {
+                if (_ctx.i == 1)
+                    continue;
+                _ctx.mag = (float)Math.Max(_ctx.mag, _ctx.p.X * _ctx.i + _ctx.Gravity);
+            }
+
+            if (!IsPositive(_ctx.mag))
+            {
+                _ctx.mag = 0;
+            }
+
+            _ctx.counter = 0;
+            while (_ctx.counter < 2)
+            {
+                _ctx.mag = (float)Math.Min(_ctx.mag, _ctx.mag + 1);
+                _ctx.counter++;
+            }
+
+            do
+            {
+                _ctx.counter--;
+            }
+            while (_ctx.counter > 0);
+            // 7. Switch statement
+            switch (_ctx.tx)
+            {
+                case 0:
+                    _ctx.mag += 1;
+                    break;
+                default:
+                    _ctx.mag += 0;
+                    break;
+            }
+
+            // 8. Memory writes
+            staticCache[_ctx.tx] = _ctx.tid;
+            dynamicCache[_ctx.tx] = _ctx.mag;
+            _ctx._state = 1;
+            return;
+        }
+
+        case 1:
+        {
+            // 10. Atomics and Out parameter
+            if (_ctx.tx == 0)
+            {
+                Gpu.AtomicAdd(ref totalMagnitude, dynamicCache[0]);
+                successFlag = true;
+            }
+
+            // 11. Phase 2 Features: InlineArray, unsafe fixed, AddWithCarry
+            Vector8 inlineVec = new Vector8();
+            inlineVec[0] = 123;
+            inlineVec[1] = 456;
+            unsafe
+            {
+                PhysicsState state = new PhysicsState();
+                state.Buffer[0] = inlineVec[0];
+                state.Buffer[1] = inlineVec[1];
+                ulong carry = 0;
+                uint sum = Gpu.AddWithCarry(state.Buffer[0], state.Buffer[1], ref carry);
+                long borrow = 0;
+                uint diff = Gpu.SubWithBorrow(sum, state.Buffer[1], ref borrow);
+                if (sum > diff)
+                {
+                    state.Flags = 1;
+                }
+            }
+
+            // 11.6 Operators (Ternary, Bitwise, Logical, else if)
+            bool condition1 = _ctx.tx > 0;
+            bool condition2 = _ctx.ty == 0;
+            if (condition1 && condition2) // Logical short-circuit
+            {
+                int bitwise = (_ctx.tx << 2) | (_ctx.ty >> 1) ^ 0xFF;
+                bitwise &= ~1; // Bitwise assignment and NOT
+            }
+            else if (condition1 || !condition2)
+            {
+                _ctx.mag += 1.5f;
+            }
+
+            // 11.5 Inline PTX
+            Gpu.InlinePtx("/* test ptx inline */");
+            // 12. Early return
+            if (_ctx.ty > 0)
+            {
+                return;
+            }
+
+            _BranchEnd_0:
+                ;
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ProcessPhysics_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::DebugReduc.PhysicsVector* particles, global::System.Single* totalMagnitude, global::System.Boolean* successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount);
 #pragma warning disable CS8500
@@ -372,6 +544,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_ComprehensiveSpecKernel_ProcessPhysics[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_ComprehensiveSpecKernel_ProcessPhysics();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_ComprehensiveSpecKernel_ProcessPhysics(particles, ref totalMagnitude, out successFlag, largeStructVal, particleCount, unrollFactor, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<ProcessPhysics_Delegate>("__gsharp_launch_ComprehensiveSpecKernel_ProcessPhysics", dllPath);
 fixed (global::DebugReduc.PhysicsVector* p_particles = particles)
 fixed (global::System.Single* p_totalMagnitude = &totalMagnitude)
@@ -440,6 +659,26 @@ ComprehensiveSpecKernel_CooperativePhysicsProcess(data, &_gsharp_contexts[_ctxti
 }
 ";
 public static readonly string CooperativePhysicsProcess_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +CooperativePhysicsProcess_Source;
+public class __gsharp_context_ComprehensiveSpecKernel_CooperativePhysicsProcess {
+public int _state;
+public uint _warpExchange;
+}
+public static unsafe void __gsharp_statemachine_ComprehensiveSpecKernel_CooperativePhysicsProcess(int[] data, __gsharp_context_ComprehensiveSpecKernel_CooperativePhysicsProcess _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            int tid = ThreadIndex.X;
+            data[tid] = tid;
+            Gpu.SyncGrid();
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void CooperativePhysicsProcess_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
 #pragma warning disable CS8500
@@ -451,6 +690,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_MegaTestCompilationBase{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_ComprehensiveSpecKernel_CooperativePhysicsProcess[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_ComprehensiveSpecKernel_CooperativePhysicsProcess();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_ComprehensiveSpecKernel_CooperativePhysicsProcess(data, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<CooperativePhysicsProcess_Delegate>("__gsharp_launch_ComprehensiveSpecKernel_CooperativePhysicsProcess", dllPath);
 fixed (global::System.Int32* p_data = data)
 {

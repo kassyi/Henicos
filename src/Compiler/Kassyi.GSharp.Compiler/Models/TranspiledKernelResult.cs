@@ -8,6 +8,7 @@ internal readonly struct TranspiledKernelResult(
     string? @namespace,
     string cudaSource,
     string cppSource,
+    string managedCSharpSource,
     EquatableArray<EquatableDiagnostic> diagnostics) : IEquatable<TranspiledKernelResult>
 {
     public IMethodSymbol MethodSymbol { get; } = methodSymbol;
@@ -16,6 +17,7 @@ internal readonly struct TranspiledKernelResult(
     public string? Namespace { get; } = @namespace;
     public string CudaSource { get; } = cudaSource;
     public string CppSource { get; } = cppSource;
+    public string ManagedCSharpSource { get; } = managedCSharpSource;
     public EquatableArray<EquatableDiagnostic> Diagnostics { get; } = diagnostics;
 
     public bool Equals(TranspiledKernelResult other)
@@ -25,6 +27,7 @@ internal readonly struct TranspiledKernelResult(
                Namespace == other.Namespace &&
                CudaSource == other.CudaSource &&
                CppSource == other.CppSource &&
+               ManagedCSharpSource == other.ManagedCSharpSource &&
                Diagnostics.Equals(other.Diagnostics);
     }
 

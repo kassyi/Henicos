@@ -142,6 +142,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             {
             }, isDevice: false, cppDialect);
 
+            var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(methodDeclaration, context.SemanticModel);
+
             if (!CheckSuppressGs0001(methodDeclaration))
             {
                 return new TranspiledKernelResult(
@@ -151,6 +153,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
                     cudaSource,
                     cppSource,
+                    managedCSharpSource,
                     collector.GetDiagnostics()
                 );
             }
@@ -165,6 +168,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
                 cudaSource,
                 cppSource,
+                managedCSharpSource,
                 collector.GetDiagnostics()
             );
         }
@@ -181,7 +185,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 methodSymbol?.Name ?? "E",
                 methodSymbol?.ContainingType.Name ?? "E",
                 methodSymbol?.ContainingNamespace?.GetFullNamespaceName(),
-                "", "", collector.GetDiagnostics());
+                "", "", $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n", collector.GetDiagnostics());
         }
     }
 
@@ -399,7 +403,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         GeneratorConfig config,
         SourceProductionContext context, bool isCuda)
     {
-        var methodsData = ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source)>();
+        var methodsData = ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>();
         foreach (var method in methods)
         {
             foreach (var diag in method.Diagnostics)
@@ -408,7 +412,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var source = isCuda ? method.CudaSource : method.CppSource;
-            methodsData.Add((method.MethodSymbol, source));
+            methodsData.Add((method.MethodSymbol, source, method.ManagedCSharpSource));
         }
 
         var wrapperSource = WrapperEmitter.GenerateKernelExtensions(classSymbol, methodsData, config);

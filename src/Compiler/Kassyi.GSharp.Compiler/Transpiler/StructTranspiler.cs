@@ -118,11 +118,33 @@ internal static class StructTranspiler
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
         int? packValue = null;
-        var structLayoutAttr = structSym.GetAttributes().FirstOrDefault(a => a.IsStructLayoutAttribute());
+        AttributeData? structLayoutAttr = null;
+        foreach (var a in structSym.GetAttributes())
+        {
+            if (!a.IsStructLayoutAttribute())
+            {
+                continue;
+            }
+
+            structLayoutAttr = a;
+            break;
+        }
+
         if (structLayoutAttr != null)
         {
-            var packArg = structLayoutAttr.NamedArguments.FirstOrDefault(kvp => kvp.Key == "Pack").Value;
-            if (packArg is { IsNull: false, Value: int p and > 0 })
+            TypedConstant? packArgValue = null;
+            foreach (var kvp in structLayoutAttr.NamedArguments)
+            {
+                if (kvp.Key != "Pack")
+                {
+                    continue;
+                }
+
+                packArgValue = kvp.Value;
+                break;
+            }
+
+            if (packArgValue is { IsNull: false, Value: int p and > 0 })
             {
                 packValue = p;
             }
@@ -301,7 +323,8 @@ internal static class StructTranspiler
         if (conv.ReturnType.IsEqualTo(structSym))
         {
             // Implicit constructor from param type
-            context.Emitter.Writer.Append("__device__ inline ").AppendFullyQualifiedCppName(structSym).AppendLine("() {}");
+            context.Emitter.Writer.Append("__device__ inline ").AppendFullyQualifiedCppName(structSym)
+                .AppendLine("() {}");
 
             context.Emitter.Writer.Append("__device__ inline ").AppendFullyQualifiedCppName(structSym);
             using (context.Emitter.Writer.Parentheses())
@@ -356,39 +379,39 @@ internal static class StructTranspiler
         switch (member)
         {
             case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
+            {
+                VariableDeclaratorSyntax? syntax = null;
+                var syntaxRefs = field.DeclaringSyntaxReferences;
+                if (!syntaxRefs.IsEmpty)
                 {
-                    VariableDeclaratorSyntax? syntax = null;
-                    var syntaxRefs = field.DeclaringSyntaxReferences;
-                    if (!syntaxRefs.IsEmpty)
-                    {
-                        syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
-                    }
-
-                    ExpressionSyntax? sizeExp = null;
-                    if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
-                    {
-                        sizeExp = argList.Arguments[0].Expression;
-                    }
-
-                    if (sizeExp != null)
-                    {
-                        context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
-                        context.Emitter.Writer.Append($" {field.Name}");
-                        using (context.Emitter.Writer.Brackets())
-                        {
-                            context.Visitor.Visit(sizeExp);
-                        }
-
-                        context.Emitter.Writer.AppendSemiColonLine();
-                    }
-                    else
-                    {
-                        context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
-                        context.Emitter.Writer.AppendLine($"* {field.Name}; // ERROR: fixed size not found");
-                    }
-
-                    break;
+                    syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
                 }
+
+                ExpressionSyntax? sizeExp = null;
+                if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
+                {
+                    sizeExp = argList.Arguments[0].Expression;
+                }
+
+                if (sizeExp != null)
+                {
+                    context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
+                    context.Emitter.Writer.Append($" {field.Name}");
+                    using (context.Emitter.Writer.Brackets())
+                    {
+                        context.Visitor.Visit(sizeExp);
+                    }
+
+                    context.Emitter.Writer.AppendSemiColonLine();
+                }
+                else
+                {
+                    context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
+                    context.Emitter.Writer.AppendLine($"* {field.Name}; // ERROR: fixed size not found");
+                }
+
+                break;
+            }
             case IFieldSymbol field:
                 WriteMemberDeclaration(field.Type, field.Name, field, ref context);
                 break;

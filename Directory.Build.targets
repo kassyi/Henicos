@@ -1,0 +1,7 @@
+<Project>
+  <ItemGroup>
+    <!-- Prevent implicit import of System.Linq across all projects to catch LINQ usage at compile-time. -->
+    <!-- This must be in .targets because the SDK adds default implicit usings after .props are evaluated. -->
+    <Using Remove="System.Linq" />
+  </ItemGroup>
+</Project>

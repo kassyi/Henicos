@@ -9,6 +9,8 @@
     
     <GSharpTargetDialect>Cpu</GSharpTargetDialect>
     <GSharpEmitSource>true</GSharpEmitSource>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>obj/generated</CompilerGeneratedFilesOutputPath>
     <DefineConstants>GSHARP_CPU</DefineConstants>
     <RootNamespace>Kassyi.GSharp.Tests</RootNamespace>
   </PropertyGroup>

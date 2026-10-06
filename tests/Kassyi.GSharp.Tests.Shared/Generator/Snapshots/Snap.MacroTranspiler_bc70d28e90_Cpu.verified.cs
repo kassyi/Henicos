@@ -9,6 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 namespace Kassyi.GSharp.Tests.TestCases.Transpiler
 {
 public partial class GEN_35_MacroTranspiler_InGpuKernel
@@ -187,6 +188,145 @@ GEN_35_MacroTranspiler_InGpuKernel_MyKernel(&_gsharp_contexts[_ctxtid]);
 }
 ";
 public static readonly string MyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +MyKernel_Source;
+public class __gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel {
+public int _state;
+public uint _warpExchange;
+}
+public static unsafe void __gsharp_statemachine_GEN_35_MacroTranspiler_InGpuKernel_MyKernel(__gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            int sum = 0;
+            // ForUnroll macro
+            Gpu.ForUnroll(0, 3, i =>
+            {
+                sum += i;
+            });
+            // GridStrideLoop macro
+            for (int j = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; j < (10); j += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+            {
+                sum += j;
+            }
+
+            // SingleThread macro
+            Gpu.SingleThread(() =>
+            {
+                sum += 100;
+            });
+            // SyncGrid macro - Edge case 1: Empty block
+            Gpu.SyncGrid(() =>
+            {
+            });
+            // SyncGrid macro - Edge case 2: Single statement block
+            Gpu.SyncGrid(() =>
+            {
+                sum += 1;
+            });
+            // SyncGrid macro - Edge case 3: Expression body lambda
+            Gpu.SyncGrid(() => sum += 2);
+            // SyncGrid macro - Edge case 4: Single unbraced statement in if
+            Gpu.SyncGrid(() =>
+            {
+                if (sum > 0)
+                    sum += 10;
+                sum += 20;
+            });
+            // SyncGrid macro - Comprehensive steps with nested for loop and if-else
+            Gpu.SyncGrid(() =>
+            {
+                sum += 1;
+                sum += 2;
+                for (int i = 0; i < 10; i++)
+                {
+                    sum += i;
+                    sum *= 2;
+                }
+
+                if (sum > 50)
+                {
+                    sum += 100;
+                    sum += 200;
+                }
+                else
+                {
+                    sum -= 10;
+                    sum -= 20;
+                }
+
+                sum += 3;
+                Gpu.SyncGrid(); // Manual sync co-existence (should not produce double sync)
+                sum += 4;
+            });
+            // SyncGrid macro - Deep nesting of nesting (for -> if -> for)
+            Gpu.SyncGrid(() =>
+            {
+                for (int i = 0; i < 5; i++)
+                {
+                    if (i % 2 == 0)
+                    {
+                        for (int j = 0; j < 3; j++)
+                        {
+                            sum += i;
+                            sum += j;
+                        }
+
+                        sum += 10;
+                    }
+
+                    sum += 20;
+                }
+            });
+            // SyncGrid macro - Recursive / nested SyncGrid inside SyncGrid
+            Gpu.SyncGrid(() =>
+            {
+                sum += 1;
+                Gpu.SyncGrid(() =>
+                {
+                    sum += 2;
+                    sum += 3;
+                });
+                sum += 4;
+            });
+            // SyncGrid macro - Direct nested SyncGrid wrapper pattern (inner SyncGrid is unwrapped/eliminated)
+            Gpu.SyncGrid(() =>
+            {
+                Gpu.SyncGrid(() =>
+                {
+                    sum += 500;
+                });
+            });
+            // SyncGrid macro - Arrow function (lambda) and local function inside
+            Gpu.SyncGrid(() =>
+            {
+                void LocalStep()
+                {
+                    sum += 11;
+                    sum += 22;
+                }
+
+                LocalStep();
+                sum += 33;
+            });
+            // SyncGrid macro - SingleThread inside SyncGrid (must suppress sync to avoid GPU deadlock)
+            Gpu.SyncGrid(() =>
+            {
+                sum += 1;
+                Gpu.SingleThread(() =>
+                {
+                    sum += 2;
+                    sum += 3;
+                });
+                sum += 4;
+            });
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void MyKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ);
 #pragma warning disable CS8500
@@ -195,6 +335,53 @@ public static unsafe void LaunchMyKernel(uint gridDimX = 1, uint gridDimY = 1, u
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_GEN_35_MacroTranspiler_InGpuKernel_MyKernel(_gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<MyKernel_Delegate>("__gsharp_launch_GEN_35_MacroTranspiler_InGpuKernel_MyKernel", dllPath);
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ);
 }

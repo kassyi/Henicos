@@ -25,6 +25,12 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return;
         }
 
+        if (IsCuda && typeSymbol.TypeKind == TypeKind.Delegate)
+        {
+            context.Emitter.Writer.Append("auto");
+            return;
+        }
+
         if (typeSymbol is IPointerTypeSymbol pointer)
         {
             AppendType(ref context, pointer.PointedAtType);

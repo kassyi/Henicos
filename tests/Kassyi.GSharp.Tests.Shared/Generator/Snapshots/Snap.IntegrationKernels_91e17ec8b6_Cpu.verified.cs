@@ -39,6 +39,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
 namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class Tier1IntegrationKernels
@@ -316,6 +317,161 @@ Tier1IntegrationKernels_AllInOneKernel(intInput, floatInput, results, config, gl
 }
 ";
 public static readonly string AllInOneKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +AllInOneKernel_Source;
+public class __gsharp_context_Tier1IntegrationKernels_AllInOneKernel {
+public int _state;
+public uint _warpExchange;
+public bool ok;
+public // Bitwise and Shifts
+            int bitwise;
+public // Math & Hardware Math (SYN-68)
+            float mag;
+public // Inline Array (GEN-30)
+            Tier1FixedArray arr;
+public // SYN-94: ForUnroll
+            float sum;
+public // SYN-70: foreach loop on InlineArray
+            float foreachSum;
+public // SYN-08: Lambda expressions (Expanded to C++ auto lambdas)
+            Func<float, float, float> multiplier;
+}
+public static unsafe void __gsharp_statemachine_Tier1IntegrationKernels_AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, __gsharp_context_Tier1IntegrationKernels_AllInOneKernel _ctx) {
+        // SYN-47: Dynamic Shared Memory
+            SharedMemory<float> dynamicSharedMem = new SharedMemory<float>(dynamicSharedSize);
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            // SYN-94: Macro DSL
+            for (int tid = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; tid < (count); tid += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+            {
+                // Local function with AggressiveInlining
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                int LocalInlineFunc(int x) => x + 5 - 5; // effectively x
+                // Tuple, tuple swap, & Inline out var (SYN-03)
+                (int a, int b) = (LocalInlineFunc(tid), tid * 2);
+                (a, b) = (b, a); // Swap
+                (a, b) = (b, a); // Swap back
+                _ctx.ok = TryProcess(intInput[tid], out var processed);
+                _ctx.bitwise = (a << 1) | (b >> 1) ^ 0xFF;
+                _ctx.bitwise &= ~1;
+                _ctx.mag = HelperMath(floatInput[tid], (float)processed);
+                _ctx.mag = HelperMathAggressive(_ctx.mag); // SYN-28
+                _ctx.mag = (float)Math.Max(_ctx.mag, config.FloatVal);
+                // SYN-01: Switch expression
+                _ctx.mag += (tid % 3) switch
+                {
+                    0 => 1.0f,
+                    1 => 2.0f,
+                    _ => 3.0f
+                };
+                _ctx.arr = new Tier1FixedArray();
+                _ctx.arr[0] = _ctx.mag;
+                _ctx.arr[1] = _ctx.mag * 2.0f;
+                _ctx.arr[2] = _ctx.mag * 3.0f;
+                _ctx.arr[3] = _ctx.mag * 4.0f;
+                _ctx.sum = 0;
+                Gpu.ForUnroll(0, 4, i =>
+                {
+                    if (i != 1)
+                    {
+                        _ctx.sum += _ctx.arr[i];
+                    }
+                });
+                _ctx.foreachSum = 0;
+                foreach (var val in _ctx.arr)
+                {
+                    _ctx.foreachSum += val;
+                }
+
+                _ctx.sum += _ctx.foreachSum;
+                {
+                    ReadOnlySpan<float> coll = [1.0f, 2.0f, 3.0f, 4.0f];
+                    float collSum = 0;
+                    foreach (var val in coll)
+                    {
+                        collSum += val;
+                    }
+
+                    _ctx.sum += collSum + coll.Length;
+                }
+
+                {
+                    Span<float> stackBuf = stackalloc float[]
+                    {
+                        5.0f,
+                        10.0f,
+                        15.0f,
+                        20.0f
+                    };
+                    float stackSum = 0;
+                    foreach (var val in stackBuf)
+                    {
+                        stackSum += val;
+                    }
+
+                    _ctx.sum += stackSum + stackBuf.Length;
+                }
+
+                _ctx.multiplier = (float x, float m) => x * m;
+                _ctx.sum = _ctx.multiplier(_ctx.sum, 2.0f);
+                // Atomic Operations (SYN-49)
+                if (_ctx.ok && config.BoolVal)
+                {
+                    Gpu.AtomicAdd(ref globalCounter[0], (ulong)_ctx.bitwise);
+                }
+
+                dynamicSharedMem[ThreadIndex.X] = _ctx.sum;
+                Gpu.SyncThreads(); // GBI-31
+                // Complex ternary (GSH-01)
+                float finalVal = (_ctx.bitwise > 0) ? (dynamicSharedMem[ThreadIndex.X] > 10.0f ? 10.0f : dynamicSharedMem[ThreadIndex.X]) : 0.0f;
+                // SYN-14: fixed buffers inside structs
+                unsafe
+                {
+                    Tier1FixedBufferStruct fbs = new Tier1FixedBufferStruct();
+                    fbs.Data[0] = _ctx.bitwise;
+                    finalVal += fbs.Data[0];
+                }
+
+                // SYN-04 Null coalescing
+                int? maybeVal = default;
+                int actualVal = maybeVal ?? 5; // Should be 5
+                finalVal += actualVal;
+                // BCL-01 & BCL-02: System.Numerics.BitOperations
+                int popCount = System.Numerics.BitOperations.PopCount((uint)_ctx.bitwise);
+                int leadingZeroes = System.Numerics.BitOperations.LeadingZeroCount((uint)_ctx.bitwise);
+                finalVal += popCount + leadingZeroes;
+                // SYN-90: Complex Control Flow
+                int loopCounter = 0;
+                do
+                {
+                    if (loopCounter % 2 == 0)
+                    {
+                        if (finalVal < 1000.0f)
+                        {
+                            finalVal += 1.0f;
+                        }
+                    }
+                    else
+                    {
+                        finalVal -= 0.5f;
+                    }
+
+                    loopCounter++;
+                }
+                while (loopCounter < 3);
+                // SYN-77: Inline PTX
+                Gpu.InlinePtx("// test inline ptx");
+                results[tid] = finalVal;
+            }
+
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void AllInOneKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* intInput, global::System.Single* floatInput, global::System.Single* results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, global::System.UInt64* globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize);
 #pragma warning disable CS8500
@@ -327,6 +483,53 @@ return;
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_Tier1IntegrationKernels_AllInOneKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_Tier1IntegrationKernels_AllInOneKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_Tier1IntegrationKernels_AllInOneKernel(intInput, floatInput, results, config, globalCounter, count, dynamicSharedSize, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AllInOneKernel_Delegate>("__gsharp_launch_Tier1IntegrationKernels_AllInOneKernel", dllPath);
 fixed (global::System.Int32* p_intInput = intInput)
 fixed (global::System.Single* p_floatInput = floatInput)

@@ -4,10 +4,10 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class StructMarshalingEmitter
 {
     /// <summary>Emits marshal and unmarshal routines for all custom structs used in kernel signatures.</summary>
-    internal static void WriteStructMarshaling(SourceWriter writer, IEnumerable<(IMethodSymbol Method, string Source)> methods)
+    internal static void WriteStructMarshaling(SourceWriter writer, IEnumerable<(IMethodSymbol Method, string Source, string ManagedCSharpSource)> methods)
     {
         var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-        foreach (var (method, _) in methods)
+        foreach (var (method, _, _) in methods)
         {
             foreach (var parameter in method.Parameters)
             {

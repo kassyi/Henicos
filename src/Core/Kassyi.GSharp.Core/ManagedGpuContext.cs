@@ -1,0 +1,238 @@
+using System.ComponentModel;
+
+namespace Kassyi.GSharp.Core;
+
+using System;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+/// <summary>
+/// Provides a managed execution context for evaluating GPU kernels directly on the .NET host CPU without native toolchains.
+/// </summary>
+public static class ManagedGpuContext
+{
+    // A flag to check if the current thread is executing within a managed cooperative scheduler
+    [ThreadStatic]
+    public static bool IsActive;
+
+    [ThreadStatic]
+    public static int ThreadIdxX;
+
+    [ThreadStatic]
+    public static int ThreadIdxY;
+
+    [ThreadStatic]
+    public static int ThreadIdxZ;
+
+    [ThreadStatic]
+    public static int BlockIdxX;
+
+    [ThreadStatic]
+    public static int BlockIdxY;
+
+    [ThreadStatic]
+    public static int BlockIdxZ;
+
+    [ThreadStatic]
+    public static int BlockDimX;
+
+    [ThreadStatic]
+    public static int BlockDimY;
+
+    [ThreadStatic]
+    public static int BlockDimZ;
+
+    [ThreadStatic]
+    public static int GridDimX;
+
+    [ThreadStatic]
+    public static int GridDimY;
+
+    [ThreadStatic]
+    public static int GridDimZ;
+
+    // Shared memory buffer per thread (each physical thread represents a block during managed execution loop)
+    [ThreadStatic]
+    private static byte[]? s_sharedMemoryBuffer;
+
+    [ThreadStatic]
+    private static int s_sharedMemoryOffset;
+
+    [ThreadStatic]
+    private static int[]? s_allocationOffsets;
+
+    [ThreadStatic]
+    private static int s_allocationIndex;
+
+    [ThreadStatic]
+    private static int s_maxAllocationIndex;
+
+    /// <summary>
+    /// Initializes or resets the shared memory buffer for the current block execution.
+    /// </summary>
+    public static void ResetSharedMemory()
+    {
+        s_sharedMemoryOffset = 0;
+        s_allocationIndex = 0;
+        s_maxAllocationIndex = 0;
+    }
+
+    /// <summary>
+    /// Resets the allocation index so the next thread can reuse the same shared memory buffers.
+    /// </summary>
+    public static void ResetAllocationIndex() => s_allocationIndex = 0;
+
+    /// <summary>
+    /// Allocates a contiguous span of shared memory from the current block's buffer.
+    /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API for code generators
+    public static Span<T> AllocateSharedMemory<T>(int count) where T : unmanaged
+    {
+        if (count <= 0)
+        {
+            return Span<T>.Empty;
+        }
+
+        var bytesNeeded = count * Unsafe.SizeOf<T>();
+
+        s_allocationOffsets ??= new int[64];
+
+        var currentIndex = s_allocationIndex++;
+
+        // Ensure buffer exists and is large enough
+        s_sharedMemoryBuffer ??= new byte[Math.Max(bytesNeeded, 65536)]; // Default 64KB
+
+        if (currentIndex < s_maxAllocationIndex)
+        {
+            // Reuse existing allocation for this index
+            var existingOffset = s_allocationOffsets[currentIndex];
+            return MemoryMarshal.Cast<byte, T>(s_sharedMemoryBuffer.AsSpan(existingOffset, bytesNeeded));
+        }
+
+        if (s_sharedMemoryOffset + bytesNeeded > s_sharedMemoryBuffer.Length)
+        {
+            // Expand buffer if necessary
+            Array.Resize(ref s_sharedMemoryBuffer,
+                Math.Max(s_sharedMemoryBuffer.Length * 2, s_sharedMemoryOffset + bytesNeeded));
+        }
+
+        var newOffset = s_sharedMemoryOffset;
+        var byteSpan = s_sharedMemoryBuffer.AsSpan(newOffset, bytesNeeded);
+        s_sharedMemoryOffset += bytesNeeded;
+
+        if (currentIndex >= s_allocationOffsets.Length)
+        {
+            Array.Resize(ref s_allocationOffsets, s_allocationOffsets.Length * 2);
+        }
+
+        s_allocationOffsets[currentIndex] = newOffset;
+        s_maxAllocationIndex++;
+
+        return MemoryMarshal.Cast<byte, T>(byteSpan);
+    }
+
+    /// <summary>
+    /// Sets the thread coordinates for the current cooperative scheduler step.
+    /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API for code generators
+    public static void SetThreadContext(
+        int tx, int ty, int tz,
+        int bx, int by, int bz,
+        int bDimX, int bDimY, int bDimZ,
+        int gDimX, int gDimY, int gDimZ)
+    {
+        IsActive = true;
+
+        ThreadIdxX = tx;
+        ThreadIdxY = ty;
+        ThreadIdxZ = tz;
+
+        BlockIdxX = bx;
+        BlockIdxY = by;
+        BlockIdxZ = bz;
+
+        BlockDimX = bDimX;
+        BlockDimY = bDimY;
+        BlockDimZ = bDimZ;
+
+        GridDimX = gDimX;
+        GridDimY = gDimY;
+        GridDimZ = gDimZ;
+    }
+
+    /// <summary>
+    /// Clears the thread context when execution is completed.
+    /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API for code generators
+    public static void ClearThreadContext() => IsActive = false;
+
+    // Mocks for Warp Shuffle operations in Managed Execution
+
+    /// <summary>
+    /// Internal mock for warp exchange assignment. Do not use directly.
+    /// </summary>
+    /// <typeparam name="T">The value type.</typeparam>
+    /// <param name="value">The value to assign.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void __gsharp_warp_exchange_assign<T>(T value) => GpuOnlyException.Throw<T>();
+
+    /// <summary>
+    /// Internal mock for warp shuffle down. Do not use directly.
+    /// </summary>
+    /// <typeparam name="TContext">The context type.</typeparam>
+    /// <typeparam name="T">The value type.</typeparam>
+    /// <param name="ctx">The context.</param>
+    /// <param name="mask">The thread mask.</param>
+    /// <param name="val">The value to shuffle.</param>
+    /// <param name="delta">The lane offset.</param>
+    /// <param name="width">The warp width.</param>
+    /// <returns>The shuffled value.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static dynamic __gsharp_warp_shuffle_read_down_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
+        int width = 32) => GpuOnlyException.Throw<T>()!;
+
+    /// <summary>
+    /// Internal mock for warp shuffle up. Do not use directly.
+    /// </summary>
+    /// <typeparam name="TContext">The context type.</typeparam>
+    /// <typeparam name="T">The value type.</typeparam>
+    /// <param name="ctx">The context.</param>
+    /// <param name="mask">The thread mask.</param>
+    /// <param name="val">The value to shuffle.</param>
+    /// <param name="delta">The lane offset.</param>
+    /// <param name="width">The warp width.</param>
+    /// <returns>The shuffled value.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static dynamic __gsharp_warp_shuffle_read_up_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
+        int width = 32) => GpuOnlyException.Throw<T>()!;
+
+    /// <summary>
+    /// Internal mock for warp shuffle XOR. Do not use directly.
+    /// </summary>
+    /// <typeparam name="TContext">The context type.</typeparam>
+    /// <typeparam name="T">The value type.</typeparam>
+    /// <param name="ctx">The context.</param>
+    /// <param name="mask">The thread mask.</param>
+    /// <param name="val">The value to shuffle.</param>
+    /// <param name="delta">The lane offset.</param>
+    /// <param name="width">The warp width.</param>
+    /// <returns>The shuffled value.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static dynamic __gsharp_warp_shuffle_read_xor_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
+        int width = 32) => GpuOnlyException.Throw<T>()!;
+
+    /// <summary>
+    /// Internal mock for warp shuffle direct read. Do not use directly.
+    /// </summary>
+    /// <typeparam name="TContext">The context type.</typeparam>
+    /// <typeparam name="T">The value type.</typeparam>
+    /// <param name="ctx">The context.</param>
+    /// <param name="mask">The thread mask.</param>
+    /// <param name="val">The value to shuffle.</param>
+    /// <param name="srcLane">The source lane.</param>
+    /// <param name="width">The warp width.</param>
+    /// <returns>The shuffled value.</returns>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static dynamic __gsharp_warp_shuffle_read_sync<TContext, T>(TContext ctx, uint mask, T val, uint srcLane,
+        int width = 32) => GpuOnlyException.Throw<T>()!;
+}
