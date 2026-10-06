@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Restore implicit LINQ for test projects since it is removed globally -->
+    <Using Include="System.Linq" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.csv" />
     <None Include="$(MSBuildThisFileDirectory)xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Visible="false" Condition="!Exists('$(MSBuildProjectDirectory)\xunit.runner.json')" />
     <None Include="$(MSBuildProjectDirectory)\xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(MSBuildProjectDirectory)\xunit.runner.json')" />

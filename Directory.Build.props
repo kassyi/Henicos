@@ -9,11 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Prevent implicit import of System.Linq across all projects to catch LINQ usage at compile-time -->
-    <Using Remove="System.Linq" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
