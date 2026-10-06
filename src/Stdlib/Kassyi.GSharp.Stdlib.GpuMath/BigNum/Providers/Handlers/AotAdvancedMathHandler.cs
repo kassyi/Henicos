@@ -621,6 +621,19 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         return (uint)res;
     }
 
+    /// <summary>
+    /// Executes the ModPow NTT MegaKernel.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace.</param>
+    /// <param name="targetOperand">The target operand buffer.</param>
+    /// <param name="resultBuffer">The result buffer.</param>
+    /// <param name="constant">The constant modulus buffer.</param>
+    /// <param name="reciprocalMod">The reciprocal modulus buffer.</param>
+    /// <param name="exponent">The exponent buffer.</param>
+    /// <param name="n">The number of words.</param>
+    /// <param name="targetBits">The target precision in bits.</param>
+    /// <param name="gridDim">The grid dimension.</param>
+    /// <param name="blockDim">The block dimension.</param>
     public void ExecuteModPowNttMegaKernel(
         GpuWorkspace workspace,
         GpuBigUInt targetOperand, GpuBigUInt resultBuffer, GpuBigUInt constant,

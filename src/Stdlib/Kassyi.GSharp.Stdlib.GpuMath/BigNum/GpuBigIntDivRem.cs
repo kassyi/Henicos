@@ -184,6 +184,13 @@ public static partial class GpuBigIntDivRem
     /// Performs a zero-sync Barrett reduction using a precomputed reciprocal.
     /// This method does not synchronize with the CPU for remainder correction, enabling CUDA Graph capture.
     /// </summary>
+    /// <param name="leftOperand">The left operand.</param>
+    /// <param name="rightOperand">The right operand.</param>
+    /// <param name="reciprocalOfB">The precomputed reciprocal of the right operand.</param>
+    /// <param name="targetBits">The target precision in bits.</param>
+    /// <param name="aActualWords">The actual word count of the left operand.</param>
+    /// <param name="quotientBuffer">The buffer to store the quotient result.</param>
+    /// <param name="remainderBuffer">The buffer to store the remainder result.</param>
     public static void ReduceZeroSync(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt reciprocalOfB,
         int targetBits, int aActualWords, GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
     {
