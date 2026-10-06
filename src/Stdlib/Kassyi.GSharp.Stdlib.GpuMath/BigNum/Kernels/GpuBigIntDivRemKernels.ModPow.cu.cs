@@ -2,7 +2,7 @@
 
 #pragma warning disable GSH0014
 
-using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 

@@ -1,8 +1,6 @@
-// ReSharper disable All
-
 #pragma warning disable GSH0014
 
-using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
@@ -152,6 +150,7 @@ public static partial class GpuBigIntDivRemKernels
             {
                 GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, -1, false);
             }
+
             Gpu.SyncThreads();
 
             uint top2 = diff[evalWords - 1];
@@ -164,6 +163,7 @@ public static partial class GpuBigIntDivRemKernels
                 GpuBigIntKernels.DeviceAddSubParallel(diff, rightOperand, diff, evalWords, 1, false);
                 done = true;
             }
+
             Gpu.SyncThreads();
 
             if (done)

@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.IO;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
 /// Provides high-performance GPU-accelerated Divide-and-Conquer (D&amp;C) radix conversion

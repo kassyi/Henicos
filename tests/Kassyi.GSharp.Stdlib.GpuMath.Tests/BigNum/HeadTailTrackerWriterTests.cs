@@ -1,6 +1,4 @@
-using Kassyi.GSharp.Stdlib.GpuMath.IO;
-
-namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.IO;
+namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 public class HeadTailTrackerWriterTests
 {

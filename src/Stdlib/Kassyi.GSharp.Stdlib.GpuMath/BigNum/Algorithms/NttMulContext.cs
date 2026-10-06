@@ -1,6 +1,6 @@
 #pragma warning disable IDE0051, IDE0044, CS0169
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>Encapsulates parameter buffers, dimensions, and twiddle factor pointers for NTT-based big integer multiplication kernels.</summary>
 public struct NttMulContext

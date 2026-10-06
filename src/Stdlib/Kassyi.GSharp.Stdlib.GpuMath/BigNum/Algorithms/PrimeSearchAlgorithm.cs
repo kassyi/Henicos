@@ -1,4 +1,3 @@
-using System.Numerics;
 using System.Security.Cryptography;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;

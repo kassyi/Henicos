@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
 /// Encapsulates device scratch buffers and intermediate memory arrays for multi-precision calculations.

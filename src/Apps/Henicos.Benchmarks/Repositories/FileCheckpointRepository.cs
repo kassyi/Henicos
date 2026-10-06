@@ -1,5 +1,5 @@
-using System.Security.Cryptography;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 
 namespace Henicos.Benchmarks.Repositories;
 

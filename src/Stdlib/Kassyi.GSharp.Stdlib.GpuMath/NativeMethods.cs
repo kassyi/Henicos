@@ -3,7 +3,7 @@ using System.Reflection;
 
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.Interop;
+namespace Kassyi.GSharp.Stdlib.GpuMath;
 
 /// <summary>P/Invoke bindings to the legacy pre-compiled native CUDA C++ dynamic library (<c>Kassyi.GSharp.GpuBigInt.Cuda.dll</c>).</summary>
 internal static partial class NativeMethods

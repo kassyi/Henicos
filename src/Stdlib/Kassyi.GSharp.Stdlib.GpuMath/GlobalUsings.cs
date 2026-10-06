@@ -12,4 +12,4 @@ global using System.Threading.Tasks;
 global using Kassyi.GSharp.Core;
 global using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 global using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
-global using Kassyi.GSharp.Stdlib.GpuMath.Contexts;
+global using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;

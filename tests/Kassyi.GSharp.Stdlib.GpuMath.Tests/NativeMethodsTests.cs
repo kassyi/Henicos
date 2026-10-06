@@ -1,6 +1,6 @@
-using Kassyi.GSharp.Stdlib.GpuMath.Interop;
+using Kassyi.GSharp.Stdlib.GpuMath;
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.Interop;
+namespace Kassyi.GSharp.Stdlib.GpuMath.Tests;
 
 [Trait("Category", "GpuExecution")]
 public class NativeMethodsTests

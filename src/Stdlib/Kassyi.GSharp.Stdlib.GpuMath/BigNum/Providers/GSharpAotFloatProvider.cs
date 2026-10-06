@@ -1,6 +1,4 @@
 
-using Kassyi.GSharp.Stdlib.GpuMath.Interop;
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 /// <summary>

@@ -1,7 +1,6 @@
 using System.Globalization;
 using BenchmarkDotNet.Running;
 using Henicos.Benchmarks.ComputeBenchmarks;
-using Kassyi.GSharp.Stdlib.GpuMath.IO;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 namespace Henicos.Benchmarks;

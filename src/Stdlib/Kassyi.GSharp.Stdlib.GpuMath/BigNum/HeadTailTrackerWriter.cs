@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Kassyi.GSharp.Stdlib.GpuMath.IO;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
 /// A memory-efficient <see cref="TextWriter"/> that records only the first <c>N</c> (head) and last <c>N</c> (tail) characters of streaming text.
