@@ -28,8 +28,8 @@ public static partial class GpuBigIntDivRem
         else
         {
             // For giant-scale numbers (>1024 bits), MegaKernel suffers catastrophic performance degradation
-            // due to register spilling into local memory. We fall back to the HostLoop which uses standard Global Memory efficiently.
-            ModPowHostLoopController.Execute(baseVal, exp, mod, resultBuffer);
+            // due to register spilling into local memory. We fall back to the Zero-Sync HostLoop which queues kernels asynchronously.
+            ModPowZeroSyncController.Execute(baseVal, exp, mod, resultBuffer);
         }
     }
 }

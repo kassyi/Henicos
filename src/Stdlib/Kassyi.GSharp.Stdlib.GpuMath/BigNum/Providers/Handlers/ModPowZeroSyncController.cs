@@ -4,10 +4,10 @@ using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 /// <summary>
-/// Encapsulates the host-orchestrated square-and-multiply algorithm loop for modular exponentiation,
-/// isolating the synchronous CPU-GPU control flow from the main advanced math handler.
+/// Encapsulates the host-orchestrated square-and-multiply algorithm loop for modular exponentiation.
+/// Uses zero-sync Barrett reduction to execute entirely asynchronously without host-device synchronization.
 /// </summary>
-internal static class ModPowHostLoopController
+internal static class ModPowZeroSyncController
 {
     public static void Execute(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer)
     {
@@ -54,7 +54,7 @@ internal static class ModPowHostLoopController
         using var extendedTempBase = new GpuBigUInt(baseVal.Workspace, 4 * n);
         extendedTempBase.Clear();
         extendedTempBase.CopyFrom(tempBase, numWords: 2 * n);
-        GpuBigIntDivRem.Reduce(extendedTempBase, mod, reciprocalOfMod, targetBits, aActualWords, tempBaseQ, tempBaseR);
+        GpuBigIntDivRem.ReduceZeroSync(extendedTempBase, mod, reciprocalOfMod, targetBits, aActualWords, tempBaseQ, tempBaseR);
         tempBase.CopyFrom(tempBaseR, numWords: 2 * n);
 
         using var tempMul = new GpuBigUInt(baseVal.Workspace, 4 * n);
@@ -97,12 +97,12 @@ internal static class ModPowHostLoopController
                     if ((e & 1) == 1)
                     {
                         GpuBigIntMath.Mul(tempResult, tempBase, tempMul);
-                        GpuBigIntDivRem.Reduce(tempMul, mod, reciprocalOfMod, targetBits, aActualWords, tempQ, tempR);
+                        GpuBigIntDivRem.ReduceZeroSync(tempMul, mod, reciprocalOfMod, targetBits, aActualWords, tempQ, tempR);
                         tempResult.CopyFrom(tempR, numWords: 2 * n);
                     }
 
                     GpuBigIntMath.Mul(tempBase, tempBase, tempMul);
-                    GpuBigIntDivRem.Reduce(tempMul, mod, reciprocalOfMod, targetBits, aActualWords, tempQ, tempR);
+                    GpuBigIntDivRem.ReduceZeroSync(tempMul, mod, reciprocalOfMod, targetBits, aActualWords, tempQ, tempR);
                     tempBase.CopyFrom(tempR, numWords: 2 * n);
 
                     e >>= 1;
