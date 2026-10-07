@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Remove="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
     <Compile Remove="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
+    <Compile Remove="$(IntermediateOutputPath)GeneratedNativeApi\**\*.g.cs" />
   </ItemGroup>
 
   <Target Name="GenerateYamlDialects" BeforeTargets="CoreCompile" Inputs="@(DialectYamlFiles)" Outputs="$(IntermediateOutputPath)GeneratedDialects.stamp">
@@ -67,14 +68,23 @@
     <Touch Files="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" AlwaysCreate="true" />
   </Target>
 
-  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects;GenerateDiagnostics">
+  <Target Name="GenerateNativeApi" BeforeTargets="CoreCompile" Outputs="$(IntermediateOutputPath)GeneratedNativeApi.stamp">
+    <MakeDir Directories="$(IntermediateOutputPath)GeneratedNativeApi" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)../../NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
+    <Touch Files="$(IntermediateOutputPath)GeneratedNativeApi.stamp" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects;GenerateDiagnostics;GenerateNativeApi">
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
       <Compile Include="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
+      <Compile Include="$(IntermediateOutputPath)GeneratedNativeApi\NativeApiMapper.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedNativeApi\NativeApiMapper.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects.stamp" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedNativeApi.stamp" />
     </ItemGroup>
   </Target>
 

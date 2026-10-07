@@ -1,0 +1,680 @@
+namespace: Kassyi.GSharp.Core
+className: Gpu
+
+methods:
+  # --- Gpu Bitwise & Arithmetic Intrinsics ---
+  - name: BitReverse
+    nativeName: __brev
+    summary: Reverses the bit order of a 32-bit unsigned integer using the __brev hardware instruction.
+    returnType: uint
+    returnDescription: The bit-reversed 32-bit unsigned integer.
+    parameters:
+      - name: val
+        type: uint
+        description: The 32-bit unsigned integer whose bits are to be reversed.
+
+  - name: AtomicAdd
+    nativeName: atomicAdd
+    summary: Atomically adds a value to the target address and returns the old value.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, ulong, float]
+    returnType: T
+    returnDescription: The original value stored at the address before the addition.
+    parameters:
+      - name: address
+        type: ref T
+        description: The reference to the memory location to modify.
+      - name: val
+        type: T
+        description: The value to add.
+
+  - name: AtomicSub
+    nativeName: atomicSub
+    summary: Atomically subtracts an integer value from the target address and returns the old value.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint]
+    returnType: T
+    returnDescription: The original value stored at the address before the subtraction.
+    parameters:
+      - name: address
+        type: ref T
+        description: The reference to the memory location to modify.
+      - name: val
+        type: T
+        description: The value to subtract.
+
+  - name: AddWithCarry
+    nativeName: __gsharp_add_cc
+    summary: Adds two unsigned 32-bit integers with carry-in and carry-out propagation.
+    returnType: uint
+    returnDescription: The 32-bit addition result.
+    parameters:
+      - name: a
+        type: uint
+        description: The first operand.
+      - name: b
+        type: uint
+        description: The second operand.
+      - name: carry
+        type: ref ulong
+        description: The carry-in value (0 or 1), updated with the carry-out result.
+
+  - name: SubWithBorrow
+    nativeName: __gsharp_sub_cc
+    summary: Subtracts two unsigned 32-bit integers with borrow-in and borrow-out propagation.
+    returnType: uint
+    returnDescription: The 32-bit subtraction result.
+    parameters:
+      - name: a
+        type: uint
+        description: The minuend operand.
+      - name: b
+        type: uint
+        description: The subtrahend operand.
+      - name: borrow
+        type: ref long
+        description: The borrow-in value (0 or 1), updated with the borrow-out result.
+
+  - name: AtomicOr
+    nativeName: atomicOr
+    summary: Atomically computes bitwise OR on the target unsigned integer address.
+    typeTemplate:
+      placeholder: T
+      types: [uint, ulong]
+    returnType: T
+    returnDescription: The original value stored at the address before the operation.
+    parameters:
+      - name: address
+        type: ref T
+        description: The reference to the memory location to modify.
+      - name: val
+        type: T
+        description: The value to OR.
+
+  - name: AtomicMax
+    nativeName: atomicMax
+    summary: Atomically computes the maximum value between the address content and the supplied value.
+    typeTemplate:
+      placeholder: T
+      types: [uint, ulong]
+    returnType: T
+    returnDescription: The original value stored at the address before the operation.
+    parameters:
+      - name: address
+        type: ref T
+        description: The reference to the memory location to modify.
+      - name: val
+        type: T
+        description: The value to compare.
+
+  - name: MultiplyWide
+    nativeName: __gsharp_mul_wide
+    summary: Computes the full 64-bit product of two 32-bit unsigned integers without overflow.
+    returnType: ulong
+    returnDescription: The 64-bit product of a and b.
+    parameters:
+      - name: a
+        type: uint
+        description: The first 32-bit unsigned multiplicand.
+      - name: b
+        type: uint
+        description: The second 32-bit unsigned multiplicand.
+
+  - name: MultiplyHigh
+    nativeName: __umul64hi
+    summary: Computes the high 64 bits of the product of two 64-bit unsigned integers (__umul64hi).
+    returnType: ulong
+    returnDescription: The most significant 64 bits of the 128-bit product.
+    parameters:
+      - name: a
+        type: ulong
+        description: The first 64-bit unsigned multiplicand.
+      - name: b
+        type: ulong
+        description: The second 64-bit unsigned multiplicand.
+
+  - name: FunnelShiftLeft
+    nativeName: __funnelshift_l
+    summary: Concatenates hi and lo, shifts left by shift, and extracts the most significant 32 bits.
+    returnType: uint
+    returnDescription: The most significant 32 bits of the shifted 64-bit pair.
+    parameters:
+      - name: lo
+        type: uint
+        description: The least significant 32 bits.
+      - name: hi
+        type: uint
+        description: The most significant 32 bits.
+      - name: shift
+        type: uint
+        description: The shift amount in bits (0-31).
+
+  - name: FunnelShiftRight
+    nativeName: __funnelshift_r
+    summary: Concatenates hi and lo, shifts right by shift, and extracts the least significant 32 bits.
+    returnType: uint
+    returnDescription: The least significant 32 bits of the shifted 64-bit pair.
+    parameters:
+      - name: lo
+        type: uint
+        description: The least significant 32 bits.
+      - name: hi
+        type: uint
+        description: The most significant 32 bits.
+      - name: shift
+        type: uint
+        description: The shift amount in bits (0-31).
+
+  - name: SyncGrid
+    nativeName: cg::this_grid().sync
+    summary: Synchronizes all threads across the entire cooperative grid (cg::this_grid().sync()).
+    returnType: void
+
+  # --- Warp Intrinsics ---
+  - name: ActiveMask
+    className: Warp
+    nativeName: __activemask
+    summary: Returns a 32-bit mask of all currently active threads in the calling warp.
+    returnType: uint
+    returnDescription: A 32-bit bitmask where bit i corresponds to active lane i.
+
+  - name: ShuffleSync
+    className: Warp
+    nativeName: __shfl_sync
+    summary: Exchanges a variable between threads within a warp.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, float]
+    returnType: T
+    returnDescription: The value of var held by thread srcLane.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: var
+        type: T
+        description: The source value to broadcast from the source lane.
+      - name: srcLane
+        type: int
+        description: The source lane index (0-31) whose value is broadcasted.
+      - name: width
+        type: int
+        description: The sub-warp width in threads (power of 2, default 32).
+        defaultValue: 32
+
+  - name: ShuffleDownSync
+    className: Warp
+    nativeName: __shfl_down_sync
+    summary: Exchanges a variable from a thread with a higher ID relative to the caller.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, float, double]
+    returnType: T
+    returnDescription: The shifted value from the higher-index lane, or the original value if out of bounds.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: var
+        type: T
+        description: The source value to shift.
+      - name: delta
+        type: uint
+        description: The positive lane index offset to shift down by.
+      - name: width
+        type: int
+        description: The sub-warp width in threads (power of 2, default 32).
+        defaultValue: 32
+
+  - name: ShuffleUpSync
+    className: Warp
+    nativeName: __shfl_up_sync
+    summary: Exchanges a variable from a thread with a lower ID relative to the caller.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, float]
+    returnType: T
+    returnDescription: The shifted value from the lower-index lane, or the original value if out of bounds.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: var
+        type: T
+        description: The source value to shift.
+      - name: delta
+        type: uint
+        description: The positive lane index offset to shift up by.
+      - name: width
+        type: int
+        description: The sub-warp width in threads (power of 2, default 32).
+        defaultValue: 32
+
+  - name: ShuffleXorSync
+    className: Warp
+    nativeName: __shfl_xor_sync
+    summary: Exchanges a variable based on a bitwise XOR of the caller's lane ID.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, float]
+    returnType: T
+    returnDescription: The value from the XOR-calculated lane.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: var
+        type: T
+        description: The source value to exchange.
+      - name: laneMask
+        type: int
+        description: The bitmask used to XOR against the calling thread's lane ID.
+      - name: width
+        type: int
+        description: The sub-warp width in threads (power of 2, default 32).
+        defaultValue: 32
+
+  - name: BallotSync
+    className: Warp
+    nativeName: __ballot_sync
+    summary: Evaluates predicate for all active threads in the warp and returns an integer whose Nth bit is set if and only if predicate evaluates to non-zero for the Nth thread.
+    returnType: uint
+    returnDescription: A 32-bit bitmask of thread predicate evaluation results.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: predicate
+        type: bool
+        description: The boolean condition evaluated by each thread.
+
+  - name: AllSync
+    className: Warp
+    nativeName: __all_sync
+    summary: Evaluates predicate for all active threads in the warp and returns non-zero if and only if predicate evaluates to non-zero for all of them.
+    returnType: bool
+    returnDescription: True if predicate evaluates to true for all participating threads.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: predicate
+        type: bool
+        description: The boolean condition evaluated by each thread.
+
+  - name: AnySync
+    className: Warp
+    nativeName: __any_sync
+    summary: Evaluates predicate for all active threads in the warp and returns non-zero if and only if predicate evaluates to non-zero for any of them.
+    returnType: bool
+    returnDescription: True if predicate evaluates to true for any participating thread.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: predicate
+        type: bool
+        description: The boolean condition evaluated by each thread.
+
+  - name: ReduceAddSync
+    className: Warp
+    nativeName: __reduce_add_sync
+    summary: Performs a hardware warp reduction sum operation.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint]
+    returnType: T
+    returnDescription: The sum of val across participating threads.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: val
+        type: T
+        description: The value contributed by this thread.
+
+  - name: ReduceMinSync
+    className: Warp
+    nativeName: __reduce_min_sync
+    summary: Performs a hardware warp reduction minimum operation.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint]
+    returnType: T
+    returnDescription: The minimum of val across participating threads.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: val
+        type: T
+        description: The value contributed by this thread.
+
+  - name: ReduceMaxSync
+    className: Warp
+    nativeName: __reduce_max_sync
+    summary: Performs a hardware warp reduction maximum operation.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint]
+    returnType: T
+    returnDescription: The maximum of val across participating threads.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: val
+        type: T
+        description: The value contributed by this thread.
+
+  - name: ReduceAndSync
+    className: Warp
+    nativeName: __reduce_and_sync
+    summary: Performs a hardware warp reduction bitwise AND operation.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint]
+    returnType: T
+    returnDescription: The bitwise AND of val across participating threads.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: val
+        type: T
+        description: The value contributed by this thread.
+
+  - name: ReduceOrSync
+    className: Warp
+    nativeName: __reduce_or_sync
+    summary: Performs a hardware warp reduction bitwise OR operation.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint]
+    returnType: T
+    returnDescription: The bitwise OR of val across participating threads.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: val
+        type: T
+        description: The value contributed by this thread.
+
+  - name: ReduceXorSync
+    className: Warp
+    nativeName: __reduce_xor_sync
+    summary: Performs a hardware warp reduction bitwise XOR operation.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint]
+    returnType: T
+    returnDescription: The bitwise XOR of val across participating threads.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit thread participation bitmask.
+      - name: val
+        type: T
+        description: The value contributed by this thread.
+
+  # --- Gpu Bit Manipulation & Crypto ---
+  - name: PopCount
+    nativeName: __popc
+    summary: Counts the number of set bits (population count) in a 32-bit unsigned integer.
+    returnType: uint
+    returnDescription: The number of set bits.
+    parameters:
+      - name: val
+        type: uint
+        description: The unsigned 32-bit integer.
+
+  - name: PopCount
+    nativeName: __popcll
+    summary: Counts the number of set bits (population count) in a 64-bit unsigned integer.
+    returnType: uint
+    returnDescription: The number of set bits.
+    parameters:
+      - name: val
+        type: ulong
+        description: The unsigned 64-bit integer.
+
+  - name: CountLeadingZeros
+    nativeName: __clz
+    summary: Returns the number of consecutive zero bits starting from the most significant bit of a 32-bit integer.
+    returnType: uint
+    returnDescription: The count of leading zero bits.
+    parameters:
+      - name: val
+        type: uint
+        description: The 32-bit integer to inspect.
+
+  - name: CountLeadingZeros
+    nativeName: __clzll
+    summary: Returns the number of consecutive zero bits starting from the most significant bit of a 64-bit integer.
+    returnType: uint
+    returnDescription: The count of leading zero bits.
+    parameters:
+      - name: val
+        type: ulong
+        description: The 64-bit integer to inspect.
+
+  - name: BitReverse
+    nativeName: __brev64
+    summary: Reverses the bit order of a 64-bit unsigned integer using the __brev64 hardware instruction.
+    returnType: ulong
+    returnDescription: The bit-reversed 64-bit unsigned integer.
+    parameters:
+      - name: val
+        type: ulong
+        description: The 64-bit unsigned integer whose bits are to be reversed.
+
+  - name: BytePermute
+    nativeName: __byte_perm
+    summary: Returns selected bytes from two 32-bit unsigned integers according to a selector mask.
+    returnType: uint
+    returnDescription: The permuted 32-bit result.
+    parameters:
+      - name: x
+        type: uint
+        description: First source value.
+      - name: y
+        type: uint
+        description: Second source value.
+      - name: selector
+        type: uint
+        description: Byte selector mask.
+
+  - name: MultiplyHigh
+    nativeName: __mulhi
+    summary: Computes the high 32 bits of the product of two 32-bit signed integers.
+    returnType: int
+    returnDescription: The most significant 32 bits of the 64-bit product.
+    parameters:
+      - name: a
+        type: int
+        description: The first 32-bit signed multiplicand.
+      - name: b
+        type: int
+        description: The second 32-bit signed multiplicand.
+
+  - name: MultiplyHigh
+    nativeName: __mul64hi
+    summary: Computes the high 64 bits of the product of two 64-bit signed integers.
+    returnType: long
+    returnDescription: The most significant 64 bits of the 128-bit product.
+    parameters:
+      - name: a
+        type: long
+        description: The first 64-bit signed multiplicand.
+      - name: b
+        type: long
+        description: The second 64-bit signed multiplicand.
+
+  - name: AbsDiff
+    nativeName: __sad
+    summary: Computes the absolute difference of two signed integers.
+    returnType: int
+    returnDescription: The absolute difference |a - b|.
+    parameters:
+      - name: a
+        type: int
+        description: The first operand.
+      - name: b
+        type: int
+        description: The second operand.
+
+  - name: AbsDiff
+    nativeName: __usad
+    summary: Computes the absolute difference of two unsigned integers.
+    returnType: uint
+    returnDescription: The absolute difference |a - b|.
+    parameters:
+      - name: a
+        type: uint
+        description: The first operand.
+      - name: b
+        type: uint
+        description: The second operand.
+
+  # --- Memory Synchronization & Fences ---
+  - name: ThreadFence
+    nativeName: __threadfence
+    summary: Ensures memory writes are visible across all threads on device.
+    returnType: void
+
+  - name: ThreadFenceBlock
+    nativeName: __threadfence_block
+    summary: Ensures memory writes are visible to all threads in the same block.
+    returnType: void
+
+  - name: ThreadFenceSystem
+    nativeName: __threadfence_system
+    summary: Ensures memory writes are visible across device and host.
+    returnType: void
+
+  # --- Hardware Timers ---
+  - name: Clock
+    nativeName: clock
+    summary: Returns the value of a per-multiprocessor cycle counter (32-bit).
+    returnType: uint
+    returnDescription: The cycle counter value.
+
+  - name: Clock64
+    nativeName: clock64
+    summary: Returns the value of a per-multiprocessor cycle counter (64-bit).
+    returnType: ulong
+    returnDescription: The 64-bit cycle counter value.
+
+  # --- Additional Hardware Atomics ---
+  - name: AtomicExch
+    nativeName: atomicExch
+    summary: Atomically exchanges the value at address with val.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, ulong, float]
+    returnType: T
+    returnDescription: The original value stored at address.
+    parameters:
+      - name: address
+        type: ref T
+        description: The memory location to modify.
+      - name: val
+        type: T
+        description: The value to write.
+
+  - name: AtomicMin
+    nativeName: atomicMin
+    summary: Atomically computes the minimum value between the address content and val.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, ulong]
+    returnType: T
+    returnDescription: The original value stored at address.
+    parameters:
+      - name: address
+        type: ref T
+        description: The memory location to modify.
+      - name: val
+        type: T
+        description: The value to compare.
+
+  - name: AtomicInc
+    nativeName: atomicInc
+    summary: Atomically increments the value at address up to val (wrapping to 0).
+    returnType: uint
+    returnDescription: The original value stored at address.
+    parameters:
+      - name: address
+        type: ref uint
+        description: The memory location to modify.
+      - name: val
+        type: uint
+        description: The maximum limit before wrapping.
+
+  - name: AtomicDec
+    nativeName: atomicDec
+    summary: Atomically decrements the value at address (wrapping to val if <= 0).
+    returnType: uint
+    returnDescription: The original value stored at address.
+    parameters:
+      - name: address
+        type: ref uint
+        description: The memory location to modify.
+      - name: val
+        type: uint
+        description: The wrap value.
+
+  - name: AtomicCAS
+    nativeName: atomicCAS
+    summary: Atomically compares the value in memory with compare and, if equal, stores val in memory.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, ulong]
+    returnType: T
+    returnDescription: The original value stored at the address.
+    parameters:
+      - name: address
+        type: ref T
+        description: The reference to the memory location to modify.
+      - name: compare
+        type: T
+        description: The value to compare against.
+      - name: val
+        type: T
+        description: The value to store if comparison succeeds.
+
+  - name: AtomicAnd
+    nativeName: atomicAnd
+    summary: Atomically computes bitwise AND on the target integer address.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, ulong]
+    returnType: T
+    returnDescription: The original value stored at the address before the operation.
+    parameters:
+      - name: address
+        type: ref T
+        description: The reference to the memory location to modify.
+      - name: val
+        type: T
+        description: The value to AND.
+
+  - name: AtomicXor
+    nativeName: atomicXor
+    summary: Atomically computes bitwise XOR on the target integer address.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, ulong]
+    returnType: T
+    returnDescription: The original value stored at the address before the operation.
+    parameters:
+      - name: address
+        type: ref T
+        description: The reference to the memory location to modify.
+      - name: val
+        type: T
+        description: The value to XOR.
+
