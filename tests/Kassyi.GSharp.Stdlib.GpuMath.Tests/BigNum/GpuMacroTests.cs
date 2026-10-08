@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels;
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
@@ -23,7 +24,7 @@ public class GpuMacroTests
         var actualLength = Math.Max(0, length);
         var output = new uint[actualLength];
         // Fill with random noise to ensure it gets overwritten
-        for (int i = 0; i < output.Length; i++) output[i] = 0xDEADBEEF;
+        Array.Fill(output, 0xDEADBEEF);
 
         uint fillValue = 0x55555555;
         uint singleValue = 0x12345678;
@@ -44,16 +45,10 @@ public class GpuMacroTests
             gridDimX: gridSize, blockDimX: blockSize);
 
         // Verify the results
-        for (int i = 0; i < length; i++)
+        if (length > 0)
         {
-            if (i == 0)
-            {
-                Assert.Equal(singleValue, output[i]);
-            }
-            else
-            {
-                Assert.Equal(fillValue, output[i]);
-            }
+            Assert.Equal(singleValue, output[0]);
+            Assert.True(output.AsSpan(1).AsStackEnumerable().All(v => v == fillValue));
         }
 
         // For actualLength == 0, output array is length 0 and shouldn't be touched.

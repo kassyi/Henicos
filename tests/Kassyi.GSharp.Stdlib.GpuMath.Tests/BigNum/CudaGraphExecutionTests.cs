@@ -5,6 +5,7 @@ using System.Runtime.ExceptionServices;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.ZeroAlloc.Linq;
 using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
@@ -68,10 +69,7 @@ public class CudaGraphExecutionTests
                 ctx.Provider.CopyDeviceToHost(hostC, d.DevicePointer, numWords, ctx.Stream);
 
                 // Verify result (hostA + hostB = hostC)
-                for (int i = 0; i < numWords; i++)
-                {
-                    Assert.Equal(hostA[i] + hostB[i], hostC[i]);
-                }
+                Assert.True(hostA.AsStackEnumerable().Select((a, i) => a + hostB[i] == hostC[i]).All(ok => ok));
 
                 ctx.Provider.DestroyGraph(graph, graphExec);
             }
