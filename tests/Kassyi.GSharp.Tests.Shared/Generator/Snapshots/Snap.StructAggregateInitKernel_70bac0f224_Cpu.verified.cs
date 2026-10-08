@@ -43,7 +43,7 @@ __gsharp_context_StructAggregateInitKernels_AggregateInitKernel* _all_contexts =
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_AggregateInitKernel(int* __restrict__ output, __gsharp_context_StructAggregateInitKernels_AggregateInitKernel* _ctx){
+extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_AggregateInitKernel(GSharpArray<int> output, __gsharp_context_StructAggregateInitKernels_AggregateInitKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -62,7 +62,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_StructAggregateInitKernels_AggregateInitKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_StructAggregateInitKernels_AggregateInitKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> output)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -126,7 +126,7 @@ public static unsafe void __gsharp_statemachine_StructAggregateInitKernels_Aggre
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void AggregateInitKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output);
+private unsafe delegate void AggregateInitKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output);
 #pragma warning disable CS8500
 public static unsafe void LaunchAggregateInitKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -204,7 +204,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<AggregateInitKernel_Delegate>("__gsharp_launch_StructAggregateInitKernels_AggregateInitKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length });
 }
 }
 #pragma warning restore CS8500
@@ -231,7 +231,7 @@ __gsharp_context_StructAggregateInitKernels_DeeplyNestedInitKernel* _all_context
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_DeeplyNestedInitKernel(int* __restrict__ output, __gsharp_context_StructAggregateInitKernels_DeeplyNestedInitKernel* _ctx){
+extern ""C"" __declspec(dllexport) void StructAggregateInitKernels_DeeplyNestedInitKernel(GSharpArray<int> output, __gsharp_context_StructAggregateInitKernels_DeeplyNestedInitKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -252,7 +252,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_StructAggregateInitKernels_DeeplyNestedInitKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_StructAggregateInitKernels_DeeplyNestedInitKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> output)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -319,7 +319,7 @@ public static unsafe void __gsharp_statemachine_StructAggregateInitKernels_Deepl
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void DeeplyNestedInitKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* output);
+private unsafe delegate void DeeplyNestedInitKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output);
 #pragma warning disable CS8500
 public static unsafe void LaunchDeeplyNestedInitKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -397,7 +397,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<DeeplyNestedInitKernel_Delegate>("__gsharp_launch_StructAggregateInitKernels_DeeplyNestedInitKernel", dllPath);
 fixed (global::System.Int32* p_output = output)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_output);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length });
 }
 }
 #pragma warning restore CS8500

@@ -63,7 +63,7 @@ __gsharp_context_ObjectLifecycleKernels_Kernel_LifecycleUpdate* _all_contexts = 
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void ObjectLifecycleKernels_Kernel_LifecycleUpdate(Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState* __restrict__ states, int length, int multiplier, __gsharp_context_ObjectLifecycleKernels_Kernel_LifecycleUpdate* _ctx){
+extern ""C"" __declspec(dllexport) void ObjectLifecycleKernels_Kernel_LifecycleUpdate(GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState> states, int length, int multiplier, __gsharp_context_ObjectLifecycleKernels_Kernel_LifecycleUpdate* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -84,7 +84,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ObjectLifecycleKernels_Kernel_LifecycleUpdate(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState* __restrict__ states, int length, int multiplier)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ObjectLifecycleKernels_Kernel_LifecycleUpdate(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState> states, int length, int multiplier)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -149,7 +149,7 @@ public static unsafe void __gsharp_statemachine_ObjectLifecycleKernels_Kernel_Li
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void Kernel_LifecycleUpdate_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState* states, global::System.Int32 length, global::System.Int32 multiplier);
+private unsafe delegate void Kernel_LifecycleUpdate_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy states, global::System.Int32 length, global::System.Int32 multiplier);
 #pragma warning disable CS8500
 public static unsafe void LaunchKernel_LifecycleUpdate(global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] states, global::System.Int32 length, global::System.Int32 multiplier, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -227,7 +227,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_LifecycleUpdate_Delegate>("__gsharp_launch_ObjectLifecycleKernels_Kernel_LifecycleUpdate", dllPath);
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState* p_states = states)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_states, length, multiplier);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_states, Length = states.Length }, length, multiplier);
 }
 }
 #pragma warning restore CS8500
@@ -247,7 +247,7 @@ __gsharp_context_ObjectLifecycleKernels_Kernel_FactoryInitialization* _all_conte
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void ObjectLifecycleKernels_Kernel_FactoryInitialization(int* __restrict__ inputValues, Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState* __restrict__ outputStates, int length, __gsharp_context_ObjectLifecycleKernels_Kernel_FactoryInitialization* _ctx){
+extern ""C"" __declspec(dllexport) void ObjectLifecycleKernels_Kernel_FactoryInitialization(GSharpArray<int> inputValues, GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState> outputStates, int length, __gsharp_context_ObjectLifecycleKernels_Kernel_FactoryInitialization* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -271,7 +271,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ObjectLifecycleKernels_Kernel_FactoryInitialization(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ inputValues, Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState* __restrict__ outputStates, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ObjectLifecycleKernels_Kernel_FactoryInitialization(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> inputValues, GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState> outputStates, int length)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -339,7 +339,7 @@ public static unsafe void __gsharp_statemachine_ObjectLifecycleKernels_Kernel_Fa
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void Kernel_FactoryInitialization_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* inputValues, global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState* outputStates, global::System.Int32 length);
+private unsafe delegate void Kernel_FactoryInitialization_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy inputValues, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputStates, global::System.Int32 length);
 #pragma warning disable CS8500
 public static unsafe void LaunchKernel_FactoryInitialization(global::System.Int32[] inputValues, global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] outputStates, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -418,7 +418,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kern
 fixed (global::System.Int32* p_inputValues = inputValues)
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState* p_outputStates = outputStates)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_inputValues, p_outputStates, length);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_inputValues, Length = inputValues.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputStates, Length = outputStates.Length }, length);
 }
 }
 #pragma warning restore CS8500

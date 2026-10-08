@@ -48,7 +48,7 @@ __gsharp_context_InlineOutVarKernels_HappyPathKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void InlineOutVarKernels_HappyPathKernel(int* __restrict__ input, int* __restrict__ output, int* __restrict__ success, __gsharp_context_InlineOutVarKernels_HappyPathKernel* _ctx){
+extern ""C"" __declspec(dllexport) void InlineOutVarKernels_HappyPathKernel(GSharpArray<int> input, GSharpArray<int> output, GSharpArray<int> success, __gsharp_context_InlineOutVarKernels_HappyPathKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -75,7 +75,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_InlineOutVarKernels_HappyPathKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output, int* __restrict__ success)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_InlineOutVarKernels_HappyPathKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> input, GSharpArray<int> output, GSharpArray<int> success)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -145,7 +145,7 @@ public static unsafe void __gsharp_statemachine_InlineOutVarKernels_HappyPathKer
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void HappyPathKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output, global::System.Int32* success);
+private unsafe delegate void HappyPathKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy success);
 #pragma warning disable CS8500
 public static unsafe void LaunchHappyPathKernel(global::System.Int32[] input, global::System.Int32[] output, global::System.Int32[] success, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -225,7 +225,7 @@ fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 fixed (global::System.Int32* p_success = success)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_output, p_success);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_success, Length = success.Length });
 }
 }
 #pragma warning restore CS8500
@@ -235,7 +235,7 @@ __gsharp_context_InlineOutVarKernels_IfConditionKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void InlineOutVarKernels_IfConditionKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_InlineOutVarKernels_IfConditionKernel* _ctx){
+extern ""C"" __declspec(dllexport) void InlineOutVarKernels_IfConditionKernel(GSharpArray<int> input, GSharpArray<int> output, __gsharp_context_InlineOutVarKernels_IfConditionKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -260,7 +260,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_InlineOutVarKernels_IfConditionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_InlineOutVarKernels_IfConditionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> input, GSharpArray<int> output)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -328,7 +328,7 @@ public static unsafe void __gsharp_statemachine_InlineOutVarKernels_IfConditionK
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void IfConditionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output);
+private unsafe delegate void IfConditionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output);
 #pragma warning disable CS8500
 public static unsafe void LaunchIfConditionKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -407,7 +407,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<IfCo
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_output);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length });
 }
 }
 #pragma warning restore CS8500
@@ -417,7 +417,7 @@ __gsharp_context_InlineOutVarKernels_WhileConditionKernel* _all_contexts = nullp
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void InlineOutVarKernels_WhileConditionKernel(int* __restrict__ input, int* __restrict__ output, __gsharp_context_InlineOutVarKernels_WhileConditionKernel* _ctx){
+extern ""C"" __declspec(dllexport) void InlineOutVarKernels_WhileConditionKernel(GSharpArray<int> input, GSharpArray<int> output, __gsharp_context_InlineOutVarKernels_WhileConditionKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -442,7 +442,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_InlineOutVarKernels_WhileConditionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ output)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_InlineOutVarKernels_WhileConditionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> input, GSharpArray<int> output)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -510,7 +510,7 @@ public static unsafe void __gsharp_statemachine_InlineOutVarKernels_WhileConditi
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void WhileConditionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* output);
+private unsafe delegate void WhileConditionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output);
 #pragma warning disable CS8500
 public static unsafe void LaunchWhileConditionKernel(global::System.Int32[] input, global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -589,7 +589,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Whil
 fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_output = output)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_output);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length });
 }
 }
 #pragma warning restore CS8500

@@ -126,7 +126,7 @@ float foreachSum;
 System_Func<float, float, float> multiplier;
 Kassyi_GSharp_Core_SharedMemory<float> dynamicSharedMem;
 };
-extern ""C"" __declspec(dllexport) void Tier1IntegrationKernels_AllInOneKernel(int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize, __gsharp_context_Tier1IntegrationKernels_AllInOneKernel* _ctx){
+extern ""C"" __declspec(dllexport) void Tier1IntegrationKernels_AllInOneKernel(GSharpArray<int> intInput, GSharpArray<float> floatInput, GSharpArray<float> results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, GSharpArray<unsigned long long> globalCounter, int count, int dynamicSharedSize, __gsharp_context_Tier1IntegrationKernels_AllInOneKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -280,7 +280,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Tier1IntegrationKernels_AllInOneKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Tier1IntegrationKernels_AllInOneKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> intInput, GSharpArray<float> floatInput, GSharpArray<float> results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, GSharpArray<unsigned long long> globalCounter, int count, int dynamicSharedSize)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -478,7 +478,7 @@ public static unsafe void __gsharp_statemachine_Tier1IntegrationKernels_AllInOne
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void AllInOneKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* intInput, global::System.Single* floatInput, global::System.Single* results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, global::System.UInt64* globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize);
+private unsafe delegate void AllInOneKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy intInput, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy floatInput, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize);
 #pragma warning disable CS8500
 public static unsafe void LaunchAllInOneKernel(global::System.Int32[] intInput, global::System.Single[] floatInput, global::System.Single[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, global::System.UInt64[] globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -559,7 +559,7 @@ fixed (global::System.Single* p_floatInput = floatInput)
 fixed (global::System.Single* p_results = results)
 fixed (global::System.UInt64* p_globalCounter = globalCounter)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_intInput, p_floatInput, p_results, config, p_globalCounter, count, dynamicSharedSize);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_intInput, Length = intInput.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_floatInput, Length = floatInput.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_results, Length = results.Length }, config, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_globalCounter, Length = globalCounter.Length }, count, dynamicSharedSize);
 }
 }
 #pragma warning restore CS8500

@@ -80,6 +80,21 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// Gets the declared symbol for the specified syntax node, or null if unresolvable.
+    /// </summary>
+    public static ISymbol? GetSafeDeclaredSymbol(this SemanticModel semanticModel, SyntaxNode node,
+        CancellationToken cancellationToken = default)
+    {
+        if (IsInSameTree(semanticModel, node))
+        {
+            return semanticModel.GetDeclaredSymbol(node, cancellationToken);
+        }
+
+        var original = FindOriginalNode(semanticModel, node);
+        return original != null ? semanticModel.GetDeclaredSymbol(original, cancellationToken) : null;
+    }
+
+    /// <summary>
     /// Gets the constant value for the specified expression, or an empty Optional if unresolvable.
     /// </summary>
     public static Optional<object?> GetSafeConstantValue(this SemanticModel semanticModel, SyntaxNode node,

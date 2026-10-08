@@ -57,11 +57,10 @@ internal static class NativeStructEmitter
     }
 
     private static void MapToNativeField(SourceWriter writer, IFieldSymbol field, int fieldSize)
-
     {
-        if (field.Type is IArrayTypeSymbol)
+        if (KernelLaunchEmitter.IsArrayLikeType(field.Type, out _))
         {
-            writer.AppendLine($"public IntPtr {field.Name};");
+            writer.AppendLine($"public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {field.Name};");
         }
         else if (CudaLayoutRules.IsCustomStruct(field.Type))
         {

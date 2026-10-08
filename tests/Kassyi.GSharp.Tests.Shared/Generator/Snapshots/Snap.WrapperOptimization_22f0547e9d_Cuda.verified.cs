@@ -107,7 +107,7 @@ float B;
 }
 ;
 #endif
-extern ""C"" __global__ void WrapperOptimizationKernels_ComplexSignatureKernel(int* __restrict__  scalarRef, float* __restrict__  scalarOut, int* __restrict__ arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal){
+extern ""C"" __global__ void WrapperOptimizationKernels_ComplexSignatureKernel(int* __restrict__  scalarRef, float* __restrict__  scalarOut, GSharpArray<int> arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal){
 (*scalarOut)=0;
 if((*scalarRef)>constantVal)
 {
@@ -160,22 +160,20 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_scalarOut, (IntPt
 kernelParams[1] = &d_scalarOut;
 // Marshal array: arrayVal
 int arrayVal_size = arrayVal.Length * sizeof(global::System.Int32);
+IntPtr* proxy_arrayVal = stackalloc IntPtr[2];
+proxy_arrayVal[0] = IntPtr.Zero;
+((int*)(proxy_arrayVal + 1))[0] = arrayVal.Length;
 if (arrayVal_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_arrayVal, (IntPtr)arrayVal_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_arrayVal = System.Runtime.InteropServices.GCHandle.Alloc(arrayVal, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_arrayVal[0] = d_arrayVal;
+fixed (global::System.Int32* p_arrayVal = arrayVal)
 {
-IntPtr p_arrayVal = handle_arrayVal.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_arrayVal, p_arrayVal, (IntPtr)arrayVal_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_arrayVal, (IntPtr)p_arrayVal, (IntPtr)arrayVal_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_arrayVal.Free();
 }
-}
-kernelParams[2] = &d_arrayVal;
+kernelParams[2] = proxy_arrayVal;
 AotContexts.MyCustomStruct native_structRef = default;
 AotContexts.Marshal_MyCustomStruct(ref structRef, ref native_structRef, false, structRef_allocatedPtrs, hStream);
 // Marshal ref/out struct: structRef
@@ -212,16 +210,10 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 // Copy back array: arrayVal
 if (arrayVal_size > 0 && d_arrayVal != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_arrayVal = System.Runtime.InteropServices.GCHandle.Alloc(arrayVal, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Int32* p_arrayVal = arrayVal)
 {
-IntPtr p_arrayVal = handleBack_arrayVal.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_arrayVal, d_arrayVal, (IntPtr)arrayVal_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_arrayVal, d_arrayVal, (IntPtr)arrayVal_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_arrayVal.Free();
 }
 }
 // Fast zero-allocation copy from device
@@ -255,7 +247,10 @@ kernelParams[0] = &scalarRef;
 // Marshal device scalar: scalarOut
 kernelParams[1] = &scalarOut;
 // Marshal device array: arrayVal
-kernelParams[2] = &arrayVal;
+IntPtr* proxy_arrayVal = stackalloc IntPtr[2];
+proxy_arrayVal[0] = arrayVal;
+((int*)(proxy_arrayVal + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[2] = proxy_arrayVal;
 // Marshal device struct: structRef
 kernelParams[3] = &structRef;
 // Marshal scalar: constantVal

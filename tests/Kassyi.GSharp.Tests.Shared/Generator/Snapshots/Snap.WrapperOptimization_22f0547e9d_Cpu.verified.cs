@@ -65,7 +65,7 @@ __gsharp_context_WrapperOptimizationKernels_ComplexSignatureKernel* _all_context
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void WrapperOptimizationKernels_ComplexSignatureKernel(int* __restrict__  scalarRef, float* __restrict__  scalarOut, int* __restrict__ arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal, __gsharp_context_WrapperOptimizationKernels_ComplexSignatureKernel* _ctx){
+extern ""C"" __declspec(dllexport) void WrapperOptimizationKernels_ComplexSignatureKernel(int* __restrict__  scalarRef, float* __restrict__  scalarOut, GSharpArray<int> arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal, __gsharp_context_WrapperOptimizationKernels_ComplexSignatureKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -86,7 +86,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_WrapperOptimizationKernels_ComplexSignatureKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__  scalarRef, float* __restrict__  scalarOut, int* __restrict__ arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_WrapperOptimizationKernels_ComplexSignatureKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__  scalarRef, float* __restrict__  scalarOut, GSharpArray<int> arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -152,7 +152,7 @@ public static unsafe void __gsharp_statemachine_WrapperOptimizationKernels_Compl
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ComplexSignatureKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* scalarRef, global::System.Single* scalarOut, global::System.Int32* arrayVal, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct* structRef);
+private unsafe delegate void ComplexSignatureKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* scalarRef, global::System.Single* scalarOut, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy arrayVal, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct* structRef);
 #pragma warning disable CS8500
 public static unsafe void LaunchComplexSignatureKernel(ref global::System.Int32 scalarRef, out global::System.Single scalarOut, global::System.Int32[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -234,7 +234,7 @@ fixed (global::System.Single* p_scalarOut = &scalarOut)
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct* p_structRef = &structRef)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_scalarRef, p_scalarOut, p_arrayVal, p_structRef);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_scalarRef, p_scalarOut, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_arrayVal, Length = arrayVal.Length }, p_structRef);
 }
 }
 #pragma warning restore CS8500

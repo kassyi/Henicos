@@ -76,7 +76,7 @@ public partial class SgemmKernels
 public static partial class AotContexts
 {
 }
-public const string SgemmKernel_Source = @"extern ""C"" __global__ void SgemmKernels_SgemmKernel(float* __restrict__ a, float* __restrict__ b, float* __restrict__ c, int n){
+public const string SgemmKernel_Source = @"extern ""C"" __global__ void SgemmKernels_SgemmKernel(GSharpArray<float> a, GSharpArray<float> b, GSharpArray<float> c, int n){
 __shared__ float As[256];
 __shared__ float Bs[256];
 auto bx = blockIdx.x;
@@ -144,48 +144,48 @@ try
 void** kernelParams = stackalloc void*[4];
 // Marshal array: a
 int a_size = a.Length * sizeof(global::System.Single);
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = IntPtr.Zero;
+((int*)(proxy_a + 1))[0] = a.Length;
 if (a_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_a, (IntPtr)a_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_a[0] = d_a;
+fixed (global::System.Single* p_a = a)
 {
-IntPtr p_a = handle_a.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_a, p_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_a, (IntPtr)p_a, (IntPtr)a_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_a.Free();
 }
-}
-kernelParams[0] = &d_a;
+kernelParams[0] = proxy_a;
 // Marshal array: b
 int b_size = b.Length * sizeof(global::System.Single);
+IntPtr* proxy_b = stackalloc IntPtr[2];
+proxy_b[0] = IntPtr.Zero;
+((int*)(proxy_b + 1))[0] = b.Length;
 if (b_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_b, (IntPtr)b_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_b[0] = d_b;
+fixed (global::System.Single* p_b = b)
 {
-IntPtr p_b = handle_b.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_b, p_b, (IntPtr)b_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_b, (IntPtr)p_b, (IntPtr)b_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_b.Free();
 }
-}
-kernelParams[1] = &d_b;
+kernelParams[1] = proxy_b;
 // Marshal array: c
 int c_size = c.Length * sizeof(global::System.Single);
+IntPtr* proxy_c = stackalloc IntPtr[2];
+proxy_c[0] = IntPtr.Zero;
+((int*)(proxy_c + 1))[0] = c.Length;
 if (c_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_c, (IntPtr)c_size, hStream));
+proxy_c[0] = d_c;
 // Skip HtoD copy for [Out] array: c
 }
-kernelParams[2] = &d_c;
+kernelParams[2] = proxy_c;
 // Marshal scalar: n
 kernelParams[3] = &n;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -202,16 +202,10 @@ IntPtr.Zero // Extra
 // Copy back array: c
 if (c_size > 0 && d_c != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_c = System.Runtime.InteropServices.GCHandle.Alloc(c, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Single* p_c = c)
 {
-IntPtr p_c = handleBack_c.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_c, d_c, (IntPtr)c_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_c, d_c, (IntPtr)c_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_c.Free();
 }
 }
 }
@@ -235,11 +229,20 @@ try
 {
 void** kernelParams = stackalloc void*[4];
 // Marshal device array: a
-kernelParams[0] = &a;
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = a;
+((int*)(proxy_a + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_a;
 // Marshal device array: b
-kernelParams[1] = &b;
+IntPtr* proxy_b = stackalloc IntPtr[2];
+proxy_b[0] = b;
+((int*)(proxy_b + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[1] = proxy_b;
 // Marshal device array: c
-kernelParams[2] = &c;
+IntPtr* proxy_c = stackalloc IntPtr[2];
+proxy_c[0] = c;
+((int*)(proxy_c + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[2] = proxy_c;
 // Marshal scalar: n
 kernelParams[3] = &n;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(

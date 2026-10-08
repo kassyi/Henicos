@@ -7,7 +7,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GSharpTargetDialect>Cuda</GSharpTargetDialect>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-  </PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles></PropertyGroup>
 
   <ItemGroup>
     <CompilerVisibleProperty Include="GSharpTargetDialect" />

@@ -12,6 +12,10 @@
   <Folder Name="/src/Stdlib/">
     <Project Path="src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Generators/Kassyi.GSharp.Stdlib.GpuMath.Generators.csproj" />
   </Folder>
+  <Folder Name="/src/ZeroAlloc/">
+    <Project Path="src/ZeroAlloc/Kassyi.ZeroAlloc.Linq.Generators/Kassyi.ZeroAlloc.Linq.Generators.csproj" />
+    <Project Path="src/ZeroAlloc/Kassyi.ZeroAlloc.Linq/Kassyi.ZeroAlloc.Linq.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kassyi.GSharp.Tests.Common/Kassyi.GSharp.Tests.Common.csproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Shared/Kassyi.GSharp.Tests.Shared.shproj" />
@@ -21,5 +25,6 @@
     <Project Path="tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Generators/Kassyi.GSharp.Tests.Generators.csproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj" />
+    <Project Path="tests/Kassyi.ZeroAlloc.Linq.Tests/Kassyi.ZeroAlloc.Linq.Tests.csproj" />
   </Folder>
 </Solution>

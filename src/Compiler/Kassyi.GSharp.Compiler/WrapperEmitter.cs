@@ -76,33 +76,34 @@ internal static class WrapperEmitter
 
         switch (isDevicePtr)
         {
-            case true when (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out):
+            case true when (KernelLaunchEmitter.IsArrayLikeType(p.Type, out _) ||
+                            p.RefKind is RefKind.Ref or RefKind.Out):
+            {
+                if (p.HasExplicitDefaultValue)
                 {
-                    if (p.HasExplicitDefaultValue)
-                    {
-                        defaultValue = "default";
-                    }
-
-                    return new InteropParameterInfo(string.Empty, null, true, defaultValue);
+                    defaultValue = "default";
                 }
+
+                return new InteropParameterInfo(string.Empty, null, true, defaultValue);
+            }
             case true when CudaLayoutRules.IsCustomStruct(p.Type):
-                {
-                    var tempWriter = new SourceWriter();
-                    tempWriter.AppendAotStructPath(p.Type);
-                    var rawTypeName = tempWriter.ToString();
-                    return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
-                }
+            {
+                var tempWriter = new SourceWriter();
+                tempWriter.AppendAotStructPath(p.Type);
+                var rawTypeName = tempWriter.ToString();
+                return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
+            }
             default:
+            {
+                var modifier = p.RefKind switch
                 {
-                    var modifier = p.RefKind switch
-                    {
-                        RefKind.Ref => "ref",
-                        RefKind.Out => "out",
-                        _ => string.Empty
-                    };
+                    RefKind.Ref => "ref",
+                    RefKind.Out => "out",
+                    _ => string.Empty
+                };
 
-                    return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
-                }
+                return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
+            }
         }
     }
 
@@ -268,6 +269,7 @@ internal static class WrapperEmitter
             writer.Append("void ");
         }
 
+
         writer.Append("Launch");
         writer.Append(method.Name);
         if (isDevicePtr)
@@ -311,7 +313,7 @@ internal static class WrapperEmitter
     {
         foreach (var p in method.Parameters)
         {
-            if (p.RefKind is not RefKind.Out || p.Type is IArrayTypeSymbol)
+            if (p.RefKind is not RefKind.Out || KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
             {
                 continue;
             }
@@ -326,7 +328,7 @@ internal static class WrapperEmitter
         var hasArray = false;
         foreach (var p in method.Parameters)
         {
-            if (p.Type is not IArrayTypeSymbol)
+            if (!KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
             {
                 continue;
             }
@@ -346,7 +348,7 @@ internal static class WrapperEmitter
             var isFirst = true;
             foreach (var p in method.Parameters)
             {
-                if (p.Type is not IArrayTypeSymbol)
+                if (!KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
                 {
                     continue;
                 }
@@ -380,7 +382,8 @@ internal static class WrapperEmitter
     }
 
 
-    private static string GetMangledKernelName(IMethodSymbol method) => $"{method.ContainingType.Name}_{method.Name}";
+    private static string GetMangledKernelName(IMethodSymbol method) =>
+        $"{method.ContainingType.Name}_{method.Name}";
 
     private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, IMethodSymbol method)
     {
@@ -496,10 +499,9 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
 
-                if (p.Type is IArrayTypeSymbol arrayType)
+                if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out var elementType))
                 {
-                    writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
-                    writer.Append("* ");
+                    writer.Append("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ");
                     writer.Append(p.Name);
                 }
                 else
@@ -541,12 +543,14 @@ internal static class WrapperEmitter
         writer.AppendLine(
             "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
 
-        writer.AppendLine($"if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))");
+        writer.AppendLine(
+            "if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))");
         using (writer.Scope())
         {
             writer.AppendLine("int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);");
             writer.AppendLine("int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);");
-            writer.AppendLine($"var _gsharp_contexts = new __gsharp_context_{mangledName}[_gsharp_total_blocks * _gsharp_threads_per_block];");
+            writer.AppendLine(
+                $"var _gsharp_contexts = new __gsharp_context_{mangledName}[_gsharp_total_blocks * _gsharp_threads_per_block];");
             writer.AppendLine("for (int i = 0; i < _gsharp_contexts.Length; i++) {");
             writer.AppendLine($"  _gsharp_contexts[i] = new __gsharp_context_{mangledName}();");
             writer.AppendLine("}");
@@ -599,7 +603,8 @@ internal static class WrapperEmitter
                                 writer.AppendLine("anyGridActive = true;");
                                 writer.AppendLine("anyBlockActive = true;");
                                 writer.AppendLine("_gsharp_contexts[linear_tid]._yieldedForGridSync = false;");
-                                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();");
+                                writer.AppendLine(
+                                    "global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();");
 
                                 writer.Append($"__gsharp_statemachine_{mangledName}(");
                                 bool isFirst = true;
@@ -633,6 +638,7 @@ internal static class WrapperEmitter
                                 {
                                     writer.Append(", ref __gsharp_auto_result[linear_tid]");
                                 }
+
                                 writer.AppendLine(");");
 
                                 writer.AppendLine("if (_gsharp_contexts[linear_tid]._yieldedForGridSync)");
@@ -676,10 +682,10 @@ internal static class WrapperEmitter
 
         foreach (var p in method.Parameters)
         {
-            if (p.Type is IArrayTypeSymbol arrayType)
+            if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out var elementType))
             {
                 writer.Append("fixed (");
-                writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
+                writer.AppendFullyQualifiedCsharpName(elementType);
                 writer.AppendLine($"* p_{p.Name} = {p.Name})");
                 hasFixed = true;
             }
@@ -732,7 +738,12 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
 
-                if (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out)
+                if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
+                {
+                    writer.Append(
+                        $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{p.Name}, Length = {p.Name}.Length }}");
+                }
+                else if (p.RefKind is RefKind.Ref or RefKind.Out)
                 {
                     writer.Append("p_");
                     writer.Append(p.Name);

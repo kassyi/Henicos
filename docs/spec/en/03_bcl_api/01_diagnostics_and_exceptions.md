@@ -60,6 +60,7 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | [**GSH0032**](diagnostics/GSH0032.md) | Error    | **Unrolled loop bounds must be statically deterministic.** The bounds of a loop marked with `Gpu.Hint.Unroll` cannot be determined at compile-time.                                               |
 | [**GSH0033**](diagnostics/GSH0033.md) | Warning  | **Unrolled loop may be silently ignored.** A loop marked with `Gpu.Hint.Unroll` contains dynamic control flow (e.g., `break`), causing `nvcc` to ignore the hint.                               |
 | [**GSH0034**](diagnostics/GSH0034.md) | Error    | **The 'params' modifier is prohibited in GPU device code.** You used the `params` keyword in a `[GpuKernel]` or `[GpuDevice]` method, which incurs hidden heap allocation.                      |
+| [**SLQ0001**](diagnostics/SLQ0001.md) | Warning  | **Excessive StackLinq chain depth.** Triggered when a StackLinq query chain exceeds recommended nesting depth, threatening GPU register spilling or stack frame bloat.         |
 | [**RS0030**](diagnostics/RS0030.md)   | Error    | **Banned API in GPU kernel.** Triggered when a banned .NET API is used in GPU kernels or GPU intrinsics are invoked from host CPU code.                                                           |
 
 ---

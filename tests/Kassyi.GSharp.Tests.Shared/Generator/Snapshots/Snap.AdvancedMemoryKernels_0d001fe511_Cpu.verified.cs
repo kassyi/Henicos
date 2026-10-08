@@ -23,7 +23,7 @@ __gsharp_context_AdvancedMemoryKernels_FixedBufferKernel* _all_contexts = nullpt
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_FixedBufferKernel(unsigned int* __restrict__ data, __gsharp_context_AdvancedMemoryKernels_FixedBufferKernel* _ctx){
+extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_FixedBufferKernel(GSharpArray<unsigned int> data, __gsharp_context_AdvancedMemoryKernels_FixedBufferKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -42,7 +42,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_FixedBufferKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_FixedBufferKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<unsigned int> data)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -105,7 +105,7 @@ public static unsafe void __gsharp_statemachine_AdvancedMemoryKernels_FixedBuffe
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void FixedBufferKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* data);
+private unsafe delegate void FixedBufferKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
 #pragma warning disable CS8500
 public static unsafe void LaunchFixedBufferKernel(global::System.UInt32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -183,7 +183,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<FixedBufferKernel_Delegate>("__gsharp_launch_AdvancedMemoryKernels_FixedBufferKernel", dllPath);
 fixed (global::System.UInt32* p_data = data)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
 }
 }
 #pragma warning restore CS8500
@@ -193,7 +193,7 @@ __gsharp_context_AdvancedMemoryKernels_PointerIncrementKernel* _all_contexts = n
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerIncrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest, __gsharp_context_AdvancedMemoryKernels_PointerIncrementKernel* _ctx){
+extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerIncrementKernel(GSharpArray<unsigned int> src, GSharpArray<unsigned int> dest, __gsharp_context_AdvancedMemoryKernels_PointerIncrementKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -218,7 +218,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerIncrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ src, unsigned int* __restrict__ dest)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerIncrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<unsigned int> src, GSharpArray<unsigned int> dest)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -286,7 +286,7 @@ public static unsafe void __gsharp_statemachine_AdvancedMemoryKernels_PointerInc
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void PointerIncrementKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* src, global::System.UInt32* dest);
+private unsafe delegate void PointerIncrementKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy src, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dest);
 #pragma warning disable CS8500
 public static unsafe void LaunchPointerIncrementKernel(global::System.UInt32[] src, global::System.UInt32[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -365,7 +365,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Poin
 fixed (global::System.UInt32* p_src = src)
 fixed (global::System.UInt32* p_dest = dest)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_src, p_dest);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_src, Length = src.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dest, Length = dest.Length });
 }
 }
 #pragma warning restore CS8500
@@ -375,7 +375,7 @@ __gsharp_context_AdvancedMemoryKernels_PointerDecrementKernel* _all_contexts = n
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerDecrementKernel(unsigned int* __restrict__ src, unsigned int* __restrict__ dest, __gsharp_context_AdvancedMemoryKernels_PointerDecrementKernel* _ctx){
+extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerDecrementKernel(GSharpArray<unsigned int> src, GSharpArray<unsigned int> dest, __gsharp_context_AdvancedMemoryKernels_PointerDecrementKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -400,7 +400,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerDecrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ src, unsigned int* __restrict__ dest)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerDecrementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<unsigned int> src, GSharpArray<unsigned int> dest)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -468,7 +468,7 @@ public static unsafe void __gsharp_statemachine_AdvancedMemoryKernels_PointerDec
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void PointerDecrementKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* src, global::System.UInt32* dest);
+private unsafe delegate void PointerDecrementKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy src, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dest);
 #pragma warning disable CS8500
 public static unsafe void LaunchPointerDecrementKernel(global::System.UInt32[] src, global::System.UInt32[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -547,7 +547,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Poin
 fixed (global::System.UInt32* p_src = src)
 fixed (global::System.UInt32* p_dest = dest)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_src, p_dest);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_src, Length = src.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dest, Length = dest.Length });
 }
 }
 #pragma warning restore CS8500
@@ -557,7 +557,7 @@ __gsharp_context_AdvancedMemoryKernels_PointerComplexAssignmentKernel* _all_cont
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerComplexAssignmentKernel(unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest, __gsharp_context_AdvancedMemoryKernels_PointerComplexAssignmentKernel* _ctx){
+extern ""C"" __declspec(dllexport) void AdvancedMemoryKernels_PointerComplexAssignmentKernel(GSharpArray<unsigned int> idx, GSharpArray<unsigned int> val, GSharpArray<unsigned int> dest, __gsharp_context_AdvancedMemoryKernels_PointerComplexAssignmentKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -582,7 +582,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerComplexAssignmentKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ idx, unsigned int* __restrict__ val, unsigned int* __restrict__ dest)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_AdvancedMemoryKernels_PointerComplexAssignmentKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<unsigned int> idx, GSharpArray<unsigned int> val, GSharpArray<unsigned int> dest)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -650,7 +650,7 @@ public static unsafe void __gsharp_statemachine_AdvancedMemoryKernels_PointerCom
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void PointerComplexAssignmentKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* idx, global::System.UInt32* val, global::System.UInt32* dest);
+private unsafe delegate void PointerComplexAssignmentKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy idx, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy val, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dest);
 #pragma warning disable CS8500
 public static unsafe void LaunchPointerComplexAssignmentKernel(global::System.UInt32[] idx, global::System.UInt32[] val, global::System.UInt32[] dest, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -730,7 +730,7 @@ fixed (global::System.UInt32* p_idx = idx)
 fixed (global::System.UInt32* p_val = val)
 fixed (global::System.UInt32* p_dest = dest)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_idx, p_val, p_dest);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_idx, Length = idx.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_val, Length = val.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dest, Length = dest.Length });
 }
 }
 #pragma warning restore CS8500

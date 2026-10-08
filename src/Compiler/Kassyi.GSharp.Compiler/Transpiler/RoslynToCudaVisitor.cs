@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Compiler.Transpiler.Rules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
@@ -173,15 +174,44 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// <inheritdoc />
     public override void VisitParameter(ParameterSyntax node)
     {
+        var paramSymbol = Context.Query.SemanticModel.GetSafeDeclaredSymbol(node);
+        var isReadOnly = paramSymbol?.HasAttribute(KnownAttributes.GpuReadOnly) == true;
+
         if (node.Type != null)
         {
             var typeSymbol = Context.Query.SemanticModel.GetTypeSymbol(node.Type);
             if (typeSymbol != null)
             {
-                Context.Emitter.Dialect.AppendType(ref Context, typeSymbol);
+                var isArray = KernelLaunchEmitter.IsArrayLikeType(typeSymbol, out var elementType);
+                
+                if (isReadOnly && !isArray)
+                {
+                    Context.Emitter.Writer.Append("const ");
+                }
+
+                if (isArray)
+                {
+                    Context.Emitter.Writer.Append("GSharpArray<");
+                    if (isReadOnly)
+                    {
+                        Context.Emitter.Writer.Append("const ");
+                    }
+
+                    Context.Emitter.Dialect.AppendType(ref Context, elementType);
+                    Context.Emitter.Writer.Append(">");
+                }
+                else
+                {
+                    Context.Emitter.Dialect.AppendType(ref Context, typeSymbol);
+                }
             }
             else
             {
+                if (isReadOnly)
+                {
+                    Context.Emitter.Writer.Append("const ");
+                }
+
                 Visit(node.Type);
             }
         }
@@ -237,9 +267,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
-        var statements = Context.Emitter.AutoSyncGridDepth > 0
+        IReadOnlyList<CSharpSyntaxNode> statements = Context.Emitter.AutoSyncGridDepth > 0
             ? FlattenStatements(node.Statements, Context.Query.SemanticModel)
-            : node.Statements;
+            : ToNodeList(node.Statements);
         for (var i = 0; i < statements.Count; i++)
         {
             Visit(statements[i]);
@@ -251,7 +281,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         }
     }
 
-    internal bool ShouldInsertAutoSync(IReadOnlyList<StatementSyntax> statements, int currentIndex)
+    internal bool ShouldInsertAutoSync(IReadOnlyList<CSharpSyntaxNode> statements, int currentIndex)
     {
         if (Context.Emitter.AutoSyncGridDepth <= 0 || currentIndex >= statements.Count - 1)
         {
@@ -278,12 +308,19 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         return false;
     }
 
-    internal bool IsEmptyOrSyncGrid(StatementSyntax stmt) =>
+    internal bool IsEmptyOrSyncGrid(CSharpSyntaxNode stmt) =>
         stmt is EmptyStatementSyntax || IsParameterlessSyncGrid(stmt);
 
-    internal bool IsParameterlessSyncGrid(StatementSyntax stmt)
+    internal bool IsParameterlessSyncGrid(CSharpSyntaxNode stmt)
     {
-        if (stmt is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
+        var invocation = stmt switch
+        {
+            ExpressionStatementSyntax exprStmt => exprStmt.Expression as InvocationExpressionSyntax,
+            InvocationExpressionSyntax inv => inv,
+            _ => null
+        };
+
+        if (invocation == null)
         {
             return false;
         }
@@ -297,19 +334,29 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                symbol.ContainingNamespace.IsCoreNamespace();
     }
 
-    internal static IReadOnlyList<StatementSyntax> FlattenStatements(
+    internal static IReadOnlyList<CSharpSyntaxNode> FlattenStatements(
         IReadOnlyList<StatementSyntax> statements,
         SemanticModel semanticModel)
     {
-        var result = ImmutableArray.CreateBuilder<StatementSyntax>(statements.Count);
+        var result = ImmutableArray.CreateBuilder<CSharpSyntaxNode>(statements.Count);
         FlattenInto(statements, semanticModel, result);
         return result.ToImmutable();
+    }
+
+    internal static IReadOnlyList<CSharpSyntaxNode> ToNodeList(SyntaxList<StatementSyntax> statements)
+    {
+        var result = new CSharpSyntaxNode[statements.Count];
+        for (var i = 0; i < statements.Count; i++)
+        {
+            result[i] = statements[i];
+        }
+        return result;
     }
 
     private static void FlattenInto(
         IEnumerable<StatementSyntax> statements,
         SemanticModel semanticModel,
-        ImmutableArray<StatementSyntax>.Builder result)
+        ImmutableArray<CSharpSyntaxNode>.Builder result)
     {
         foreach (var stmt in statements)
         {
@@ -318,12 +365,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 switch (body)
                 {
                     case BlockSyntax innerBlock:
-
                         FlattenInto(innerBlock.Statements, semanticModel, result);
                         break;
                     case ExpressionSyntax innerExpr:
-
-                        result.Add(SyntaxFactory.ExpressionStatement(innerExpr));
+                        result.Add(innerExpr);
                         break;
                 }
             }

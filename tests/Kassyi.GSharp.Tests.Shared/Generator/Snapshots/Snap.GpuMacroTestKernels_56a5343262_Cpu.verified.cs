@@ -23,7 +23,7 @@ __gsharp_context_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle* _all_contex
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue, __gsharp_context_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle* _ctx){
+extern ""C"" __declspec(dllexport) void GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(GSharpArray<unsigned int> outputBuffer, int length, unsigned int fillValue, unsigned int singleValue, __gsharp_context_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -56,7 +56,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ outputBuffer, int length, unsigned int fillValue, unsigned int singleValue)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<unsigned int> outputBuffer, int length, unsigned int fillValue, unsigned int singleValue)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -135,7 +135,7 @@ public static unsafe void __gsharp_statemachine_GpuMacroTestKernels_Kernel_Macro
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void Kernel_MacroTest_FillAndSingle_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* outputBuffer, global::System.Int32 length, global::System.UInt32 fillValue, global::System.UInt32 singleValue);
+private unsafe delegate void Kernel_MacroTest_FillAndSingle_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy outputBuffer, global::System.Int32 length, global::System.UInt32 fillValue, global::System.UInt32 singleValue);
 #pragma warning disable CS8500
 public static unsafe void LaunchKernel_MacroTest_FillAndSingle(global::System.UInt32[] outputBuffer, global::System.Int32 length, global::System.UInt32 fillValue, global::System.UInt32 singleValue, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -213,7 +213,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Kernel_MacroTest_FillAndSingle_Delegate>("__gsharp_launch_GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle", dllPath);
 fixed (global::System.UInt32* p_outputBuffer = outputBuffer)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_outputBuffer, length, fillValue, singleValue);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_outputBuffer, Length = outputBuffer.Length }, length, fillValue, singleValue);
 }
 }
 #pragma warning restore CS8500

@@ -2,6 +2,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Stdlib\Kassyi.GSharp.Stdlib.GpuMath\Kassyi.GSharp.Stdlib.GpuMath.csproj" />
     <ProjectReference Include="..\..\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
+    <ProjectReference Include="..\..\ZeroAlloc\Kassyi.ZeroAlloc.Linq\Kassyi.ZeroAlloc.Linq.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -29,16 +30,13 @@
   </ItemGroup>
 
   <Target Name="CompileNativeBenchmarks" BeforeTargets="GSharpAddGeneratedItemsToOutputDirectory">
-    <CompileCudaToFatbinTask
-        CudaSources="@(NativeBenchmarkCudaSources)"
-        CombinedFatbinName="native_benchmarks.gfatbin"
-        OutputDirectory="$(IntermediateOutputPath)GSharpFatbins"
-        TargetArchitectures="$(GSharpTargetArchitectures)" >
+    <CompileCudaToFatbinTask CudaSources="@(NativeBenchmarkCudaSources)" CombinedFatbinName="native_benchmarks.gfatbin" OutputDirectory="$(IntermediateOutputPath)GSharpFatbins" TargetArchitectures="$(GSharpTargetArchitectures)">
       <Output TaskParameter="OutputFatbins" ItemName="_GSharpCompiledFatbins" />
     </CompileCudaToFatbinTask>
   </Target>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageReference Include="ZLinq" Version="1.5.6" />
   </ItemGroup>
 
   <Import Project="..\..\Compiler\Kassyi.GSharp.Compiler\build\Kassyi.GSharp.Compiler.targets" />

@@ -54,6 +54,13 @@ template <typename T>
 struct GSharpArray {
     T* __restrict__ data;
     int length;
+
+    inline GSharpArray() : data(nullptr), length(0) {}
+    inline GSharpArray(T* d, int l) : data(d), length(l) {}
+    
+    // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
+    template <typename U>
+    inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length) {}
     inline T* begin() { return data; }
     inline T* end() { return data + length; }
     inline const T* begin() const { return data; }
@@ -80,26 +87,7 @@ struct Kassyi_GSharp_Core_SharedMemory {
     inline operator const T*() const { return data; }
 };
 
-template <typename T>
-struct System_ReadOnlySpan {
-    const T* __restrict__ data;
-    int length;
-    inline const T* begin() const { return data; }
-    inline const T* end() const { return data + length; }
-    inline const T& operator[](int index) const { return data[index]; }
-};
 
-template <typename T>
-struct System_Span {
-    T* __restrict__ data;
-    int length;
-    inline T* begin() { return data; }
-    inline T* end() { return data + length; }
-    inline const T* begin() const { return data; }
-    inline const T* end() const { return data + length; }
-    inline T& operator[](int index) { return data[index]; }
-    inline const T& operator[](int index) const { return data[index]; }
-};
 
 // --- Conversions & Casts ---
 __forceinline__ float __gsharp_float_cast(float x) { return x; }

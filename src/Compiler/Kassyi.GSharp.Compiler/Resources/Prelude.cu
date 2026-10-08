@@ -15,6 +15,13 @@ struct GSharpArray {
     T* __restrict__ data;
     int length;
 
+    __device__ inline GSharpArray() : data(nullptr), length(0) {}
+    __device__ inline GSharpArray(T* d, int l) : data(d), length(l) {}
+    
+    // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
+    template <typename U>
+    __device__ inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length) {}
+
     __device__ inline T* begin() { return data; }
     __device__ inline T* end() { return data + length; }
     __device__ inline const T* begin() const { return data; }
@@ -25,6 +32,8 @@ struct GSharpArray {
     __device__ inline operator T*() { return data; }
     __device__ inline operator const T*() const { return data; }
 };
+
+
 
 // --- Arithmetic & SIMD ---
 __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
@@ -159,3 +168,7 @@ __forceinline__ __device__ unsigned long long __gsharp_atomicCAS(unsigned long l
 __forceinline__ __device__ int __gsharp_atomicAdd(int* address, int val) { return atomicAdd(address, val) + val; }
 __forceinline__ __device__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }
 __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
+
+// --- ZeroAlloc.Linq (StackLinq) ---
+#include "StackLinq.cuh"
+

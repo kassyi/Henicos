@@ -34,7 +34,7 @@ __gsharp_context_LoopUnrollKernels_LoopUnrollForKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollForKernel(int* __restrict__ data, __gsharp_context_LoopUnrollKernels_LoopUnrollForKernel* _ctx){
+extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollForKernel(GSharpArray<int> data, __gsharp_context_LoopUnrollKernels_LoopUnrollForKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -56,7 +56,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollForKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollForKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -122,7 +122,7 @@ public static unsafe void __gsharp_statemachine_LoopUnrollKernels_LoopUnrollForK
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void LoopUnrollForKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+private unsafe delegate void LoopUnrollForKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
 #pragma warning disable CS8500
 public static unsafe void LaunchLoopUnrollForKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -200,7 +200,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollForKernel_Delegate>("__gsharp_launch_LoopUnrollKernels_LoopUnrollForKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
 }
 }
 #pragma warning restore CS8500
@@ -210,7 +210,7 @@ __gsharp_context_LoopUnrollKernels_LoopUnrollFactorKernel* _all_contexts = nullp
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollFactorKernel(int* __restrict__ data, __gsharp_context_LoopUnrollKernels_LoopUnrollFactorKernel* _ctx){
+extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollFactorKernel(GSharpArray<int> data, __gsharp_context_LoopUnrollKernels_LoopUnrollFactorKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -232,7 +232,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollFactorKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollFactorKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -298,7 +298,7 @@ public static unsafe void __gsharp_statemachine_LoopUnrollKernels_LoopUnrollFact
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void LoopUnrollFactorKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+private unsafe delegate void LoopUnrollFactorKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
 #pragma warning disable CS8500
 public static unsafe void LaunchLoopUnrollFactorKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -376,7 +376,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollFactorKernel_Delegate>("__gsharp_launch_LoopUnrollKernels_LoopUnrollFactorKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
 }
 }
 #pragma warning restore CS8500
@@ -386,7 +386,7 @@ __gsharp_context_LoopUnrollKernels_LoopUnrollWhileKernel* _all_contexts = nullpt
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollWhileKernel(int* __restrict__ data, __gsharp_context_LoopUnrollKernels_LoopUnrollWhileKernel* _ctx){
+extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollWhileKernel(GSharpArray<int> data, __gsharp_context_LoopUnrollKernels_LoopUnrollWhileKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -410,7 +410,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollWhileKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollWhileKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -478,7 +478,7 @@ public static unsafe void __gsharp_statemachine_LoopUnrollKernels_LoopUnrollWhil
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void LoopUnrollWhileKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+private unsafe delegate void LoopUnrollWhileKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
 #pragma warning disable CS8500
 public static unsafe void LaunchLoopUnrollWhileKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -556,7 +556,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollWhileKernel_Delegate>("__gsharp_launch_LoopUnrollKernels_LoopUnrollWhileKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
 }
 }
 #pragma warning restore CS8500
@@ -566,7 +566,7 @@ __gsharp_context_LoopUnrollKernels_LoopUnrollNestedKernel* _all_contexts = nullp
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollNestedKernel(int* __restrict__ data, __gsharp_context_LoopUnrollKernels_LoopUnrollNestedKernel* _ctx){
+extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollNestedKernel(GSharpArray<int> data, __gsharp_context_LoopUnrollKernels_LoopUnrollNestedKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -591,7 +591,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollNestedKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollNestedKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -660,7 +660,7 @@ public static unsafe void __gsharp_statemachine_LoopUnrollKernels_LoopUnrollNest
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void LoopUnrollNestedKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+private unsafe delegate void LoopUnrollNestedKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
 #pragma warning disable CS8500
 public static unsafe void LaunchLoopUnrollNestedKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -738,7 +738,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollNestedKernel_Delegate>("__gsharp_launch_LoopUnrollKernels_LoopUnrollNestedKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
 }
 }
 #pragma warning restore CS8500
@@ -748,7 +748,7 @@ __gsharp_context_LoopUnrollKernels_LoopUnrollSingleStatementKernel* _all_context
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollSingleStatementKernel(int* __restrict__ data, __gsharp_context_LoopUnrollKernels_LoopUnrollSingleStatementKernel* _ctx){
+extern ""C"" __declspec(dllexport) void LoopUnrollKernels_LoopUnrollSingleStatementKernel(GSharpArray<int> data, __gsharp_context_LoopUnrollKernels_LoopUnrollSingleStatementKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -770,7 +770,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollSingleStatementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LoopUnrollKernels_LoopUnrollSingleStatementKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -833,7 +833,7 @@ public static unsafe void __gsharp_statemachine_LoopUnrollKernels_LoopUnrollSing
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void LoopUnrollSingleStatementKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+private unsafe delegate void LoopUnrollSingleStatementKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
 #pragma warning disable CS8500
 public static unsafe void LaunchLoopUnrollSingleStatementKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -911,7 +911,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LoopUnrollSingleStatementKernel_Delegate>("__gsharp_launch_LoopUnrollKernels_LoopUnrollSingleStatementKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
 }
 }
 #pragma warning restore CS8500

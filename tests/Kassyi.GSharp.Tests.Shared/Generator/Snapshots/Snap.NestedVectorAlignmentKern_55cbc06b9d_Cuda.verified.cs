@@ -173,7 +173,7 @@ double2 Field5_Double2;
 }
 ;
 #endif
-extern ""C"" __global__ void NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(int* __restrict__ offsets){
+extern ""C"" __global__ void NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(GSharpArray<int> offsets){
 {
 Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct s = {};
 unsigned char* basePtr = (unsigned char*)&s;
@@ -211,22 +211,20 @@ try
 void** kernelParams = stackalloc void*[1];
 // Marshal array: offsets
 int offsets_size = offsets.Length * sizeof(global::System.Int32);
+IntPtr* proxy_offsets = stackalloc IntPtr[2];
+proxy_offsets[0] = IntPtr.Zero;
+((int*)(proxy_offsets + 1))[0] = offsets.Length;
 if (offsets_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_offsets, (IntPtr)offsets_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_offsets = System.Runtime.InteropServices.GCHandle.Alloc(offsets, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_offsets[0] = d_offsets;
+fixed (global::System.Int32* p_offsets = offsets)
 {
-IntPtr p_offsets = handle_offsets.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_offsets, p_offsets, (IntPtr)offsets_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_offsets, (IntPtr)p_offsets, (IntPtr)offsets_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_offsets.Free();
 }
-}
-kernelParams[0] = &d_offsets;
+kernelParams[0] = proxy_offsets;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -239,16 +237,10 @@ IntPtr.Zero // Extra
 // Copy back array: offsets
 if (offsets_size > 0 && d_offsets != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_offsets = System.Runtime.InteropServices.GCHandle.Alloc(offsets, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Int32* p_offsets = offsets)
 {
-IntPtr p_offsets = handleBack_offsets.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_offsets, d_offsets, (IntPtr)offsets_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_offsets, d_offsets, (IntPtr)offsets_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_offsets.Free();
 }
 }
 }
@@ -270,7 +262,10 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal device array: offsets
-kernelParams[0] = &offsets;
+IntPtr* proxy_offsets = stackalloc IntPtr[2];
+proxy_offsets[0] = offsets;
+((int*)(proxy_offsets + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_offsets;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

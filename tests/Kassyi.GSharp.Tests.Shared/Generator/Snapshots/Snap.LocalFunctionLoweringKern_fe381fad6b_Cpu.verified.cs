@@ -34,7 +34,7 @@ __gsharp_context_LocalFunctionLoweringKernels_LocalFunctionVoidKernel* _all_cont
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void LocalFunctionLoweringKernels_LocalFunctionVoidKernel(int* __restrict__ data, __gsharp_context_LocalFunctionLoweringKernels_LocalFunctionVoidKernel* _ctx){
+extern ""C"" __declspec(dllexport) void LocalFunctionLoweringKernels_LocalFunctionVoidKernel(GSharpArray<int> data, __gsharp_context_LocalFunctionLoweringKernels_LocalFunctionVoidKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -55,7 +55,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionLoweringKernels_LocalFunctionVoidKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionLoweringKernels_LocalFunctionVoidKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -120,7 +120,7 @@ public static unsafe void __gsharp_statemachine_LocalFunctionLoweringKernels_Loc
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void LocalFunctionVoidKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+private unsafe delegate void LocalFunctionVoidKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
 #pragma warning disable CS8500
 public static unsafe void LaunchLocalFunctionVoidKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -198,7 +198,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionVoidKernel_Delegate>("__gsharp_launch_LocalFunctionLoweringKernels_LocalFunctionVoidKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
 }
 }
 #pragma warning restore CS8500
@@ -208,7 +208,7 @@ __gsharp_context_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel* _a
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(int* __restrict__ data, int bonus, __gsharp_context_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel* _ctx){
+extern ""C"" __declspec(dllexport) void LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(GSharpArray<int> data, int bonus, __gsharp_context_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -229,7 +229,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int bonus)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data, int bonus)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -294,7 +294,7 @@ public static unsafe void __gsharp_statemachine_LocalFunctionLoweringKernels_Loc
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void LocalFunctionValueReturnKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data, global::System.Int32 bonus);
+private unsafe delegate void LocalFunctionValueReturnKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data, global::System.Int32 bonus);
 #pragma warning disable CS8500
 public static unsafe void LaunchLocalFunctionValueReturnKernel(global::System.Int32[] data, global::System.Int32 bonus, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -372,7 +372,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionValueReturnKernel_Delegate>("__gsharp_launch_LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data, bonus);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length }, bonus);
 }
 }
 #pragma warning restore CS8500
@@ -382,7 +382,7 @@ __gsharp_context_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel*
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(int* __restrict__ data, __gsharp_context_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel* _ctx){
+extern ""C"" __declspec(dllexport) void LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(GSharpArray<int> data, __gsharp_context_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -403,7 +403,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -464,7 +464,7 @@ public static unsafe void __gsharp_statemachine_LocalFunctionLoweringKernels_Loc
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void LocalFunctionExpressionBodyKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+private unsafe delegate void LocalFunctionExpressionBodyKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
 #pragma warning disable CS8500
 public static unsafe void LaunchLocalFunctionExpressionBodyKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -542,7 +542,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<LocalFunctionExpressionBodyKernel_Delegate>("__gsharp_launch_LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
 }
 }
 #pragma warning restore CS8500
@@ -552,7 +552,7 @@ __gsharp_context_LocalFunctionLoweringKernels_NestedLocalFunctionKernel* _all_co
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void LocalFunctionLoweringKernels_NestedLocalFunctionKernel(int* __restrict__ data, __gsharp_context_LocalFunctionLoweringKernels_NestedLocalFunctionKernel* _ctx){
+extern ""C"" __declspec(dllexport) void LocalFunctionLoweringKernels_NestedLocalFunctionKernel(GSharpArray<int> data, __gsharp_context_LocalFunctionLoweringKernels_NestedLocalFunctionKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -578,7 +578,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionLoweringKernels_NestedLocalFunctionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionLoweringKernels_NestedLocalFunctionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -645,7 +645,7 @@ public static unsafe void __gsharp_statemachine_LocalFunctionLoweringKernels_Nes
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void NestedLocalFunctionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+private unsafe delegate void NestedLocalFunctionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
 #pragma warning disable CS8500
 public static unsafe void LaunchNestedLocalFunctionKernel(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -723,7 +723,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<NestedLocalFunctionKernel_Delegate>("__gsharp_launch_LocalFunctionLoweringKernels_NestedLocalFunctionKernel", dllPath);
 fixed (global::System.Int32* p_data = data)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
 }
 }
 #pragma warning restore CS8500
@@ -733,7 +733,7 @@ __gsharp_context_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel* _al
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ result, __gsharp_context_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel* _ctx){
+extern ""C"" __declspec(dllexport) void LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(GSharpArray<int> a, GSharpArray<int> b, GSharpArray<int> result, __gsharp_context_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -763,7 +763,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ a, int* __restrict__ b, int* __restrict__ result)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> a, GSharpArray<int> b, GSharpArray<int> result)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -833,7 +833,7 @@ public static unsafe void __gsharp_statemachine_LocalFunctionLoweringKernels_Mul
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void MultiParamLocalFunctionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* a, global::System.Int32* b, global::System.Int32* result);
+private unsafe delegate void MultiParamLocalFunctionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy b, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result);
 #pragma warning disable CS8500
 public static unsafe void LaunchMultiParamLocalFunctionKernel(global::System.Int32[] a, global::System.Int32[] b, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -913,7 +913,7 @@ fixed (global::System.Int32* p_a = a)
 fixed (global::System.Int32* p_b = b)
 fixed (global::System.Int32* p_result = result)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p_result);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_a, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_b, Length = b.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length });
 }
 }
 #pragma warning restore CS8500

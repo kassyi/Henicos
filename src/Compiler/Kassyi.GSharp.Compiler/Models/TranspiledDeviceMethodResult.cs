@@ -10,6 +10,7 @@ internal readonly struct TranspiledDeviceMethodResult(
     string cudaBody,
     string cppSignature,
     string cppBody,
+    EquatableArray<string> requiredIncludes,
     EquatableArray<EquatableDiagnostic> diagnostics) : IEquatable<TranspiledDeviceMethodResult>
 {
     public IMethodSymbol MethodSymbol { get; } = methodSymbol;
@@ -20,6 +21,7 @@ internal readonly struct TranspiledDeviceMethodResult(
     public string CudaBody { get; } = cudaBody;
     public string CppSignature { get; } = cppSignature;
     public string CppBody { get; } = cppBody;
+    public EquatableArray<string> RequiredIncludes { get; } = requiredIncludes;
     public EquatableArray<EquatableDiagnostic> Diagnostics { get; } = diagnostics;
 
     public bool Equals(TranspiledDeviceMethodResult other)
@@ -31,13 +33,14 @@ internal readonly struct TranspiledDeviceMethodResult(
                CudaBody == other.CudaBody &&
                CppSignature == other.CppSignature &&
                CppBody == other.CppBody &&
+               RequiredIncludes.Equals(other.RequiredIncludes) &&
                Diagnostics.Equals(other.Diagnostics);
     }
 
     public override bool Equals(object? obj) => obj is TranspiledDeviceMethodResult other && Equals(other);
 
     public override int GetHashCode() => HashHelper.Combine(MethodName, ClassName, Namespace, CudaSignature, CudaBody,
-        CppSignature, CppBody, Diagnostics);
+        CppSignature, CppBody, RequiredIncludes, Diagnostics);
 
     public static bool operator ==(TranspiledDeviceMethodResult left, TranspiledDeviceMethodResult right) =>
         left.Equals(right);

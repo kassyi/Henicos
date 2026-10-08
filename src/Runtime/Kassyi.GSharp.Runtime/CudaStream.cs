@@ -28,10 +28,7 @@ public sealed class CudaStream : IDisposable
     /// <summary>
     /// Blocks the current host thread until all operations in this stream have completed.
     /// </summary>
-    public void Synchronize()
-    {
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Handle));
-    }
+    public void Synchronize() => CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Handle));
 
     /// <summary>
     /// Destroys the CUDA stream.

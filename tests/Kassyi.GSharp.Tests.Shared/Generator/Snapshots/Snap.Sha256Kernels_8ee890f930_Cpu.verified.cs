@@ -18,7 +18,7 @@ inline unsigned int MessageSigma0(unsigned int x);
 
 inline unsigned int MessageSigma1(unsigned int x);
 
-inline void ComputeBlock(int tid, unsigned char* input, unsigned int* output);
+inline void ComputeBlock(int tid, GSharpArray<unsigned char> input, GSharpArray<unsigned int> output);
 
 inline unsigned int RotR(unsigned int x, int n){
 return (x>>n)|(x<<(32-n));
@@ -48,7 +48,7 @@ inline unsigned int MessageSigma1(unsigned int x){
 return RotR(x,17)^RotR(x,19)^(x>>10);
 }
 
-inline void ComputeBlock(int tid, unsigned char* input, unsigned int* output){
+inline void ComputeBlock(int tid, GSharpArray<unsigned char> input, GSharpArray<unsigned int> output){
 const unsigned int k[64]={ 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
 unsigned int w[64];
 int offset = tid*64;
@@ -121,7 +121,7 @@ __gsharp_context_Sha256Kernels_Sha256Kernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void Sha256Kernels_Sha256Kernel(unsigned char* __restrict__ input, unsigned int* __restrict__ output, int numMessages, __gsharp_context_Sha256Kernels_Sha256Kernel* _ctx){
+extern ""C"" __declspec(dllexport) void Sha256Kernels_Sha256Kernel(GSharpArray<unsigned char> input, GSharpArray<unsigned int> output, int numMessages, __gsharp_context_Sha256Kernels_Sha256Kernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -140,7 +140,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Sha256Kernels_Sha256Kernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned char* __restrict__ input, unsigned int* __restrict__ output, int numMessages)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Sha256Kernels_Sha256Kernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<unsigned char> input, GSharpArray<unsigned int> output, int numMessages)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -203,7 +203,7 @@ public static unsafe void __gsharp_statemachine_Sha256Kernels_Sha256Kernel(byte[
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void Sha256Kernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Byte* input, global::System.UInt32* output, global::System.Int32 numMessages);
+private unsafe delegate void Sha256Kernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy output, global::System.Int32 numMessages);
 #pragma warning disable CS8500
 public static unsafe void LaunchSha256Kernel(global::System.Byte[] input, global::System.UInt32[] output, global::System.Int32 numMessages, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -282,7 +282,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Sha2
 fixed (global::System.Byte* p_input = input)
 fixed (global::System.UInt32* p_output = output)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_output, numMessages);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_output, Length = output.Length }, numMessages);
 }
 }
 #pragma warning restore CS8500

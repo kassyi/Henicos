@@ -9,6 +9,7 @@ internal readonly struct TranspiledKernelResult(
     string cudaSource,
     string cppSource,
     string managedCSharpSource,
+    EquatableArray<string> requiredIncludes,
     EquatableArray<EquatableDiagnostic> diagnostics) : IEquatable<TranspiledKernelResult>
 {
     public IMethodSymbol MethodSymbol { get; } = methodSymbol;
@@ -18,6 +19,7 @@ internal readonly struct TranspiledKernelResult(
     public string CudaSource { get; } = cudaSource;
     public string CppSource { get; } = cppSource;
     public string ManagedCSharpSource { get; } = managedCSharpSource;
+    public EquatableArray<string> RequiredIncludes { get; } = requiredIncludes;
     public EquatableArray<EquatableDiagnostic> Diagnostics { get; } = diagnostics;
 
     public bool Equals(TranspiledKernelResult other)
@@ -28,13 +30,14 @@ internal readonly struct TranspiledKernelResult(
                CudaSource == other.CudaSource &&
                CppSource == other.CppSource &&
                ManagedCSharpSource == other.ManagedCSharpSource &&
+               RequiredIncludes.Equals(other.RequiredIncludes) &&
                Diagnostics.Equals(other.Diagnostics);
     }
 
     public override bool Equals(object? obj) => obj is TranspiledKernelResult other && Equals(other);
 
     public override int GetHashCode() => HashHelper.Combine(MethodName, ClassName, Namespace, CudaSource, CppSource,
-        Diagnostics);
+        ManagedCSharpSource, RequiredIncludes, Diagnostics);
 
     public static bool operator ==(TranspiledKernelResult left, TranspiledKernelResult right) => left.Equals(right);
     public static bool operator !=(TranspiledKernelResult left, TranspiledKernelResult right) => !left.Equals(right);

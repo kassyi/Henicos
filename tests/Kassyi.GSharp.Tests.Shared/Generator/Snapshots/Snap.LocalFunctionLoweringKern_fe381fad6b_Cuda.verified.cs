@@ -80,7 +80,7 @@ public partial class LocalFunctionLoweringKernels
 public static partial class AotContexts
 {
 }
-public const string LocalFunctionVoidKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionVoidKernel(int* __restrict__ data){
+public const string LocalFunctionVoidKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionVoidKernel(GSharpArray<int> data){
 int tid = threadIdx.x;
 auto MultiplyByTwo = [&]() {
 data[tid]=data[tid]*2;
@@ -114,22 +114,20 @@ try
 void** kernelParams = stackalloc void*[1];
 // Marshal array: data
 int data_size = data.Length * sizeof(global::System.Int32);
+IntPtr* proxy_data = stackalloc IntPtr[2];
+proxy_data[0] = IntPtr.Zero;
+((int*)(proxy_data + 1))[0] = data.Length;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_data[0] = d_data;
+fixed (global::System.Int32* p_data = data)
 {
-IntPtr p_data = handle_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, p_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_data.Free();
 }
-}
-kernelParams[0] = &d_data;
+kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -142,16 +140,10 @@ IntPtr.Zero // Extra
 // Copy back array: data
 if (data_size > 0 && d_data != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Int32* p_data = data)
 {
-IntPtr p_data = handleBack_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_data, d_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_data, d_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_data.Free();
 }
 }
 }
@@ -173,7 +165,10 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal device array: data
-kernelParams[0] = &data;
+IntPtr* proxy_data = stackalloc IntPtr[2];
+proxy_data[0] = data;
+((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -190,7 +185,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string LocalFunctionValueReturnKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(int* __restrict__ data, int bonus){
+public const string LocalFunctionValueReturnKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(GSharpArray<int> data, int bonus){
 int tid = threadIdx.x;
 auto ComputeTotal = [&](int val) {
 return val*3+bonus;
@@ -224,22 +219,20 @@ try
 void** kernelParams = stackalloc void*[2];
 // Marshal array: data
 int data_size = data.Length * sizeof(global::System.Int32);
+IntPtr* proxy_data = stackalloc IntPtr[2];
+proxy_data[0] = IntPtr.Zero;
+((int*)(proxy_data + 1))[0] = data.Length;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_data[0] = d_data;
+fixed (global::System.Int32* p_data = data)
 {
-IntPtr p_data = handle_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, p_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_data.Free();
 }
-}
-kernelParams[0] = &d_data;
+kernelParams[0] = proxy_data;
 // Marshal scalar: bonus
 kernelParams[1] = &bonus;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -254,16 +247,10 @@ IntPtr.Zero // Extra
 // Copy back array: data
 if (data_size > 0 && d_data != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Int32* p_data = data)
 {
-IntPtr p_data = handleBack_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_data, d_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_data, d_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_data.Free();
 }
 }
 }
@@ -285,7 +272,10 @@ try
 {
 void** kernelParams = stackalloc void*[2];
 // Marshal device array: data
-kernelParams[0] = &data;
+IntPtr* proxy_data = stackalloc IntPtr[2];
+proxy_data[0] = data;
+((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_data;
 // Marshal scalar: bonus
 kernelParams[1] = &bonus;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
@@ -304,7 +294,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string LocalFunctionExpressionBodyKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(int* __restrict__ data){
+public const string LocalFunctionExpressionBodyKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(GSharpArray<int> data){
 int tid = threadIdx.x;
 auto Square = [&](int x) {
 return x*x;
@@ -338,22 +328,20 @@ try
 void** kernelParams = stackalloc void*[1];
 // Marshal array: data
 int data_size = data.Length * sizeof(global::System.Int32);
+IntPtr* proxy_data = stackalloc IntPtr[2];
+proxy_data[0] = IntPtr.Zero;
+((int*)(proxy_data + 1))[0] = data.Length;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_data[0] = d_data;
+fixed (global::System.Int32* p_data = data)
 {
-IntPtr p_data = handle_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, p_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_data.Free();
 }
-}
-kernelParams[0] = &d_data;
+kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -366,16 +354,10 @@ IntPtr.Zero // Extra
 // Copy back array: data
 if (data_size > 0 && d_data != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Int32* p_data = data)
 {
-IntPtr p_data = handleBack_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_data, d_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_data, d_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_data.Free();
 }
 }
 }
@@ -397,7 +379,10 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal device array: data
-kernelParams[0] = &data;
+IntPtr* proxy_data = stackalloc IntPtr[2];
+proxy_data[0] = data;
+((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -414,7 +399,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string NestedLocalFunctionKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_NestedLocalFunctionKernel(int* __restrict__ data){
+public const string NestedLocalFunctionKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_NestedLocalFunctionKernel(GSharpArray<int> data){
 int tid = threadIdx.x;
 auto InnerAdd = [&](int a, int b) {
 return a+b;
@@ -453,22 +438,20 @@ try
 void** kernelParams = stackalloc void*[1];
 // Marshal array: data
 int data_size = data.Length * sizeof(global::System.Int32);
+IntPtr* proxy_data = stackalloc IntPtr[2];
+proxy_data[0] = IntPtr.Zero;
+((int*)(proxy_data + 1))[0] = data.Length;
 if (data_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_data, (IntPtr)data_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_data[0] = d_data;
+fixed (global::System.Int32* p_data = data)
 {
-IntPtr p_data = handle_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, p_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_data, (IntPtr)p_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_data.Free();
 }
-}
-kernelParams[0] = &d_data;
+kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -481,16 +464,10 @@ IntPtr.Zero // Extra
 // Copy back array: data
 if (data_size > 0 && d_data != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_data = System.Runtime.InteropServices.GCHandle.Alloc(data, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Int32* p_data = data)
 {
-IntPtr p_data = handleBack_data.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_data, d_data, (IntPtr)data_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_data, d_data, (IntPtr)data_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_data.Free();
 }
 }
 }
@@ -512,7 +489,10 @@ try
 {
 void** kernelParams = stackalloc void*[1];
 // Marshal device array: data
-kernelParams[0] = &data;
+IntPtr* proxy_data = stackalloc IntPtr[2];
+proxy_data[0] = data;
+((int*)(proxy_data + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_data;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -529,7 +509,7 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string MultiParamLocalFunctionKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(int* __restrict__ a, int* __restrict__ b, int* __restrict__ result){
+public const string MultiParamLocalFunctionKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(GSharpArray<int> a, GSharpArray<int> b, GSharpArray<int> result){
 int tid = threadIdx.x;
 auto ClampAdd = [&](int val1, int val2, int minVal, int maxVal) {
 int sum = val1+val2;
@@ -574,58 +554,52 @@ try
 void** kernelParams = stackalloc void*[3];
 // Marshal array: a
 int a_size = a.Length * sizeof(global::System.Int32);
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = IntPtr.Zero;
+((int*)(proxy_a + 1))[0] = a.Length;
 if (a_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_a, (IntPtr)a_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_a[0] = d_a;
+fixed (global::System.Int32* p_a = a)
 {
-IntPtr p_a = handle_a.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_a, p_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_a, (IntPtr)p_a, (IntPtr)a_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_a.Free();
 }
-}
-kernelParams[0] = &d_a;
+kernelParams[0] = proxy_a;
 // Marshal array: b
 int b_size = b.Length * sizeof(global::System.Int32);
+IntPtr* proxy_b = stackalloc IntPtr[2];
+proxy_b[0] = IntPtr.Zero;
+((int*)(proxy_b + 1))[0] = b.Length;
 if (b_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_b, (IntPtr)b_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_b[0] = d_b;
+fixed (global::System.Int32* p_b = b)
 {
-IntPtr p_b = handle_b.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_b, p_b, (IntPtr)b_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_b, (IntPtr)p_b, (IntPtr)b_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_b.Free();
 }
-}
-kernelParams[1] = &d_b;
+kernelParams[1] = proxy_b;
 // Marshal array: result
 int result_size = result.Length * sizeof(global::System.Int32);
+IntPtr* proxy_result = stackalloc IntPtr[2];
+proxy_result[0] = IntPtr.Zero;
+((int*)(proxy_result + 1))[0] = result.Length;
 if (result_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_result, (IntPtr)result_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_result = System.Runtime.InteropServices.GCHandle.Alloc(result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_result[0] = d_result;
+fixed (global::System.Int32* p_result = result)
 {
-IntPtr p_result = handle_result.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, p_result, (IntPtr)result_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_result, (IntPtr)p_result, (IntPtr)result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_result.Free();
 }
-}
-kernelParams[2] = &d_result;
+kernelParams[2] = proxy_result;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -638,46 +612,28 @@ IntPtr.Zero // Extra
 // Copy back array: a
 if (a_size > 0 && d_a != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_a = System.Runtime.InteropServices.GCHandle.Alloc(a, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Int32* p_a = a)
 {
-IntPtr p_a = handleBack_a.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_a, d_a, (IntPtr)a_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_a, d_a, (IntPtr)a_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_a.Free();
 }
 }
 // Copy back array: b
 if (b_size > 0 && d_b != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_b = System.Runtime.InteropServices.GCHandle.Alloc(b, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Int32* p_b = b)
 {
-IntPtr p_b = handleBack_b.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_b, d_b, (IntPtr)b_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_b, d_b, (IntPtr)b_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_b.Free();
 }
 }
 // Copy back array: result
 if (result_size > 0 && d_result != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_result = System.Runtime.InteropServices.GCHandle.Alloc(result, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Int32* p_result = result)
 {
-IntPtr p_result = handleBack_result.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_result, d_result, (IntPtr)result_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_result, d_result, (IntPtr)result_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_result.Free();
 }
 }
 }
@@ -701,11 +657,20 @@ try
 {
 void** kernelParams = stackalloc void*[3];
 // Marshal device array: a
-kernelParams[0] = &a;
+IntPtr* proxy_a = stackalloc IntPtr[2];
+proxy_a[0] = a;
+((int*)(proxy_a + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_a;
 // Marshal device array: b
-kernelParams[1] = &b;
+IntPtr* proxy_b = stackalloc IntPtr[2];
+proxy_b[0] = b;
+((int*)(proxy_b + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[1] = proxy_b;
 // Marshal device array: result
-kernelParams[2] = &result;
+IntPtr* proxy_result = stackalloc IntPtr[2];
+proxy_result[0] = result;
+((int*)(proxy_result + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[2] = proxy_result;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

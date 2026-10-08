@@ -27,7 +27,7 @@ int totalThreads;
 int nextId;
 int nextVal;
 };
-extern ""C"" __declspec(dllexport) void GridSyncManagedKernels_GlobalBarrierKernel(int* __restrict__ buffer, __gsharp_context_GridSyncManagedKernels_GlobalBarrierKernel* _ctx){
+extern ""C"" __declspec(dllexport) void GridSyncManagedKernels_GlobalBarrierKernel(GSharpArray<int> buffer, __gsharp_context_GridSyncManagedKernels_GlobalBarrierKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -62,7 +62,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_GridSyncManagedKernels_GlobalBarrierKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ buffer)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GridSyncManagedKernels_GlobalBarrierKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> buffer)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -149,7 +149,7 @@ public static unsafe void __gsharp_statemachine_GridSyncManagedKernels_GlobalBar
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void GlobalBarrierKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* buffer);
+private unsafe delegate void GlobalBarrierKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy buffer);
 #pragma warning disable CS8500
 public static unsafe void LaunchGlobalBarrierKernel(global::System.Int32[] buffer, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -227,7 +227,7 @@ return;
 var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<GlobalBarrierKernel_Delegate>("__gsharp_launch_GridSyncManagedKernels_GlobalBarrierKernel", dllPath);
 fixed (global::System.Int32* p_buffer = buffer)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_buffer);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_buffer, Length = buffer.Length });
 }
 }
 #pragma warning restore CS8500
@@ -242,7 +242,7 @@ Kassyi_GSharp_Core_SharedMemory<int> shared;
 int localTid;
 int stride;
 };
-extern ""C"" __declspec(dllexport) void GridSyncManagedKernels_GlobalReductionKernel(int* __restrict__ input, int* __restrict__ blockSums, int* __restrict__ totalSum, __gsharp_context_GridSyncManagedKernels_GlobalReductionKernel* _ctx){
+extern ""C"" __declspec(dllexport) void GridSyncManagedKernels_GlobalReductionKernel(GSharpArray<int> input, GSharpArray<int> blockSums, GSharpArray<int> totalSum, __gsharp_context_GridSyncManagedKernels_GlobalReductionKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -320,7 +320,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_GridSyncManagedKernels_GlobalReductionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ input, int* __restrict__ blockSums, int* __restrict__ totalSum)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_GridSyncManagedKernels_GlobalReductionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> input, GSharpArray<int> blockSums, GSharpArray<int> totalSum)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -451,7 +451,7 @@ public static unsafe void __gsharp_statemachine_GridSyncManagedKernels_GlobalRed
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void GlobalReductionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* input, global::System.Int32* blockSums, global::System.Int32* totalSum);
+private unsafe delegate void GlobalReductionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy input, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy blockSums, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy totalSum);
 #pragma warning disable CS8500
 public static unsafe void LaunchGlobalReductionKernel(global::System.Int32[] input, global::System.Int32[] blockSums, global::System.Int32[] totalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -531,7 +531,7 @@ fixed (global::System.Int32* p_input = input)
 fixed (global::System.Int32* p_blockSums = blockSums)
 fixed (global::System.Int32* p_totalSum = totalSum)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_input, p_blockSums, p_totalSum);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_input, Length = input.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_blockSums, Length = blockSums.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_totalSum, Length = totalSum.Length });
 }
 }
 #pragma warning restore CS8500

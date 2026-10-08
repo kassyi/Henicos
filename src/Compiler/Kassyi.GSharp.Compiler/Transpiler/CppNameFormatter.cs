@@ -129,8 +129,5 @@ internal static class CppNameFormatter
         }
     }
 
-    public static string TrimContextSuffix(string name)
-    {
-        return name.EndsWith("Context") ? name[..^7] : name;
-    }
+    public static string TrimContextSuffix(string name) => name.EndsWith("Context") ? name[..^7] : name;
 }

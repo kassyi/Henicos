@@ -160,7 +160,7 @@ int Data[4];
 }
 ;
 #endif
-extern ""C"" __global__ void Tier1IntegrationKernels_AllInOneKernel(int* __restrict__ intInput, float* __restrict__ floatInput, float* __restrict__ results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, unsigned long long* __restrict__ globalCounter, int count, int dynamicSharedSize){
+extern ""C"" __global__ void Tier1IntegrationKernels_AllInOneKernel(GSharpArray<int> intInput, GSharpArray<float> floatInput, GSharpArray<float> results, Kassyi_GSharp_Tests_Shared_Syntax_Tier1CustomStruct config, GSharpArray<unsigned long long> globalCounter, int count, int dynamicSharedSize){
 for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < count; tid += gridDim.x * blockDim.x)
 {
 auto LocalInlineFunc = [&](int x) {
@@ -336,80 +336,72 @@ try
 void** kernelParams = stackalloc void*[7];
 // Marshal array: intInput
 int intInput_size = intInput.Length * sizeof(global::System.Int32);
+IntPtr* proxy_intInput = stackalloc IntPtr[2];
+proxy_intInput[0] = IntPtr.Zero;
+((int*)(proxy_intInput + 1))[0] = intInput.Length;
 if (intInput_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_intInput, (IntPtr)intInput_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_intInput = System.Runtime.InteropServices.GCHandle.Alloc(intInput, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_intInput[0] = d_intInput;
+fixed (global::System.Int32* p_intInput = intInput)
 {
-IntPtr p_intInput = handle_intInput.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_intInput, p_intInput, (IntPtr)intInput_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_intInput, (IntPtr)p_intInput, (IntPtr)intInput_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_intInput.Free();
 }
-}
-kernelParams[0] = &d_intInput;
+kernelParams[0] = proxy_intInput;
 // Marshal array: floatInput
 int floatInput_size = floatInput.Length * sizeof(global::System.Single);
+IntPtr* proxy_floatInput = stackalloc IntPtr[2];
+proxy_floatInput[0] = IntPtr.Zero;
+((int*)(proxy_floatInput + 1))[0] = floatInput.Length;
 if (floatInput_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_floatInput, (IntPtr)floatInput_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_floatInput = System.Runtime.InteropServices.GCHandle.Alloc(floatInput, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_floatInput[0] = d_floatInput;
+fixed (global::System.Single* p_floatInput = floatInput)
 {
-IntPtr p_floatInput = handle_floatInput.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_floatInput, p_floatInput, (IntPtr)floatInput_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_floatInput, (IntPtr)p_floatInput, (IntPtr)floatInput_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_floatInput.Free();
 }
-}
-kernelParams[1] = &d_floatInput;
+kernelParams[1] = proxy_floatInput;
 // Marshal array: results
 int results_size = results.Length * sizeof(global::System.Single);
+IntPtr* proxy_results = stackalloc IntPtr[2];
+proxy_results[0] = IntPtr.Zero;
+((int*)(proxy_results + 1))[0] = results.Length;
 if (results_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_results, (IntPtr)results_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_results = System.Runtime.InteropServices.GCHandle.Alloc(results, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_results[0] = d_results;
+fixed (global::System.Single* p_results = results)
 {
-IntPtr p_results = handle_results.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_results, p_results, (IntPtr)results_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_results, (IntPtr)p_results, (IntPtr)results_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_results.Free();
 }
-}
-kernelParams[2] = &d_results;
+kernelParams[2] = proxy_results;
 AotContexts.Tier1CustomStruct native_config = default;
 AotContexts.Marshal_Tier1CustomStruct(ref config, ref native_config, false, config_allocatedPtrs, hStream);
 // Marshal scalar struct: config
 kernelParams[3] = &native_config;
 // Marshal array: globalCounter
 int globalCounter_size = globalCounter.Length * sizeof(global::System.UInt64);
+IntPtr* proxy_globalCounter = stackalloc IntPtr[2];
+proxy_globalCounter[0] = IntPtr.Zero;
+((int*)(proxy_globalCounter + 1))[0] = globalCounter.Length;
 if (globalCounter_size > 0)
 {
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_globalCounter, (IntPtr)globalCounter_size, hStream));
-System.Runtime.InteropServices.GCHandle handle_globalCounter = System.Runtime.InteropServices.GCHandle.Alloc(globalCounter, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+proxy_globalCounter[0] = d_globalCounter;
+fixed (global::System.UInt64* p_globalCounter = globalCounter)
 {
-IntPtr p_globalCounter = handle_globalCounter.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_globalCounter, p_globalCounter, (IntPtr)globalCounter_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_globalCounter, (IntPtr)p_globalCounter, (IntPtr)globalCounter_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-finally
-{
-handle_globalCounter.Free();
 }
-}
-kernelParams[4] = &d_globalCounter;
+kernelParams[4] = proxy_globalCounter;
 // Marshal scalar: count
 kernelParams[5] = &count;
 // Marshal scalar: dynamicSharedSize
@@ -426,62 +418,38 @@ IntPtr.Zero // Extra
 // Copy back array: intInput
 if (intInput_size > 0 && d_intInput != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_intInput = System.Runtime.InteropServices.GCHandle.Alloc(intInput, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Int32* p_intInput = intInput)
 {
-IntPtr p_intInput = handleBack_intInput.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_intInput, d_intInput, (IntPtr)intInput_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_intInput, d_intInput, (IntPtr)intInput_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_intInput.Free();
 }
 }
 // Copy back array: floatInput
 if (floatInput_size > 0 && d_floatInput != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_floatInput = System.Runtime.InteropServices.GCHandle.Alloc(floatInput, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Single* p_floatInput = floatInput)
 {
-IntPtr p_floatInput = handleBack_floatInput.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_floatInput, d_floatInput, (IntPtr)floatInput_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_floatInput, d_floatInput, (IntPtr)floatInput_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_floatInput.Free();
 }
 }
 // Copy back array: results
 if (results_size > 0 && d_results != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_results = System.Runtime.InteropServices.GCHandle.Alloc(results, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.Single* p_results = results)
 {
-IntPtr p_results = handleBack_results.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_results, d_results, (IntPtr)results_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_results, d_results, (IntPtr)results_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_results.Free();
 }
 }
 AotContexts.Unmarshal_Tier1CustomStruct(ref config, ref native_config, false, hStream);
 // Copy back array: globalCounter
 if (globalCounter_size > 0 && d_globalCounter != IntPtr.Zero)
 {
-System.Runtime.InteropServices.GCHandle handleBack_globalCounter = System.Runtime.InteropServices.GCHandle.Alloc(globalCounter, System.Runtime.InteropServices.GCHandleType.Pinned);
-try
+fixed (global::System.UInt64* p_globalCounter = globalCounter)
 {
-IntPtr p_globalCounter = handleBack_globalCounter.AddrOfPinnedObject();
-CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_globalCounter, d_globalCounter, (IntPtr)globalCounter_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_globalCounter, d_globalCounter, (IntPtr)globalCounter_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
-}
-finally
-{
-handleBack_globalCounter.Free();
 }
 }
 }
@@ -507,15 +475,27 @@ try
 {
 void** kernelParams = stackalloc void*[7];
 // Marshal device array: intInput
-kernelParams[0] = &intInput;
+IntPtr* proxy_intInput = stackalloc IntPtr[2];
+proxy_intInput[0] = intInput;
+((int*)(proxy_intInput + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_intInput;
 // Marshal device array: floatInput
-kernelParams[1] = &floatInput;
+IntPtr* proxy_floatInput = stackalloc IntPtr[2];
+proxy_floatInput[0] = floatInput;
+((int*)(proxy_floatInput + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[1] = proxy_floatInput;
 // Marshal device array: results
-kernelParams[2] = &results;
+IntPtr* proxy_results = stackalloc IntPtr[2];
+proxy_results[0] = results;
+((int*)(proxy_results + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[2] = proxy_results;
 // Marshal device struct: config
 kernelParams[3] = &config;
 // Marshal device array: globalCounter
-kernelParams[4] = &globalCounter;
+IntPtr* proxy_globalCounter = stackalloc IntPtr[2];
+proxy_globalCounter[0] = globalCounter;
+((int*)(proxy_globalCounter + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[4] = proxy_globalCounter;
 // Marshal scalar: count
 kernelParams[5] = &count;
 // Marshal scalar: dynamicSharedSize

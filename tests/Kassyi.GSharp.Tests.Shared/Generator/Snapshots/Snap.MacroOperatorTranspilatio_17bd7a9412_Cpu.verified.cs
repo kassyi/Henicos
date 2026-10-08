@@ -5,12 +5,12 @@ namespace Kassyi.GSharp.Generated
 internal static class GSharpSharedCpuDeviceCode
 {
 public const string Source = @"struct TestNamespace_DummyContext;
-inline void DummyOp(TestNamespace_DummyContext* __restrict__  ctx, unsigned int* result, unsigned int* left, unsigned int* right);
+inline void DummyOp(TestNamespace_DummyContext* __restrict__  ctx, GSharpArray<unsigned int> result, GSharpArray<unsigned int> left, GSharpArray<unsigned int> right);
 
-inline void DummyUnaryOp(unsigned int* result, unsigned int* operand);
+inline void DummyUnaryOp(GSharpArray<unsigned int> result, GSharpArray<unsigned int> operand);
 
 struct TestNamespace_DummyContext;
-inline void DummyShiftOp(TestNamespace_DummyContext ctx, unsigned int* result, unsigned int* operand, int shift);
+inline void DummyShiftOp(TestNamespace_DummyContext ctx, GSharpArray<unsigned int> result, GSharpArray<unsigned int> operand, int shift);
 
 #ifndef __GSHARP_STRUCT_TestNamespace_DummyContext__
 #define __GSHARP_STRUCT_TestNamespace_DummyContext__
@@ -20,10 +20,10 @@ int State;
 }
 ;
 #endif
-inline void DummyOp(TestNamespace_DummyContext* __restrict__  ctx, unsigned int* result, unsigned int* left, unsigned int* right){
+inline void DummyOp(TestNamespace_DummyContext* __restrict__  ctx, GSharpArray<unsigned int> result, GSharpArray<unsigned int> left, GSharpArray<unsigned int> right){
 }
 
-inline void DummyUnaryOp(unsigned int* result, unsigned int* operand){
+inline void DummyUnaryOp(GSharpArray<unsigned int> result, GSharpArray<unsigned int> operand){
 }
 
 #ifndef __GSHARP_STRUCT_TestNamespace_DummyContext__
@@ -34,7 +34,7 @@ int State;
 }
 ;
 #endif
-inline void DummyShiftOp(TestNamespace_DummyContext ctx, unsigned int* result, unsigned int* operand, int shift){
+inline void DummyShiftOp(TestNamespace_DummyContext ctx, GSharpArray<unsigned int> result, GSharpArray<unsigned int> operand, int shift){
 }
 
 ";
@@ -90,12 +90,12 @@ int State;
 #define __GSHARP_STRUCT_TestNamespace_DummyRef__
 struct TestNamespace_DummyRef
 {
-unsigned int* Data;
+GSharpArray<unsigned int> Data;
 __device__ inline TestNamespace_DummyRef() {}
-__device__ inline TestNamespace_DummyRef(unsigned int* v) {
+__device__ inline TestNamespace_DummyRef(GSharpArray<unsigned int> v) {
 this->Data = v;
 }
-__device__ inline operator unsigned int*() const {
+__device__ inline operator GSharpArray<unsigned int>() const {
 return this->Data;
 }
 }
@@ -107,7 +107,7 @@ __gsharp_context_TestKernels_MacroKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void TestKernels_MacroKernel(TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult, __gsharp_context_TestKernels_MacroKernel* _ctx){
+extern ""C"" __declspec(dllexport) void TestKernels_MacroKernel(TestNamespace_DummyContext ctx, GSharpArray<unsigned int> dA, GSharpArray<unsigned int> dB, GSharpArray<unsigned int> dResult, __gsharp_context_TestKernels_MacroKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -128,7 +128,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_TestKernels_MacroKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, TestNamespace_DummyContext ctx, unsigned int* __restrict__ dA, unsigned int* __restrict__ dB, unsigned int* __restrict__ dResult)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_TestKernels_MacroKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, TestNamespace_DummyContext ctx, GSharpArray<unsigned int> dA, GSharpArray<unsigned int> dB, GSharpArray<unsigned int> dResult)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -192,7 +192,7 @@ public static unsafe void __gsharp_statemachine_TestKernels_MacroKernel(global::
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void MacroKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::TestNamespace.DummyContext ctx, global::System.UInt32* dA, global::System.UInt32* dB, global::System.UInt32* dResult);
+private unsafe delegate void MacroKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::TestNamespace.DummyContext ctx, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dA, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dB, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy dResult);
 #pragma warning disable CS8500
 public static unsafe void LaunchMacroKernel(global::TestNamespace.DummyContext ctx, global::System.UInt32[] dA, global::System.UInt32[] dB, global::System.UInt32[] dResult, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -272,7 +272,7 @@ fixed (global::System.UInt32* p_dA = dA)
 fixed (global::System.UInt32* p_dB = dB)
 fixed (global::System.UInt32* p_dResult = dResult)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, ctx, p_dA, p_dB, p_dResult);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, ctx, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dA, Length = dA.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dB, Length = dB.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_dResult, Length = dResult.Length });
 }
 }
 #pragma warning restore CS8500

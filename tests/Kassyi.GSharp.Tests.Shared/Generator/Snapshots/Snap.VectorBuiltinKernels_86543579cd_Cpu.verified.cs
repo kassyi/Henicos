@@ -34,7 +34,7 @@ __gsharp_context_VectorBuiltinKernels_Vector2AddKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector2AddKernel(float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length, __gsharp_context_VectorBuiltinKernels_Vector2AddKernel* _ctx){
+extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector2AddKernel(GSharpArray<float2> a, GSharpArray<float2> b, GSharpArray<float2> result, int length, __gsharp_context_VectorBuiltinKernels_Vector2AddKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -56,7 +56,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector2AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector2AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<float2> a, GSharpArray<float2> b, GSharpArray<float2> result, int length)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -122,7 +122,7 @@ public static unsafe void __gsharp_statemachine_VectorBuiltinKernels_Vector2AddK
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void Vector2AddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Numerics.Vector2* a, global::System.Numerics.Vector2* b, global::System.Numerics.Vector2* result, global::System.Int32 length);
+private unsafe delegate void Vector2AddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy b, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, global::System.Int32 length);
 #pragma warning disable CS8500
 public static unsafe void LaunchVector2AddKernel(global::System.Numerics.Vector2[] a, global::System.Numerics.Vector2[] b, global::System.Numerics.Vector2[] result, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -202,7 +202,7 @@ fixed (global::System.Numerics.Vector2* p_a = a)
 fixed (global::System.Numerics.Vector2* p_b = b)
 fixed (global::System.Numerics.Vector2* p_result = result)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p_result, length);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_a, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_b, Length = b.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length }, length);
 }
 }
 #pragma warning restore CS8500
@@ -212,7 +212,7 @@ __gsharp_context_VectorBuiltinKernels_Vector3AddKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector3AddKernel(float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length, __gsharp_context_VectorBuiltinKernels_Vector3AddKernel* _ctx){
+extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector3AddKernel(GSharpArray<float3> a, GSharpArray<float3> b, GSharpArray<float3> result, int length, __gsharp_context_VectorBuiltinKernels_Vector3AddKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -234,7 +234,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector3AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector3AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<float3> a, GSharpArray<float3> b, GSharpArray<float3> result, int length)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -300,7 +300,7 @@ public static unsafe void __gsharp_statemachine_VectorBuiltinKernels_Vector3AddK
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void Vector3AddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Numerics.Vector3* a, global::System.Numerics.Vector3* b, global::System.Numerics.Vector3* result, global::System.Int32 length);
+private unsafe delegate void Vector3AddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy b, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, global::System.Int32 length);
 #pragma warning disable CS8500
 public static unsafe void LaunchVector3AddKernel(global::System.Numerics.Vector3[] a, global::System.Numerics.Vector3[] b, global::System.Numerics.Vector3[] result, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -380,7 +380,7 @@ fixed (global::System.Numerics.Vector3* p_a = a)
 fixed (global::System.Numerics.Vector3* p_b = b)
 fixed (global::System.Numerics.Vector3* p_result = result)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p_result, length);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_a, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_b, Length = b.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length }, length);
 }
 }
 #pragma warning restore CS8500
@@ -390,7 +390,7 @@ __gsharp_context_VectorBuiltinKernels_Vector4AddKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
 bool _yieldedForGridSync = false;
 };
-extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector4AddKernel(float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length, __gsharp_context_VectorBuiltinKernels_Vector4AddKernel* _ctx){
+extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector4AddKernel(GSharpArray<float4> a, GSharpArray<float4> b, GSharpArray<float4> result, int length, __gsharp_context_VectorBuiltinKernels_Vector4AddKernel* _ctx){
 #define _state _ctx->_state
 #define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
@@ -412,7 +412,7 @@ return;
 #undef _state
 #undef _yieldedForGridSync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector4AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector4AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<float4> a, GSharpArray<float4> b, GSharpArray<float4> result, int length)
 {
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
@@ -478,7 +478,7 @@ public static unsafe void __gsharp_statemachine_VectorBuiltinKernels_Vector4AddK
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void Vector4AddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Numerics.Vector4* a, global::System.Numerics.Vector4* b, global::System.Numerics.Vector4* result, global::System.Int32 length);
+private unsafe delegate void Vector4AddKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy a, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy b, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy result, global::System.Int32 length);
 #pragma warning disable CS8500
 public static unsafe void LaunchVector4AddKernel(global::System.Numerics.Vector4[] a, global::System.Numerics.Vector4[] b, global::System.Numerics.Vector4[] result, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
@@ -558,7 +558,7 @@ fixed (global::System.Numerics.Vector4* p_a = a)
 fixed (global::System.Numerics.Vector4* p_b = b)
 fixed (global::System.Numerics.Vector4* p_result = result)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_a, p_b, p_result, length);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_a, Length = a.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_b, Length = b.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_result, Length = result.Length }, length);
 }
 }
 #pragma warning restore CS8500
