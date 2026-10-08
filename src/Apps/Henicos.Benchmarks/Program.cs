@@ -46,6 +46,7 @@ internal class Program
             "compute-bench" => RunComputeBench(args[1..]),
             "arithmetic" => RunArithmeticBench(args[1..]),
             "stacklinq" => RunStackLinqBench(args[1..]),
+            "stacklinq-gpu" => RunStackLinqGpuBench(args[1..]),
             _ when LooksLikeDigits(args[0]) => RunCpuPi(args),
             _ => HandleUnknownCommand(command)
         };
@@ -163,6 +164,13 @@ internal class Program
     {
         Logger<Program>.Info("Running StackLinq vs System.Linq Benchmark...");
         BenchmarkRunner.Run<StackLinqBenchmark>();
+        return 0;
+    }
+
+    private static int RunStackLinqGpuBench(string[] args)
+    {
+        Logger<Program>.Info("Running StackLinq GPU Benchmark...");
+        BenchmarkRunner.Run<StackLinqGpuBenchmark>();
         return 0;
     }
 
