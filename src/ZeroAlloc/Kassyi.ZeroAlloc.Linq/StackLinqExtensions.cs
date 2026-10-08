@@ -761,6 +761,308 @@ public static class StackLinqExtensions
         return count;
     }
 
+    public static bool Contains<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        TSource value)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        while (enumerator.TryGetNext(out var current))
+        {
+            if (EqualityComparer<TSource>.Default.Equals(current, value))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static TSource ElementAt<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        int index)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        
+        if (typeof(TEnumerator) == typeof(SpanEnumerator<TSource>))
+        {
+            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<TSource>>(ref enumerator);
+            var span = spanEnum.GetRemainingSpanAndAdvance();
+            if ((uint)index < (uint)span.Length)
+            {
+                return span[index];
+            }
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<TSource>))
+        {
+            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<TSource>>(ref enumerator);
+            var span = arrayEnum.GetRemainingSpanAndAdvance();
+            if ((uint)index < (uint)span.Length)
+            {
+                return span[index];
+            }
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        int count = 0;
+        while (enumerator.TryGetNext(out var current))
+        {
+            if (count == index)
+            {
+                return current;
+            }
+            count++;
+        }
+        throw new ArgumentOutOfRangeException(nameof(index));
+    }
+
+    public static TSource? ElementAtOrDefault<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        int index)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        
+        if (typeof(TEnumerator) == typeof(SpanEnumerator<TSource>))
+        {
+            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<TSource>>(ref enumerator);
+            var span = spanEnum.GetRemainingSpanAndAdvance();
+            if ((uint)index < (uint)span.Length)
+            {
+                return span[index];
+            }
+            return default;
+        }
+        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<TSource>))
+        {
+            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<TSource>>(ref enumerator);
+            var span = arrayEnum.GetRemainingSpanAndAdvance();
+            if ((uint)index < (uint)span.Length)
+            {
+                return span[index];
+            }
+            return default;
+        }
+
+        int count = 0;
+        while (enumerator.TryGetNext(out var current))
+        {
+            if (count == index)
+            {
+                return current;
+            }
+            count++;
+        }
+        return default;
+    }
+
+    public static TSource Single<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var result))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+        if (enumerator.TryGetNext(out _))
+        {
+            throw new InvalidOperationException("Sequence contains more than one element");
+        }
+        return result;
+    }
+
+    public static TSource Single<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        var enumerator = source.Enumerator;
+        TSource result = default!;
+        bool found = false;
+        while (enumerator.TryGetNext(out var current))
+        {
+            if (predicate(current))
+            {
+                if (found)
+                {
+                    throw new InvalidOperationException("Sequence contains more than one matching element");
+                }
+                result = current;
+                found = true;
+            }
+        }
+        if (!found)
+        {
+            throw new InvalidOperationException("Sequence contains no matching element");
+        }
+        return result;
+    }
+
+    public static TSource? SingleOrDefault<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var result))
+        {
+            return default;
+        }
+        if (enumerator.TryGetNext(out _))
+        {
+            throw new InvalidOperationException("Sequence contains more than one element");
+        }
+        return result;
+    }
+
+    public static TSource? SingleOrDefault<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        var enumerator = source.Enumerator;
+        TSource result = default!;
+        bool found = false;
+        while (enumerator.TryGetNext(out var current))
+        {
+            if (predicate(current))
+            {
+                if (found)
+                {
+                    throw new InvalidOperationException("Sequence contains more than one matching element");
+                }
+                result = current;
+                found = true;
+            }
+        }
+        if (!found)
+        {
+            return default;
+        }
+        return result;
+    }
+
+    public static TSource Last<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        
+        if (typeof(TEnumerator) == typeof(SpanEnumerator<TSource>))
+        {
+            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<TSource>>(ref enumerator);
+            var span = spanEnum.GetRemainingSpanAndAdvance();
+            if (span.Length > 0)
+            {
+                return span[^1];
+            }
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<TSource>))
+        {
+            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<TSource>>(ref enumerator);
+            var span = arrayEnum.GetRemainingSpanAndAdvance();
+            if (span.Length > 0)
+            {
+                return span[^1];
+            }
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        bool found = false;
+        TSource result = default!;
+        while (enumerator.TryGetNext(out var current))
+        {
+            result = current;
+            found = true;
+        }
+        if (!found)
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+        return result;
+    }
+
+    public static TSource? LastOrDefault<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        
+        if (typeof(TEnumerator) == typeof(SpanEnumerator<TSource>))
+        {
+            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<TSource>>(ref enumerator);
+            var span = spanEnum.GetRemainingSpanAndAdvance();
+            if (span.Length > 0)
+            {
+                return span[^1];
+            }
+            return default;
+        }
+        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<TSource>))
+        {
+            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<TSource>>(ref enumerator);
+            var span = arrayEnum.GetRemainingSpanAndAdvance();
+            if (span.Length > 0)
+            {
+                return span[^1];
+            }
+            return default;
+        }
+
+        bool found = false;
+        TSource result = default!;
+        while (enumerator.TryGetNext(out var current))
+        {
+            result = current;
+            found = true;
+        }
+        if (!found)
+        {
+            return default;
+        }
+        return result;
+    }
+
+    public static StackEnumerable<TakeWhileEnumerator<TEnumerator, TSource>, TSource> TakeWhile<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        return new StackEnumerable<TakeWhileEnumerator<TEnumerator, TSource>, TSource>(
+            new TakeWhileEnumerator<TEnumerator, TSource>(source.Enumerator, predicate));
+    }
+
+    public static StackEnumerable<TakeWhileAtEnumerator<TEnumerator, TSource>, TSource> TakeWhile<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        return new StackEnumerable<TakeWhileAtEnumerator<TEnumerator, TSource>, TSource>(
+            new TakeWhileAtEnumerator<TEnumerator, TSource>(source.Enumerator, predicate));
+    }
+
+    public static StackEnumerable<SkipWhileEnumerator<TEnumerator, TSource>, TSource> SkipWhile<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        return new StackEnumerable<SkipWhileEnumerator<TEnumerator, TSource>, TSource>(
+            new SkipWhileEnumerator<TEnumerator, TSource>(source.Enumerator, predicate));
+    }
+
+    public static StackEnumerable<SkipWhileAtEnumerator<TEnumerator, TSource>, TSource> SkipWhile<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        return new StackEnumerable<SkipWhileAtEnumerator<TEnumerator, TSource>, TSource>(
+            new SkipWhileAtEnumerator<TEnumerator, TSource>(source.Enumerator, predicate));
+    }
+
     public static StackEnumerable<TakeEnumerator<TEnumerator, TSource>, TSource> Take<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source, int count)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -769,12 +1071,64 @@ public static class StackLinqExtensions
             new TakeEnumerator<TEnumerator, TSource>(source.Enumerator, count));
     }
 
+    public static StackEnumerable<SpanEnumerator<TSource>, TSource> TakeLast<TSource>(
+        this StackEnumerable<SpanEnumerator<TSource>, TSource> source, int count)
+    {
+        var enumerator = source.Enumerator;
+        var span = enumerator.GetRemainingSpanAndAdvance();
+        int takeCount = Math.Min(count, span.Length);
+        if (takeCount <= 0)
+        {
+            return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(ReadOnlySpan<TSource>.Empty));
+        }
+        return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(span.Slice(span.Length - takeCount, takeCount)));
+    }
+
+    public static StackEnumerable<SpanEnumerator<TSource>, TSource> TakeLast<TSource>(
+        this StackEnumerable<ArrayEnumerator<TSource>, TSource> source, int count)
+    {
+        var enumerator = source.Enumerator;
+        var span = enumerator.GetRemainingSpanAndAdvance();
+        int takeCount = Math.Min(count, span.Length);
+        if (takeCount <= 0)
+        {
+            return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(ReadOnlySpan<TSource>.Empty));
+        }
+        return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(span.Slice(span.Length - takeCount, takeCount)));
+    }
+
     public static StackEnumerable<SkipEnumerator<TEnumerator, TSource>, TSource> Skip<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source, int count)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
     {
         return new StackEnumerable<SkipEnumerator<TEnumerator, TSource>, TSource>(
             new SkipEnumerator<TEnumerator, TSource>(source.Enumerator, count));
+    }
+
+    public static StackEnumerable<SpanEnumerator<TSource>, TSource> SkipLast<TSource>(
+        this StackEnumerable<SpanEnumerator<TSource>, TSource> source, int count)
+    {
+        var enumerator = source.Enumerator;
+        var span = enumerator.GetRemainingSpanAndAdvance();
+        int skipCount = Math.Min(count, span.Length);
+        if (span.Length - skipCount <= 0)
+        {
+            return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(ReadOnlySpan<TSource>.Empty));
+        }
+        return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(span.Slice(0, span.Length - skipCount)));
+    }
+
+    public static StackEnumerable<SpanEnumerator<TSource>, TSource> SkipLast<TSource>(
+        this StackEnumerable<ArrayEnumerator<TSource>, TSource> source, int count)
+    {
+        var enumerator = source.Enumerator;
+        var span = enumerator.GetRemainingSpanAndAdvance();
+        int skipCount = Math.Min(count, span.Length);
+        if (span.Length - skipCount <= 0)
+        {
+            return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(ReadOnlySpan<TSource>.Empty));
+        }
+        return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(span.Slice(0, span.Length - skipCount)));
     }
 
     public static TAccumulate Aggregate<TEnumerator, TSource, TAccumulate>(
@@ -943,11 +1297,33 @@ public static class StackLinqExtensions
     // -----------------------------------------------------------------------------------------
     // BANNED LINQ OPERATIONS (DO NOT IMPLEMENT)
     // -----------------------------------------------------------------------------------------
-    // Operations like OrderBy, Distinct, GroupBy, Union, Except, Join are deliberately NOT
-    // implemented in StackLinq. These operations require dynamic heap allocation (HashSet/Dictionary)
-    // or global synchronization (Radix Sort on GPU), making them completely unsuitable for
-    // lazy, zero-allocation, thread-local SIMT pipeline execution.
-    // If you need sorting or grouping, process the array directly on the CPU before execution,
-    // or use dedicated array-level operations (e.g., GpuArray.Sort()).
+    // The following operations are deliberately NOT implemented in StackLinq. They violate
+    // the core principles of zero-allocation, thread-local SIMT execution on GPUs:
+    //
+    // A. Requires Dynamic Heap Allocation (Out of Memory / GC Constraints)
+    //    - ToList<T>()
+    //    - ToDictionary<TKey, TValue>(...)
+    //    - ToHashSet<T>(...)
+    //    - ToLookup<TKey, TElement>(...)
+    //
+    // B. Requires Dynamic State Allocation / Hashing (Bucket Construction)
+    //    - Distinct(), DistinctBy(...)
+    //    - Union(), UnionBy(...)
+    //    - Except(), ExceptBy(...)
+    //    - Intersect(), IntersectBy(...)
+    //    - GroupBy(...)
+    //    - Join(), GroupJoin(...)
+    //
+    // C. Requires Global Synchronization / Full Buffering (Breaks Thread Pipeline)
+    //    - OrderBy(), OrderByDescending()
+    //    - ThenBy(), ThenByDescending()
+    //    - Order(), OrderDescending()
+    //    - Chunk(int)
+    //    (Note: If you need sorting or grouping, process the array directly on the CPU
+    //     before execution, or use dedicated array-level operations like GpuArray.Sort()).
+    //
+    // D. Requires Dynamic Dispatch / Reflection (RTTI)
+    //    - Cast<TResult>()
+    //    - OfType<TResult>()
     // -----------------------------------------------------------------------------------------
 }

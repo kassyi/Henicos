@@ -256,4 +256,97 @@ public class StackLinqTests
 
         Assert.Equal(2, actual);
     }
+    [Fact]
+    public void TakeWhile_SkipWhile_ShouldMatchStandardLinq()
+    {
+        int[] data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+        var expectedTake = data.TakeWhile(x => x < 5).ToArray();
+        var actualTake = data.AsStackEnumerable().TakeWhile(x => x < 5).ToArray();
+        Assert.Equal(expectedTake, actualTake);
+
+        var expectedSkip = data.SkipWhile(x => x < 5).ToArray();
+        var actualSkip = data.AsStackEnumerable().SkipWhile(x => x < 5).ToArray();
+        Assert.Equal(expectedSkip, actualSkip);
+    }
+
+    [Fact]
+    public void Contains_ShouldReturnCorrectResult()
+    {
+        int[] data = { 1, 2, 3, 4, 5 };
+
+        Assert.True(data.AsStackEnumerable().Contains(3));
+        Assert.False(data.AsStackEnumerable().Contains(6));
+    }
+
+    [Fact]
+    public void ElementAt_ShouldReturnCorrectResult()
+    {
+        int[] data = { 10, 20, 30, 40, 50 };
+
+        // Test SpanEnumerator directly
+        Assert.Equal(30, data.AsStackEnumerable().ElementAt(2));
+        Assert.Equal(0, data.AsStackEnumerable().ElementAtOrDefault(10));
+        Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().ElementAt(10));
+
+        // Test WhereEnumerator chaining
+        Assert.Equal(40, data.AsStackEnumerable().Where(x => x > 20).ElementAt(1));
+        Assert.Equal(0, data.AsStackEnumerable().Where(x => x > 20).ElementAtOrDefault(10));
+        Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().Where(x => x > 20).ElementAt(10));
+    }
+
+    [Fact]
+    public void Single_ShouldReturnCorrectResult()
+    {
+        int[] data1 = { 10 };
+        int[] data2 = { 10, 20 };
+        int[] data3 = { 10, 20, 30 };
+
+        Assert.Equal(10, data1.AsStackEnumerable().Single());
+        Assert.Equal(10, data1.AsStackEnumerable().SingleOrDefault());
+        Assert.Throws<InvalidOperationException>(() => data2.AsStackEnumerable().Single());
+
+        Assert.Equal(20, data3.AsStackEnumerable().Single(x => x == 20));
+        Assert.Equal(0, data3.AsStackEnumerable().SingleOrDefault(x => x == 40));
+        Assert.Throws<InvalidOperationException>(() => data3.AsStackEnumerable().Single(x => x > 10)); // matches 20 and 30
+    }
+
+    [Fact]
+    public void Last_ShouldReturnCorrectResult()
+    {
+        int[] data = { 10, 20, 30 };
+
+        // Optimized SpanEnumerator execution
+        Assert.Equal(30, data.AsStackEnumerable().Last());
+        Assert.Equal(30, data.AsStackEnumerable().LastOrDefault());
+
+        // Empty source
+        int[] empty = Array.Empty<int>();
+        Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Last());
+        Assert.Equal(0, empty.AsStackEnumerable().LastOrDefault());
+
+        // Chained execution (O(N))
+        Assert.Equal(20, data.AsStackEnumerable().Where(x => x < 30).Last());
+        Assert.Equal(20, data.AsStackEnumerable().Where(x => x < 30).LastOrDefault());
+    }
+
+    [Fact]
+    public void TakeLast_SkipLast_Optimized_ShouldMatchStandardLinq()
+    {
+        int[] data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+        var expectedTakeLast = data.TakeLast(3).ToArray();
+        var actualTakeLast = data.AsStackEnumerable().TakeLast(3).ToArray();
+        Assert.Equal(expectedTakeLast, actualTakeLast);
+
+        var expectedSkipLast = data.SkipLast(3).ToArray();
+        var actualSkipLast = data.AsStackEnumerable().SkipLast(3).ToArray();
+        Assert.Equal(expectedSkipLast, actualSkipLast);
+
+        // Edge cases
+        Assert.Empty(data.AsStackEnumerable().TakeLast(0).ToArray());
+        Assert.Equal(data, data.AsStackEnumerable().TakeLast(15).ToArray());
+        Assert.Equal(data, data.AsStackEnumerable().SkipLast(0).ToArray());
+        Assert.Empty(data.AsStackEnumerable().SkipLast(15).ToArray());
+    }
 }

@@ -113,6 +113,86 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         __device__ inline auto Current() const { return source.Current(); }
     };
 
+    template <typename TSource, typename TPredicate>
+    struct TakeWhileEnumerator {
+        TSource source;
+        TPredicate predicate;
+        
+        __device__ inline TakeWhileEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred) {}
+        
+        __device__ inline bool MoveNext() {
+            if (source.MoveNext()) {
+                if (predicate(source.Current())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        __device__ inline auto Current() const { return source.Current(); }
+    };
+
+    template <typename TSource, typename TPredicate>
+    struct TakeWhileAtEnumerator {
+        TSource source;
+        TPredicate predicate;
+        int index;
+        
+        __device__ inline TakeWhileAtEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred), index(0) {}
+        
+        __device__ inline bool MoveNext() {
+            if (source.MoveNext()) {
+                if (predicate(source.Current(), index++)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        __device__ inline auto Current() const { return source.Current(); }
+    };
+
+    template <typename TSource, typename TPredicate>
+    struct SkipWhileEnumerator {
+        TSource source;
+        TPredicate predicate;
+        bool yielding;
+        
+        __device__ inline SkipWhileEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred), yielding(false) {}
+        
+        __device__ inline bool MoveNext() {
+            while (source.MoveNext()) {
+                if (!yielding && predicate(source.Current())) {
+                    continue;
+                }
+                yielding = true;
+                return true;
+            }
+            return false;
+        }
+        __device__ inline auto Current() const { return source.Current(); }
+    };
+
+    template <typename TSource, typename TPredicate>
+    struct SkipWhileAtEnumerator {
+        TSource source;
+        TPredicate predicate;
+        bool yielding;
+        int index;
+        
+        __device__ inline SkipWhileAtEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred), yielding(false), index(0) {}
+        
+        __device__ inline bool MoveNext() {
+            while (source.MoveNext()) {
+                if (!yielding && predicate(source.Current(), index++)) {
+                    continue;
+                }
+                yielding = true;
+                return true;
+            }
+            return false;
+        }
+        __device__ inline auto Current() const { return source.Current(); }
+    };
+
     struct StackLinq {
         template <typename T>
         __device__ static inline auto AsStackEnumerable(GSharpArray<T> source) {
@@ -147,6 +227,26 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         template <typename TSource>
         __device__ static inline auto Skip(TSource source, int count) {
             return SkipEnumerator<TSource>(source, count);
+        }
+
+        template <typename TSource, typename TPredicate>
+        __device__ static inline auto TakeWhile(TSource source, TPredicate predicate) {
+            return TakeWhileEnumerator<TSource, TPredicate>(source, predicate);
+        }
+
+        template <typename TSource, typename TPredicate>
+        __device__ static inline auto TakeWhileAt(TSource source, TPredicate predicate) {
+            return TakeWhileAtEnumerator<TSource, TPredicate>(source, predicate);
+        }
+
+        template <typename TSource, typename TPredicate>
+        __device__ static inline auto SkipWhile(TSource source, TPredicate predicate) {
+            return SkipWhileEnumerator<TSource, TPredicate>(source, predicate);
+        }
+
+        template <typename TSource, typename TPredicate>
+        __device__ static inline auto SkipWhileAt(TSource source, TPredicate predicate) {
+            return SkipWhileAtEnumerator<TSource, TPredicate>(source, predicate);
         }
         
         template <typename TSource>
@@ -196,10 +296,39 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             return true;
         }
 
+        template <typename TSource, typename TValue>
+        __device__ static inline bool Contains(TSource source, TValue value) {
+            while (source.MoveNext()) {
+                if (source.Current() == value) return true;
+            }
+            return false;
+        }
+
+        template <typename TSource>
+        __device__ static inline auto ElementAt(TSource source, int index) {
+            int count = 0;
+            while (source.MoveNext()) {
+                if (count == index) return source.Current();
+                count++;
+            }
+            asm("trap;");
+            return decltype(source.Current())();
+        }
+
+        template <typename TSource>
+        __device__ static inline auto ElementAtOrDefault(TSource source, int index) {
+            int count = 0;
+            while (source.MoveNext()) {
+                if (count == index) return source.Current();
+                count++;
+            }
+            return decltype(source.Current())();
+        }
+
         template <typename TSource>
         __device__ static inline auto First(TSource source) {
             if (source.MoveNext()) return source.Current();
-            // TODO: Assert or trap
+            asm("trap;");
             return decltype(source.Current())();
         }
 
@@ -208,7 +337,7 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             while (source.MoveNext()) {
                 if (predicate(source.Current())) return source.Current();
             }
-            // TODO: Assert or trap
+            asm("trap;");
             return decltype(source.Current())();
         }
 
@@ -224,6 +353,87 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 if (predicate(source.Current())) return source.Current();
             }
             return decltype(source.Current())();
+        }
+
+        template <typename TSource>
+        __device__ static inline auto Single(TSource source) {
+            if (!source.MoveNext()) {
+                asm("trap;");
+                return decltype(source.Current())();
+            }
+            auto result = source.Current();
+            if (source.MoveNext()) {
+                asm("trap;");
+            }
+            return result;
+        }
+
+        template <typename TSource, typename TPredicate>
+        __device__ static inline auto Single(TSource source, TPredicate predicate) {
+            auto result = decltype(source.Current())();
+            bool found = false;
+            while (source.MoveNext()) {
+                if (predicate(source.Current())) {
+                    if (found) {
+                        asm("trap;");
+                    }
+                    result = source.Current();
+                    found = true;
+                }
+            }
+            if (!found) {
+                asm("trap;");
+            }
+            return result;
+        }
+
+        template <typename TSource>
+        __device__ static inline auto SingleOrDefault(TSource source) {
+            if (!source.MoveNext()) return decltype(source.Current())();
+            auto result = source.Current();
+            if (source.MoveNext()) {
+                asm("trap;");
+            }
+            return result;
+        }
+
+        template <typename TSource, typename TPredicate>
+        __device__ static inline auto SingleOrDefault(TSource source, TPredicate predicate) {
+            auto result = decltype(source.Current())();
+            bool found = false;
+            while (source.MoveNext()) {
+                if (predicate(source.Current())) {
+                    if (found) {
+                        asm("trap;");
+                    }
+                    result = source.Current();
+                    found = true;
+                }
+            }
+            return result;
+        }
+
+        template <typename TSource>
+        __device__ static inline auto Last(TSource source) {
+            auto result = decltype(source.Current())();
+            bool found = false;
+            while (source.MoveNext()) {
+                result = source.Current();
+                found = true;
+            }
+            if (!found) {
+                asm("trap;");
+            }
+            return result;
+        }
+
+        template <typename TSource>
+        __device__ static inline auto LastOrDefault(TSource source) {
+            auto result = decltype(source.Current())();
+            while (source.MoveNext()) {
+                result = source.Current();
+            }
+            return result;
         }
 
         template <typename TSource>
