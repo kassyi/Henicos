@@ -116,6 +116,11 @@ public class NumericsAndHwMathTests
     [InlineData(-0.0f, -0.0)]
     public void Test_MathEdgeCases_SpecialValues(float fInput, double dInput)
     {
+        if (float.IsNaN(fInput) || double.IsNaN(dInput))
+        {
+            SkipIfCpuDialect("CUDA and C# differ in NaN handling for Math.Max and Math.Min");
+        }
+
         float[] floatInputs = [fInput];
         float[] floatResults = new float[6];
         double[] doubleInputs = [dInput];
