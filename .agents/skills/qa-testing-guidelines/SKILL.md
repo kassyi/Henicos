@@ -49,12 +49,16 @@ description: ガイドライン: C#およびGPU向けのテストコードを作
 コードベースが大規模化したため、**C# コード内への機能ID（Feature ID / チケット番号）のハードコードは廃止**されました。
 テストコードは C# Framework Design Guidelines に準拠し、ドメインの意図を直接表現する自然言語で命名してください。なお、Jules やロードマップとのタスク連携はコード側ではなく外部メタデータ（JSON / `roadmap.json`）側で紐付けを管理します。
 
-- **`[Trait("FeatureId", "...")]` の廃止**:
-    - テストメソッドやクラスに `[Trait("FeatureId", "...")]` を付与しては**いけません**。
-    - 分類が必要な場合は、カテゴリ Trait（例: `[Trait("Category", "HappyPath")]`, `[Trait("Category", "SadPath")]`, `[Trait("Category", "GpuExecution")]`）を使用してください。
+- **直交3軸メタデータ属性（`TestTarget` / `Category` / `Scenario`）の適用**:
+    - チケット番号や Feature ID を `[Trait]` として付与しては**いけません**。
+    - テストの分類・フィルタリングには、以下の強い型付け（Enum）属性を使用してください（定義場所: `tests/Kassyi.GSharp.Tests.Common` / 名前空間 `Kassyi.GSharp.Tests.Common`、テストプロジェクト全体でグローバルインポート済み）：
+        - **Axis 1 (実行環境)**: `[TestTarget(ExecutionTarget.GpuExecution)]` / `[TestTarget(ExecutionTarget.CpuExecution)]` (`tests/Kassyi.GSharp.Tests.Common/ExecutionTarget.cs`)
+        - **Axis 2 (機能ドメイン)**: `[Category(TestCategory.Compiler)]` / `[Category(TestCategory.Runtime)]` / `[Category(TestCategory.Syntax)]` / `[Category(TestCategory.Stdlib)]` 等 (`tests/Kassyi.GSharp.Tests.Common/TestCategory.cs`)
+        - **Axis 3 (テストシナリオ)**: `[Scenario(TestScenario.HappyPath)]` / `[Scenario(TestScenario.SadPath)]` / `[Scenario(TestScenario.Boundary)]` (`tests/Kassyi.GSharp.Tests.Common/TestScenario.cs`)
     ```csharp
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
     public async Task GeneratorSnapshots_ThrowsOnInvalidSyntax(string fileName)
     ```
 - **テストメソッド・クラス・ファイル命名規則**:
