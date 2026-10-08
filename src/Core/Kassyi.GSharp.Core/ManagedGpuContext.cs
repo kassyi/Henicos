@@ -11,43 +11,81 @@ using System.Runtime.InteropServices;
 /// </summary>
 public static class ManagedGpuContext
 {
-    // A flag to check if the current thread is executing within a managed cooperative scheduler
+    /// <summary>
+    /// Gets or sets a value indicating whether the current thread is executing within a managed cooperative scheduler.
+    /// </summary>
     [ThreadStatic]
     public static bool IsActive;
 
+    /// <summary>
+    /// Gets or sets the x-dimension thread index within the current thread block.
+    /// </summary>
     [ThreadStatic]
     public static int ThreadIdxX;
 
+    /// <summary>
+    /// Gets or sets the y-dimension thread index within the current thread block.
+    /// </summary>
     [ThreadStatic]
     public static int ThreadIdxY;
 
+    /// <summary>
+    /// Gets or sets the z-dimension thread index within the current thread block.
+    /// </summary>
     [ThreadStatic]
     public static int ThreadIdxZ;
 
+    /// <summary>
+    /// Gets or sets the x-dimension block index within the grid.
+    /// </summary>
     [ThreadStatic]
     public static int BlockIdxX;
 
+    /// <summary>
+    /// Gets or sets the y-dimension block index within the grid.
+    /// </summary>
     [ThreadStatic]
     public static int BlockIdxY;
 
+    /// <summary>
+    /// Gets or sets the z-dimension block index within the grid.
+    /// </summary>
     [ThreadStatic]
     public static int BlockIdxZ;
 
+    /// <summary>
+    /// Gets or sets the x-dimension size of each block.
+    /// </summary>
     [ThreadStatic]
     public static int BlockDimX;
 
+    /// <summary>
+    /// Gets or sets the y-dimension size of each block.
+    /// </summary>
     [ThreadStatic]
     public static int BlockDimY;
 
+    /// <summary>
+    /// Gets or sets the z-dimension size of each block.
+    /// </summary>
     [ThreadStatic]
     public static int BlockDimZ;
 
+    /// <summary>
+    /// Gets or sets the x-dimension size of the grid.
+    /// </summary>
     [ThreadStatic]
     public static int GridDimX;
 
+    /// <summary>
+    /// Gets or sets the y-dimension size of the grid.
+    /// </summary>
     [ThreadStatic]
     public static int GridDimY;
 
+    /// <summary>
+    /// Gets or sets the z-dimension size of the grid.
+    /// </summary>
     [ThreadStatic]
     public static int GridDimZ;
 
@@ -85,6 +123,9 @@ public static class ManagedGpuContext
     /// <summary>
     /// Allocates a contiguous span of shared memory from the current block's buffer.
     /// </summary>
+    /// <typeparam name="T">The unmanaged element type of the shared memory buffer.</typeparam>
+    /// <param name="count">The number of elements to allocate.</param>
+    /// <returns>A contiguous <see cref="Span{T}"/> pointing to the allocated shared memory region.</returns>
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static Span<T> AllocateSharedMemory<T>(int count) where T : unmanaged
     {
@@ -134,6 +175,18 @@ public static class ManagedGpuContext
     /// <summary>
     /// Sets the thread coordinates for the current cooperative scheduler step.
     /// </summary>
+    /// <param name="tx">The x-dimension thread index (threadIdx.x).</param>
+    /// <param name="ty">The y-dimension thread index (threadIdx.y).</param>
+    /// <param name="tz">The z-dimension thread index (threadIdx.z).</param>
+    /// <param name="bx">The x-dimension block index (blockIdx.x).</param>
+    /// <param name="by">The y-dimension block index (blockIdx.y).</param>
+    /// <param name="bz">The z-dimension block index (blockIdx.z).</param>
+    /// <param name="bDimX">The x-dimension size of the thread block (blockDim.x).</param>
+    /// <param name="bDimY">The y-dimension size of the thread block (blockDim.y).</param>
+    /// <param name="bDimZ">The z-dimension size of the thread block (blockDim.z).</param>
+    /// <param name="gDimX">The x-dimension size of the grid (gridDim.x).</param>
+    /// <param name="gDimY">The y-dimension size of the grid (gridDim.y).</param>
+    /// <param name="gDimZ">The z-dimension size of the grid (gridDim.z).</param>
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static void SetThreadContext(
         int tx, int ty, int tz,
@@ -168,71 +221,169 @@ public static class ManagedGpuContext
 
     // Mocks for Warp Shuffle operations in Managed Execution
 
+    [ThreadStatic]
+    private static byte[]? s_warpExchangeBuffer;
+
+    private static Span<byte> GetWarpExchangeBuffer()
+    {
+        s_warpExchangeBuffer ??= new byte[1024 * 8]; // max 1024 threads per block * 8 bytes (double)
+        return s_warpExchangeBuffer;
+    }
+
     /// <summary>
     /// Internal mock for warp exchange assignment. Do not use directly.
     /// </summary>
     /// <typeparam name="T">The value type.</typeparam>
     /// <param name="value">The value to assign.</param>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static void __gsharp_warp_exchange_assign<T>(T value) => GpuOnlyException.Throw<T>();
+    public static void __gsharp_warp_exchange_assign<T>(T value) where T : unmanaged
+    {
+        var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        Unsafe.WriteUnaligned(ref GetWarpExchangeBuffer()[linearTid * 8], value);
+    }
 
     /// <summary>
     /// Internal mock for warp shuffle down. Do not use directly.
     /// </summary>
     /// <typeparam name="TContext">The context type.</typeparam>
     /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="ctx">The context.</param>
+    /// <param name="ctx">The execution context.</param>
     /// <param name="mask">The thread mask.</param>
     /// <param name="val">The value to shuffle.</param>
     /// <param name="delta">The lane offset.</param>
-    /// <param name="width">The warp width.</param>
+    /// <param name="width">The logical warp width.</param>
     /// <returns>The shuffled value.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static dynamic __gsharp_warp_shuffle_read_down_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
-        int width = 32) => GpuOnlyException.Throw<T>()!;
+    public static dynamic __gsharp_warp_shuffle_read_down_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta, int width = 32) where T : unmanaged
+    {
+        var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        var laneId = linearTid % 32;
+        var warpStartTid = linearTid - laneId;
+
+        var logicalLane = laneId % width;
+        var targetLogicalLane = logicalLane + (int)delta;
+
+        if (targetLogicalLane < width)
+        {
+            var globalSrcLane = laneId - logicalLane + targetLogicalLane;
+            if (globalSrcLane < 32)
+            {
+                var targetTid = warpStartTid + globalSrcLane;
+                return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
+            }
+        }
+        
+        return val;
+    }
 
     /// <summary>
     /// Internal mock for warp shuffle up. Do not use directly.
     /// </summary>
     /// <typeparam name="TContext">The context type.</typeparam>
     /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="ctx">The context.</param>
+    /// <param name="ctx">The execution context.</param>
     /// <param name="mask">The thread mask.</param>
     /// <param name="val">The value to shuffle.</param>
     /// <param name="delta">The lane offset.</param>
-    /// <param name="width">The warp width.</param>
+    /// <param name="width">The logical warp width.</param>
     /// <returns>The shuffled value.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static dynamic __gsharp_warp_shuffle_read_up_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
-        int width = 32) => GpuOnlyException.Throw<T>()!;
+    public static dynamic __gsharp_warp_shuffle_read_up_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta, int width = 32) where T : unmanaged
+    {
+        var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        var laneId = linearTid % 32;
+        var warpStartTid = linearTid - laneId;
+
+        var logicalLane = laneId % width;
+        var targetLogicalLane = logicalLane - (int)delta;
+
+        if (targetLogicalLane < 0)
+        {
+            return val;
+        }
+
+        var globalSrcLane = laneId - logicalLane + targetLogicalLane;
+        if (globalSrcLane >= 32)
+        {
+            return val;
+        }
+
+        var targetTid = warpStartTid + globalSrcLane;
+        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
+
+    }
 
     /// <summary>
     /// Internal mock for warp shuffle XOR. Do not use directly.
     /// </summary>
     /// <typeparam name="TContext">The context type.</typeparam>
     /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="ctx">The context.</param>
+    /// <param name="ctx">The execution context.</param>
     /// <param name="mask">The thread mask.</param>
     /// <param name="val">The value to shuffle.</param>
-    /// <param name="delta">The lane offset.</param>
-    /// <param name="width">The warp width.</param>
+    /// <param name="delta">The lane XOR mask.</param>
+    /// <param name="width">The logical warp width.</param>
     /// <returns>The shuffled value.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static dynamic __gsharp_warp_shuffle_read_xor_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
-        int width = 32) => GpuOnlyException.Throw<T>()!;
+    public static dynamic __gsharp_warp_shuffle_read_xor_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta, int width = 32) where T : unmanaged
+    {
+        var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        var laneId = linearTid % 32;
+        var warpStartTid = linearTid - laneId;
+
+        var logicalLane = laneId % width;
+        var targetLogicalLane = logicalLane ^ (int)delta;
+
+        if (targetLogicalLane >= width)
+        {
+            return val;
+        }
+
+        var globalSrcLane = laneId - logicalLane + targetLogicalLane;
+        if (globalSrcLane >= 32)
+        {
+            return val;
+        }
+
+        var targetTid = warpStartTid + globalSrcLane;
+        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
+
+    }
 
     /// <summary>
     /// Internal mock for warp shuffle direct read. Do not use directly.
     /// </summary>
     /// <typeparam name="TContext">The context type.</typeparam>
     /// <typeparam name="T">The value type.</typeparam>
-    /// <param name="ctx">The context.</param>
+    /// <param name="ctx">The execution context.</param>
     /// <param name="mask">The thread mask.</param>
     /// <param name="val">The value to shuffle.</param>
-    /// <param name="srcLane">The source lane.</param>
-    /// <param name="width">The warp width.</param>
+    /// <param name="srcLane">The source lane ID.</param>
+    /// <param name="width">The logical warp width.</param>
     /// <returns>The shuffled value.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static dynamic __gsharp_warp_shuffle_read_sync<TContext, T>(TContext ctx, uint mask, T val, uint srcLane,
-        int width = 32) => GpuOnlyException.Throw<T>()!;
+    public static dynamic __gsharp_warp_shuffle_read_sync<TContext, T>(TContext ctx, uint mask, T val, uint srcLane, int width = 32) where T : unmanaged
+    {
+        var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        var laneId = linearTid % 32;
+        var warpStartTid = linearTid - laneId;
+
+        var logicalLane = laneId % width;
+        var targetLogicalLane = (int)srcLane;
+
+        if (targetLogicalLane >= width)
+        {
+            return val;
+        }
+
+        var globalSrcLane = laneId - logicalLane + targetLogicalLane;
+        if (globalSrcLane >= 32)
+        {
+            return val;
+        }
+
+        var targetTid = warpStartTid + globalSrcLane;
+        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
+
+    }
 }

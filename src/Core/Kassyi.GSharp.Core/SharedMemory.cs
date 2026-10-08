@@ -13,8 +13,7 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// <summary>
     /// Declares static or dynamic shared memory with the specified element capacity.
     /// </summary>
-    /// <param name="size">The number of elements allocated in shared memory.</param>
-    private readonly System.Span<T> _span;
+    private readonly Span<T> _span;
 
     /// <summary>
     /// Declares static or dynamic shared memory with the specified element capacity.
@@ -22,14 +21,7 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// <param name="size">The number of elements allocated in shared memory.</param>
     public SharedMemory(int size)
     {
-        if (ManagedGpuContext.IsActive)
-        {
-            _span = ManagedGpuContext.AllocateSharedMemory<T>(size);
-        }
-        else
-        {
-            _span = default;
-        }
+        _span = ManagedGpuContext.IsActive ? ManagedGpuContext.AllocateSharedMemory<T>(size) : default;
     }
 
     /// <summary>
