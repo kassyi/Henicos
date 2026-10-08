@@ -86,14 +86,19 @@ public int _state;
 public uint _warpExchange;
 public bool _yieldedForGridSync;
 }
-public static unsafe void __gsharp_statemachine_AutoAllocateReturnTest_ComputeMag(float* a, __gsharp_context_AutoAllocateReturnTest_ComputeMag _ctx) {
+public static unsafe void __gsharp_statemachine_AutoAllocateReturnTest_ComputeMag(float* a, __gsharp_context_AutoAllocateReturnTest_ComputeMag _ctx, ref float __gsharp_auto_result) {
 {
     switch (_ctx._state)
     {
         case 0:
         {
             int tid = ThreadIndex.X;
-            return;
+            {
+                __gsharp_auto_result = a[tid] * 2.0f;
+                _ctx._state = -1;
+                return;
+            }
+
             _ctx._state = -1;
             return;
         }
@@ -160,7 +165,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_AutoAllocateReturnTest_ComputeMag(a, _gsharp_contexts[linear_tid]);
+__gsharp_statemachine_AutoAllocateReturnTest_ComputeMag(a, _gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;
@@ -253,13 +258,18 @@ public int _state;
 public uint _warpExchange;
 public bool _yieldedForGridSync;
 }
-public static unsafe void __gsharp_statemachine_AutoAllocateReturnTest_ComputeInt(int* a, int b, __gsharp_context_AutoAllocateReturnTest_ComputeInt _ctx) {
+public static unsafe void __gsharp_statemachine_AutoAllocateReturnTest_ComputeInt(int* a, int b, __gsharp_context_AutoAllocateReturnTest_ComputeInt _ctx, ref int __gsharp_auto_result) {
 {
     switch (_ctx._state)
     {
         case 0:
         {
-            return;
+            {
+                __gsharp_auto_result = a[0] + b;
+                _ctx._state = -1;
+                return;
+            }
+
             _ctx._state = -1;
             return;
         }
@@ -326,7 +336,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_AutoAllocateReturnTest_ComputeInt(a, b, _gsharp_contexts[linear_tid]);
+__gsharp_statemachine_AutoAllocateReturnTest_ComputeInt(a, b, _gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;

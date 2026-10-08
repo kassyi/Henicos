@@ -146,12 +146,18 @@ public static unsafe void __gsharp_statemachine_StatementsSnapshotKernels_BasicS
             // IfStatement & ReturnStatement
             if (n <= 0)
             {
-                return;
+                {
+                    _ctx._state = -1;
+                    return;
+                }
             }
             else if (n == 1)
             {
                 output[0] = 1;
-                return;
+                {
+                    _ctx._state = -1;
+                    return;
+                }
             }
             else
             {

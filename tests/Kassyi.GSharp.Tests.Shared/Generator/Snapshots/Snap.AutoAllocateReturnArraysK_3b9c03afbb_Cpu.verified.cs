@@ -85,13 +85,18 @@ public int _state;
 public uint _warpExchange;
 public bool _yieldedForGridSync;
 }
-public static unsafe void __gsharp_statemachine_AutoAllocateReturnArraysKernels_NormalReturnKernel(int someValue, __gsharp_context_AutoAllocateReturnArraysKernels_NormalReturnKernel _ctx) {
+public static unsafe void __gsharp_statemachine_AutoAllocateReturnArraysKernels_NormalReturnKernel(int someValue, __gsharp_context_AutoAllocateReturnArraysKernels_NormalReturnKernel _ctx, ref float __gsharp_auto_result) {
 {
     switch (_ctx._state)
     {
         case 0:
         {
-            return;
+            {
+                __gsharp_auto_result = someValue * 2.0f;
+                _ctx._state = -1;
+                return;
+            }
+
             _ctx._state = -1;
             return;
         }
@@ -158,7 +163,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_AutoAllocateReturnArraysKernels_NormalReturnKernel(someValue, _gsharp_contexts[linear_tid]);
+__gsharp_statemachine_AutoAllocateReturnArraysKernels_NormalReturnKernel(someValue, _gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;
@@ -251,13 +256,18 @@ public int _state;
 public uint _warpExchange;
 public bool _yieldedForGridSync;
 }
-public static unsafe void __gsharp_statemachine_AutoAllocateReturnArraysKernels_OneThreadKernel(__gsharp_context_AutoAllocateReturnArraysKernels_OneThreadKernel _ctx) {
+public static unsafe void __gsharp_statemachine_AutoAllocateReturnArraysKernels_OneThreadKernel(__gsharp_context_AutoAllocateReturnArraysKernels_OneThreadKernel _ctx, ref int __gsharp_auto_result) {
 {
     switch (_ctx._state)
     {
         case 0:
         {
-            return;
+            {
+                __gsharp_auto_result = 42;
+                _ctx._state = -1;
+                return;
+            }
+
             _ctx._state = -1;
             return;
         }
@@ -324,7 +334,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_AutoAllocateReturnArraysKernels_OneThreadKernel(_gsharp_contexts[linear_tid]);
+__gsharp_statemachine_AutoAllocateReturnArraysKernels_OneThreadKernel(_gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;
@@ -429,7 +439,7 @@ public int _state;
 public uint _warpExchange;
 public bool _yieldedForGridSync;
 }
-public static unsafe void __gsharp_statemachine_AutoAllocateReturnArraysKernels_StructReturnKernel(__gsharp_context_AutoAllocateReturnArraysKernels_StructReturnKernel _ctx) {
+public static unsafe void __gsharp_statemachine_AutoAllocateReturnArraysKernels_StructReturnKernel(__gsharp_context_AutoAllocateReturnArraysKernels_StructReturnKernel _ctx, ref global::Kassyi.GSharp.Tests.Shared.Runtime.AutoAllocateReturnArraysKernels.TestStruct __gsharp_auto_result) {
 {
     switch (_ctx._state)
     {
@@ -438,7 +448,12 @@ public static unsafe void __gsharp_statemachine_AutoAllocateReturnArraysKernels_
             TestStruct s;
             s.A = ThreadIndex.X;
             s.B = ThreadIndex.X * 1.5f;
-            return;
+            {
+                __gsharp_auto_result = s;
+                _ctx._state = -1;
+                return;
+            }
+
             _ctx._state = -1;
             return;
         }
@@ -505,7 +520,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_AutoAllocateReturnArraysKernels_StructReturnKernel(_gsharp_contexts[linear_tid]);
+__gsharp_statemachine_AutoAllocateReturnArraysKernels_StructReturnKernel(_gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;

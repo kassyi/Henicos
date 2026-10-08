@@ -79,7 +79,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_TestKernelReturnTypesSadPath_ArrayKernel(_gsharp_contexts[linear_tid]);
+__gsharp_statemachine_TestKernelReturnTypesSadPath_ArrayKernel(_gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;
@@ -166,7 +166,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_TestKernelReturnTypesSadPath_StringKernel(_gsharp_contexts[linear_tid]);
+__gsharp_statemachine_TestKernelReturnTypesSadPath_StringKernel(_gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;
@@ -280,7 +280,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_TestKernelReturnTypesSadPath_PointerKernel2(_gsharp_contexts[linear_tid]);
+__gsharp_statemachine_TestKernelReturnTypesSadPath_PointerKernel2(_gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;
@@ -367,7 +367,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_TestKernelReturnTypesSadPath_ManagedStructKernel(_gsharp_contexts[linear_tid]);
+__gsharp_statemachine_TestKernelReturnTypesSadPath_ManagedStructKernel(_gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;
@@ -454,7 +454,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_TestKernelReturnTypesSadPath_SpanKernel(_gsharp_contexts[linear_tid]);
+__gsharp_statemachine_TestKernelReturnTypesSadPath_SpanKernel(_gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;

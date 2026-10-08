@@ -85,13 +85,18 @@ public int _state;
 public uint _warpExchange;
 public bool _yieldedForGridSync;
 }
-public static unsafe void __gsharp_statemachine_ErrorKernels_NonVoidReturnKernel(__gsharp_context_ErrorKernels_NonVoidReturnKernel _ctx) {
+public static unsafe void __gsharp_statemachine_ErrorKernels_NonVoidReturnKernel(__gsharp_context_ErrorKernels_NonVoidReturnKernel _ctx, ref int __gsharp_auto_result) {
 {
     switch (_ctx._state)
     {
         case 0:
         {
-            return;
+            {
+                __gsharp_auto_result = 1;
+                _ctx._state = -1;
+                return;
+            }
+
             _ctx._state = -1;
             return;
         }
@@ -158,7 +163,7 @@ anyGridActive = true;
 anyBlockActive = true;
 _gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_ErrorKernels_NonVoidReturnKernel(_gsharp_contexts[linear_tid]);
+__gsharp_statemachine_ErrorKernels_NonVoidReturnKernel(_gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
 if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
 {
 gridSyncRequested = true;

@@ -110,7 +110,11 @@ public static unsafe void __gsharp_statemachine_GpuBigIntKernels_ChunkAddKernel(
             int chunkIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
             int start = chunkIdx * chunkSize;
             if (start >= numWords)
+            {
+                _ctx._state = -1;
                 return;
+            }
+
             int end = start + chunkSize;
             if (end > numWords)
                 end = numWords;

@@ -629,6 +629,10 @@ internal static class WrapperEmitter
                                 }
 
                                 writer.Append("_gsharp_contexts[linear_tid]");
+                                if (method.ReturnType.SpecialType != SpecialType.System_Void)
+                                {
+                                    writer.Append(", ref __gsharp_auto_result[linear_tid]");
+                                }
                                 writer.AppendLine(");");
 
                                 writer.AppendLine("if (_gsharp_contexts[linear_tid]._yieldedForGridSync)");

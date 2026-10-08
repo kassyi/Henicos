@@ -275,6 +275,11 @@ public static class MethodTranspiler
             }
 
             writer.Append($"__gsharp_context_{methodName} _ctx");
+            
+            if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
+            {
+                writer.Append($", ref {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} __gsharp_auto_result");
+            }
         }
 
         writer.AppendLine(") {");
@@ -420,10 +425,32 @@ public static class MethodTranspiler
 
         public override SyntaxNode? VisitReturnStatement(ReturnStatementSyntax node)
         {
-            // Remove return value for managed state machine (which is void) unless it's the state machine state return
-            if (_inLambdaOrLocalFuncCount == 0 && node.Expression != null && !node.HasAnnotations("StateMachineReturn"))
+            if (_inLambdaOrLocalFuncCount == 0 && !node.HasAnnotations("StateMachineReturn"))
             {
-                return SyntaxFactory.ReturnStatement().WithTriviaFrom(node);
+                var statements = new List<StatementSyntax>();
+
+                if (node.Expression != null)
+                {
+                    statements.Add(SyntaxFactory.ExpressionStatement(
+                        SyntaxFactory.AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            SyntaxFactory.IdentifierName("__gsharp_auto_result"),
+                            (ExpressionSyntax)Visit(node.Expression)!
+                        )
+                    ));
+                }
+
+                statements.Add(SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        SyntaxFactory.ParseExpression("_ctx._state"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-1))
+                    )
+                ));
+
+                statements.Add(SyntaxFactory.ReturnStatement());
+
+                return SyntaxFactory.Block(statements).WithTriviaFrom(node);
             }
 
             return base.VisitReturnStatement(node);
