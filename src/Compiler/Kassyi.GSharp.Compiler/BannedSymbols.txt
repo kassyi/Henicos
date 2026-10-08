@@ -45,10 +45,7 @@ P:System.DateTime.Now;DateTime.Now is non-deterministic (Violates YES Static Det
 P:System.DateTime.UtcNow;DateTime.UtcNow is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based seeds instead.
 M:System.Guid.NewGuid;Guid.NewGuid is non-deterministic (Violates YES Static Determinism). Use deterministic hash-based naming instead.
 
-# 4. String manipulation & collection prohibitions in Compiler
-M:System.String.Replace(System.String,System.String);String replacement is prohibited. Use AST/Symbol formatting or builder instead.
-M:System.String.Replace(System.Char,System.Char);String replacement is prohibited. Use AST/Symbol formatting or builder instead.
-
+# 4. Collection prohibitions in Compiler
 T:System.Collections.Generic.List`1;Dynamic lists are prohibited in the compiler for performance and allocation reasons. Use ImmutableArray, Array, ArrayPool, or recursion with StringBuilder instead.
 
 # 5. LINQ prohibition (Enforces Zero-Allocation / High Performance in Compiler)

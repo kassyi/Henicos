@@ -114,3 +114,23 @@ M:System.Collections.Immutable.ImmutableArrayExtensions.Where``1(System.Collecti
 M:System.Collections.Immutable.ImmutableArrayExtensions.Select``2(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,``1});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
 M:System.Collections.Immutable.ImmutableArrayExtensions.ToArray``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
 
+# String manipulation prohibitions (Enforces Zero-Allocation and Span/AST-based handling)
+M:System.String.Substring(System.Int32);String manipulation is prohibited. Use Range/Index ([..]) or spans instead.
+M:System.String.Substring(System.Int32,System.Int32);String manipulation is prohibited. Use Range/Index ([start..end]) or spans instead.
+M:System.String.Replace(System.String,System.String);String replacement is prohibited. Use AST/Symbol formatting, spans, or StringBuilder instead.
+M:System.String.Replace(System.Char,System.Char);String replacement is prohibited. Use AST/Symbol formatting, spans, or StringBuilder instead.
+M:System.String.Split(System.Char[]);String.Split causes heap allocations. Use span-based tokenization or MemoryExtensions instead.
+M:System.String.Split(System.Char[],System.StringSplitOptions);String.Split causes heap allocations. Use span-based tokenization or MemoryExtensions instead.
+M:System.String.Split(System.String[],System.StringSplitOptions);String.Split causes heap allocations. Use span-based tokenization or MemoryExtensions instead.
+M:System.String.Split(System.Char,System.StringSplitOptions);String.Split causes heap allocations. Use span-based tokenization or MemoryExtensions instead.
+M:System.String.Trim;String.Trim causes heap allocations. Use AsSpan().Trim() instead.
+M:System.String.TrimStart;String.TrimStart causes heap allocations. Use AsSpan().TrimStart() instead.
+M:System.String.TrimEnd;String.TrimEnd causes heap allocations. Use AsSpan().TrimEnd() instead.
+M:System.String.ToLower;String case conversion causes heap allocations. Use StringComparison.OrdinalIgnoreCase or span operations instead.
+M:System.String.ToLowerInvariant;String case conversion causes heap allocations. Use StringComparison.OrdinalIgnoreCase or span operations instead.
+M:System.String.ToUpper;String case conversion causes heap allocations. Use StringComparison.OrdinalIgnoreCase or span operations instead.
+M:System.String.ToUpperInvariant;String case conversion causes heap allocations. Use StringComparison.OrdinalIgnoreCase or span operations instead.
+M:System.String.Insert(System.Int32,System.String);String manipulation is prohibited. Use StringBuilder or spans instead.
+M:System.String.Remove(System.Int32);String manipulation is prohibited. Use Range/Index or spans instead.
+M:System.String.Remove(System.Int32,System.Int32);String manipulation is prohibited. Use Range/Index or spans instead.
+
