@@ -49,3 +49,4 @@ M:System.Guid.NewGuid;Guid.NewGuid is non-deterministic (Violates YES Static Det
 T:System.Collections.Generic.List`1;Dynamic lists are prohibited in the compiler for performance and allocation reasons. Use ImmutableArray, Array, ArrayPool, or recursion with StringBuilder instead.
 
 # 5. LINQ prohibition (Enforces Zero-Allocation / High Performance in Compiler)
+# Covered globally by root BannedSymbols.txt. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable() or explicit loops.

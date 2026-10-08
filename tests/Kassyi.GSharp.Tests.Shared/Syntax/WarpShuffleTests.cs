@@ -1,6 +1,7 @@
 using System.Linq;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Tests.Shared.Helpers;
+using Kassyi.ZeroAlloc.Linq;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -83,12 +84,7 @@ public class WarpShuffleTests : TranspilerTestBase
         // Verify reduction output against host-calculated sum per warp
         for (int w = 0; w < numWarps; w++)
         {
-            int expectedWarpSum = 0;
-            for (int lane = 0; lane < threadsPerWarp; lane++)
-            {
-                expectedWarpSum += input[w * threadsPerWarp + lane];
-            }
-
+            int expectedWarpSum = input.AsSpan(w * threadsPerWarp, threadsPerWarp).AsStackEnumerable().Sum();
             Assert.Equal(expectedWarpSum, output[w]);
         }
     }

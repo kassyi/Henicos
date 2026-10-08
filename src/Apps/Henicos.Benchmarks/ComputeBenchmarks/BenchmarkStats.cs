@@ -1,3 +1,5 @@
+using Kassyi.ZeroAlloc.Linq;
+
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public readonly record struct BenchmarkStats(double Min, double Median, double Mean)
@@ -17,13 +19,7 @@ public readonly record struct BenchmarkStats(double Min, double Median, double M
             ? (sorted[sorted.Length / 2 - 1] + sorted[sorted.Length / 2]) / 2.0
             : sorted[sorted.Length / 2];
 
-        double sum = 0;
-        foreach (var v in sorted)
-        {
-            sum += v;
-        }
-
-        var mean = sum / sorted.Length;
+        var mean = sorted.AsStackEnumerable().Average();
         return new BenchmarkStats(min, median, mean);
     }
 }

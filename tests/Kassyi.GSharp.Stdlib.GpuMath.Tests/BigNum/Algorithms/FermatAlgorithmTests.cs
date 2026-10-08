@@ -1,9 +1,11 @@
 using System;
+using System.Linq;
 using System.Numerics;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
+using Kassyi.ZeroAlloc.Linq;
 using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
@@ -27,11 +29,8 @@ public class FermatAlgorithmTests
 
         var x = BigInteger.One << e;
         var n = (BigInteger.One << (2 * e + 1)) - x + 11;
-        BigInteger expected = 2;
-        for (int i = 0; i < e; i++)
-        {
-            expected = (expected * expected) % n;
-        }
+        BigInteger expected = Enumerable.Range(0, e)
+            .Aggregate(new BigInteger(2), (cur, _) => (cur * cur) % n);
 
         Assert.Equal(expected, actual);
     }
@@ -51,11 +50,8 @@ public class FermatAlgorithmTests
         // Compute correct expected value on CPU
         var x = BigInteger.One << e;
         var n = (BigInteger.One << (2 * e + 1)) - x + 11;
-        BigInteger expected = 2;
-        for (int i = 0; i < e; i++)
-        {
-            expected = (expected * expected) % n;
-        }
+        BigInteger expected = Enumerable.Range(0, e)
+            .Aggregate(new BigInteger(2), (cur, _) => (cur * cur) % n);
 
         Assert.Equal(expected, actual);
     }

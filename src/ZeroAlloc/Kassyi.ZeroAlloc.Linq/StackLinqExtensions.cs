@@ -761,6 +761,17 @@ public static class StackLinqExtensions
         return count;
     }
 
+    /// <summary>
+    /// Determines whether a stack-allocated sequence contains a specified element by using the default equality comparer.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence in which to locate a value.</param>
+    /// <param name="value">The value to locate in the sequence.</param>
+    /// <returns><see langword="true"/> if the source sequence contains an element with the specified value; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>
+    /// <para><b>Performance:</b> Linear search in $O(N)$ time with zero heap allocations.</para>
+    /// </remarks>
     public static bool Contains<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source,
         TSource value)
@@ -777,6 +788,18 @@ public static class StackLinqExtensions
         return false;
     }
 
+    /// <summary>
+    /// Returns the element at a specified index in a stack-allocated sequence.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return an element from.</param>
+    /// <param name="index">The zero-based index of the element to retrieve.</param>
+    /// <returns>The element at the specified position in the source sequence.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="index"/> is less than 0 or greater than or equal to the number of elements in <paramref name="source"/>.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> $O(1)$ indexing for span/array sources; otherwise $O(N)$ with zero heap allocations.</para>
+    /// </remarks>
     public static TSource ElementAt<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source,
         int index)
@@ -817,6 +840,17 @@ public static class StackLinqExtensions
         throw new ArgumentOutOfRangeException(nameof(index));
     }
 
+    /// <summary>
+    /// Returns the element at a specified index in a stack-allocated sequence or a default value if the index is out of range.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return an element from.</param>
+    /// <param name="index">The zero-based index of the element to retrieve.</param>
+    /// <returns>The default value of <typeparamref name="TSource"/> if <paramref name="index"/> is outside the bounds of <paramref name="source"/>; otherwise, the element at the specified position.</returns>
+    /// <remarks>
+    /// <para><b>Performance:</b> $O(1)$ indexing for span/array sources; otherwise $O(N)$ with zero heap allocations.</para>
+    /// </remarks>
     public static TSource? ElementAtOrDefault<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source,
         int index)
@@ -857,6 +891,14 @@ public static class StackLinqExtensions
         return default;
     }
 
+    /// <summary>
+    /// Returns the only element of a stack-allocated sequence, and throws an exception if there is not exactly one element in the sequence.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return the single element of.</param>
+    /// <returns>The single element of the input sequence.</returns>
+    /// <exception cref="InvalidOperationException">The input sequence contains no elements or more than one element.</exception>
     public static TSource Single<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -873,6 +915,16 @@ public static class StackLinqExtensions
         return result;
     }
 
+    /// <summary>
+    /// Returns the only element of a stack-allocated sequence that satisfies a specified condition, and throws an exception if more than one such element exists.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return a single element from.</param>
+    /// <param name="predicate">A function to test an element for a condition.</param>
+    /// <returns>The single element of the input sequence that satisfies the condition.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="predicate"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">No element satisfies the condition in <paramref name="predicate"/>, or more than one element satisfies the condition.</exception>
     public static TSource Single<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source,
         Func<TSource, bool> predicate)
@@ -901,6 +953,14 @@ public static class StackLinqExtensions
         return result;
     }
 
+    /// <summary>
+    /// Returns the only element of a stack-allocated sequence, or a default value if the sequence is empty; this method throws an exception if there is more than one element in the sequence.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return the single element of.</param>
+    /// <returns>The single element of the input sequence, or default value if the sequence contains no elements.</returns>
+    /// <exception cref="InvalidOperationException">The input sequence contains more than one element.</exception>
     public static TSource? SingleOrDefault<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -917,6 +977,16 @@ public static class StackLinqExtensions
         return result;
     }
 
+    /// <summary>
+    /// Returns the only element of a stack-allocated sequence that satisfies a specified condition, or a default value if no such element exists; this method throws an exception if more than one element satisfies the condition.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return a single element from.</param>
+    /// <param name="predicate">A function to test an element for a condition.</param>
+    /// <returns>The single element of the input sequence that satisfies the condition, or default value if no such element is found.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="predicate"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">More than one element satisfies the condition in <paramref name="predicate"/>.</exception>
     public static TSource? SingleOrDefault<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source,
         Func<TSource, bool> predicate)
@@ -945,6 +1015,17 @@ public static class StackLinqExtensions
         return result;
     }
 
+    /// <summary>
+    /// Returns the last element of a stack-allocated sequence.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return the last element of.</param>
+    /// <returns>The value at the last position in the source sequence.</returns>
+    /// <exception cref="InvalidOperationException">The source sequence is empty.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> $O(1)$ for span/array sources; otherwise $O(N)$ with zero heap allocations.</para>
+    /// </remarks>
     public static TSource Last<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -986,6 +1067,16 @@ public static class StackLinqExtensions
         return result;
     }
 
+    /// <summary>
+    /// Returns the last element of a stack-allocated sequence, or a default value if the sequence contains no elements.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return the last element of.</param>
+    /// <returns>The default value of <typeparamref name="TSource"/> if the source sequence is empty; otherwise, the last element in the sequence.</returns>
+    /// <remarks>
+    /// <para><b>Performance:</b> $O(1)$ for span/array sources; otherwise $O(N)$ with zero heap allocations.</para>
+    /// </remarks>
     public static TSource? LastOrDefault<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -1027,6 +1118,16 @@ public static class StackLinqExtensions
         return result;
     }
 
+
+    /// <summary>
+    /// Returns elements from a stack-allocated sequence as long as a specified condition is true.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return elements from.</param>
+    /// <param name="predicate">A function to test each element for a condition.</param>
+    /// <returns>A <see cref="StackEnumerable{TEnumerator, TSource}"/> that contains elements from the input sequence that occur before the element at which the test no longer passes.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="predicate"/> is <see langword="null"/>.</exception>
     public static StackEnumerable<TakeWhileEnumerator<TEnumerator, TSource>, TSource> TakeWhile<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -1036,6 +1137,15 @@ public static class StackLinqExtensions
             new TakeWhileEnumerator<TEnumerator, TSource>(source.Enumerator, predicate));
     }
 
+    /// <summary>
+    /// Returns elements from a stack-allocated sequence as long as a specified condition is true. The element's index is used in the logic of the predicate function.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return elements from.</param>
+    /// <param name="predicate">A function to test each source element for a condition; the second parameter of the function represents the index of the source element.</param>
+    /// <returns>A <see cref="StackEnumerable{TEnumerator, TSource}"/> that contains elements from the input sequence that occur before the element at which the test no longer passes.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="predicate"/> is <see langword="null"/>.</exception>
     public static StackEnumerable<TakeWhileAtEnumerator<TEnumerator, TSource>, TSource> TakeWhile<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, bool> predicate)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -1045,6 +1155,15 @@ public static class StackLinqExtensions
             new TakeWhileAtEnumerator<TEnumerator, TSource>(source.Enumerator, predicate));
     }
 
+    /// <summary>
+    /// Bypasses elements in a stack-allocated sequence as long as a specified condition is true and then returns the remaining elements.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return elements from.</param>
+    /// <param name="predicate">A function to test each element for a condition.</param>
+    /// <returns>A <see cref="StackEnumerable{TEnumerator, TSource}"/> that contains elements from the input sequence starting at the first element that does not pass the test.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="predicate"/> is <see langword="null"/>.</exception>
     public static StackEnumerable<SkipWhileEnumerator<TEnumerator, TSource>, TSource> SkipWhile<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source, Func<TSource, bool> predicate)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -1054,6 +1173,15 @@ public static class StackLinqExtensions
             new SkipWhileEnumerator<TEnumerator, TSource>(source.Enumerator, predicate));
     }
 
+    /// <summary>
+    /// Bypasses elements in a stack-allocated sequence as long as a specified condition is true and then returns the remaining elements. The element's index is used in the logic of the predicate function.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to return elements from.</param>
+    /// <param name="predicate">A function to test each source element for a condition; the second parameter of the function represents the index of the source element.</param>
+    /// <returns>A <see cref="StackEnumerable{TEnumerator, TSource}"/> that contains elements from the input sequence starting at the first element that does not pass the test.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="predicate"/> is <see langword="null"/>.</exception>
     public static StackEnumerable<SkipWhileAtEnumerator<TEnumerator, TSource>, TSource> SkipWhile<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source, Func<TSource, int, bool> predicate)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -1063,6 +1191,14 @@ public static class StackLinqExtensions
             new SkipWhileAtEnumerator<TEnumerator, TSource>(source.Enumerator, predicate));
     }
 
+    /// <summary>
+    /// Returns a specified number of contiguous elements from the start of a stack-allocated sequence.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The sequence to return elements from.</param>
+    /// <param name="count">The number of elements to return.</param>
+    /// <returns>A <see cref="StackEnumerable{TEnumerator, TSource}"/> that contains the specified number of elements from the start of the input sequence.</returns>
     public static StackEnumerable<TakeEnumerator<TEnumerator, TSource>, TSource> Take<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source, int count)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -1071,6 +1207,13 @@ public static class StackLinqExtensions
             new TakeEnumerator<TEnumerator, TSource>(source.Enumerator, count));
     }
 
+    /// <summary>
+    /// Returns a new stack-allocated enumerable that contains the last <paramref name="count"/> elements from <paramref name="source"/>.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source span sequence to return elements from.</param>
+    /// <param name="count">The number of elements to take from the end of the sequence.</param>
+    /// <returns>A stack-allocated enumerable containing the last <paramref name="count"/> elements.</returns>
     public static StackEnumerable<SpanEnumerator<TSource>, TSource> TakeLast<TSource>(
         this StackEnumerable<SpanEnumerator<TSource>, TSource> source, int count)
     {
@@ -1084,6 +1227,13 @@ public static class StackLinqExtensions
         return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(span.Slice(span.Length - takeCount, takeCount)));
     }
 
+    /// <summary>
+    /// Returns a new stack-allocated enumerable that contains the last <paramref name="count"/> elements from <paramref name="source"/>.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source array sequence to return elements from.</param>
+    /// <param name="count">The number of elements to take from the end of the sequence.</param>
+    /// <returns>A stack-allocated enumerable containing the last <paramref name="count"/> elements.</returns>
     public static StackEnumerable<SpanEnumerator<TSource>, TSource> TakeLast<TSource>(
         this StackEnumerable<ArrayEnumerator<TSource>, TSource> source, int count)
     {
@@ -1097,6 +1247,14 @@ public static class StackLinqExtensions
         return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(span.Slice(span.Length - takeCount, takeCount)));
     }
 
+    /// <summary>
+    /// Bypasses a specified number of elements in a stack-allocated sequence and then returns the remaining elements.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The sequence to return elements from.</param>
+    /// <param name="count">The number of elements to skip before returning the remaining elements.</param>
+    /// <returns>A <see cref="StackEnumerable{TEnumerator, TSource}"/> that contains elements that occur after the specified index in the input sequence.</returns>
     public static StackEnumerable<SkipEnumerator<TEnumerator, TSource>, TSource> Skip<TEnumerator, TSource>(
         this StackEnumerable<TEnumerator, TSource> source, int count)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
@@ -1105,6 +1263,13 @@ public static class StackLinqExtensions
             new SkipEnumerator<TEnumerator, TSource>(source.Enumerator, count));
     }
 
+    /// <summary>
+    /// Returns a new stack-allocated enumerable that contains the elements from <paramref name="source"/> with the last <paramref name="count"/> elements omitted.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source span sequence to omit elements from.</param>
+    /// <param name="count">The number of elements to omit from the end of the sequence.</param>
+    /// <returns>A stack-allocated enumerable containing elements with the last <paramref name="count"/> elements omitted.</returns>
     public static StackEnumerable<SpanEnumerator<TSource>, TSource> SkipLast<TSource>(
         this StackEnumerable<SpanEnumerator<TSource>, TSource> source, int count)
     {
@@ -1118,6 +1283,13 @@ public static class StackLinqExtensions
         return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(span.Slice(0, span.Length - skipCount)));
     }
 
+    /// <summary>
+    /// Returns a new stack-allocated enumerable that contains the elements from <paramref name="source"/> with the last <paramref name="count"/> elements omitted.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source array sequence to omit elements from.</param>
+    /// <param name="count">The number of elements to omit from the end of the sequence.</param>
+    /// <returns>A stack-allocated enumerable containing elements with the last <paramref name="count"/> elements omitted.</returns>
     public static StackEnumerable<SpanEnumerator<TSource>, TSource> SkipLast<TSource>(
         this StackEnumerable<ArrayEnumerator<TSource>, TSource> source, int count)
     {
@@ -1131,6 +1303,17 @@ public static class StackLinqExtensions
         return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(span.Slice(0, span.Length - skipCount)));
     }
 
+    /// <summary>
+    /// Applies an accumulator function over a stack-allocated sequence. The specified seed value is used as the initial accumulator value.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <typeparam name="TAccumulate">The type of the accumulator value.</typeparam>
+    /// <param name="source">A stack-allocated sequence to aggregate over.</param>
+    /// <param name="seed">The initial accumulator value.</param>
+    /// <param name="func">An accumulator function to be invoked on each element.</param>
+    /// <returns>The final accumulator value.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
     public static TAccumulate Aggregate<TEnumerator, TSource, TAccumulate>(
         this StackEnumerable<TEnumerator, TSource> source,
         TAccumulate seed,
@@ -1147,6 +1330,13 @@ public static class StackLinqExtensions
         return result;
     }
 
+    /// <summary>
+    /// Returns the maximum value in a stack-allocated sequence of <see cref="int"/> values.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="int"/> values to determine the maximum value of.</param>
+    /// <returns>The maximum value in the sequence.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> contains no elements.</exception>
     public static int Max<TEnumerator>(this StackEnumerable<TEnumerator, int> source)
         where TEnumerator : struct, IStackEnumerator<int>, allows ref struct
     {
@@ -1156,7 +1346,9 @@ public static class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
-        while (enumerator.TryGetNext(out var value)) { if (value > max)
+        while (enumerator.TryGetNext(out var value))
+        {
+            if (value > max)
             {
                 max = value;
             }
@@ -1164,6 +1356,13 @@ public static class StackLinqExtensions
         return max;
     }
 
+    /// <summary>
+    /// Returns the minimum value in a stack-allocated sequence of <see cref="int"/> values.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="int"/> values to determine the minimum value of.</param>
+    /// <returns>The minimum value in the sequence.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> contains no elements.</exception>
     public static int Min<TEnumerator>(this StackEnumerable<TEnumerator, int> source)
         where TEnumerator : struct, IStackEnumerator<int>, allows ref struct
     {
@@ -1173,7 +1372,9 @@ public static class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
-        while (enumerator.TryGetNext(out var value)) { if (value < min)
+        while (enumerator.TryGetNext(out var value))
+        {
+            if (value < min)
             {
                 min = value;
             }
@@ -1181,13 +1382,24 @@ public static class StackLinqExtensions
         return min;
     }
 
+    /// <summary>
+    /// Computes the average of a stack-allocated sequence of <see cref="int"/> values.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="int"/> values to calculate the average of.</param>
+    /// <returns>The average of the sequence of values.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> contains no elements.</exception>
     public static double Average<TEnumerator>(this StackEnumerable<TEnumerator, int> source)
         where TEnumerator : struct, IStackEnumerator<int>, allows ref struct
     {
         var enumerator = source.Enumerator;
         long sum = 0;
         int count = 0;
-        while (enumerator.TryGetNext(out var value)) { sum += value; count++; }
+        while (enumerator.TryGetNext(out var value))
+        {
+            sum += value;
+            count++;
+        }
         if (count == 0)
         {
             throw new InvalidOperationException("Sequence contains no elements");
@@ -1196,6 +1408,13 @@ public static class StackLinqExtensions
         return (double)sum / count;
     }
 
+    /// <summary>
+    /// Returns the maximum value in a stack-allocated sequence of <see cref="float"/> values.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="float"/> values to determine the maximum value of.</param>
+    /// <returns>The maximum value in the sequence.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> contains no elements.</exception>
     public static float Max<TEnumerator>(this StackEnumerable<TEnumerator, float> source)
         where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
     {
@@ -1205,7 +1424,9 @@ public static class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
-        while (enumerator.TryGetNext(out var value)) { if (value > max)
+        while (enumerator.TryGetNext(out var value))
+        {
+            if (value > max)
             {
                 max = value;
             }
@@ -1213,6 +1434,13 @@ public static class StackLinqExtensions
         return max;
     }
 
+    /// <summary>
+    /// Returns the minimum value in a stack-allocated sequence of <see cref="float"/> values.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="float"/> values to determine the minimum value of.</param>
+    /// <returns>The minimum value in the sequence.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> contains no elements.</exception>
     public static float Min<TEnumerator>(this StackEnumerable<TEnumerator, float> source)
         where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
     {
@@ -1222,7 +1450,9 @@ public static class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
-        while (enumerator.TryGetNext(out var value)) { if (value < min)
+        while (enumerator.TryGetNext(out var value))
+        {
+            if (value < min)
             {
                 min = value;
             }
@@ -1230,13 +1460,24 @@ public static class StackLinqExtensions
         return min;
     }
 
+    /// <summary>
+    /// Computes the average of a stack-allocated sequence of <see cref="float"/> values.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="float"/> values to calculate the average of.</param>
+    /// <returns>The average of the sequence of values.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> contains no elements.</exception>
     public static float Average<TEnumerator>(this StackEnumerable<TEnumerator, float> source)
         where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
     {
         var enumerator = source.Enumerator;
         double sum = 0;
         int count = 0;
-        while (enumerator.TryGetNext(out var value)) { sum += value; count++; }
+        while (enumerator.TryGetNext(out var value))
+        {
+            sum += value;
+            count++;
+        }
         if (count == 0)
         {
             throw new InvalidOperationException("Sequence contains no elements");
@@ -1245,6 +1486,13 @@ public static class StackLinqExtensions
         return (float)(sum / count);
     }
 
+    /// <summary>
+    /// Returns the maximum value in a stack-allocated sequence of <see cref="double"/> values.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="double"/> values to determine the maximum value of.</param>
+    /// <returns>The maximum value in the sequence.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> contains no elements.</exception>
     public static double Max<TEnumerator>(this StackEnumerable<TEnumerator, double> source)
         where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
     {
@@ -1254,7 +1502,9 @@ public static class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
-        while (enumerator.TryGetNext(out var value)) { if (value > max)
+        while (enumerator.TryGetNext(out var value))
+        {
+            if (value > max)
             {
                 max = value;
             }
@@ -1262,6 +1512,13 @@ public static class StackLinqExtensions
         return max;
     }
 
+    /// <summary>
+    /// Returns the minimum value in a stack-allocated sequence of <see cref="double"/> values.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="double"/> values to determine the minimum value of.</param>
+    /// <returns>The minimum value in the sequence.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> contains no elements.</exception>
     public static double Min<TEnumerator>(this StackEnumerable<TEnumerator, double> source)
         where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
     {
@@ -1271,7 +1528,9 @@ public static class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
-        while (enumerator.TryGetNext(out var value)) { if (value < min)
+        while (enumerator.TryGetNext(out var value))
+        {
+            if (value < min)
             {
                 min = value;
             }
@@ -1279,13 +1538,24 @@ public static class StackLinqExtensions
         return min;
     }
 
+    /// <summary>
+    /// Computes the average of a stack-allocated sequence of <see cref="double"/> values.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A sequence of <see cref="double"/> values to calculate the average of.</param>
+    /// <returns>The average of the sequence of values.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> contains no elements.</exception>
     public static double Average<TEnumerator>(this StackEnumerable<TEnumerator, double> source)
         where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
     {
         var enumerator = source.Enumerator;
         double sum = 0;
         int count = 0;
-        while (enumerator.TryGetNext(out var value)) { sum += value; count++; }
+        while (enumerator.TryGetNext(out var value))
+        {
+            sum += value;
+            count++;
+        }
         if (count == 0)
         {
             throw new InvalidOperationException("Sequence contains no elements");
@@ -1293,6 +1563,7 @@ public static class StackLinqExtensions
 
         return sum / count;
     }
+
 
     // -----------------------------------------------------------------------------------------
     // BANNED LINQ OPERATIONS (DO NOT IMPLEMENT)

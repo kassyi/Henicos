@@ -1,3 +1,4 @@
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -41,11 +42,7 @@ public class ConcurrencyAndWarpTests
             blockDimX: size
         );
 
-        for (int i = 0; i < size; i++)
-        {
-            int expected = (size - 1 - i) * 3 + 1;
-            Assert.Equal(expected, dataArray[i]);
-        }
+        Assert.True(dataArray.AsStackEnumerable().Select((val, i) => val == (size - 1 - i) * 3 + 1).All(ok => ok));
     }
 
     [SkippableFact()]

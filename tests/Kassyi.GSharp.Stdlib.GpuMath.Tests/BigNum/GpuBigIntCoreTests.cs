@@ -166,10 +166,7 @@ public class GpuBigIntCoreTests
         // Create an array with all bits set to 1, except the highest bit of the highest word
         // to ensure it is treated as a positive number by BigInteger.
         var arrA = new uint[TestSizeWords];
-        for (int i = 0; i < TestSizeWords; i++)
-        {
-            arrA[i] = 0xFFFFFFFF;
-        }
+        Array.Fill(arrA, 0xFFFFFFFF);
 
         arrA[TestSizeWords - 1] = 0x7FFFFFFF;
 

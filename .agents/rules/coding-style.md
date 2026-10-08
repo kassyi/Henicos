@@ -77,6 +77,27 @@ While .NET Framework Design Guidelines (FDG) generally avoid abbreviations, spec
 /// </remarks>
 ```
 
+### 2.4. Zero-Allocation & LINQ Policy (RS0030)
+
+- **Banned `System.Linq`**: Standard LINQ is strictly prohibited across the codebase due to heap allocations and hidden boxing (`RS0030`).
+- **Dogfooding `Kassyi.ZeroAlloc.Linq` (StackLinq)**:
+  - For data mapping, filtering, or assertions in tests, harnesses, and utilities, prefer `StackLinq` for zero-allocation fluent chains.
+  - **Quick Example**:
+    ```csharp
+    using Kassyi.ZeroAlloc.Linq;
+
+    // Fluent pipeline executed purely on stack/registers (0 B heap allocation)
+    int sum = data.AsStackEnumerable()
+                  .Where(x => x > 0)
+                  .Select(x => x * 2)
+                  .Sum();
+    ```
+  - For detailed architecture, API reference, and benchmarks, see: [StackLinq Architecture & Specification](../../docs/spec/en/03_bcl_api/linq/00_index.md).
+- **Prohibited Over-Refactoring (Preserve Imperative Loops)**:
+  - **GPU Kernels (`*.cu`, `*.cu.cs`)**: Never use LINQ. Keep imperative `for` loops so AST lowering can map cleanly to native unrolling (`#pragma unroll`).
+  - **Benchmark Measurement Loops**: Keep raw imperative loops in CPU baseline comparisons (e.g., `SgemmBenchmark`, `BlackScholesBenchmark`) to avoid skewing benchmark overhead.
+  - **State Machines & Stream Parsers**: Keep `while` / `for` for IO streams, reader states, and buffer initializations (e.g., `leftArray[i] = random.Next()`).
+
 ---
 
 ## 3. GPU KERNEL DEVELOPMENT CONVENTIONS
@@ -96,12 +117,13 @@ Any C# file that contains G# GPU kernel implementations (e.g., methods annotated
 
 Before presenting any code modification, refactored files, or responding to the user:
 
-### 3.1. Static Code Analysis Validation
+### 4.1. Static Code Analysis Validation
 
 1. **Mental Check:** Validate your generated code against this guidelines document.
 2. **Diagnostic Pre-emption:** Ensure your output does not trigger any warnings or errors from Roslyn Analyzers or ReSharper. Leave the workspace clean and compliant.
+3. **Unused Members Suppression:** Always validate that unused members are properly handled. In library components (`Kassyi.GSharp.Core`), use `#pragma warning disable IDE0051` or `// ReSharper disable UnusedMember.Global` when members are strictly intended as public API.
 
-### 3.2. Tone & Communication Rules
+### 4.2. Tone & Communication Rules
 
 - **Language:** Conduct all explanations, walkthroughs, Q&As, and thinking processes in Japanese.
 - **Professional Demeanor:** Keep your tone quiet, highly professional, concise, and dry—like a seasoned senior backend engineer. Do not adopt an overly optimistic or apologetic persona. Focus entirely on logic, architecture, and safety.

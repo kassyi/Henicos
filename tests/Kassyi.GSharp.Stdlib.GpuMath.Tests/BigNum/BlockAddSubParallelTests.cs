@@ -71,10 +71,7 @@ public class BlockAddSubParallelTests
             blockDimX: blockDimX
         );
 
-        for (int i = 0; i < numWords; i++)
-        {
-            Assert.True(expectedWords[i] == resultData[i], $"Mismatch at word {i}. Expected: {expectedWords[i]:X8}, Actual: {resultData[i]:X8}");
-        }
+        Assert.True(expectedWords.AsSpan().SequenceEqual(resultData));
     }
 
     [SkippableFact]

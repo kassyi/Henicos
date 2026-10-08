@@ -2,6 +2,7 @@ using System;
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
+using Kassyi.ZeroAlloc.Linq;
 using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels;
@@ -18,11 +19,8 @@ public class GpuBigIntRnsMontgomeryKernelsTests
         var msk = RnsConstantsData.ModulusSK;
 
         // Calculate M1 and M2
-        BigInteger M1 = 1;
-        foreach (var m in b1) M1 *= m;
-
-        BigInteger M2 = 1;
-        foreach (var m in b2) M2 *= m;
+        BigInteger M1 = b1.AsStackEnumerable().Aggregate(BigInteger.One, (acc, m) => acc * m);
+        BigInteger M2 = b2.AsStackEnumerable().Aggregate(BigInteger.One, (acc, m) => acc * m);
 
         // Choose a random value X that is less than M1
         // Let's use a value close to M1 to test the full range
@@ -82,12 +80,8 @@ public class GpuBigIntRnsMontgomeryKernelsTests
         }
 
         // 3. Verify against direct conversion of X to Base 2
-        var expectedRnsB2 = new uint[k];
-        for (int j = 0; j < k; j++)
-        {
-            expectedRnsB2[j] = (uint)(X % b2[j]);
-            Assert.Equal(expectedRnsB2[j], destRnsB2[j]);
-        }
+        var expectedRnsB2 = b2.AsStackEnumerable().Select(m => (uint)(X % m)).ToArray();
+        Assert.True(destRnsB2.AsSpan().SequenceEqual(expectedRnsB2));
     }
 
     [Fact]
@@ -99,10 +93,8 @@ public class GpuBigIntRnsMontgomeryKernelsTests
         var b2 = RnsConstantsData.ModuliB2.AsSpan(0, k).ToArray();
         var msk = RnsConstantsData.ModulusSK;
 
-        BigInteger M1 = 1;
-        foreach (var m in b1) M1 *= m;
-        BigInteger M2 = 1;
-        foreach (var m in b2) M2 *= m;
+        BigInteger M1 = b1.AsStackEnumerable().Aggregate(BigInteger.One, (acc, m) => acc * m);
+        BigInteger M2 = b2.AsStackEnumerable().Aggregate(BigInteger.One, (acc, m) => acc * m);
 
         // Choose N (modulus), must be coprime to M1 and M2.
         // In RNS Montgomery, r_tilde can reach up to (1 + k)*N.

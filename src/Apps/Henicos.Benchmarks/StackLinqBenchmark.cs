@@ -26,21 +26,18 @@ public class StackLinqBenchmark
             _data[i] = i;
         }
 
-        // パディング用に先頭10%を0にする (Data Windowing 用)
-        for (var i = 0; i < Size / 10; i++)
-        {
-            _data[i] = 0;
-        }
+        // Zero out the first 10% for padding (used in Data Windowing)
+        Array.Clear(_data, 0, Size / 10);
 
         _endMarkerForWindowing = _data[(int)(Size * 0.9)];
         _targetForShortCircuit = _data[(int)(Size * 0.1)];
 
-        // Targeted Search 用に中央に1つだけ特定の値を入れる
+        // Insert a sentinel target value at the center for Targeted Search
         _data[Size / 2] = 9999999;
     }
 
     // ==========================================
-    // シナリオA: Heavy Pipeline (フィルタリングと変換)
+    // Scenario A: Heavy Pipeline (Filtering and Projection)
     // ==========================================
 
     [Benchmark]
@@ -70,7 +67,7 @@ public class StackLinqBenchmark
     public int StackLinq_HeavyPipeline() => _data.AsStackEnumerable().Where(x => x % 2 == 0).Select(x => x * 3).Sum();
 
     // ==========================================
-    // シナリオB: Short Circuit (早期リターン)
+    // Scenario B: Short Circuit (Early Return)
     // ==========================================
 
     [Benchmark]
@@ -99,7 +96,7 @@ public class StackLinqBenchmark
     public int StackLinq_ShortCircuit() => _data.AsStackEnumerable().Where(x => x == _targetForShortCircuit).First();
 
     // ==========================================
-    // シナリオC: Span Optimization (境界切り出し)
+    // Scenario C: Span Optimization (Boundary Slicing)
     // ==========================================
 
     [Benchmark]
@@ -135,7 +132,7 @@ public class StackLinqBenchmark
     public int StackLinq_SpanOptimization() => _data.AsStackEnumerable().Skip(Size / 10).Take(Size / 2).Sum();
 
     // ==========================================
-    // 総合演習1: Data Windowing (スキップ・条件切り出し)
+    // Comprehensive Scenario 1: Data Windowing (Skip and Conditional Slicing)
     // ==========================================
 
     [Benchmark]
@@ -147,7 +144,7 @@ public class StackLinqBenchmark
         _data.AsStackEnumerable().SkipLast(1).SkipWhile(x => x == 0).TakeWhile(x => x != _endMarkerForWindowing).Sum();
 
     // ==========================================
-    // 総合演習2: Targeted Search (複数条件のピンポイント)
+    // Comprehensive Scenario 2: Targeted Search (Multi-condition Pinpointing)
     // ==========================================
 
     [Benchmark]
@@ -173,7 +170,7 @@ public class StackLinqBenchmark
     }
 
     // ==========================================
-    // 総合演習3: Boundary Span Optimization (チェーン最適化)
+    // Comprehensive Scenario 3: Boundary Span Optimization (Chained Slicing Optimization)
     // ==========================================
 
     [Benchmark]
