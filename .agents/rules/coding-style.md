@@ -15,6 +15,17 @@ These rules are absolute. Any violation will directly induce runtime failures, G
 - **NEVER suppress or swallow exceptions** with an empty `catch (Exception) { }` block.
 - **Diagnostics:** Always log, report, or rethrow appropriately.
 
+### 1.3. Ban on Null-Forgiving Operators (`!`)
+
+- **DO NOT use the null-forgiving operator (`!`) when avoidable.** If an explicit `if` check, pattern matching, null-coalescing throw (`?? throw`), empty collection initialization (`= []`), or properly typed nullable signature (`T?`) can prevent it, using `!` is strictly forbidden.
+- **Strict Exception & Mandatory Justification Comment**:
+  - The use of `!` is permitted **ONLY** in rare cases where language/API limitations make avoiding it excessively convoluted (e.g., deliberate `null!` argument passing in unit tests asserting `ArgumentNullException`, or downstream Roslyn AST/generator pipelines with invariant non-null semantics).
+  - Whenever `!` is used, it **MUST be accompanied by a clear comment explaining why it is unavoidable and safe** (e.g., `// Intentionally passing null to assert ArgumentNullException guard`, `// Roslyn AST guarantees non-null child when parent is valid`). Uncommented `!` is strictly prohibited.
+- **Enforcement & Alternatives:**
+  - **Defensive guards:** Check explicitly with pattern matching or guards (`if (foo is null) throw ...` or `foo ?? throw ...`).
+  - **Uninitialized fields:** For benchmark/lifecycle fields without constructor injection, initialize with empty values (`= []`, `= Array.Empty<T>()`) or make them explicitly nullable (`T?`).
+  - **Domain modeling:** If a property or parameter can be null under failure or before execution, model its type as nullable (`T?`) or use a result pattern rather than concealing nullability with `null!`.
+
 ---
 
 ## 2. C# DEVELOPMENT & CODE STYLE CHARTER
