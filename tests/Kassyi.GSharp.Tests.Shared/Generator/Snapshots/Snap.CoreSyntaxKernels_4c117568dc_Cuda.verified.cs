@@ -211,17 +211,21 @@ int tid = threadIdx.x;
 switch(tid)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
 data[tid]=10;
 break;
 }
 case 1:
+__gsharp_switch_1_state_1:
 case 2:
+__gsharp_switch_1_state_2:
 {
 data[tid]=20;
 break;
 }
 default:
+__gsharp_switch_1_state_default:
 {
 data[tid]=30;
 break;
