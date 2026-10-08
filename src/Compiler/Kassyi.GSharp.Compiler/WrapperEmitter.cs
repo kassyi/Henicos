@@ -545,86 +545,109 @@ internal static class WrapperEmitter
         using (writer.Scope())
         {
             writer.AppendLine("int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);");
-            writer.AppendLine("for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)");
+            writer.AppendLine("int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);");
+            writer.AppendLine($"var _gsharp_contexts = new __gsharp_context_{mangledName}[_gsharp_total_blocks * _gsharp_threads_per_block];");
+            writer.AppendLine("for (int i = 0; i < _gsharp_contexts.Length; i++) {");
+            writer.AppendLine($"  _gsharp_contexts[i] = new __gsharp_context_{mangledName}();");
+            writer.AppendLine("}");
+
+            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);");
+
+            writer.AppendLine("bool anyGridActive = true;");
+            writer.AppendLine("while (anyGridActive)");
             using (writer.Scope())
             {
-                writer.AppendLine("int bx = _b_idx % (int)gridDimX;");
-                writer.AppendLine("int by = (_b_idx / (int)gridDimX) % (int)gridDimY;");
-                writer.AppendLine("int bz = _b_idx / (int)(gridDimX * gridDimY);");
-
-                writer.AppendLine(
-                    $"var _gsharp_contexts = new __gsharp_context_{mangledName}[blockDimX * blockDimY * blockDimZ];");
-
-                writer.AppendLine("for (int i = 0; i < _gsharp_contexts.Length; i++) {");
-                writer.AppendLine($"  _gsharp_contexts[i] = new __gsharp_context_{mangledName}();");
-                writer.AppendLine("}");
-
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;");
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;");
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;");
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;");
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;");
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;");
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;");
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;");
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;");
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;");
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();");
-
-                writer.AppendLine("bool anyActive = true;");
-                writer.AppendLine("while (anyActive)");
+                writer.AppendLine("anyGridActive = false;");
+                writer.AppendLine("for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)");
                 using (writer.Scope())
                 {
-                    writer.AppendLine("anyActive = false;");
-                    writer.AppendLine("for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)");
+                    writer.AppendLine("int bx = _b_idx % (int)gridDimX;");
+                    writer.AppendLine("int by = (_b_idx / (int)gridDimX) % (int)gridDimY;");
+                    writer.AppendLine("int bz = _b_idx / (int)(gridDimX * gridDimY);");
+
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;");
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;");
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;");
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;");
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;");
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;");
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;");
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;");
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;");
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;");
+
+                    writer.AppendLine("bool anyBlockActive = true;");
+                    writer.AppendLine("while (anyBlockActive)");
                     using (writer.Scope())
                     {
-                        writer.AppendLine("int tx = _t_idx % (int)blockDimX;");
-                        writer.AppendLine("int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;");
-                        writer.AppendLine("int tz = _t_idx / (int)(blockDimX * blockDimY);");
-                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;");
-                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;");
-                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;");
-
-                        writer.AppendLine("if (_gsharp_contexts[_t_idx]._state != -1)");
+                        writer.AppendLine("anyBlockActive = false;");
+                        writer.AppendLine("bool gridSyncRequested = false;");
+                        writer.AppendLine("for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)");
                         using (writer.Scope())
                         {
-                            writer.AppendLine("anyActive = true;");
-                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();");
-                            writer.Append($"__gsharp_statemachine_{mangledName}(");
-                            bool isFirst = true;
-                            foreach (var p in method.Parameters)
+                            writer.AppendLine("int tx = _t_idx % (int)blockDimX;");
+                            writer.AppendLine("int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;");
+                            writer.AppendLine("int tz = _t_idx / (int)(blockDimX * blockDimY);");
+                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;");
+                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;");
+                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;");
+
+                            writer.AppendLine("int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;");
+                            writer.AppendLine("if (_gsharp_contexts[linear_tid]._state != -1)");
+                            using (writer.Scope())
                             {
+                                writer.AppendLine("anyGridActive = true;");
+                                writer.AppendLine("anyBlockActive = true;");
+                                writer.AppendLine("_gsharp_contexts[linear_tid]._yieldedForGridSync = false;");
+                                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();");
+
+                                writer.Append($"__gsharp_statemachine_{mangledName}(");
+                                bool isFirst = true;
+                                foreach (var p in method.Parameters)
+                                {
+                                    if (!isFirst)
+                                    {
+                                        writer.Append(", ");
+                                    }
+
+                                    isFirst = false;
+                                    if (p.RefKind == RefKind.Ref)
+                                    {
+                                        writer.Append("ref ");
+                                    }
+                                    else if (p.RefKind == RefKind.Out)
+                                    {
+                                        writer.Append("out ");
+                                    }
+
+                                    writer.Append(p.Name);
+                                }
+
                                 if (!isFirst)
                                 {
                                     writer.Append(", ");
                                 }
 
-                                isFirst = false;
-                                if (p.RefKind == RefKind.Ref)
+                                writer.Append("_gsharp_contexts[linear_tid]");
+                                writer.AppendLine(");");
+
+                                writer.AppendLine("if (_gsharp_contexts[linear_tid]._yieldedForGridSync)");
+                                using (writer.Scope())
                                 {
-                                    writer.Append("ref ");
+                                    writer.AppendLine("gridSyncRequested = true;");
                                 }
-                                else if (p.RefKind == RefKind.Out)
-                                {
-                                    writer.Append("out ");
-                                }
-
-                                writer.Append(p.Name);
                             }
+                        }
 
-                            if (!isFirst)
-                            {
-                                writer.Append(", ");
-                            }
-
-                            writer.Append("_gsharp_contexts[_t_idx]");
-                            writer.AppendLine(");");
+                        writer.AppendLine("if (gridSyncRequested)");
+                        using (writer.Scope())
+                        {
+                            writer.AppendLine("break;");
                         }
                     }
-                }
 
-                writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;");
+                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;");
+                }
             }
 
             WriteAutoResultReturn(writer, method);
