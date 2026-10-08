@@ -3,54 +3,43 @@ namespace Kassyi.GSharp.Generated
 {
 internal static class GSharpSharedCpuPrelude
 {
-public const string Source = @"// GSharp CPU/Standard C++ Prelude Header
-// Embedded intrinsic functions, polyfills, and standard type definitions for GSharp-generated C++ code.
-
-#include <cmath>
+public const string Source = @"#include <cmath>
 #include <algorithm>
 #include <cstdint>
 #include <intrin.h>
 #include <vector>
 #include <functional>
 #include <atomic>
-
-struct float2 { float x, y; };
-struct float3 { float x, y, z; };
-struct float4 { float x, y, z, w; };
-
-inline uint32_t __gsharp_rotr32(uint32_t value, int offset) { return _rotr(value, offset); }
-inline float __gsharp_float_cast(float x) { return x; }
-inline float __gsharp_float_cast(double x) { return (float)x; }
-inline double __gsharp_double_cast(float x) { return (double)x; }
-inline double __gsharp_double_cast(double x) { return x; }
-inline int __gsharp_int_cast(float x) { return (int)x; }
-inline int __gsharp_int_cast(double x) { return (int)x; }
-inline uint32_t __gsharp_uint_cast(float x) { return (uint32_t)x; }
-inline uint32_t __gsharp_uint_cast(double x) { return (uint32_t)x; }
-inline uint64_t __gsharp_rotr64(uint64_t value, int offset) { return _rotr64(value, offset); }
-inline uint32_t __gsharp_rotl32(uint32_t value, int offset) { return _rotl(value, offset); }
-inline uint64_t __gsharp_rotl64(uint64_t value, int offset) { return _rotl64(value, offset); }
-inline uint32_t __popc(uint32_t value) { return __popcnt(value); }
-inline uint64_t __popcll(uint64_t value) { return __popcnt64(value); }
-inline uint32_t __gsharp_lzc_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? 31 - index : 32; }
-inline uint64_t __gsharp_lzc_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? 63 - index : 64; }
-inline uint32_t __gsharp_tzc_32(uint32_t value) { unsigned long index; return _BitScanForward(&index, value) ? index : 32; }
-inline uint64_t __gsharp_tzc_64(uint64_t value) { unsigned long index; return _BitScanForward64(&index, value) ? index : 64; }
-inline uint32_t __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? index : 0; }
-inline uint64_t __gsharp_log2_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? index : 0; }
+#include <cstring>
 
 #define __device__
 #define __global__
+#if defined(_MSC_VER)
+#define __forceinline__ __forceinline
+#elif defined(__GNUC__) || defined(__clang__)
+#define __forceinline__ inline __attribute__((always_inline))
+#else
 #define __forceinline__ inline
+#endif
+
+#if defined(_MSC_VER)
+#define __noinline__ __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#define __noinline__ __attribute__((noinline))
+#else
 #define __noinline__
+#endif
 #define __shared__
 #if defined(_MSC_VER)
 #define __restrict__ __restrict
 #endif
 
-template <typename T> T __gsharp_clamp(T val, T min_val, T max_val) {
-    return std::max(min_val, std::min(val, max_val));
-}
+// --- Standard Types & Structures ---
+struct float2 { float x, y; };
+struct float3 { float x, y, z; };
+struct float4 { float x, y, z, w; };
+struct uint3 { uint32_t x, y, z; };
+struct dim3 { uint32_t x, y, z; };
 
 template <typename T>
 struct System_Nullable {
@@ -111,62 +100,117 @@ struct System_Span {
     inline const T& operator[](int index) const { return data[index]; }
 };
 
-struct uint3 { uint32_t x, y, z; };
-struct dim3 { uint32_t x, y, z; };
+// --- Conversions & Casts ---
+__forceinline__ float __gsharp_float_cast(float x) { return x; }
+__forceinline__ float __gsharp_float_cast(double x) { return (float)x; }
+__forceinline__ double __gsharp_double_cast(float x) { return (double)x; }
+__forceinline__ double __gsharp_double_cast(double x) { return x; }
+__forceinline__ int __gsharp_int_cast(float x) { return (int)x; }
+__forceinline__ int __gsharp_int_cast(double x) { return (int)x; }
+__forceinline__ uint32_t __gsharp_uint_cast(float x) { return (uint32_t)x; }
+__forceinline__ uint32_t __gsharp_uint_cast(double x) { return (uint32_t)x; }
 
-// CPU Polyfills for threadIdx, blockIdx, blockDim, gridDim
+// --- Math & Range ---
+template <typename T> T max(T a, T b) { return std::max(a, b); }
+template <typename T> T min(T a, T b) { return std::min(a, b); }
+template <typename T> T __gsharp_clamp(T val, T min_val, T max_val) {
+    return std::max(min_val, std::min(val, max_val));
+}
+
+// --- Bit Manipulation & Arithmetic ---
+__forceinline__ uint32_t __gsharp_rotr32(uint32_t value, int offset) { return _rotr(value, offset); }
+__forceinline__ uint64_t __gsharp_rotr64(uint64_t value, int offset) { return _rotr64(value, offset); }
+__forceinline__ uint32_t __gsharp_rotl32(uint32_t value, int offset) { return _rotl(value, offset); }
+__forceinline__ uint64_t __gsharp_rotl64(uint64_t value, int offset) { return _rotl64(value, offset); }
+__forceinline__ uint32_t __popc(uint32_t value) { return __popcnt(value); }
+__forceinline__ uint64_t __popcll(uint64_t value) { return __popcnt64(value); }
+__forceinline__ uint32_t __gsharp_lzc_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? 31 - index : 32; }
+__forceinline__ uint64_t __gsharp_lzc_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? 63 - index : 64; }
+__forceinline__ uint32_t __gsharp_tzc_32(uint32_t value) { unsigned long index; return _BitScanForward(&index, value) ? index : 32; }
+__forceinline__ uint64_t __gsharp_tzc_64(uint64_t value) { unsigned long index; return _BitScanForward64(&index, value) ? index : 64; }
+__forceinline__ uint32_t __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? index : 0; }
+__forceinline__ uint64_t __gsharp_log2_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? index : 0; }
+__forceinline__ unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {
+    if (len <= 0) return 0;
+    if (len >= 32) return a >> pos;
+    return (a >> pos) & ((1U << len) - 1);
+}
+__forceinline__ unsigned long long __gsharp_bfe64(unsigned long long a, int pos, int len) {
+    if (len <= 0) return 0;
+    if (len >= 64) return a >> pos;
+    return (a >> pos) & ((1ULL << len) - 1);
+}
+__forceinline__ unsigned int __gsharp_bfi(unsigned int a, unsigned int b, int pos, int len) {
+    if (len <= 0) return b;
+    unsigned int mask = len >= 32 ? 0xFFFFFFFFU : ((1U << len) - 1);
+    return (b & ~(mask << pos)) | ((a & mask) << pos);
+}
+__forceinline__ unsigned long long __gsharp_bfi64(unsigned long long a, unsigned long long b, int pos, int len) {
+    if (len <= 0) return b;
+    unsigned long long mask = len >= 64 ? 0xFFFFFFFFFFFFFFFFULL : ((1ULL << len) - 1);
+    return (b & ~(mask << pos)) | ((a & mask) << pos);
+}
+__forceinline__ unsigned int __gsharp_lop3(unsigned int a, unsigned int b, unsigned int c, unsigned char immLut) {
+    unsigned int res = 0;
+    for (int i = 0; i < 32; i++) {
+        int bitA = (a >> i) & 1;
+        int bitB = (b >> i) & 1;
+        int bitC = (c >> i) & 1;
+        int idx = (bitA << 2) | (bitB << 1) | bitC;
+        if ((immLut >> idx) & 1) res |= (1U << i);
+    }
+    return res;
+}
+__forceinline__ unsigned long long __brevll(unsigned long long val) {
+    unsigned long long res = 0;
+    for (int i = 0; i < 64; i++) {
+        if ((val >> i) & 1) res |= (1ULL << (63 - i));
+    }
+    return res;
+}
+__forceinline__ int __dp4a(int a, int b, int c) {
+    const signed char* va = reinterpret_cast<const signed char*>(&a);
+    const signed char* vb = reinterpret_cast<const signed char*>(&b);
+    return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
+}
+__forceinline__ unsigned int __dp4a(unsigned int a, unsigned int b, unsigned int c) {
+    const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
+    const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
+    return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
+}
+__forceinline__ unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {
+    const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
+    const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
+    unsigned int diff = (unsigned int)std::abs((int)va[0] - (int)vb[0])
+                      + (unsigned int)std::abs((int)va[1] - (int)vb[1])
+                      + (unsigned int)std::abs((int)va[2] - (int)vb[2])
+                      + (unsigned int)std::abs((int)va[3] - (int)vb[3]);
+    return c + diff;
+}
+
+// --- Thread & Block State ---
 thread_local uint3 threadIdx;
 thread_local uint3 blockIdx;
 thread_local dim3 blockDim;
 thread_local dim3 gridDim;
 
-template<typename T>
-inline T __gsharp_atomic_fetch_add(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_add(val, std::memory_order_relaxed);
+extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
+    threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
+    blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
+    blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;
+    gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
 }
 
-template<typename T>
-inline T __gsharp_atomic_max(T* address, T val) {
-    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
-    T old = atom->load(std::memory_order_relaxed);
-    while (old < val && !atom->compare_exchange_weak(old, val, std::memory_order_relaxed)) { }
-    return old;
+namespace cg {
+    struct grid_group {
+        void sync() {}
+    };
+    inline grid_group this_grid() { return grid_group(); }
 }
 
-template<typename T>
-inline T __gsharp_atomic_or(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_or(val, std::memory_order_relaxed);
-}
+inline void __syncthreads() {}
 
-template<typename T>
-inline T __gsharp_atomic_cas(T* address, T compare, T val) {
-    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
-    T expected = compare;
-    atom->compare_exchange_strong(expected, val, std::memory_order_relaxed);
-    return expected;
-}
-
-template<typename T>
-inline T __gsharp_atomic_exch(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->exchange(val, std::memory_order_relaxed);
-}
-
-inline int atomicAdd(int* address, int val) { return __gsharp_atomic_fetch_add(address, val); }
-inline unsigned int atomicAdd(unsigned int* address, unsigned int val) { return __gsharp_atomic_fetch_add(address, val); }
-inline unsigned long long atomicAdd(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_fetch_add(address, val); }
-inline int atomicMax(int* address, int val) { return __gsharp_atomic_max(address, val); }
-inline unsigned int atomicMax(unsigned int* address, unsigned int val) { return __gsharp_atomic_max(address, val); }
-inline unsigned long long atomicMax(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_max(address, val); }
-inline int atomicOr(int* address, int val) { return __gsharp_atomic_or(address, val); }
-inline unsigned int atomicOr(unsigned int* address, unsigned int val) { return __gsharp_atomic_or(address, val); }
-inline unsigned long long atomicOr(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_or(address, val); }
-inline int atomicCAS(int* address, int compare, int val) { return __gsharp_atomic_cas(address, compare, val); }
-inline unsigned int atomicCAS(unsigned int* address, unsigned int compare, unsigned int val) { return __gsharp_atomic_cas(address, compare, val); }
-inline unsigned long long atomicCAS(unsigned long long* address, unsigned long long compare, unsigned long long val) { return __gsharp_atomic_cas(address, compare, val); }
-inline int atomicExch(int* address, int val) { return __gsharp_atomic_exch(address, val); }
-inline unsigned int atomicExch(unsigned int* address, unsigned int val) { return __gsharp_atomic_exch(address, val); }
-inline unsigned long long atomicExch(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_exch(address, val); }
-
+// --- Shared Memory ---
 inline thread_local char __gsharp_dynamic_smem[65536];
 inline thread_local size_t __gsharp_smem_offsets[64];
 inline thread_local bool __gsharp_smem_initialized[64];
@@ -190,29 +234,57 @@ inline void* __gsharp_allocate_smem(int allocId, size_t size, size_t alignment) 
     return (void*)(__gsharp_dynamic_smem + __gsharp_smem_offsets[allocId]);
 }
 
-inline void __syncthreads() {}
+// --- Atomics ---
+template<typename T>
+__forceinline__ T __gsharp_atomic_fetch_add(T* address, T val) {
+    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_add(val, std::memory_order_relaxed);
+}
 
-// Math polyfills
-template <typename T> T max(T a, T b) { return std::max(a, b); }
-template <typename T> T min(T a, T b) { return std::min(a, b); }
+template<typename T>
+__forceinline__ T __gsharp_atomic_max(T* address, T val) {
+    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+    T old = atom->load(std::memory_order_relaxed);
+    while (old < val && !atom->compare_exchange_weak(old, val, std::memory_order_relaxed)) { }
+    return old;
+}
 
-// Warp primitives polyfill (Single-thread dummy execution)
-inline unsigned __activemask() { return 0xFFFFFFFF; }
-template <typename T> inline T __shfl_sync(unsigned mask, T var, int srcLane, int width=32) { return var; }
-template <typename T> inline T __shfl_up_sync(unsigned mask, T var, unsigned int delta, int width=32) { return var; }
-template <typename T> inline T __shfl_down_sync(unsigned mask, T var, unsigned int delta, int width=32) { return var; }
-template <typename T> inline T __shfl_xor_sync(unsigned mask, T var, int laneMask, int width=32) { return var; }
+template<typename T>
+__forceinline__ T __gsharp_atomic_or(T* address, T val) {
+    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_or(val, std::memory_order_relaxed);
+}
+
+template<typename T>
+__forceinline__ T __gsharp_atomic_cas(T* address, T compare, T val) {
+    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+    T expected = compare;
+    atom->compare_exchange_strong(expected, val, std::memory_order_relaxed);
+    return expected;
+}
+
+template<typename T>
+__forceinline__ T __gsharp_atomic_exch(T* address, T val) {
+    return reinterpret_cast<volatile std::atomic<T>*>(address)->exchange(val, std::memory_order_relaxed);
+}
+
+__forceinline__ int atomicAdd(int* address, int val) { return __gsharp_atomic_fetch_add(address, val); }
+__forceinline__ unsigned int atomicAdd(unsigned int* address, unsigned int val) { return __gsharp_atomic_fetch_add(address, val); }
+__forceinline__ unsigned long long atomicAdd(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_fetch_add(address, val); }
+__forceinline__ int atomicMax(int* address, int val) { return __gsharp_atomic_max(address, val); }
+__forceinline__ unsigned int atomicMax(unsigned int* address, unsigned int val) { return __gsharp_atomic_max(address, val); }
+__forceinline__ unsigned long long atomicMax(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_max(address, val); }
+__forceinline__ int atomicOr(int* address, int val) { return __gsharp_atomic_or(address, val); }
+__forceinline__ unsigned int atomicOr(unsigned int* address, unsigned int val) { return __gsharp_atomic_or(address, val); }
+__forceinline__ unsigned long long atomicOr(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_or(address, val); }
+__forceinline__ int atomicCAS(int* address, int compare, int val) { return __gsharp_atomic_cas(address, compare, val); }
+__forceinline__ unsigned int atomicCAS(unsigned int* address, unsigned int compare, unsigned int val) { return __gsharp_atomic_cas(address, compare, val); }
+__forceinline__ unsigned long long atomicCAS(unsigned long long* address, unsigned long long compare, unsigned long long val) { return __gsharp_atomic_cas(address, compare, val); }
+__forceinline__ int atomicExch(int* address, int val) { return __gsharp_atomic_exch(address, val); }
+__forceinline__ unsigned int atomicExch(unsigned int* address, unsigned int val) { return __gsharp_atomic_exch(address, val); }
+__forceinline__ unsigned long long atomicExch(unsigned long long* address, unsigned long long val) { return __gsharp_atomic_exch(address, val); }
 
 __forceinline__ int __gsharp_atomicCAS(int* address, int val, int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ unsigned int __gsharp_atomicCAS(unsigned int* address, unsigned int val, unsigned int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ unsigned long long __gsharp_atomicCAS(unsigned long long* address, unsigned long long val, unsigned long long compare) { return atomicCAS(address, compare, val); }
-
-namespace cg {
-    struct grid_group {
-        void sync() {}
-    };
-    inline grid_group this_grid() { return grid_group(); }
-}
 
 __forceinline__ int __gsharp_atomicAdd(int* address, int val) { return atomicAdd(address, val) + val; }
 __forceinline__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }
@@ -222,15 +294,12 @@ __forceinline__ int __gsharp_atomicExch(int* address, int val) { return atomicEx
 __forceinline__ unsigned int __gsharp_atomicExch(unsigned int* address, unsigned int val) { return atomicExch(address, val); }
 __forceinline__ unsigned long long __gsharp_atomicExch(unsigned long long* address, unsigned long long val) { return atomicExch(address, val); }
 
-extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
-    threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
-    blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
-    blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;
-    gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
-}
-
-// --- Warp Shuffle CPU Polyfill Helpers ---
-#include <cstring>
+// --- Warp & Synchronization ---
+inline unsigned __activemask() { return 0xFFFFFFFF; }
+template <typename T> inline T __shfl_sync(unsigned mask, T var, int srcLane, int width=32) { return var; }
+template <typename T> inline T __shfl_up_sync(unsigned mask, T var, unsigned int delta, int width=32) { return var; }
+template <typename T> inline T __shfl_down_sync(unsigned mask, T var, unsigned int delta, int width=32) { return var; }
+template <typename T> inline T __shfl_xor_sync(unsigned mask, T var, int laneMask, int width=32) { return var; }
 
 template<typename T>
 inline void __gsharp_warp_exchange_assign_impl(T val, uint64_t* exchange) {
@@ -316,77 +385,6 @@ inline T __gsharp_warp_shuffle_read_sync(TContext* _ctx, uint32_t mask, T val, u
     return result;
 }
 
-namespace Hint {
-    inline void Unroll() {}
-}
-
-// CPU Polyfills for PTX hardware intrinsics
-inline unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {
-    if (len <= 0) return 0;
-    if (len >= 32) return a >> pos;
-    return (a >> pos) & ((1U << len) - 1);
-}
-
-inline unsigned long long __gsharp_bfe64(unsigned long long a, int pos, int len) {
-    if (len <= 0) return 0;
-    if (len >= 64) return a >> pos;
-    return (a >> pos) & ((1ULL << len) - 1);
-}
-
-inline unsigned int __gsharp_bfi(unsigned int a, unsigned int b, int pos, int len) {
-    if (len <= 0) return b;
-    unsigned int mask = len >= 32 ? 0xFFFFFFFFU : ((1U << len) - 1);
-    return (b & ~(mask << pos)) | ((a & mask) << pos);
-}
-
-inline unsigned long long __gsharp_bfi64(unsigned long long a, unsigned long long b, int pos, int len) {
-    if (len <= 0) return b;
-    unsigned long long mask = len >= 64 ? 0xFFFFFFFFFFFFFFFFULL : ((1ULL << len) - 1);
-    return (b & ~(mask << pos)) | ((a & mask) << pos);
-}
-
-inline unsigned int __gsharp_lop3(unsigned int a, unsigned int b, unsigned int c, unsigned char immLut) {
-    unsigned int res = 0;
-    for (int i = 0; i < 32; i++) {
-        int bitA = (a >> i) & 1;
-        int bitB = (b >> i) & 1;
-        int bitC = (c >> i) & 1;
-        int idx = (bitA << 2) | (bitB << 1) | bitC;
-        if ((immLut >> idx) & 1) res |= (1U << i);
-    }
-    return res;
-}
-
-inline unsigned long long __brevll(unsigned long long val) {
-    unsigned long long res = 0;
-    for (int i = 0; i < 64; i++) {
-        if ((val >> i) & 1) res |= (1ULL << (63 - i));
-    }
-    return res;
-}
-
-inline int __dp4a(int a, int b, int c) {
-    const signed char* va = reinterpret_cast<const signed char*>(&a);
-    const signed char* vb = reinterpret_cast<const signed char*>(&b);
-    return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
-}
-
-inline unsigned int __dp4a(unsigned int a, unsigned int b, unsigned int c) {
-    const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
-    const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
-    return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
-}
-
-inline unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {
-    const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
-    const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
-    unsigned int diff = (unsigned int)std::abs((int)va[0] - (int)vb[0])
-                      + (unsigned int)std::abs((int)va[1] - (int)vb[1])
-                      + (unsigned int)std::abs((int)va[2] - (int)vb[2])
-                      + (unsigned int)std::abs((int)va[3] - (int)vb[3]);
-    return c + diff;
-}
-
 template<typename T>
 inline unsigned int __match_any_sync(unsigned int mask, T val) {
     return mask & 1;
@@ -401,6 +399,10 @@ inline unsigned int __match_all_sync(unsigned int mask, T val, int* pred) {
 inline void __nanosleep(unsigned int duration) {}
 inline void __syncwarp(unsigned int mask = 0xFFFFFFFFU) {}
 
+// --- Compiler Hints ---
+namespace Hint {
+    inline void Unroll() {}
+}
 
 ";
 }

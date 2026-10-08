@@ -3,26 +3,18 @@ namespace Kassyi.GSharp.Generated
 {
 internal static class GSharpSharedCudaPrelude
 {
-public const string Source = @"// GSharp Prelude Header
-// Embedded intrinsic functions and standard type definitions for GSharp-generated CUDA C++ code.
-
-#include <cooperative_groups.h>
+public const string Source = @"#include <cooperative_groups.h>
 namespace cg = cooperative_groups;
 
-/**
- * @brief CUDA device-side representation of C# Nullable<T> (T?).
- */
+// --- Standard Types ---
 template <typename T>
 struct System_Nullable {
     bool HasValue;
     T Value;
-    __device__ System_Nullable() : HasValue(false), Value() {}
-    __device__ System_Nullable(T val) : HasValue(true), Value(val) {}
+    __device__ inline System_Nullable() : HasValue(false), Value() {}
+    __device__ inline System_Nullable(T val) : HasValue(true), Value(val) {}
 };
 
-/**
- * @brief CUDA device-side representation of C# Array / Span fat pointer.
- */
 template <typename T>
 struct GSharpArray {
     T* __restrict__ data;
@@ -39,13 +31,7 @@ struct GSharpArray {
     __device__ inline operator const T*() const { return data; }
 };
 
-/**
- * @brief 32-bit unsigned addition with carry-in and carry-out (PTX add.cc / addc).
- * @param a First operand.
- * @param b Second operand.
- * @param carry Pointer to carry-in flag (updated in-place to carry-out flag).
- * @return Sum of a + b + carry_in (mod 2^32).
- */
+// --- Arithmetic & SIMD ---
 __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
     unsigned int res;
     unsigned int c_in = (unsigned int)*carry;
@@ -61,13 +47,6 @@ __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned
     return res;
 }
 
-/**
- * @brief 32-bit unsigned subtraction with borrow-in and borrow-out (PTX sub.cc / subc).
- * @param a Minuend operand.
- * @param b Subtrahend operand.
- * @param borrow Pointer to borrow-in flag (updated in-place to borrow-out flag).
- * @return Difference of a - b - borrow_in (mod 2^32).
- */
 __device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
     unsigned int res;
     unsigned int dummy;
@@ -84,94 +63,100 @@ __device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned
     return res;
 }
 
-/**
- * @brief 32-bit unsigned multiplication widening to 64-bit result (PTX mul.wide.u32).
- */
 __device__ __forceinline__ unsigned long long __gsharp_mul_wide(unsigned int a, unsigned int b) {
     unsigned long long res;
     asm volatile(""mul.wide.u32 %0, %1, %2;"" : ""=l""(res) : ""r""(a), ""r""(b));
     return res;
 }
 
-/**
- * @brief 32-bit circular bitwise left rotation (BitOperations.RotateLeft).
- */
-__device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
-    offset &= 31;
-    return __funnelshift_l(value, value, offset);
+__device__ __forceinline__ unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {
+    unsigned int res;
+    asm(""vabsdiff4.u32.u32.u32.add %0, %1, %2, %3;"" : ""=r""(res) : ""r""(a), ""r""(b), ""r""(c));
+    return res;
 }
 
-/**
- * @brief 32-bit circular bitwise right rotation (BitOperations.RotateRight).
- */
-__device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
-    offset &= 31;
-    return __funnelshift_r(value, value, offset);
-}
-
-/**
- * @brief 64-bit circular bitwise left rotation (BitOperations.RotateLeft).
- */
-__device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
-    offset &= 63;
-    return offset ? (value << offset) | (value >> (64 - offset)) : value;
-}
-
-/**
- * @brief 64-bit circular bitwise right rotation (BitOperations.RotateRight).
- */
-__device__ __forceinline__ unsigned long long __gsharp_rotr64(unsigned long long value, int offset) {
-    offset &= 63;
-    return offset ? (value >> offset) | (value << (64 - offset)) : value;
-}
-
-/**
- * @brief 32-bit trailing zero count (BitOperations.TrailingZeroCount).
- */
-__device__ __forceinline__ int __gsharp_tzc_32(unsigned int value) {
-    return value ? __ffs(value) - 1 : 32;
-}
-
-/**
- * @brief 64-bit trailing zero count (BitOperations.TrailingZeroCount).
- */
-__device__ __forceinline__ int __gsharp_tzc_64(unsigned long long value) {
-    return value ? __ffsll(value) - 1 : 64;
-}
-
-/**
- * @brief 32-bit integer base-2 logarithm (BitOperations.Log2).
- */
-__device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
-    return value ? 31 - __clz(value) : 0;
-}
-
-/**
- * @brief 64-bit integer base-2 logarithm (BitOperations.Log2).
- */
-__device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
-    return value ? 63 - __clzll(value) : 0;
-}
-
-/**
- * @brief 32-bit leading zero count (BitOperations.LeadingZeroCount).
- */
-__device__ __forceinline__ int __gsharp_lzc_32(unsigned int value) {
-    return value ? __clz(value) : 32;
-}
-
-/**
- * @brief 64-bit leading zero count (BitOperations.LeadingZeroCount).
- */
-__device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
-    return value ? __clzll(value) : 64;
-}
-
+// --- Math & Range ---
 __forceinline__ __device__ int __gsharp_clamp(int value, int min_val, int max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
 __forceinline__ __device__ unsigned int __gsharp_clamp(unsigned int value, unsigned int min_val, unsigned int max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
 __forceinline__ __device__ float __gsharp_clamp(float value, float min_val, float max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
 __forceinline__ __device__ double __gsharp_clamp(double value, double min_val, double max_val) { return value < min_val ? min_val : (value > max_val ? max_val : value); }
 
+// --- Bit Manipulation ---
+__device__ __forceinline__ unsigned int __gsharp_rotl32(unsigned int value, int offset) {
+    offset &= 31;
+    return __funnelshift_l(value, value, offset);
+}
+
+__device__ __forceinline__ unsigned int __gsharp_rotr32(unsigned int value, int offset) {
+    offset &= 31;
+    return __funnelshift_r(value, value, offset);
+}
+
+__device__ __forceinline__ unsigned long long __gsharp_rotl64(unsigned long long value, int offset) {
+    offset &= 63;
+    return offset ? (value << offset) | (value >> (64 - offset)) : value;
+}
+
+__device__ __forceinline__ unsigned long long __gsharp_rotr64(unsigned long long value, int offset) {
+    offset &= 63;
+    return offset ? (value >> offset) | (value << (64 - offset)) : value;
+}
+
+__device__ __forceinline__ int __gsharp_tzc_32(unsigned int value) {
+    return value ? __ffs(value) - 1 : 32;
+}
+
+__device__ __forceinline__ int __gsharp_tzc_64(unsigned long long value) {
+    return value ? __ffsll(value) - 1 : 64;
+}
+
+__device__ __forceinline__ int __gsharp_log2_32(unsigned int value) {
+    return value ? 31 - __clz(value) : 0;
+}
+
+__device__ __forceinline__ int __gsharp_log2_64(unsigned long long value) {
+    return value ? 63 - __clzll(value) : 0;
+}
+
+__device__ __forceinline__ int __gsharp_lzc_32(unsigned int value) {
+    return value ? __clz(value) : 32;
+}
+
+__device__ __forceinline__ int __gsharp_lzc_64(unsigned long long value) {
+    return value ? __clzll(value) : 64;
+}
+
+__device__ __forceinline__ unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {
+    unsigned int res;
+    asm(""bfe.u32 %0, %1, %2, %3;"" : ""=r""(res) : ""r""(a), ""r""(pos), ""r""(len));
+    return res;
+}
+
+__device__ __forceinline__ unsigned long long __gsharp_bfe64(unsigned long long a, int pos, int len) {
+    unsigned long long res;
+    asm(""bfe.u64 %0, %1, %2, %3;"" : ""=l""(res) : ""l""(a), ""r""(pos), ""r""(len));
+    return res;
+}
+
+__device__ __forceinline__ unsigned int __gsharp_bfi(unsigned int a, unsigned int b, int pos, int len) {
+    unsigned int res;
+    asm(""bfi.b32 %0, %1, %2, %3, %4;"" : ""=r""(res) : ""r""(a), ""r""(b), ""r""(pos), ""r""(len));
+    return res;
+}
+
+__device__ __forceinline__ unsigned long long __gsharp_bfi64(unsigned long long a, unsigned long long b, int pos, int len) {
+    unsigned long long res;
+    asm(""bfi.b64 %0, %1, %2, %3, %4;"" : ""=l""(res) : ""l""(a), ""l""(b), ""r""(pos), ""r""(len));
+    return res;
+}
+
+#define __gsharp_lop3(a, b, c, immLut) ([&]() -> unsigned int { \
+    unsigned int __res; \
+    asm(""lop3.b32 %0, %1, %2, %3, %4;"" : ""=r""(__res) : ""r""(a), ""r""(b), ""r""(c), ""n""(immLut)); \
+    return __res; \
+}())
+
+// --- Atomics ---
 __forceinline__ __device__ int __gsharp_atomicCAS(int* address, int val, int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ __device__ unsigned int __gsharp_atomicCAS(unsigned int* address, unsigned int val, unsigned int compare) { return atomicCAS(address, compare, val); }
 __forceinline__ __device__ unsigned long long __gsharp_atomicCAS(unsigned long long* address, unsigned long long val, unsigned long long compare) { return atomicCAS(address, compare, val); }
@@ -179,63 +164,6 @@ __forceinline__ __device__ unsigned long long __gsharp_atomicCAS(unsigned long l
 __forceinline__ __device__ int __gsharp_atomicAdd(int* address, int val) { return atomicAdd(address, val) + val; }
 __forceinline__ __device__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }
 __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
-
-/**
- * @brief 32-bit Bit Field Extract (PTX bfe.u32).
- */
-__device__ __forceinline__ unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {
-    unsigned int res;
-    asm(""bfe.u32 %0, %1, %2, %3;"" : ""=r""(res) : ""r""(a), ""r""(pos), ""r""(len));
-    return res;
-}
-
-/**
- * @brief 64-bit Bit Field Extract (PTX bfe.u64).
- */
-__device__ __forceinline__ unsigned long long __gsharp_bfe64(unsigned long long a, int pos, int len) {
-    unsigned long long res;
-    asm(""bfe.u64 %0, %1, %2, %3;"" : ""=l""(res) : ""l""(a), ""r""(pos), ""r""(len));
-    return res;
-}
-
-/**
- * @brief 32-bit Bit Field Insert (PTX bfi.b32).
- */
-__device__ __forceinline__ unsigned int __gsharp_bfi(unsigned int a, unsigned int b, int pos, int len) {
-    unsigned int res;
-    asm(""bfi.b32 %0, %1, %2, %3, %4;"" : ""=r""(res) : ""r""(a), ""r""(b), ""r""(pos), ""r""(len));
-    return res;
-}
-
-/**
- * @brief 64-bit Bit Field Insert (PTX bfi.b64).
- */
-__device__ __forceinline__ unsigned long long __gsharp_bfi64(unsigned long long a, unsigned long long b, int pos, int len) {
-    unsigned long long res;
-    asm(""bfi.b64 %0, %1, %2, %3, %4;"" : ""=l""(res) : ""l""(a), ""l""(b), ""r""(pos), ""r""(len));
-    return res;
-}
-
-/**
- * @brief 3-input arbitrary bitwise logic operation with 8-bit LUT (PTX lop3.b32).
- * Defined as a macro so that the immLut argument satisfies the compile-time constant ('n') constraint.
- */
-#define __gsharp_lop3(a, b, c, immLut) ([&]() -> unsigned int { \
-    unsigned int __res; \
-    asm(""lop3.b32 %0, %1, %2, %3, %4;"" : ""=r""(__res) : ""r""(a), ""r""(b), ""r""(c), ""n""(immLut)); \
-    return __res; \
-}())
-
-
-/**
- * @brief SIMD absolute difference of 4 packed 8-bit unsigned integers with accumulation (PTX vabsdiff4).
- */
-__device__ __forceinline__ unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {
-    unsigned int res;
-    asm(""vabsdiff4.u32.u32.u32.add %0, %1, %2, %3;"" : ""=r""(res) : ""r""(a), ""r""(b), ""r""(c));
-    return res;
-}
-
 
 ";
 }
