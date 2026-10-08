@@ -125,11 +125,13 @@ internal class Program
         var allSuccess = true;
         foreach (var r in results)
         {
-            if (!r.Success)
+            if (r.Success)
             {
-                allSuccess = false;
-                break;
+                continue;
             }
+
+            allSuccess = false;
+            break;
         }
 
         return allSuccess ? 0 : 1;

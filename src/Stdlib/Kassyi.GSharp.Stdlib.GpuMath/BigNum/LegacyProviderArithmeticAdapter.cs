@@ -14,10 +14,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// </remarks>
 internal struct LegacyProviderArithmeticAdapter : IGpuBigIntArithmetic
 {
-    private static GpuBigUInt Wrap(GpuWorkspace ctx, GpuBigIntMemoryHandle handle)
-    {
-        return new GpuBigUInt(ctx, handle, isTemp: true);
-    }
+    private static GpuBigUInt Wrap(GpuWorkspace ctx, GpuBigIntMemoryHandle handle) => new(ctx, handle, isTemp: true);
 
     /// <inheritdoc/>
     public void Add(ref GpuBigIntExecutionContext context, GpuBigIntMemoryHandle left, GpuBigIntMemoryHandle right,

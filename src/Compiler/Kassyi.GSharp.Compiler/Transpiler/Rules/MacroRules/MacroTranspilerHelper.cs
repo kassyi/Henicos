@@ -30,10 +30,7 @@ internal static class MacroTranspilerHelper
             }
         }
 
-        public void Dispose()
-        {
-            _stack.Pop(_cookie);
-        }
+        public void Dispose() => _stack.Pop(_cookie);
     }
 
     public static bool TryBeginMacroScope(
