@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Kassyi.ZeroAlloc.Linq;
 
 /// <summary>
@@ -23,6 +25,23 @@ public static class StackLinqExtensions
     {
         ArgumentNullException.ThrowIfNull(source);
         return new(new ArrayEnumerator<T>(source));
+    }
+
+    /// <summary>
+    /// Wraps a <see cref="System.Collections.Generic.List{T}"/> into a zero-allocation <see cref="StackEnumerable{TEnumerator, T}"/>.
+    /// </summary>
+    /// <typeparam name="T">The type of the elements in the list.</typeparam>
+    /// <param name="source">The source list to wrap.</param>
+    /// <returns>A stack-allocated enumerable wrapping a <see cref="SpanEnumerator{T}"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="source"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> Operates in $O(1)$ time with zero heap allocations by accessing the underlying span.</para>
+    /// <para><b>Execution Target:</b> Host-only (CPU) operation. Cannot be transpiled or invoked within GPU kernels.</para>
+    /// </remarks>
+    public static StackEnumerable<SpanEnumerator<T>, T> AsStackEnumerable<T>(this System.Collections.Generic.List<T> source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        return new(new SpanEnumerator<T>(CollectionsMarshal.AsSpan(source)));
     }
 
     /// <summary>
@@ -72,6 +91,28 @@ public static class StackLinqExtensions
     }
 
     /// <summary>
+    /// Filters a stack-allocated sequence of values based on a predicate. Each element's index is used in the logic of the predicate function.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to filter.</param>
+    /// <param name="predicate">A function to test each source element for a condition; the second parameter of the function represents the index of the source element.</param>
+    /// <returns>A <see cref="StackEnumerable{TEnumerator, TSource}"/> that contains elements from the input sequence that satisfy the condition.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="predicate"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> Evaluated lazily with zero heap allocations.</para>
+    /// </remarks>
+    public static StackEnumerable<WhereAtEnumerator<TEnumerator, TSource>, TSource> Where<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, int, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        return new StackEnumerable<WhereAtEnumerator<TEnumerator, TSource>, TSource>(
+            new WhereAtEnumerator<TEnumerator, TSource>(source.Enumerator, predicate));
+    }
+
+    /// <summary>
     /// Projects each element of a stack-allocated sequence into a new form.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
@@ -93,6 +134,30 @@ public static class StackLinqExtensions
         ArgumentNullException.ThrowIfNull(selector);
         return new StackEnumerable<SelectEnumerator<TEnumerator, TSource, TResult>, TResult>(
             new SelectEnumerator<TEnumerator, TSource, TResult>(source.Enumerator, selector));
+    }
+
+    /// <summary>
+    /// Projects each element of a stack-allocated sequence into a new form by incorporating the element's index.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the source sequence.</typeparam>
+    /// <typeparam name="TResult">The type of the value returned by <paramref name="selector"/>.</typeparam>
+    /// <param name="source">The sequence of elements to invoke a transform function on.</param>
+    /// <param name="selector">A transform function to apply to each source element; the second parameter of the function represents the index of the source element.</param>
+    /// <returns>A <see cref="StackEnumerable{TEnumerator, TResult}"/> whose elements are the result of invoking the transform function on each element of <paramref name="source"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="selector"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> Evaluated lazily with zero heap allocations.</para>
+    /// </remarks>
+    public static StackEnumerable<SelectAtEnumerator<TEnumerator, TSource, TResult>, TResult> Select<TEnumerator, TSource,
+        TResult>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, int, TResult> selector)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(selector);
+        return new StackEnumerable<SelectAtEnumerator<TEnumerator, TSource, TResult>, TResult>(
+            new SelectAtEnumerator<TEnumerator, TSource, TResult>(source.Enumerator, selector));
     }
 
     /// <summary>
@@ -329,6 +394,24 @@ public static class StackLinqExtensions
     }
 
     /// <summary>
+    /// Computes the sum of the sequence of <see cref="int"/> values that are obtained by invoking a transform function on each element of the input sequence.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the source sequence.</typeparam>
+    /// <param name="source">A sequence of values that are used to calculate a sum.</param>
+    /// <param name="selector">A transform function to apply to each element.</param>
+    /// <returns>The sum of the projected values.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="selector"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> Short-circuits the creation of a dedicated enumerator by chaining <see cref="Select{TEnumerator, TSource, TResult}(StackEnumerable{TEnumerator, TSource}, Func{TSource, TResult})"/> internally in $O(N)$ time with zero heap allocations.</para>
+    /// </remarks>
+    public static int Sum<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, int> selector)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
+        source.Select(selector).Sum();
+
+    /// <summary>
     /// Computes the sum of a sequence of <see cref="float"/> values.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
@@ -352,6 +435,24 @@ public static class StackLinqExtensions
     }
 
     /// <summary>
+    /// Computes the sum of the sequence of <see cref="float"/> values that are obtained by invoking a transform function on each element of the input sequence.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the source sequence.</typeparam>
+    /// <param name="source">A sequence of values that are used to calculate a sum.</param>
+    /// <param name="selector">A transform function to apply to each element.</param>
+    /// <returns>The sum of the projected values.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="selector"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> Short-circuits the creation of a dedicated enumerator by chaining <see cref="Select{TEnumerator, TSource, TResult}(StackEnumerable{TEnumerator, TSource}, Func{TSource, TResult})"/> internally in $O(N)$ time with zero heap allocations.</para>
+    /// </remarks>
+    public static float Sum<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, float> selector)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
+        source.Select(selector).Sum();
+
+    /// <summary>
     /// Computes the sum of a sequence of <see cref="double"/> values.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
@@ -373,6 +474,24 @@ public static class StackLinqExtensions
 
         return sum;
     }
+
+    /// <summary>
+    /// Computes the sum of the sequence of <see cref="double"/> values that are obtained by invoking a transform function on each element of the input sequence.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the source sequence.</typeparam>
+    /// <param name="source">A sequence of values that are used to calculate a sum.</param>
+    /// <param name="selector">A transform function to apply to each element.</param>
+    /// <returns>The sum of the projected values.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="selector"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> Short-circuits the creation of a dedicated enumerator by chaining <see cref="Select{TEnumerator, TSource, TResult}(StackEnumerable{TEnumerator, TSource}, Func{TSource, TResult})"/> internally in $O(N)$ time with zero heap allocations.</para>
+    /// </remarks>
+    public static double Sum<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, double> selector)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
+        source.Select(selector).Sum();
 
     /// <summary>
     /// Creates an array from a <see cref="StackEnumerable{TEnumerator, TSource}"/>.

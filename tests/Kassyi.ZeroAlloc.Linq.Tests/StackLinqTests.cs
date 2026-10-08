@@ -12,8 +12,8 @@ public class StackLinqTests
         int[] data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
         int expected = data.Where(x => x > 5)
-                           .Select(x => x * 2)
-                           .Count();
+            .Select(x => x * 2)
+            .Count();
 
         int actual = data.AsStackEnumerable()
             .Where(x => x > 5)
@@ -31,8 +31,8 @@ public class StackLinqTests
 
         // Since standard LINQ does not support Span<T>, execute it against the original array (data) to get the expected value.
         int expected = data.Where(x => x % 2 == 0)
-                           .Select(x => x + 1)
-                           .Count();
+            .Select(x => x + 1)
+            .Count();
 
         int actual = span.AsStackEnumerable()
             .Where(x => x % 2 == 0)
@@ -59,8 +59,8 @@ public class StackLinqTests
         long allocated = memoryAfter - memoryBefore;
 
         int expected = data.Where(x => x % 2 != 0)
-                           .Select(x => x * 3)
-                           .Count();
+            .Select(x => x * 3)
+            .Count();
 
         Assert.Equal(expected, actual);
         Assert.Equal(0, allocated);
@@ -78,7 +78,7 @@ public class StackLinqTests
     public void Any_ShouldReturnTrueIfMatchingElementExists()
     {
         int[] data = { 1, 2, 3, 4, 5 };
-        
+
         Assert.True(data.AsStackEnumerable().Any());
         Assert.True(data.AsStackEnumerable().Any(x => x == 3));
         Assert.False(data.AsStackEnumerable().Any(x => x == 10));
@@ -88,7 +88,7 @@ public class StackLinqTests
     public void All_ShouldReturnTrueIfAllElementsMatch()
     {
         int[] data = { 2, 4, 6, 8 };
-        
+
         Assert.True(data.AsStackEnumerable().All(x => x % 2 == 0));
         Assert.False(data.AsStackEnumerable().All(x => x > 4));
     }
@@ -97,10 +97,10 @@ public class StackLinqTests
     public void First_ShouldReturnFirstMatchingElement()
     {
         int[] data = { 1, 2, 3, 4, 5 };
-        
+
         Assert.Equal(1, data.AsStackEnumerable().First());
         Assert.Equal(4, data.AsStackEnumerable().First(x => x > 3));
-        
+
         Assert.Throws<InvalidOperationException>(() => Array.Empty<int>().AsStackEnumerable().First());
         Assert.Throws<InvalidOperationException>(() => data.AsStackEnumerable().First(x => x > 10));
     }
@@ -109,10 +109,10 @@ public class StackLinqTests
     public void FirstOrDefault_ShouldReturnFirstMatchingElementOrDefault()
     {
         int[] data = { 1, 2, 3, 4, 5 };
-        
+
         Assert.Equal(1, data.AsStackEnumerable().FirstOrDefault());
         Assert.Equal(4, data.AsStackEnumerable().FirstOrDefault(x => x > 3));
-        
+
         Assert.Equal(0, Array.Empty<int>().AsStackEnumerable().FirstOrDefault());
         Assert.Equal(0, data.AsStackEnumerable().FirstOrDefault(x => x > 10));
     }
@@ -134,10 +134,10 @@ public class StackLinqTests
     public void ToArray_ShouldReturnArrayOfElements()
     {
         int[] data = { 1, 2, 3, 4, 5 };
-        
+
         int[] expected = data.Where(x => x > 2).ToArray();
         int[] actual = data.AsStackEnumerable().Where(x => x > 2).ToArray();
-        
+
         Assert.Equal(expected, actual);
     }
 
@@ -175,5 +175,57 @@ public class StackLinqTests
             .Where(x => x > 2)
             .Select(x => x * 10)
             .CopyTo(dest);
+    }
+
+    [Fact]
+    public void List_AsStackEnumerable_ShouldMatchStandardLinq()
+    {
+        var data = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+        int expected = data.Where(x => x > 5)
+            .Select(x => x * 2)
+            .Count();
+
+        int actual = data.AsStackEnumerable()
+            .Where(x => x > 5)
+            .Select(x => x * 2)
+            .Count();
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void Indexed_Where_Select_ShouldMatchStandardLinq()
+    {
+        int[] data = { 10, 20, 30, 40, 50, 60 };
+
+        int expected = data.Where((x, i) => x > 20 && i % 2 == 0)
+            .Select((x, i) => x + i)
+            .Sum();
+
+        int actual = data.AsStackEnumerable()
+            .Where((x, i) => x > 20 && i % 2 == 0)
+            .Select((x, i) => x + i)
+            .Sum();
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void Selector_Sum_ShouldMatchStandardLinq()
+    {
+        int[] data = { 1, 2, 3, 4, 5 };
+
+        int expectedInt = data.Sum(x => x * 2);
+        int actualInt = data.AsStackEnumerable().Sum(x => x * 2);
+        Assert.Equal(expectedInt, actualInt);
+
+        float expectedFloat = data.Sum(x => x * 1.5f);
+        float actualFloat = data.AsStackEnumerable().Sum(x => x * 1.5f);
+        Assert.Equal(expectedFloat, actualFloat);
+
+        double expectedDouble = data.Sum(x => x * 1.1);
+        double actualDouble = data.AsStackEnumerable().Sum(x => x * 1.1);
+        Assert.Equal(expectedDouble, actualDouble, precision: 5);
     }
 }
