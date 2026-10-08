@@ -130,19 +130,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         try
         {
-
             var collector = new DiagnosticCollector();
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
             var cudaSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
                 collector.Report,
-                isDevice: false, cudaDialect);
+                isDevice: false, cudaDialect, out var requiredIncludesCuda);
             var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
             {
-            }, isDevice: false, cppDialect);
+            }, isDevice: false, cppDialect, out var requiredIncludesCpp);
 
-            var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(methodDeclaration, context.SemanticModel);
+            var managedCSharpSource =
+                MethodTranspiler.GenerateManagedCSharpSource(methodDeclaration, context.SemanticModel);
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
@@ -154,6 +154,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     cudaSource,
                     cppSource,
                     managedCSharpSource,
+                    new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
                     collector.GetDiagnostics()
                 );
             }
@@ -169,23 +170,28 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cudaSource,
                 cppSource,
                 managedCSharpSource,
+                new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
                 collector.GetDiagnostics()
             );
         }
         catch (Exception ex)
         {
             var collector = new DiagnosticCollector();
+#pragma warning disable RS1035
+            System.IO.File.AppendAllText(@"P:\Projects\Active\Henicos\tmp\gsharp_error.txt", ex.ToString() + "\n\n");
+#pragma warning restore RS1035
             collector.Report(Diagnostic.Create(
                 GSharpDiagnostics.InternalCompilerError,
                 Location.None,
-                ex.Message));
+                ex.ToString()));
 
             return new TranspiledKernelResult(
                 methodSymbol,
                 methodSymbol.Name,
                 methodSymbol.ContainingType.Name,
                 methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
-                "", "", $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n", collector.GetDiagnostics());
+                "", "", $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n",
+                new EquatableArray<string>(), collector.GetDiagnostics());
         }
     }
 
@@ -201,7 +207,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         try
         {
-
             var collector = new DiagnosticCollector();
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
@@ -214,10 +219,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var cudaBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
                 collector.Report,
-                isDevice: true, cudaDialect);
+                isDevice: true, cudaDialect, out var requiredIncludesCuda);
             var cppBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
             {
-            }, isDevice: true, cppDialect);
+            }, isDevice: true, cppDialect, out var requiredIncludesCpp);
 
             return new TranspiledDeviceMethodResult(
                 methodSymbol,
@@ -228,11 +233,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cudaBody,
                 cppSignature,
                 cppBody,
+                new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
                 collector.GetDiagnostics());
         }
         catch (Exception ex)
         {
             var collector = new DiagnosticCollector();
+#pragma warning disable RS1035
+            System.IO.File.AppendAllText(@"P:\Projects\Active\Henicos\tmp\gsharp_error.txt", ex.ToString() + "\n\n");
+#pragma warning restore RS1035
             collector.Report(Diagnostic.Create(
                 GSharpDiagnostics.InternalCompilerError,
                 Location.None,
@@ -243,7 +252,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 methodSymbol.Name,
                 methodSymbol.ContainingType.Name,
                 null,
-                "", "", "", "", collector.GetDiagnostics());
+                "", "", "", "", new EquatableArray<string>(), collector.GetDiagnostics());
         }
     }
 
@@ -343,8 +352,27 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
         var safeAssemblyName = IdentifierHelper.ToSafeIdentifier(assemblyName);
+        var requiredIncludes = new HashSet<string>();
+        foreach (var method in distinctKernelMethods)
+        {
+            if (method.RequiredIncludes != null)
+            {
+                foreach (var inc in method.RequiredIncludes)
+                {
+                    requiredIncludes.Add(inc);
+                }
+            }
+        }
+        foreach (var method in distinctDeviceMethods)
+        {
+            foreach (var inc in method.RequiredIncludes)
+            {
+                requiredIncludes.Add(inc);
+            }
+        }
+
         WriteUnityAotArtifact(safeAssemblyName, config, preludeSource, commonDeviceSource, allKernelsSource.ToString(),
-            dialect, context);
+            dialect, context, requiredIncludes);
 
         if (!isCuda)
         {
@@ -403,7 +431,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         GeneratorConfig config,
         SourceProductionContext context, bool isCuda)
     {
-        var methodsData = ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>();
+        var methodsData =
+            ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>();
         foreach (var method in methods)
         {
             foreach (var diag in method.Diagnostics)
@@ -423,9 +452,14 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     private static void WriteUnityAotArtifact(string safeAssemblyName, GeneratorConfig config,
         string preludeSource, string commonDeviceSource, string allKernelsSource, ITranspilerDialect dialect,
-        SourceProductionContext context)
+        SourceProductionContext context, HashSet<string> requiredIncludes)
     {
-        var fullSource = preludeSource + commonDeviceSource + allKernelsSource;
+        var includesBuilder = new StringBuilder();
+        foreach (var inc in requiredIncludes)
+        {
+            includesBuilder.AppendLine($"#include {inc}");
+        }
+        var fullSource = includesBuilder + preludeSource + commonDeviceSource + allKernelsSource;
         var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
         var fileName = $"Kassyi.GSharp.Kernels_{safeAssemblyName}{ext}";
         var safeIntermediateOutputPath = config.IntermediateOutputPath ?? "";
@@ -531,6 +565,56 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         using var reader = new StreamReader(stream);
-        return reader.ReadToEnd() + "\n";
+        var content = reader.ReadToEnd() + "\n";
+
+        if (dialect.IsCuda && content.Contains("#include \"StackLinq.cuh\""))
+        {
+            string? slResourceName = null;
+            foreach (var n in assembly.GetManifestResourceNames())
+            {
+                if (n.EndsWith("StackLinq.cuh", StringComparison.Ordinal))
+                {
+                    slResourceName = n;
+                    break;
+                }
+            }
+            if (slResourceName != null)
+            {
+                using var slStream = assembly.GetManifestResourceStream(slResourceName);
+                if (slStream != null)
+                {
+                    using var slReader = new StreamReader(slStream);
+                    var slContent = slReader.ReadToEnd();
+                    var includeIndex = content.IndexOf("#include \"StackLinq.cuh\"", StringComparison.Ordinal);
+                    if (includeIndex >= 0)
+                    {
+                        var before = content[..includeIndex];
+                        var after = content[(includeIndex + 24)..];
+                        content = before + slContent + after;
+                    }
+                }
+            }
+        }
+
+        return content;
+    }
+
+    private static ImmutableArray<string> CombineIncludes(HashSet<string> a, HashSet<string> b)
+    {
+        var builder = ImmutableArray.CreateBuilder<string>();
+        foreach (var item in a)
+        {
+            builder.Add(item);
+        }
+        foreach (var item in b)
+        {
+            if (a.Contains(item))
+            {
+                continue;
+            }
+
+            builder.Add(item);
+        }
+        return builder.ToImmutable();
     }
 }

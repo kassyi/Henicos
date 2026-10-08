@@ -57,6 +57,7 @@
     <DialectYamlFiles Include="Dialects\**\*.yml" />
     <DialectYamlFiles Include="Dialects\**\*.yaml" />
     <EmbeddedResource Include="Resources\Prelude.cu" />
+    <EmbeddedResource Include="Resources\StackLinq.cuh" />
     <EmbeddedResource Include="Resources\Prelude.cpp" />
   </ItemGroup>
 

@@ -15,6 +15,13 @@ struct GSharpArray {
     T* __restrict__ data;
     int length;
 
+    __device__ inline GSharpArray() : data(nullptr), length(0) {}
+    __device__ inline GSharpArray(T* d, int l) : data(d), length(l) {}
+    
+    // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
+    template <typename U>
+    __device__ inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length) {}
+
     __device__ inline T* begin() { return data; }
     __device__ inline T* end() { return data + length; }
     __device__ inline const T* begin() const { return data; }
@@ -25,6 +32,8 @@ struct GSharpArray {
     __device__ inline operator T*() { return data; }
     __device__ inline operator const T*() const { return data; }
 };
+
+
 
 // --- Arithmetic & SIMD ---
 __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
@@ -161,177 +170,5 @@ __forceinline__ __device__ unsigned int __gsharp_atomicAdd(unsigned int* address
 __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
 
 // --- ZeroAlloc.Linq (StackLinq) ---
-namespace Kassyi { namespace ZeroAlloc { namespace Linq {
-    
-    template <typename T>
-    struct ArrayEnumerator {
-        GSharpArray<T> source;
-        int index;
-        
-        __device__ inline ArrayEnumerator(GSharpArray<T> src) : source(src), index(-1) {}
-        
-        __device__ inline bool MoveNext() {
-            if (index + 1 < source.length) {
-                index++;
-                return true;
-            }
-            return false;
-        }
-        __device__ inline T Current() const { return source[index]; }
-    };
-
-    template <typename TSource, typename TPredicate>
-    struct WhereEnumerator {
-        TSource source;
-        TPredicate predicate;
-        
-        __device__ inline WhereEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred) {}
-        
-        __device__ inline bool MoveNext() {
-            while (source.MoveNext()) {
-                if (predicate(source.Current())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        __device__ inline auto Current() const { return source.Current(); }
-    };
-
-    template <typename TSource, typename TSelector>
-    struct SelectEnumerator {
-        TSource source;
-        TSelector selector;
-        
-        __device__ inline SelectEnumerator(TSource src, TSelector sel) : source(src), selector(sel) {}
-        
-        __device__ inline bool MoveNext() { return source.MoveNext(); }
-        __device__ inline auto Current() const { return selector(source.Current()); }
-    };
-
-    template <typename TSource, typename TPredicate>
-    struct WhereAtEnumerator {
-        TSource source;
-        TPredicate predicate;
-        int index;
-        
-        __device__ inline WhereAtEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred), index(0) {}
-        
-        __device__ inline bool MoveNext() {
-            while (source.MoveNext()) {
-                if (predicate(source.Current(), index++)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        __device__ inline auto Current() const { return source.Current(); }
-    };
-
-    template <typename TSource, typename TSelector>
-    struct SelectAtEnumerator {
-        TSource source;
-        TSelector selector;
-        int index;
-        
-        __device__ inline SelectAtEnumerator(TSource src, TSelector sel) : source(src), selector(sel), index(0) {}
-        
-        __device__ inline bool MoveNext() { return source.MoveNext(); }
-        __device__ inline auto Current() const { return selector(source.Current(), index++); }
-    };
-
-    struct StackLinq {
-        template <typename T>
-        __device__ static inline auto AsStackEnumerable(GSharpArray<T> source) {
-            return ArrayEnumerator<T>(source);
-        }
-        
-        template <typename TSource, typename TPredicate>
-        __device__ static inline auto Where(TSource source, TPredicate predicate) {
-            return WhereEnumerator<TSource, TPredicate>(source, predicate);
-        }
-
-        template <typename TSource, typename TPredicate>
-        __device__ static inline auto WhereAt(TSource source, TPredicate predicate) {
-            return WhereAtEnumerator<TSource, TPredicate>(source, predicate);
-        }
-        
-        template <typename TSource, typename TSelector>
-        __device__ static inline auto Select(TSource source, TSelector selector) {
-            return SelectEnumerator<TSource, TSelector>(source, selector);
-        }
-
-        template <typename TSource, typename TSelector>
-        __device__ static inline auto SelectAt(TSource source, TSelector selector) {
-            return SelectAtEnumerator<TSource, TSelector>(source, selector);
-        }
-        
-        template <typename TSource>
-        __device__ static inline int Count(TSource source) {
-            int count = 0;
-            while (source.MoveNext()) count++;
-            return count;
-        }
-
-        template <typename TSource>
-        __device__ static inline bool Any(TSource source) {
-            return source.MoveNext();
-        }
-
-        template <typename TSource, typename TPredicate>
-        __device__ static inline bool Any(TSource source, TPredicate predicate) {
-            while (source.MoveNext()) {
-                if (predicate(source.Current())) return true;
-            }
-            return false;
-        }
-
-        template <typename TSource, typename TPredicate>
-        __device__ static inline bool All(TSource source, TPredicate predicate) {
-            while (source.MoveNext()) {
-                if (!predicate(source.Current())) return false;
-            }
-            return true;
-        }
-
-        template <typename TSource>
-        __device__ static inline auto First(TSource source) {
-            if (source.MoveNext()) return source.Current();
-            // TODO: Assert or trap
-            return decltype(source.Current())();
-        }
-
-        template <typename TSource, typename TPredicate>
-        __device__ static inline auto First(TSource source, TPredicate predicate) {
-            while (source.MoveNext()) {
-                if (predicate(source.Current())) return source.Current();
-            }
-            // TODO: Assert or trap
-            return decltype(source.Current())();
-        }
-
-        template <typename TSource>
-        __device__ static inline auto FirstOrDefault(TSource source) {
-            if (source.MoveNext()) return source.Current();
-            return decltype(source.Current())();
-        }
-
-        template <typename TSource, typename TPredicate>
-        __device__ static inline auto FirstOrDefault(TSource source, TPredicate predicate) {
-            while (source.MoveNext()) {
-                if (predicate(source.Current())) return source.Current();
-            }
-            return decltype(source.Current())();
-        }
-
-        template <typename TSource>
-        __device__ static inline auto Sum(TSource source) {
-            decltype(source.Current()) sum = 0;
-            while (source.MoveNext()) {
-                sum += source.Current();
-            }
-            return sum;
-        }
-    };
-}}}
+#include "StackLinq.cuh"
 

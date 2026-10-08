@@ -16,8 +16,8 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 
         var methodName = symbol.Name;
 
-        // Detect indexed overloads and map to WhereAt / SelectAt
-        if (methodName is "Where" or "Select")
+        // Detect indexed overloads and map to WhereAt / SelectAt / CountAt
+        if (methodName is "Where" or "Select" or "Count")
         {
             var lastParam = symbol.Parameters.Length > 0 ? symbol.Parameters[^1] : null;
             if (lastParam?.Type is INamedTypeSymbol { DelegateInvokeMethod.Parameters.Length: 2 })

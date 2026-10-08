@@ -167,6 +167,8 @@ __forceinline__ __device__ unsigned int __gsharp_atomicAdd(unsigned int* address
 __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
 
 // --- ZeroAlloc.Linq (StackLinq) ---
+#pragma once
+
 namespace Kassyi { namespace ZeroAlloc { namespace Linq {
     
     template <typename T>
@@ -246,6 +248,40 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         __device__ inline auto Current() const { return selector(source.Current(), index++); }
     };
 
+    template <typename TSource>
+    struct TakeEnumerator {
+        TSource source;
+        int remaining;
+        
+        __device__ inline TakeEnumerator(TSource src, int count) : source(src), remaining(count > 0 ? count : 0) {}
+        
+        __device__ inline bool MoveNext() {
+            if (remaining > 0 && source.MoveNext()) {
+                remaining--;
+                return true;
+            }
+            return false;
+        }
+        __device__ inline auto Current() const { return source.Current(); }
+    };
+
+    template <typename TSource>
+    struct SkipEnumerator {
+        TSource source;
+        int remaining;
+        
+        __device__ inline SkipEnumerator(TSource src, int count) : source(src), remaining(count > 0 ? count : 0) {}
+        
+        __device__ inline bool MoveNext() {
+            while (remaining > 0) {
+                if (source.MoveNext()) remaining--;
+                else return false;
+            }
+            return source.MoveNext();
+        }
+        __device__ inline auto Current() const { return source.Current(); }
+    };
+
     struct StackLinq {
         template <typename T>
         __device__ static inline auto AsStackEnumerable(GSharpArray<T> source) {
@@ -271,11 +307,40 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         __device__ static inline auto SelectAt(TSource source, TSelector selector) {
             return SelectAtEnumerator<TSource, TSelector>(source, selector);
         }
+
+        template <typename TSource>
+        __device__ static inline auto Take(TSource source, int count) {
+            return TakeEnumerator<TSource>(source, count);
+        }
+
+        template <typename TSource>
+        __device__ static inline auto Skip(TSource source, int count) {
+            return SkipEnumerator<TSource>(source, count);
+        }
         
         template <typename TSource>
         __device__ static inline int Count(TSource source) {
             int count = 0;
             while (source.MoveNext()) count++;
+            return count;
+        }
+
+        template <typename TSource, typename TPredicate>
+        __device__ static inline int Count(TSource source, TPredicate predicate) {
+            int count = 0;
+            while (source.MoveNext()) {
+                if (predicate(source.Current())) count++;
+            }
+            return count;
+        }
+
+        template <typename TSource, typename TPredicate>
+        __device__ static inline int CountAt(TSource source, TPredicate predicate) {
+            int count = 0;
+            int index = 0;
+            while (source.MoveNext()) {
+                if (predicate(source.Current(), index++)) count++;
+            }
             return count;
         }
 
@@ -338,8 +403,49 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             }
             return sum;
         }
+
+        template <typename TSource, typename TAccumulate, typename TFunc>
+        __device__ static inline TAccumulate Aggregate(TSource source, TAccumulate seed, TFunc func) {
+            TAccumulate result = seed;
+            while (source.MoveNext()) {
+                result = func(result, source.Current());
+            }
+            return result;
+        }
+
+        template <typename TSource>
+        __device__ static inline auto Max(TSource source) {
+            if (!source.MoveNext()) return decltype(source.Current())();
+            auto max_val = source.Current();
+            while (source.MoveNext()) {
+                if (source.Current() > max_val) max_val = source.Current();
+            }
+            return max_val;
+        }
+
+        template <typename TSource>
+        __device__ static inline auto Min(TSource source) {
+            if (!source.MoveNext()) return decltype(source.Current())();
+            auto min_val = source.Current();
+            while (source.MoveNext()) {
+                if (source.Current() < min_val) min_val = source.Current();
+            }
+            return min_val;
+        }
+
+        template <typename TSource>
+        __device__ static inline auto Average(TSource source) {
+            double sum = 0;
+            int count = 0;
+            while (source.MoveNext()) {
+                sum += (double)source.Current();
+                count++;
+            }
+            return count > 0 ? (sum / count) : 0;
+        }
     };
 }}}
+
 
 
 ";

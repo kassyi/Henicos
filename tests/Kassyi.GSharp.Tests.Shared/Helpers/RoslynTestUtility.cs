@@ -14,12 +14,14 @@ public static class RoslynTestUtility
         {
             throw new DirectoryNotFoundException("Could not determine test project directory.");
         }
+
         var projectDir = Path.GetFullPath(Path.Combine(fileDir, ".."));
         var testCasesDir = Path.Combine(projectDir, "TestCases");
         if (!Directory.Exists(testCasesDir))
         {
             throw new DirectoryNotFoundException($"TestCases directory not found at: {testCasesDir}");
         }
+
         return testCasesDir;
     }
 
@@ -39,15 +41,16 @@ public static class RoslynTestUtility
         string typeName,
         string methodName,
         bool isDevice = true,
-        Kassyi.GSharp.Compiler.Transpiler.Dialects.ITranspilerDialect? dialect = null)
+        ITranspilerDialect? dialect = null)
     {
         var (semanticModel, methodSymbol) = MegaCompilationCache.GetMethodContext(typeName, methodName);
         var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
         var diagnostics = new List<Diagnostic>();
-        dialect ??= new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
+        dialect ??= new GSharpCudaDialect();
         var cudaSource =
-            MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice);
+            MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice,
+                new GSharpCudaDialect(), out var _);
         return (cudaSource, diagnostics);
     }
 
@@ -57,16 +60,17 @@ public static class RoslynTestUtility
         string methodName,
         [CallerFilePath] string callerFilePath = "",
         bool isDevice = true,
-        Kassyi.GSharp.Compiler.Transpiler.Dialects.ITranspilerDialect? dialect = null)
+        ITranspilerDialect? dialect = null)
     {
         var (semanticModel, methodSymbol) =
             MegaCompilationCache.GetMethodContext(targetType, methodName, callerFilePath);
         var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
         var diagnostics = new List<Diagnostic>();
-        dialect ??= new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect();
+        dialect ??= new GSharpCudaDialect();
         var cudaSource =
-            MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: isDevice);
+            MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice,
+                new GSharpCudaDialect(), out var _);
         return (cudaSource, diagnostics);
     }
 
@@ -86,7 +90,8 @@ public static class RoslynTestUtility
     {
         var compilation = CreateCompilation(source);
         var analyzerOptions =
-            new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, new TestAnalyzerConfigOptionsProvider(targetDialect));
+            new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty,
+                new TestAnalyzerConfigOptionsProvider(targetDialect));
         var compilationWithAnalyzers = compilation.WithAnalyzers(ImmutableArray.Create(analyzer), analyzerOptions);
         return await compilationWithAnalyzers.GetAnalyzerDiagnosticsAsync();
     }
@@ -271,7 +276,8 @@ internal class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
 {
     public override AnalyzerConfigOptions GlobalOptions { get; }
 
-    public TestAnalyzerConfigOptionsProvider(string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null)
+    public TestAnalyzerConfigOptionsProvider(string targetDialect = "Cuda",
+        Dictionary<string, string>? additionalOptions = null)
     {
         GlobalOptions = new TestAnalyzerConfigOptions(targetDialect, additionalOptions);
     }
