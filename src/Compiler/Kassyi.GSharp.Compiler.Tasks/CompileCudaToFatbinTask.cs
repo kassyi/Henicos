@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
@@ -367,21 +366,25 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                 var suppressGs0001 = false;
                 foreach (var sourcePath in sourcePaths)
                 {
-                    if (File.Exists(sourcePath))
+                    if (!File.Exists(sourcePath))
                     {
-                        try
+                        continue;
+                    }
+
+                    try
+                    {
+                        var content = File.ReadAllText(sourcePath);
+                        if (!content.Contains("// gsharp:suppress GS0001"))
                         {
-                            var content = File.ReadAllText(sourcePath);
-                            if (content.Contains("// gsharp:suppress GS0001"))
-                            {
-                                suppressGs0001 = true;
-                                break;
-                            }
+                            continue;
                         }
-                        catch
-                        {
-                            // Ignore read errors
-                        }
+
+                        suppressGs0001 = true;
+                        break;
+                    }
+                    catch
+                    {
+                        // Ignore read errors
                     }
                 }
 
@@ -431,8 +434,41 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
 internal static class NvccOutputParser
 {
-    private static readonly Regex s_spillRegex =
-        new(@"[1-9]\d*\s+bytes spill", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static bool HasSpill(string line)
+    {
+        const string Target = "bytes spill";
+        var index = 0;
+        while (index < line.Length)
+        {
+            var found = line.IndexOf(Target, index, StringComparison.OrdinalIgnoreCase);
+            if (found <= 0)
+            {
+                return false;
+            }
+
+            var i = found - 1;
+            while (i >= 0 && char.IsWhiteSpace(line[i]))
+            {
+                i--;
+            }
+
+            var endOfDigits = i;
+            while (i >= 0 && char.IsDigit(line[i]))
+            {
+                i--;
+            }
+
+            var startOfDigits = i + 1;
+            if (startOfDigits <= endOfDigits && line[startOfDigits] != '0')
+            {
+                return true;
+            }
+
+            index = found + Target.Length;
+        }
+
+        return false;
+    }
 
     public static bool DetectRegisterSpill(string output, string error, out string errorMessage)
     {
@@ -450,7 +486,7 @@ internal static class NvccOutputParser
 
             if ((line.IndexOf("ptxas warning", StringComparison.OrdinalIgnoreCase) < 0 ||
                  line.IndexOf("spill", StringComparison.OrdinalIgnoreCase) < 0) &&
-                !s_spillRegex.IsMatch(line))
+                !HasSpill(line))
             {
                 continue;
             }
@@ -473,7 +509,7 @@ internal static class NvccOutputParser
         using var outReader = new StringReader(output);
         while ((line = outReader.ReadLine()) != null)
         {
-            if (s_spillRegex.IsMatch(line))
+            if (HasSpill(line))
             {
                 spillLines.Add(line.Trim());
             }

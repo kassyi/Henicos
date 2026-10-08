@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace Kassyi.GSharp.Compiler.Generators;
 
@@ -136,7 +135,7 @@ public static partial class DiagnosticGenerator
         {
             writer.Line("#error Diagnostic ID is missing in diagnostics.json.");
         }
-        else if (!IdFormatRegex().IsMatch(diag.Id))
+        else if (!IsValidId(diag.Id))
         {
             writer.Line($"#error Invalid diagnostic ID format '{diag.Id}' in diagnostics.json. Expected 3 alphanumeric characters followed by 4 digits (e.g. GSH0001).");
         }
@@ -162,6 +161,24 @@ public static partial class DiagnosticGenerator
 
     private static string Escape(string? s) => s?.Replace("\"", "\\\"") ?? "";
 
-    [GeneratedRegex(@"^[A-Za-z0-9]{3}\d{4}$")]
-    private static partial Regex IdFormatRegex();
+    private static bool IsValidId(string id)
+    {
+        if (id.Length != 7)
+        {
+            return false;
+        }
+
+        return isAsciiLetterOrDigit(id[0]) &&
+               isAsciiLetterOrDigit(id[1]) &&
+               isAsciiLetterOrDigit(id[2]) &&
+               isAsciiDigit(id[3]) &&
+               isAsciiDigit(id[4]) &&
+               isAsciiDigit(id[5]) &&
+               isAsciiDigit(id[6]);
+
+        static bool isAsciiDigit(char c) => c is >= '0' and <= '9';
+
+        static bool isAsciiLetterOrDigit(char c) =>
+            c is >= 'A' and <= 'Z' or >= 'a' and <= 'z' or >= '0' and <= '9';
+    }
 }
