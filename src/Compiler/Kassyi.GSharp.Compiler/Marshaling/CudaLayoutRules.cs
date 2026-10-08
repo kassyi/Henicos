@@ -109,7 +109,13 @@ internal static class CudaLayoutRules
 
     private static bool TryGetPredefinedLayout(ITypeSymbol type, out CudaLayoutInfo layout)
     {
-        if (type is IArrayTypeSymbol or IPointerTypeSymbol)
+        if (KernelLaunchEmitter.IsArrayLikeType(type, out _))
+        {
+            layout = new CudaLayoutInfo(16, 8); // Device pointer (8) + Length (4) + Padding (4)
+            return true;
+        }
+
+        if (type is IPointerTypeSymbol)
         {
             layout = new CudaLayoutInfo(8, 8); // Device pointer size/alignment (64-bit CUDA)
             return true;

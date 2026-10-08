@@ -501,8 +501,7 @@ internal static class WrapperEmitter
 
                 if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out var elementType))
                 {
-                    writer.AppendFullyQualifiedCsharpName(elementType);
-                    writer.Append("* ");
+                    writer.Append("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ");
                     writer.Append(p.Name);
                 }
                 else
@@ -739,8 +738,11 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
 
-                if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out _) ||
-                    p.RefKind is RefKind.Ref or RefKind.Out)
+                if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
+                {
+                    writer.Append($"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{p.Name}, Length = {p.Name}.Length }}");
+                }
+                else if (p.RefKind is RefKind.Ref or RefKind.Out)
                 {
                     writer.Append("p_");
                     writer.Append(p.Name);

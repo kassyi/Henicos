@@ -138,6 +138,7 @@ public class GpuBigIntCoreTests
         var expected = BigInteger.Parse("90000");
         Assert.Equal(expected, ToBigInteger(result.ToHostArray()));
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -153,6 +154,7 @@ public class GpuBigIntCoreTests
             gpuFunc: (a, b) => a + b
         );
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -185,6 +187,7 @@ public class GpuBigIntCoreTests
 
         AssertGpuResultEqualsCpu(bigA + bigB, gpuResult, TestSizeWords);
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -242,6 +245,7 @@ public class GpuBigIntCoreTests
         Buffer.BlockCopy(bytes, 0, words, 0, copyBytes);
         return words;
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Scalar_Correctness(GpuExecutionEngine engine)
@@ -284,6 +288,7 @@ public class GpuBigIntCoreTests
         GpuBigIntMath.Mul(gpuA, scalarMul, gpuResult);
         AssertGpuResultEqualsCpu(bigA * scalarMul, gpuResult, TestSizeWords);
     }
+
     [SkippableFact]
     public void Test_NttReference_Correctness()
     {
@@ -314,6 +319,7 @@ public class GpuBigIntCoreTests
             Assert.Equal(expectedWords[i], actualWords[i]);
         }
     }
+
     [SkippableTheory]
     // Standard prime: p = 17, threshold = primeModulus - b = 7 (for b = 10)
     [InlineData(6u, 10u, 17u)] // Just below threshold: (6 + 10 = 16 < 17) -> 16
@@ -341,6 +347,7 @@ public class GpuBigIntCoreTests
         var actual = GpuBigIntNttKernels.ModAdd(a, b, p);
         Assert.Equal(expected, actual);
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -359,6 +366,7 @@ public class GpuBigIntCoreTests
             gpuFunc: (a, b) => a * b
         );
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Div_Correctness(GpuExecutionEngine engine)
@@ -400,6 +408,7 @@ public class GpuBigIntCoreTests
         gpuResult.Value = gpuA % gpuB;
         AssertGpuResultEqualsCpu(bigA % bigB, gpuResult);
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Bitwise_Correctness(GpuExecutionEngine engine)
@@ -425,6 +434,7 @@ public class GpuBigIntCoreTests
         gpuResult.Value = ~gpuA;
         Assert.Equal(arrA.Select(a => ~a).ToArray(), gpuResult.ToHostArray());
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot, 143)]
     [InlineData(GpuExecutionEngine.GSharpAot, 0)] // Edge case: zero shift
@@ -452,6 +462,7 @@ public class GpuBigIntCoreTests
 
         AssertGpuResultEqualsCpu(expectedBig, gpuResult, TestSizeWords);
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot, 143)]
     [InlineData(GpuExecutionEngine.GSharpAot, 0)] // Edge case: zero shift
@@ -611,6 +622,7 @@ public class GpuBigIntCoreTests
             carryVal.Dispose();
         }
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_DivRem_Mod_ModPow_Correctness(GpuExecutionEngine engine)
@@ -737,6 +749,7 @@ public class GpuBigIntCoreTests
 
         Assert.Equal(expected, actual);
     }
+
     [SkippableFact]
     public void Test_HalfGcdReference_Correctness()
     {
@@ -766,6 +779,7 @@ public class GpuBigIntCoreTests
             Assert.Equal(expectedGcd, actualGcd);
         }
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Gcd_Correctness(GpuExecutionEngine engine)
@@ -793,6 +807,7 @@ public class GpuBigIntCoreTests
 
         Assert.Equal(expectedGcd, actualGcd);
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
@@ -810,6 +825,7 @@ public class GpuBigIntCoreTests
             GpuBigIntMath.Gcd(gpuA, gpuB, gpuResult);
         });
     }
+
     [SkippableTheory]
     // Happy path
     [InlineData(GpuExecutionEngine.GSharpAot, 48u, 18u)]
@@ -881,6 +897,7 @@ public class GpuBigIntCoreTests
         var actualInverseStruct = ToBigInteger(gpuResult2.ToHostArray());
         Assert.Equal(expectedInverse, actualInverseStruct);
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Function_ModInverse_NotCoprime_Throws(GpuExecutionEngine engine)
@@ -921,6 +938,7 @@ public class GpuBigIntCoreTests
         if (v < 0) v = (v + n) % n;
         return v;
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_CompareTo_Correctness(GpuExecutionEngine engine)
@@ -1001,6 +1019,7 @@ public class GpuBigIntCoreTests
         Assert.Equal(bigInt.GetBitLength(), gpu.GetBitLength());
         Assert.Equal(bigInt.GetByteCount(isUnsigned: true), gpu.GetByteCount());
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_State_Correctness(GpuExecutionEngine engine)
@@ -1039,6 +1058,7 @@ public class GpuBigIntCoreTests
         gpuZero.SetIsNegative(false);
         Assert.False(gpuZero.GetIsNegative());
     }
+
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Sqrt_Correctness(GpuExecutionEngine engine)
@@ -1207,8 +1227,6 @@ public class GpuBigIntCoreTests
         var actualBig = ToBigInteger(actualGpu.ToHostArray());
         if (expected != actualBig)
         {
-            File.WriteAllText("P:\\Projects\\Active\\Henicos\\hex_diff.txt",
-                "EXPECTED:\n" + expected.ToString("X") + "\nACTUAL:\n" + actualBig.ToString("X"));
             Assert.Equal(expected, actualBig);
         }
     }

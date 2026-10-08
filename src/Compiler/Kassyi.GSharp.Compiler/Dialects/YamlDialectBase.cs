@@ -196,7 +196,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
         }
         else if (isArray)
         {
-            KernelLaunchEmitter.IsArrayLikeType(typeSymbol, out var elementType);
+            KernelLaunchEmitter.IsArrayLikeType(typeSymbol!, out var elementType);
             context.Emitter.Writer.Append("GSharpArray<");
             if (isReadOnly)
             {

@@ -1,4 +1,5 @@
 using System.Buffers;
+using Kassyi.GSharp.Runtime.Interop;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 
@@ -20,18 +21,12 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     /// <summary>
     /// Gets the <see cref="GpuWorkspace"/> associated with this GPU integer instance.
     /// </summary>
-    public GpuWorkspace Workspace
-    {
-        get;
-    }
+    public GpuWorkspace Workspace { get; }
 
     /// <summary>
     /// Gets the underlying GPU memory handle tracking device buffer allocation and lifetime.
     /// </summary>
-    public GpuBigIntMemoryHandle Handle
-    {
-        get;
-    }
+    public GpuBigIntMemoryHandle Handle { get; }
 
     /// <summary>
     /// Gets the raw 64-bit device memory pointer to the first limb word in GPU global address space.
@@ -45,12 +40,24 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     public int NumWords => Handle.IsDefault ? 0 : Handle.NumWords;
 
     /// <summary>
+    /// Returns a native array proxy struct representing this GPU buffer for P/Invoke AOT context structs.
+    /// </summary>
+    /// <returns>A native array proxy struct.</returns>
+    public GSharpArrayProxy ToProxy() => new() { Data = DevicePointer, Length = NumWords };
+
+    /// <summary>
+    /// Implicitly converts this <see cref="GpuBigUInt"/> to <see cref="GSharpArrayProxy"/>.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <remarks>
+    /// This provides a convenient syntax for passing GPU big integer buffers to native marshal context structs.
+    /// </remarks>
+    public static implicit operator GSharpArrayProxy(GpuBigUInt value) => value.ToProxy();
+
+    /// <summary>
     /// Gets a value indicating whether this buffer represents an intermediate temporary buffer managed by expression evaluation.
     /// </summary>
-    public bool IsTemp
-    {
-        get;
-    }
+    public bool IsTemp { get; }
 
     internal GpuBigUInt(GpuWorkspace workspace, GpuBigIntMemoryHandle handle, bool isTemp = false)
     {

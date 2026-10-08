@@ -19,22 +19,22 @@ public class NativeStructGenerationTests
         var generatedSources = runResult.GeneratedTrees.Select(t => t.ToString()).ToList();
         var allCode = string.Join("\n", generatedSources);
 
-        // 1. Check native struct declaration and layout for ChildStruct where float[] is replaced by IntPtr
+        // 1. Check native struct declaration and layout for ChildStruct where float[] is replaced by GSharpArrayProxy
         Assert.Contains(
-            "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]",
+            "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]",
             allCode);
         Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_ChildStruct", allCode);
-        Assert.Contains("IntPtr Values;", allCode);
+        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Values;", allCode);
         Assert.Contains("int Scale;", allCode);
 
         // 2. Check native struct declaration for ParentStruct with nested native struct
         Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_ParentStruct", allCode);
         Assert.Contains("Kassyi_GSharp_Tests_GeneratorTestCode_ChildStruct Child;", allCode);
-        Assert.Contains("IntPtr ExtraBuffer;", allCode);
+        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ExtraBuffer;", allCode);
 
-        // 3. Check native struct declaration for StructWithArrayOfStructs where ChildStruct[] is replaced by IntPtr
+        // 3. Check native struct declaration for StructWithArrayOfStructs where ChildStruct[] is replaced by GSharpArrayProxy
         Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_StructWithArrayOfStructs", allCode);
-        Assert.Contains("IntPtr Children;", allCode);
+        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Children;", allCode);
 
         // 4. Verify Marshal and Unmarshal helper methods exist for the structs
         Assert.Contains("Marshal_ChildStruct", allCode);
@@ -43,9 +43,9 @@ public class NativeStructGenerationTests
         Assert.Contains("Unmarshal_ParentStruct", allCode);
 
         // 5. Verify packed struct (now emitted explicitly following CUDA ABI rules)
-        Assert.Contains("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]", allCode);
+        Assert.Contains("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 18)]", allCode);
         Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_PackedShadowStruct", allCode);
-        Assert.Contains("IntPtr Data;", allCode);
+        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;", allCode);
         Assert.Contains("global::System.Byte Flag;", allCode);
     }
 }
