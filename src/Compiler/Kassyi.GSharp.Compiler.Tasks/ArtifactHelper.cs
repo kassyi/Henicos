@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+using Kassyi.GSharp.Cryptography;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -7,20 +7,52 @@ internal static class ArtifactHelper
     public static bool ProcessArtifact(string outputFilePath, TaskLoggingHelper log)
     {
         var fileData = File.ReadAllBytes(outputFilePath);
-        var hashBytes = ComputeSha256(fileData);
+        var keySeed = ResolveSigningKey(log);
+        var signature = Ed25519.Sign(fileData, keySeed);
 
-
-        var plainFinalData = new byte[fileData.Length + 32];
-        Buffer.BlockCopy(fileData, 0, plainFinalData, 0, fileData.Length);
-        Buffer.BlockCopy(hashBytes, 0, plainFinalData, fileData.Length, 32);
-        File.WriteAllBytes(outputFilePath, plainFinalData);
+        var signedData = new byte[fileData.Length + Ed25519.SignatureSize];
+        Buffer.BlockCopy(fileData, 0, signedData, 0, fileData.Length);
+        Buffer.BlockCopy(signature, 0, signedData, fileData.Length, Ed25519.SignatureSize);
+        File.WriteAllBytes(outputFilePath, signedData);
         return true;
     }
 
-    private static byte[] ComputeSha256(byte[] data)
+    private static ReadOnlySpan<byte> ResolveSigningKey(TaskLoggingHelper log)
     {
-        using var sha256 = SHA256.Create();
-        return sha256.ComputeHash(data);
+        var envKey = Environment.GetEnvironmentVariable("GSHARP_SIGNING_KEY");
+        if (string.IsNullOrWhiteSpace(envKey))
+        {
+            return Ed25519.DefaultDevKeySeed;
+        }
+
+        try
+        {
+            var trimmed = envKey.Trim();
+            if (trimmed.Length == 64)
+            {
+                var key = new byte[32];
+                for (var i = 0; i < 32; i++)
+                {
+                    key[i] = Convert.ToByte(trimmed.Substring(i * 2, 2), 16);
+                }
+
+                return key;
+            }
+
+            var base64Key = Convert.FromBase64String(trimmed);
+            if (base64Key.Length == 32)
+            {
+                return base64Key;
+            }
+
+            log.LogWarning("GSHARP_SIGNING_KEY environment variable is invalid (must be 32 bytes hex or base64). Falling back to default development signing key.");
+        }
+        catch (Exception ex)
+        {
+            log.LogWarning($"Failed to parse GSHARP_SIGNING_KEY: {ex.Message}. Falling back to default development signing key.");
+        }
+
+        return Ed25519.DefaultDevKeySeed;
     }
 
     public static string GetCleanKernelFileName(string sourcePath)

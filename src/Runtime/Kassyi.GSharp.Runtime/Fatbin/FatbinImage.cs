@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Cryptography;
+
 namespace Kassyi.GSharp.Runtime.Fatbin;
 
 /// <summary>
@@ -30,8 +32,8 @@ public sealed class FatbinImage
     }
 
     /// <summary>
-    /// Gets a value indicating whether a G# 32-byte SHA-256 signature is detected at the tail.
-    /// Determined strictly by whether the source binary length equals <see cref="PayloadSize"/> + 32.
+    /// Gets a value indicating whether a G# 64-byte Ed25519 digital signature is detected at the tail.
+    /// Determined strictly by whether the source binary length equals <see cref="PayloadSize"/> + 64.
     /// </summary>
     public bool HasGSharpSignature
     {
@@ -47,7 +49,7 @@ public sealed class FatbinImage
     }
 
     /// <summary>
-    /// Gets the appended 32-byte G# signature, or an empty memory slice if not signed.
+    /// Gets the appended 64-byte G# Ed25519 digital signature, or an empty memory slice if not signed.
     /// </summary>
     public ReadOnlyMemory<byte> Signature
     {
@@ -68,7 +70,7 @@ public sealed class FatbinImage
     /// <param name="magic">The FATBIN magic number.</param>
     /// <param name="version">The FATBIN format version.</param>
     /// <param name="payloadSize">The total payload size in bytes.</param>
-    /// <param name="hasGSharpSignature">Whether a G# 32-byte SHA-256 signature is present.</param>
+    /// <param name="hasGSharpSignature">Whether a G# 64-byte Ed25519 signature is present.</param>
     /// <param name="payload">The binary payload data slice.</param>
     /// <param name="signature">The appended signature slice, if present.</param>
     /// <param name="items">The collection of parsed embedded modules.</param>
@@ -141,6 +143,30 @@ public sealed class FatbinImage
                     }
             }
 
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Verifies the appended Ed25519 signature against one or more trusted 32-byte public keys (Authorized Keys model).
+    /// </summary>
+    /// <param name="trustedKeys">A contiguous byte span containing one or more 32-byte public keys.</param>
+    /// <returns><see langword="true"/> if the signature matches any trusted key in the whitelist; otherwise, <see langword="false"/>.</returns>
+    public bool VerifySignature(ReadOnlySpan<byte> trustedKeys)
+    {
+        if (!HasGSharpSignature || Signature.Length != Ed25519.SignatureSize || trustedKeys.Length == 0 || (trustedKeys.Length % Ed25519.PublicKeySize) != 0)
+        {
+            return false;
+        }
+
+        for (var offset = 0; offset < trustedKeys.Length; offset += Ed25519.PublicKeySize)
+        {
+            var key = trustedKeys.Slice(offset, Ed25519.PublicKeySize);
+            if (Ed25519.Verify(Payload.Span, Signature.Span, key))
+            {
+                return true;
+            }
         }
 
         return false;

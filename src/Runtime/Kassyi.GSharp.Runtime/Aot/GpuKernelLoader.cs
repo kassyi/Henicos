@@ -240,14 +240,14 @@ public sealed class GpuKernelLoader
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static IntPtr LoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName)
     {
-        // 1. Fast path: Extract embedded hash struct (without calculating SHA256 yet) to check cache
-        if (aotFatbin.Length < 32)
+        // 1. Fast path: Extract embedded hash struct from signature to check cache
+        if (aotFatbin.Length < AotSignatureValidator.SignatureSize)
         {
-            throw new InvalidOperationException("AOT kernel binary is too small to contain a valid hash.");
+            throw new InvalidOperationException("AOT kernel binary is too small to contain a valid signature.");
         }
 
         EnsureInitialized();
-        var embeddedHashStruct = new AotSignatureValidator.Hash256(aotFatbin.Slice(aotFatbin.Length - 32));
+        var embeddedHashStruct = new AotSignatureValidator.Hash256(aotFatbin.Slice(aotFatbin.Length - AotSignatureValidator.SignatureSize, 32));
         var cacheKey = (embeddedHashStruct, kernelName);
 
         if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))

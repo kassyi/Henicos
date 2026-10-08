@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using Kassyi.GSharp.Cryptography;
 using Kassyi.GSharp.Runtime.Aot;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
@@ -17,7 +18,7 @@ public class CpuKernelLoaderTests
         var tempFile = Path.GetTempFileName();
         try
         {
-            File.WriteAllBytes(tempFile, new byte[31]); // Less than 32 bytes
+            File.WriteAllBytes(tempFile, new byte[63]); // Less than 64 bytes
             
             var ex = Assert.Throws<InvalidOperationException>(() =>
             {
@@ -40,15 +41,15 @@ public class CpuKernelLoaderTests
         try
         {
             byte[] dummyBinary = "INVALID_DLL_CONTENT"u8.ToArray();
-            byte[] invalidHash = new byte[32]; // all zeros, incorrect
-            byte[] fileContent = [..dummyBinary, ..invalidHash];
+            byte[] invalidSignature = new byte[64]; // all zeros, incorrect
+            byte[] fileContent = [..dummyBinary, ..invalidSignature];
             File.WriteAllBytes(tempFile, fileContent);
 
             var ex = Assert.Throws<InvalidOperationException>(() =>
             {
                 CpuKernelLoader.LoadAotKernel<EmptyDelegate>("dummy_kernel", tempFile);
             });
-            Assert.Contains("hash mismatch", ex.Message);
+            Assert.Contains("signature", ex.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -59,15 +60,15 @@ public class CpuKernelLoaderTests
     [Fact]
     [Trait("Category", "Runtime")]
     [Trait("Category", "SadPath")]
-    public void Test_CpuLoader_ValidHash_FailsAtNativeLibraryLoad()
+    public void Test_CpuLoader_ValidSignature_FailsAtNativeLibraryLoad()
     {
         var tempFile = Path.GetTempFileName();
         var dllFile = tempFile + ".dll";
         try
         {
             byte[] dummyBinary = "INVALID_DLL_CONTENT"u8.ToArray();
-            byte[] validHash = SHA256.HashData(dummyBinary);
-            byte[] fileContent = [..dummyBinary, ..validHash];
+            byte[] validSignature = Ed25519.Sign(dummyBinary, Ed25519.DefaultDevKeySeed);
+            byte[] fileContent = [..dummyBinary, ..validSignature];
             File.WriteAllBytes(dllFile, fileContent);
 
             Assert.ThrowsAny<Exception>(() =>

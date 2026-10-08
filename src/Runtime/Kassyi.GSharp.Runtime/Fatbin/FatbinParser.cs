@@ -28,9 +28,9 @@ public static class FatbinParser
     private const int MinimumItemHeaderSize = 40;
 
     /// <summary>
-    /// Size of the G# appended SHA-256 signature in bytes.
+    /// Size of the G# appended Ed25519 digital signature in bytes.
     /// </summary>
-    private const int GSharpSignatureSize = 32;
+    public const int GSharpSignatureSize = 64;
 
     /// <summary>
     /// Attempts to defensively parse a fatbin binary span.
@@ -67,7 +67,6 @@ public static class FatbinParser
 
         fatbin = null;
         return false;
-
     }
 
     private static bool TryParseInternal(
@@ -92,7 +91,8 @@ public static class FatbinParser
         }
 
         var hasGSharpSignature = (ulong)span.Length == totalPayloadSize + GSharpSignatureSize;
-        var (payloadMemory, signatureMemory) = ResolveBuffers(span, memory, isMemoryBacked, (int)totalPayloadSize, hasGSharpSignature);
+        var (payloadMemory, signatureMemory) =
+            ResolveBuffers(span, memory, isMemoryBacked, (int)totalPayloadSize, hasGSharpSignature);
 
         if (!TryParseItems(span, header.HeaderSize, (int)totalPayloadSize, out var items))
         {

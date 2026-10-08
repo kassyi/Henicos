@@ -1,10 +1,9 @@
-#nullable enable
 using System;
-using System.Threading.Tasks;
-using Xunit;
-using Kassyi.GSharp.Runtime.Aot;
-using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
+using Kassyi.GSharp.Cryptography;
+using Kassyi.GSharp.Runtime.Aot;
+using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
@@ -16,8 +15,8 @@ public class GpuKernelLoaderAotTests
     static GpuKernelLoaderAotTests()
     {
         var basePtx = Encoding.UTF8.GetBytes(".version 7.0\n.target sm_50\n.address_size 64\n.visible .entry empty_kernel() { ret; }\0");
-        var hash = System.Security.Cryptography.SHA256.HashData(basePtx);
-        s_validPtx = [.. basePtx, .. hash];
+        var signature = Ed25519.Sign(basePtx, Ed25519.DefaultDevKeySeed);
+        s_validPtx = [.. basePtx, .. signature];
     }
 
     [Fact]
