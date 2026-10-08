@@ -7,33 +7,49 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 {
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        if (symbol.ContainingNamespace?.Name != "Linq" || 
+        if (symbol.ContainingNamespace?.Name != "Linq" ||
             symbol.ContainingNamespace?.ContainingNamespace?.Name != "ZeroAlloc" ||
             symbol.ContainingNamespace?.ContainingNamespace?.ContainingNamespace?.Name != "Kassyi")
         {
             return false;
         }
 
+        var methodName = symbol.Name;
+
+        // Detect indexed overloads and map to WhereAt / SelectAt
+        if (methodName is "Where" or "Select")
+        {
+            var lastParam = symbol.Parameters.Length > 0 ? symbol.Parameters[^1] : null;
+            if (lastParam?.Type is INamedTypeSymbol { DelegateInvokeMethod.Parameters.Length: 2 })
+            {
+                methodName += "At";
+            }
+        }
+
         // Output the C++ namespace for our StackLinq implementation
         context.Emitter.Writer.Append("Kassyi::ZeroAlloc::Linq::StackLinq::");
-        context.Emitter.Writer.Append(symbol.Name);
+        context.Emitter.Writer.Append(methodName);
 
         using (context.Emitter.Writer.Parentheses())
         {
             var arguments = node.ArgumentList.Arguments;
-
-            // If this is an extension method call via instance.Method(), the instance is the first argument
-            if (symbol.IsExtensionMethod && node.Expression is MemberAccessExpressionSyntax memberAccess)
+            switch (symbol.IsExtensionMethod)
             {
-                context.Visitor.Visit(memberAccess.Expression);
-                if (arguments.Count > 0)
+                // If this is an extension method call via instance.Method(), the instance is the first argument
+                case true when node.Expression is MemberAccessExpressionSyntax memberAccess:
                 {
-                    context.Emitter.Writer.AppendComma();
+                    context.Visitor.Visit(memberAccess.Expression);
+
+                    if (arguments.Count > 0)
+                    {
+                        context.Emitter.Writer.AppendComma();
+                    }
+
+                    break;
                 }
-            }
-            else if (symbol.IsExtensionMethod)
-            {
-                 // Called as a normal static method, first arg is the instance, which is handled normally below
+                case true:
+                    // Called as a normal static method, first arg is the instance, which is handled normally below
+                    break;
             }
 
             for (var i = 0; i < arguments.Count; i++)

@@ -54,4 +54,19 @@ public partial class StackLinqTestKernel
             data[0] = first;
         }
     }
+
+    [GpuKernel]
+    public static void RunLinqIndexedAndSelectorSum(int[] data)
+    {
+        int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+        if (tid == 0)
+        {
+            int sum = data.AsStackEnumerable()
+                          .Where((x, i) => x > 5 && i % 2 == 0)
+                          .Select((x, i) => x + i)
+                          .Sum(x => x * 3);
+            
+            data[0] = sum;
+        }
+    }
 }

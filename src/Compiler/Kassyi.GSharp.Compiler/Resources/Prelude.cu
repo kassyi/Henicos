@@ -209,6 +209,37 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         __device__ inline auto Current() const { return selector(source.Current()); }
     };
 
+    template <typename TSource, typename TPredicate>
+    struct WhereAtEnumerator {
+        TSource source;
+        TPredicate predicate;
+        int index;
+        
+        __device__ inline WhereAtEnumerator(TSource src, TPredicate pred) : source(src), predicate(pred), index(0) {}
+        
+        __device__ inline bool MoveNext() {
+            while (source.MoveNext()) {
+                if (predicate(source.Current(), index++)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        __device__ inline auto Current() const { return source.Current(); }
+    };
+
+    template <typename TSource, typename TSelector>
+    struct SelectAtEnumerator {
+        TSource source;
+        TSelector selector;
+        int index;
+        
+        __device__ inline SelectAtEnumerator(TSource src, TSelector sel) : source(src), selector(sel), index(0) {}
+        
+        __device__ inline bool MoveNext() { return source.MoveNext(); }
+        __device__ inline auto Current() const { return selector(source.Current(), index++); }
+    };
+
     struct StackLinq {
         template <typename T>
         __device__ static inline auto AsStackEnumerable(GSharpArray<T> source) {
@@ -219,10 +250,20 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         __device__ static inline auto Where(TSource source, TPredicate predicate) {
             return WhereEnumerator<TSource, TPredicate>(source, predicate);
         }
+
+        template <typename TSource, typename TPredicate>
+        __device__ static inline auto WhereAt(TSource source, TPredicate predicate) {
+            return WhereAtEnumerator<TSource, TPredicate>(source, predicate);
+        }
         
         template <typename TSource, typename TSelector>
         __device__ static inline auto Select(TSource source, TSelector selector) {
             return SelectEnumerator<TSource, TSelector>(source, selector);
+        }
+
+        template <typename TSource, typename TSelector>
+        __device__ static inline auto SelectAt(TSource source, TSelector selector) {
+            return SelectAtEnumerator<TSource, TSelector>(source, selector);
         }
         
         template <typename TSource>

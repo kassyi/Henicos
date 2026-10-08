@@ -739,5 +739,188 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
 }
 }
 #pragma warning restore CS8500
+public const string RunLinqIndexedAndSelectorSum_Source = @"struct __gsharp_context_StackLinqTestKernel_RunLinqIndexedAndSelectorSum {
+int _state = 0;
+__gsharp_context_StackLinqTestKernel_RunLinqIndexedAndSelectorSum* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
+};
+extern ""C"" __declspec(dllexport) void StackLinqTestKernel_RunLinqIndexedAndSelectorSum(int* __restrict__ data, __gsharp_context_StackLinqTestKernel_RunLinqIndexedAndSelectorSum* _ctx){
+#define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
+switch(_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+int tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(tid==0)
+{
+int sum = Kassyi::ZeroAlloc::Linq::StackLinq::Sum(Kassyi::ZeroAlloc::Linq::StackLinq::Select(Kassyi::ZeroAlloc::Linq::StackLinq::Where(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(data),[&](auto x, auto i) {
+return x>5&&i%2==0;
+}
+),[&](auto x, auto i) {
+return x+i;
+}
+),[&](auto x) {
+return x*3;
+}
+);
+data[0]=sum;
+}
+_state=-1;
+return;
+}
+}
+#undef _state
+#undef _yieldedForGridSync
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_StackLinqTestKernel_RunLinqIndexedAndSelectorSum(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
+{
+int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+#pragma omp parallel for schedule(dynamic)
+for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int32_t bx = _b_idx % gridDimX;
+int32_t by = (_b_idx / gridDimX) % gridDimY;
+int32_t bz = _b_idx / (gridDimX * gridDimY);
+__gsharp_reset_smem();
+std::vector<__gsharp_context_StackLinqTestKernel_RunLinqIndexedAndSelectorSum> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+for (auto& ctx : _gsharp_contexts) {
+ctx._state = 0;
+ctx._all_contexts = _gsharp_contexts.data();
+}
+std::atomic<bool> anyActive{true};
+while (anyActive)
+{
+anyActive = false;
+int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+#pragma omp parallel for schedule(static)
+for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
+{
+int32_t tx = _t_idx % blockDimX;
+int32_t ty = (_t_idx / blockDimX) % blockDimY;
+int32_t tz = _t_idx / (blockDimX * blockDimY);
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+StackLinqTestKernel_RunLinqIndexedAndSelectorSum(data, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
+}
+}
+";
+public static readonly string RunLinqIndexedAndSelectorSum_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +RunLinqIndexedAndSelectorSum_Source;
+public class __gsharp_context_StackLinqTestKernel_RunLinqIndexedAndSelectorSum {
+public int _state;
+public uint _warpExchange;
+public bool _yieldedForGridSync;
+}
+public static unsafe void __gsharp_statemachine_StackLinqTestKernel_RunLinqIndexedAndSelectorSum(int[] data, __gsharp_context_StackLinqTestKernel_RunLinqIndexedAndSelectorSum _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+            if (tid == 0)
+            {
+                int sum = data.AsStackEnumerable().Where((x, i) => x > 5 && i % 2 == 0).Select((x, i) => x + i).Sum(x => x * 3);
+                data[0] = sum;
+            }
+
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+private unsafe delegate void RunLinqIndexedAndSelectorSum_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* data);
+#pragma warning disable CS8500
+public static unsafe void LaunchRunLinqIndexedAndSelectorSum(global::System.Int32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (data.Length == 0){
+return;
+}
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_StackLinqTestKernel_RunLinqIndexedAndSelectorSum[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_StackLinqTestKernel_RunLinqIndexedAndSelectorSum();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+bool anyBlockActive = true;
+while (anyBlockActive)
+{
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
+{
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_StackLinqTestKernel_RunLinqIndexedAndSelectorSum(data, _gsharp_contexts[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
+}
+}
+}
+if (gridSyncRequested)
+{
+break;
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+return;
+}
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<RunLinqIndexedAndSelectorSum_Delegate>("__gsharp_launch_StackLinqTestKernel_RunLinqIndexedAndSelectorSum", dllPath);
+fixed (global::System.Int32* p_data = data)
+{
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_data);
+}
+}
+#pragma warning restore CS8500
 }
 }
