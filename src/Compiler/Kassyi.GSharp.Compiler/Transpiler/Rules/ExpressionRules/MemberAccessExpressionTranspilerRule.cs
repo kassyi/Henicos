@@ -76,15 +76,15 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
         var memberName = node.Name.Identifier.Text;
         var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Expression);
-        if (typeSymbol != null && context.Emitter.Dialect.TryMapMemberAccess(typeSymbol, memberName, out var mappedName, out var isMethodCall))
+        if (typeSymbol != null && context.Emitter.Dialect.TryMapMemberAccess(typeSymbol, memberName, out var mappedName, out var isMethodCall) && mappedName != null)
         {
             if (isMethodCall)
             {
-                context.Emitter.Writer.Append(mappedName!).AppendParentheses();
+                context.Emitter.Writer.Append(mappedName).AppendParentheses();
             }
             else
             {
-                context.Emitter.Writer.Append(mappedName!);
+                context.Emitter.Writer.Append(mappedName);
             }
         }
         else

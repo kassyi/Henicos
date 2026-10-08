@@ -105,7 +105,8 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
         ref TranspileContext context)
     {
         if (variable.Initializer == null ||
-            !InitializationSyntaxExtractor.TryGetArrayElementType(typeSymbol, out var elemType, out var isConst))
+            !InitializationSyntaxExtractor.TryGetArrayElementType(typeSymbol, out var elemType, out var isConst) ||
+            elemType == null)
         {
             return false;
         }

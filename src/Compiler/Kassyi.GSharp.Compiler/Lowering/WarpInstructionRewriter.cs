@@ -34,10 +34,14 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
         ImmutableArray<StatementSyntax>.Builder hoistedAssignments)
         : CSharpSyntaxRewriter
     {
-        public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node)
+        public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
         {
             // First, visit children to handle nested warp instructions (e.g., WarpShuffle(WarpShuffle(x)))
-            var visitedNode = (InvocationExpressionSyntax)base.VisitInvocationExpression(node)!;
+            var visited = base.VisitInvocationExpression(node);
+            if (visited is not InvocationExpressionSyntax visitedNode)
+            {
+                return visited;
+            }
 
             if (IsWarpPrimitive(visitedNode))
             {

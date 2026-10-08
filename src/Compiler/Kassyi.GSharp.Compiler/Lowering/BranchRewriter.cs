@@ -55,11 +55,11 @@ public class BranchRewriter : CSharpSyntaxRewriter
         return SyntaxFactory.Block(newStatements);
     }
 
-    public override SyntaxNode VisitIfStatement(IfStatementSyntax node)
+    public override SyntaxNode? VisitIfStatement(IfStatementSyntax node)
     {
         if (!ContainsBarrier(node))
         {
-            return base.VisitIfStatement(node)!;
+            return base.VisitIfStatement(node);
         }
 
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();

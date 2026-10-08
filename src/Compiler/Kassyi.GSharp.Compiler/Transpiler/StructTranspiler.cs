@@ -32,17 +32,23 @@ internal static class StructTranspiler
     }
 
     /// <summary>
-    /// Topologically sorts referenced structs so that dependent nested structs are declared first in C++.
+    /// Topologically sorts referenced structs in the current context so that dependent nested structs are declared first in C++.
     /// </summary>
     public static ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(ref TranspileContext context)
+        => GetTopologicallySortedStructs(context.Query.UsedStructs);
+
+    /// <summary>
+    /// Topologically sorts referenced structs so that dependent nested structs are declared first in C++.
+    /// </summary>
+    public static ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(IEnumerable<INamedTypeSymbol> usedStructs)
     {
         // [WHY] CUDA C++ requires full struct definitions in dependency order before value-type usage as fields.
         var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
+        var structSet = usedStructs as ISet<INamedTypeSymbol> ?? new HashSet<INamedTypeSymbol>(usedStructs, SymbolEqualityComparer.Default);
         var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         var visiting = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-        var usedStructs = context.Query.UsedStructs;
 
-        foreach (var s in usedStructs)
+        foreach (var s in structSet)
         {
             visit(s);
         }
@@ -63,7 +69,7 @@ internal static class StructTranspiler
 
             foreach (var dep in GetStructDependencies(s))
             {
-                if (usedStructs.Contains(dep))
+                if (structSet.Contains(dep))
                 {
                     visit(dep);
                 }

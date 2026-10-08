@@ -77,31 +77,31 @@ public class LoopRewriter : CSharpSyntaxRewriter
         return SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(continueLabel));
     }
 
-    public override SyntaxNode VisitWhileStatement(WhileStatementSyntax node)
+    public override SyntaxNode? VisitWhileStatement(WhileStatementSyntax node)
     {
         if (!ContainsBarrier(node))
         {
-            return base.VisitWhileStatement(node)!;
+            return base.VisitWhileStatement(node);
         }
 
         return RewriteLoop("While", node.Condition, node.Statement, isPostCondition: false);
     }
 
-    public override SyntaxNode VisitDoStatement(DoStatementSyntax node)
+    public override SyntaxNode? VisitDoStatement(DoStatementSyntax node)
     {
         if (!ContainsBarrier(node))
         {
-            return base.VisitDoStatement(node)!;
+            return base.VisitDoStatement(node);
         }
 
         return RewriteLoop("Do", node.Condition, node.Statement, isPostCondition: true);
     }
 
-    public override SyntaxNode VisitForStatement(ForStatementSyntax node)
+    public override SyntaxNode? VisitForStatement(ForStatementSyntax node)
     {
         if (!ContainsBarrier(node))
         {
-            return base.VisitForStatement(node)!;
+            return base.VisitForStatement(node);
         }
 
         var initializers = ImmutableArray.CreateBuilder<StatementSyntax>();

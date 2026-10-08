@@ -39,9 +39,9 @@ public static class MethodTranspiler
         ITranspilerDialect? dialect = null)
     {
         using var session = TranspilationSession.Begin(methodDecl, semanticModel, reportDiagnostic, dialect);
-        if (session.HasError)
+        if (session.ErrorMessage != null)
         {
-            return session.ErrorMessage!;
+            return session.ErrorMessage;
         }
 
         ref var context = ref session.Context;
@@ -51,7 +51,7 @@ public static class MethodTranspiler
 
         if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.Body != null)
         {
-            var tuple = AstLoweringPipeline.Lower(methodDecl.Body!);
+            var tuple = AstLoweringPipeline.Lower(methodDecl.Body);
             loweredBody = tuple.LoweredBody;
             contextFields = tuple.ContextFields;
         }
@@ -380,7 +380,7 @@ public static class MethodTranspiler
             }
 
             var countArg = invocation.ArgumentList.Arguments[0].Expression;
-            if (invocation.ArgumentList.Arguments[1].Expression is not SimpleLambdaExpressionSyntax lambda)
+            if (invocation.ArgumentList.Arguments[1].Expression is not SimpleLambdaExpressionSyntax { Block: not null } lambda)
             {
                 return base.VisitExpressionStatement(node);
             }
@@ -411,7 +411,7 @@ public static class MethodTranspiler
                 )
             );
 
-            var body = (BlockSyntax)base.Visit(lambda.Block!);
+            var body = base.Visit(lambda.Block) as BlockSyntax ?? lambda.Block;
             _inLambdaOrLocalFuncCount--;
 
             return SyntaxFactory.ForStatement(
@@ -435,7 +435,7 @@ public static class MethodTranspiler
                         SyntaxFactory.AssignmentExpression(
                             SyntaxKind.SimpleAssignmentExpression,
                             SyntaxFactory.IdentifierName("__gsharp_auto_result"),
-                            (ExpressionSyntax)Visit(node.Expression)!
+                            Visit(node.Expression) as ExpressionSyntax ?? node.Expression
                         )
                     ));
                 }
@@ -483,9 +483,9 @@ public static class MethodTranspiler
         ITranspilerDialect? dialect = null)
     {
         using var session = TranspilationSession.Begin(methodDecl, semanticModel, reportDiagnostic, dialect);
-        if (session.HasError)
+        if (session.ErrorMessage != null)
         {
-            return session.ErrorMessage!;
+            return session.ErrorMessage;
         }
 
         ref var context = ref session.Context;
@@ -493,7 +493,7 @@ public static class MethodTranspiler
         IReadOnlyList<VariableDeclaratorSyntax>? contextFields = null;
         if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.Body != null)
         {
-            var tuple = AstLoweringPipeline.Lower(methodDecl.Body!);
+            var tuple = AstLoweringPipeline.Lower(methodDecl.Body);
             contextFields = tuple.ContextFields;
         }
 
