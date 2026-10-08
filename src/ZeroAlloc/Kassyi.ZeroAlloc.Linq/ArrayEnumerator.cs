@@ -47,4 +47,11 @@ public struct ArrayEnumerator<T> : IStackEnumerator<T>
         current = default!;
         return false;
     }
+
+    internal ReadOnlySpan<T> GetRemainingSpanAndAdvance()
+    {
+        var remaining = new ReadOnlySpan<T>(_source, _index, _source.Length - _index);
+        _index = _source.Length;
+        return remaining;
+    }
 }

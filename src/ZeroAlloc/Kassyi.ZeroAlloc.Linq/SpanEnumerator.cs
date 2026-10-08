@@ -45,4 +45,11 @@ public ref struct SpanEnumerator<T> : IStackEnumerator<T>
         current = default!;
         return false;
     }
+
+    internal ReadOnlySpan<T> GetRemainingSpanAndAdvance()
+    {
+        var remaining = _source.Slice(_index);
+        _index = _source.Length;
+        return remaining;
+    }
 }

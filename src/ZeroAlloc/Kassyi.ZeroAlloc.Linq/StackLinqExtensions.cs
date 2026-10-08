@@ -1,3 +1,5 @@
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Kassyi.ZeroAlloc.Linq;
@@ -38,7 +40,7 @@ public static class StackLinqExtensions
     /// <para><b>Performance:</b> Operates in $O(1)$ time with zero heap allocations by accessing the underlying span.</para>
     /// <para><b>Execution Target:</b> Host-only (CPU) operation. Cannot be transpiled or invoked within GPU kernels.</para>
     /// </remarks>
-    public static StackEnumerable<SpanEnumerator<T>, T> AsStackEnumerable<T>(this System.Collections.Generic.List<T> source)
+    public static StackEnumerable<SpanEnumerator<T>, T> AsStackEnumerable<T>(this List<T> source)
     {
         ArgumentNullException.ThrowIfNull(source);
         return new(new SpanEnumerator<T>(CollectionsMarshal.AsSpan(source)));
@@ -179,6 +181,69 @@ public static class StackLinqExtensions
         while (enumerator.TryGetNext(out _))
         {
             count++;
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Returns a number that represents how many elements in the specified stack-allocated sequence satisfy a condition.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of elements in the sequence.</typeparam>
+    /// <param name="source">The sequence that contains elements to be counted.</param>
+    /// <param name="predicate">A function to test each element for a condition.</param>
+    /// <returns>A number that represents how many elements in the sequence satisfy the condition.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="predicate"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> Consumes the enumerator in $O(N)$ time with zero heap allocations.</para>
+    /// </remarks>
+    public static int Count<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        var count = 0;
+        var enumerator = source.Enumerator;
+        while (enumerator.TryGetNext(out var value))
+        {
+            if (predicate(value))
+            {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /// <summary>
+    /// Returns a number that represents how many elements in the specified stack-allocated sequence satisfy a condition. Each element's index is used in the logic of the predicate function.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of elements in the sequence.</typeparam>
+    /// <param name="source">The sequence that contains elements to be counted.</param>
+    /// <param name="predicate">A function to test each element for a condition; the second parameter of the function represents the index of the source element.</param>
+    /// <returns>A number that represents how many elements in the sequence satisfy the condition.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="predicate"/> is <see langword="null"/>.</exception>
+    /// <remarks>
+    /// <para><b>Performance:</b> Consumes the enumerator in $O(N)$ time with zero heap allocations.</para>
+    /// </remarks>
+    public static int Count<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, int, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        var count = 0;
+        var index = 0;
+        var enumerator = source.Enumerator;
+        while (enumerator.TryGetNext(out var value))
+        {
+            if (predicate(value, index++))
+            {
+                count++;
+            }
         }
 
         return count;
@@ -383,8 +448,52 @@ public static class StackLinqExtensions
         this StackEnumerable<TEnumerator, int> source)
         where TEnumerator : struct, IStackEnumerator<int>, allows ref struct
     {
-        var sum = 0;
         var enumerator = source.Enumerator;
+        int sum = 0;
+
+        if (typeof(TEnumerator) == typeof(SpanEnumerator<int>))
+        {
+            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<int>>(ref enumerator);
+            var span = spanEnum.GetRemainingSpanAndAdvance();
+            if (Vector.IsHardwareAccelerated && span.Length >= Vector<int>.Count)
+            {
+                var vectors = MemoryMarshal.Cast<int, Vector<int>>(span);
+                var acc = Vector<int>.Zero;
+                foreach (var v in vectors)
+                {
+                    acc += v;
+                }
+                sum += Vector.Sum(acc);
+                span = span.Slice(vectors.Length * Vector<int>.Count);
+            }
+            foreach (var val in span)
+            {
+                sum += val;
+            }
+            return sum;
+        }
+        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<int>))
+        {
+            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<int>>(ref enumerator);
+            var span = arrayEnum.GetRemainingSpanAndAdvance();
+            if (Vector.IsHardwareAccelerated && span.Length >= Vector<int>.Count)
+            {
+                var vectors = MemoryMarshal.Cast<int, Vector<int>>(span);
+                var acc = Vector<int>.Zero;
+                foreach (var v in vectors)
+                {
+                    acc += v;
+                }
+                sum += Vector.Sum(acc);
+                span = span.Slice(vectors.Length * Vector<int>.Count);
+            }
+            foreach (var val in span)
+            {
+                sum += val;
+            }
+            return sum;
+        }
+
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
@@ -424,8 +533,52 @@ public static class StackLinqExtensions
         this StackEnumerable<TEnumerator, float> source)
         where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
     {
-        float sum = 0;
         var enumerator = source.Enumerator;
+        float sum = 0;
+
+        if (typeof(TEnumerator) == typeof(SpanEnumerator<float>))
+        {
+            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<float>>(ref enumerator);
+            var span = spanEnum.GetRemainingSpanAndAdvance();
+            if (Vector.IsHardwareAccelerated && span.Length >= Vector<float>.Count)
+            {
+                var vectors = MemoryMarshal.Cast<float, Vector<float>>(span);
+                var acc = Vector<float>.Zero;
+                foreach (var v in vectors)
+                {
+                    acc += v;
+                }
+                sum += Vector.Sum(acc);
+                span = span.Slice(vectors.Length * Vector<float>.Count);
+            }
+            foreach (var val in span)
+            {
+                sum += val;
+            }
+            return sum;
+        }
+        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<float>))
+        {
+            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<float>>(ref enumerator);
+            var span = arrayEnum.GetRemainingSpanAndAdvance();
+            if (Vector.IsHardwareAccelerated && span.Length >= Vector<float>.Count)
+            {
+                var vectors = MemoryMarshal.Cast<float, Vector<float>>(span);
+                var acc = Vector<float>.Zero;
+                foreach (var v in vectors)
+                {
+                    acc += v;
+                }
+                sum += Vector.Sum(acc);
+                span = span.Slice(vectors.Length * Vector<float>.Count);
+            }
+            foreach (var val in span)
+            {
+                sum += val;
+            }
+            return sum;
+        }
+
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
@@ -465,8 +618,52 @@ public static class StackLinqExtensions
         this StackEnumerable<TEnumerator, double> source)
         where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
     {
-        double sum = 0;
         var enumerator = source.Enumerator;
+        double sum = 0;
+
+        if (typeof(TEnumerator) == typeof(SpanEnumerator<double>))
+        {
+            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<double>>(ref enumerator);
+            var span = spanEnum.GetRemainingSpanAndAdvance();
+            if (Vector.IsHardwareAccelerated && span.Length >= Vector<double>.Count)
+            {
+                var vectors = MemoryMarshal.Cast<double, Vector<double>>(span);
+                var acc = Vector<double>.Zero;
+                foreach (var v in vectors)
+                {
+                    acc += v;
+                }
+                sum += Vector.Sum(acc);
+                span = span.Slice(vectors.Length * Vector<double>.Count);
+            }
+            foreach (var val in span)
+            {
+                sum += val;
+            }
+            return sum;
+        }
+        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<double>))
+        {
+            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<double>>(ref enumerator);
+            var span = arrayEnum.GetRemainingSpanAndAdvance();
+            if (Vector.IsHardwareAccelerated && span.Length >= Vector<double>.Count)
+            {
+                var vectors = MemoryMarshal.Cast<double, Vector<double>>(span);
+                var acc = Vector<double>.Zero;
+                foreach (var v in vectors)
+                {
+                    acc += v;
+                }
+                sum += Vector.Sum(acc);
+                span = span.Slice(vectors.Length * Vector<double>.Count);
+            }
+            foreach (var val in span)
+            {
+                sum += val;
+            }
+            return sum;
+        }
+
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
@@ -563,4 +760,194 @@ public static class StackLinqExtensions
 
         return count;
     }
+
+    public static StackEnumerable<TakeEnumerator<TEnumerator, TSource>, TSource> Take<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source, int count)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        return new StackEnumerable<TakeEnumerator<TEnumerator, TSource>, TSource>(
+            new TakeEnumerator<TEnumerator, TSource>(source.Enumerator, count));
+    }
+
+    public static StackEnumerable<SkipEnumerator<TEnumerator, TSource>, TSource> Skip<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source, int count)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        return new StackEnumerable<SkipEnumerator<TEnumerator, TSource>, TSource>(
+            new SkipEnumerator<TEnumerator, TSource>(source.Enumerator, count));
+    }
+
+    public static TAccumulate Aggregate<TEnumerator, TSource, TAccumulate>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        TAccumulate seed,
+        Func<TAccumulate, TSource, TAccumulate> func)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(func);
+        var result = seed;
+        var enumerator = source.Enumerator;
+        while (enumerator.TryGetNext(out var value))
+        {
+            result = func(result, value);
+        }
+        return result;
+    }
+
+    public static int Max<TEnumerator>(this StackEnumerable<TEnumerator, int> source)
+        where TEnumerator : struct, IStackEnumerator<int>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var max))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        while (enumerator.TryGetNext(out var value)) { if (value > max)
+            {
+                max = value;
+            }
+        }
+        return max;
+    }
+
+    public static int Min<TEnumerator>(this StackEnumerable<TEnumerator, int> source)
+        where TEnumerator : struct, IStackEnumerator<int>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var min))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        while (enumerator.TryGetNext(out var value)) { if (value < min)
+            {
+                min = value;
+            }
+        }
+        return min;
+    }
+
+    public static double Average<TEnumerator>(this StackEnumerable<TEnumerator, int> source)
+        where TEnumerator : struct, IStackEnumerator<int>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        long sum = 0;
+        int count = 0;
+        while (enumerator.TryGetNext(out var value)) { sum += value; count++; }
+        if (count == 0)
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        return (double)sum / count;
+    }
+
+    public static float Max<TEnumerator>(this StackEnumerable<TEnumerator, float> source)
+        where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var max))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        while (enumerator.TryGetNext(out var value)) { if (value > max)
+            {
+                max = value;
+            }
+        }
+        return max;
+    }
+
+    public static float Min<TEnumerator>(this StackEnumerable<TEnumerator, float> source)
+        where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var min))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        while (enumerator.TryGetNext(out var value)) { if (value < min)
+            {
+                min = value;
+            }
+        }
+        return min;
+    }
+
+    public static float Average<TEnumerator>(this StackEnumerable<TEnumerator, float> source)
+        where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        double sum = 0;
+        int count = 0;
+        while (enumerator.TryGetNext(out var value)) { sum += value; count++; }
+        if (count == 0)
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        return (float)(sum / count);
+    }
+
+    public static double Max<TEnumerator>(this StackEnumerable<TEnumerator, double> source)
+        where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var max))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        while (enumerator.TryGetNext(out var value)) { if (value > max)
+            {
+                max = value;
+            }
+        }
+        return max;
+    }
+
+    public static double Min<TEnumerator>(this StackEnumerable<TEnumerator, double> source)
+        where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var min))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        while (enumerator.TryGetNext(out var value)) { if (value < min)
+            {
+                min = value;
+            }
+        }
+        return min;
+    }
+
+    public static double Average<TEnumerator>(this StackEnumerable<TEnumerator, double> source)
+        where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        double sum = 0;
+        int count = 0;
+        while (enumerator.TryGetNext(out var value)) { sum += value; count++; }
+        if (count == 0)
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        return sum / count;
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // BANNED LINQ OPERATIONS (DO NOT IMPLEMENT)
+    // -----------------------------------------------------------------------------------------
+    // Operations like OrderBy, Distinct, GroupBy, Union, Except, Join are deliberately NOT
+    // implemented in StackLinq. These operations require dynamic heap allocation (HashSet/Dictionary)
+    // or global synchronization (Radix Sort on GPU), making them completely unsuitable for
+    // lazy, zero-allocation, thread-local SIMT pipeline execution.
+    // If you need sorting or grouping, process the array directly on the CPU before execution,
+    // or use dedicated array-level operations (e.g., GpuArray.Sort()).
+    // -----------------------------------------------------------------------------------------
 }

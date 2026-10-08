@@ -228,4 +228,32 @@ public class StackLinqTests
         double actualDouble = data.AsStackEnumerable().Sum(x => x * 1.1);
         Assert.Equal(expectedDouble, actualDouble, precision: 5);
     }
+
+    [Fact]
+    public void Count_Predicate_ShouldMatchStandardLinq()
+    {
+        int[] data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+        int expected = data.Count(x => x % 2 == 0);
+        int actual = data.AsStackEnumerable().Count(x => x % 2 == 0);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void Count_IndexedPredicate_ShouldMatchStandardLinq()
+    {
+        int[] data = { 10, 20, 30, 40, 50, 60 };
+
+        int expected = data.Where((x, i) => x > 20 && i % 2 == 0).Count(); // standard LINQ lacks Count((x, i) => ...)
+        // x: 10, 20, 30, 40, 50, 60
+        // i:  0,  1,  2,  3,  4,  5
+        // >20: F, F, T, T, T, T
+        // i%2: T, F, T, F, T, F
+        // match: 30(2), 50(4) => count is 2
+
+        int actual = data.AsStackEnumerable().Count((x, i) => x > 20 && i % 2 == 0);
+
+        Assert.Equal(2, actual);
+    }
 }
