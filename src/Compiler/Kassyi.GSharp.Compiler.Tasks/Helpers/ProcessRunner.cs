@@ -38,18 +38,20 @@ public class ProcessRunner : IProcessRunner
 
         using var ctr = cancellationToken.Register(state =>
         {
-            var p = (Process)state!;
-            tcs.TrySetCanceled();
-            try
+            if (state is Process p)
             {
-                if (p is { HasExited: false })
+                tcs.TrySetCanceled();
+                try
                 {
-                    p.Kill();
+                    if (p is { HasExited: false })
+                    {
+                        p.Kill();
+                    }
                 }
-            }
-            catch
-            {
-                /* ignore */
+                catch
+                {
+                    // Ignore process cleanup errors on best-effort basis during cancellation
+                }
             }
         }, process);
 

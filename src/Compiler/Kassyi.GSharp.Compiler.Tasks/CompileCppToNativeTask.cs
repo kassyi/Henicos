@@ -180,14 +180,15 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             if (result.ExitCode == 0 && File.Exists(outputDllPath))
             {
                 // MSVC produces .obj, .lib, .exp. Clean them up to avoid clutter.
-                var baseDir = Path.GetDirectoryName(outputDllPath)!;
+                var baseDir = Path.GetDirectoryName(outputDllPath) ?? "";
                 var baseName = Path.GetFileNameWithoutExtension(outputDllPath);
                 var objPath = Path.Combine(baseDir, baseName + ".obj");
                 var libPath = Path.Combine(baseDir, baseName + ".lib");
                 var expPath = Path.Combine(baseDir, baseName + ".exp");
 
                 // Also the source .obj (if cl.exe drops it in the source folder, but typically it drops in cwd or output dir)
-                var srcObjPath = Path.Combine(Path.GetDirectoryName(sourcePath)!,
+                var srcDir = Path.GetDirectoryName(sourcePath) ?? "";
+                var srcObjPath = Path.Combine(srcDir,
                     Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
                 var cwdObjPath = Path.Combine(Environment.CurrentDirectory,
                     Path.GetFileNameWithoutExtension(sourcePath) + ".obj");

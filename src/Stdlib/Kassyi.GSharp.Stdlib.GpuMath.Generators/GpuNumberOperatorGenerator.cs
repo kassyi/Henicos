@@ -19,17 +19,17 @@ public class GpuNumberOperatorGenerator : IIncrementalGenerator
     /// <inheritdoc/>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        IncrementalValuesProvider<StructDeclarationSyntax> structDeclarations = context.SyntaxProvider
+        var structDeclarations = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
                 transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
-            .Where(static m => m is not null)!;
+            .Where(static m => m is not null)
+            .Select(static (m, _) => m ?? throw new InvalidOperationException("Filtered struct declaration was null"));
 
-        IncrementalValueProvider<(Compilation, ImmutableArray<StructDeclarationSyntax>)> compilationAndStructs
-            = context.CompilationProvider.Combine(structDeclarations.Collect());
+        var compilationAndStructs = context.CompilationProvider.Combine(structDeclarations.Collect());
 
         context.RegisterSourceOutput(compilationAndStructs,
-            static (spc, source) => Execute(source.Item1, source.Item2, spc));
+            static (spc, source) => Execute(source.Left, source.Right, spc));
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node) =>
