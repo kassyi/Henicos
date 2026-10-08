@@ -21,6 +21,7 @@ public struct Emitter(
     public SourceWriter Writer = writer;
     public OverrideScopeStack LocalVariableOverrides = localVariableOverrides;
     public ITranspilerDialect Dialect { get; } = dialect;
+    public HashSet<string> RequiredIncludes { get; } = new();
 
     public bool HasEmittedDynamicSmemBase = false;
     public bool SkipLocalsInit = false;

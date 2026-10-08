@@ -193,7 +193,7 @@ public class WarpShuffleTests : TranspilerTestBase
             .First();
 
         var cudaSource =
-            MethodTranspiler.GenerateCudaSource(methodDecl, model, isDevice: true, dialect: CurrentDialect);
+            MethodTranspiler.GenerateCudaSource(methodDecl, model, null, true, CurrentDialect, out var _);
 
         Assert.Contains("__shfl_down_sync", cudaSource);
         Assert.Contains("0xffffffff", cudaSource);

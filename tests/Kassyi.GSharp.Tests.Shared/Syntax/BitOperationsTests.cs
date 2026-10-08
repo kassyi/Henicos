@@ -22,7 +22,6 @@ public class BitOperationsTests : TranspilerTestBase
     [InlineData(0x55555555u, 31)]
     public void Test_BCL02_Rotate32_Execution(uint val, int shift)
     {
-
         uint[] vals = [val];
         int[] shifts = [shift];
         uint[] rotLeft = new uint[1];
@@ -46,7 +45,6 @@ public class BitOperationsTests : TranspilerTestBase
     [InlineData(0x5555555555555555ul, 63)]
     public void Test_BCL02_Rotate64_Execution(ulong val, int shift)
     {
-
         ulong[] vals = [val];
         int[] shifts = [shift];
         ulong[] rotLeft = new ulong[1];
@@ -68,7 +66,8 @@ public class BitOperationsTests : TranspilerTestBase
         Assert.Contains("__gsharp_rotr32", source);
 
         // 2. Verify MethodTranspiler generates __gsharp_rotl32 and __gsharp_rotr32 from AST
-        var kernelPath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "..", "Syntax", "BitOperationsKernels.cu.cs");
+        var kernelPath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "..", "Syntax",
+            "BitOperationsKernels.cu.cs");
         var kernelCode = File.ReadAllText(kernelPath);
         var compilation = RoslynTestUtility.CreateCompilation(kernelCode);
         var tree = compilation.SyntaxTrees.First();
@@ -79,7 +78,8 @@ public class BitOperationsTests : TranspilerTestBase
             .First(m => m.Identifier.Text == "Rotate32Kernel");
 
         var diagnostics = new List<Diagnostic>();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: false);
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), false,
+            new GSharpCudaDialect(), out var _);
 
         Assert.Empty(diagnostics);
         Assert.Contains("__gsharp_rotl32", cudaSource);

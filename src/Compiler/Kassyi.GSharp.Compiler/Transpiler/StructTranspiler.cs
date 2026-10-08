@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Marshaling;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Emits CUDA C++ struct definitions, operator overloads, and handles InlineArray structures.</summary>
@@ -430,12 +432,29 @@ internal static class StructTranspiler
     private static void WriteMemberDeclaration(ITypeSymbol type, string name, ISymbol memberSymbol,
         ref TranspileContext context)
     {
-        if (memberSymbol.HasAttribute(KnownAttributes.GpuReadOnly))
+        var isReadOnly = memberSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
+        var isArray = KernelLaunchEmitter.IsArrayLikeType(type, out var elementType);
+
+        if (isReadOnly && !isArray)
         {
             context.Emitter.Writer.Append("const ");
         }
 
-        context.Emitter.Dialect.AppendType(ref context, type);
+        if (isArray)
+        {
+            context.Emitter.Writer.Append("GSharpArray<");
+            if (isReadOnly)
+            {
+                context.Emitter.Writer.Append("const ");
+            }
+            context.Emitter.Dialect.AppendType(ref context, elementType);
+            context.Emitter.Writer.Append(">");
+        }
+        else
+        {
+            context.Emitter.Dialect.AppendType(ref context, type);
+        }
+
         context.Emitter.Writer.AppendLine($" {name};");
     }
 }

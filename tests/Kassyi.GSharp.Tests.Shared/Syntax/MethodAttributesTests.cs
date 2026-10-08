@@ -1,7 +1,8 @@
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public partial class MethodAttributesTests
-:  TranspilerTestBase{
+    : TranspilerTestBase
+{
     private const string InlineDevice = "inline __device__";
     private const string ForceinlineDevice = "__forceinline__ __device__";
     private const string NoinlineDevice = "__noinline__ __device__";
@@ -36,7 +37,8 @@ public partial class MethodAttributesTests
             .First(m => m.Identifier.Text == methodName);
 
         var diagnostics = new List<Diagnostic>();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: true);
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), true,
+            new GSharpCudaDialect(), out var _);
         return (cudaSource, diagnostics);
     }
 

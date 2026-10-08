@@ -6,7 +6,8 @@ public class LoopUnrollTests : TranspilerTestBase
 {
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileKernelMethod(string methodName)
     {
-        var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "..", "Syntax", "LoopUnrollKernels.cu.cs");
+        var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "..", "Syntax",
+            "LoopUnrollKernels.cu.cs");
         var compilation = MegaCompilationCache.GetDynamicCompilation(testCasePath);
 
         var tree = compilation.SyntaxTrees.First(t => t.FilePath == testCasePath);
@@ -17,13 +18,15 @@ public class LoopUnrollTests : TranspilerTestBase
             .First(m => m.Identifier.Text == methodName);
 
         var diagnostics = new List<Diagnostic>();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: false);
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), false,
+            new GSharpCudaDialect(), out var _);
         return (cudaSource, diagnostics);
     }
 
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileTestCaseMethod(string methodName)
     {
-        var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "LoopUnrollStatements.cs");
+        var testCasePath =
+            Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "LoopUnrollStatements.cs");
         var compilation = MegaCompilationCache.GetDynamicCompilation(testCasePath);
 
         var tree = compilation.SyntaxTrees.First(t => t.FilePath == testCasePath);
@@ -34,7 +37,8 @@ public class LoopUnrollTests : TranspilerTestBase
             .First(m => m.Identifier.Text == methodName);
 
         var diagnostics = new List<Diagnostic>();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), isDevice: false);
+        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), false,
+            new GSharpCudaDialect(), out var _);
         return (cudaSource, diagnostics);
     }
 
@@ -42,7 +46,6 @@ public class LoopUnrollTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LoopUnrollForKernel_Execution()
     {
-
         int[] data = [0];
         LoopUnrollKernels.LaunchLoopUnrollForKernel(data, blockDimX: 1);
         Assert.Equal(10, data[0]);
@@ -52,7 +55,6 @@ public class LoopUnrollTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LoopUnrollFactorKernel_Execution()
     {
-
         int[] data = [0];
         LoopUnrollKernels.LaunchLoopUnrollFactorKernel(data, blockDimX: 1);
         Assert.Equal(100, data[0]);
@@ -62,7 +64,6 @@ public class LoopUnrollTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LoopUnrollWhileKernel_Execution()
     {
-
         int[] data = [0];
         LoopUnrollKernels.LaunchLoopUnrollWhileKernel(data, blockDimX: 1);
         Assert.Equal(15, data[0]);
@@ -72,7 +73,6 @@ public class LoopUnrollTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LoopUnrollNestedKernel_Execution()
     {
-
         int[] data = [0];
         LoopUnrollKernels.LaunchLoopUnrollNestedKernel(data, blockDimX: 1);
         Assert.Equal(18, data[0]);
@@ -82,7 +82,6 @@ public class LoopUnrollTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LoopUnrollSingleStatementKernel_Execution()
     {
-
         int[] data = [0];
         LoopUnrollKernels.LaunchLoopUnrollSingleStatementKernel(data, blockDimX: 1);
         Assert.Equal(8, data[0]);
