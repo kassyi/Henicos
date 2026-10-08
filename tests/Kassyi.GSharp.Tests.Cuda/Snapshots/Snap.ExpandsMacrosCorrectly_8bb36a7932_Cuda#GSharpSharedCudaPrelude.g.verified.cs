@@ -181,6 +181,63 @@ __forceinline__ __device__ int __gsharp_atomicAdd(int* address, int val) { retur
 __forceinline__ __device__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }
 __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
 
+/**
+ * @brief 32-bit Bit Field Extract (PTX bfe.u32).
+ */
+__device__ __forceinline__ unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {
+    unsigned int res;
+    asm(""bfe.u32 %0, %1, %2, %3;"" : ""=r""(res) : ""r""(a), ""r""(pos), ""r""(len));
+    return res;
+}
+
+/**
+ * @brief 64-bit Bit Field Extract (PTX bfe.u64).
+ */
+__device__ __forceinline__ unsigned long long __gsharp_bfe64(unsigned long long a, int pos, int len) {
+    unsigned long long res;
+    asm(""bfe.u64 %0, %1, %2, %3;"" : ""=l""(res) : ""l""(a), ""r""(pos), ""r""(len));
+    return res;
+}
+
+/**
+ * @brief 32-bit Bit Field Insert (PTX bfi.b32).
+ */
+__device__ __forceinline__ unsigned int __gsharp_bfi(unsigned int a, unsigned int b, int pos, int len) {
+    unsigned int res;
+    asm(""bfi.b32 %0, %1, %2, %3, %4;"" : ""=r""(res) : ""r""(a), ""r""(b), ""r""(pos), ""r""(len));
+    return res;
+}
+
+/**
+ * @brief 64-bit Bit Field Insert (PTX bfi.b64).
+ */
+__device__ __forceinline__ unsigned long long __gsharp_bfi64(unsigned long long a, unsigned long long b, int pos, int len) {
+    unsigned long long res;
+    asm(""bfi.b64 %0, %1, %2, %3, %4;"" : ""=l""(res) : ""l""(a), ""l""(b), ""r""(pos), ""r""(len));
+    return res;
+}
+
+/**
+ * @brief 3-input arbitrary bitwise logic operation with 8-bit LUT (PTX lop3.b32).
+ * Defined as a macro so that the immLut argument satisfies the compile-time constant ('n') constraint.
+ */
+#define __gsharp_lop3(a, b, c, immLut) ([&]() -> unsigned int { \
+    unsigned int __res; \
+    asm(""lop3.b32 %0, %1, %2, %3, %4;"" : ""=r""(__res) : ""r""(a), ""r""(b), ""r""(c), ""n""(immLut)); \
+    return __res; \
+}())
+
+
+/**
+ * @brief SIMD absolute difference of 4 packed 8-bit unsigned integers with accumulation (PTX vabsdiff4).
+ */
+__device__ __forceinline__ unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {
+    unsigned int res;
+    asm(""vabsdiff4.u32.u32.u32.add %0, %1, %2, %3;"" : ""=r""(res) : ""r""(a), ""r""(b), ""r""(c));
+    return res;
+}
+
+
 ";
 }
 }

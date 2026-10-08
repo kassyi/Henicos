@@ -195,5 +195,183 @@ hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_u32Data, 
 }
 }
 #pragma warning restore CS8500
+public const string PtxIntrinsicsExpansionKernel_Source = @"struct __gsharp_context_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel {
+int _state = 0;
+__gsharp_context_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
+};
+extern ""C"" __declspec(dllexport) void NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel(unsigned int* __restrict__ u32Out, unsigned long long* __restrict__ u64Out, int* __restrict__ i32Out, __gsharp_context_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel* _ctx){
+#define _state _ctx->_state
+switch(_state)
+{
+case 0:
+{
+unsigned int u32Val = 0x12345678u;
+unsigned long long u64Val = 0x0123456789ABCDEFul;
+u32Out[0]=__gsharp_bfe(u32Val,4,8);
+u64Out[0]=__gsharp_bfe64(u64Val,8,16);
+u32Out[1]=__gsharp_bfi(0xFFu,u32Val,4,8);
+u64Out[1]=__gsharp_bfi64(0xFFFFul,u64Val,8,16);
+u32Out[2]=__gsharp_lop3(u32Val,0x0F0F0F0Fu,0xAAAAAAAAu,0x54);
+u32Out[3]=__gsharp_tzc_32(u32Val);
+u64Out[2]=__gsharp_tzc_64(u64Val);
+u64Out[3]=__brevll(u64Val);
+i32Out[0]=__dp4a(0x01020304,0x05060708,10);
+u32Out[4]=__dp4a(0x01020304u,0x05060708u,10u);
+u32Out[5]=__gsharp_vabsdiff4(0x10203040u,0x01020304u,5u);
+u32Out[6]=__match_any_sync(0xFFFFFFFFu,u32Val);
+int matchPred = 0;
+u32Out[7]=__match_all_sync(0xFFFFFFFFu,u32Val,&matchPred);
+__nanosleep(10);
+__syncwarp(4294967295u);
+atomicAdd(&u32Out[8],42u);
+_state=-1;
+return;
+}
+}
+#undef _state
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, unsigned int* __restrict__ u32Out, unsigned long long* __restrict__ u64Out, int* __restrict__ i32Out)
+{
+int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+#pragma omp parallel for schedule(dynamic)
+for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int32_t bx = _b_idx % gridDimX;
+int32_t by = (_b_idx / gridDimX) % gridDimY;
+int32_t bz = _b_idx / (gridDimX * gridDimY);
+__gsharp_reset_smem();
+std::vector<__gsharp_context_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+for (auto& ctx : _gsharp_contexts) {
+ctx._state = 0;
+ctx._all_contexts = _gsharp_contexts.data();
+}
+std::atomic<bool> anyActive{true};
+while (anyActive)
+{
+anyActive = false;
+int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+#pragma omp parallel for schedule(static)
+for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
+{
+int32_t tx = _t_idx % blockDimX;
+int32_t ty = (_t_idx / blockDimX) % blockDimY;
+int32_t tz = _t_idx / (blockDimX * blockDimY);
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel(u32Out, u64Out, i32Out, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
+}
+}
+";
+public static readonly string PtxIntrinsicsExpansionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +PtxIntrinsicsExpansionKernel_Source;
+public class __gsharp_context_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel {
+public int _state;
+public uint _warpExchange;
+}
+public static unsafe void __gsharp_statemachine_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel(uint[] u32Out, ulong[] u64Out, int[] i32Out, __gsharp_context_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            uint u32Val = 0x12345678u;
+            ulong u64Val = 0x0123456789ABCDEFul;
+            u32Out[0] = Gpu.BitFieldExtract(u32Val, 4, 8);
+            u64Out[0] = Gpu.BitFieldExtract(u64Val, 8, 16);
+            u32Out[1] = Gpu.BitFieldInsert(0xFFu, u32Val, 4, 8);
+            u64Out[1] = Gpu.BitFieldInsert(0xFFFFul, u64Val, 8, 16);
+            u32Out[2] = Gpu.Lop3(u32Val, 0x0F0F0F0Fu, 0xAAAAAAAAu, 0x54);
+            u32Out[3] = Gpu.CountTrailingZeros(u32Val);
+            u64Out[2] = Gpu.CountTrailingZeros(u64Val);
+            u64Out[3] = Gpu.BitReverse64(u64Val);
+            i32Out[0] = Gpu.DotProduct4(0x01020304, 0x05060708, 10);
+            u32Out[4] = Gpu.DotProduct4(0x01020304u, 0x05060708u, 10u);
+            u32Out[5] = Gpu.Sad4(0x10203040u, 0x01020304u, 5u);
+            u32Out[6] = Gpu.MatchAnySync(0xFFFFFFFFu, u32Val);
+            int matchPred = 0;
+            u32Out[7] = Gpu.MatchAllSync(0xFFFFFFFFu, u32Val, ref matchPred);
+            Gpu.NanoSleep(10);
+            Gpu.SyncWarp();
+            Gpu.ReductionAdd(ref u32Out[8], 42u);
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+private unsafe delegate void PtxIntrinsicsExpansionKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.UInt32* u32Out, global::System.UInt64* u64Out, global::System.Int32* i32Out);
+#pragma warning disable CS8500
+public static unsafe void LaunchPtxIntrinsicsExpansionKernel(global::System.UInt32[] u32Out, global::System.UInt64[] u64Out, global::System.Int32[] i32Out, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (u32Out.Length == 0 || u64Out.Length == 0 || i32Out.Length == 0){
+return;
+}
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+var _gsharp_contexts = new __gsharp_context_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel[blockDimX * blockDimY * blockDimZ];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
+bool anyActive = true;
+while (anyActive)
+{
+anyActive = false;
+for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+if (_gsharp_contexts[_t_idx]._state != -1)
+{
+anyActive = true;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel(u32Out, u64Out, i32Out, _gsharp_contexts[_t_idx]);
+}
+}
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+return;
+}
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<PtxIntrinsicsExpansionKernel_Delegate>("__gsharp_launch_NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel", dllPath);
+fixed (global::System.UInt32* p_u32Out = u32Out)
+fixed (global::System.UInt64* p_u64Out = u64Out)
+fixed (global::System.Int32* p_i32Out = i32Out)
+{
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_u32Out, p_u64Out, p_i32Out);
+}
+}
+#pragma warning restore CS8500
 }
 }
