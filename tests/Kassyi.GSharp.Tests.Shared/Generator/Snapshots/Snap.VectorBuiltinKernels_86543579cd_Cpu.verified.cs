@@ -32,12 +32,15 @@ public const string Vector2AddKernel_Source = @"struct __gsharp_context_VectorBu
 int _state = 0;
 __gsharp_context_VectorBuiltinKernels_Vector2AddKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
 };
 extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector2AddKernel(float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length, __gsharp_context_VectorBuiltinKernels_Vector2AddKernel* _ctx){
 #define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
 auto tid = threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
@@ -51,6 +54,7 @@ return;
 }
 }
 #undef _state
+#undef _yieldedForGridSync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector2AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float2* __restrict__ a, float2* __restrict__ b, float2* __restrict__ result, int length)
 {
@@ -94,6 +98,7 @@ public static readonly string Vector2AddKernel_FullSource=global::Kassyi.GSharp.
 public class __gsharp_context_VectorBuiltinKernels_Vector2AddKernel {
 public int _state;
 public uint _warpExchange;
+public bool _yieldedForGridSync;
 }
 public static unsafe void __gsharp_statemachine_VectorBuiltinKernels_Vector2AddKernel(global::System.Numerics.Vector2[] a, global::System.Numerics.Vector2[] b, global::System.Numerics.Vector2[] result, int length, __gsharp_context_VectorBuiltinKernels_Vector2AddKernel _ctx) {
 {
@@ -130,15 +135,21 @@ var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
 int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_VectorBuiltinKernels_Vector2AddKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_VectorBuiltinKernels_Vector2AddKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
 for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
 int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
-var _gsharp_contexts = new __gsharp_context_VectorBuiltinKernels_Vector2AddKernel[blockDimX * blockDimY * blockDimZ];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_VectorBuiltinKernels_Vector2AddKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
@@ -149,12 +160,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
-bool anyActive = true;
-while (anyActive)
+bool anyBlockActive = true;
+while (anyBlockActive)
 {
-anyActive = false;
-for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
 {
 int tx = _t_idx % (int)blockDimX;
 int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
@@ -162,15 +173,27 @@ int tz = _t_idx / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-if (_gsharp_contexts[_t_idx]._state != -1)
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
 {
-anyActive = true;
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_VectorBuiltinKernels_Vector2AddKernel(a, b, result, length, _gsharp_contexts[_t_idx]);
+__gsharp_statemachine_VectorBuiltinKernels_Vector2AddKernel(a, b, result, length, _gsharp_contexts[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
 }
+}
+}
+if (gridSyncRequested)
+{
+break;
 }
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 return;
 }
@@ -187,12 +210,15 @@ public const string Vector3AddKernel_Source = @"struct __gsharp_context_VectorBu
 int _state = 0;
 __gsharp_context_VectorBuiltinKernels_Vector3AddKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
 };
 extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector3AddKernel(float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length, __gsharp_context_VectorBuiltinKernels_Vector3AddKernel* _ctx){
 #define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
 auto tid = threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
@@ -206,6 +232,7 @@ return;
 }
 }
 #undef _state
+#undef _yieldedForGridSync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector3AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float3* __restrict__ a, float3* __restrict__ b, float3* __restrict__ result, int length)
 {
@@ -249,6 +276,7 @@ public static readonly string Vector3AddKernel_FullSource=global::Kassyi.GSharp.
 public class __gsharp_context_VectorBuiltinKernels_Vector3AddKernel {
 public int _state;
 public uint _warpExchange;
+public bool _yieldedForGridSync;
 }
 public static unsafe void __gsharp_statemachine_VectorBuiltinKernels_Vector3AddKernel(global::System.Numerics.Vector3[] a, global::System.Numerics.Vector3[] b, global::System.Numerics.Vector3[] result, int length, __gsharp_context_VectorBuiltinKernels_Vector3AddKernel _ctx) {
 {
@@ -285,15 +313,21 @@ var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
 int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_VectorBuiltinKernels_Vector3AddKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_VectorBuiltinKernels_Vector3AddKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
 for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
 int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
-var _gsharp_contexts = new __gsharp_context_VectorBuiltinKernels_Vector3AddKernel[blockDimX * blockDimY * blockDimZ];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_VectorBuiltinKernels_Vector3AddKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
@@ -304,12 +338,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
-bool anyActive = true;
-while (anyActive)
+bool anyBlockActive = true;
+while (anyBlockActive)
 {
-anyActive = false;
-for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
 {
 int tx = _t_idx % (int)blockDimX;
 int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
@@ -317,15 +351,27 @@ int tz = _t_idx / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-if (_gsharp_contexts[_t_idx]._state != -1)
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
 {
-anyActive = true;
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_VectorBuiltinKernels_Vector3AddKernel(a, b, result, length, _gsharp_contexts[_t_idx]);
+__gsharp_statemachine_VectorBuiltinKernels_Vector3AddKernel(a, b, result, length, _gsharp_contexts[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
 }
+}
+}
+if (gridSyncRequested)
+{
+break;
 }
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 return;
 }
@@ -342,12 +388,15 @@ public const string Vector4AddKernel_Source = @"struct __gsharp_context_VectorBu
 int _state = 0;
 __gsharp_context_VectorBuiltinKernels_Vector4AddKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
 };
 extern ""C"" __declspec(dllexport) void VectorBuiltinKernels_Vector4AddKernel(float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length, __gsharp_context_VectorBuiltinKernels_Vector4AddKernel* _ctx){
 #define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
 auto tid = threadIdx.x+blockIdx.x*blockDim.x;
 if(tid<length)
@@ -361,6 +410,7 @@ return;
 }
 }
 #undef _state
+#undef _yieldedForGridSync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_VectorBuiltinKernels_Vector4AddKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float4* __restrict__ a, float4* __restrict__ b, float4* __restrict__ result, int length)
 {
@@ -404,6 +454,7 @@ public static readonly string Vector4AddKernel_FullSource=global::Kassyi.GSharp.
 public class __gsharp_context_VectorBuiltinKernels_Vector4AddKernel {
 public int _state;
 public uint _warpExchange;
+public bool _yieldedForGridSync;
 }
 public static unsafe void __gsharp_statemachine_VectorBuiltinKernels_Vector4AddKernel(global::System.Numerics.Vector4[] a, global::System.Numerics.Vector4[] b, global::System.Numerics.Vector4[] result, int length, __gsharp_context_VectorBuiltinKernels_Vector4AddKernel _ctx) {
 {
@@ -440,15 +491,21 @@ var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
 int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_VectorBuiltinKernels_Vector4AddKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_VectorBuiltinKernels_Vector4AddKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
 for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
 int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
-var _gsharp_contexts = new __gsharp_context_VectorBuiltinKernels_Vector4AddKernel[blockDimX * blockDimY * blockDimZ];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_VectorBuiltinKernels_Vector4AddKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
@@ -459,12 +516,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
-bool anyActive = true;
-while (anyActive)
+bool anyBlockActive = true;
+while (anyBlockActive)
 {
-anyActive = false;
-for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
 {
 int tx = _t_idx % (int)blockDimX;
 int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
@@ -472,15 +529,27 @@ int tz = _t_idx / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-if (_gsharp_contexts[_t_idx]._state != -1)
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
 {
-anyActive = true;
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_VectorBuiltinKernels_Vector4AddKernel(a, b, result, length, _gsharp_contexts[_t_idx]);
+__gsharp_statemachine_VectorBuiltinKernels_Vector4AddKernel(a, b, result, length, _gsharp_contexts[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
 }
+}
+}
+if (gridSyncRequested)
+{
+break;
 }
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 return;
 }

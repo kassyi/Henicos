@@ -1,10 +1,8 @@
 using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 
 namespace Kassyi.GSharp.Core;
-
-using System;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 /// <summary>
 /// Provides a managed execution context for evaluating GPU kernels directly on the .NET host CPU without native toolchains.
@@ -91,28 +89,48 @@ public static class ManagedGpuContext
 
     // Shared memory buffer per thread (each physical thread represents a block during managed execution loop)
     [ThreadStatic]
-    private static byte[]? s_sharedMemoryBuffer;
+    private static byte[][]? s_perBlockSharedMemoryBuffer;
 
     [ThreadStatic]
-    private static int s_sharedMemoryOffset;
+    private static int[]? s_perBlockSharedMemoryOffset;
 
     [ThreadStatic]
-    private static int[]? s_allocationOffsets;
+    private static int[][]? s_perBlockAllocationOffsets;
+
+    [ThreadStatic]
+    private static int[]? s_perBlockMaxAllocationIndex;
 
     [ThreadStatic]
     private static int s_allocationIndex;
 
-    [ThreadStatic]
-    private static int s_maxAllocationIndex;
+    private static int LinearBlockId => BlockIdxZ * GridDimY * GridDimX + BlockIdxY * GridDimX + BlockIdxX;
 
     /// <summary>
-    /// Initializes or resets the shared memory buffer for the current block execution.
+    /// Initializes or resets the shared memory arrays for the entire grid execution.
+    /// </summary>
+    public static void InitializeGrid(int totalBlocks)
+    {
+        if (s_perBlockSharedMemoryBuffer == null || s_perBlockSharedMemoryBuffer.Length < totalBlocks)
+        {
+            s_perBlockSharedMemoryBuffer = new byte[totalBlocks][];
+            s_perBlockSharedMemoryOffset = new int[totalBlocks];
+            s_perBlockAllocationOffsets = new int[totalBlocks][];
+            s_perBlockMaxAllocationIndex = new int[totalBlocks];
+        }
+        else
+        {
+            Array.Clear(s_perBlockSharedMemoryOffset, 0, totalBlocks);
+            Array.Clear(s_perBlockMaxAllocationIndex, 0, totalBlocks);
+            // We don't need to clear the actual buffers, just the offsets
+        }
+    }
+
+    /// <summary>
+    /// Obsolete method kept for backwards compatibility with previously generated code.
     /// </summary>
     public static void ResetSharedMemory()
     {
-        s_sharedMemoryOffset = 0;
-        s_allocationIndex = 0;
-        s_maxAllocationIndex = 0;
+        // No-op for new generation scheme, but keeps old code compiling if any.
     }
 
     /// <summary>
@@ -135,41 +153,60 @@ public static class ManagedGpuContext
         }
 
         var bytesNeeded = count * Unsafe.SizeOf<T>();
+        var blockId = LinearBlockId;
 
-        s_allocationOffsets ??= new int[64];
-
-        var currentIndex = s_allocationIndex++;
-
-        // Ensure buffer exists and is large enough
-        s_sharedMemoryBuffer ??= new byte[Math.Max(bytesNeeded, 65536)]; // Default 64KB
-
-        if (currentIndex < s_maxAllocationIndex)
+        if (s_perBlockAllocationOffsets != null)
         {
-            // Reuse existing allocation for this index
-            var existingOffset = s_allocationOffsets[currentIndex];
-            return MemoryMarshal.Cast<byte, T>(s_sharedMemoryBuffer.AsSpan(existingOffset, bytesNeeded));
+            var allocationOffsets = s_perBlockAllocationOffsets[blockId];
+            if (allocationOffsets == null)
+            {
+                allocationOffsets = Array.Empty<int>();
+                s_perBlockAllocationOffsets[blockId] = allocationOffsets;
+            }
+
+            var currentIndex = s_allocationIndex++;
+
+            // Ensure buffer exists and is large enough
+
+            var buffer = s_perBlockSharedMemoryBuffer?[blockId];
+            if (buffer == null)
+            {
+                buffer = Array.Empty<byte>();
+                s_perBlockSharedMemoryBuffer![blockId] = buffer;
+            }
+
+            if (currentIndex < s_perBlockMaxAllocationIndex![blockId])
+            {
+                // Reuse existing allocation for this index
+                var existingOffset = allocationOffsets[currentIndex];
+                return MemoryMarshal.Cast<byte, T>(buffer.AsSpan(existingOffset, bytesNeeded));
+            }
+
+            if (s_perBlockSharedMemoryOffset![blockId] + bytesNeeded > buffer.Length)
+            {
+                // Expand buffer if necessary
+                Array.Resize(ref s_perBlockSharedMemoryBuffer[blockId],
+                    Math.Max(buffer.Length * 2, s_perBlockSharedMemoryOffset[blockId] + bytesNeeded));
+                buffer = s_perBlockSharedMemoryBuffer[blockId];
+            }
+
+            var newOffset = s_perBlockSharedMemoryOffset[blockId];
+            var byteSpan = buffer.AsSpan(newOffset, bytesNeeded);
+            s_perBlockSharedMemoryOffset[blockId] += bytesNeeded;
+
+            if (currentIndex >= allocationOffsets.Length)
+            {
+                Array.Resize(ref s_perBlockAllocationOffsets[blockId], Math.Max(16, allocationOffsets.Length * 2));
+                allocationOffsets = s_perBlockAllocationOffsets[blockId];
+            }
+
+            allocationOffsets[currentIndex] = newOffset;
+            s_perBlockMaxAllocationIndex[blockId]++;
+
+            return MemoryMarshal.Cast<byte, T>(byteSpan);
         }
 
-        if (s_sharedMemoryOffset + bytesNeeded > s_sharedMemoryBuffer.Length)
-        {
-            // Expand buffer if necessary
-            Array.Resize(ref s_sharedMemoryBuffer,
-                Math.Max(s_sharedMemoryBuffer.Length * 2, s_sharedMemoryOffset + bytesNeeded));
-        }
-
-        var newOffset = s_sharedMemoryOffset;
-        var byteSpan = s_sharedMemoryBuffer.AsSpan(newOffset, bytesNeeded);
-        s_sharedMemoryOffset += bytesNeeded;
-
-        if (currentIndex >= s_allocationOffsets.Length)
-        {
-            Array.Resize(ref s_allocationOffsets, s_allocationOffsets.Length * 2);
-        }
-
-        s_allocationOffsets[currentIndex] = newOffset;
-        s_maxAllocationIndex++;
-
-        return MemoryMarshal.Cast<byte, T>(byteSpan);
+        throw new InvalidOperationException("Grid not initialized. Call InitializeGrid first.");
     }
 
     /// <summary>
@@ -254,7 +291,8 @@ public static class ManagedGpuContext
     /// <param name="width">The logical warp width.</param>
     /// <returns>The shuffled value.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static dynamic __gsharp_warp_shuffle_read_down_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta, int width = 32) where T : unmanaged
+    public static dynamic __gsharp_warp_shuffle_read_down_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
+        int width = 32) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
         var laneId = linearTid % 32;
@@ -272,7 +310,7 @@ public static class ManagedGpuContext
                 return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
             }
         }
-        
+
         return val;
     }
 
@@ -288,7 +326,8 @@ public static class ManagedGpuContext
     /// <param name="width">The logical warp width.</param>
     /// <returns>The shuffled value.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static dynamic __gsharp_warp_shuffle_read_up_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta, int width = 32) where T : unmanaged
+    public static dynamic __gsharp_warp_shuffle_read_up_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
+        int width = 32) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
         var laneId = linearTid % 32;
@@ -310,7 +349,6 @@ public static class ManagedGpuContext
 
         var targetTid = warpStartTid + globalSrcLane;
         return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
-
     }
 
     /// <summary>
@@ -325,7 +363,8 @@ public static class ManagedGpuContext
     /// <param name="width">The logical warp width.</param>
     /// <returns>The shuffled value.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static dynamic __gsharp_warp_shuffle_read_xor_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta, int width = 32) where T : unmanaged
+    public static dynamic __gsharp_warp_shuffle_read_xor_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
+        int width = 32) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
         var laneId = linearTid % 32;
@@ -347,7 +386,6 @@ public static class ManagedGpuContext
 
         var targetTid = warpStartTid + globalSrcLane;
         return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
-
     }
 
     /// <summary>
@@ -362,7 +400,8 @@ public static class ManagedGpuContext
     /// <param name="width">The logical warp width.</param>
     /// <returns>The shuffled value.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static dynamic __gsharp_warp_shuffle_read_sync<TContext, T>(TContext ctx, uint mask, T val, uint srcLane, int width = 32) where T : unmanaged
+    public static dynamic __gsharp_warp_shuffle_read_sync<TContext, T>(TContext ctx, uint mask, T val, uint srcLane,
+        int width = 32) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
         var laneId = linearTid % 32;
@@ -384,6 +423,5 @@ public static class ManagedGpuContext
 
         var targetTid = warpStartTid + globalSrcLane;
         return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
-
     }
 }

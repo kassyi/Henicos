@@ -98,6 +98,7 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendLine("int _state = 0;");
         context.Emitter.Writer.AppendLine($"__gsharp_context_{methodName}* _all_contexts = nullptr;");
         context.Emitter.Writer.AppendLine("uint64_t _warpExchange = 0;");
+        context.Emitter.Writer.AppendLine("bool _yieldedForGridSync = false;");
         foreach (var field in fields)
         {
             var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
@@ -161,9 +162,6 @@ public static class MethodTranspiler
         loweredBody = (BlockSyntax)rewriter.Visit(loweredBody);
 
         var bodySource = loweredBody.NormalizeWhitespace().ToFullString().Replace("_ctx->", "_ctx.");
-        bodySource = System.Text.RegularExpressions.Regex.Replace(bodySource, @"\b_state\b", "_ctx._state");
-        bodySource =
-            System.Text.RegularExpressions.Regex.Replace(bodySource, @"\b_warpExchange\b", "_ctx._warpExchange");
 
         var localInitBuilder = new StringBuilder();
 
@@ -171,6 +169,7 @@ public static class MethodTranspiler
         writer.AppendLine($"public class __gsharp_context_{methodName} {{");
         writer.AppendLine("public int _state;");
         writer.AppendLine("public uint _warpExchange;");
+        writer.AppendLine("public bool _yieldedForGridSync;");
         if (contextFields != null)
         {
             foreach (var field in contextFields)
@@ -276,6 +275,11 @@ public static class MethodTranspiler
             }
 
             writer.Append($"__gsharp_context_{methodName} _ctx");
+            
+            if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
+            {
+                writer.Append($", ref {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} __gsharp_auto_result");
+            }
         }
 
         writer.AppendLine(") {");
@@ -299,10 +303,23 @@ public static class MethodTranspiler
 
     private class ManagedExecutionRewriter : CSharpSyntaxRewriter
     {
-        private int _inLambdaOrLocalFuncCount = 0;
+        private int _inLambdaOrLocalFuncCount;
 
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
         {
+            if (node.Identifier.Text == "_state" || node.Identifier.Text == "_warpExchange" || node.Identifier.Text == "_yieldedForGridSync")
+            {
+                if (node.Parent is MemberAccessExpressionSyntax parent && parent.Name == node)
+                {
+                    return base.VisitIdentifierName(node);
+                }
+
+                return SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName("_ctx"),
+                    node).WithTriviaFrom(node);
+            }
+
             if (node.Identifier.Text == "BitOperations")
             {
                 if (node.Parent is MemberAccessExpressionSyntax parent && parent.Name == node)
@@ -408,10 +425,32 @@ public static class MethodTranspiler
 
         public override SyntaxNode? VisitReturnStatement(ReturnStatementSyntax node)
         {
-            // Remove return value for managed state machine (which is void) unless it's the state machine state return
-            if (_inLambdaOrLocalFuncCount == 0 && node.Expression != null && !node.HasAnnotations("StateMachineReturn"))
+            if (_inLambdaOrLocalFuncCount == 0 && !node.HasAnnotations("StateMachineReturn"))
             {
-                return SyntaxFactory.ReturnStatement().WithTriviaFrom(node);
+                var statements = new List<StatementSyntax>();
+
+                if (node.Expression != null)
+                {
+                    statements.Add(SyntaxFactory.ExpressionStatement(
+                        SyntaxFactory.AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            SyntaxFactory.IdentifierName("__gsharp_auto_result"),
+                            (ExpressionSyntax)Visit(node.Expression)!
+                        )
+                    ));
+                }
+
+                statements.Add(SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        SyntaxFactory.ParseExpression("_ctx._state"),
+                        SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-1))
+                    )
+                ));
+
+                statements.Add(SyntaxFactory.ReturnStatement());
+
+                return SyntaxFactory.Block(statements).WithTriviaFrom(node);
             }
 
             return base.VisitReturnStatement(node);
@@ -643,6 +682,7 @@ public static class MethodTranspiler
             if (loweredBody != null)
             {
                 context.Emitter.Writer.AppendLine("#define _state _ctx->_state");
+                context.Emitter.Writer.AppendLine("#define _yieldedForGridSync _ctx->_yieldedForGridSync");
             }
 
             if (loweredBody != null)
@@ -674,6 +714,7 @@ public static class MethodTranspiler
             if (loweredBody != null)
             {
                 context.Emitter.Writer.AppendLine("#undef _state");
+                context.Emitter.Writer.AppendLine("#undef _yieldedForGridSync");
             }
         }
     }

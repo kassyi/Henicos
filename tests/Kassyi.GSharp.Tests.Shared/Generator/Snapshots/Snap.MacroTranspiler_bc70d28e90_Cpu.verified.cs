@@ -21,133 +21,113 @@ public const string MyKernel_Source = @"struct __gsharp_context_GEN_35_MacroTran
 int _state = 0;
 __gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
+int sum;
+int i;
 };
 extern ""C"" __declspec(dllexport) void GEN_35_MacroTranspiler_InGpuKernel_MyKernel(__gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel* _ctx){
 #define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
-int sum = 0;
+_ctx->sum=0;
 // [GpuUnroll] start=0, count=3
 {
-sum+=0;
+_ctx->sum+=_ctx->i;
 }
 {
-sum+=1;
+_ctx->sum+=_ctx->i;
 }
 {
-sum+=2;
+_ctx->sum+=_ctx->i;
 }
 for(int j = blockIdx.x * blockDim.x + threadIdx.x; j < 10; j += gridDim.x * blockDim.x)
 {
-sum+=j;
+_ctx->sum+=j;
 }
 if(threadIdx.x == 0 && blockIdx.x == 0)
 {
-sum+=100;
+_ctx->sum+=100;
 }
+_yieldedForGridSync=true;
+_state=1;
+return;
+}
+case 1:
+__gsharp_switch_1_state_1:
 {
-sum+=1;
+_yieldedForGridSync=true;
+_state=2;
+return;
 }
+case 2:
+__gsharp_switch_1_state_2:
 {
-sum+=2;
+_yieldedForGridSync=true;
+_state=3;
+return;
 }
+case 3:
+__gsharp_switch_1_state_3:
 {
-if(sum>0)
+_yieldedForGridSync=true;
+_state=4;
+return;
+}
+case 4:
+__gsharp_switch_1_state_4:
 {
-sum+=10;
+_yieldedForGridSync=true;
+_state=5;
+return;
 }
-cg::this_grid().sync();
-sum+=20;
-}
+case 5:
+__gsharp_switch_1_state_5:
 {
-sum+=1;
-cg::this_grid().sync();
-sum+=2;
-cg::this_grid().sync();
-for(int i = 0;i<10;i++)
+_yieldedForGridSync=true;
+_state=6;
+return;
+}
+case 6:
+__gsharp_switch_1_state_6:
 {
-sum+=i;
-cg::this_grid().sync();
-sum*=2;
+_yieldedForGridSync=true;
+_state=7;
+return;
 }
-cg::this_grid().sync();
-if(sum>50)
+case 7:
+__gsharp_switch_1_state_7:
 {
-sum+=100;
-cg::this_grid().sync();
-sum+=200;
+_yieldedForGridSync=true;
+_state=8;
+return;
 }
-else
+case 8:
+__gsharp_switch_1_state_8:
 {
-sum-=10;
-cg::this_grid().sync();
-sum-=20;
+_yieldedForGridSync=true;
+_state=9;
+return;
 }
-cg::this_grid().sync();
-sum+=3;
-cg::this_grid().sync();
-sum+=4;
-}
+case 9:
+__gsharp_switch_1_state_9:
 {
-for(int i = 0;i<5;i++)
+_yieldedForGridSync=true;
+_state=10;
+return;
+}
+case 10:
+__gsharp_switch_1_state_10:
 {
-if(i%2==0)
-{
-for(int j = 0;j<3;j++)
-{
-sum+=i;
-cg::this_grid().sync();
-sum+=j;
-}
-cg::this_grid().sync();
-sum+=10;
-}
-cg::this_grid().sync();
-sum+=20;
-}
-}
-{
-sum+=1;
-cg::this_grid().sync();
-sum+=2;
-cg::this_grid().sync();
-sum+=3;
-cg::this_grid().sync();
-sum+=4;
-}
-{
-sum+=500;
-}
-{
-auto LocalStep = [&]() {
-sum+=11;
-cg::this_grid().sync();
-sum+=22;
-}
-;
-cg::this_grid().sync();
-LocalStep();
-cg::this_grid().sync();
-sum+=33;
-}
-{
-sum+=1;
-cg::this_grid().sync();
-if(threadIdx.x == 0 && blockIdx.x == 0)
-{
-sum+=2;
-sum+=3;
-}
-cg::this_grid().sync();
-sum+=4;
-}
 _state=-1;
 return;
 }
 }
 #undef _state
+#undef _yieldedForGridSync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_GEN_35_MacroTranspiler_InGpuKernel_MyKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ)
 {
@@ -191,6 +171,9 @@ public static readonly string MyKernel_FullSource=global::Kassyi.GSharp.Generate
 public class __gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel {
 public int _state;
 public uint _warpExchange;
+public bool _yieldedForGridSync;
+public int sum;
+public int i;
 }
 public static unsafe void __gsharp_statemachine_GEN_35_MacroTranspiler_InGpuKernel_MyKernel(__gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel _ctx) {
 {
@@ -198,128 +181,93 @@ public static unsafe void __gsharp_statemachine_GEN_35_MacroTranspiler_InGpuKern
     {
         case 0:
         {
-            int sum = 0;
+            _ctx.sum = 0;
             // ForUnroll macro
             Gpu.ForUnroll(0, 3, i =>
             {
-                sum += i;
+                _ctx.sum += _ctx.i;
             });
             // GridStrideLoop macro
             for (int j = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; j < (10); j += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
             {
-                sum += j;
+                _ctx.sum += j;
             }
 
             // SingleThread macro
             Gpu.SingleThread(() =>
             {
-                sum += 100;
+                _ctx.sum += 100;
             });
-            // SyncGrid macro - Edge case 1: Empty block
-            Gpu.SyncGrid(() =>
-            {
-            });
-            // SyncGrid macro - Edge case 2: Single statement block
-            Gpu.SyncGrid(() =>
-            {
-                sum += 1;
-            });
-            // SyncGrid macro - Edge case 3: Expression body lambda
-            Gpu.SyncGrid(() => sum += 2);
-            // SyncGrid macro - Edge case 4: Single unbraced statement in if
-            Gpu.SyncGrid(() =>
-            {
-                if (sum > 0)
-                    sum += 10;
-                sum += 20;
-            });
-            // SyncGrid macro - Comprehensive steps with nested for loop and if-else
-            Gpu.SyncGrid(() =>
-            {
-                sum += 1;
-                sum += 2;
-                for (int i = 0; i < 10; i++)
-                {
-                    sum += i;
-                    sum *= 2;
-                }
+            _ctx._yieldedForGridSync = true;
+            _ctx._state = 1;
+            return;
+        }
 
-                if (sum > 50)
-                {
-                    sum += 100;
-                    sum += 200;
-                }
-                else
-                {
-                    sum -= 10;
-                    sum -= 20;
-                }
+        case 1:
+        {
+            _ctx._yieldedForGridSync = true;
+            _ctx._state = 2;
+            return;
+        }
 
-                sum += 3;
-                Gpu.SyncGrid(); // Manual sync co-existence (should not produce double sync)
-                sum += 4;
-            });
-            // SyncGrid macro - Deep nesting of nesting (for -> if -> for)
-            Gpu.SyncGrid(() =>
-            {
-                for (int i = 0; i < 5; i++)
-                {
-                    if (i % 2 == 0)
-                    {
-                        for (int j = 0; j < 3; j++)
-                        {
-                            sum += i;
-                            sum += j;
-                        }
+        case 2:
+        {
+            _ctx._yieldedForGridSync = true;
+            _ctx._state = 3;
+            return;
+        }
 
-                        sum += 10;
-                    }
+        case 3:
+        {
+            _ctx._yieldedForGridSync = true;
+            _ctx._state = 4;
+            return;
+        }
 
-                    sum += 20;
-                }
-            });
-            // SyncGrid macro - Recursive / nested SyncGrid inside SyncGrid
-            Gpu.SyncGrid(() =>
-            {
-                sum += 1;
-                Gpu.SyncGrid(() =>
-                {
-                    sum += 2;
-                    sum += 3;
-                });
-                sum += 4;
-            });
-            // SyncGrid macro - Direct nested SyncGrid wrapper pattern (inner SyncGrid is unwrapped/eliminated)
-            Gpu.SyncGrid(() =>
-            {
-                Gpu.SyncGrid(() =>
-                {
-                    sum += 500;
-                });
-            });
-            // SyncGrid macro - Arrow function (lambda) and local function inside
-            Gpu.SyncGrid(() =>
-            {
-                void LocalStep()
-                {
-                    sum += 11;
-                    sum += 22;
-                }
+        case 4:
+        {
+            _ctx._yieldedForGridSync = true;
+            _ctx._state = 5;
+            return;
+        }
 
-                LocalStep();
-                sum += 33;
-            });
-            // SyncGrid macro - SingleThread inside SyncGrid (must suppress sync to avoid GPU deadlock)
-            Gpu.SyncGrid(() =>
-            {
-                sum += 1;
-                Gpu.SingleThread(() =>
-                {
-                    sum += 2;
-                    sum += 3;
-                });
-                sum += 4;
-            });
+        case 5:
+        {
+            _ctx._yieldedForGridSync = true;
+            _ctx._state = 6;
+            return;
+        }
+
+        case 6:
+        {
+            _ctx._yieldedForGridSync = true;
+            _ctx._state = 7;
+            return;
+        }
+
+        case 7:
+        {
+            _ctx._yieldedForGridSync = true;
+            _ctx._state = 8;
+            return;
+        }
+
+        case 8:
+        {
+            _ctx._yieldedForGridSync = true;
+            _ctx._state = 9;
+            return;
+        }
+
+        case 9:
+        {
+            _ctx._yieldedForGridSync = true;
+            _ctx._state = 10;
+            return;
+        }
+
+        case 10:
+        {
             _ctx._state = -1;
             return;
         }
@@ -338,15 +286,21 @@ var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
 int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
 for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
 int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
-var _gsharp_contexts = new __gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel[blockDimX * blockDimY * blockDimZ];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_GEN_35_MacroTranspiler_InGpuKernel_MyKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
@@ -357,12 +311,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
-bool anyActive = true;
-while (anyActive)
+bool anyBlockActive = true;
+while (anyBlockActive)
 {
-anyActive = false;
-for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
 {
 int tx = _t_idx % (int)blockDimX;
 int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
@@ -370,15 +324,27 @@ int tz = _t_idx / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-if (_gsharp_contexts[_t_idx]._state != -1)
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
 {
-anyActive = true;
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_GEN_35_MacroTranspiler_InGpuKernel_MyKernel(_gsharp_contexts[_t_idx]);
+__gsharp_statemachine_GEN_35_MacroTranspiler_InGpuKernel_MyKernel(_gsharp_contexts[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
 }
+}
+}
+if (gridSyncRequested)
+{
+break;
 }
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 return;
 }

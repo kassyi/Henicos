@@ -1,5 +1,11 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+
 /// <summary>Lowers flat C# AST statements into a switch-based state machine separated by thread barriers.</summary>
 public class StateMachineLowerer
 {
@@ -11,8 +17,39 @@ public class StateMachineLowerer
         var currentCaseStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
         var state = 0;
 
+        // 1. Pass 1: Identify all state boundaries (barriers AND labels) and assign sequential states.
+        var labelStates = new Dictionary<string, int>();
+        int simulatedState = 0;
         foreach (var stmt in statements)
         {
+            if (stmt is LabeledStatementSyntax labeled)
+            {
+                simulatedState++;
+                labelStates[labeled.Identifier.ValueText] = simulatedState;
+            }
+
+            if (BarrierHelper.GetPhaseBarrierInvocation(stmt) != null)
+            {
+                simulatedState++;
+            }
+        }
+
+        // 2. Pass 2: Generate switch cases.
+        foreach (var stmt in statements)
+        {
+            if (stmt is LabeledStatementSyntax labeled)
+            {
+                // A label boundary requires falling through to the next state case without yielding.
+                commitState(state + 1, isBarrier: false);
+
+                if (labeled.Statement is not EmptyStatementSyntax)
+                {
+                    currentCaseStatements.Add(RewriteGoto(labeled.Statement, labelStates));
+                }
+
+                continue;
+            }
+
             var barrierInv = BarrierHelper.GetPhaseBarrierInvocation(stmt);
             if (barrierInv != null)
             {
@@ -23,30 +60,45 @@ public class StateMachineLowerer
                     currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
                         SyntaxFactory.InvocationExpression(
                             SyntaxFactory.IdentifierName("__gsharp_warp_exchange_assign"),
-                            SyntaxFactory.ArgumentList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(valArg)))
+                            SyntaxFactory.ArgumentList(
+                                SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(valArg)))
                         )
                     ));
 
                     // 2. State Split & Return
-                    commitState(state + 1);
+                    commitState(state + 1, isBarrier: true);
 
                     // 3. Rewrite original Warp.ShuffleXXX(...) to __gsharp_warp_shuffle_read_XXX(...)
-                    currentCaseStatements.Add(RewriteWarpShuffleRead(stmt, barrierInv));
+                    var readStmt = RewriteWarpShuffleRead(stmt, barrierInv);
+                    currentCaseStatements.Add(RewriteGoto(readStmt, labelStates));
                 }
                 else
                 {
-                    // Regular SyncThreads
-                    commitState(state + 1);
+                    var name = (barrierInv.Expression as MemberAccessExpressionSyntax)?.Name.Identifier.ValueText
+                               ?? (barrierInv.Expression as IdentifierNameSyntax)?.Identifier.ValueText;
+
+                    if (name == "SyncGrid")
+                    {
+                        currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                SyntaxFactory.IdentifierName("_yieldedForGridSync"),
+                                SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
+                            )
+                        ));
+                    }
+
+                    commitState(state + 1, isBarrier: true);
                 }
             }
             else
             {
-                currentCaseStatements.Add(stmt);
+                currentCaseStatements.Add(RewriteGoto(stmt, labelStates));
             }
         }
 
-        // [WHY] State -1 signals the CPU emulator that this thread has completed its execution.
-        commitState(-1);
+        // Final state: -1
+        commitState(-1, isBarrier: true);
 
         var switchStmt = SyntaxFactory.SwitchStatement(
             SyntaxFactory.IdentifierName("_state"),
@@ -55,11 +107,20 @@ public class StateMachineLowerer
 
         return SyntaxFactory.Block(switchStmt);
 
-        void commitState(int nextState)
+        void commitState(int nextState, bool isBarrier)
         {
-            currentCaseStatements.Add(CreateStateAssignment(nextState));
-            currentCaseStatements.Add(SyntaxFactory.ReturnStatement()
-                .WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn")));
+            if (isBarrier)
+            {
+                currentCaseStatements.Add(CreateStateAssignment(nextState));
+                currentCaseStatements.Add(SyntaxFactory.ReturnStatement()
+                    .WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn")));
+            }
+            else
+            {
+                // Unconditional jump to next state within the switch
+                currentCaseStatements.Add(SyntaxFactory.ParseStatement($"goto case {nextState};")
+                    .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed));
+            }
 
             cases.Add(SyntaxFactory.SwitchSection(
                 SyntaxFactory.SingletonList<SwitchLabelSyntax>(SyntaxFactory.CaseSwitchLabel(
@@ -69,7 +130,29 @@ public class StateMachineLowerer
             ));
 
             currentCaseStatements.Clear();
-            state++;
+            state = nextState;
+        }
+    }
+
+    private static StatementSyntax RewriteGoto(StatementSyntax stmt, Dictionary<string, int> labelStates) =>
+        (StatementSyntax)new GotoRewriter(labelStates).Visit(stmt);
+
+    private class GotoRewriter(Dictionary<string, int> labelStates) : CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
+        {
+            if (node.Kind() != SyntaxKind.GotoStatement || node.Expression is not IdentifierNameSyntax id)
+            {
+                return base.VisitGotoStatement(node);
+            }
+
+            if (labelStates.TryGetValue(id.Identifier.ValueText, out var targetState))
+            {
+                return SyntaxFactory.ParseStatement($"goto case {targetState};")
+                    .WithTriviaFrom(node);
+            }
+
+            return base.VisitGotoStatement(node);
         }
     }
 
@@ -86,7 +169,8 @@ public class StateMachineLowerer
 
     private static StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv)
     {
-        var methodName = (barrierInv.Expression as MemberAccessExpressionSyntax)?.Name.Identifier.ValueText ?? "ShuffleDownSync";
+        var methodName = (barrierInv.Expression as MemberAccessExpressionSyntax)?.Name.Identifier.ValueText ??
+                         "ShuffleDownSync";
         var readMethodName = methodName switch
         {
             "ShuffleDownSync" => "__gsharp_warp_shuffle_read_down_sync",

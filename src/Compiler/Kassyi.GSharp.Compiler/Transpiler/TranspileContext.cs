@@ -31,6 +31,9 @@ public struct Emitter(
     public string? LabelSuffix = null;
     public int SmemAllocCount = 0;
 
+    public int SwitchIdCounter = 0;
+    public Stack<int> ActiveSwitchIds = new();
+
     public int PushOverrideScope(string name, OverrideValue value) =>
         LocalVariableOverrides.Push(name, value);
 

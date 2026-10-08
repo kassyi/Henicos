@@ -173,6 +173,9 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileSwitchStatement(SwitchStatementSyntax node, ref TranspileContext context)
     {
+        var switchId = ++context.Emitter.SwitchIdCounter;
+        context.Emitter.ActiveSwitchIds.Push(switchId);
+
         context.Emitter.Writer.AppendKeyword("switch");
         using (context.Emitter.Writer.Parentheses())
         {
@@ -187,6 +190,8 @@ internal static class StatementTranspilers
                 context.Visitor.Visit(section);
             }
         }
+
+        context.Emitter.ActiveSwitchIds.Pop();
     }
 
     /// <summary>
@@ -224,6 +229,21 @@ internal static class StatementTranspilers
 
     public static void TranspileGotoStatement(GotoStatementSyntax node, ref TranspileContext context)
     {
+        if (node.IsKind(SyntaxKind.GotoCaseStatement))
+        {
+            var activeId = context.Emitter.ActiveSwitchIds.Count > 0 ? context.Emitter.ActiveSwitchIds.Peek().ToString() : "0";
+            context.Emitter.Writer.Append($"goto __gsharp_switch_{activeId}_state_");
+            context.Visitor.Visit(node.Expression);
+            context.Emitter.Writer.AppendSemiColonLine();
+            return;
+        }
+        else if (node.IsKind(SyntaxKind.GotoDefaultStatement))
+        {
+            var activeId = context.Emitter.ActiveSwitchIds.Count > 0 ? context.Emitter.ActiveSwitchIds.Peek().ToString() : "0";
+            context.Emitter.Writer.AppendLine($"goto __gsharp_switch_{activeId}_state_default;");
+            return;
+        }
+
         context.Emitter.Writer.Append("goto ");
         if (node.Expression is IdentifierNameSyntax identifier && context.Emitter.LabelSuffix != null)
         {

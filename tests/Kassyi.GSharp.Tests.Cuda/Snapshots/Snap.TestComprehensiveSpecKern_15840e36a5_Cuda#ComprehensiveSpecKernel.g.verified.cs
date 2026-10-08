@@ -220,11 +220,13 @@ while(counter>0);
 switch(tx)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
 mag+=1;
 break;
 }
 default:
+__gsharp_switch_1_state_default:
 {
 mag+=0;
 break;

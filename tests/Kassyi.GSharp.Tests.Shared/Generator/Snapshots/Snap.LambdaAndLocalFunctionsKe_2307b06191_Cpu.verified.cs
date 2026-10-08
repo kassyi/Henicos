@@ -32,12 +32,15 @@ public const string NonCapturingLambdaKernel_Source = @"struct __gsharp_context_
 int _state = 0;
 __gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
 };
 extern ""C"" __declspec(dllexport) void LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel(int* __restrict__ data, __gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel* _ctx){
 #define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
 int tid = threadIdx.x;
 auto doubleValue = [&](int x) {
@@ -50,6 +53,7 @@ return;
 }
 }
 #undef _state
+#undef _yieldedForGridSync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
@@ -93,6 +97,7 @@ public static readonly string NonCapturingLambdaKernel_FullSource=global::Kassyi
 public class __gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel {
 public int _state;
 public uint _warpExchange;
+public bool _yieldedForGridSync;
 }
 public static unsafe void __gsharp_statemachine_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel(int[] data, __gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel _ctx) {
 {
@@ -125,15 +130,21 @@ var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
 int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
 for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
 int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
-var _gsharp_contexts = new __gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel[blockDimX * blockDimY * blockDimZ];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
@@ -144,12 +155,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
-bool anyActive = true;
-while (anyActive)
+bool anyBlockActive = true;
+while (anyBlockActive)
 {
-anyActive = false;
-for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
 {
 int tx = _t_idx % (int)blockDimX;
 int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
@@ -157,15 +168,27 @@ int tz = _t_idx / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-if (_gsharp_contexts[_t_idx]._state != -1)
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
 {
-anyActive = true;
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel(data, _gsharp_contexts[_t_idx]);
+__gsharp_statemachine_LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel(data, _gsharp_contexts[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
 }
+}
+}
+if (gridSyncRequested)
+{
+break;
 }
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 return;
 }
@@ -180,12 +203,15 @@ public const string ValueCapturingLambdaKernel_Source = @"struct __gsharp_contex
 int _state = 0;
 __gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
 };
 extern ""C"" __declspec(dllexport) void LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel(int* __restrict__ data, int factor, __gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel* _ctx){
 #define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
 int tid = threadIdx.x;
 auto multiply = [&](int x) {
@@ -198,6 +224,7 @@ return;
 }
 }
 #undef _state
+#undef _yieldedForGridSync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data, int factor)
 {
@@ -241,6 +268,7 @@ public static readonly string ValueCapturingLambdaKernel_FullSource=global::Kass
 public class __gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel {
 public int _state;
 public uint _warpExchange;
+public bool _yieldedForGridSync;
 }
 public static unsafe void __gsharp_statemachine_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel(int[] data, int factor, __gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel _ctx) {
 {
@@ -273,15 +301,21 @@ var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
 int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
 for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
 int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
-var _gsharp_contexts = new __gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel[blockDimX * blockDimY * blockDimZ];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
@@ -292,12 +326,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
-bool anyActive = true;
-while (anyActive)
+bool anyBlockActive = true;
+while (anyBlockActive)
 {
-anyActive = false;
-for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
 {
 int tx = _t_idx % (int)blockDimX;
 int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
@@ -305,15 +339,27 @@ int tz = _t_idx / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-if (_gsharp_contexts[_t_idx]._state != -1)
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
 {
-anyActive = true;
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel(data, factor, _gsharp_contexts[_t_idx]);
+__gsharp_statemachine_LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel(data, factor, _gsharp_contexts[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
 }
+}
+}
+if (gridSyncRequested)
+{
+break;
 }
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 return;
 }
@@ -328,12 +374,15 @@ public const string ImmediatelyEvaluatedLambdaKernel_Source = @"struct __gsharp_
 int _state = 0;
 __gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
 };
 extern ""C"" __declspec(dllexport) void LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel(int* __restrict__ data, __gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel* _ctx){
 #define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
 int tid = threadIdx.x;
 auto LocalAdd = [&](int a, int b) {
@@ -346,6 +395,7 @@ return;
 }
 }
 #undef _state
+#undef _yieldedForGridSync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
@@ -389,6 +439,7 @@ public static readonly string ImmediatelyEvaluatedLambdaKernel_FullSource=global
 public class __gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel {
 public int _state;
 public uint _warpExchange;
+public bool _yieldedForGridSync;
 }
 public static unsafe void __gsharp_statemachine_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel(int[] data, __gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel _ctx) {
 {
@@ -425,15 +476,21 @@ var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
 int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
 for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
 int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
-var _gsharp_contexts = new __gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel[blockDimX * blockDimY * blockDimZ];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
@@ -444,12 +501,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
-bool anyActive = true;
-while (anyActive)
+bool anyBlockActive = true;
+while (anyBlockActive)
 {
-anyActive = false;
-for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
 {
 int tx = _t_idx % (int)blockDimX;
 int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
@@ -457,15 +514,27 @@ int tz = _t_idx / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-if (_gsharp_contexts[_t_idx]._state != -1)
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
 {
-anyActive = true;
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel(data, _gsharp_contexts[_t_idx]);
+__gsharp_statemachine_LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel(data, _gsharp_contexts[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
 }
+}
+}
+if (gridSyncRequested)
+{
+break;
 }
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 return;
 }
@@ -480,12 +549,15 @@ public const string ShadowedVariableCaptureKernel_Source = @"struct __gsharp_con
 int _state = 0;
 __gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
 };
 extern ""C"" __declspec(dllexport) void LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel(int* __restrict__ data, __gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel* _ctx){
 #define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
 int tid = threadIdx.x;
 int value = 50;
@@ -499,6 +571,7 @@ return;
 }
 }
 #undef _state
+#undef _yieldedForGridSync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int* __restrict__ data)
 {
@@ -542,6 +615,7 @@ public static readonly string ShadowedVariableCaptureKernel_FullSource=global::K
 public class __gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel {
 public int _state;
 public uint _warpExchange;
+public bool _yieldedForGridSync;
 }
 public static unsafe void __gsharp_statemachine_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel(int[] data, __gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel _ctx) {
 {
@@ -578,15 +652,21 @@ var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
 int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
 for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
 int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
-var _gsharp_contexts = new __gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel[blockDimX * blockDimY * blockDimZ];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
@@ -597,12 +677,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
-bool anyActive = true;
-while (anyActive)
+bool anyBlockActive = true;
+while (anyBlockActive)
 {
-anyActive = false;
-for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
 {
 int tx = _t_idx % (int)blockDimX;
 int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
@@ -610,15 +690,27 @@ int tz = _t_idx / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-if (_gsharp_contexts[_t_idx]._state != -1)
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
 {
-anyActive = true;
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel(data, _gsharp_contexts[_t_idx]);
+__gsharp_statemachine_LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel(data, _gsharp_contexts[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
 }
+}
+}
+if (gridSyncRequested)
+{
+break;
 }
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 return;
 }
@@ -633,13 +725,16 @@ public const string NestedReturnsKernel_Source = @"struct __gsharp_context_Lambd
 int _state = 0;
 __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel* _all_contexts = nullptr;
 uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
 };
 extern ""C"" __declspec(dllexport) void LambdaAndLocalFunctionsKernels_NestedReturnsKernel(int someValue, __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel* _ctx, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
 #define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
 switch(_state)
 {
 case 0:
+__gsharp_switch_1_state_0:
 {
 auto LocalAdd = [&](float a, float b) {
 return a+b;
@@ -656,6 +751,7 @@ return;
 }
 }
 #undef _state
+#undef _yieldedForGridSync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_LambdaAndLocalFunctionsKernels_NestedReturnsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, int someValue, float* __restrict__ __gsharp_auto_result)
 {
@@ -699,8 +795,9 @@ public static readonly string NestedReturnsKernel_FullSource=global::Kassyi.GSha
 public class __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel {
 public int _state;
 public uint _warpExchange;
+public bool _yieldedForGridSync;
 }
-public static unsafe void __gsharp_statemachine_LambdaAndLocalFunctionsKernels_NestedReturnsKernel(int someValue, __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel _ctx) {
+public static unsafe void __gsharp_statemachine_LambdaAndLocalFunctionsKernels_NestedReturnsKernel(int someValue, __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel _ctx, ref float __gsharp_auto_result) {
 {
     switch (_ctx._state)
     {
@@ -716,7 +813,12 @@ public static unsafe void __gsharp_statemachine_LambdaAndLocalFunctionsKernels_N
             {
                 return x * 2;
             };
-            return;
+            {
+                __gsharp_auto_result = LocalAdd(someValue, doubleValue(someValue));
+                _ctx._state = -1;
+                return;
+            }
+
             _ctx._state = -1;
             return;
         }
@@ -738,15 +840,21 @@ var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
 int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
 for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
 int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
-var _gsharp_contexts = new __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel[blockDimX * blockDimY * blockDimZ];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_LambdaAndLocalFunctionsKernels_NestedReturnsKernel();
-}
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
@@ -757,12 +865,12 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetSharedMemory();
-bool anyActive = true;
-while (anyActive)
+bool anyBlockActive = true;
+while (anyBlockActive)
 {
-anyActive = false;
-for (int _t_idx = 0; _t_idx < _gsharp_contexts.Length; _t_idx++)
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
 {
 int tx = _t_idx % (int)blockDimX;
 int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
@@ -770,15 +878,27 @@ int tz = _t_idx / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-if (_gsharp_contexts[_t_idx]._state != -1)
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
 {
-anyActive = true;
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_LambdaAndLocalFunctionsKernels_NestedReturnsKernel(someValue, _gsharp_contexts[_t_idx]);
+__gsharp_statemachine_LambdaAndLocalFunctionsKernels_NestedReturnsKernel(someValue, _gsharp_contexts[linear_tid], ref __gsharp_auto_result[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
 }
+}
+}
+if (gridSyncRequested)
+{
+break;
 }
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 return __gsharp_auto_result;
 }
