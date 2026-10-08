@@ -31,7 +31,9 @@ internal class Program
             return 0;
         }
 
+#pragma warning disable RS0030 // CLI argument normalization
         var command = args[0].ToLowerInvariant();
+#pragma warning restore RS0030
 
         return command switch
         {
@@ -97,7 +99,9 @@ internal class Program
             }
             else
             {
+#pragma warning disable RS0030 // CLI argument normalization
                 suite = arg.ToLowerInvariant();
+#pragma warning restore RS0030
             }
         }
 
@@ -133,7 +137,9 @@ internal class Program
 
     private static int RunArithmeticBench(string[] args)
     {
+#pragma warning disable RS0030 // CLI argument normalization
         var target = args.Length > 0 ? args[0].ToLowerInvariant() : "all";
+#pragma warning restore RS0030
 
         if (target is "all" or "gbf")
         {
@@ -310,21 +316,45 @@ internal class Program
             return false;
         }
 
-        var trimmed = s.Trim().Replace("_", string.Empty).Replace(",", string.Empty);
-        if (trimmed.Length == 0)
+        var span = s.AsSpan().Trim();
+        if (span.Length == 0)
         {
             return false;
         }
 
-        var (multiplier, numberPart) = char.ToUpperInvariant(trimmed[^1]) switch
+        double multiplier;
+        ReadOnlySpan<char> numberSpan;
+        switch (char.ToUpperInvariant(span[^1]))
         {
-            'K' => (1_000.0, trimmed[..^1]),
-            'M' => (1_000_000.0, trimmed[..^1]),
-            'G' => (1_000_000_000.0, trimmed[..^1]),
-            _ => (1.0, trimmed)
-        };
+            case 'K':
+                multiplier = 1_000.0;
+                numberSpan = span[..^1];
+                break;
+            case 'M':
+                multiplier = 1_000_000.0;
+                numberSpan = span[..^1];
+                break;
+            case 'G':
+                multiplier = 1_000_000_000.0;
+                numberSpan = span[..^1];
+                break;
+            default:
+                multiplier = 1.0;
+                numberSpan = span;
+                break;
+        }
 
-        if (double.TryParse(numberPart, CultureInfo.InvariantCulture, out var val))
+        Span<char> cleaned = stackalloc char[numberSpan.Length];
+        var len = 0;
+        foreach (var c in numberSpan)
+        {
+            if (c is not ('_' or ','))
+            {
+                cleaned[len++] = c;
+            }
+        }
+
+        if (double.TryParse(cleaned[..len].ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var val))
         {
             result = (int)(val * multiplier);
             return true;

@@ -174,12 +174,11 @@ public class GpuNumberOperatorGenerator : IIncrementalGenerator
         return writer.ToString();
 
         string shiftBody(string op) => isAstNode
-            ? "new(new Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions.ShiftLeftExpression(left, shift))".Replace(
-                "ShiftLeft", op)
+            ? $"new(new Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions.{op}Expression(left, shift))"
             : $"new {structName}(left.Value {GetOperatorSymbol(op)} shift)";
 
         string operatorBody(string op) => isAstNode
-            ? "new(new Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions.AddExpression(left, right))".Replace("Add", op)
+            ? $"new(new Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions.{op}Expression(left, right))"
             : $"new {structName}(left.Value {GetOperatorSymbol(op)} right.Value)";
 
         void inheritdoc() => writer.Line("/// <inheritdoc/>");

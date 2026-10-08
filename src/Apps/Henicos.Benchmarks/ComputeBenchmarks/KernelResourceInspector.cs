@@ -143,7 +143,7 @@ public static class KernelResourceInspector
                 var colonIdx = line.IndexOf(':', funcIdx + 8);
                 if (colonIdx >= 0)
                 {
-                    currentFunc = line.Substring(colonIdx + 1).Trim();
+                    currentFunc = line.AsSpan(colonIdx + 1).Trim().ToString();
                     s_instructionCounts[currentFunc] = 0;
                     continue;
                 }
@@ -154,19 +154,20 @@ public static class KernelResourceInspector
                 continue;
             }
 
-            var trimmed = line.TrimStart();
-            if (!trimmed.StartsWith("/*", StringComparison.Ordinal))
+            var trimmed = line.AsSpan().TrimStart();
+            if (!trimmed.StartsWith("/*"))
             {
                 continue;
             }
 
-            var endIdx = trimmed.IndexOf("*/", 2, StringComparison.Ordinal);
-            if (endIdx <= 2)
+            var relativeEndIdx = trimmed[2..].IndexOf("*/");
+            if (relativeEndIdx < 0)
             {
                 continue;
             }
 
-            var afterComment = trimmed.Substring(endIdx + 2);
+            var endIdx = relativeEndIdx + 2;
+            var afterComment = trimmed[(endIdx + 2)..];
             if (afterComment.Length <= 0 || !char.IsWhiteSpace(afterComment[0]))
             {
                 continue;

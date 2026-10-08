@@ -69,6 +69,15 @@ public static class ComputeBenchmarkReporter
         logOut.WriteLine("================================================================================");
     }
 
-    private static string FormatName(string name) =>
-        name.Replace("Compression Function ", "").Trim();
+    private static string FormatName(string name)
+    {
+        const string Prefix = "Compression Function ";
+        var span = name.AsSpan();
+        if (span.StartsWith(Prefix))
+        {
+            span = span[Prefix.Length..];
+        }
+
+        return span.Trim().ToString();
+    }
 }

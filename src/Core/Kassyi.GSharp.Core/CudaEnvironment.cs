@@ -89,7 +89,7 @@ public class DefaultCudaPathResolver : ICudaPathResolver
             {
                 var folderName = Path.GetFileName(d);
                 var versionStr = folderName.StartsWith("v", StringComparison.OrdinalIgnoreCase)
-                    ? folderName.Substring(1)
+                    ? folderName[1..]
                     : folderName;
 
                 if (Version.TryParse(versionStr, out var v))
