@@ -108,9 +108,14 @@ public static class ManagedGpuContext
     /// <summary>
     /// Initializes or resets the shared memory arrays for the entire grid execution.
     /// </summary>
+    /// <param name="totalBlocks">The total number of blocks in the grid.</param>
     public static void InitializeGrid(int totalBlocks)
     {
-        if (s_perBlockSharedMemoryBuffer == null || s_perBlockSharedMemoryBuffer.Length < totalBlocks)
+        if (s_perBlockSharedMemoryBuffer == null ||
+            s_perBlockSharedMemoryOffset == null ||
+            s_perBlockAllocationOffsets == null ||
+            s_perBlockMaxAllocationIndex == null ||
+            s_perBlockSharedMemoryBuffer.Length < totalBlocks)
         {
             s_perBlockSharedMemoryBuffer = new byte[totalBlocks][];
             s_perBlockSharedMemoryOffset = new int[totalBlocks];
@@ -123,14 +128,6 @@ public static class ManagedGpuContext
             Array.Clear(s_perBlockMaxAllocationIndex, 0, totalBlocks);
             // We don't need to clear the actual buffers, just the offsets
         }
-    }
-
-    /// <summary>
-    /// Obsolete method kept for backwards compatibility with previously generated code.
-    /// </summary>
-    public static void ResetSharedMemory()
-    {
-        // No-op for new generation scheme, but keeps old code compiling if any.
     }
 
     /// <summary>
@@ -158,11 +155,6 @@ public static class ManagedGpuContext
         if (s_perBlockAllocationOffsets != null)
         {
             var allocationOffsets = s_perBlockAllocationOffsets[blockId];
-            if (allocationOffsets == null)
-            {
-                allocationOffsets = [];
-                s_perBlockAllocationOffsets[blockId] = allocationOffsets;
-            }
 
             var currentIndex = s_allocationIndex++;
 
@@ -185,7 +177,7 @@ public static class ManagedGpuContext
             if (s_perBlockSharedMemoryOffset![blockId] + bytesNeeded > buffer.Length)
             {
                 // Expand buffer if necessary
-                Array.Resize(ref s_perBlockSharedMemoryBuffer[blockId],
+                Array.Resize(ref s_perBlockSharedMemoryBuffer![blockId],
                     Math.Max(buffer.Length * 2, s_perBlockSharedMemoryOffset[blockId] + bytesNeeded));
                 buffer = s_perBlockSharedMemoryBuffer[blockId];
             }
