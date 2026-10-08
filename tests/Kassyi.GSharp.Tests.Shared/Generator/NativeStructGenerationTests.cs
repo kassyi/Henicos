@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 public class NativeStructGenerationTests
 {
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public async Task Test_NativeStructGeneration_ArrayFieldsAndNestedStructs()
     {
         var testConfig = RoslynTestUtility.TestGenerator("Analyzers/NativeStructGeneration.cs");

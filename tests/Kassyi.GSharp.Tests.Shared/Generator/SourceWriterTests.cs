@@ -7,8 +7,8 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 public class SourceWriterTests
 {
     [Fact]
-    [Trait("Category", "Transpiler")]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Compiler)]
+    [Category(TestCategory.Syntax)]
     public void Test_SourceWriter_FluentChaining_BasicTokens()
     {
         using var writer = new SourceWriter();
@@ -27,8 +27,8 @@ public class SourceWriterTests
     }
 
     [Fact]
-    [Trait("Category", "Transpiler")]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Compiler)]
+    [Category(TestCategory.Syntax)]
     public void Test_SourceWriter_FluentChaining_WithNullsAndConditionals()
     {
         using var writer = new SourceWriter();
@@ -47,8 +47,8 @@ public class SourceWriterTests
     }
 
     [Fact]
-    [Trait("Category", "Transpiler")]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Compiler)]
+    [Category(TestCategory.Syntax)]
     public void Test_SourceWriter_FluentChaining_StructuralTokens()
     {
         using var writer = new SourceWriter();
@@ -65,8 +65,8 @@ public class SourceWriterTests
     }
 
     [Fact]
-    [Trait("Category", "Transpiler")]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Compiler)]
+    [Category(TestCategory.Syntax)]
     public void Test_SourceWriter_FluentChaining_RepeatedNewlines()
     {
         using var writer = new SourceWriter();
@@ -81,8 +81,8 @@ public class SourceWriterTests
     }
 
     [Fact]
-    [Trait("Category", "Transpiler")]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Compiler)]
+    [Category(TestCategory.Syntax)]
     public void Test_SourceWriter_FluentChaining_InterpolatedStrings()
     {
         using var writer = new SourceWriter();
@@ -101,8 +101,8 @@ public class SourceWriterTests
     }
 
     [Fact]
-    [Trait("Category", "Transpiler")]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Compiler)]
+    [Category(TestCategory.Syntax)]
     public Task Test_SourceWriter_NestedScopeAndIndentation_Snapshots()
     {
         using var writer = new SourceWriter();

@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 public class CoreIntrinsicsTests
 {
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_GpuHint_Unroll_DefaultFactor_ExecutesWithoutException()
     {
         // Happy Path: Gpu.Hint.Unroll is a pure marker method and should complete safely on the host
@@ -14,7 +14,7 @@ public class CoreIntrinsicsTests
     }
 
     [Theory]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(-1)]
@@ -28,7 +28,7 @@ public class CoreIntrinsicsTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_GpuSyncAndControl_HostInvocation_ThrowsGpuOnlyException()
     {
         // Sad Path: Hardware sync & control markers must throw GpuOnlyException when invoked on the host CPU
@@ -47,7 +47,7 @@ public class CoreIntrinsicsTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_GpuAtomicsAndArithmetics_HostInvocation_ThrowsGpuOnlyException()
     {
         // Sad Path: Atomic and carry arithmetic intrinsics must throw GpuOnlyException
@@ -83,7 +83,7 @@ public class CoreIntrinsicsTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_CoordinateProperties_HostEvaluation_ThrowsGpuOnlyException()
     {
         // Sad Path: Thread/Block coordinate markers must throw GpuOnlyException on CPU
@@ -110,7 +110,7 @@ public class CoreIntrinsicsTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_GpuShuffleAndMask_HostInvocation_ThrowsGpuOnlyException()
     {
         // Sad Path: Shuffle and active mask intrinsics on Gpu class must throw GpuOnlyException
@@ -133,7 +133,7 @@ public class CoreIntrinsicsTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_WarpIntrinsics_HostEvaluation_ThrowsGpuOnlyException()
     {
         // Sad Path: Warp-level intrinsics must throw GpuOnlyException
@@ -145,7 +145,7 @@ public class CoreIntrinsicsTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_SharedMemory_HostEvaluation_ThrowsGpuOnlyException()
     {
         // Happy Path: Constructing SharedMemory on host does not throw, since it's just a marker
@@ -165,7 +165,7 @@ public class CoreIntrinsicsTests
     }
 
     [Theory]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(0, 0, 0, 0)]
     [InlineData(1, -1, 100, -100)]
     [InlineData(int.MinValue, int.MaxValue, int.MinValue, int.MaxValue)]

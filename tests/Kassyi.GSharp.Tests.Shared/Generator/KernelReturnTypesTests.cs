@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 public class KernelReturnTypesTests : Helpers.TranspilerTestBase
 {
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_ManagedKernelReturns_ReportsDiagnostics()
     {
         var driver = await TestGenerator("Generator/KernelReturnTypes_SadPath.cs")

@@ -3,8 +3,8 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 public class TranspilerIssuesTests
 :  TranspilerTestBase{
     [SkippableTheory]
-    [Trait("Category", "Transpiler")]
-    [Trait("Category", "GpuExecution")]
+    [Category(TestCategory.Compiler)]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(10, 5, 2, 1)]
     [InlineData(10, 2, 5, 2)]
     [InlineData(2, 5, 1, 3)]
@@ -22,25 +22,25 @@ public class TranspilerIssuesTests
     }
 
     [Fact()]
-    [Trait("Category", "Transpiler")]
+    [Category(TestCategory.Compiler)]
     public void Test_GeneralTupleSupport()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Transpiler")]
+    [Category(TestCategory.Compiler)]
     public void Test_LocalFunctionsSupport()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Transpiler")]
+    [Category(TestCategory.Compiler)]
     public void Test_StackAllocFixedArray()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Transpiler")]
+    [Category(TestCategory.Compiler)]
     public void Test_GenericsConstraintResolution()
     {
     }

@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 public class AutoAllocateReturnArraysTests
 {
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void NormalReturnKernel_MultiThread_ReturnsExpectedArray()
     {
         var result = AutoAllocateReturnArraysKernels.LaunchNormalReturnKernel(10, blockDimX: 5, blockDimY: 2);
@@ -19,7 +19,7 @@ public class AutoAllocateReturnArraysTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void OneThreadKernel_OneThread_ReturnsSingleElementArray()
     {
         var result = AutoAllocateReturnArraysKernels.LaunchOneThreadKernel(blockDimX: 1, blockDimY: 1, blockDimZ: 1);
@@ -30,7 +30,7 @@ public class AutoAllocateReturnArraysTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void StructReturnKernel_BlittableStruct_ReturnsExpectedStructArray()
     {
         var result = AutoAllocateReturnArraysKernels.LaunchStructReturnKernel(blockDimX: 100);
@@ -45,7 +45,7 @@ public class AutoAllocateReturnArraysTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void KernelLaunchZeroDimension_ThrowsArgumentOutOfRangeException()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -53,7 +53,7 @@ public class AutoAllocateReturnArraysTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void KernelLaunchOverflowingDimension_ThrowsOverflowException()
     {
         Assert.Throws<OverflowException>(() => 

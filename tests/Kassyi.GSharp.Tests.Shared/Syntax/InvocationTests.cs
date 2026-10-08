@@ -5,7 +5,7 @@ public class InvocationTests
     // SYN-49 Happy Path
     // SYN-49 Happy Path
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_InterlockedAtomicOperations()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
@@ -33,7 +33,7 @@ public class InvocationTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_InterlockedAtomicOperations_EmptyArray()
     {
         int[] intBuf = [];
@@ -52,7 +52,7 @@ public class InvocationTests
 
     // SYN-49 Edge Cases
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_InterlockedEdgeCases_ArrayElementsAndStructFields()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
@@ -78,7 +78,7 @@ public class InvocationTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_InterlockedEdgeCases_EmptyArray()
     {
         int[] emptyArray = [];
@@ -93,7 +93,7 @@ public class InvocationTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_AtomicTestStruct_MemoryLayout()
     {
         Assert.Equal(16, System.Runtime.InteropServices.Marshal.SizeOf<AtomicTestStruct>());

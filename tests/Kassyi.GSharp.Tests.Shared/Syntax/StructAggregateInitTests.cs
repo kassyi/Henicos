@@ -41,7 +41,7 @@ public partial class StructAggregateInitTests
     private static partial Regex NestedStructInitRegex();
 
     [SkippableFact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_StructAggregateInitialization_HappyPath()
     {
         var (cudaSource, diagnostics) =
@@ -52,7 +52,7 @@ public partial class StructAggregateInitTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_StructAggregateInitialization_EdgeCase_DeeplyNested()
     {
         var (cudaSource, diagnostics) =

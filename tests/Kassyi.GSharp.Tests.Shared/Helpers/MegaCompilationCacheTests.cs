@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.Helpers;
 public class MegaCompilationCacheTests
 :  TranspilerTestBase{
     [Fact]
-    [Trait("Category", "Stress")]
+    [Category(TestCategory.Stress)]
     public void GetDynamicCompilation_ConcurrentAccess_IsThreadSafe()
     {
         var exceptions = new ConcurrentBag<Exception>();
@@ -30,7 +30,7 @@ public class MegaCompilationCacheTests
     }
 
     [Fact]
-    [Trait("Category", "Stress")]
+    [Category(TestCategory.Stress)]
     public void GetDynamicCompilation_ConcurrentAccess_WithExplicitCallerPaths_IsDeterministicAndThreadSafe()
     {
         var exceptions = new ConcurrentBag<Exception>();

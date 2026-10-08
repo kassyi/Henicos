@@ -3,7 +3,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class KernelFusionTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;
@@ -23,7 +23,7 @@ public class KernelFusionTests : IDisposable
     }
 
     [SkippableFact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_ComplexExpressionTreeFusion_AdditionAndMultiplication()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -48,7 +48,7 @@ public class KernelFusionTests : IDisposable
     }
 
     [SkippableFact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_ChainedAddSubMulExpressionFusion()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -74,7 +74,7 @@ public class KernelFusionTests : IDisposable
     }
 
     [SkippableTheory]
-    [Trait("Category", "EdgeCases")]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(0u, 0u, 10u, 0u)]
     [InlineData(1u, 1u, 1u, 2u)]
     [InlineData(uint.MaxValue / 2, uint.MaxValue / 4, 2u, 0u)]

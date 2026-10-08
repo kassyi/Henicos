@@ -2,7 +2,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuBigIntegerTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;
@@ -22,7 +22,7 @@ public class GpuBigIntegerTests : IDisposable
     }
 
     [SkippableFact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Construct_WorksCorrectly()
     {
         CudaCapability.EnsureGpuAvailable();

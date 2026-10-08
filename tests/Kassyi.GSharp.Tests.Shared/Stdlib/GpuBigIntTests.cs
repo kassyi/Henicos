@@ -6,11 +6,11 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuBigIntegerTests
 {
     [SkippableFact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_ConstructorAndProperties_StoreCorrectValues()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -27,7 +27,7 @@ public class GpuBigIntegerTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(0, false, 0, false, 0)]   // 0 == 0
     [InlineData(10, false, 5, false, 1)]  // +10 > +5
     [InlineData(5, false, 10, false, -1)] // +5 < +10
@@ -92,7 +92,7 @@ public class GpuBigIntegerTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(false, false, false)] // (+A) * (+B) = +Result
     [InlineData(false, true, true)]   // (+A) * (-B) = -Result
     [InlineData(true, false, true)]   // (-A) * (+B) = -Result
@@ -121,7 +121,7 @@ public class GpuBigIntegerTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(false, false, false)] // (+A) + (+B) = +Result
     [InlineData(true, true, true)]    // (-A) + (-B) = -Result
     public void Test_SignedAdditionExpression_SameSigns_Succeeds(bool negA, bool negB, bool expectedNeg)
@@ -143,7 +143,7 @@ public class GpuBigIntegerTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(10, false, 5, true, 5, false)]  // (+10) + (-5) = +5
     [InlineData(5, false, 10, true, 5, true)]   // (+5) + (-10) = -5
     [InlineData(10, true, 5, false, 5, true)]   // (-10) + (+5) = -5
@@ -178,7 +178,7 @@ public class GpuBigIntegerTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(false, true, false)] // (+A) - (-B) = (+A) + (+B) = +Result
     [InlineData(true, false, true)]  // (-A) - (+B) = (-A) + (-B) = -Result
     public void Test_SignedSubtractionExpression_DifferentSigns_Succeeds(bool negA, bool negB, bool expectedNeg)
@@ -200,7 +200,7 @@ public class GpuBigIntegerTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(10, false, 5, false, 5, false)]  // (+10) - (+5) = +5
     [InlineData(5, false, 10, false, 5, true)]   // (+5) - (+10) = -5
     [InlineData(10, true, 5, true, 5, true)]     // (-10) - (-5) = -5
@@ -235,7 +235,7 @@ public class GpuBigIntegerTests
     }
 
     [SkippableFact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_UnaryOperators_NegationAndBitwiseNot()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -258,7 +258,7 @@ public class GpuBigIntegerTests
     }
 
     [SkippableFact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_Evaluate_SadPaths_ThrowsAndReleasesBuffers()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();

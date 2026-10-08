@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class Tier1_IntegrationTests : TranspilerTestBase
 {
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_Tier1_AllInOneKernel_Execution()
     {
         EnsureCapability(DialectCapabilities.AllGpuFeatures);

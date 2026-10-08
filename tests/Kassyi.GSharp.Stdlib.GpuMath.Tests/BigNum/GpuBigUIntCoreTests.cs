@@ -2,7 +2,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuUIntBigIntegerCoreTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;
@@ -22,7 +22,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     }
 
     [SkippableTheory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData("0", 1)]
     [InlineData("123456789012345678901234567890", 4)]
     [InlineData("-123456789012345678901234567890", 4)] // Should take absolute value
@@ -39,7 +39,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
     }
 
     [SkippableFact]
-    [Trait("Category", "EdgeCase")]
+    [Scenario(TestScenario.Boundary)]
     public void Test_PadTo_LargerSize_ZeroPadsCorrectly()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -78,7 +78,7 @@ public class GpuUIntBigIntegerCoreTests : IDisposable
         Assert.Equal(3u, resultData[2]);
     }
     [SkippableFact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Addition_EvaluatesCorrectly()
     {
         CudaCapability.EnsureGpuAvailable();

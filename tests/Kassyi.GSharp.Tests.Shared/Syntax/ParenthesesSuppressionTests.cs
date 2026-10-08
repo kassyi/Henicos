@@ -30,7 +30,7 @@ public partial class ParenthesesSuppressionTests
     private static partial Regex IntAssignmentRegex();
 
     [SkippableFact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_RedundantParenthesesSuppression_HappyPath()
     {
         var (cudaSource, diagnostics) =
@@ -41,7 +41,7 @@ public partial class ParenthesesSuppressionTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_ParenthesesPreservation_EdgeCases_PrecedenceAndMixedOperators()
     {
         var (cudaSource, diagnostics) =

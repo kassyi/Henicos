@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 [Collection("CudaGraphExclusive")]
 public class CudaGraphExecutionTests
 {
@@ -90,7 +90,7 @@ public class CudaGraphExecutionTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Stress")]
+    [Category(TestCategory.Stress)]
     public void Test_CudaGraph_StressLaunch()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -159,7 +159,7 @@ public class CudaGraphExecutionTests
             ExceptionDispatchInfo.Capture(threadEx).Throw();
         }
     }
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [SkippableFact]
     public void Test_CudaGraph_SadPath_ImplicitSyncFails()
     {
@@ -195,7 +195,7 @@ public class CudaGraphExecutionTests
         Assert.Equal(CUresult.CudaErrorStreamCaptureImplicit, capturedEx.Result);
     }
 
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [SkippableFact]
     public void Test_CudaGraph_WorkspaceDispose_AbortsLeakedStreamCapture_WithoutContamination()
     {
@@ -248,7 +248,7 @@ public class CudaGraphExecutionTests
         }
     }
 
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [SkippableFact]
     public void Test_CudaGraph_ReduceZeroSync_IsCaptureSafe()
     {

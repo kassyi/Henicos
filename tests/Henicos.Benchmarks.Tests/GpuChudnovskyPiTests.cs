@@ -4,7 +4,7 @@ using Xunit;
 namespace Henicos.Benchmarks.Tests;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuChudnovskyPiTests
 {
     [Fact]

@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class LambdaAndLocalFunctionsTests
 :  TranspilerTestBase{
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_NonCapturingLambdaKernel()
     {
         // Happy Path: キャプチャを持たない、あるいは単純な値型のみをキャプチャするラムダ式 (() => { }) が、C++側で一意な名前（決定的かつ競合しない名前）を持つ抽出された device 関数（またはC++ラムダ）として正しく展開され実行されること。
@@ -15,7 +15,7 @@ public class LambdaAndLocalFunctionsTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(2, 5, 10)]
     [InlineData(3, 10, 30)]
     public void Test_ValueCapturingLambdaKernel(int factor, int input, int expected)
@@ -27,7 +27,7 @@ public class LambdaAndLocalFunctionsTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_ImmediatelyEvaluatedLambdaKernel()
     {
         // Edge Cases: メソッド引数内で即時評価されるラムダや、ネストされたラムダ式におけるキャプチャスコープの解決
@@ -39,7 +39,7 @@ public class LambdaAndLocalFunctionsTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_ShadowedVariableCaptureKernel()
     {
         // Edge Cases: 同名変数のキャプチャ時の名前衝突回避が正しく行われること。
@@ -49,7 +49,7 @@ public class LambdaAndLocalFunctionsTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_NestedReturnsKernel()
     {
         var result = LambdaAndLocalFunctionsKernels.LaunchNestedReturnsKernel(someValue: 10, blockDimX: 1);

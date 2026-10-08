@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 public class CompilerInfrastructureUnitTests
 {
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_EquatableArray_BasicOperations_WorkCorrectly()
     {
         // Happy Path: Standard population, indexing, iteration, and equality
@@ -36,7 +36,7 @@ public class CompilerInfrastructureUnitTests
     }
 
     [Theory]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(2)]
@@ -69,7 +69,7 @@ public class CompilerInfrastructureUnitTests
     }
 
     [Fact]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     public void Test_EquatableArray_DefaultValue_HandledGracefully()
     {
         // Boundary Testing: Default (uninitialized) struct instance
@@ -95,7 +95,7 @@ public class CompilerInfrastructureUnitTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_EquatableArray_Mismatches_ReturnFalse()
     {
         // Sad Path: Length mismatches, element value differences, and Default vs Initialized
@@ -113,7 +113,7 @@ public class CompilerInfrastructureUnitTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_EquatableArray_IndexOutOfBounds_ThrowsArgumentOutOfRangeException()
     {
         // Sad Path: Indexing out of range
@@ -123,7 +123,7 @@ public class CompilerInfrastructureUnitTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_SourceWriter_InterpolationAndIndentation_BuildsAccurateCode()
     {
         // Happy Path: SourceWriter with indentation scopes and interpolated handler
@@ -144,7 +144,7 @@ public class CompilerInfrastructureUnitTests
     }
 
     [Fact]
-    [Trait("Category", "Stress")]
+    [Category(TestCategory.Stress)]
     public void Test_EquatableArray_ConcurrentReadsAndEquality_ThreadSafe()
     {
         // Stress & Concurrency: Multi-threaded equality checks across worker threads

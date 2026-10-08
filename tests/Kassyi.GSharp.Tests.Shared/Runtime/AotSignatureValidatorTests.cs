@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 public class AotSignatureValidatorTests
 {
     [Fact]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     public void ExtractAndVerify_WhenBinaryIsTooSmall_ThrowsInvalidOperationException()
     {
         // Arrange
@@ -22,7 +22,7 @@ public class AotSignatureValidatorTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void ExtractAndVerify_WhenSignatureMismatches_ThrowsInvalidOperationException()
     {
         // Arrange
@@ -36,7 +36,7 @@ public class AotSignatureValidatorTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void ExtractAndVerify_WhenSignatureMatches_ReturnsPayloadAndStruct()
     {
         // Arrange

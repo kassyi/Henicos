@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Stdlib;
 
-[Trait("Category", "Unit")]
+[Category(TestCategory.Unit)]
 public class BigIntegerExtensionsTests
 {
     [Theory]

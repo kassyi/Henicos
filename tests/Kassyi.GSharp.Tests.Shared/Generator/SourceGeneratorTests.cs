@@ -6,7 +6,7 @@ public class SourceGeneratorTests(ITestOutputHelper output)
     private readonly ITestOutputHelper _output = output;
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void TestGeneratedWrapper()
     {
         int[] aArray = [10];

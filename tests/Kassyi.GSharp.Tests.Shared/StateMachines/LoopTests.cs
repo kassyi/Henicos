@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 public class LoopTests : StateMachineTestBase
 {
     [Fact]
-    [Trait("Category", "Compiler")]
+    [Category(TestCategory.Compiler)]
     public Task Lower_WhileStatement()
     {
         bool condition = true;
@@ -23,7 +23,7 @@ public class LoopTests : StateMachineTestBase
     }
 
     [Fact]
-    [Trait("Category", "Compiler")]
+    [Category(TestCategory.Compiler)]
     public Task Lower_ForStatement_WithBreakAndContinue() =>
         // LoopRewriter itself does not flatten nested if-statements, so we should test its specific responsibilities:
         // rewriting loops and updating break/continue inside them.
@@ -38,7 +38,7 @@ public class LoopTests : StateMachineTestBase
         });
 
     [Fact]
-    [Trait("Category", "Compiler")]
+    [Category(TestCategory.Compiler)]
     public Task Lower_DoStatement()
     {
         bool condition = true;

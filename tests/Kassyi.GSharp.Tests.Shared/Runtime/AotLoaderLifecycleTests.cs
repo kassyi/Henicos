@@ -7,7 +7,7 @@ public class AotLoaderLifecycleTests
     private delegate void DummyDelegate();
 
     [Theory]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     [InlineData("")]
     [InlineData(" ")]
     [InlineData("NonExistentKernel")]
@@ -22,7 +22,7 @@ public class AotLoaderLifecycleTests
     }
 
     [Theory]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(16)]
@@ -40,7 +40,7 @@ public class AotLoaderLifecycleTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_GpuKernelLoader_DriverAvailability_ReturnsWithoutException()
     {
         // Happy Path: IsDriverAvailable should gracefully return boolean without bubbling unhandled DllNotFoundException

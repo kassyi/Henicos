@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 public class HoistingTests : StateMachineTestBase
 {
     [Fact]
-    [Trait("Category", "Compiler")]
+    [Category(TestCategory.Compiler)]
     public Task Hoist_VariablesAcrossBarrier() => VerifyHoist(() =>
     {
         int a = 1;

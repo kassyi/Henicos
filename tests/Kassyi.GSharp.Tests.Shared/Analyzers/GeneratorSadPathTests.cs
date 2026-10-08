@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 public class GeneratorSadPathTests
 :  TranspilerTestBase{
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [InlineData("SYN-13", "Analyzers/DynamicStackAllocSadPath.cs", "GSH0003")]
     [InlineData("SYN-17", "Analyzers/UnresolvedTargetTypedNew.cs", "CS8754")]
     [InlineData("SYN-03", "Analyzers/DuplicateOutVar.cs", "CS0128")]
@@ -18,7 +18,7 @@ public class GeneratorSadPathTests
     }
 
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [InlineData("SYN-01", "Analyzers/GpuKernel/NonExhaustiveSwitch_InGpuKernel.cu.cs", "CS8509")]
     public async Task Test_GeneratorSadPath_ReportsExpectedDiagnostic(string featureId, string testCasePath, string expectedDiagnosticId)
     {
@@ -27,7 +27,7 @@ public class GeneratorSadPathTests
     }
 
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [InlineData("SYN-08", "Analyzers/DelegateEscapeSadPath.cs", new[] { "GSH0001", "GSH0003" })]
     [InlineData("SYN-01", "Analyzers/GpuKernel/UnsupportedSwitch_InGpuKernel.cu.cs", new[] { "GSH0003", "GSH0003" })]
     public async Task Test_GeneratorSadPath_ReportsMultipleExpectedErrors(string featureId, string testCasePath, string[] expectedErrorIds)
@@ -37,7 +37,7 @@ public class GeneratorSadPathTests
     }
 
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [InlineData("GEN-29", "Analyzers/DynamicSharedMemorySadPath.cs")]
     [InlineData("SYN-90", "Analyzers/UnsupportedMethodInStructInit.cs")]
     [InlineData("GEN-17", "Analyzers/RefOutReassignmentSadPath.cs")]
@@ -48,7 +48,7 @@ public class GeneratorSadPathTests
     }
 
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [InlineData("GEN-33", "Analyzers/UnsupportedStructFieldsSadPath.cs")]
     [InlineData("SYN-91_92", "Analyzers/InvalidParenthesesSadPath.cs")]
     public async Task Test_GeneratorSadPath_HasErrors(string featureId, string testCasePath)
@@ -58,7 +58,7 @@ public class GeneratorSadPathTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_LocalFunctionCapture_ReportsExpectedDiagnostic()
     {
         await RoslynTestUtility.TestGenerator("Analyzers/LocalFunctionCaptureSadPath.cs")

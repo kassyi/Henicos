@@ -21,7 +21,7 @@ public class GpuKernelLoaderAotTests
     }
 
     [Fact]
-    [Trait("Category", "Runtime")]
+    [Category(TestCategory.Runtime)]
     public void Test_LoadAotKernel_ParallelContention()
     {
         if (!GpuKernelLoader.IsDriverAvailable) return;
@@ -38,7 +38,7 @@ public class GpuKernelLoaderAotTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_LoadAotKernel_IncompatibleFatbin_ThrowsInvalidOperationException()
     {
         if (!GpuKernelLoader.IsDriverAvailable) return;
@@ -57,7 +57,7 @@ public class GpuKernelLoaderAotTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_LoadModule_IncompatibleFatbin_ThrowsInvalidOperationException()
     {
         if (!GpuKernelLoader.IsDriverAvailable) return;

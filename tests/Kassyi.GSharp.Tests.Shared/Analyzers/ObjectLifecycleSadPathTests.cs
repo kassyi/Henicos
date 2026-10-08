@@ -13,7 +13,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     private const string TestCasePath = "Analyzers/ObjectLifecycleSadPath.cs";
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_11_3_1_MissingIDisposableOnClass_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
@@ -21,7 +21,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_11_3_1_UndisposedFieldInDispose_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
@@ -29,7 +29,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_11_3_2_PropertyGetterSideEffects_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_sideEffectAnalyzer)
@@ -37,7 +37,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_11_3_2_ImplicitCastOperators_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_sideEffectAnalyzer)
@@ -45,7 +45,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_11_3_3_UnguardedMultiAllocation_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_allocationAnalyzer)
@@ -53,7 +53,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_11_3_3_StaticLifecycle_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_allocationAnalyzer)
@@ -61,7 +61,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_11_3_4_StandardInjectionBorrowing_HazardDetected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
@@ -69,7 +69,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_11_3_5_DefaultInterfaceMethods_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)

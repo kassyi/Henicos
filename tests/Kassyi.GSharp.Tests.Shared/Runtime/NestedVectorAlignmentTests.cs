@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace Kassyi.GSharp.Tests.Runtime;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class NestedVectorAlignmentTests
 {
     private readonly ITestOutputHelper _output;

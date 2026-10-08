@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 public class SyntaxExtensionsTests
 {
     [Fact]
-    [Trait("Category", "Compiler")]
+    [Category(TestCategory.Compiler)]
     public void Test_SyntaxExtensions_SyntaxToken_IsKind_MatchesCorrectly()
     {
         var token = SyntaxFactory.Token(SyntaxKind.RefKeyword);
@@ -18,7 +18,7 @@ public class SyntaxExtensionsTests
     }
 
     [Fact]
-    [Trait("Category", "Compiler")]
+    [Category(TestCategory.Compiler)]
     public void Test_SyntaxExtensions_SyntaxNode_IsKind_MatchesCorrectly()
     {
         var node = SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression);

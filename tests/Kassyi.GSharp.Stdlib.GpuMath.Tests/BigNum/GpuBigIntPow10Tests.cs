@@ -1,11 +1,11 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuBigIntPow10Tests
 {
     private static GpuExecutionEngine CreateTestEngine() => GpuExecutionEngine.GSharpAot;
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [SkippableTheory]
     [InlineData(0)]
     [InlineData(1)]
@@ -29,7 +29,7 @@ public class GpuBigIntPow10Tests
         var expected = BigInteger.Pow(10, exponent);
         Assert.Equal(expected, resultGpu.ToBigInteger());
     }
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [SkippableTheory]
     [InlineData(-1)]
     [InlineData(int.MinValue)]

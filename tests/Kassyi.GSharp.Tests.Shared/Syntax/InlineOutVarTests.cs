@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class InlineOutVarTests
 :  TranspilerTestBase{
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(5, 25, 1)]
     [InlineData(1, 1, 1)]
     [InlineData(0, 0, 0)]
@@ -22,7 +22,7 @@ public class InlineOutVarTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(4, 26)]  // 4 > 0 -> 16 + 10 = 26
     [InlineData(1, 11)]  // 1 > 0 -> 1 + 10 = 11
     [InlineData(0, -10)] // 0 <= 0 -> 0 - 10 = -10
@@ -39,7 +39,7 @@ public class InlineOutVarTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(4, 6)] // 4 -> steps: 3, 2, 1 -> sum = 6
     [InlineData(1, 0)] // 1 -> step: 0 -> while condition false -> sum = 0
     [InlineData(0, 0)] // 0 -> step: -1 -> while condition false -> sum = 0

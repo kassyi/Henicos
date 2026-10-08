@@ -39,7 +39,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LoopUnrollForKernel_Execution()
     {
 
@@ -49,7 +49,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LoopUnrollFactorKernel_Execution()
     {
 
@@ -59,7 +59,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LoopUnrollWhileKernel_Execution()
     {
 
@@ -69,7 +69,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LoopUnrollNestedKernel_Execution()
     {
 
@@ -79,7 +79,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LoopUnrollSingleStatementKernel_Execution()
     {
 
@@ -89,7 +89,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_LoopUnrollFor_TranspilesPragmaUnroll()
     {
         var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollForKernel");
@@ -108,7 +108,7 @@ public class LoopUnrollTests : TranspilerTestBase
     [InlineData("StatementUnrollFactor1", "#pragma unroll 1\nfor")]
     [InlineData("StatementUnrollFactor", "#pragma unroll 4\nfor")]
     [InlineData("StatementUnrollFactorMax", "#pragma unroll 2147483647\nfor")]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_LoopUnrollFactor_BoundaryTheory(string methodName, string expectedCudaPattern)
     {
         var (cudaSource, diagnostics) = TranspileTestCaseMethod(methodName);
@@ -117,7 +117,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_LoopUnrollFactor_TranspilesPragmaUnrollFactor()
     {
         var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollFactorKernel");
@@ -132,7 +132,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_LoopUnroll_NegativeFactor_ReportsDiagnostic()
     {
         var (cudaSource, diagnostics) = TranspileTestCaseMethod("StatementUnrollNegativeFactor");
@@ -141,7 +141,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_LoopUnroll_VariableFactor_ReportsDiagnostic()
     {
         var (cudaSource, diagnostics) = TranspileTestCaseMethod("StatementUnrollVariableFactor");
@@ -152,7 +152,7 @@ public class LoopUnrollTests : TranspilerTestBase
     [Theory]
     [InlineData("StatementUnrollMisplacedEnd")]
     [InlineData("StatementUnrollMisplacedLast")]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_LoopUnroll_MisplacedHint_ReportsDiagnostic(string methodName)
     {
         var (cudaSource, diagnostics) = TranspileTestCaseMethod(methodName);
@@ -161,7 +161,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_LoopUnrollWhile_TranspilesPragmaUnroll()
     {
         var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollWhileKernel");
@@ -176,7 +176,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_LoopUnrollNested_TranspilesPragmaUnrollOnInnerLoopOnly()
     {
         var (cudaSource, diagnostics) = TranspileTestCaseMethod("StatementUnrollNested");
@@ -196,7 +196,7 @@ public class LoopUnrollTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_LoopUnrollSingleStatement_TranspilesPragmaUnroll()
     {
         var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollSingleStatementKernel");

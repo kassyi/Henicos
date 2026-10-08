@@ -4,8 +4,8 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
-[Trait("Category", "GpuExecution")]
-[Trait("Category", "Stress")]
+[TestTarget(ExecutionTarget.GpuExecution)]
+[Category(TestCategory.Stress)]
 public class HeavyGpuStressTests
 {
     [SkippableFact]
@@ -45,7 +45,7 @@ public class HeavyGpuStressTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Concurrency")]
+    [Category(TestCategory.Runtime)]
     public void Test_GpuKernelLoader_HandlesConcurrentLaunches()
     {
         // Concurrently launch kernels across multiple worker threads to stress 

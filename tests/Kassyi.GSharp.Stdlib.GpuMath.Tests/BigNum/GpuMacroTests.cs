@@ -2,7 +2,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuMacroTests
 {
     [SkippableTheory]

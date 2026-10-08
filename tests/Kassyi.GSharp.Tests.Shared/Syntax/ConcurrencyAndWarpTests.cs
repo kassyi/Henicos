@@ -4,12 +4,12 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class ConcurrencyAndWarpTests
 :  TranspilerTestBase{
     [SkippableFact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_WarpPrimitives_Transpilation()
     {
     }
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void TestSharedMemoryKernel()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
@@ -24,7 +24,7 @@ public class ConcurrencyAndWarpTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void TestSharedMemory_WarpSyncAcross256Threads()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
@@ -49,13 +49,13 @@ public class ConcurrencyAndWarpTests
     }
 
     [SkippableFact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_CooperativeGroups_Transpilation()
     {
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void TestIntrinsicsKernel()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
@@ -70,8 +70,8 @@ public class ConcurrencyAndWarpTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
-    [Trait("Category", "Stress")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stress)]
     public void TestAtomicAddStress_HighContention()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
@@ -90,8 +90,8 @@ public class ConcurrencyAndWarpTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
-    [Trait("Category", "Stress")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stress)]
     public void TestAtomicOrMaxStress_HighContention()
     {
         EnsureCapability(DialectCapabilities.HardwareAtomics);
@@ -115,7 +115,7 @@ public class ConcurrencyAndWarpTests
     }
 
     [SkippableFact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_AsyncCopyTma_Transpilation()
     {
     }

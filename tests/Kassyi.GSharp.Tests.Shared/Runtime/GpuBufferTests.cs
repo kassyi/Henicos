@@ -13,8 +13,8 @@ public class GpuBufferTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "HappyPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(1024)]
@@ -46,8 +46,8 @@ public class GpuBufferTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_GpuBuffer_NegativeLength_ThrowsArgumentOutOfRangeException()
     {
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
@@ -56,8 +56,8 @@ public class GpuBufferTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_GpuBuffer_OversizedSpan_ThrowsArgumentException()
     {
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
@@ -73,8 +73,8 @@ public class GpuBufferTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_GpuBuffer_UseAfterDispose_ThrowsObjectDisposedException()
     {
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();

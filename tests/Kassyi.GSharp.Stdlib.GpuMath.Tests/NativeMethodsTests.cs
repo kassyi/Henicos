@@ -2,7 +2,7 @@ using Kassyi.GSharp.Stdlib.GpuMath;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class NativeMethodsTests
 {
     [SkippableFact]

@@ -5,13 +5,13 @@ public class CollectionsAndMemoryTests
     : TranspilerTestBase
 {
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_IndexAndRange_Transpilation()
     {
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_ForeachCollectionExpression_Execution()
     {
         int[] output = [0];
@@ -20,7 +20,7 @@ public class CollectionsAndMemoryTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_ForeachStackAlloc_Execution()
     {
         int[] output = [0];
@@ -29,13 +29,13 @@ public class CollectionsAndMemoryTests
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_SpanUsage_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_MultidimensionalIndexer_Transpilation()
     {
     }
