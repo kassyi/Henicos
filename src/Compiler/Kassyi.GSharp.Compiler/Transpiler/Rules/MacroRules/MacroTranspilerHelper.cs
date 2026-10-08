@@ -71,7 +71,7 @@ internal static class MacroTranspilerHelper
                 case BlockSyntax block:
                     var flatStatements = context.Emitter.AutoSyncGridDepth > 0
                         ? RoslynToCudaVisitor.FlattenStatements(block.Statements, context.Query.SemanticModel)
-                        : block.Statements;
+                        : RoslynToCudaVisitor.ToNodeList(block.Statements);
                     for (var i = 0; i < flatStatements.Count; i++)
                     {
                         var stmt = flatStatements[i];
@@ -121,7 +121,7 @@ internal static class MacroTranspilerHelper
         };
     }
 
-    public static bool HasExecutableStatements(IReadOnlyList<StatementSyntax> statements)
+    public static bool HasExecutableStatements(IReadOnlyList<CSharpSyntaxNode> statements)
     {
         for (var i = 0; i < statements.Count; i++)
         {
@@ -134,7 +134,7 @@ internal static class MacroTranspilerHelper
         return false;
     }
 
-    public static void EmitFlattenedSyncGridBlock(IReadOnlyList<StatementSyntax> flatStatements, ref TranspileContext context)
+    public static void EmitFlattenedSyncGridBlock(IReadOnlyList<CSharpSyntaxNode> flatStatements, ref TranspileContext context)
     {
         for (var i = 0; i < flatStatements.Count; i++)
         {
