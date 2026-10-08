@@ -13,7 +13,6 @@
     <Project Path="src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Generators/Kassyi.GSharp.Stdlib.GpuMath.Generators.csproj" />
   </Folder>
   <Folder Name="/src/ZeroAlloc/">
-    <Project Path="src/ZeroAlloc/Kassyi.ZeroAlloc.Linq.Generators/Kassyi.ZeroAlloc.Linq.Generators.csproj" />
     <Project Path="src/ZeroAlloc/Kassyi.ZeroAlloc.Linq/Kassyi.ZeroAlloc.Linq.csproj" />
   </Folder>
   <Folder Name="/tests/">
