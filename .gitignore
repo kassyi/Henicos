@@ -81,6 +81,7 @@ dist-ssr/
 /.agents/workflows/commit.ja.prompt.md
 /.agents/workflows/design-pattern-plan.prompt.md
 /.agents/workflows/design-pattern-refactor.prompt.md
+/.agents/workflows/grill-you.ja.prompt.md
 /.agents/workflows/kickoff.prompt.md
 /.agents/workflows/make-pr.prompt.md
 /.agents/workflows/phased-code-review-flash.prompt.md
