@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
@@ -65,7 +64,7 @@ public static class KernelResourceInspector
                 return;
             }
 
-            var fatbins = Directory.GetFiles(baseDir, "*.fatbin");
+            var fatbins = Directory.GetFiles(baseDir, "*.gfatbin");
             foreach (var fatbin in fatbins)
             {
                 InspectFatbin(fatbin);
@@ -87,7 +86,7 @@ public static class KernelResourceInspector
             var payload = new byte[bytes.Length - 32];
             Array.Copy(bytes, payload, payload.Length);
 
-            var tempPath = Path.Combine(Path.GetTempPath(), $"henicos_inspect_{Guid.NewGuid():N}.fatbin");
+            var tempPath = Path.Combine(Path.GetTempPath(), $"henicos_inspect_{Guid.NewGuid():N}.gfatbin");
             try
             {
                 File.WriteAllBytes(tempPath, payload);
@@ -114,7 +113,14 @@ public static class KernelResourceInspector
             {
                 if (File.Exists(tempPath))
                 {
-                    try { File.Delete(tempPath); } catch { /* best effort cleanup */ }
+                    try
+                    {
+                        File.Delete(tempPath);
+                    }
+                    catch
+                    {
+                        /* best effort cleanup */
+                    }
                 }
             }
         }
@@ -127,20 +133,48 @@ public static class KernelResourceInspector
     private static void ParseSassOutput(string sassOutput)
     {
         using var reader = new StringReader(sassOutput);
-        string? line;
         string? currentFunc = null;
 
-        while ((line = reader.ReadLine()) != null)
+        while (reader.ReadLine() is { } line)
         {
-            var funcMatch = Regex.Match(line, @"Function\s*:\s*(.+)$");
-            if (funcMatch.Success)
+            var funcIdx = line.IndexOf("Function", StringComparison.Ordinal);
+            if (funcIdx >= 0)
             {
-                currentFunc = funcMatch.Groups[1].Value.Trim();
-                s_instructionCounts[currentFunc] = 0;
+                var colonIdx = line.IndexOf(':', funcIdx + 8);
+                if (colonIdx >= 0)
+                {
+                    currentFunc = line.Substring(colonIdx + 1).Trim();
+                    s_instructionCounts[currentFunc] = 0;
+                    continue;
+                }
+            }
+
+            if (currentFunc == null)
+            {
                 continue;
             }
 
-            if (currentFunc != null && Regex.IsMatch(line, @"^\s*/\*[0-9a-fA-F]+\*/\s+([A-Z0-9_\.]+)"))
+            var trimmed = line.TrimStart();
+            if (!trimmed.StartsWith("/*", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var endIdx = trimmed.IndexOf("*/", 2, StringComparison.Ordinal);
+            if (endIdx <= 2)
+            {
+                continue;
+            }
+
+            var afterComment = trimmed.Substring(endIdx + 2);
+            if (afterComment.Length <= 0 || !char.IsWhiteSpace(afterComment[0]))
+            {
+                continue;
+            }
+
+            var instruction = afterComment.TrimStart();
+            if (instruction.Length > 0 && (char.IsAsciiLetterUpper(instruction[0]) || char.IsDigit(instruction[0]) ||
+                                           instruction[0] == '_' || instruction[0] == '.'))
             {
                 s_instructionCounts[currentFunc]++;
             }

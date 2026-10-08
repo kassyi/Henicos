@@ -31,7 +31,7 @@
   <Target Name="CompileNativeBenchmarks" BeforeTargets="GSharpAddGeneratedItemsToOutputDirectory">
     <CompileCudaToFatbinTask
         CudaSources="@(NativeBenchmarkCudaSources)"
-        CombinedFatbinName="native_benchmarks.fatbin"
+        CombinedFatbinName="native_benchmarks.gfatbin"
         OutputDirectory="$(IntermediateOutputPath)GSharpFatbins"
         TargetArchitectures="$(GSharpTargetArchitectures)" >
       <Output TaskParameter="OutputFatbins" ItemName="_GSharpCompiledFatbins" />
