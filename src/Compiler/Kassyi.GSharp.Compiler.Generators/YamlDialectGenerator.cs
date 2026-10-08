@@ -100,6 +100,13 @@ public static class YamlDialectGenerator
                 writer.Line($"public override string MethodPrefix => \"{methodPrefix}\";");
             }
 
+            // Capabilities
+            var capabilities = GetInheritedValue(def, definitions, d => d.Capabilities);
+            if (capabilities != null)
+            {
+                writer.Line($"public override Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities Capabilities => Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities.{capabilities};");
+            }
+
             // Types
             if (def.Types.Count > 0)
             {
