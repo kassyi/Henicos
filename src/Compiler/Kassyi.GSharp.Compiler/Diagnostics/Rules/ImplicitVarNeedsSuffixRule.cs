@@ -25,8 +25,7 @@ internal sealed class ImplicitVarNeedsSuffixRule : ISyntaxValidationRule<Variabl
             return;
         }
 
-        var upper = text.ToUpperInvariant();
-        if (upper.IndexOf('U') >= 0 || upper.IndexOf('L') >= 0)
+        if (text.IndexOf('U') >= 0 || text.IndexOf('u') >= 0 || text.IndexOf('L') >= 0 || text.IndexOf('l') >= 0)
         {
             return;
         }

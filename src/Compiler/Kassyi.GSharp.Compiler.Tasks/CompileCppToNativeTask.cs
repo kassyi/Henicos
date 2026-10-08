@@ -145,16 +145,24 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         {
             if (env.TryGetValue("PATH", out var pathEnv))
             {
-                foreach (var path in pathEnv.Split(Path.PathSeparator))
+                var span = pathEnv.AsSpan();
+                while (span.Length > 0)
                 {
-                    var fullPath = Path.Combine(path, "cl.exe");
-                    if (!File.Exists(fullPath))
+                    var sepIdx = span.IndexOf(Path.PathSeparator);
+                    var segment = sepIdx >= 0 ? span.Slice(0, sepIdx) : span;
+                    var fullPath = Path.Combine(segment.ToString(), "cl.exe");
+                    if (File.Exists(fullPath))
                     {
-                        continue;
+                        clExePath = fullPath;
+                        break;
                     }
 
-                    clExePath = fullPath;
-                    break;
+                    if (sepIdx < 0)
+                    {
+                        break;
+                    }
+
+                    span = span.Slice(sepIdx + 1);
                 }
             }
         }

@@ -21,10 +21,8 @@ public static class PiVerifier
         var count = computedHexTail.Length;
 
         var expectedHex = BbpAlgorithm.ExtractHexDigits(offset, count);
-        expectedHex = expectedHex.ToUpperInvariant();
-        computedHexTail = computedHexTail.ToUpperInvariant();
 
-        if (computedHexTail == expectedHex)
+        if (string.Equals(computedHexTail, expectedHex, StringComparison.OrdinalIgnoreCase))
         {
             Logger.Info("Verification", $"PASS: Expected {expectedHex} == Computed {computedHexTail}");
             return true;

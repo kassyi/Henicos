@@ -127,7 +127,7 @@ public class HeadTailTrackerWriter(int headCapacity = 50, int tailCapacity = 50)
             // Reconstruct exact string if it didn't overflow tail buffer
             var remaining = (int)(_totalWritten - headCapacity);
             var tailStr = GetTail();
-            return _head.ToString() + tailStr.Substring(tailStr.Length - remaining);
+            return _head + tailStr[^remaining..];
         }
 
         return $"{GetHead()}{separator}{GetTail()}";

@@ -51,7 +51,7 @@ public sealed class TrustedKeysGenerator : IIncrementalGenerator
         using var reader = new StringReader(text);
         while (reader.ReadLine() is { } line)
         {
-            var trimmed = line.Trim();
+            var trimmed = line.AsSpan().Trim();
             if (trimmed.Length == 0 || trimmed[0] == '#')
             {
                 continue;
@@ -65,7 +65,7 @@ public sealed class TrustedKeysGenerator : IIncrementalGenerator
             {
                 try
                 {
-                    var base64Bytes = Convert.FromBase64String(trimmed);
+                    var base64Bytes = Convert.FromBase64String(trimmed.ToString());
                     if (base64Bytes.Length == 32)
                     {
                         builder.AddRange(base64Bytes);
@@ -79,7 +79,7 @@ public sealed class TrustedKeysGenerator : IIncrementalGenerator
         }
     }
 
-    private static bool TryParseHex(string hex, out byte[] bytes)
+    private static bool TryParseHex(ReadOnlySpan<char> hex, out byte[] bytes)
     {
         bytes = new byte[32];
         for (var i = 0; i < 32; i++)

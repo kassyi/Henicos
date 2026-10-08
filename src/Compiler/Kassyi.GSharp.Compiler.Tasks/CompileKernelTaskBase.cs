@@ -119,7 +119,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             return null;
         }
 
-        var output = vswhereResult.StandardOutput.Trim();
+        var output = vswhereResult.StandardOutput.AsSpan().Trim().ToString();
 
         if (string.IsNullOrEmpty(output))
         {
@@ -154,12 +154,13 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
         var envOutput = envResult.StandardOutput;
 
         var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var line in envOutput.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
+        using var reader = new StringReader(envOutput);
+        while (reader.ReadLine() is { } line)
         {
             var eqIndex = line.IndexOf('=');
             if (eqIndex > 0)
             {
-                envVars[line.Substring(0, eqIndex)] = line.Substring(eqIndex + 1);
+                envVars[line[..eqIndex]] = line[(eqIndex + 1)..];
             }
         }
 

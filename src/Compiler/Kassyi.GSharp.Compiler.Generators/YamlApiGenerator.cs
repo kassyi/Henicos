@@ -165,7 +165,7 @@ public static class YamlApiGenerator
 
                     foreach (var t in types)
                     {
-                        var returnType = m.ReturnType.Replace(placeholder, t);
+                        var returnType = ReplacePlaceholder(m.ReturnType, placeholder, t);
 
                         if (!string.IsNullOrEmpty(m.Summary))
                         {
@@ -199,7 +199,7 @@ public static class YamlApiGenerator
                                     writer.Append(", ");
                                 }
 
-                                var pType = p.Type.Replace(placeholder, t);
+                                var pType = ReplacePlaceholder(p.Type, placeholder, t);
                                 writer.Append($"{pType} {p.Name}");
                                 if (!string.IsNullOrEmpty(p.DefaultValue))
                                 {
@@ -229,7 +229,7 @@ public static class YamlApiGenerator
                                 sigBuilder.Append(", ");
                             }
 
-                            var pType = p.Type.Replace(placeholder, t);
+                            var pType = ReplacePlaceholder(p.Type, placeholder, t);
                             sigBuilder.Append(pType);
                         }
                         sigBuilder.Append(")");
@@ -279,6 +279,18 @@ public static class YamlApiGenerator
         return writer.ToString();
     }
 
+    private static string ReplacePlaceholder(string template, string placeholder, string replacement)
+    {
+        if (string.IsNullOrEmpty(placeholder) || !template.Contains(placeholder))
+        {
+            return template;
+        }
+
+        var sb = new StringBuilder(template);
+        sb.Replace(placeholder, replacement);
+        return sb.ToString();
+    }
+
     private static string EscapeXml(string text)
     {
         if (string.IsNullOrEmpty(text))
@@ -286,9 +298,31 @@ public static class YamlApiGenerator
             return text;
         }
 
-        return text
-            .Replace("&", "&amp;")
-            .Replace("<", "&lt;")
-            .Replace(">", "&gt;");
+        if (text.IndexOf('&') < 0 && text.IndexOf('<') < 0 && text.IndexOf('>') < 0)
+        {
+            return text;
+        }
+
+        var sb = new StringBuilder(text.Length + 16);
+        foreach (var c in text)
+        {
+            switch (c)
+            {
+                case '&':
+                    sb.Append("&amp;");
+                    break;
+                case '<':
+                    sb.Append("&lt;");
+                    break;
+                case '>':
+                    sb.Append("&gt;");
+                    break;
+                default:
+                    sb.Append(c);
+                    break;
+            }
+        }
+
+        return sb.ToString();
     }
 }

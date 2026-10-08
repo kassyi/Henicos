@@ -130,7 +130,16 @@ public abstract class Logger : ILogger
         }
 
         var timestamp = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}]";
-        var levelStr = level.ToString().ToUpper();
+        var levelStr = level switch
+        {
+            LogLevel.Trace => "TRACE",
+            LogLevel.Verbose => "VERBOSE",
+            LogLevel.Debug => "DEBUG",
+            LogLevel.Info => "INFO",
+            LogLevel.Warning => "WARNING",
+            LogLevel.Error => "ERROR",
+            _ => "UNKNOWN"
+        };
 
         var logLine = $"{timestamp} [{levelStr}] [{tag}] {message}";
 

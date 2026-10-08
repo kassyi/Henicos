@@ -18,11 +18,16 @@ internal static class SemanticModelExtensions
 
         foreach (var ann in node.GetAnnotations("GSharpOriginalSpan"))
         {
-            var parts = ann.Data?.Split(',');
-            if (parts is { Length: 2 } && int.TryParse(parts[0], out var start) && int.TryParse(parts[1], out var length))
+            if (ann.Data is { } data)
             {
-                var span = new TextSpan(start, length);
-                return semanticModel.SyntaxTree.GetRoot().FindNode(span, getInnermostNodeForTie: true);
+                var commaIdx = data.IndexOf(',');
+                if (commaIdx > 0 &&
+                    int.TryParse(data[..commaIdx], out var start) &&
+                    int.TryParse(data[(commaIdx + 1)..], out var length))
+                {
+                    var span = new TextSpan(start, length);
+                    return semanticModel.SyntaxTree.GetRoot().FindNode(span, getInnermostNodeForTie: true);
+                }
             }
         }
 
