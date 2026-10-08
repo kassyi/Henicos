@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
     <RootNamespace>Kassyi.GSharp.Tests.Common</RootNamespace>
   </PropertyGroup>
 
