@@ -1,6 +1,3 @@
-using System.Collections.Generic;
-using YamlDotNet.Serialization;
-
 namespace Kassyi.GSharp.Compiler.Generators;
 
 public class NativeApiDefinition
@@ -8,7 +5,7 @@ public class NativeApiDefinition
     public string Namespace { get; set; } = string.Empty;
     public string ClassName { get; set; } = string.Empty;
     public string? LibraryName { get; set; }
-    public List<ApiMethodDefinition> Methods { get; set; } = new();
+    public List<ApiMethodDefinition> Methods { get; set; } = [];
 }
 
 public class ApiMethodDefinition
@@ -24,13 +21,13 @@ public class ApiMethodDefinition
     public TypeTemplateDefinition? TypeTemplate { get; set; }
     public string ReturnType { get; set; } = "void";
     public string? ReturnDescription { get; set; }
-    public List<ParameterDefinition> Parameters { get; set; } = new();
+    public List<ParameterDefinition> Parameters { get; set; } = [];
 }
 
 public class TypeTemplateDefinition
 {
     public string Placeholder { get; set; } = "T";
-    public List<string> Types { get; set; } = new();
+    public List<string> Types { get; set; } = [];
 }
 
 public class ParameterDefinition

@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 [assembly:
     SuppressMessage("ReSharper", "UnusedMember.Global", Scope = "namespaceanddescendants",
         Target = "Kassyi.GSharp.Runtime.Interop", Justification = "Public API exposed for runtime consumers")]

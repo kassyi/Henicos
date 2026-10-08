@@ -1,4 +1,5 @@
 Dialect: StandardCpp
+Capabilities: None
 RequiredHeaders: []
 StructPrefix: ""
 MethodPrefix: "__device__ "

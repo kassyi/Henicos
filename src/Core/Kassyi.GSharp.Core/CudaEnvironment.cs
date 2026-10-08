@@ -24,10 +24,39 @@ public interface ICudaPathResolver
 public class DefaultCudaPathResolver : ICudaPathResolver
 {
     // Virtual I/O boundaries for mocking in unit tests
+
+    /// <summary>
+    /// Retrieves the value of an environment variable.
+    /// </summary>
+    /// <param name="name">The name of the environment variable.</param>
+    /// <returns>The value of the environment variable, or <see langword="null"/> if not found.</returns>
     protected virtual string? GetEnvironmentVariable(string name) => Environment.GetEnvironmentVariable(name);
+
+    /// <summary>
+    /// Determines whether the given directory path refers to an existing directory on disk.
+    /// </summary>
+    /// <param name="path">The path to test.</param>
+    /// <returns><see langword="true"/> if the path refers to an existing directory; otherwise, <see langword="false"/>.</returns>
     protected virtual bool DirectoryExists(string path) => Directory.Exists(path);
+
+    /// <summary>
+    /// Returns the names of subdirectories matching a search pattern in a specified directory.
+    /// </summary>
+    /// <param name="path">The relative or absolute path to the directory to search.</param>
+    /// <param name="searchPattern">The search string to match against the names of subdirectories.</param>
+    /// <returns>An array of full names of matching directories.</returns>
     protected virtual string[] GetDirectories(string path, string searchPattern) => Directory.GetDirectories(path, searchPattern);
+
+    /// <summary>
+    /// Determines whether the current operating system is Windows.
+    /// </summary>
+    /// <returns><see langword="true"/> if running on Windows; otherwise, <see langword="false"/>.</returns>
     protected virtual bool IsWindows() => OperatingSystem.IsWindows();
+
+    /// <summary>
+    /// Determines whether the current operating system is Linux.
+    /// </summary>
+    /// <returns><see langword="true"/> if running on Linux; otherwise, <see langword="false"/>.</returns>
     protected virtual bool IsLinux() => OperatingSystem.IsLinux();
 
     /// <inheritdoc />
@@ -41,43 +70,45 @@ public class DefaultCudaPathResolver : ICudaPathResolver
 
         if (IsWindows())
         {
-            const string baseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
-            if (!DirectoryExists(baseDir))
+            const string BaseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
+            if (!DirectoryExists(BaseDir))
             {
                 return null;
             }
 
-            var subDirs = GetDirectories(baseDir, "v*");
-            if (subDirs.Length > 0)
+            var subDirs = GetDirectories(BaseDir, "v*");
+            if (subDirs.Length <= 0)
             {
-                string? bestPath = null;
-                Version? bestVersion = null;
-
-                foreach (var d in subDirs)
-                {
-                    var folderName = Path.GetFileName(d);
-                    var versionStr = folderName.StartsWith("v", StringComparison.OrdinalIgnoreCase)
-                        ? folderName.Substring(1)
-                        : folderName;
-
-                    if (Version.TryParse(versionStr, out var v))
-                    {
-                        if (bestVersion != null && v <= bestVersion)
-                        {
-                            continue;
-                        }
-
-                        bestVersion = v;
-                        bestPath = d;
-                    }
-                    else if (bestPath == null)
-                    {
-                        bestPath = d;
-                    }
-                }
-
-                return bestPath;
+                return null;
             }
+
+            string? bestPath = null;
+            Version? bestVersion = null;
+
+            foreach (var d in subDirs)
+            {
+                var folderName = Path.GetFileName(d);
+                var versionStr = folderName.StartsWith("v", StringComparison.OrdinalIgnoreCase)
+                    ? folderName.Substring(1)
+                    : folderName;
+
+                if (Version.TryParse(versionStr, out var v))
+                {
+                    if (bestVersion != null && v <= bestVersion)
+                    {
+                        continue;
+                    }
+
+                    bestVersion = v;
+                    bestPath = d;
+                }
+                else if (bestPath == null)
+                {
+                    bestPath = d;
+                }
+            }
+
+            return bestPath;
         }
         else if (IsLinux())
         {

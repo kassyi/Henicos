@@ -18,7 +18,7 @@ public class DialectDefinition
 
     /// <summary>Gets or sets the list of C++ headers required by this dialect.</summary>
     [YamlMember(Alias = "RequiredHeaders")]
-    public List<string> RequiredHeaders { get; set; } = new();
+    public List<string> RequiredHeaders { get; set; } = [];
 
     /// <summary>Gets or sets the struct prefix applied by this dialect.</summary>
     [YamlMember(Alias = "StructPrefix")]
@@ -35,4 +35,8 @@ public class DialectDefinition
     /// <summary>Gets or sets the dictionary of mapped intrinsic expressions.</summary>
     [YamlMember(Alias = "Intrinsics")]
     public Dictionary<string, string> Intrinsics { get; set; } = new();
+
+    /// <summary>Gets or sets the capabilities of this dialect.</summary>
+    [YamlMember(Alias = "Capabilities")]
+    public string? Capabilities { get; set; }
 }

@@ -6,9 +6,13 @@ using Kassyi.GSharp.Compiler;
 
 namespace Kassyi.GSharp.Core.Generators;
 
+/// <summary>
+/// Incremental source generator that emits CUDA-compatible vector types (e.g., Float2, Int4, Double3).
+/// </summary>
 [Generator]
 public class VectorTypesGenerator : IIncrementalGenerator
 {
+    /// <inheritdoc />
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(ctx =>

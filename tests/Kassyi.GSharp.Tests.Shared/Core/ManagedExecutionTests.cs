@@ -1,5 +1,6 @@
 using System;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Tests.Shared.Syntax;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
@@ -42,6 +43,49 @@ public class ManagedExecutionTests : TranspilerTestBase
             for (int i = 0; i < length; i++)
             {
                 Assert.Equal(length - 1 - i, output[i]);
+            }
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = previousState;
+        }
+    }
+
+    [SkippableFact]
+    public void Test_Kernel_Direct_Managed_Execution_WarpShuffleReduceSum()
+    {
+        bool previousState = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = true;
+        
+        try
+        {
+            const int threadsPerWarp = 32;
+            const int numWarps = 4;
+            const int totalThreads = threadsPerWarp * numWarps;
+
+            int[] input = new int[totalThreads];
+            for (int i = 0; i < totalThreads; i++)
+            {
+                input[i] = i + 1;
+            }
+
+            int[] output = new int[numWarps];
+
+            WarpShuffleKernels.LaunchWarpReductionKernel(
+                input,
+                output,
+                blockDimX: (uint)totalThreads
+            );
+
+            for (int w = 0; w < numWarps; w++)
+            {
+                int expectedWarpSum = 0;
+                for (int lane = 0; lane < threadsPerWarp; lane++)
+                {
+                    expectedWarpSum += input[w * threadsPerWarp + lane];
+                }
+
+                Assert.Equal(expectedWarpSum, output[w]);
             }
         }
         finally

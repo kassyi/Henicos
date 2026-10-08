@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -33,7 +28,7 @@ public static class YamlApiGenerator
             try
             {
                 var def = s_deserializer.Deserialize<NativeApiDefinition>(text);
-                if (def != null && !string.IsNullOrEmpty(def.Namespace))
+                if (!string.IsNullOrEmpty(def.Namespace))
                 {
                     definitions.Add(def);
                 }
@@ -90,18 +85,18 @@ public static class YamlApiGenerator
                 
                 if (!string.IsNullOrEmpty(m.Summary))
                 {
-                    writer.Line($"/// <summary>{m.Summary}</summary>");
+                    writer.Line($"/// <summary>{EscapeXml(m.Summary)}</summary>");
                 }
                 foreach (var p in m.Parameters)
                 {
                     if (!string.IsNullOrEmpty(p.Description))
                     {
-                        writer.Line($"/// <param name=\"{p.Name}\">{p.Description}</param>");
+                        writer.Line($"/// <param name=\"{p.Name}\">{EscapeXml(p.Description)}</param>");
                     }
                 }
                 if (!string.IsNullOrEmpty(m.ReturnDescription))
                 {
-                    writer.Line($"/// <returns>{m.ReturnDescription}</returns>");
+                    writer.Line($"/// <returns>{EscapeXml(m.ReturnDescription)}</returns>");
                 }
 
                 writer.Line($"[LibraryImport({string.Join(", ", importArgs)})]");
@@ -115,7 +110,11 @@ public static class YamlApiGenerator
                     for (int i = 0; i < m.Parameters.Count; i++)
                     {
                         var p = m.Parameters[i];
-                        if (i > 0) writer.Append(", ");
+                        if (i > 0)
+                        {
+                            writer.Append(", ");
+                        }
+
                         writer.Append($"{p.Type} {p.Name}");
                     }
                 }
@@ -137,7 +136,18 @@ public static class YamlApiGenerator
         writer.Line($"namespace {def.Namespace};");
         writer.Line();
         
-        var classGroups = def.Methods.GroupBy(m => string.IsNullOrEmpty(m.ClassName) ? def.ClassName : m.ClassName);
+        var classGroups = new Dictionary<string, List<ApiMethodDefinition>>();
+        foreach (var m in def.Methods)
+        {
+            var className = string.IsNullOrEmpty(m.ClassName) ? def.ClassName : m.ClassName;
+            if (!classGroups.TryGetValue(className, out var list))
+            {
+                list = [];
+                classGroups[className] = list;
+            }
+
+            list.Add(m);
+        }
         
         foreach (var group in classGroups)
         {
@@ -148,9 +158,9 @@ public static class YamlApiGenerator
                 writer.Line("// ReSharper disable UnusedMember.Global");
                 writer.Line();
                 
-                foreach (var m in group)
+                foreach (var m in group.Value)
                 {
-                    var types = m.TypeTemplate?.Types ?? new List<string> { "" };
+                    var types = m.TypeTemplate?.Types ?? [""];
                     var placeholder = m.TypeTemplate?.Placeholder ?? "T";
                     
                     foreach (var t in types)
@@ -159,20 +169,20 @@ public static class YamlApiGenerator
                         
                         if (!string.IsNullOrEmpty(m.Summary))
                         {
-                            writer.Line($"/// <summary>{m.Summary}</summary>");
+                            writer.Line($"/// <summary>{EscapeXml(m.Summary)}</summary>");
                         }
                         
                         foreach (var p in m.Parameters)
                         {
                             if (!string.IsNullOrEmpty(p.Description))
                             {
-                                writer.Line($"/// <param name=\"{p.Name}\">{p.Description}</param>");
+                                writer.Line($"/// <param name=\"{p.Name}\">{EscapeXml(p.Description)}</param>");
                             }
                         }
                         
                         if (!string.IsNullOrEmpty(m.ReturnDescription))
                         {
-                            writer.Line($"/// <returns>{m.ReturnDescription}</returns>");
+                            writer.Line($"/// <returns>{EscapeXml(m.ReturnDescription)}</returns>");
                         }
                         
                         var nativeName = m.NativeName ?? m.Name;
@@ -184,7 +194,11 @@ public static class YamlApiGenerator
                             for (int i = 0; i < m.Parameters.Count; i++)
                             {
                                 var p = m.Parameters[i];
-                                if (i > 0) writer.Append(", ");
+                                if (i > 0)
+                                {
+                                    writer.Append(", ");
+                                }
+
                                 var pType = p.Type.Replace(placeholder, t);
                                 writer.Append($"{pType} {p.Name}");
                                 if (!string.IsNullOrEmpty(p.DefaultValue))
@@ -196,7 +210,7 @@ public static class YamlApiGenerator
                         
                         if (returnType == "void")
                         {
-                            writer.AppendLine($" => Kassyi.GSharp.Core.GpuOnlyException.Throw();");
+                            writer.AppendLine(" => Kassyi.GSharp.Core.GpuOnlyException.Throw();");
                         }
                         else
                         {
@@ -210,7 +224,11 @@ public static class YamlApiGenerator
                         for (int i = 0; i < m.Parameters.Count; i++)
                         {
                             var p = m.Parameters[i];
-                            if (i > 0) sigBuilder.Append(", ");
+                            if (i > 0)
+                            {
+                                sigBuilder.Append(", ");
+                            }
+
                             var pType = p.Type.Replace(placeholder, t);
                             sigBuilder.Append(pType);
                         }
@@ -259,5 +277,18 @@ public static class YamlApiGenerator
         }
         
         return writer.ToString();
+    }
+
+    private static string EscapeXml(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return text;
+        }
+
+        return text
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;");
     }
 }

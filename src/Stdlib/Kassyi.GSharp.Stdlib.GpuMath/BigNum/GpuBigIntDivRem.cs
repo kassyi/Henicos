@@ -126,6 +126,13 @@ public static partial class GpuBigIntDivRem
     /// <summary>
     /// Performs a Barrett reduction using a precomputed reciprocal.
     /// </summary>
+    /// <param name="leftOperand">The dividend.</param>
+    /// <param name="rightOperand">The divisor.</param>
+    /// <param name="reciprocalOfB">The precomputed reciprocal of the divisor.</param>
+    /// <param name="targetBits">The target precision in bits.</param>
+    /// <param name="aActualWords">The actual number of words in the dividend.</param>
+    /// <param name="quotientBuffer">The buffer to store the computed quotient.</param>
+    /// <param name="remainderBuffer">The buffer to store the computed remainder.</param>
     public static void Reduce(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt reciprocalOfB,
         int targetBits, int aActualWords, GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
     {

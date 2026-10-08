@@ -286,6 +286,9 @@ public struct ModPowNttContext
     public long[] CarryBuffer;
 }
 
+/// <summary>
+/// Precomputed constants for RNS (Residue Number System) operations.
+/// </summary>
 public struct RnsConstantsContext
 {
     /// <summary>Moduli values for the first RNS base.</summary>

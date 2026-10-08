@@ -3,6 +3,8 @@
 
   <PropertyGroup>
     <RunSettingsFilePath>$(MSBuildThisFileDirectory)..\.runsettings</RunSettingsFilePath>
+    <!-- Suppress compiler warnings from generated test kernel wrappers -->
+    <NoWarn>$(NoWarn);0162;8321;8618</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -5,11 +5,20 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 /// <summary>Computes high-precision Pi digits using the Chudnovsky binary splitting algorithm on CPU.</summary>
 public partial class ChudnovskyAlgorithm
 {
+    /// <summary>Represents the intermediate terms P, Q, and T in the binary splitting algorithm.</summary>
     public struct ChudnovskyPqt
     {
-        public BigInteger P, Q, T;
+        /// <summary>The P term.</summary>
+        public BigInteger P;
+        /// <summary>The Q term.</summary>
+        public BigInteger Q;
+        /// <summary>The T term.</summary>
+        public BigInteger T;
     }
 
+    /// <summary>Computes Pi up to the specified number of digits.</summary>
+    /// <param name="digits">The number of digits to compute.</param>
+    /// <returns>A string representation of Pi.</returns>
     public static string ComputePi(int digits)
     {
         // 14 digits per term approx
@@ -39,6 +48,10 @@ public partial class ChudnovskyAlgorithm
         return pi.ToString();
     }
 
+    /// <summary>Computes the subtree of the binary splitting algorithm for the range [a, b).</summary>
+    /// <param name="a">The start index of the range.</param>
+    /// <param name="b">The end index of the range.</param>
+    /// <returns>The computed P, Q, and T values for the subtree.</returns>
     public static ChudnovskyPqt ComputeSubtree(int a, int b)
     {
         if (a + 1 == b)

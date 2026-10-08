@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Generators;
 public class RnsConstantsGenerator : IIncrementalGenerator
 {
     private const int MaxModuliPerBase = 128; // Up to 4096-bit (128 primes for B1, 128 for B2)
-    private readonly int[] SupportedKSizes = { 8, 16, 32, 64, 128 };
+    private readonly int[] SupportedKSizes = [8, 16, 32, 64, 128];
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -283,7 +283,8 @@ public class RnsConstantsGenerator : IIncrementalGenerator
 
     private bool IsPrimeCpu(uint n)
     {
-        int[] smallPrimes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
+        int[] smallPrimes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+        ];
         foreach (var p in smallPrimes)
         {
             if (n % p == 0)
