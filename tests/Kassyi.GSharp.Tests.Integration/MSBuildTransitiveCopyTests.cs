@@ -119,7 +119,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
         var consumerOutputDir = Path.Combine(consumerDir, "bin", "Debug", "net10.0");
         
         // From Dummy.cu
-        File.Exists(Path.Combine(consumerOutputDir, "Dummy.fatbin")).Should().BeTrue("Fatbin should be copied transitively");
+        File.Exists(Path.Combine(consumerOutputDir, "Dummy.gfatbin")).Should().BeTrue("Fatbin should be copied transitively");
         
         // From Dummy.cpp (Architecture suffixes x64 and arm64 should be generated in Mock mode if MultiTarget is true, or just host arch)
         // Since we didn't specify GSharpMultiTarget, it defaults to false and uses host arch (x64 typically).
