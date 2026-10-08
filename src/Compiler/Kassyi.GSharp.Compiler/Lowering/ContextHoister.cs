@@ -93,9 +93,8 @@ public class ContextHoister : CSharpSyntaxRewriter
                 );
                 assignments.Add(SyntaxFactory.ExpressionStatement(assignment));
             }
-            else
+            else if (base.VisitVariableDeclarator(variable) is VariableDeclaratorSyntax visitedVar)
             {
-                var visitedVar = (VariableDeclaratorSyntax)base.VisitVariableDeclarator(variable)!;
                 remainingVariables.Add(visitedVar);
             }
         }

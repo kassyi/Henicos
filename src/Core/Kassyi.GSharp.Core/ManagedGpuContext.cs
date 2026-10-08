@@ -168,7 +168,10 @@ public static class ManagedGpuContext
         var bytesNeeded = count * Unsafe.SizeOf<T>();
         var blockId = LinearBlockId;
 
-        if (s_perBlockAllocationOffsets == null)
+        if (s_perBlockAllocationOffsets == null ||
+            s_perBlockSharedMemoryBuffer == null ||
+            s_perBlockMaxAllocationIndex == null ||
+            s_perBlockSharedMemoryOffset == null)
         {
             throw new InvalidOperationException("Grid not initialized. Call InitializeGrid first.");
         }
@@ -184,24 +187,24 @@ public static class ManagedGpuContext
 
         // Ensure buffer exists and is large enough
 
-        var buffer = s_perBlockSharedMemoryBuffer?[blockId];
+        var buffer = s_perBlockSharedMemoryBuffer[blockId];
         if (buffer == null)
         {
             buffer = [];
-            s_perBlockSharedMemoryBuffer![blockId] = buffer;
+            s_perBlockSharedMemoryBuffer[blockId] = buffer;
         }
 
-        if (currentIndex < s_perBlockMaxAllocationIndex![blockId])
+        if (currentIndex < s_perBlockMaxAllocationIndex[blockId])
         {
             // Reuse existing allocation for this index
             var existingOffset = allocationOffsets[currentIndex];
             return MemoryMarshal.Cast<byte, T>(buffer.AsSpan(existingOffset, bytesNeeded));
         }
 
-        if (s_perBlockSharedMemoryOffset![blockId] + bytesNeeded > buffer.Length)
+        if (s_perBlockSharedMemoryOffset[blockId] + bytesNeeded > buffer.Length)
         {
             // Expand buffer if necessary
-            Array.Resize(ref s_perBlockSharedMemoryBuffer![blockId],
+            Array.Resize(ref s_perBlockSharedMemoryBuffer[blockId],
                 Math.Max(buffer.Length * 2, s_perBlockSharedMemoryOffset[blockId] + bytesNeeded));
             buffer = s_perBlockSharedMemoryBuffer[blockId];
         }

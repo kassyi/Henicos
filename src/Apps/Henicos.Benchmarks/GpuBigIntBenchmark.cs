@@ -2,9 +2,9 @@ namespace Henicos.Benchmarks;
 
 public class GpuBigIntBenchmark : GpuBigMathBenchmarkBase
 {
-    private GpuBigUInt[] _leftSigs = null!;
-    private GpuBigUInt[] _rightSigs = null!;
-    private GpuBigUInt[] _resultSigs = null!;
+    private GpuBigUInt[] _leftSigs = [];
+    private GpuBigUInt[] _rightSigs = [];
+    private GpuBigUInt[] _resultSigs = [];
 
     protected override void OnSetup()
     {

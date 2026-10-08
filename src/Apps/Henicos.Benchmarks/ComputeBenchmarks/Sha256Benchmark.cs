@@ -9,10 +9,10 @@ public class Sha256Benchmark : IComputeBenchmark
     private const int ThreadsPerBlock = 256;
     private const int Blocks = (N + ThreadsPerBlock - 1) / ThreadsPerBlock;
 
-    private byte[] _input = null!;
-    private uint[] _outputCpu = null!;
-    private uint[] _outputGsharp = null!;
-    private uint[] _outputNative = null!;
+    private byte[] _input = [];
+    private uint[] _outputCpu = [];
+    private uint[] _outputGsharp = [];
+    private uint[] _outputNative = [];
 
     public string Name => "SHA-256 Compression Function (100k Blocks)";
 

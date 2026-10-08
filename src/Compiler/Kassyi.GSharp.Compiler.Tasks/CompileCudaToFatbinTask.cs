@@ -70,10 +70,8 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return true;
         }
 
-        var outputName = Path.HasExtension(CombinedFatbinName)
-            ? Path.ChangeExtension(CombinedFatbinName, ".gfatbin")
-            : CombinedFatbinName + ".gfatbin";
-        var outputFatbinPath = Path.Combine(OutputDirectory, outputName!);
+        var outputName = Path.ChangeExtension(CombinedFatbinName, ".gfatbin") ?? $"{CombinedFatbinName}.gfatbin";
+        var outputFatbinPath = Path.Combine(OutputDirectory, outputName);
 
         if (MockCompilation)
         {

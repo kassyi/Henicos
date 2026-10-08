@@ -40,7 +40,8 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
     private static string GetRepositoryRoot([System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "")
     {
-        var dir = new DirectoryInfo(Path.GetDirectoryName(callerFilePath)!);
+        var dirPath = Path.GetDirectoryName(callerFilePath) ?? AppContext.BaseDirectory;
+        var dir = new DirectoryInfo(dirPath);
         while (dir != null)
         {
             if (dir.GetFiles("Henicos.sln").Any() || dir.GetDirectories(".git").Any())
@@ -221,7 +222,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     {
         var rootDir = GetRepositoryRoot();
         var sourcePath = Path.Combine(rootDir, relativeFilePath);
-        var sourceDir = Path.GetDirectoryName(sourcePath);
+        var sourceDir = Path.GetDirectoryName(sourcePath) ?? rootDir;
 
         if (!File.Exists(sourcePath))
         {
@@ -232,7 +233,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         var source = await File.ReadAllTextAsync(sourcePath);
         var testName = Path.GetFileNameWithoutExtension(sourcePath).Replace(".cu", "");
 
-        await VerifyGeneratorAsync(source, testName, sourceDir!);
+        await VerifyGeneratorAsync(source, testName, sourceDir);
     }
 
     [Fact]

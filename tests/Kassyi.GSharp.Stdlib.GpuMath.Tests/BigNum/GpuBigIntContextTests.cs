@@ -63,12 +63,15 @@ public class GpuBigIntContextTests
 
         var advancedMathField = typeof(GSharpAotProvider).GetField(
             "_advancedMath", BindingFlags.NonPublic | BindingFlags.Instance);
-        var advancedMath = advancedMathField!.GetValue(provider)!;
+        Assert.NotNull(advancedMathField);
+        var advancedMath = advancedMathField.GetValue(provider);
+        Assert.NotNull(advancedMath);
 
         var twiddleCacheField = advancedMath.GetType().GetField(
             "_twiddleCache",
             BindingFlags.NonPublic | BindingFlags.Instance);
-        var twiddleCache = (System.Collections.IDictionary)twiddleCacheField!.GetValue(advancedMath)!;
+        Assert.NotNull(twiddleCacheField);
+        var twiddleCache = Assert.IsAssignableFrom<System.Collections.IDictionary>(twiddleCacheField.GetValue(advancedMath));
 
         Assert.True(twiddleCache.Count > 0, "Cache should be populated after multiplication.");
         int cachedCountBefore = twiddleCache.Count;

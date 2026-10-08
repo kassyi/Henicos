@@ -4,15 +4,25 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal readonly ref struct TranspilationSession
 {
-    private readonly RoslynToCudaVisitor _visitor;
+    private readonly RoslynToCudaVisitor? _visitor;
     public readonly IMethodSymbol? MethodSymbol;
     public readonly string? ErrorMessage;
 
-    public ref TranspileContext Context => ref _visitor.Context;
+    public ref TranspileContext Context
+    {
+        get
+        {
+            if (_visitor == null)
+            {
+                throw new InvalidOperationException(ErrorMessage ?? "Transpilation session failed.");
+            }
+            return ref _visitor.Context;
+        }
+    }
 
     public bool HasError => ErrorMessage != null;
 
-    private TranspilationSession(RoslynToCudaVisitor visitor, IMethodSymbol? methodSymbol, string? errorMessage)
+    private TranspilationSession(RoslynToCudaVisitor? visitor, IMethodSymbol? methodSymbol, string? errorMessage)
     {
         _visitor = visitor;
         MethodSymbol = methodSymbol;
@@ -42,7 +52,7 @@ internal readonly ref struct TranspilationSession
             var error =
                 $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
 #pragma warning restore RS0030
-            return new TranspilationSession(null!, methodSymbol, error);
+            return new TranspilationSession(null, methodSymbol, error);
         }
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);

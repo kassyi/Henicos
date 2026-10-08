@@ -50,6 +50,13 @@ These rules are absolute. Any violation will directly induce runtime failures, G
 
 - **NEVER suppress or swallow exceptions** with an empty `catch { }` block unless accompanied by a clear English comment explaining _why_ it is safe to ignore (e.g., `// Ignore cleanup errors on best-effort basis`).
 
+### 1.4. Ban on Null-Forgiving Operators (`!`)
+
+- **DO NOT use the null-forgiving operator (`!`) when avoidable.** Whenever an explicit `if` check, pattern matching, null-coalescing throw (`?? throw`), empty collection initialization (`= []`), or properly typed nullable signature (`T?`) can prevent it, using `!` is strictly forbidden.
+- **Strict Exception & Mandatory Comment**:
+  - Using `!` is permitted **ONLY** when genuinely unavoidable or when avoiding it would make code excessively convoluted due to language/framework constraints (e.g., deliberate `null!` passing in unit tests asserting `ArgumentNullException`, or Roslyn generator/AST pipelines with invariant non-null guarantees).
+  - In such unavoidable cases, **it MUST be accompanied by an explicit comment explaining why it is safe and necessary** (e.g., `// Intentionally passing null to assert ArgumentNullException defensive guard`). Any uncommented `!` is strictly prohibited.
+
 ---
 
 ## 2. C# DEVELOPMENT & CODE STYLE CHARTER

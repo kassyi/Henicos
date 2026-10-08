@@ -9,6 +9,7 @@ public class BenchmarkStatsTests
     public void Calculate_EmptyOrNullArray_ReturnsDefault()
     {
         Assert.Equal(default, BenchmarkStats.Calculate(Array.Empty<double>()));
+        // Intentionally passing null to test defensive guard against null array input.
         Assert.Equal(default, BenchmarkStats.Calculate(null!));
     }
 

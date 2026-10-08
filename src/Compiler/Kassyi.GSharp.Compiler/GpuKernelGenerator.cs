@@ -123,13 +123,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
+        if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+        {
+            return null;
+        }
 
         try
         {
-            if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
-            {
-                return null;
-            }
 
             var collector = new DiagnosticCollector();
             var cudaDialect = new GSharpCudaDialect();
@@ -181,10 +181,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 ex.Message));
 
             return new TranspiledKernelResult(
-                methodSymbol!,
-                methodSymbol?.Name ?? "E",
-                methodSymbol?.ContainingType.Name ?? "E",
-                methodSymbol?.ContainingNamespace?.GetFullNamespaceName(),
+                methodSymbol,
+                methodSymbol.Name,
+                methodSymbol.ContainingType.Name,
+                methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
                 "", "", $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n", collector.GetDiagnostics());
         }
     }
@@ -194,13 +194,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
+        if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+        {
+            return null;
+        }
 
         try
         {
-            if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
-            {
-                return null;
-            }
 
             var collector = new DiagnosticCollector();
             var cudaDialect = new GSharpCudaDialect();
@@ -239,9 +239,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 ex.Message));
 
             return new TranspiledDeviceMethodResult(
-                methodSymbol!,
-                methodSymbol?.Name ?? "E",
-                methodSymbol?.ContainingType.Name ?? "E",
+                methodSymbol,
+                methodSymbol.Name,
+                methodSymbol.ContainingType.Name,
                 null,
                 "", "", "", "", collector.GetDiagnostics());
         }

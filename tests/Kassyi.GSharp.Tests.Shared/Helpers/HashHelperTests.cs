@@ -27,6 +27,7 @@ public class HashHelperTests
     [Fact]
     public void ComputeShortHash_GivenNullString_ThrowsArgumentNullException()
     {
+        // Intentionally passing null to assert ArgumentNullException defensive guard.
         Assert.Throws<ArgumentNullException>(() => HashHelper.ComputeShortHash(null!));
     }
 }

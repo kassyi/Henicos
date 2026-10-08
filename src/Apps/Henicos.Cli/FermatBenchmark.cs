@@ -14,7 +14,8 @@ public class FermatBenchmark
         get; set;
     }
 
-    private FermatAlgorithm _runner = null!;
+    private FermatAlgorithm? _runner;
+    private FermatAlgorithm Runner => _runner ?? throw new InvalidOperationException("Runner has not been initialized. Call Setup() first.");
 
     private BigInteger _baseValueX;
     private BigInteger _modulusN;
@@ -53,11 +54,11 @@ public class FermatBenchmark
     [Benchmark]
     public uint[] GpuBigIntJit()
     {
-        var (result, _) = _runner.RunFermatPrp();
+        var (result, _) = Runner.RunFermatPrp();
         return result;
     }
 
     [Benchmark]
-    public void GSharpAotChunk100() => _runner.RunBenchmarkChunk();
+    public void GSharpAotChunk100() => Runner.RunBenchmarkChunk();
 }
 

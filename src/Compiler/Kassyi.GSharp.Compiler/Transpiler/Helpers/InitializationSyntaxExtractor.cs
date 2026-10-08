@@ -2,9 +2,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 internal static class InitializationSyntaxExtractor
 {
-    public static bool TryGetArrayElementType(ITypeSymbol? typeSymbol, out ITypeSymbol elemType, out bool isConst)
+    public static bool TryGetArrayElementType(ITypeSymbol? typeSymbol, out ITypeSymbol? elemType, out bool isConst)
     {
-        elemType = null!;
+        elemType = null;
         isConst = false;
 
         switch (typeSymbol)
