@@ -1,3 +1,5 @@
+using Kassyi.ZeroAlloc.Linq;
+
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class VectorBuiltinTests
@@ -24,11 +26,9 @@ public class VectorBuiltinTests
 
         VectorBuiltinKernels.LaunchVector2AddKernel(a, b, result, arrayLength, blockDimX: 32);
 
-        for (int i = 0; i < arrayLength; i++)
-        {
-            Assert.Equal(expected[i].X, result[i].X, 5);
-            Assert.Equal(expected[i].Y, result[i].Y, 5);
-        }
+        Assert.True(expected.AsStackEnumerable().Select((exp, i) =>
+            Math.Abs(exp.X - result[i].X) < 1e-5f &&
+            Math.Abs(exp.Y - result[i].Y) < 1e-5f).All(ok => ok));
     }
 
     [SkippableTheory]
@@ -53,12 +53,10 @@ public class VectorBuiltinTests
 
         VectorBuiltinKernels.LaunchVector3AddKernel(a, b, result, arrayLength, blockDimX: 32);
 
-        for (int i = 0; i < arrayLength; i++)
-        {
-            Assert.Equal(expected[i].X, result[i].X, 5);
-            Assert.Equal(expected[i].Y, result[i].Y, 5);
-            Assert.Equal(expected[i].Z, result[i].Z, 5);
-        }
+        Assert.True(expected.AsStackEnumerable().Select((exp, i) =>
+            Math.Abs(exp.X - result[i].X) < 1e-5f &&
+            Math.Abs(exp.Y - result[i].Y) < 1e-5f &&
+            Math.Abs(exp.Z - result[i].Z) < 1e-5f).All(ok => ok));
     }
 
     [SkippableTheory]
@@ -83,12 +81,10 @@ public class VectorBuiltinTests
 
         VectorBuiltinKernels.LaunchVector4AddKernel(a, b, result, arrayLength, blockDimX: 32);
 
-        for (int i = 0; i < arrayLength; i++)
-        {
-            Assert.Equal(expected[i].X, result[i].X, 5);
-            Assert.Equal(expected[i].Y, result[i].Y, 5);
-            Assert.Equal(expected[i].Z, result[i].Z, 5);
-            Assert.Equal(expected[i].W, result[i].W, 5);
-        }
+        Assert.True(expected.AsStackEnumerable().Select((exp, i) =>
+            Math.Abs(exp.X - result[i].X) < 1e-5f &&
+            Math.Abs(exp.Y - result[i].Y) < 1e-5f &&
+            Math.Abs(exp.Z - result[i].Z) < 1e-5f &&
+            Math.Abs(exp.W - result[i].W) < 1e-5f).All(ok => ok));
     }
 }

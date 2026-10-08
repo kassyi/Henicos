@@ -1,3 +1,5 @@
+using Kassyi.ZeroAlloc.Linq;
+
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class InvocationTests
@@ -68,13 +70,11 @@ public class InvocationTests
         InvocationAndIntrinsicsKernels.LaunchInterlockedEdgeCasesKernel(
             array, structArray, blockDimX: 4);
 
-        for (int i = 0; i < 4; i++)
-        {
-            Assert.Equal(i + 1 + 10, array[i]);
-            Assert.Equal((i + 1) * 10 + 1, structArray[i].ValueI);
-            Assert.Equal(42u, structArray[i].ValueU);
-            Assert.Equal(99L, structArray[i].ValueL);
-        }
+        Assert.True(array.AsStackEnumerable().Select((val, i) =>
+            val == i + 1 + 10 &&
+            structArray[i].ValueI == (i + 1) * 10 + 1 &&
+            structArray[i].ValueU == 42u &&
+            structArray[i].ValueL == 99L).All(ok => ok));
     }
 
     [SkippableFact]

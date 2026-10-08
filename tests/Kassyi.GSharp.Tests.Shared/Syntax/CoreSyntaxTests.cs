@@ -1,3 +1,4 @@
+using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
@@ -41,10 +42,7 @@ public class CoreSyntaxTests
         // tid 2: 20 + 3 + 200 = 223
         Assert.Equal(223, dataArray[2]);
         // tid 3..7: default branch -> 30 + 3 = 33
-        for (int tid = 3; tid < 8; tid++)
-        {
-            Assert.Equal(33, dataArray[tid]);
-        }
+        Assert.True(dataArray.AsSpan(3, 5).AsStackEnumerable().All(v => v == 33));
     }
 
     [SkippableFact]
