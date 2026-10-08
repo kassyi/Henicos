@@ -1,24 +1,8 @@
 #pragma warning disable CS0649
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
-public class StructTranspilerEdgeCasesTests
-:  TranspilerTestBase{
-    private static TranspileContext CreateTestContext(params INamedTypeSymbol[] usedStructsArray)
-    {
-        var usedStructs = new HashSet<INamedTypeSymbol>(usedStructsArray, SymbolEqualityComparer.Default);
-        return new TranspileContext(
-            default,
-            usedStructs,
-            new OverrideScopeStack(),
-            null!,
-            null,
-            null!,
-            ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
-            new Kassyi.GSharp.Compiler.Dialects.GSharpCudaDialect(),
-            Kassyi.GSharp.Compiler.Transpiler.Rules.TranspilerRuleRegistry.CreateDefault());
-    }
-
-
+public class StructTranspilerEdgeCasesTests : TranspilerTestBase
+{
     private static INamedTypeSymbol GetLocalTypeSymbol(string name, [CallerFilePath] string callerFilePath = "")
     {
         var comp = MegaCompilationCache.GetDynamicCompilation(callerFilePath);
@@ -30,9 +14,7 @@ public class StructTranspilerEdgeCasesTests
     public void Test_TopologicallySortedStructs_EmptyStruct()
     {
         var structSym = GetLocalTypeSymbol("EmptyStruct");
-        var context = CreateTestContext(structSym);
-
-        var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
+        var sorted = StructTranspiler.GetTopologicallySortedStructs([structSym]);
 
         Assert.Single(sorted);
         Assert.Equal("EmptyStruct", sorted[0].Name);
@@ -48,11 +30,9 @@ public class StructTranspilerEdgeCasesTests
         var symC = comp.GetSymbolsWithName("StructC", SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
         var symD = comp.GetSymbolsWithName("StructD", SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
 
-        var context = CreateTestContext(symA, symB, symC, symD);
+        var sorted = StructTranspiler.GetTopologicallySortedStructs([symA, symB, symC, symD]);
 
-        var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
-
-        Assert.Equal(4, sorted.Count);
+        Assert.Equal(4, sorted.Length);
         // Order must be D -> C -> B -> A (dependents last)
         Assert.Equal("StructD", sorted[0].Name);
         Assert.Equal("StructC", sorted[1].Name);
@@ -65,9 +45,7 @@ public class StructTranspilerEdgeCasesTests
     public void Test_TopologicallySortedStructs_ExcludesSystemTypes()
     {
         var structSym = GetLocalTypeSymbol("MyStruct");
-        var context = CreateTestContext(structSym);
-
-        var sorted = StructTranspiler.GetTopologicallySortedStructs(ref context).ToList();
+        var sorted = StructTranspiler.GetTopologicallySortedStructs([structSym]);
 
         Assert.Single(sorted);
         Assert.Equal("MyStruct", sorted[0].Name);

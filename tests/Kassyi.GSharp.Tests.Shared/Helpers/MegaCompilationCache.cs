@@ -6,8 +6,8 @@ public static class MegaCompilationCache
     private static readonly Lazy<CSharpCompilation> s_baseCompilation = new(() =>
     {
         var baseDir = AppContext.BaseDirectory;
-        var trustedAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string;
-        var references = trustedAssemblies!
+        var trustedAssemblies = AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") as string ?? "";
+        var references = trustedAssemblies
             .Split(Path.PathSeparator)
             .Where(p => !string.IsNullOrWhiteSpace(p))
             .Select(p => 
@@ -30,7 +30,7 @@ public static class MegaCompilationCache
         }
 
         // Implicitly reference Math library if present in the same directory, to support standard library tests
-        var mathDllPath = Path.Combine(Path.GetDirectoryName(coreDllPath)!, "Kassyi.GSharp.Stdlib.GpuMath.dll");
+        var mathDllPath = Path.Combine(Path.GetDirectoryName(coreDllPath) ?? baseDir, "Kassyi.GSharp.Stdlib.GpuMath.dll");
         if (File.Exists(mathDllPath) && !references.Any(r => string.Equals(r.Display, mathDllPath, StringComparison.OrdinalIgnoreCase)))
         {
             references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(mathDllPath)));

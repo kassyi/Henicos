@@ -95,7 +95,8 @@ public partial class DiagnosticParityTests
     {
         // callerPath is ...\tests\Kassyi.GSharp.Tests.Shared\Analyzers\DiagnosticParityTests.cs
         // Go up 4 levels to reach the repository root
-        var dir = new DirectoryInfo(Path.GetDirectoryName(callerPath)!);
-        return dir.Parent!.Parent!.Parent!.FullName;
+        var dirPath = Path.GetDirectoryName(callerPath) ?? throw new InvalidOperationException($"Invalid caller path: {callerPath}");
+        var dir = new DirectoryInfo(dirPath);
+        return dir.Parent?.Parent?.Parent?.FullName ?? throw new InvalidOperationException("Failed to resolve repository root directory.");
     }
 }

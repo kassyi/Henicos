@@ -21,6 +21,7 @@ public class GEN_36_MacroArgumentSadPath
         Gpu.InlinePtx(ptxStr);
 
         // Error GSH0003: arg must be lambda expression
+        // Intentionally passing null! to assert analyzer diagnostic when macro argument is not a lambda.
         Gpu.SyncGrid(null!);
     }
 }

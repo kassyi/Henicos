@@ -80,6 +80,7 @@ public class BigMathTests : TranspilerTestBase
     [Fact]
     public void TestGpuUIntBigInteger_SadPath_NullContext()
     {
+        // Intentionally passing null to assert ArgumentNullException defensive guard.
         Assert.Throws<ArgumentNullException>(() => new GpuBigUInt(null!, 4));
     }
 }

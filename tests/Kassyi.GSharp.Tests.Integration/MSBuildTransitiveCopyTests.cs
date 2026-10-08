@@ -19,7 +19,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
         Directory.CreateDirectory(_testRoot);
 
         // Find repo root (assuming test assembly is in tests/Kassyi.GSharp.Tests.Integration/bin/Debug/net10.0)
-        var currentDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+        var currentDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? AppContext.BaseDirectory;
         _repoRoot = Path.GetFullPath(Path.Combine(currentDir, "..", "..", "..", "..", ".."));
     }
 
@@ -47,7 +47,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
         Directory.CreateDirectory(consumerDir);
 
         var targetsPath = Path.Combine(_repoRoot, "src", "Compiler", "Kassyi.GSharp.Compiler", "build", "Kassyi.GSharp.Compiler.targets");
-        var taskAssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!, "Kassyi.GSharp.Compiler.Tasks.dll");
+        var taskAssemblyPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? AppContext.BaseDirectory, "Kassyi.GSharp.Compiler.Tasks.dll");
 
         // 1. Create Producer
         var producerProject = $"""
@@ -100,8 +100,8 @@ public class MSBuildTransitiveCopyTests : IDisposable
             CreateNoWindow = true
         };
 
-        using var process = Process.Start(startInfo);
-        var stdoutTask = process!.StandardOutput.ReadToEndAsync();
+        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start build process.");
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
         var stderrTask = process.StandardError.ReadToEndAsync();
 
         if (!process.WaitForExit(60000))
@@ -175,8 +175,8 @@ public class MSBuildTransitiveCopyTests : IDisposable
             CreateNoWindow = true
         };
 
-        using var process = Process.Start(startInfo);
-        var stdoutTask = process!.StandardOutput.ReadToEndAsync();
+        using var process = Process.Start(startInfo) ?? throw new InvalidOperationException("Failed to start build process.");
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
         var stderrTask = process.StandardError.ReadToEndAsync();
 
         if (!process.WaitForExit(60000))

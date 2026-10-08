@@ -16,7 +16,7 @@ public class GpuBigFloatArithmeticTests
 {
     private GpuBigIntExecutionContext CreateContext(GpuWorkspace ctx)
     {
-        return new GpuBigIntExecutionContext(ctx, ctx.MemoryManager, default!, ctx.Stream);
+        return new GpuBigIntExecutionContext(ctx, ctx.MemoryManager, ctx.Stream);
     }
 
     [SkippableFact]
