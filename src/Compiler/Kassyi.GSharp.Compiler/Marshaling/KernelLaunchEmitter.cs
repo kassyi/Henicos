@@ -27,7 +27,7 @@ internal static class KernelLaunchEmitter
                     writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
                 }
             }
-            else if ((!isDevicePtr && p.Type is IArrayTypeSymbol) ||
+            else if ((!isDevicePtr && IsArrayLikeType(p.Type, out _)) ||
                      (!isDevicePtr && p.RefKind is RefKind.Ref or RefKind.Out))
             {
                 writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
@@ -125,7 +125,6 @@ internal static class KernelLaunchEmitter
     /// <summary>Emits cleanup code to asynchronously free allocated device memory buffers.</summary>
     internal static void WriteCleanup(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
-
         foreach (var p in method.Parameters)
         {
             WriteParameterFree(writer, p, isDevicePtr);
@@ -144,15 +143,63 @@ internal static class KernelLaunchEmitter
         }
     }
 
+    internal static bool IsArrayLikeType(ITypeSymbol type, out ITypeSymbol elementType)
+    {
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            elementType = arrayType.ElementType;
+            return true;
+        }
+
+        if (type is INamedTypeSymbol { IsGenericType: true } genericType &&
+            genericType.ContainingNamespace.ToString() is "System" or "System.Collections.Immutable")
+        {
+            if (genericType.Name is "Span" or "ReadOnlySpan" or "Memory" or "ReadOnlyMemory" or "ArraySegment"
+                or "ImmutableArray")
+            {
+                elementType = genericType.TypeArguments[0];
+                return true;
+            }
+        }
+
+        elementType = null!;
+        return false;
+    }
+
+    private static string GetSpanExpression(IParameterSymbol p)
+    {
+        if (p.Type is INamedTypeSymbol { Name: "Memory" or "ReadOnlyMemory" })
+        {
+            return $"{p.Name}.Span";
+        }
+        else if (p.Type is INamedTypeSymbol { Name: "ArraySegment" or "ImmutableArray" })
+        {
+            return $"{p.Name}.AsSpan()";
+        }
+
+        return p.Name;
+    }
+
     private static void WriteParameterMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex, bool isDevicePtr)
     {
-        if (isDevicePtr && (p.Type is IArrayTypeSymbol || CudaLayoutRules.IsCustomStruct(p.Type) ||
+        if (isDevicePtr && (IsArrayLikeType(p.Type, out _) || CudaLayoutRules.IsCustomStruct(p.Type) ||
                             p.RefKind is RefKind.Ref or RefKind.Out))
         {
-            var kind = p.Type is IArrayTypeSymbol ? "array" :
+            var kind = IsArrayLikeType(p.Type, out _) ? "array" :
                 CudaLayoutRules.IsCustomStruct(p.Type) ? "struct" : "scalar";
             writer.AppendLine($"// Marshal device {kind}: {p.Name}");
-            writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name};");
+            if (kind == "array")
+            {
+                writer.AppendLine($"IntPtr* proxy_{p.Name} = stackalloc IntPtr[2];");
+                writer.AppendLine($"proxy_{p.Name}[0] = {p.Name};");
+                writer.AppendLine($"((int*)(proxy_{p.Name} + 1))[0] = 0; // Length is unknown for raw IntPtr");
+                writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{p.Name};");
+            }
+            else
+            {
+                writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name};");
+            }
+
             return;
         }
 
@@ -160,9 +207,9 @@ internal static class KernelLaunchEmitter
         {
             WriteCustomStructMarshal(writer, p, paramIndex, isDevicePtr);
         }
-        else if (p.Type is IArrayTypeSymbol arrayType)
+        else if (IsArrayLikeType(p.Type, out var elementType))
         {
-            WriteArrayMarshal(writer, p, arrayType, paramIndex);
+            WriteArrayMarshal(writer, p, elementType, paramIndex);
         }
         else if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
@@ -216,7 +263,7 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void WriteArrayMarshal(SourceWriter writer, IParameterSymbol p, IArrayTypeSymbol arrayType,
+    private static void WriteArrayMarshal(SourceWriter writer, IParameterSymbol p, ITypeSymbol elementType,
         int paramIndex)
     {
         GetArrayDirection(p, out var hasIn, out var hasOut);
@@ -225,14 +272,19 @@ internal static class KernelLaunchEmitter
 
         writer.AppendLine($"// Marshal array: {p.Name}");
         writer.Append($"int {p.Name}_size = {p.Name}.Length * sizeof(");
-        writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
+        writer.AppendFullyQualifiedCsharpName(elementType);
         writer.AppendLine(");");
+
+        writer.AppendLine($"IntPtr* proxy_{p.Name} = stackalloc IntPtr[2];");
+        writer.AppendLine($"proxy_{p.Name}[0] = IntPtr.Zero;");
+        writer.AppendLine($"((int*)(proxy_{p.Name} + 1))[0] = {p.Name}.Length;");
 
         writer.AppendLine($"if ({p.Name}_size > 0)");
         using (writer.Scope())
         {
             writer.AppendLine(
                 $"CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_{p.Name}, (IntPtr){p.Name}_size, hStream));");
+            writer.AppendLine($"proxy_{p.Name}[0] = d_{p.Name};");
 
             if (isOutOnly)
             {
@@ -240,29 +292,21 @@ internal static class KernelLaunchEmitter
             }
             else
             {
-                writer.AppendLine(
-                    $"System.Runtime.InteropServices.GCHandle handle_{p.Name} =" +
-                    $" System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
-
-                writer.AppendLine("try");
+                var spanExpr = GetSpanExpression(p);
+                writer.Append("fixed (");
+                writer.AppendFullyQualifiedCsharpName(elementType);
+                writer.AppendLine($"* p_{p.Name} = {spanExpr})");
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"IntPtr p_{p.Name} = handle_{p.Name}.AddrOfPinnedObject();");
                     writer.AppendLine(
                         $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(" +
-                        $"d_{p.Name}, p_{p.Name}, (IntPtr){p.Name}_size, hStream));");
+                        $"d_{p.Name}, (IntPtr)p_{p.Name}, (IntPtr){p.Name}_size, hStream));");
                     writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
-                }
-
-                writer.AppendLine("finally");
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"handle_{p.Name}.Free();");
                 }
             }
         }
 
-        writer.AppendLine($"kernelParams[{paramIndex}] = &d_{p.Name};");
+        writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{p.Name};");
     }
 
     private static void WriteRefOrOutScalarMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex)
@@ -346,7 +390,7 @@ internal static class KernelLaunchEmitter
 
     public static void WriteParameterUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
-        if (isDevicePtr && (p.Type is IArrayTypeSymbol || CudaLayoutRules.IsCustomStruct(p.Type) ||
+        if (isDevicePtr && (IsArrayLikeType(p.Type, out _) || CudaLayoutRules.IsCustomStruct(p.Type) ||
                             p.RefKind is RefKind.Ref or RefKind.Out))
         {
             return;
@@ -356,7 +400,7 @@ internal static class KernelLaunchEmitter
         {
             WriteCustomStructUnmarshal(writer, p, isDevicePtr);
         }
-        else if (p.Type is IArrayTypeSymbol)
+        else if (IsArrayLikeType(p.Type, out _))
         {
             WriteArrayUnmarshal(writer, p, isDevicePtr);
         }
@@ -416,22 +460,16 @@ internal static class KernelLaunchEmitter
         writer.AppendLine($"if ({p.Name}_size > 0 && d_{p.Name} != IntPtr.Zero)");
         using (writer.Scope())
         {
-            writer.AppendLine(
-                $"System.Runtime.InteropServices.GCHandle handleBack_{p.Name} =" +
-                $" System.Runtime.InteropServices.GCHandle.Alloc({p.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
-            writer.AppendLine("try");
+            var spanExpr = GetSpanExpression(p);
+            writer.Append("fixed (");
+            IsArrayLikeType(p.Type, out var elementType);
+            writer.AppendFullyQualifiedCsharpName(elementType);
+            writer.AppendLine($"* p_{p.Name} = {spanExpr})");
             using (writer.Scope())
             {
-                writer.AppendLine($"IntPtr p_{p.Name} = handleBack_{p.Name}.AddrOfPinnedObject();");
                 writer.AppendLine(
-                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_{p.Name}, d_{p.Name}, (IntPtr){p.Name}_size, hStream));");
+                    $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_{p.Name}, d_{p.Name}, (IntPtr){p.Name}_size, hStream));");
                 writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
-            }
-
-            writer.AppendLine("finally");
-            using (writer.Scope())
-            {
-                writer.AppendLine($"handleBack_{p.Name}.Free();");
             }
         }
     }

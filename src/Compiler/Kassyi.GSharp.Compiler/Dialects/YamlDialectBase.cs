@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Marshaling;
+
 namespace Kassyi.GSharp.Compiler.Dialects;
 
 public abstract class YamlDialectBase : ITranspilerDialect
@@ -20,9 +22,22 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         if (typeSymbol is IArrayTypeSymbol array)
         {
+            context.Emitter.Writer.Append("GSharpArray<");
             AppendType(ref context, array.ElementType);
-            context.Emitter.Writer.Append("*");
+            context.Emitter.Writer.Append(">");
             return;
+        }
+
+        if (typeSymbol is INamedTypeSymbol { IsGenericType: true } genericType &&
+            genericType.ContainingNamespace.ToString() is "System" or "System.Collections.Immutable")
+        {
+            if (genericType.Name is "Span" or "ReadOnlySpan" or "Memory" or "ReadOnlyMemory" or "ArraySegment" or "ImmutableArray")
+            {
+                context.Emitter.Writer.Append("GSharpArray<");
+                AppendType(ref context, genericType.TypeArguments[0]);
+                context.Emitter.Writer.Append(">");
+                return;
+            }
         }
 
         if (IsCuda && typeSymbol.TypeKind == TypeKind.Delegate)
@@ -165,7 +180,12 @@ public abstract class YamlDialectBase : ITranspilerDialect
         ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol)
     {
         var isRefPointer = p.Modifiers.Any(SyntaxKind.RefKeyword) || p.Modifiers.Any(SyntaxKind.OutKeyword);
-        var isPointerType = typeSymbol is IPointerTypeSymbol or IArrayTypeSymbol;
+        var isPointerType = typeSymbol is IPointerTypeSymbol;
+        
+        var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(p.SyntaxTree);
+        var paramSymbol = paramSemanticModel.GetDeclaredSymbol(p);
+        var isReadOnly = paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
+        var isArray = typeSymbol != null && KernelLaunchEmitter.IsArrayLikeType(typeSymbol, out var _);
 
         if (typeSymbol is INamedTypeSymbol { IsGenericType: true, Name: TypeConstants.SharedMemoryType } namedType &&
             namedType.ContainingNamespace.IsCoreNamespace())
@@ -173,6 +193,18 @@ public abstract class YamlDialectBase : ITranspilerDialect
             AppendType(ref context, namedType.TypeArguments[0]);
             context.Emitter.Writer.Append("*");
             isPointerType = true;
+        }
+        else if (isArray)
+        {
+            KernelLaunchEmitter.IsArrayLikeType(typeSymbol, out var elementType);
+            context.Emitter.Writer.Append("GSharpArray<");
+            if (isReadOnly)
+            {
+                context.Emitter.Writer.Append("const ");
+            }
+
+            AppendType(ref context, elementType);
+            context.Emitter.Writer.Append(">");
         }
         else
         {
