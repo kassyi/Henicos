@@ -21,10 +21,7 @@ public class StackLinqGpuBenchmark
             _data[i] = i;
         }
 
-        for (int i = 0; i < Size / 10; i++)
-        {
-            _data[i] = 0;
-        }
+        Array.Clear(_data, 0, Size / 10);
 
         _endMarker = _data[(int)(Size * 0.9)];
         

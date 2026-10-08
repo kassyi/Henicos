@@ -1,3 +1,5 @@
+using Kassyi.ZeroAlloc.Linq;
+
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public class ReductionBenchmark : IComputeBenchmark
@@ -42,7 +44,6 @@ public class ReductionBenchmark : IComputeBenchmark
     {
         for (var b = 0; b < Blocks; b++)
         {
-            var sum = 0.0f;
             var start = b * ElementsPerBlock;
             var end = start + ElementsPerBlock;
             if (end > N)
@@ -50,16 +51,10 @@ public class ReductionBenchmark : IComputeBenchmark
                 end = N;
             }
 
-            for (var i = start; i < end; i++)
-            {
-                var v = _input[i];
-                sum += v.X + v.Y + v.Z + v.W;
-            }
-
-            _outputCpu[b] = sum;
+            _outputCpu[b] = _input.AsSpan(start, end - start).AsStackEnumerable().Sum(v => v.X + v.Y + v.Z + v.W);
         }
 
-        _finalResultCpu = Sum(_outputCpu);
+        _finalResultCpu = _outputCpu.AsStackEnumerable().Sum();
     }
 
     public void RunGSharp()
@@ -68,7 +63,7 @@ public class ReductionBenchmark : IComputeBenchmark
             _input, _outputGsharp, N,
             gridDimX: Blocks, blockDimX: ThreadsPerBlock);
 
-        _finalResultGsharp = Sum(_outputGsharp);
+        _finalResultGsharp = _outputGsharp.AsStackEnumerable().Sum();
     }
 
     public void RunNativeCuda()
@@ -77,18 +72,7 @@ public class ReductionBenchmark : IComputeBenchmark
             _input, _outputNative, N,
             gridDimX: Blocks, blockDimX: ThreadsPerBlock);
 
-        _finalResultNative = Sum(_outputNative);
-    }
-
-    private static float Sum(float[] array)
-    {
-        var sum = 0f;
-        foreach (var t in array)
-        {
-            sum += t;
-        }
-
-        return sum;
+        _finalResultNative = _outputNative.AsStackEnumerable().Sum();
     }
 
     public void Verify()

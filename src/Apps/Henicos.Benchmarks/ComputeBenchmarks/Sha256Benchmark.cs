@@ -51,18 +51,27 @@ public class Sha256Benchmark : IComputeBenchmark
 
     public void Verify()
     {
-        for (var i = 0; i < N * 8; i++)
+        if (!_outputCpu.AsSpan().SequenceEqual(_outputGsharp))
         {
-            if (_outputCpu[i] != _outputGsharp[i])
+            for (var i = 0; i < N * 8; i++)
             {
-                throw new Exception(
-                    $"Mismatch at hash output index {i}: CPU={_outputCpu[i]:X8}, G#={_outputGsharp[i]:X8}");
+                if (_outputCpu[i] != _outputGsharp[i])
+                {
+                    throw new Exception(
+                        $"Mismatch at hash output index {i}: CPU={_outputCpu[i]:X8}, G#={_outputGsharp[i]:X8}");
+                }
             }
+        }
 
-            if (_outputCpu[i] != _outputNative[i])
+        if (!_outputCpu.AsSpan().SequenceEqual(_outputNative))
+        {
+            for (var i = 0; i < N * 8; i++)
             {
-                throw new Exception(
-                    $"Mismatch at hash output index {i}: CPU={_outputCpu[i]:X8}, Native={_outputNative[i]:X8}");
+                if (_outputCpu[i] != _outputNative[i])
+                {
+                    throw new Exception(
+                        $"Mismatch at hash output index {i}: CPU={_outputCpu[i]:X8}, Native={_outputNative[i]:X8}");
+                }
             }
         }
     }

@@ -1,3 +1,5 @@
+using Kassyi.ZeroAlloc.Linq;
+
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static class ComputeBenchmarkRunner
@@ -65,19 +67,7 @@ public static class ComputeBenchmarkRunner
             ComputeBenchmarkReporter.ReportTable(results, logOut);
         }
 
-        var allSucceeded = true;
-        foreach (var r in results)
-        {
-            if (r.Success)
-            {
-                continue;
-            }
-
-            allSucceeded = false;
-            break;
-        }
-
-        return allSucceeded;
+        return results.AsStackEnumerable().All(r => r.Success);
     }
 
     public static List<BenchmarkResult> RunSuite(string suiteName, int iterations, TextWriter logOut)
