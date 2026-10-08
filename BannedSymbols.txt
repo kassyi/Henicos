@@ -34,6 +34,9 @@
 #      - Generic Methods: Double backticks for method type parameters in signature (e.g., IEnumerable{``0}, Func{``0,System.Boolean}).
 # ==============================================================================
 
+# 1. Regular Expressions prohibition (Enforces Grammar & Performance)
+T:System.Text.RegularExpressions.Regex;Regular expressions are strictly prohibited (Violates YES AST / Anti-Pattern). Use string matching operations or Roslyn instead.
+
 M:Microsoft.CodeAnalysis.ISymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
 M:Microsoft.CodeAnalysis.ITypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.
 M:Microsoft.CodeAnalysis.INamedTypeSymbol.ToString;Avoid string allocations. Write directly via SourceWriter extensions (AppendFullyQualifiedCsharpName, AppendFullyQualifiedCppName) or use SymbolExtensions.GetFullyQualifiedName() if a string is required.

@@ -12,7 +12,10 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     public ITaskItem[] CppSources { get; set; } = [];
 
     /// <summary>Gets or sets a value indicating whether to compile for multiple architectures (x64 and arm64).</summary>
-    public bool GSharpMultiTarget { get; set; }
+    public bool GSharpMultiTarget
+    {
+        get; set;
+    }
 
     /// <summary>Gets or sets the resulting compiled native DLL task items.</summary>
     [Output]
