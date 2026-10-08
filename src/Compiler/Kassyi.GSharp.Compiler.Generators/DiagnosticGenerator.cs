@@ -159,7 +159,31 @@ public static partial class DiagnosticGenerator
         }
     }
 
-    private static string Escape(string? s) => s?.Replace("\"", "\\\"") ?? "";
+    private static string Escape(string? s)
+    {
+        if (string.IsNullOrEmpty(s))
+        {
+            return "";
+        }
+
+        if (s.IndexOf('"') < 0)
+        {
+            return s;
+        }
+
+        var sb = new StringBuilder(s.Length + 4);
+        foreach (var c in s)
+        {
+            if (c == '"')
+            {
+                sb.Append('\\');
+            }
+
+            sb.Append(c);
+        }
+
+        return sb.ToString();
+    }
 
     private static bool IsValidId(string id)
     {

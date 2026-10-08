@@ -131,6 +131,6 @@ internal static class CppNameFormatter
 
     public static string TrimContextSuffix(string name)
     {
-        return name.EndsWith("Context") ? name.Substring(0, name.Length - 7) : name;
+        return name.EndsWith("Context") ? name[..^7] : name;
     }
 }

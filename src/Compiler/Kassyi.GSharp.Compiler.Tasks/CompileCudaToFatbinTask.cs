@@ -132,8 +132,12 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                 continue;
             }
             originalPathsFiltered.Add(sp);
-            var escapedPath = sp.Replace("\\", "/");
-            bundleContent.AppendLine($"#include \"{escapedPath}\"");
+            bundleContent.Append("#include \"");
+            foreach (var c in sp)
+            {
+                bundleContent.Append(c == '\\' ? '/' : c);
+            }
+            bundleContent.AppendLine("\"");
         }
 
         try
@@ -186,7 +190,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return true;
         }
 
-        _architectures = TargetArchitectures.Split([';'], StringSplitOptions.RemoveEmptyEntries);
+        _architectures = SplitSemicolon(TargetArchitectures);
         _vcvarsEnv = GetVcvarsEnvironment("x64");
         if (_vcvarsEnv != null)
         {
@@ -316,10 +320,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         args.Append("--ptxas-options=-v,--warn-on-spills ");
         foreach (var arch in architectures)
         {
-            var parts = arch.Split(',');
-            if (parts.Length == 2)
+            var commaIdx = arch.IndexOf(',');
+            if (commaIdx > 0)
             {
-                args.Append($"-gencode arch={parts[0]},code={parts[1]} ");
+                args.Append($"-gencode arch={arch[..commaIdx]},code={arch[(commaIdx + 1)..]} ");
             }
         }
 
@@ -428,6 +432,36 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return false;
         }
     }
+
+    private static string[] SplitSemicolon(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return [];
+        }
+
+        var list = new List<string>();
+        var span = value.AsSpan();
+        while (span.Length > 0)
+        {
+            var idx = span.IndexOf(';');
+            var segment = idx >= 0 ? span.Slice(0, idx) : span;
+            var trimmed = segment.Trim();
+            if (trimmed.Length > 0)
+            {
+                list.Add(trimmed.ToString());
+            }
+
+            if (idx < 0)
+            {
+                break;
+            }
+
+            span = span.Slice(idx + 1);
+        }
+
+        return [.. list];
+    }
 }
 
 internal static class NvccOutputParser
@@ -479,7 +513,7 @@ internal static class NvccOutputParser
         {
             if (line.IndexOf("Function properties for", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                functionContext = line.Trim();
+                functionContext = line.AsSpan().Trim().ToString();
             }
 
             if ((line.IndexOf("ptxas warning", StringComparison.OrdinalIgnoreCase) < 0 ||
@@ -491,15 +525,15 @@ internal static class NvccOutputParser
 
             if (line.IndexOf("ptxas warning", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                spillLines.Add(line.Trim());
+                spillLines.Add(line.AsSpan().Trim().ToString());
             }
             else if (!string.IsNullOrEmpty(functionContext))
             {
-                spillLines.Add($"{functionContext} -> {line.Trim()}");
+                spillLines.Add($"{functionContext} -> {line.AsSpan().Trim().ToString()}");
             }
             else
             {
-                spillLines.Add(line.Trim());
+                spillLines.Add(line.AsSpan().Trim().ToString());
             }
         }
 
@@ -509,7 +543,7 @@ internal static class NvccOutputParser
         {
             if (HasSpill(line))
             {
-                spillLines.Add(line.Trim());
+                spillLines.Add(line.AsSpan().Trim().ToString());
             }
         }
 

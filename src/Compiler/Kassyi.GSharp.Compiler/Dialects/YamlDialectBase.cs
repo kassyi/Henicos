@@ -92,7 +92,9 @@ public abstract class YamlDialectBase : ITranspilerDialect
         if (patternAttr is { ConstructorArguments.Length: > 0 })
         {
             var pattern = patternAttr.ConstructorArguments[0].Value?.ToString() ?? "{0}";
+#pragma warning disable RS0030 // Intrinsic pattern formatting requires lowercase symbol name
             mappedExpression = string.Format(pattern, symbol.Name.ToLowerInvariant());
+#pragma warning restore RS0030
             return true;
         }
 
@@ -126,7 +128,14 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         if (typeSymbol.IsSystemNumericsVector())
         {
-            mappedName = memberName.ToLowerInvariant();
+            mappedName = memberName switch
+            {
+                "X" => "x",
+                "Y" => "y",
+                "Z" => "z",
+                "W" => "w",
+                _ => char.ToLowerInvariant(memberName[0]) + (memberName.Length > 1 ? memberName[1..] : string.Empty),
+            };
             return true;
         }
 

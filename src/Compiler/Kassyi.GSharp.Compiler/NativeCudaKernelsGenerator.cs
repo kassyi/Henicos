@@ -62,7 +62,7 @@ public class NativeCudaKernelsGenerator : IIncrementalGenerator
 
                 if (currentIndex > start)
                 {
-                    builder.Add(textStr.Substring(start, currentIndex - start));
+                    builder.Add(textStr[start..currentIndex]);
                 }
             }
 

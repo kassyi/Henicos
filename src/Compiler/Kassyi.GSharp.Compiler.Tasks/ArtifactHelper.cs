@@ -27,19 +27,19 @@ internal static class ArtifactHelper
 
         try
         {
-            var trimmed = envKey.Trim();
+            var trimmed = envKey.AsSpan().Trim();
             if (trimmed.Length == 64)
             {
                 var key = new byte[32];
                 for (var i = 0; i < 32; i++)
                 {
-                    key[i] = Convert.ToByte(trimmed.Substring(i * 2, 2), 16);
+                    key[i] = Convert.ToByte(trimmed.Slice(i * 2, 2).ToString(), 16);
                 }
 
                 return key;
             }
 
-            var base64Key = Convert.FromBase64String(trimmed);
+            var base64Key = Convert.FromBase64String(trimmed.ToString());
             if (base64Key.Length == 32)
             {
                 return base64Key;
@@ -60,7 +60,7 @@ internal static class ArtifactHelper
         var fileName = Path.GetFileNameWithoutExtension(sourcePath);
         if (fileName.EndsWith(".g", StringComparison.OrdinalIgnoreCase))
         {
-            fileName = fileName.Substring(0, fileName.Length - 2);
+            fileName = fileName[..^2];
         }
 
         return fileName;
