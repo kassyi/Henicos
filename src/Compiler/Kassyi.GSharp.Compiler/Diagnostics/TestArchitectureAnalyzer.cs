@@ -101,7 +101,13 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
     {
         foreach (var attribute in symbol.GetAttributes())
         {
-            if (attribute.AttributeClass?.Name != "TraitAttribute")
+            var attrName = attribute.AttributeClass?.Name;
+            if (attrName is "CategoryAttribute" or "TestCategoryAttribute" or "TestTargetAttribute" or "ScenarioAttribute")
+            {
+                return true;
+            }
+
+            if (attrName != "TraitAttribute")
             {
                 continue;
             }
