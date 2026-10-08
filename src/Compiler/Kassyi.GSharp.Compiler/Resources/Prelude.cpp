@@ -314,3 +314,85 @@ inline T __gsharp_warp_shuffle_read_sync(TContext* _ctx, uint32_t mask, T val, u
 namespace Hint {
     inline void Unroll() {}
 }
+
+// CPU Polyfills for PTX hardware intrinsics
+inline unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {
+    if (len <= 0) return 0;
+    if (len >= 32) return a >> pos;
+    return (a >> pos) & ((1U << len) - 1);
+}
+
+inline unsigned long long __gsharp_bfe64(unsigned long long a, int pos, int len) {
+    if (len <= 0) return 0;
+    if (len >= 64) return a >> pos;
+    return (a >> pos) & ((1ULL << len) - 1);
+}
+
+inline unsigned int __gsharp_bfi(unsigned int a, unsigned int b, int pos, int len) {
+    if (len <= 0) return b;
+    unsigned int mask = len >= 32 ? 0xFFFFFFFFU : ((1U << len) - 1);
+    return (b & ~(mask << pos)) | ((a & mask) << pos);
+}
+
+inline unsigned long long __gsharp_bfi64(unsigned long long a, unsigned long long b, int pos, int len) {
+    if (len <= 0) return b;
+    unsigned long long mask = len >= 64 ? 0xFFFFFFFFFFFFFFFFULL : ((1ULL << len) - 1);
+    return (b & ~(mask << pos)) | ((a & mask) << pos);
+}
+
+inline unsigned int __gsharp_lop3(unsigned int a, unsigned int b, unsigned int c, unsigned char immLut) {
+    unsigned int res = 0;
+    for (int i = 0; i < 32; i++) {
+        int bitA = (a >> i) & 1;
+        int bitB = (b >> i) & 1;
+        int bitC = (c >> i) & 1;
+        int idx = (bitA << 2) | (bitB << 1) | bitC;
+        if ((immLut >> idx) & 1) res |= (1U << i);
+    }
+    return res;
+}
+
+inline unsigned long long __brevll(unsigned long long val) {
+    unsigned long long res = 0;
+    for (int i = 0; i < 64; i++) {
+        if ((val >> i) & 1) res |= (1ULL << (63 - i));
+    }
+    return res;
+}
+
+inline int __dp4a(int a, int b, int c) {
+    const signed char* va = reinterpret_cast<const signed char*>(&a);
+    const signed char* vb = reinterpret_cast<const signed char*>(&b);
+    return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
+}
+
+inline unsigned int __dp4a(unsigned int a, unsigned int b, unsigned int c) {
+    const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
+    const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
+    return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
+}
+
+inline unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {
+    const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
+    const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
+    unsigned int diff = (unsigned int)std::abs((int)va[0] - (int)vb[0])
+                      + (unsigned int)std::abs((int)va[1] - (int)vb[1])
+                      + (unsigned int)std::abs((int)va[2] - (int)vb[2])
+                      + (unsigned int)std::abs((int)va[3] - (int)vb[3]);
+    return c + diff;
+}
+
+template<typename T>
+inline unsigned int __match_any_sync(unsigned int mask, T val) {
+    return mask & 1;
+}
+
+template<typename T>
+inline unsigned int __match_all_sync(unsigned int mask, T val, int* pred) {
+    if (pred) *pred = 1;
+    return mask & 1;
+}
+
+inline void __nanosleep(unsigned int duration) {}
+inline void __syncwarp(unsigned int mask = 0xFFFFFFFFU) {}
+
