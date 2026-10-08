@@ -25,4 +25,42 @@ public static partial class NumericsAndHwMathKernels
         u64Data[5] = BitOperations.RotateLeft(u64Val, 10);
         u64Data[6] = BitOperations.RotateRight(u64Val, 7);
     }
+
+    [GpuKernel]
+    public static void PtxIntrinsicsExpansionKernel(
+        uint[] u32Out,
+        ulong[] u64Out,
+        int[] i32Out)
+    {
+        uint u32Val = 0x12345678u;
+        ulong u64Val = 0x0123456789ABCDEFul;
+
+        u32Out[0] = Gpu.BitFieldExtract(u32Val, 4, 8);
+        u64Out[0] = Gpu.BitFieldExtract(u64Val, 8, 16);
+
+        u32Out[1] = Gpu.BitFieldInsert(0xFFu, u32Val, 4, 8);
+        u64Out[1] = Gpu.BitFieldInsert(0xFFFFul, u64Val, 8, 16);
+
+        u32Out[2] = Gpu.Lop3(u32Val, 0x0F0F0F0Fu, 0xAAAAAAAAu, 0x54);
+
+        u32Out[3] = Gpu.CountTrailingZeros(u32Val);
+        u64Out[2] = Gpu.CountTrailingZeros(u64Val);
+
+        u64Out[3] = Gpu.BitReverse64(u64Val);
+
+        i32Out[0] = Gpu.DotProduct4(0x01020304, 0x05060708, 10);
+        u32Out[4] = Gpu.DotProduct4(0x01020304u, 0x05060708u, 10u);
+
+        u32Out[5] = Gpu.Sad4(0x10203040u, 0x01020304u, 5u);
+
+        u32Out[6] = Gpu.MatchAnySync(0xFFFFFFFFu, u32Val);
+
+        int matchPred = 0;
+        u32Out[7] = Gpu.MatchAllSync(0xFFFFFFFFu, u32Val, ref matchPred);
+
+        Gpu.NanoSleep(10);
+        Gpu.SyncWarp();
+
+        Gpu.ReductionAdd(ref u32Out[8], 42u);
+    }
 }
