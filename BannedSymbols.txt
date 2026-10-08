@@ -68,51 +68,51 @@ M:Microsoft.CodeAnalysis.SyntaxNode.ToString;Converting AST nodes to string is s
 M:Microsoft.CodeAnalysis.SyntaxNode.ToFullString;Converting AST nodes to string is strictly prohibited (Violates YES AST). Inspect and transform code using SyntaxKind, SyntaxNode, IOperation, or ISymbol directly.
 
 # LINQ & Functional iteration prohibitions (Enforces Static Determinism and Zero-Allocation)
-N:System.Linq;LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-T:System.Linq.Enumerable;LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-T:System.Linq.Queryable;LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-T:System.Linq.ParallelEnumerable;PLINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+N:System.Linq;Standard LINQ is strictly prohibited due to heap allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable() or explicit loops instead.
+T:System.Linq.Enumerable;Standard LINQ is strictly prohibited due to heap allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable() or explicit loops instead.
+T:System.Linq.Queryable;Standard LINQ is strictly prohibited due to heap allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable() or explicit loops instead.
+T:System.Linq.ParallelEnumerable;PLINQ is strictly prohibited in G#. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
 T:System.Linq.Expressions.Expression;Expression trees are prohibited in G# (YES Static Determinism)
 
 # System.Linq.Enumerable extension methods
-M:System.Linq.Enumerable.Where``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.Where``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Int32,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.Select``2(System.Collections.Generic.IEnumerable{``0},System.Func{``0,``1});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.Select``2(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Int32,``1});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.SelectMany``2(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Collections.Generic.IEnumerable{``1}});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.FirstOrDefault``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.FirstOrDefault``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.First``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.First``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.SingleOrDefault``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.SingleOrDefault``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.Single``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.Single``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.All``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.ToList``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.ToArray``1(System.Collections.Generic.IEnumerable{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.OfType``1(System.Collections.IEnumerable);LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Linq.Enumerable.Cast``1(System.Collections.IEnumerable);LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Linq.Enumerable.Where``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().Where() instead.
+M:System.Linq.Enumerable.Where``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Int32,System.Boolean});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().Where() instead.
+M:System.Linq.Enumerable.Select``2(System.Collections.Generic.IEnumerable{``0},System.Func{``0,``1});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().Select() instead.
+M:System.Linq.Enumerable.Select``2(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Int32,``1});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().Select() instead.
+M:System.Linq.Enumerable.SelectMany``2(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Collections.Generic.IEnumerable{``1}});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Linq.Enumerable.FirstOrDefault``1(System.Collections.Generic.IEnumerable{``0});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().FirstOrDefault() or explicit loops instead.
+M:System.Linq.Enumerable.FirstOrDefault``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().FirstOrDefault() or explicit loops instead.
+M:System.Linq.Enumerable.First``1(System.Collections.Generic.IEnumerable{``0});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().First() instead.
+M:System.Linq.Enumerable.First``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().First() instead.
+M:System.Linq.Enumerable.SingleOrDefault``1(System.Collections.Generic.IEnumerable{``0});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().SingleOrDefault() instead.
+M:System.Linq.Enumerable.SingleOrDefault``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().SingleOrDefault() instead.
+M:System.Linq.Enumerable.Single``1(System.Collections.Generic.IEnumerable{``0});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().Single() instead.
+M:System.Linq.Enumerable.Single``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().Single() instead.
+M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().Any() instead.
+M:System.Linq.Enumerable.Any``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().Any() instead.
+M:System.Linq.Enumerable.All``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().All() instead.
+M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().Count() or .Length/.Count property instead.
+M:System.Linq.Enumerable.Count``1(System.Collections.Generic.IEnumerable{``0},System.Func{``0,System.Boolean});LINQ is prohibited due to allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().Count() instead.
+M:System.Linq.Enumerable.ToList``1(System.Collections.Generic.IEnumerable{``0});LINQ ToList() causes heap allocations. Use ArrayPool, ImmutableArray, or explicit loops instead.
+M:System.Linq.Enumerable.ToArray``1(System.Collections.Generic.IEnumerable{``0});LINQ ToArray() causes heap allocations. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) via .AsStackEnumerable().ToArray() or ArrayPool instead.
+M:System.Linq.Enumerable.OfType``1(System.Collections.IEnumerable);LINQ is prohibited due to allocations. Use explicit pattern matching in a loop instead.
+M:System.Linq.Enumerable.Cast``1(System.Collections.IEnumerable);LINQ is prohibited due to allocations. Use explicit loop or Cast methods instead.
 
 # System.Collections.Immutable.ImmutableArrayExtensions LINQ-like methods
-M:System.Collections.Immutable.ImmutableArrayExtensions.FirstOrDefault``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.FirstOrDefault``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.First``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.First``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.SingleOrDefault``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.SingleOrDefault``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.Single``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.Single``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.Any``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.Any``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.All``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.Where``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.Select``2(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,``1});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
-M:System.Collections.Immutable.ImmutableArrayExtensions.ToArray``1(System.Collections.Immutable.ImmutableArray{``0});LINQ is strictly prohibited in G# (YES Static Determinism and Zero-Allocation)
+M:System.Collections.Immutable.ImmutableArrayExtensions.FirstOrDefault``1(System.Collections.Immutable.ImmutableArray{``0});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.FirstOrDefault``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.First``1(System.Collections.Immutable.ImmutableArray{``0});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.First``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.SingleOrDefault``1(System.Collections.Immutable.ImmutableArray{``0});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.SingleOrDefault``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.Single``1(System.Collections.Immutable.ImmutableArray{``0});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.Single``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.Any``1(System.Collections.Immutable.ImmutableArray{``0});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.Any``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.All``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.Where``1(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,System.Boolean});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.Select``2(System.Collections.Immutable.ImmutableArray{``0},System.Func{``0,``1});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
+M:System.Collections.Immutable.ImmutableArrayExtensions.ToArray``1(System.Collections.Immutable.ImmutableArray{``0});LINQ-like extension on ImmutableArray causes allocations/boxing. Use zero-allocation 'Kassyi.ZeroAlloc.Linq' (StackLinq) or explicit loops instead.
 
 # String manipulation prohibitions (Enforces Zero-Allocation and Span/AST-based handling)
 M:System.String.Substring(System.Int32);String manipulation is prohibited. Use Range/Index ([..]) or spans instead.
