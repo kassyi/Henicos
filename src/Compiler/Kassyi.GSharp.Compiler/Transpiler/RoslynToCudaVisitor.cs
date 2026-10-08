@@ -397,11 +397,18 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         Context.Emitter.Writer.Append("case ");
         Visit(node.Value);
+        Context.Emitter.Writer.AppendLine(":");
+        var activeId = Context.Emitter.ActiveSwitchIds.Count > 0 ? Context.Emitter.ActiveSwitchIds.Peek().ToString() : "0";
+        Context.Emitter.Writer.Append($"__gsharp_switch_{activeId}_state_");
+        Visit(node.Value);
         Context.Emitter.Writer.Append(":");
     }
 
-    public override void VisitDefaultSwitchLabel(DefaultSwitchLabelSyntax node) =>
-        Context.Emitter.Writer.Append("default:");
+    public override void VisitDefaultSwitchLabel(DefaultSwitchLabelSyntax node)
+    {
+        var activeId = Context.Emitter.ActiveSwitchIds.Count > 0 ? Context.Emitter.ActiveSwitchIds.Peek().ToString() : "0";
+        Context.Emitter.Writer.Append($"default:\n__gsharp_switch_{activeId}_state_default:");
+    }
 
     public override void VisitBreakStatement(BreakStatementSyntax node)
         => StatementTranspilers.TranspileBreakStatement(node, ref Context);
