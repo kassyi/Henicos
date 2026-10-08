@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Cryptography;
 using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime.Fatbin;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
@@ -34,5 +35,43 @@ public class GpuKernelLoaderAotTests
             // Call SynchronizeDevice to ensure context binding is correct per-thread
             GpuKernelLoader.SynchronizeDevice();
         });
+    }
+
+    [Fact]
+    [Trait("Category", "SadPath")]
+    public void Test_LoadAotKernel_IncompatibleFatbin_ThrowsInvalidOperationException()
+    {
+        if (!GpuKernelLoader.IsDriverAvailable) return;
+
+        // Create a mock Fatbin targeted at sm_99 (a future architecture higher than any current physical GPU)
+        byte[] mockFatbin = FatbinParserTests.CreateMockFatbin(FatbinItemInfo.TypePtx, 990, 99, 0);
+        byte[] signature = Ed25519.Sign(mockFatbin, Ed25519.DefaultDevKeySeed);
+        byte[] signedFatbin = [.. mockFatbin, .. signature];
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            GpuKernelLoader.LoadAotKernel(signedFatbin, "dummy_kernel");
+        });
+
+        Assert.Contains("does not contain any PTX or cuBIN compatible with the current GPU", ex.Message);
+    }
+
+    [Fact]
+    [Trait("Category", "SadPath")]
+    public void Test_LoadModule_IncompatibleFatbin_ThrowsInvalidOperationException()
+    {
+        if (!GpuKernelLoader.IsDriverAvailable) return;
+
+        // Create a mock Fatbin targeted at sm_99 (a future architecture)
+        byte[] mockFatbin = FatbinParserTests.CreateMockFatbin(FatbinItemInfo.TypeCubin, 990, 99, 0);
+        byte[] signature = Ed25519.Sign(mockFatbin, Ed25519.DefaultDevKeySeed);
+        byte[] signedFatbin = [.. mockFatbin, .. signature];
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            GpuKernelLoader.LoadModule(signedFatbin);
+        });
+
+        Assert.Contains("does not contain any PTX or cuBIN compatible with the current GPU", ex.Message);
     }
 }

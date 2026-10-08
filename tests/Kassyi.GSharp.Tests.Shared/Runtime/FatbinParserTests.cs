@@ -440,37 +440,123 @@ public class FatbinParserTests
         Assert.Equal(imageMem.Items.Count, imageSpan.Items.Count);
     }
 
-    private static byte[] CreateMockFatbin(ushort type, uint computeVersion, ushort major, ushort minor)
+    [Theory]
+    [Trait("Category", "HappyPath")]
+    [InlineData(8, 0, 8, 0, true)]  // Exact match
+    [InlineData(8, 0, 8, 6, true)]  // Newer minor
+    [InlineData(8, 0, 9, 0, true)]  // Newer major
+    [InlineData(8, 6, 8, 0, false)] // Target older minor
+    [InlineData(8, 0, 7, 5, false)] // Target older major
+    public void Test_IsCompatibleWith_Ptx_ForwardCompatibility(ushort ptxMajor, ushort ptxMinor, int deviceMajor, int deviceMinor, bool expected)
+    {
+        byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypePtx, (uint)(ptxMajor * 10 + ptxMinor), ptxMajor, ptxMinor);
+        bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
+
+        Assert.True(parsed);
+        Assert.NotNull(image);
+        Assert.Equal(expected, image.IsCompatibleWith(deviceMajor, deviceMinor));
+    }
+
+    [Theory]
+    [Trait("Category", "HappyPath")]
+    [InlineData(8, 0, 8, 0, true)]  // Exact match
+    [InlineData(8, 0, 8, 6, false)] // Different minor
+    [InlineData(8, 0, 9, 0, false)] // Newer major (CUBIN is native machine code, not forward compatible)
+    [InlineData(8, 6, 8, 0, false)] // Older minor
+    [InlineData(8, 0, 7, 5, false)] // Older major
+    public void Test_IsCompatibleWith_Cubin_ExactMatchOnly(ushort cubinMajor, ushort cubinMinor, int deviceMajor, int deviceMinor, bool expected)
+    {
+        byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypeCubin, (uint)(cubinMajor * 10 + cubinMinor), cubinMajor, cubinMinor);
+        bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
+
+        Assert.True(parsed);
+        Assert.NotNull(image);
+        Assert.Equal(expected, image.IsCompatibleWith(deviceMajor, deviceMinor));
+    }
+
+    [Theory]
+    [Trait("Category", "SadPath")]
+    [InlineData(-1, 0)]
+    [InlineData(8, -1)]
+    [InlineData(-1, -1)]
+    public void Test_IsCompatibleWith_NegativeArchitecture_ReturnsFalse(int deviceMajor, int deviceMinor)
+    {
+        byte[] fatbinBytes = CreateMockFatbin(FatbinItemInfo.TypePtx, 80, 8, 0);
+        bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
+
+        Assert.True(parsed);
+        Assert.NotNull(image);
+        Assert.False(image.IsCompatibleWith(deviceMajor, deviceMinor));
+    }
+
+    [Fact]
+    [Trait("Category", "HappyPath")]
+    public void Test_IsCompatibleWith_MultipleItems_MatchesAny()
+    {
+        // FATBIN containing sm_86 CUBIN and sm_80 PTX
+        byte[] fatbinBytes = CreateMockFatbin(
+            (FatbinItemInfo.TypeCubin, 86u, (ushort)8, (ushort)6),
+            (FatbinItemInfo.TypePtx, 80u, (ushort)8, (ushort)0)
+        );
+
+        bool parsed = FatbinParser.TryParse(fatbinBytes, out FatbinImage? image);
+        Assert.True(parsed);
+        Assert.NotNull(image);
+
+        // On sm_86: Matches CUBIN (and PTX)
+        Assert.True(image.IsCompatibleWith(8, 6));
+
+        // On sm_80: Matches PTX
+        Assert.True(image.IsCompatibleWith(8, 0));
+
+        // On sm_90: Matches PTX forward compatibility
+        Assert.True(image.IsCompatibleWith(9, 0));
+
+        // On sm_75: Neither matches
+        Assert.False(image.IsCompatibleWith(7, 5));
+    }
+
+    internal static byte[] CreateMockFatbin(ushort type, uint computeVersion, ushort major, ushort minor)
+    {
+        return CreateMockFatbin([(type, computeVersion, major, minor)]);
+    }
+
+    internal static byte[] CreateMockFatbin(params (ushort type, uint computeVersion, ushort major, ushort minor)[] items)
     {
         using var ms = new MemoryStream();
         using var bw = new BinaryWriter(ms);
+
+        ulong payloadSize = (ulong)(items.Length * (80 + 16));
 
         // fat_elf_header (16 bytes)
         bw.Write(0xBA55ED50u); // magic
         bw.Write((ushort)1);   // version
         bw.Write((ushort)16);  // header_size
-        bw.Write((ulong)(80 + 16)); // payload items size (excluding header) = 96
+        bw.Write(payloadSize); // payload items size
 
-        // fat_elf_item (80 bytes header + 16 bytes dummy data)
-        bw.Write(type);             // 0x00: type
-        bw.Write((byte)1);          // 0x02: param_2
-        bw.Write((byte)1);          // 0x03: param_3
-        bw.Write(80u);              // 0x04: header_size
-        bw.Write(16UL);             // 0x08: size
-        bw.Write(16u);              // 0x10: compressed_size
-        bw.Write(0u);               // 0x14: param_4
-        bw.Write(minor);            // 0x18: minor
-        bw.Write(major);            // 0x1A: major
-        bw.Write(computeVersion);   // 0x1C: compute_version
-        bw.Write(0u);               // 0x20: name_off
-        bw.Write(0u);               // 0x24: name_len
-        bw.Write(0UL);              // 0x28: flags
-        bw.Write(0UL);              // 0x30: zero
-        bw.Write(16UL);             // 0x38: uncompressed_size
-        bw.Write(new byte[16]);     // 0x40 - 0x50: padding
+        foreach (var item in items)
+        {
+            // fat_elf_item (80 bytes header + 16 bytes dummy data)
+            bw.Write(item.type);           // 0x00: type
+            bw.Write((byte)1);             // 0x02: param_2
+            bw.Write((byte)1);             // 0x03: param_3
+            bw.Write(80u);                 // 0x04: header_size
+            bw.Write(16UL);                // 0x08: size
+            bw.Write(16u);                 // 0x10: compressed_size
+            bw.Write(0u);                  // 0x14: param_4
+            bw.Write(item.minor);          // 0x18: minor
+            bw.Write(item.major);          // 0x1A: major
+            bw.Write(item.computeVersion); // 0x1C: compute_version
+            bw.Write(0u);                  // 0x20: name_off
+            bw.Write(0u);                  // 0x24: name_len
+            bw.Write(0UL);                 // 0x28: flags
+            bw.Write(0UL);                 // 0x30: zero
+            bw.Write(16UL);                // 0x38: uncompressed_size
+            bw.Write(new byte[16]);        // 0x40 - 0x50: padding
 
-        // Item payload (16 bytes)
-        bw.Write(new byte[16]);
+            // Item payload (16 bytes)
+            bw.Write(new byte[16]);
+        }
 
         return ms.ToArray();
     }
