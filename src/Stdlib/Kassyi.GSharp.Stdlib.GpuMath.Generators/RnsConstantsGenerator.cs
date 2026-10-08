@@ -57,7 +57,7 @@ public class RnsConstantsGenerator : IIncrementalGenerator
 
         // Ensure we have enough primes (MaxModuliPerBase * 2 + 1 for SK)
         var requiredPrimes = MaxModuliPerBase * 2 + 1;
-        
+
         // Fallback: Calculate missing primes dynamically
         if (sortedPrimesList.Count == 0)
         {

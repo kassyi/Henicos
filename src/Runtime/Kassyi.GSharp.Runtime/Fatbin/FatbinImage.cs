@@ -8,38 +8,59 @@ public sealed class FatbinImage
     /// <summary>
     /// Gets the FATBIN magic number (expected to be <c>0xBA55ED50</c>).
     /// </summary>
-    public uint Magic { get; }
+    public uint Magic
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the FATBIN format version.
     /// </summary>
-    public ushort Version { get; }
+    public ushort Version
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the total size of the FATBIN binary payload in bytes (including headers, excluding appended signatures).
     /// </summary>
-    public ulong PayloadSize { get; }
+    public ulong PayloadSize
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets a value indicating whether a G# 32-byte SHA-256 signature is detected at the tail.
     /// Determined strictly by whether the source binary length equals <see cref="PayloadSize"/> + 32.
     /// </summary>
-    public bool HasGSharpSignature { get; }
+    public bool HasGSharpSignature
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the raw FATBIN binary payload (excluding signature).
     /// </summary>
-    public ReadOnlyMemory<byte> Payload { get; }
+    public ReadOnlyMemory<byte> Payload
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the appended 32-byte G# signature, or an empty memory slice if not signed.
     /// </summary>
-    public ReadOnlyMemory<byte> Signature { get; }
+    public ReadOnlyMemory<byte> Signature
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the metadata of all embedded modules (PTX or cuBIN) contained in this fatbin.
     /// </summary>
-    public IReadOnlyList<FatbinItemInfo> Items { get; }
+    public IReadOnlyList<FatbinItemInfo> Items
+    {
+        get;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FatbinImage"/> class.
@@ -87,37 +108,37 @@ public sealed class FatbinImage
             switch (item.Type)
             {
                 case FatbinItemInfo.TypePtx:
-                {
-                    // PTX: Forward compatible JIT compilation.
-                    // Can run if device architecture is equal to or newer than the PTX target architecture.
-                    if (deviceMajor > item.Major || (deviceMajor == item.Major && deviceMinor >= item.Minor))
                     {
-                        return true;
-                    }
+                        // PTX: Forward compatible JIT compilation.
+                        // Can run if device architecture is equal to or newer than the PTX target architecture.
+                        if (deviceMajor > item.Major || (deviceMajor == item.Major && deviceMinor >= item.Minor))
+                        {
+                            return true;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 case FatbinItemInfo.TypeCubin:
-                {
-                    // cuBIN (native ELF binary): Requires exact architecture match.
-                    if (item.Major == deviceMajor && item.Minor == deviceMinor)
                     {
-                        return true;
-                    }
+                        // cuBIN (native ELF binary): Requires exact architecture match.
+                        if (item.Major == deviceMajor && item.Minor == deviceMinor)
+                        {
+                            return true;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
                 default:
-                {
-                    // Fallback for custom or future types: check compute capability version bounds
-                    var targetVersion = deviceMajor * 10 + deviceMinor;
-                    if (targetVersion == (int)item.ComputeVersion)
                     {
-                        return true;
-                    }
+                        // Fallback for custom or future types: check compute capability version bounds
+                        var targetVersion = deviceMajor * 10 + deviceMinor;
+                        if (targetVersion == (int)item.ComputeVersion)
+                        {
+                            return true;
+                        }
 
-                    break;
-                }
+                        break;
+                    }
             }
 
         }

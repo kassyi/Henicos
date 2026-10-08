@@ -360,7 +360,7 @@ public static partial class GpuBigIntNttKernels
 
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
         SharedMemory<uint> sharedH = new SharedMemory<uint>(32);
-        
+
         for (int bIdx = BlockIndex.X; bIdx < numBlocks; bIdx += GridDimension.X)
         {
             int startIdx = bIdx * chunkSize;
@@ -486,7 +486,7 @@ public static partial class GpuBigIntNttKernels
     public static void ExecuteResolveNttCarriesApply(uint[] outputBuffer, uint[] blockCarries, int maxWordCount,
         int chunkSize, int numBlocks)
     {
-        Gpu.GridStrideLoop(numBlocks, globalBlockIdx => 
+        Gpu.GridStrideLoop(numBlocks, globalBlockIdx =>
         {
             var carry = blockCarries[globalBlockIdx];
             if (carry > 0)

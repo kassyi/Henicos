@@ -248,7 +248,10 @@ public static partial class GpuBigIntGcdKernels
                         {
                             if (vIsOne)
                             {
-                                for (int i = 0; i < ctx.NumWords; i++) ctx.X1[i] = ctx.X2[i];
+                                for (int i = 0; i < ctx.NumWords; i++)
+                                {
+                                    ctx.X1[i] = ctx.X2[i];
+                                }
                             }
 
                             ctx.Status[0] = 1; // Success

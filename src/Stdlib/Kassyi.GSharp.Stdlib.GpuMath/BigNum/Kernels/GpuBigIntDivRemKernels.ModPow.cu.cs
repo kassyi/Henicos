@@ -108,7 +108,10 @@ public static partial class GpuBigIntDivRemKernels
 
         int evalWords = aActualWords + 1;
         var subCtx = new GpuBigIntContext
-            { Operands = new OperandContext { CarryBuffer = ctx.CarryBuffer }, NumberOfWords = evalWords };
+        {
+            Operands = new OperandContext { CarryBuffer = ctx.CarryBuffer },
+            NumberOfWords = evalWords
+        };
 
         Gpu.GridStrideLoop(evalWords, idx =>
         {

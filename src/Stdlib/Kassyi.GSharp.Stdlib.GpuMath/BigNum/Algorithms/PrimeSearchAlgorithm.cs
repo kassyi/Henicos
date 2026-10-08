@@ -24,7 +24,7 @@ public static class PrimeSearchAlgorithm
         while (true)
         {
             var candidate = GenerateRandomOdd(bitLength);
-            
+
             // 1. Fast Trial Factoring (Sieve out multiples of small primes)
             if (!IsPrimeCpu(candidate))
             {
@@ -43,7 +43,7 @@ public static class PrimeSearchAlgorithm
     {
         var bytes = new byte[(bitLength + 7) / 8];
         RandomNumberGenerator.Fill(bytes);
-        
+
         // Ensure MSB is set for exact bit length
         var topBitsToKeep = bitLength % 8;
         if (topBitsToKeep != 0)
@@ -58,8 +58,8 @@ public static class PrimeSearchAlgorithm
         }
 
         // Ensure it's odd
-        bytes[0] |= 0x01; 
-        
+        bytes[0] |= 0x01;
+
         return new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
     }
 
@@ -94,7 +94,7 @@ public static class PrimeSearchAlgorithm
         // TODO: Full Miller-Rabin or FermatRunner offload for extremely large numbers
         for (int i = 0; i < iterations; i++)
         {
-            var a = new BigInteger(2) + i; 
+            var a = new BigInteger(2) + i;
             if (BigInteger.ModPow(a, n - 1, n) != 1)
             {
                 return false;

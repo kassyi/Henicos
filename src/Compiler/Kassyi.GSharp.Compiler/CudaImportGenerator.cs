@@ -581,10 +581,10 @@ public class CudaImportGenerator : IIncrementalGenerator
                     LiteralExpressionSyntax entryLit when entryLit.IsKind(SyntaxKind.StringLiteralExpression) =>
                         entryLit.Token.ValueText,
                     InvocationExpressionSyntax
-                        {
-                            Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" },
-                            ArgumentList.Arguments.Count: > 0
-                        } nameofInvocation when
+                    {
+                        Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" },
+                        ArgumentList.Arguments.Count: > 0
+                    } nameofInvocation when
                         nameofInvocation.ArgumentList.Arguments[0].Expression is IdentifierNameSyntax targetId =>
                         targetId
                             .Identifier.ValueText,

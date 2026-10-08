@@ -316,7 +316,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
 
         var bitLength = (int)n.GetBitLength();
         var root = BigInteger.One << (bitLength / 2);
-        
+
         var lastRoot = root;
         while (true)
         {
@@ -352,7 +352,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
     {
         var a = Read(value.DevicePointer, value.NumWords);
         var n = Read(modulus.DevicePointer, modulus.NumWords);
-        
+
         BigInteger i = n, v = 0, d = 1;
         while (a > 0)
         {

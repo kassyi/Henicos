@@ -48,7 +48,10 @@ public abstract class Logger : ILogger
     /// <summary>
     /// Gets or sets the minimum active log level for message processing.
     /// </summary>
-    public static LogLevel ActiveLogLevel { get; set; } =
+    public static LogLevel ActiveLogLevel
+    {
+        get; set;
+    } =
         LogLevel.Trace; // Trace by default to output everything during debugging
 
     /// <summary>

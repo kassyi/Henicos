@@ -732,7 +732,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
                 ctx,
                 gridDimX: gridDim, blockDimX: blockDim, sharedMemBytes: sharedMemBytes,
                 hStream: workspace.Stream);
-            
+
             // Sync after each chunk to let the TDR watchdog reset
             CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
         }

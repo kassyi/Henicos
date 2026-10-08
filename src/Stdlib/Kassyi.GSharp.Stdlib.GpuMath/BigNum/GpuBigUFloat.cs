@@ -19,12 +19,18 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
     /// <summary>
     /// Gets the significand (mantissa) stored as a dynamic-size unsigned big integer in GPU device memory.
     /// </summary>
-    public GpuBigUInt Significand { get; }
+    public GpuBigUInt Significand
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the binary base-2 exponent of the floating-point number.
     /// </summary>
-    public int Exponent { get; }
+    public int Exponent
+    {
+        get;
+    }
 
     /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying <see cref="Significand"/>.

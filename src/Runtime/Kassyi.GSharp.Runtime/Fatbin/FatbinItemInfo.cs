@@ -23,32 +23,50 @@ public readonly struct FatbinItemInfo
     /// <summary>
     /// Gets the type of embedded file (1 = PTX, 2 = ELF/cuBIN).
     /// </summary>
-    public ushort Type { get; }
+    public ushort Type
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the architecture major version (e.g. 8 for sm_80).
     /// </summary>
-    public ushort Major { get; }
+    public ushort Major
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the architecture minor version (e.g. 0 for sm_80, 6 for sm_86).
     /// </summary>
-    public ushort Minor { get; }
+    public ushort Minor
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the raw compute capability version (e.g. 80 for sm_80, 86 for sm_86).
     /// </summary>
-    public uint ComputeVersion { get; }
+    public uint ComputeVersion
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the optional object name or identifier assigned to this embedded module.
     /// </summary>
-    public string? ObjectName { get; }
+    public string? ObjectName
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the size in bytes of the embedded module data payload.
     /// </summary>
-    public ulong DataSize { get; }
+    public ulong DataSize
+    {
+        get;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FatbinItemInfo"/> struct.

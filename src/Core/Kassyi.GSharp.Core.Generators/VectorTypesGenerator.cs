@@ -54,20 +54,44 @@ public class VectorTypesGenerator : IIncrementalGenerator
                     sw.AppendLine("/// <summary>");
                     sw.AppendLine($"/// Represents a {dim}-component vector of {t.Desc} values corresponding to the CUDA native <c>{cudaType}</c> type.");
                     sw.AppendLine("/// </summary>");
-                    if (dim >= 2) sw.AppendLine("/// <param name=\"x\">The X component of the vector.</param>");
-                    if (dim >= 2) sw.AppendLine("/// <param name=\"y\">The Y component of the vector.</param>");
-                    if (dim >= 3) sw.AppendLine("/// <param name=\"z\">The Z component of the vector.</param>");
-                    if (dim >= 4) sw.AppendLine("/// <param name=\"w\">The W component of the vector.</param>");
+                    if (dim >= 2)
+                    {
+                        sw.AppendLine("/// <param name=\"x\">The X component of the vector.</param>");
+                    }
+
+                    if (dim >= 2)
+                    {
+                        sw.AppendLine("/// <param name=\"y\">The Y component of the vector.</param>");
+                    }
+
+                    if (dim >= 3)
+                    {
+                        sw.AppendLine("/// <param name=\"z\">The Z component of the vector.</param>");
+                    }
+
+                    if (dim >= 4)
+                    {
+                        sw.AppendLine("/// <param name=\"w\">The W component of the vector.</param>");
+                    }
+
                     sw.AppendLine("/// <remarks>");
                     sw.AppendLine($"/// <para><b>Memory Layout:</b> {totalSize} bytes, {align}-byte aligned (blittable value type).</para>");
                     sw.AppendLine("/// <para><b>Execution Target:</b> Usable on both Host (CPU) and Device (GPU kernels).</para>");
                     sw.AppendLine("/// </remarks>");
                     sw.AppendLine("[StructLayout(LayoutKind.Sequential)]");
-                    
+
                     sw.Append($"public struct {structName}(");
                     sw.Append($"{t.Type} x, {t.Type} y");
-                    if (dim >= 3) sw.Append($", {t.Type} z");
-                    if (dim >= 4) sw.Append($", {t.Type} w");
+                    if (dim >= 3)
+                    {
+                        sw.Append($", {t.Type} z");
+                    }
+
+                    if (dim >= 4)
+                    {
+                        sw.Append($", {t.Type} w");
+                    }
+
                     sw.AppendLine(")");
                     sw.AppendLine("{");
                     sw.AppendLine("/// <summary>The X component of the vector.</summary>");
@@ -75,7 +99,7 @@ public class VectorTypesGenerator : IIncrementalGenerator
                     sw.AppendLine();
                     sw.AppendLine("/// <summary>The Y component of the vector.</summary>");
                     sw.AppendLine($"public {t.Type} Y = y;");
-                    
+
                     if (dim >= 3)
                     {
                         sw.AppendLine();

@@ -46,7 +46,7 @@ public static class YamlApiGenerator
             var isDriverApi = !string.IsNullOrEmpty(def.LibraryName);
             var source = isDriverApi ? GenerateDriverApi(def) : GenerateIntrinsics(def, mappingEntries);
             var fileName = isDriverApi ? $"{def.ClassName}.g.cs" : $"{def.ClassName}Intrinsics.g.cs";
-            
+
             File.WriteAllText(Path.Combine(outputDir, fileName), source, Encoding.UTF8);
         }
 
@@ -66,7 +66,7 @@ public static class YamlApiGenerator
         writer.Line();
         writer.Line($"namespace {def.Namespace};");
         writer.Line();
-        
+
         writer.Line("// ReSharper disable InconsistentNaming");
         writer.Line($"public static partial class {def.ClassName}");
         using (writer.Scope())
@@ -82,7 +82,7 @@ public static class YamlApiGenerator
                 {
                     importArgs.Add($"StringMarshalling = StringMarshalling.{m.StringMarshalling}");
                 }
-                
+
                 if (!string.IsNullOrEmpty(m.Summary))
                 {
                     writer.Line($"/// <summary>{EscapeXml(m.Summary)}</summary>");
@@ -101,9 +101,9 @@ public static class YamlApiGenerator
 
                 writer.Line($"[LibraryImport({string.Join(", ", importArgs)})]");
                 writer.Line("[UnmanagedCallConv(CallConvs = [typeof(CallConvStdcall)])]");
-                
+
                 var unsafeMod = m.IsUnsafe ? "unsafe " : "";
-                
+
                 writer.Append($"public static {unsafeMod}partial {m.ReturnType} {m.Name}");
                 using (writer.Parentheses())
                 {
@@ -122,7 +122,7 @@ public static class YamlApiGenerator
                 writer.Line();
             }
         }
-        
+
         return writer.ToString();
     }
 
@@ -135,7 +135,7 @@ public static class YamlApiGenerator
         writer.Line();
         writer.Line($"namespace {def.Namespace};");
         writer.Line();
-        
+
         var classGroups = new Dictionary<string, List<ApiMethodDefinition>>();
         foreach (var m in def.Methods)
         {
@@ -148,7 +148,7 @@ public static class YamlApiGenerator
 
             list.Add(m);
         }
-        
+
         foreach (var group in classGroups)
         {
             writer.Line($"public static partial class {group.Key}");
@@ -157,21 +157,21 @@ public static class YamlApiGenerator
                 writer.Line("#pragma warning disable IDE0051 // Remove unused private members");
                 writer.Line("// ReSharper disable UnusedMember.Global");
                 writer.Line();
-                
+
                 foreach (var m in group.Value)
                 {
                     var types = m.TypeTemplate?.Types ?? [""];
                     var placeholder = m.TypeTemplate?.Placeholder ?? "T";
-                    
+
                     foreach (var t in types)
                     {
                         var returnType = m.ReturnType.Replace(placeholder, t);
-                        
+
                         if (!string.IsNullOrEmpty(m.Summary))
                         {
                             writer.Line($"/// <summary>{EscapeXml(m.Summary)}</summary>");
                         }
-                        
+
                         foreach (var p in m.Parameters)
                         {
                             if (!string.IsNullOrEmpty(p.Description))
@@ -179,15 +179,15 @@ public static class YamlApiGenerator
                                 writer.Line($"/// <param name=\"{p.Name}\">{EscapeXml(p.Description)}</param>");
                             }
                         }
-                        
+
                         if (!string.IsNullOrEmpty(m.ReturnDescription))
                         {
                             writer.Line($"/// <returns>{EscapeXml(m.ReturnDescription)}</returns>");
                         }
-                        
+
                         var nativeName = m.NativeName ?? m.Name;
                         writer.Line($"[Kassyi.GSharp.Core.CudaIntrinsic(\"{nativeName}\")]");
-                        
+
                         writer.Append($"public static {returnType} {m.Name}");
                         using (writer.Parentheses())
                         {
@@ -207,7 +207,7 @@ public static class YamlApiGenerator
                                 }
                             }
                         }
-                        
+
                         if (returnType == "void")
                         {
                             writer.AppendLine(" => Kassyi.GSharp.Core.GpuOnlyException.Throw();");
@@ -217,7 +217,7 @@ public static class YamlApiGenerator
                             writer.AppendLine($" => Kassyi.GSharp.Core.GpuOnlyException.Throw<{returnType}>();");
                         }
                         writer.Line();
-                        
+
                         // Mapping entry
                         var sigBuilder = new StringBuilder();
                         sigBuilder.Append($"{def.Namespace}.{group.Key}.{m.Name}(");
@@ -233,17 +233,17 @@ public static class YamlApiGenerator
                             sigBuilder.Append(pType);
                         }
                         sigBuilder.Append(")");
-                        
+
                         mappingEntries.Add((sigBuilder.ToString(), nativeName));
                     }
                 }
-                
+
                 writer.Line("// ReSharper restore UnusedMember.Global");
                 writer.Line("#pragma warning restore IDE0051");
             }
             writer.Line();
         }
-        
+
         return writer.ToString();
     }
 
@@ -270,12 +270,12 @@ public static class YamlApiGenerator
                         writer.Line($"case \"{entry.Signature}\": nativeName = \"{entry.NativeName}\"; return true;");
                     }
                 }
-                
+
                 writer.Line("nativeName = string.Empty;");
                 writer.Line("return false;");
             }
         }
-        
+
         return writer.ToString();
     }
 

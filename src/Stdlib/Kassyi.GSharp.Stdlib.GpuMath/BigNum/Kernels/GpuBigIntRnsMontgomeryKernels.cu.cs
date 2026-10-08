@@ -133,7 +133,7 @@ public static partial class GpuBigIntRnsMontgomeryKernels
     public static void ExecuteModPowRns(
         RnsBigInt baseRns, // Pre-converted to Montgomery Space: Base * M1 mod N
         RnsBigInt oneRns,  // The value 1 in Montgomery Space: M1 mod N
-        [GpuReadOnly] uint[] exponent, 
+        [GpuReadOnly] uint[] exponent,
         int exponentWords,
         RnsMontgomeryContext montCtx,
         RnsConstantsContext ctx,
@@ -150,10 +150,10 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         // Initialization
         result.B1[tid] = oneRns.B1[tid];
         result.B2[tid] = oneRns.B2[tid];
-        
+
         x.B1[tid] = baseRns.B1[tid];
         x.B2[tid] = baseRns.B2[tid];
-        
+
         if (tid == 0)
         {
             result.Sk = oneRns.Sk;
@@ -166,7 +166,7 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         for (int i = 0; i < exponentWords; i++)
         {
             uint eWord = exponent[i];
-            
+
             for (int b = 0; b < 32; b++)
             {
                 bool bitSet = ((eWord >> b) & 1) == 1;
@@ -174,7 +174,7 @@ public static partial class GpuBigIntRnsMontgomeryKernels
                 // Always compute temp = result * x to maintain Constant-Time execution and prevent SyncThreads in branch divergence
                 ExecuteRnsMontgomeryMultiply(result, x, montCtx, ctx, temp);
                 Gpu.SyncThreads();
-                
+
                 if (bitSet)
                 {
                     // If bit is 1, keep the multiplied result
@@ -202,7 +202,7 @@ public static partial class GpuBigIntRnsMontgomeryKernels
                 Gpu.SyncThreads();
             }
         }
-        
+
         // Final Montgomery Reduction to exit Montgomery Space
         // Multiply by 1 in normal RNS space
         temp.B1[tid] = 1;
@@ -213,11 +213,11 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         }
 
         Gpu.SyncThreads();
-        
+
         // Use x as the final destination temporary
         ExecuteRnsMontgomeryMultiply(result, temp, montCtx, ctx, x);
         Gpu.SyncThreads();
-        
+
         // Copy final result back to result buffer
         result.B1[tid] = x.B1[tid];
         result.B2[tid] = x.B2[tid];

@@ -149,7 +149,7 @@ public static class ManagedGpuContext
     {
         if (count <= 0)
         {
-            return Span<T>.Empty;
+            return [];
         }
 
         var bytesNeeded = count * Unsafe.SizeOf<T>();
@@ -160,7 +160,7 @@ public static class ManagedGpuContext
             var allocationOffsets = s_perBlockAllocationOffsets[blockId];
             if (allocationOffsets == null)
             {
-                allocationOffsets = Array.Empty<int>();
+                allocationOffsets = [];
                 s_perBlockAllocationOffsets[blockId] = allocationOffsets;
             }
 
@@ -171,7 +171,7 @@ public static class ManagedGpuContext
             var buffer = s_perBlockSharedMemoryBuffer?[blockId];
             if (buffer == null)
             {
-                buffer = Array.Empty<byte>();
+                buffer = [];
                 s_perBlockSharedMemoryBuffer![blockId] = buffer;
             }
 
