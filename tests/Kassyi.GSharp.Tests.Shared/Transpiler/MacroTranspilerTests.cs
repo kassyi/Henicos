@@ -9,8 +9,8 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 public class MacroTranspilerTests : TranspilerTestBase
 {
     [Fact]
-    [Trait("Category", "Transpiler")]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Compiler)]
+    [Category(TestCategory.Syntax)]
     public async Task Test_MacroTranspiler_ExpandsMacrosCorrectly_Snapshots()
     {
         var config = TestGenerator("Transpiler/MacroTranspiler_InGpuKernel.cu.cs");

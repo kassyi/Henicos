@@ -7,11 +7,11 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuBigIntCoreTests
 {
     [SkippableFact]
-    [Trait("Category", "Memory")]
+    [Category(TestCategory.Alignment)]
     public void Test_MemoryPoolAllocation()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -42,7 +42,7 @@ public class GpuBigIntCoreTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Performance")]
+    [Category(TestCategory.Benchmark)]
     public void Test_GpuReductionCompareAndFlags()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -81,7 +81,7 @@ public class GpuBigIntCoreTests
     private const int TestSizeWords = 256; // 8192 bits
 
     [SkippableFact]
-    [Trait("Category", "Optimization")]
+    [Category(TestCategory.Compiler)]
     public void Test_DirectSquarePointwiseKernel()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -98,7 +98,7 @@ public class GpuBigIntCoreTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Algorithm")]
+    [Category(TestCategory.Stdlib)]
     public void Test_ParallelGcdLargeDigits()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -121,7 +121,7 @@ public class GpuBigIntCoreTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Runtime")]
+    [Category(TestCategory.Runtime)]
     public void Test_ExpressionKernelFusion()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -138,8 +138,6 @@ public class GpuBigIntCoreTests
         var expected = BigInteger.Parse("90000");
         Assert.Equal(expected, ToBigInteger(result.ToHostArray()));
     }
-
-    [Trait("RoadmapId", "GBI-10")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -155,8 +153,6 @@ public class GpuBigIntCoreTests
             gpuFunc: (a, b) => a + b
         );
     }
-
-    [Trait("RoadmapId", "GBI-10")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -189,8 +185,6 @@ public class GpuBigIntCoreTests
 
         AssertGpuResultEqualsCpu(bigA + bigB, gpuResult, TestSizeWords);
     }
-
-    [Trait("RoadmapId", "GBI-10")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -248,8 +242,6 @@ public class GpuBigIntCoreTests
         Buffer.BlockCopy(bytes, 0, words, 0, copyBytes);
         return words;
     }
-
-    [Trait("RoadmapId", "GBI-10")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Scalar_Correctness(GpuExecutionEngine engine)
@@ -292,8 +284,6 @@ public class GpuBigIntCoreTests
         GpuBigIntMath.Mul(gpuA, scalarMul, gpuResult);
         AssertGpuResultEqualsCpu(bigA * scalarMul, gpuResult, TestSizeWords);
     }
-
-    [Trait("RoadmapId", "GBI-11")]
     [SkippableFact]
     public void Test_NttReference_Correctness()
     {
@@ -324,8 +314,6 @@ public class GpuBigIntCoreTests
             Assert.Equal(expectedWords[i], actualWords[i]);
         }
     }
-
-    [Trait("RoadmapId", "GBI-11")]
     [SkippableTheory]
     // Standard prime: p = 17, threshold = primeModulus - b = 7 (for b = 10)
     [InlineData(6u, 10u, 17u)] // Just below threshold: (6 + 10 = 16 < 17) -> 16
@@ -353,8 +341,6 @@ public class GpuBigIntCoreTests
         var actual = GpuBigIntNttKernels.ModAdd(a, b, p);
         Assert.Equal(expected, actual);
     }
-
-    [Trait("RoadmapId", "GBI-11")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     [InlineData(GpuExecutionEngine.LegacyNative)]
@@ -373,8 +359,6 @@ public class GpuBigIntCoreTests
             gpuFunc: (a, b) => a * b
         );
     }
-
-    [Trait("RoadmapId", "GBI-12")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Div_Correctness(GpuExecutionEngine engine)
@@ -397,7 +381,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [Trait("RoadmapId", "GBI-12")]
     public void Test_ModuloOperator_Correctness(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -417,8 +400,6 @@ public class GpuBigIntCoreTests
         gpuResult.Value = gpuA % gpuB;
         AssertGpuResultEqualsCpu(bigA % bigB, gpuResult);
     }
-
-    [Trait("RoadmapId", "GBI-13")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Bitwise_Correctness(GpuExecutionEngine engine)
@@ -444,8 +425,6 @@ public class GpuBigIntCoreTests
         gpuResult.Value = ~gpuA;
         Assert.Equal(arrA.Select(a => ~a).ToArray(), gpuResult.ToHostArray());
     }
-
-    [Trait("RoadmapId", "GBI-14")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot, 143)]
     [InlineData(GpuExecutionEngine.GSharpAot, 0)] // Edge case: zero shift
@@ -473,8 +452,6 @@ public class GpuBigIntCoreTests
 
         AssertGpuResultEqualsCpu(expectedBig, gpuResult, TestSizeWords);
     }
-
-    [Trait("RoadmapId", "GBI-14")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot, 143)]
     [InlineData(GpuExecutionEngine.GSharpAot, 0)] // Edge case: zero shift
@@ -504,7 +481,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [Trait("RoadmapId", "GBI-15")]
     public void Test_ComparisonOperators_Correctness(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -541,7 +517,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [Trait("RoadmapId", "GBI-15")]
     public void Test_ComparisonOperators_ReductionEdgeCases(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -589,8 +564,7 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [Trait("RoadmapId", "GBI-16")]
-    [Trait("Category", "Operator")]
+    [Category(TestCategory.Syntax)]
     public void Test_Operator_IncrementDecrement(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -637,9 +611,6 @@ public class GpuBigIntCoreTests
             carryVal.Dispose();
         }
     }
-
-
-    [Trait("RoadmapId", "GBI-17")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_DivRem_Mod_ModPow_Correctness(GpuExecutionEngine engine)
@@ -676,7 +647,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [Trait("RoadmapId", "GBI-17")]
     public void Test_DivRem_EdgeCases(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -749,7 +719,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [Trait("RoadmapId", "GBI-19")]
     public void Test_Square_Correctness(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -768,8 +737,6 @@ public class GpuBigIntCoreTests
 
         Assert.Equal(expected, actual);
     }
-
-    [Trait("RoadmapId", "GBI-20")]
     [SkippableFact]
     public void Test_HalfGcdReference_Correctness()
     {
@@ -799,8 +766,6 @@ public class GpuBigIntCoreTests
             Assert.Equal(expectedGcd, actualGcd);
         }
     }
-
-    [Trait("RoadmapId", "GBI-20")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Gcd_Correctness(GpuExecutionEngine engine)
@@ -828,8 +793,6 @@ public class GpuBigIntCoreTests
 
         Assert.Equal(expectedGcd, actualGcd);
     }
-
-    [Trait("RoadmapId", "GBI-20")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Gcd_EmptyCollection_ThrowsException(GpuExecutionEngine engine)
@@ -847,8 +810,6 @@ public class GpuBigIntCoreTests
             GpuBigIntMath.Gcd(gpuA, gpuB, gpuResult);
         });
     }
-
-    [Trait("RoadmapId", "GBI-20")]
     [SkippableTheory]
     // Happy path
     [InlineData(GpuExecutionEngine.GSharpAot, 48u, 18u)]
@@ -920,8 +881,6 @@ public class GpuBigIntCoreTests
         var actualInverseStruct = ToBigInteger(gpuResult2.ToHostArray());
         Assert.Equal(expectedInverse, actualInverseStruct);
     }
-
-    [Trait("RoadmapId", "GBI-21")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Function_ModInverse_NotCoprime_Throws(GpuExecutionEngine engine)
@@ -962,8 +921,6 @@ public class GpuBigIntCoreTests
         if (v < 0) v = (v + n) % n;
         return v;
     }
-
-    [Trait("RoadmapId", "GBI-22")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_CompareTo_Correctness(GpuExecutionEngine engine)
@@ -989,7 +946,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [Trait("RoadmapId", "GBI-23")]
     public void Test_LengthProperties_Correctness(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -1020,7 +976,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [Trait("RoadmapId", "GBI-23")]
     public void Test_GetBitLength_AtomicStress(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -1046,8 +1001,6 @@ public class GpuBigIntCoreTests
         Assert.Equal(bigInt.GetBitLength(), gpu.GetBitLength());
         Assert.Equal(bigInt.GetByteCount(isUnsigned: true), gpu.GetByteCount());
     }
-
-    [Trait("RoadmapId", "GBI-24")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_State_Correctness(GpuExecutionEngine engine)
@@ -1086,8 +1039,6 @@ public class GpuBigIntCoreTests
         gpuZero.SetIsNegative(false);
         Assert.False(gpuZero.GetIsNegative());
     }
-
-    [Trait("RoadmapId", "GBI-25")]
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_Sqrt_Correctness(GpuExecutionEngine engine)
@@ -1116,7 +1067,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [Trait("RoadmapId", "GBI-17")]
     public void Test_Sqrt_EdgeCases(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -1186,7 +1136,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [Trait("RoadmapId", "GBI-17")]
     public void Test_ModPow_EdgeCases(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -1348,7 +1297,7 @@ public class GpuBigIntCoreTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Stress")]
+    [Category(TestCategory.Stress)]
     public void Test_GpuBigInt_ConcurrentAccess_DataRaceSafety()
     {
         CudaCapability.EnsureGpuAvailable();

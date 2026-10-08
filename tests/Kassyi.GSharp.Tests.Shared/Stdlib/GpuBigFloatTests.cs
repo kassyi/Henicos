@@ -7,11 +7,11 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Stdlib;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuBigFloatTests
 {
     [SkippableTheory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(false, false, false)] // (+10) + (+2) = +12
     [InlineData(true, true, true)]    // (-10) + (-2) = -12
     public void Test_SignRules_Addition(bool isNegA, bool isNegB, bool expectedIsNeg)
@@ -30,7 +30,7 @@ public class GpuBigFloatTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "EdgeCase")]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(int.MaxValue)]
     [InlineData(int.MinValue)]
     [InlineData(0)]
@@ -50,7 +50,7 @@ public class GpuBigFloatTests
     }
 
     [SkippableFact]
-    [Trait("Category", "EdgeCase")]
+    [Scenario(TestScenario.Boundary)]
     public void Test_ZeroSignificandNormalization_FlushesToZeroExponent()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -71,7 +71,7 @@ public class GpuBigFloatTests
     }
 
     [SkippableFact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_DivisionByZeroSignificand_ThrowsOrDetectsZeroDivisor()
     {
         using var scope = new GpuKernelLoader.CudaContextScope();

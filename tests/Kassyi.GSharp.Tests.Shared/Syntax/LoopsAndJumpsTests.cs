@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class LoopsAndJumpsTests
 :  TranspilerTestBase{
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_ForeachInlineArray_Execution()
     {
         int[] output = [0];
@@ -13,13 +13,13 @@ public class LoopsAndJumpsTests
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_SwitchGotoCase_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_NamedBreakGoto_Transpilation()
     {
     }

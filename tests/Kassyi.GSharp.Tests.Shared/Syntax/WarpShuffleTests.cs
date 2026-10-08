@@ -12,7 +12,7 @@ public class WarpShuffleTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0xFFFFFFFF, 1, 32)] // Full warp, delta=1
     [InlineData(0xFFFFFFFF, 31, 32)] // Full warp, delta=31
     [InlineData(0xFFFFFFFF, 32, 32)] // Full warp, delta=out-of-bounds
@@ -59,7 +59,7 @@ public class WarpShuffleTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_95_WarpReduceSum_CalculatesCorrectly()
     {
         const int threadsPerWarp = 32;
@@ -94,7 +94,7 @@ public class WarpShuffleTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_95_WarpShuffleBoundaryOffsets()
     {
         const int totalThreads = 32;
@@ -131,7 +131,7 @@ public class WarpShuffleTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_95_WarpDivergence()
     {
         const int totalThreads = 32;
@@ -165,7 +165,7 @@ public class WarpShuffleTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_95_Transpilation_MapsToCudaNativeShuffle()
     {
         const string code = """

@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 public class StructLayoutTests
 {
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_StructLayout_IsMaintained_InGpuKernel()
     {
         var data = new CustomLayoutStruct[1]
@@ -26,7 +26,7 @@ public class StructLayoutTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_PackedInlineArray_IsMaintained_InGpuKernel()
     {
         var data = new StructWithPackedInlineArray[1];

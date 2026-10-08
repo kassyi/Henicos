@@ -5,30 +5,30 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class NumericsAndHwMathTests
 :  TranspilerTestBase{
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_HalfPrecision_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_NativeInt_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_Int128UInt128_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_BFloat16Fp8_Transpilation()
     {
     }
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0u, 0ul)]
     [InlineData(1u, 1ul)]
     [InlineData(uint.MaxValue, ulong.MaxValue)]
@@ -64,7 +64,7 @@ public class NumericsAndHwMathTests
     }
 
         [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0.0, 0.0f)]
     [InlineData(1.5707963267948966, 1.5707963f)] // pi / 2
     [InlineData(-3.141592653589793, -3.1415927f)] // -pi
@@ -106,7 +106,7 @@ public class NumericsAndHwMathTests
     }
 
         [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(float.NaN, double.NaN)]
     [InlineData(float.PositiveInfinity, double.PositiveInfinity)]
     [InlineData(float.NegativeInfinity, double.NegativeInfinity)]
@@ -169,7 +169,7 @@ public class NumericsAndHwMathTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_MathAndMathF_EmptyArray()
     {
         double[] doubleInputs = [];
@@ -185,7 +185,7 @@ public class NumericsAndHwMathTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_PtxIntrinsicsExpansion_Execution()
     {
         SkipIfCpuDialect("PTX hardware intrinsics require CUDA execution environment");

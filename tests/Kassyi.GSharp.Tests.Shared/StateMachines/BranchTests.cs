@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 public class BranchTests : StateMachineTestBase
 {
     [Fact]
-    [Trait("Category", "Compiler")]
+    [Category(TestCategory.Compiler)]
     public Task Lower_IfStatement_WithoutElse()
     {
         bool condition = true;
@@ -23,7 +23,7 @@ public class BranchTests : StateMachineTestBase
     }
 
     [Fact]
-    [Trait("Category", "Compiler")]
+    [Category(TestCategory.Compiler)]
     public Task Lower_IfStatement_WithElse()
     {
         bool condition = true;

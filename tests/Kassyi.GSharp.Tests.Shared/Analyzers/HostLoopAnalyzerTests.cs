@@ -10,7 +10,7 @@ public class HostLoopAnalyzerTests : TranspilerTestBase
     private static readonly HostLoopAnalyzer s_analyzer = new();
 
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [InlineData("GSH-10", "Analyzers/HostLoop/AutoAllocateReturnInLoop_HostSide.cs", "GSH0015")]
     [InlineData("GSH-10", "Analyzers/HostLoop/DeconstructionLoop_SadPath.cs", "GSH0015")]
     public async Task Test_HostLoopAnalyzer_ReportsExpectedWarning(string featureId, string testCasePath, string expectedErrorId)
@@ -20,7 +20,7 @@ public class HostLoopAnalyzerTests : TranspilerTestBase
     }
 
     [Theory]
-    [Trait("Category", "SafePath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData("GSH-10", "Analyzers/HostLoop/AutoAllocateReturn_SafePath.cs")]
     public async Task Test_HostLoopAnalyzer_ReportsNoWarnings(string featureId, string testCasePath)
     {

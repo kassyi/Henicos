@@ -26,7 +26,7 @@ public class StructTranspilerEdgeCasesTests
     }
 
     [Fact]
-    [Trait("Category", "Unit")]
+    [Category(TestCategory.Unit)]
     public void Test_TopologicallySortedStructs_EmptyStruct()
     {
         var structSym = GetLocalTypeSymbol("EmptyStruct");
@@ -39,7 +39,7 @@ public class StructTranspilerEdgeCasesTests
     }
 
     [Fact]
-    [Trait("Category", "Unit")]
+    [Category(TestCategory.Unit)]
     public void Test_TopologicallySortedStructs_DeepNesting()
     {
         var comp = MegaCompilationCache.GetDynamicCompilation();
@@ -61,7 +61,7 @@ public class StructTranspilerEdgeCasesTests
     }
 
     [Fact]
-    [Trait("Category", "Unit")]
+    [Category(TestCategory.Unit)]
     public void Test_TopologicallySortedStructs_ExcludesSystemTypes()
     {
         var structSym = GetLocalTypeSymbol("MyStruct");

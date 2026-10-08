@@ -13,6 +13,7 @@
     <Project Path="src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Generators/Kassyi.GSharp.Stdlib.GpuMath.Generators.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Kassyi.GSharp.Tests.Common/Kassyi.GSharp.Tests.Common.csproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Shared/Kassyi.GSharp.Tests.Shared.shproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj" />

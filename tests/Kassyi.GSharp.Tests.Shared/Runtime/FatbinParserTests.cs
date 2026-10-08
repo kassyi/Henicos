@@ -77,14 +77,14 @@ public class FatbinParserTests
     };
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_GSharpFatbinExtension_Constant()
     {
         Assert.Equal(".gfatbin", FatbinParser.GSharpFatbinExtension);
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_TryParse_RealNvcc_DummyFatbin_HappyPath()
     {
         bool success = FatbinParser.TryParse(RealNvcc_DummyFatbin, out FatbinImage? image);
@@ -109,7 +109,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_TryParse_RealNvcc_MultiFatbin_HappyPath()
     {
         bool success = FatbinParser.TryParse(RealNvcc_MultiFatbin, out FatbinImage? image);
@@ -130,7 +130,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_TryParse_RealNvcc_IdentFatbin_HappyPath()
     {
         bool success = FatbinParser.TryParse(RealNvcc_IdentFatbin, out FatbinImage? image);
@@ -142,7 +142,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Ed25519_Rfc8032_TestVector()
     {
         // RFC 8032 Section 7.1 Test Vector 1 (Empty message)
@@ -161,7 +161,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_TryParse_WithGSharpSignature_Ed25519_HappyPath()
     {
         // Generate a 32-byte secret key seed and corresponding Ed25519 signature
@@ -187,7 +187,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_VerifySignature_CorruptedPayload_Fails()
     {
         byte[] secretKeySeed = new byte[32];
@@ -215,7 +215,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_VerifySignature_WrongPublicKey_Fails()
     {
         byte[] secretKeySeed = new byte[32];
@@ -236,7 +236,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_VerifySignature_AuthorizedKeysWhitelist_HappyPath()
     {
         byte[] seed1 = new byte[32]; Array.Fill(seed1, (byte)0x11);
@@ -263,7 +263,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_GpuSecurityPolicy_EmbeddedKeys_NotEmpty()
     {
         ReadOnlySpan<byte> embedded = GpuSecurityPolicy.EmbeddedKeys;
@@ -273,7 +273,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_GpuSecurityPolicy_DynamicKeyRegistration_And_VerifyImage()
     {
         byte[] dynamicSeed = new byte[32];
@@ -297,7 +297,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_GpuSecurityPolicy_VerifyImage_UntrustedKey_Fails()
     {
         byte[] unknownSeed = new byte[32];
@@ -315,7 +315,7 @@ public class FatbinParserTests
     }
 
     [Theory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(8, 0, true)]   // Exact match for sm_80 PTX
     [InlineData(8, 6, true)]   // Forward compatible (SM 8.6 can run sm_80 PTX)
     [InlineData(9, 0, true)]   // Forward compatible (SM 9.0 can run sm_80 PTX)
@@ -332,7 +332,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_IsCompatibleWith_CubinExactMatch()
     {
         // Synthesize a CUBIN item (Type = 2) for sm_80
@@ -349,7 +349,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_TryParse_SadPath_InvalidMagic()
     {
         byte[] invalidMagic = (byte[])RealNvcc_DummyFatbin.Clone();
@@ -365,7 +365,7 @@ public class FatbinParserTests
     }
 
     [Theory]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(15)]
@@ -379,7 +379,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     public void Test_TryParse_Boundary_TrailingBytesNot64()
     {
         // 32 extra bytes instead of 64 bytes signature -> HasGSharpSignature should be false
@@ -395,7 +395,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_TryParse_SadPath_CorruptedPayloadSize()
     {
         byte[] corrupted = (byte[])RealNvcc_DummyFatbin.Clone();
@@ -409,7 +409,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_TryParse_SadPath_CorruptedItemHeader()
     {
         byte[] corrupted = (byte[])RealNvcc_DummyFatbin.Clone();
@@ -423,7 +423,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_TryParse_ReadOnlyMemory_And_Span_Overloads()
     {
         ReadOnlyMemory<byte> memory = RealNvcc_DummyFatbin;
@@ -441,7 +441,7 @@ public class FatbinParserTests
     }
 
     [Theory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(8, 0, 8, 0, true)]  // Exact match
     [InlineData(8, 0, 8, 6, true)]  // Newer minor
     [InlineData(8, 0, 9, 0, true)]  // Newer major
@@ -458,7 +458,7 @@ public class FatbinParserTests
     }
 
     [Theory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(8, 0, 8, 0, true)]  // Exact match
     [InlineData(8, 0, 8, 6, false)] // Different minor
     [InlineData(8, 0, 9, 0, false)] // Newer major (CUBIN is native machine code, not forward compatible)
@@ -475,7 +475,7 @@ public class FatbinParserTests
     }
 
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [InlineData(-1, 0)]
     [InlineData(8, -1)]
     [InlineData(-1, -1)]
@@ -490,7 +490,7 @@ public class FatbinParserTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_IsCompatibleWith_MultipleItems_MatchesAny()
     {
         // FATBIN containing sm_86 CUBIN and sm_80 PTX

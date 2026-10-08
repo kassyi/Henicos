@@ -25,7 +25,7 @@ public partial class CudaStreamKernels
     }
 }
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class CudaStreamTests : TranspilerTestBase
 {
     [Fact]

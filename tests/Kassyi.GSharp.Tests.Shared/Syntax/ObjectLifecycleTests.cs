@@ -2,11 +2,11 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class ObjectLifecycleTests
 {
     [Theory]
-    [Trait("Category", "Execution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(10, 2, 20, 0)]
     [InlineData(60, 2, 120, 1)]
     [InlineData(0, 5, 0, 0)]
@@ -30,7 +30,7 @@ public class ObjectLifecycleTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LifecycleUpdateKernel_EmptyArrayEdgeCase()
     {
         LifecycleObjectState[] emptyStates = [];
@@ -39,7 +39,7 @@ public class ObjectLifecycleTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_FactoryInitializationKernel_EmptyArrayEdgeCase()
     {
         int[] inputs = [];
@@ -49,7 +49,7 @@ public class ObjectLifecycleTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_FactoryInitializationKernel_SingleElementEdgeCase()
     {
         int[] inputs = [42];
@@ -62,7 +62,7 @@ public class ObjectLifecycleTests
     }
 
     [Fact]
-    [Trait("Category", "Execution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_FactoryInitializationKernel_MultiElement()
     {
         int[] inputs = [-5, 0, 42, 150];

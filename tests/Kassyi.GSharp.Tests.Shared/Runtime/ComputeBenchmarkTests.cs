@@ -4,12 +4,12 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
-[Trait("Category", "Benchmark")]
+[Category(TestCategory.Benchmark)]
 [Collection("Sequential")]
 public class ComputeBenchmarkTests
 {
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void SgemmBenchmark_ExecutionAndVerification_Succeeds()
     {
         var bench = new SgemmBenchmark();
@@ -21,7 +21,7 @@ public class ComputeBenchmarkTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Sha256Benchmark_ExecutionAndVerification_Succeeds()
     {
         var bench = new Sha256Benchmark();
@@ -33,7 +33,7 @@ public class ComputeBenchmarkTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void BlackScholesBenchmark_ExecutionAndVerification_Succeeds()
     {
         var bench = new BlackScholesBenchmark();
@@ -45,7 +45,7 @@ public class ComputeBenchmarkTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void ReductionBenchmark_ExecutionAndVerification_Succeeds()
     {
         var bench = new ReductionBenchmark();
@@ -57,7 +57,7 @@ public class ComputeBenchmarkTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void ComputeBenchmarkRunner_RunSuite_All_ReturnsTrue()
     {
         var result = ComputeBenchmarkRunner.RunSuite("all", iterations: 2);

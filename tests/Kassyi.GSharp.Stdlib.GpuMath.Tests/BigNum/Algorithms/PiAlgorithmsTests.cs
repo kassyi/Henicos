@@ -3,7 +3,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Algorithms;
 
-[Trait("Category", "CpuExecution")]
+[TestTarget(ExecutionTarget.CpuExecution)]
 public class PiAlgorithmsTests
 {
     [Fact]

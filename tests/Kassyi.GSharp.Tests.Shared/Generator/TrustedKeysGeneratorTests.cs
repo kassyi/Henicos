@@ -22,7 +22,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_TrustedKeysGenerator_WithValidHexKey_GeneratesSource()
     {
         const string TrustedKeysContent = """
@@ -51,7 +51,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_TrustedKeysGenerator_WithMultipleKeysAndComments_ParsesAll()
     {
         const string TrustedKeysContent = """
@@ -82,7 +82,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     public void Test_TrustedKeysGenerator_NoTrustedKeysFile_EmitsNothing()
     {
         var compilation = CSharpCompilation.Create("TestCompilation");

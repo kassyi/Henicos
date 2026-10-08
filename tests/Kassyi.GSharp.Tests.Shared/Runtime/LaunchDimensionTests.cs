@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 public class LaunchDimensionTests
 {
     [Theory]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     [InlineData(1000, 256, 4u, 256u)]
     [InlineData(1024, 1024, 1u, 1024u)]
     [InlineData(1025, 1024, 2u, 1024u)]
@@ -18,7 +18,7 @@ public class LaunchDimensionTests
     }
 
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [InlineData(-1, 256)]
     [InlineData(1000, 0)]
     [InlineData(1000, -10)]

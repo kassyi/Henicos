@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class StructMemoryLayoutTests:  TranspilerTestBase{
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_SharedMemory_StaticExpansion_And_MultipleTypes()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);

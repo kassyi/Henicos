@@ -11,7 +11,7 @@ public class TakesOwnershipIssue256Tests : TranspilerTestBase
     private const string TestCasePath = "Analyzers/TakesOwnershipIssue256.cs";
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_11_3_X_MissingIDisposableOnTakesOwnership_Primary()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
@@ -19,7 +19,7 @@ public class TakesOwnershipIssue256Tests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_11_3_X_MissingIDisposableOnTakesOwnership_Standard()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)

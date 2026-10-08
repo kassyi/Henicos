@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 public class PoolStressTests
 :  TranspilerTestBase{
     [Fact]
-    [Trait("Category", "Stress")]
+    [Category(TestCategory.Stress)]
     public void RoslynToCudaVisitor_PoolIsThreadSafeAndResetsProperly()
     {
         var context = MegaCompilationCache.GetMethodContext<Dummy>("M");
@@ -34,7 +34,7 @@ public class PoolStressTests
     }
 
     [Fact]
-    [Trait("Category", "Stress")]
+    [Category(TestCategory.Stress)]
     public void GpuKernelValidationWalker_PoolIsThreadSafeAndResetsProperly()
     {
         var context = MegaCompilationCache.GetMethodContext<Dummy>("M");

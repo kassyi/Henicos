@@ -52,7 +52,8 @@ public static partial class ControlFlowKernels
 public class ControlFlowTests
 {
     [Fact]
-    [Trait("Category", "Compiler")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
     public void TestSimpleTernaryKernelExecution()
     {
         int[] a = [10];
@@ -83,7 +84,8 @@ public class ControlFlowTests
 public class LoopLoweringTests : StateMachineTestBase
 {
     [Fact]
-    [Trait("Category", "Compiler")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
     public Task Lower_WhileLoop() =>
         RunLoweringTest(() =>
         {
@@ -120,11 +122,13 @@ public abstract class StateMachineTestBase
     - Kernel classes in `.cu.cs` where the source generator emits companion host launcher methods into `.g.cs`.
     - Large test classes explicitly partitioned across multiple source files.
 
-### 3.2. Categorization & Traits
+### 3.2. Categorization & Metadata Attributes (3-Axis Model)
 
-- Follow `qa-testing-guidelines`:
-    - Use `[Trait("Category", "Compiler")]`, `[Trait("Category", "SadPath")]`, `[Trait("Category", "GpuExecution")]`, etc.
-    - Never hardcode ticket numbers or Feature IDs into `[Trait]` attributes.
+- Follow `qa-testing-guidelines` (Definitions in `tests/Kassyi.GSharp.Tests.Common`, globally imported across test assemblies):
+    - **Axis 1 (Execution Target)**: `[TestTarget(ExecutionTarget.GpuExecution)]`, `[TestTarget(ExecutionTarget.CpuExecution)]`
+    - **Axis 2 (Domain Category)**: `[Category(TestCategory.Compiler)]`, `[Category(TestCategory.Runtime)]`, `[Category(TestCategory.Syntax)]`, `[Category(TestCategory.Stdlib)]`, etc.
+    - **Axis 3 (Behavior Scenario)**: `[Scenario(TestScenario.HappyPath)]`, `[Scenario(TestScenario.SadPath)]`, `[Scenario(TestScenario.Boundary)]`
+    - Never hardcode ticket numbers, roadmap IDs, or Feature IDs into test attributes.
 
 ### 3.3. Snapshot Format & Fast-Hash Naming (`.verified.cs`)
 

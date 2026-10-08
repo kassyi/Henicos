@@ -11,7 +11,7 @@ public class WarpShuffleAnalyzerTests : TranspilerTestBase
     private static readonly HostIntrinsicAnalyzer s_analyzer = new();
 
     [SkippableFact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_95_HostCallToShuffleDownSync_ReportsExpectedError()
     {
         // Asserting diagnostic error for host-side intrinsic use
@@ -21,7 +21,7 @@ public class WarpShuffleAnalyzerTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public async Task Test_95_GpuCallToShuffleDownSync_ReportsNoError()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/WarpShuffleHappyPath.cs", s_analyzer)

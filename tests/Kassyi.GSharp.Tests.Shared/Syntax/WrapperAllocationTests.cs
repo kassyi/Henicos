@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class WrapperAllocationTests : TranspilerTestBase
 {
     private static readonly global::Kassyi.GSharp.Runtime.Aot.ConstantArgument[] s_constArray = new global::Kassyi.GSharp.Runtime.Aot.ConstantArgument[1];

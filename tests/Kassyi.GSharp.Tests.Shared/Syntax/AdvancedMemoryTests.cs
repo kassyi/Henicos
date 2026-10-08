@@ -4,31 +4,31 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class AdvancedMemoryTests
 :  TranspilerTestBase{
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_UnsafeAsPointer_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_MemoryMarshalCast_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_RefFields_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_SimdVector128_Transpilation()
     {
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_PointerIncrementKernel()
     {
         uint[] src = [10, 20, 30];
@@ -42,7 +42,7 @@ public class AdvancedMemoryTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_PointerDecrementKernel()
     {
         uint[] src = [100, 200, 300];
@@ -56,7 +56,7 @@ public class AdvancedMemoryTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(new uint[] { 2, 0, 1 }, new uint[] { 5, 15, 25 }, new uint[] { 25, 35, 15 })]
     [InlineData(new uint[] { 0, 1, 2 }, new uint[] { 1, 2, 3 }, new uint[] { 11, 12, 13 })]
     [InlineData(new uint[] { 0, 1, 2 }, new uint[] { 0, 1, uint.MaxValue }, new uint[] { 10, 11, 9 })]
@@ -74,13 +74,13 @@ public class AdvancedMemoryTests
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_UnsafePointerArithmetic_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_FixedSizeBuffers_Transpilation()
     {
     }

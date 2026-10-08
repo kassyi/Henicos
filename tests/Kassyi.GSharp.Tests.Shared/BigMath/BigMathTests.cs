@@ -10,7 +10,7 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.BigMath;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class BigMathTests : TranspilerTestBase
 {
     [SkippableTheory]

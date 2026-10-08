@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class SwitchExpressionTests : TranspilerTestBase
 {
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(1, 100)]
     [InlineData(2, 200)]
     [InlineData(3, 300)]
@@ -21,7 +21,7 @@ public class SwitchExpressionTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0, 0.0f)]
     [InlineData(1, 3.14159f)]
     [InlineData(2, 2.71828f)]
@@ -37,7 +37,7 @@ public class SwitchExpressionTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(int.MinValue, 1)]
     [InlineData(-1, 2)]
     [InlineData(0, 3)]

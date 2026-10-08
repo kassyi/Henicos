@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class ControlFlowTests
 :  TranspilerTestBase{
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(1, 10)]
     [InlineData(2, 20)]
     [InlineData(3, 30)]
@@ -24,7 +24,7 @@ public class ControlFlowTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_RefSwitchExpression_Transpilation()
     {
         int[] a = [10, 20];
@@ -41,14 +41,14 @@ public class ControlFlowTests
     }
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_PatternMatching_Transpilation()
     {
     }
 
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(42, 100, 42)]
     [InlineData(null, 100, 100)]
     [InlineData(0, 50, 0)]
@@ -64,7 +64,7 @@ public class ControlFlowTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_NullCoalescingAssignment_SideEffect_Transpilation()
     {
         int?[] targetArray = [null, 10]; // target[0] is null (will be assigned), target[1] is 10 (will NOT be assigned)
@@ -83,7 +83,7 @@ public class ControlFlowTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(10, 5, 10.0)]
     [InlineData(2, 5, 7.5)]
     [InlineData(0, 0, 0.0)]
@@ -102,7 +102,7 @@ public class ControlFlowTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(10, 5, 2, 1)] // 10 > 5 and 5 > 2 -> 1
     [InlineData(10, 2, 5, 2)] // 10 > 2 and 2 <= 5 -> 2
     [InlineData(2, 5, 1, 3)] // 2 <= 5 and 2 > 1 -> 3
@@ -120,14 +120,14 @@ public class ControlFlowTests
     }
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_RefConditionalExpression_Transpilation()
     {
     }
 
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_DefaultLiteral_Transpilation()
     {
     }

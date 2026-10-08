@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 public class HeadTailTrackerWriterTests
 {
     [SkippableTheory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData("12345", 5, 5, "12345", "12345", "12345")]
     [InlineData("1234567890", 5, 5, "12345", "67890", "1234567890")]
     [InlineData("1234567890123", 5, 5, "12345", "90123", "12345...90123")]
@@ -20,7 +20,7 @@ public class HeadTailTrackerWriterTests
     }
 
     [SkippableFact]
-    [Trait("Category", "EdgeCase")]
+    [Scenario(TestScenario.Boundary)]
     public void Test_Write_ZeroCapacity_DoesNotThrowAndTracksLength()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -34,7 +34,7 @@ public class HeadTailTrackerWriterTests
     }
 
     [SkippableFact]
-    [Trait("Category", "EdgeCase")]
+    [Scenario(TestScenario.Boundary)]
     public void Test_Write_CharByChar_MatchesStringOutput()
     {
         CudaCapability.EnsureGpuAvailable();

@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class BitOperationsTests : TranspilerTestBase
 {
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0x12345678u, 0)]
     [InlineData(0x12345678u, 31)]
     [InlineData(0x12345678u, 32)]
@@ -35,7 +35,7 @@ public class BitOperationsTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0x123456789ABCDEF0ul, 0)]
     [InlineData(0x123456789ABCDEF0ul, 63)]
     [InlineData(0x123456789ABCDEF0ul, 64)]
@@ -59,7 +59,7 @@ public class BitOperationsTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_BCL02_BitOperations_Rotate32_TranspilesToPtxFunnelShiftIntrinsics()
     {
         // 1. Verify wrapper source uses G# rotation prelude intrinsics

@@ -8,7 +8,7 @@ public class GpuKernelDirectInvocationAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Trait("DiagnosticId", "GSH0031")]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_GpuKernelDirectInvocation_ReportsGSH0031()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/DirectGpuKernelInvocation.cs", s_analyzer)

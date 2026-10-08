@@ -6,12 +6,12 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class CudaEventTimerTests : TranspilerTestBase
 {
     [SkippableFact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "HappyPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
     public void EventTimer_Lifecycle_And_Synchronization_Works()
     {
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();
@@ -29,8 +29,8 @@ public class CudaEventTimerTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     public void EventTimer_Throws_ObjectDisposedException_When_Used_After_Dispose()
     {
         using var _ctxScope = new GpuKernelLoader.CudaContextScope();

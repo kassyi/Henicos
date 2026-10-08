@@ -6,7 +6,7 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class GpuKernelLoaderStressTests
 {
     private static readonly byte[] s_validPtx;
@@ -19,8 +19,8 @@ public class GpuKernelLoaderStressTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "HappyPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_HighThroughputKernelLoading_ParallelStress()
     {
 
@@ -35,8 +35,8 @@ public class GpuKernelLoaderStressTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_CorruptedPtxBinary_ThrowsArgumentException()
     {
 
@@ -54,8 +54,8 @@ public class GpuKernelLoaderStressTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(63)] // Less than 64 bytes (Ed25519 signature length)
@@ -72,8 +72,8 @@ public class GpuKernelLoaderStressTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_NonExistentKernelName_ThrowsArgumentException()
     {
 
@@ -86,8 +86,8 @@ public class GpuKernelLoaderStressTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_HashMismatch_ThrowsInvalidOperationException()
     {
         var basePtx = Encoding.UTF8.GetBytes(".version 7.0\n.target sm_50\n.address_size 64\n.visible .entry empty_kernel() { ret; }\0");

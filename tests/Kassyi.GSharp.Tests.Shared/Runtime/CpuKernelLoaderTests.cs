@@ -5,14 +5,14 @@ using Kassyi.GSharp.Runtime.Aot;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
-[Trait("Category", "CpuExecution")]
+[TestTarget(ExecutionTarget.CpuExecution)]
 public class CpuKernelLoaderTests
 {
     private delegate void EmptyDelegate();
 
     [Fact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_CpuLoader_ShortBuffer_ThrowsInvalidOperationException()
     {
         var tempFile = Path.GetTempFileName();
@@ -33,8 +33,8 @@ public class CpuKernelLoaderTests
     }
 
     [Fact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_CpuLoader_HashMismatch_ThrowsInvalidOperationException()
     {
         var tempFile = Path.GetTempFileName();
@@ -58,8 +58,8 @@ public class CpuKernelLoaderTests
     }
 
     [Fact]
-    [Trait("Category", "Runtime")]
-    [Trait("Category", "SadPath")]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_CpuLoader_ValidSignature_FailsAtNativeLibraryLoad()
     {
         var tempFile = Path.GetTempFileName();

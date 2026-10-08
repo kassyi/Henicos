@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class LocalFunctionLoweringTests : TranspilerTestBase
 {
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LocalFunctionVoid_Execution()
     {
         int[] data = [10, 20, 30];
@@ -14,7 +14,7 @@ public class LocalFunctionLoweringTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0, 5, 5)]
     [InlineData(1, 10, 13)]
     [InlineData(10, 5, 35)]
@@ -31,7 +31,7 @@ public class LocalFunctionLoweringTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0, 0)]
     [InlineData(1, 1)]
     [InlineData(5, 25)]
@@ -44,7 +44,7 @@ public class LocalFunctionLoweringTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_NestedLocalFunction_Execution()
     {
         int[] data = [0, 5, 10];
@@ -55,7 +55,7 @@ public class LocalFunctionLoweringTests : TranspilerTestBase
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(10, 20, 30)]  // Within [0, 100]
     [InlineData(-50, 10, 0)]  // Below min limit 0 -> clamped to 0
     [InlineData(80, 50, 100)] // Exceeds max limit 100 -> clamped to 100

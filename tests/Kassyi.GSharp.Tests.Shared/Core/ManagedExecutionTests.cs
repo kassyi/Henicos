@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class ManagedExecutionTests : TranspilerTestBase
 {
     [SkippableTheory]

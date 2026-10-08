@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class MemoryAndFixedArraysTests
 :  TranspilerTestBase{
         [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_FixedBufferKernel()
     {
         uint[] dataArray = [5, 0];

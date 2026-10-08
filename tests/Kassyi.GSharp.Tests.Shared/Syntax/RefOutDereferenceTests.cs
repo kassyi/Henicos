@@ -37,7 +37,7 @@ public partial class RefOutDereferenceTests
     private static partial Regex ChainedRefRegex();
 
     [SkippableFact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_RefOutDereferencing_HappyPath_ModifyingRefArgument()
     {
         var (cudaSource, diagnostics) =
@@ -48,7 +48,7 @@ public partial class RefOutDereferenceTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_RefOutDereferencing_EdgeCase_MemberAccessAndChainedAssignments()
     {
         var (cudaSourceMember, diagnosticsMember) =

@@ -9,7 +9,7 @@ using Xunit;
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [Collection("GpuWorkspace")]
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class FermatAlgorithmTests
 {
     [Theory]

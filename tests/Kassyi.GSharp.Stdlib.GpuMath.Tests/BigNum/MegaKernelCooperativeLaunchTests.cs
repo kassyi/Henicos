@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class MegaKernelCooperativeLaunchTests
 {
     [SkippableFact]

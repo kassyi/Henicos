@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 public class AotConfigurationTests
 {
     [Fact]
-    [Trait("Category", "Transpiler")]
+    [Category(TestCategory.Compiler)]
     public void Test_AotConfiguration_AlwaysProducesAotWrapper()
     {
         var sourceCode = """
@@ -40,7 +40,7 @@ public class AotConfigurationTests
     }
 
     [Fact]
-    [Trait("Category", "Transpiler")]
+    [Category(TestCategory.Compiler)]
     public void Test_AotConfiguration_ProducesPlaintextArtifactAndNoKey()
     {
         var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());

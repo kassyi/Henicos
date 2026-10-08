@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class VectorBuiltinTests
 :  TranspilerTestBase{
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(10)]
@@ -32,7 +32,7 @@ public class VectorBuiltinTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(10)]
@@ -62,7 +62,7 @@ public class VectorBuiltinTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0)]
     [InlineData(1)]
     [InlineData(10)]

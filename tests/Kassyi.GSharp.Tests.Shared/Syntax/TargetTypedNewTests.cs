@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class TargetTypedNewTests
 :  TranspilerTestBase{
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_HappyPath_TargetTypedNew()
     {
         int[] output = [0];
@@ -15,7 +15,7 @@ public class TargetTypedNewTests
     }
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(0, 0)]  // tid 0: p.Id = 0, p.Child.Value = 0 -> 0
     [InlineData(1, 6)]  // tid 1: p.Id = 1, p.Child.Value = 5 -> 6
     [InlineData(2, 12)] // tid 2: p.Id = 2, p.Child.Value = 10 -> 12

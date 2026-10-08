@@ -22,7 +22,7 @@ public class GeneratorDiagnosticsTests : TranspilerTestBase
     }
 
     [Fact]
-    [Trait("Category", "Diagnostics")]
+    [Category(TestCategory.Compiler)]
     public async Task Test_UnsupportedFeatures_ReportsDiagnostics()
     {
         var driver = await TestGenerator("Generator/UnsupportedFeatures.cu.cs")

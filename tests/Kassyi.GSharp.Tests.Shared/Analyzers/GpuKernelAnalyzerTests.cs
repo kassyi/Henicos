@@ -6,7 +6,7 @@ public class GpuKernelAnalyzerTests
     private static readonly GpuKernelAnalyzer s_analyzer = new();
 
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [InlineData("GSH-01", "Analyzers/GpuKernel/Foreach_InGpuKernel.cu.cs", "GSH0007")]
     [InlineData("GSH-02", "Analyzers/GpuKernel/LinqQuery_InGpuKernel.cu.cs", "GSH0008")]
     [InlineData("GSH-03", "Analyzers/GpuKernel/ImplicitVar_WithoutSuffix_InGpuKernel.cu.cs", "GSH0009")]
@@ -22,7 +22,7 @@ public class GpuKernelAnalyzerTests
     }
 
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     // Note: GSH-02b uses .cu.txt instead of .cu.cs to prevent SnapshotTestCaseGenerator from picking it up.
     // If it were .cu.cs, the G# transpiler would attempt to compile the LINQ method syntax (which is invalid in C++),
     // causing a fatal MSVC/nvcc compiler error during the E2E backend tests (Tests.Cpu / Tests.Cuda).
@@ -39,7 +39,7 @@ public class GpuKernelAnalyzerTests
     }
 
     [Theory]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     [InlineData("GSH-00", "Analyzers/GpuKernel/ValidSyntax_InGpuKernel.cu.cs")]
     [InlineData("GSH-32-Happy", "Analyzers/UnrollStaticDeterminism_HappyPath.cs")]
     [InlineData("GSH-34-Happy", "Analyzers/ParamsProhibited_HappyPath.cs")]

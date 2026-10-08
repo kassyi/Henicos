@@ -4,30 +4,30 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class ContractsAndPtxTests
 :  TranspilerTestBase{
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_DebugAssert_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_CallerInfoAttributes_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_ConditionalAttribute_Transpilation()
     {
     }
 
     [Fact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_ConstexprPropagation_Transpilation()
     {
     }
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void TestInlinePtxKernel()
     {
         SkipIfCpuDialect("Inline PTX is only executable on CUDA devices");
@@ -38,7 +38,7 @@ public class ContractsAndPtxTests
     }
 
     [SkippableFact()]
-    [Trait("Category", "Syntax")]
+    [Category(TestCategory.Syntax)]
     public void Test_WmmaTensorCores_Transpilation()
     {
     }

@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 public class CoreSyntaxTests
 :  TranspilerTestBase{
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(5, 2, 10)]       // 5 <= 10 -> else branch 5 times: 5 * 2 = 10
     [InlineData(9, 2, 10)]       // 9 <= 10 -> else branch 5 times: 5 * 2 = 10
     [InlineData(10, 2, 10)]      // 10 <= 10 (Strict Boundary) -> else branch: 5 * 2 = 10
@@ -26,7 +26,7 @@ public class CoreSyntaxTests
 
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void TestControlFlowKernel()
     {
         // Test with 8 threads across multiple warps/lanes
@@ -48,7 +48,7 @@ public class CoreSyntaxTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void TestStructKernel()
     {
         // Empty array edge case
@@ -77,8 +77,8 @@ public class CoreSyntaxTests
     }
 
     [SkippableFact]
-    [Trait("Category", "Alignment")]
-    [Trait("Category", "GpuExecution")]
+    [Category(TestCategory.Alignment)]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void TestStruct_MixedPaddingAndAlignment()
     {
         // Empty array edge case
@@ -118,7 +118,7 @@ public class CoreSyntaxTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void TestDeviceMethodKernel()
     {
         // Single-element edge case

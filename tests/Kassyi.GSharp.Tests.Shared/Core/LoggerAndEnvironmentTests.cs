@@ -19,7 +19,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Logger_AllLevels_EmitWithoutException()
     {
         // Happy Path: Logger methods should succeed across all severity levels
@@ -51,7 +51,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Logger_PerformanceTrackingAndScopes_WorkCorrectly()
     {
         // Happy Path: Performance timer and measure scope
@@ -73,7 +73,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Logger_GenericILoggerWrapper_OperatesAsExpected()
     {
         // Happy Path: Microsoft.Extensions.Logging.ILogger implementation via Logger<T>
@@ -97,7 +97,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Theory]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     [InlineData("")]
     [InlineData(" ")]
     [InlineData("Special\t\r\n\0Characters")]
@@ -118,7 +118,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
-    [Trait("Category", "Boundary")]
+    [Scenario(TestScenario.Boundary)]
     public void Test_Logger_OversizedMessage_HandledGracefully()
     {
         // Boundary Testing: Very large message (100,000 characters)
@@ -137,7 +137,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_Logger_NullMessage_IgnoredWithoutException()
     {
         // Sad Path: Null message should be ignored cleanly without throwing NullReferenceException
@@ -146,7 +146,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_Logger_FilteringBelowActiveLevel_SuppressesLogs()
     {
         // Sad Path: Messages below active level must be suppressed
@@ -169,7 +169,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
-    [Trait("Category", "Stress")]
+    [Category(TestCategory.Stress)]
     public void Test_Logger_ConcurrentWrites_ThreadSafeAndNoDeadlock()
     {
         // Stress & Concurrency: Multi-threaded burst logging into the background queue
@@ -190,7 +190,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_CudaEnvironment_PathResolution_DoesNotCrash()
     {
         // Happy Path: CudaEnvironment API calls return either valid paths or null without throwing unhandled exceptions
@@ -209,7 +209,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public void Test_CudaEnvironment_InvalidCudaPath_Ignored()
     {
         // Sad Path: Setting an invalid CUDA_PATH environment variable should be ignored and fallback safely

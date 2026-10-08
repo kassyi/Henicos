@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 public class FastMathBoundaryTests
 {
     [Fact]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_HostSide_FastMath_FallsBackToMathF()
     {
         // Assert that invoking FastMath API directly on CPU falls back to MathF
@@ -37,7 +37,7 @@ public class FastMathBoundaryTests
     ];
 
     [SkippableTheory]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     [MemberData(nameof(GetBoundaryValues))]
     public void Test_GpuSide_FastMath_Boundaries(float inputVal)
     {
@@ -71,7 +71,7 @@ public class FastMathBoundaryTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_GpuSide_FastMath_EmptyInputs()
     {
         float[] empty = [];
@@ -83,8 +83,8 @@ public class FastMathBoundaryTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
-    [Trait("Category", "Stress")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stress)]
     public void Test_GpuSide_FastMath_Stress()
     {
         const int iterations = 100;

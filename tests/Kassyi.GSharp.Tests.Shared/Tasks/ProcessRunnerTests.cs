@@ -28,7 +28,7 @@ public class ProcessRunnerTests
     }
 
     [Fact]
-    [Trait("Category", "SadPath")]
+    [Scenario(TestScenario.SadPath)]
     public async Task Test_ProcessRunner_FileNotFound_ThrowsException()
     {
         var runner = ProcessRunner.Default;
@@ -41,7 +41,7 @@ public class ProcessRunnerTests
     }
 
     [Fact]
-    [Trait("Category", "Stress")]
+    [Category(TestCategory.Stress)]
     public void Test_ProcessRunner_LargeOutput_NoDeadlock()
     {
         // Generate a large output to fill the buffer (usually 4KB on Windows).

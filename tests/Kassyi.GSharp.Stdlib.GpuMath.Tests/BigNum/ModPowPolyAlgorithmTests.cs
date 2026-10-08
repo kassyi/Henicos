@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-[Trait("Category", "GpuExecution")]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class ModPowPolyAlgorithmTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;
@@ -41,7 +41,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     }
 
     [SkippableTheory]
-    [Trait("Category", "HappyPath")]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(256)]
     [InlineData(512)]
     [InlineData(1024)] // Un-disabled to test extreme PCIe sync overhead resolution
@@ -80,7 +80,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     }
 
     [SkippableFact]
-    [Trait("Category", "EdgeCase")]
+    [Scenario(TestScenario.Boundary)]
     public void Test_ModPow_EdgeCases()
     {
         CudaCapability.EnsureGpuAvailable();

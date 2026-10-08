@@ -3,19 +3,19 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class StackAllocFixedArrayTests:  TranspilerTestBase{
     [Fact()]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_GSH04_StackAlloc_HappyPath()
     {
     }
 
     [Fact()]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_GSH04_StackAlloc_InTightLoop()
     {
     }
 
     [Fact()]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_GSH04_StackAlloc_AsMethodArgument()
     {
     }

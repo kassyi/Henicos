@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 public class TranspilerInfrastructureTests
 :  TranspilerTestBase{
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_ForwardDeclarations_And_MutualCalls()
     {
         int[] counts = [1, 2, 3];
@@ -21,7 +21,7 @@ public class TranspilerInfrastructureTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_OverloadedFunctions_DeduplicationAndForwardDecl()
     {
         int[] inputA = [3, 4];
@@ -43,7 +43,7 @@ public class TranspilerInfrastructureTests
     }
 
     [SkippableFact]
-    [Trait("Category", "GpuExecution")]
+    [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_PinnedArrayTransfer_EmptyAndHugeArrays()
     {
         // 1. Empty array transfer
