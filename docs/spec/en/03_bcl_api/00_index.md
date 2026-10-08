@@ -80,6 +80,16 @@ The `Stdlib.Math` library is a highly specialized suite built on top of the Core
 * **[GPU Big Float](math_bignum/gpu_big_float/00_index.md)**
 * **[GPU Execution Contexts](math_bignum/gpu_workspace/GpuWorkspace.md)**
 
+---
+
+## Group 3: Zero-Allocation LINQ (`Kassyi.ZeroAlloc.Linq` / StackLinq)
+
+`StackLinq` provides zero-allocation fluent sequence transformations built entirely on C# 12 `ref struct` state machines. Pipelines are executed without garbage collection overhead on CPUs and are directly lowered into thread-local register state machines for execution on NVIDIA GPUs.
+
+* **[StackLinq Overview & Architecture](linq/00_index.md)**: Architectural tenets, loop fusion, zero-allocation design, and GPU execution model.
+* **[StackLinq API Reference](linq/api_reference.md)**: Complete reference of sequence operators (`Where`, `Select`, `Take`, `Skip`, `Sum`, etc.) and enumerator types.
+* **[Diagnostic SLQ0001](diagnostics/SLQ0001.md)**: Compile-time analyzer governing maximum query chain depth to prevent GPU register spilling.
+
 ## See also
 
 
