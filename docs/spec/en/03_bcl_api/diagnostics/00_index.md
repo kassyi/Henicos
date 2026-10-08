@@ -67,6 +67,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0051](GSH0051.md) | Error | [TakesOwnership] applied to non-IDisposable type |
 | [GSH0052](GSH0052.md) | Error | [TakesOwnership] is only allowed on constructor parameters |
 | [GSH0053](GSH0053.md) | Error | Cannot take ownership of a reference parameter |
+| [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 
 ## See Also
