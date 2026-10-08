@@ -8,10 +8,10 @@ public class ReductionBenchmark : IComputeBenchmark
     private const int ElementsPerBlock = ThreadsPerBlock * 2;
     private const int Blocks = N / ElementsPerBlock;
 
-    private Float4[] _input = null!;
-    private float[] _outputCpu = null!;
-    private float[] _outputGsharp = null!;
-    private float[] _outputNative = null!;
+    private Float4[] _input = [];
+    private float[] _outputCpu = [];
+    private float[] _outputGsharp = [];
+    private float[] _outputNative = [];
 
     private float _finalResultCpu;
     private float _finalResultGsharp;

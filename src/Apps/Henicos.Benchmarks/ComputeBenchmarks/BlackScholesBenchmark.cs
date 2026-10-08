@@ -4,20 +4,20 @@ public class BlackScholesBenchmark : IComputeBenchmark
 {
     private const int N = 1_000_000;
 
-    private float[] _s = null!;
-    private float[] _x = null!;
-    private float[] _t = null!;
+    private float[] _s = [];
+    private float[] _x = [];
+    private float[] _t = [];
     private float _r;
     private float _v;
 
-    private float[] _callResultCpu = null!;
-    private float[] _putResultCpu = null!;
+    private float[] _callResultCpu = [];
+    private float[] _putResultCpu = [];
 
-    private float[] _callResultGsharp = null!;
-    private float[] _putResultGsharp = null!;
+    private float[] _callResultGsharp = [];
+    private float[] _putResultGsharp = [];
 
-    private float[] _callResultNative = null!;
-    private float[] _putResultNative = null!;
+    private float[] _callResultNative = [];
+    private float[] _putResultNative = [];
 
     public string Name => "Black-Scholes (Float)";
 

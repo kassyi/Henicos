@@ -154,7 +154,8 @@ public class FermatBenchmarks
     private BigInteger _n;
     private BigInteger _a;
     private BigInteger _exponent;
-    private FermatAlgorithm _gsharpRunner = null!;
+    private FermatAlgorithm? _gsharpRunner;
+    private FermatAlgorithm GsharpRunner => _gsharpRunner ?? throw new InvalidOperationException("FermatAlgorithm runner has not been initialized. Call Setup() first.");
     private nint _vramBefore;
 
     [GlobalSetup]
@@ -200,7 +201,7 @@ public class FermatBenchmarks
             return 0; // Skip to avoid NVRTC Timeout/TDR
         }
 
-        var (resultArray, _) = _gsharpRunner.RunFermatPrp();
+        var (resultArray, _) = GsharpRunner.RunFermatPrp();
 
         var highestWord = resultArray[^1];
         var resBytes = new byte[resultArray.Length * 4 + 1];
@@ -227,7 +228,7 @@ public class FermatBenchmarks
             return; // Skip to avoid NVRTC Timeout/TDR
         }
 
-        _gsharpRunner.RunBenchmarkChunk();
+        GsharpRunner.RunBenchmarkChunk();
     }
 }
 

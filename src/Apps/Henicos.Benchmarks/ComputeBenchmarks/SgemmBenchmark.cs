@@ -5,11 +5,11 @@ public class SgemmBenchmark : IComputeBenchmark
     private const int N = 512; // 512x512 matrix
     private const int TileSize = 16;
 
-    private float[] _a = null!;
-    private float[] _b = null!;
-    private float[] _cCpu = null!;
-    private float[] _cGsharp = null!;
-    private float[] _cNative = null!;
+    private float[] _a = [];
+    private float[] _b = [];
+    private float[] _cCpu = [];
+    private float[] _cGsharp = [];
+    private float[] _cNative = [];
 
     public string Name => "SGEMM (512x512)";
 

@@ -12,8 +12,8 @@ public class GpuBigIntBenchmark : IDisposable
         get; set;
     }
 
-    private GpuWorkspace _contextJit = null!;
-    private GpuWorkspace _contextLegacy = null!;
+    private GpuWorkspace? _contextJit;
+    private GpuWorkspace? _contextLegacy;
 
     private GpuBigUInt _gpuAJit;
     private GpuBigUInt _gpuBJit;
@@ -58,8 +58,8 @@ public class GpuBigIntBenchmark : IDisposable
     [GlobalCleanup]
     public void Cleanup()
     {
-        _contextJit.Dispose();
-        _contextLegacy.Dispose();
+        _contextJit?.Dispose();
+        _contextLegacy?.Dispose();
         _scope.Dispose();
     }
 
