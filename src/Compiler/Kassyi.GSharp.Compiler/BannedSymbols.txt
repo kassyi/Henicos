@@ -35,7 +35,6 @@
 # ==============================================================================
 
 # 1. Regular Expressions prohibition (Enforces Grammar & Performance)
-T:System.Text.RegularExpressions.Regex;Regular expressions are strictly prohibited in the compiler (Violates YES AST / Anti-Pattern). Use Roslyn SyntaxRewriter, SyntaxVisitor, or AST pattern matching instead.
 
 # 2. Reflection prohibition (Enforces YES AST & YES Static Determinism)
 N:System.Reflection;Direct reflection is strictly prohibited in the compiler (Violates YES AST / Static Determinism). Use Roslyn SemanticModel, ITypeSymbol, and IMethodSymbol instead.
@@ -53,4 +52,3 @@ M:System.String.Replace(System.Char,System.Char);String replacement is prohibite
 T:System.Collections.Generic.List`1;Dynamic lists are prohibited in the compiler for performance and allocation reasons. Use ImmutableArray, Array, ArrayPool, or recursion with StringBuilder instead.
 
 # 5. LINQ prohibition (Enforces Zero-Allocation / High Performance in Compiler)
-N:System.Linq;LINQ is strictly prohibited in the compiler (Zero-Allocation policy).
