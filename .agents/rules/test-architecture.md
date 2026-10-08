@@ -138,3 +138,16 @@ public abstract class StateMachineTestBase
     Snap.{Prefix}_{Hash10}[_{Dialect}].g.verified.cs
     ```
 - **Infrastructure**: Never clone or copy-paste `HashHelper` or snapshot naming methods into individual test assemblies. Use the centralized test foundation in `Kassyi.GSharp.Tests.Shared.Helpers`.
+
+---
+
+## 4. DEVELOPMENT METHODOLOGY (Test-Driven AI Vibe Coding)
+
+This project strictly adheres to **Test-Driven AI Vibe Coding (テスト先行AIバイブコーディング)**.
+When picking up tasks from the roadmap, you MUST follow this fundamental workflow:
+
+1. **Phase 1: Golden Master / Snapshot Test Generation First**
+    - Before writing ANY implementation code, you must create the necessary test cases.
+    - You MUST design the tests covering happy paths, boundaries, and sad paths (exceptions) based on the `qa-testing-guidelines` **before** writing the actual logic.
+2. **Phase 2: Isolated AST Lane Branching**
+    - Work in isolated branches separated by the AST responsibility area (e.g., Expression, Statement) to prevent parallel implementation conflicts.
