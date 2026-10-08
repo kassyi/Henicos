@@ -440,7 +440,7 @@ internal static class WrapperEmitter
 
             var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_{{safeAssemblyName}}).Assembly.Location) ??
                 System.AppContext.BaseDirectory;
-            var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_{{safeAssemblyName}}.fatbin");
+            var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_{{safeAssemblyName}}.gfatbin");
             if (!System.IO.File.Exists(fatbinPath))
             {
             throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");
