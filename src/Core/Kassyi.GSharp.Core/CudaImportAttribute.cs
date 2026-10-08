@@ -12,7 +12,10 @@ public sealed class CudaImportAttribute : Attribute
     /// <summary>
     /// Gets the name of the CUDA module containing the external kernel implementation.
     /// </summary>
-    public string ModuleName { get; }
+    public string ModuleName
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets or sets the entry point name within the CUDA module. Defaults to the C# method name if empty.
@@ -22,7 +25,10 @@ public sealed class CudaImportAttribute : Attribute
     /// <summary>
     /// Gets or sets a value indicating whether kernel arguments should be packed into a context structure.
     /// </summary>
-    public bool PackContext { get; set; }
+    public bool PackContext
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CudaImportAttribute"/> class with the specified module name.

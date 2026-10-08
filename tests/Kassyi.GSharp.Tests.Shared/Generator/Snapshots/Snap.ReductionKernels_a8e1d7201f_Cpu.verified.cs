@@ -223,18 +223,18 @@ public class __gsharp_context_ReductionKernels_ReductionKernel {
 public int _state;
 public uint _warpExchange;
 public bool _yieldedForGridSync;
-public int tid;
-public int i;
-public int sum;
-public int _warpTemp_0;
-public int _warpTemp_1;
-public int _warpTemp_2;
-public int _warpTemp_3;
-public int _warpTemp_4;
-public int lane;
-public int warpId;
-public int _warpTemp_5;
-public int _warpTemp_6;
+public dynamic tid;
+public dynamic i;
+public dynamic sum;
+public dynamic _warpTemp_0;
+public dynamic _warpTemp_1;
+public dynamic _warpTemp_2;
+public dynamic _warpTemp_3;
+public dynamic _warpTemp_4;
+public dynamic lane;
+public dynamic warpId;
+public dynamic _warpTemp_5;
+public dynamic _warpTemp_6;
 }
 public static unsafe void __gsharp_statemachine_ReductionKernels_ReductionKernel(global::Kassyi.GSharp.Core.Float4[] input, float[] output, int n, __gsharp_context_ReductionKernels_ReductionKernel _ctx) {
         SharedMemory<float> sdata = new(8);

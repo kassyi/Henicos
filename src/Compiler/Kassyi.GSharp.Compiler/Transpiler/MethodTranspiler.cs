@@ -108,19 +108,17 @@ public static class MethodTranspiler
             }
 
             var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(typeSyntax);
-            if (typeSymbol == null && typeSyntax.IsVar)
+            switch (typeSymbol)
             {
-                // Fallback for dynamically generated AST nodes (e.g., _warpTemp_X)
-                // Since they are not in the semantic model, default to 'int' for now.
-                context.Emitter.Writer.Append("int");
-                context.Emitter.Writer.Append($" {field.Identifier.ValueText};");
-                context.Emitter.Writer.AppendLine();
-                continue;
-            }
-
-            if (typeSymbol == null)
-            {
-                continue;
+                case null when typeSyntax.IsVar:
+                    // Fallback for dynamically generated AST nodes (e.g., _warTemp_X)
+                    // Since they are not in the semantic model, default to 'int' for C++ (which allows implicit cast).
+                    context.Emitter.Writer.Append("int");
+                    context.Emitter.Writer.Append($" {field.Identifier.ValueText};");
+                    context.Emitter.Writer.AppendLine();
+                    continue;
+                case null:
+                    continue;
             }
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
@@ -201,7 +199,7 @@ public static class MethodTranspiler
                             }
                             else
                             {
-                                typeString = "int";
+                                typeString = "dynamic";
                             }
                         }
                     }
@@ -214,7 +212,7 @@ public static class MethodTranspiler
                         }
                         else
                         {
-                            typeString = "int";
+                            typeString = "dynamic";
                         }
                     }
                 }
@@ -275,10 +273,11 @@ public static class MethodTranspiler
             }
 
             writer.Append($"__gsharp_context_{methodName} _ctx");
-            
+
             if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
             {
-                writer.Append($", ref {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} __gsharp_auto_result");
+                writer.Append(
+                    $", ref {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} __gsharp_auto_result");
             }
         }
 
@@ -307,7 +306,8 @@ public static class MethodTranspiler
 
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
         {
-            if (node.Identifier.Text == "_state" || node.Identifier.Text == "_warpExchange" || node.Identifier.Text == "_yieldedForGridSync")
+            if (node.Identifier.Text == "_state" || node.Identifier.Text == "_warpExchange" ||
+                node.Identifier.Text == "_yieldedForGridSync")
             {
                 if (node.Parent is MemberAccessExpressionSyntax parent && parent.Name == node)
                 {

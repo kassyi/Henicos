@@ -160,10 +160,10 @@ public int lane;
 public int warpId;
 public int val;
 public uint mask;
-public int _warpTemp_0;
-public int _warpTemp_1;
-public int _warpTemp_2;
-public int _warpTemp_3;
+public dynamic _warpTemp_0;
+public dynamic _warpTemp_1;
+public dynamic _warpTemp_2;
+public dynamic _warpTemp_3;
 }
 public static unsafe void __gsharp_statemachine_WarpShuffleKernels_WarpReductionKernel(int[] input, int[] output, __gsharp_context_WarpShuffleKernels_WarpReductionKernel _ctx) {
 {
@@ -419,8 +419,8 @@ public bool _yieldedForGridSync;
 public int tid;
 public uint mask;
 public int val;
-public int _warpTemp_0;
-public int _warpTemp_1;
+public dynamic _warpTemp_0;
+public dynamic _warpTemp_1;
 }
 public static unsafe void __gsharp_statemachine_WarpShuffleKernels_WarpShuffleBoundaryKernel(int[] input, int[] outputBoundary0, int[] outputBoundary31, int[] outputBoundary32, __gsharp_context_WarpShuffleKernels_WarpShuffleBoundaryKernel _ctx) {
 {
@@ -658,7 +658,7 @@ public int tid;
 public int lane;
 public uint mask;
 public int val;
-public int _warpTemp_0;
+public dynamic _warpTemp_0;
 }
 public static unsafe void __gsharp_statemachine_WarpShuffleKernels_WarpDivergenceKernel(int[] input, int[] output, __gsharp_context_WarpShuffleKernels_WarpDivergenceKernel _ctx) {
 {

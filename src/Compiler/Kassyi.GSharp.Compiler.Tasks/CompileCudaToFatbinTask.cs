@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
@@ -12,7 +11,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     public ITaskItem[] CudaSources { get; set; } = [];
 
     /// <summary>Gets or sets the target GPU architectures (e.g. compute_86,sm_86).</summary>
-    public string TargetArchitectures { get; set; } =
+    public string TargetArchitectures
+    {
+        get; set;
+    } =
         "compute_86,sm_86";
 
     /// <summary>Gets or sets the path or executable name for the NVIDIA CUDA compiler (nvcc).</summary>
@@ -21,7 +23,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     /// <summary>
     /// When specified, bundles all <see cref="CudaSources"/> into a single fatbin with this file name.
     /// </summary>
-    public string? CombinedFatbinName { get; set; }
+    public string? CombinedFatbinName
+    {
+        get; set;
+    }
 
     /// <summary>Gets or sets the resulting compiled fatbin task items.</summary>
     [Output]
@@ -65,7 +70,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             return true;
         }
 
-        var outputFatbinPath = Path.Combine(OutputDirectory, CombinedFatbinName!);
+        var outputName = Path.HasExtension(CombinedFatbinName)
+            ? Path.ChangeExtension(CombinedFatbinName, ".gfatbin")
+            : CombinedFatbinName + ".gfatbin";
+        var outputFatbinPath = Path.Combine(OutputDirectory, outputName!);
 
         if (MockCompilation)
         {
@@ -116,7 +124,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
         var bundleFileName = Path.GetFileNameWithoutExtension(CombinedFatbinName) + "_bundle.cu";
         var bundleFilePath = Path.Combine(OutputDirectory, bundleFileName);
-        
+
         var bundleContent = new StringBuilder();
         var originalPathsFiltered = new List<string>();
         foreach (var sp in sourcePaths)
@@ -129,7 +137,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             var escapedPath = sp.Replace("\\", "/");
             bundleContent.AppendLine($"#include \"{escapedPath}\"");
         }
-        
+
         try
         {
             File.WriteAllText(bundleFilePath, bundleContent.ToString());
@@ -220,7 +228,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
         var sourcePath = sourceItem.GetMetadata("FullPath");
         var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
-        var outputFatbinPath = Path.Combine(OutputDirectory, $"{fileName}.fatbin");
+        var outputFatbinPath = Path.Combine(OutputDirectory, $"{fileName}.gfatbin");
 
         if (MockCompilation)
         {
@@ -358,21 +366,25 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                 var suppressGs0001 = false;
                 foreach (var sourcePath in sourcePaths)
                 {
-                    if (File.Exists(sourcePath))
+                    if (!File.Exists(sourcePath))
                     {
-                        try
+                        continue;
+                    }
+
+                    try
+                    {
+                        var content = File.ReadAllText(sourcePath);
+                        if (!content.Contains("// gsharp:suppress GS0001"))
                         {
-                            var content = File.ReadAllText(sourcePath);
-                            if (content.Contains("// gsharp:suppress GS0001"))
-                            {
-                                suppressGs0001 = true;
-                                break;
-                            }
+                            continue;
                         }
-                        catch
-                        {
-                            // Ignore read errors
-                        }
+
+                        suppressGs0001 = true;
+                        break;
+                    }
+                    catch
+                    {
+                        // Ignore read errors
                     }
                 }
 
@@ -422,8 +434,41 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
 internal static class NvccOutputParser
 {
-    private static readonly Regex s_spillRegex =
-        new(@"[1-9]\d*\s+bytes spill", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static bool HasSpill(string line)
+    {
+        const string Target = "bytes spill";
+        var index = 0;
+        while (index < line.Length)
+        {
+            var found = line.IndexOf(Target, index, StringComparison.OrdinalIgnoreCase);
+            if (found <= 0)
+            {
+                return false;
+            }
+
+            var i = found - 1;
+            while (i >= 0 && char.IsWhiteSpace(line[i]))
+            {
+                i--;
+            }
+
+            var endOfDigits = i;
+            while (i >= 0 && char.IsDigit(line[i]))
+            {
+                i--;
+            }
+
+            var startOfDigits = i + 1;
+            if (startOfDigits <= endOfDigits && line[startOfDigits] != '0')
+            {
+                return true;
+            }
+
+            index = found + Target.Length;
+        }
+
+        return false;
+    }
 
     public static bool DetectRegisterSpill(string output, string error, out string errorMessage)
     {
@@ -441,7 +486,7 @@ internal static class NvccOutputParser
 
             if ((line.IndexOf("ptxas warning", StringComparison.OrdinalIgnoreCase) < 0 ||
                  line.IndexOf("spill", StringComparison.OrdinalIgnoreCase) < 0) &&
-                !s_spillRegex.IsMatch(line))
+                !HasSpill(line))
             {
                 continue;
             }
@@ -464,7 +509,7 @@ internal static class NvccOutputParser
         using var outReader = new StringReader(output);
         while ((line = outReader.ReadLine()) != null)
         {
-            if (s_spillRegex.IsMatch(line))
+            if (HasSpill(line))
             {
                 spillLines.Add(line.Trim());
             }

@@ -393,9 +393,9 @@ public int tid;
 public // 3. Custom Struct extraction & Array pointer dereferencing
             PhysicsVector p;
 public SpecTypes types;
-public int origin;
-public int distance;
-public int nested;
+public dynamic origin;
+public dynamic distance;
+public dynamic nested;
 public // 4. All Math Mappings and Device Method invocation
             float mag;
 public int i;

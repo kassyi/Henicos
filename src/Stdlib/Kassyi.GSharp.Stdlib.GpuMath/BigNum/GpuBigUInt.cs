@@ -20,12 +20,18 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     /// <summary>
     /// Gets the <see cref="GpuWorkspace"/> associated with this GPU integer instance.
     /// </summary>
-    public GpuWorkspace Workspace { get; }
+    public GpuWorkspace Workspace
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the underlying GPU memory handle tracking device buffer allocation and lifetime.
     /// </summary>
-    public GpuBigIntMemoryHandle Handle { get; }
+    public GpuBigIntMemoryHandle Handle
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the raw 64-bit device memory pointer to the first limb word in GPU global address space.
@@ -41,7 +47,10 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     /// <summary>
     /// Gets a value indicating whether this buffer represents an intermediate temporary buffer managed by expression evaluation.
     /// </summary>
-    public bool IsTemp { get; }
+    public bool IsTemp
+    {
+        get;
+    }
 
     internal GpuBigUInt(GpuWorkspace workspace, GpuBigIntMemoryHandle handle, bool isTemp = false)
     {

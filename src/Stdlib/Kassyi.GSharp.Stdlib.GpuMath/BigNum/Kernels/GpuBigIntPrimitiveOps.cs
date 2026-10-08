@@ -181,7 +181,10 @@ public static partial class GpuBigIntPrimitiveOps
     {
         for (int i = 0; i < numWords; i++)
         {
-            if (data[i] != 0) return false;
+            if (data[i] != 0)
+            {
+                return false;
+            }
         }
 
         return true;
@@ -196,10 +199,17 @@ public static partial class GpuBigIntPrimitiveOps
     [GpuDeviceFunction]
     public static unsafe bool DeviceIsOne(uint* data, int numWords)
     {
-        if (data[0] != 1) return false;
+        if (data[0] != 1)
+        {
+            return false;
+        }
+
         for (int i = 1; i < numWords; i++)
         {
-            if (data[i] != 0) return false;
+            if (data[i] != 0)
+            {
+                return false;
+            }
         }
 
         return true;

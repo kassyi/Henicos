@@ -21,7 +21,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     {
         var byteSize = sizeof(T);
         using var resultBuf = workspace.RentTemp(resultWords);
-        
+
         using (new GpuKernelLoader.CudaContextScope())
         {
             CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, byteSize));
@@ -34,7 +34,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
         {
             CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&result), resultBuf.DevicePointer, byteSize));
         }
-        
+
         return result;
     }
     /// <inheritdoc/>

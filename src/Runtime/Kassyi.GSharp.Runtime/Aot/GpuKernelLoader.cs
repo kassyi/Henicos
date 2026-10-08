@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Runtime.Fatbin;
 using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Aot;
@@ -12,14 +13,13 @@ public sealed class GpuKernelLoader
     private static IntPtr s_globalContext;
     private static readonly Lock s_initLock = new();
     private static volatile bool s_isCpuFallbackMode;
+    private static int s_deviceMajor;
+    private static int s_deviceMinor;
 
     /// <summary>
     /// Gets or sets a value indicating whether to forcibly emulate GPU runtime on CPU host memory.
     /// </summary>
-    public static bool ForceCpuFallback
-    {
-        get; set;
-    }
+    public static bool ForceCpuFallback { get; set; }
 
     /// <summary>
     /// Gets a value indicating whether the runtime is operating in CPU host fallback mode.
@@ -149,6 +149,10 @@ public sealed class GpuKernelLoader
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
 
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
+                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMajor,
+                    CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor, device));
+                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMinor,
+                    CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMinor, device));
                 s_isCpuFallbackMode = false;
             }
             catch (DllNotFoundException)
@@ -171,10 +175,10 @@ public sealed class GpuKernelLoader
     }
 
 
-
     // AOT Cache uses Hash256 and KernelName to prevent collisions and avoid allocations
-    private static readonly ConcurrentDictionary<(AotSignatureValidator.Hash256 Hash, string KernelName), Lazy<GpuModule>> s_functionCache =
-        new();
+    private static readonly
+        ConcurrentDictionary<(AotSignatureValidator.Hash256 Hash, string KernelName), Lazy<GpuModule>> s_functionCache =
+            new();
 
 #pragma warning disable IDE0051 // Justification: Public API for library
     /// <summary>
@@ -240,14 +244,16 @@ public sealed class GpuKernelLoader
     // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
     public static IntPtr LoadAotKernel(ReadOnlySpan<byte> aotFatbin, string kernelName)
     {
-        // 1. Fast path: Extract embedded hash struct (without calculating SHA256 yet) to check cache
-        if (aotFatbin.Length < 32)
+        // 1. Fast path: Extract embedded hash struct from signature to check cache
+        if (aotFatbin.Length < AotSignatureValidator.SignatureSize)
         {
-            throw new InvalidOperationException("AOT kernel binary is too small to contain a valid hash.");
+            throw new InvalidOperationException("AOT kernel binary is too small to contain a valid signature.");
         }
 
         EnsureInitialized();
-        var embeddedHashStruct = new AotSignatureValidator.Hash256(aotFatbin.Slice(aotFatbin.Length - 32));
+        var embeddedHashStruct =
+            new AotSignatureValidator.Hash256(aotFatbin.Slice(aotFatbin.Length - AotSignatureValidator.SignatureSize,
+                32));
         var cacheKey = (embeddedHashStruct, kernelName);
 
         if (s_functionCache.TryGetValue(cacheKey, out var lazyHit))
@@ -257,6 +263,15 @@ public sealed class GpuKernelLoader
 
         // 2. Slow path: Validate hash and load module
         var (processed, _) = AotSignatureValidator.ExtractAndVerify(aotFatbin);
+
+        if (FatbinParser.TryParse(processed, out var fatbin))
+        {
+            if (!fatbin.IsCompatibleWith(s_deviceMajor, s_deviceMinor))
+            {
+                throw new InvalidOperationException(
+                    $"The FATBIN module does not contain any PTX or cuBIN compatible with the current GPU (sm_{s_deviceMajor}{s_deviceMinor}).");
+            }
+        }
 
         var lazyModule = s_functionCache.GetOrAdd(cacheKey, _ => new Lazy<GpuModule>(() =>
         {
@@ -281,7 +296,8 @@ public sealed class GpuKernelLoader
             var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
             if (loadResult != CUresult.CudaSuccess)
             {
-                throw new CudaException(loadResult, $"cuModuleLoadDataEx failed with {loadResult} for kernel '{kernelName}'.");
+                throw new CudaException(loadResult,
+                    $"cuModuleLoadDataEx failed with {loadResult} for kernel '{kernelName}'.");
             }
 
             CudaException.ThrowIfError(CudaDriverApi.cuModuleGetFunction(out var hfunc, module, kernelName));
@@ -303,17 +319,25 @@ public sealed class GpuKernelLoader
         EnsureInitialized();
 
         var (processed, _) = AotSignatureValidator.ExtractAndVerify(binaryData);
+
+        if (FatbinParser.TryParse(processed, out var fatbin))
+        {
+            if (!fatbin.IsCompatibleWith(s_deviceMajor, s_deviceMinor))
+            {
+                throw new InvalidOperationException(
+                    $"The FATBIN module does not contain any PTX or cuBIN compatible with the current GPU (sm_{s_deviceMajor}{s_deviceMinor}).");
+            }
+        }
+
         var pAlignedBinary = NativeMemory.AlignedAlloc((nuint)processed.Length, 8);
         try
         {
             Marshal.Copy(processed, 0, (IntPtr)pAlignedBinary, processed.Length);
 
             var loadResult = CudaDriverApi.cuModuleLoadDataEx(out var module, (IntPtr)pAlignedBinary, 0, null, null);
-            if (loadResult != CUresult.CudaSuccess)
-            {
-                throw new CudaException(loadResult, $"cuModuleLoadDataEx failed with {loadResult} for fatbin module.");
-            }
-            return module;
+            return loadResult != CUresult.CudaSuccess
+                ? throw new CudaException(loadResult, $"cuModuleLoadDataEx failed with {loadResult} for fatbin module.")
+                : module;
         }
         finally
         {
@@ -360,10 +384,14 @@ public sealed class GpuKernelLoader
         }
 
         EnsureInitialized();
-        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetAttribute(out var numRegs, CuFunctionAttribute.NumRegs, hfunc));
-        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetAttribute(out var localBytes, CuFunctionAttribute.LocalSizeBytes, hfunc));
-        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetAttribute(out var sharedBytes, CuFunctionAttribute.SharedSizeBytes, hfunc));
-        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetAttribute(out var constBytes, CuFunctionAttribute.ConstSizeBytes, hfunc));
+        CudaException.ThrowIfError(
+            CudaDriverApi.cuFuncGetAttribute(out var numRegs, CuFunctionAttribute.NumRegs, hfunc));
+        CudaException.ThrowIfError(
+            CudaDriverApi.cuFuncGetAttribute(out var localBytes, CuFunctionAttribute.LocalSizeBytes, hfunc));
+        CudaException.ThrowIfError(CudaDriverApi.cuFuncGetAttribute(out var sharedBytes,
+            CuFunctionAttribute.SharedSizeBytes, hfunc));
+        CudaException.ThrowIfError(
+            CudaDriverApi.cuFuncGetAttribute(out var constBytes, CuFunctionAttribute.ConstSizeBytes, hfunc));
         return new KernelResourceAttributes(numRegs, localBytes, sharedBytes, constBytes);
     }
 }

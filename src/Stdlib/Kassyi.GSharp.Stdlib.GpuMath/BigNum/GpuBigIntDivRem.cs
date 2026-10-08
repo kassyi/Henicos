@@ -139,7 +139,7 @@ public static partial class GpuBigIntDivRem
         var nA = leftOperand.NumWords;
         var n = rightOperand.NumWords;
         var targetWords = reciprocalOfB.NumWords;
-        
+
         using var productWithReciprocal = new GpuBigUInt(rightOperand.Workspace, nA + targetWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
 
@@ -204,7 +204,7 @@ public static partial class GpuBigIntDivRem
         var nA = leftOperand.NumWords;
         var n = rightOperand.NumWords;
         var targetWords = reciprocalOfB.NumWords;
-        
+
         using var productWithReciprocal = new GpuBigUInt(rightOperand.Workspace, nA + targetWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
 

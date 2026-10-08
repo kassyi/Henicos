@@ -252,10 +252,10 @@ public class CompileTasksTests
 
             Assert.True(task.Execute());
             var outputItem = Assert.Single(task.OutputFatbins);
-            var expectedPath = Path.Combine(tempDir, "native_benchmarks.fatbin");
+            var expectedPath = Path.Combine(tempDir, "native_benchmarks.gfatbin");
             Assert.Equal(expectedPath, outputItem.ItemSpec);
             Assert.True(File.Exists(expectedPath));
-            Assert.Equal("Kassyi.GSharp.Kernels.native_benchmarks.fatbin", outputItem.GetMetadata("LogicalName"));
+            Assert.Equal("Kassyi.GSharp.Kernels.native_benchmarks.gfatbin", outputItem.GetMetadata("LogicalName"));
         }
         finally
         {

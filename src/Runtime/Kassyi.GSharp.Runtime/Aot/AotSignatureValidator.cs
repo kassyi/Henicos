@@ -1,13 +1,16 @@
 using System.Buffers.Binary;
-using System.Security.Cryptography;
+using Kassyi.GSharp.Cryptography;
+using Kassyi.GSharp.Runtime.Fatbin;
 
 namespace Kassyi.GSharp.Runtime.Aot;
 
 /// <summary>
-/// AOT binary signature validation logic.
+/// AOT binary digital signature validation logic using Ed25519 and pinned public keys.
 /// </summary>
 internal static class AotSignatureValidator
 {
+    public const int SignatureSize = Ed25519.SignatureSize;
+
     public readonly struct Hash256 : IEquatable<Hash256>
     {
         private readonly ulong _a;
@@ -36,27 +39,42 @@ internal static class AotSignatureValidator
     }
 
     /// <summary>
-    /// Extracts the 32-byte embedded SHA256 hash from the end of the binary, 
-    /// validates it against the actual hash of the payload, and returns the payload and the hash.
+    /// Extracts the 64-byte embedded Ed25519 digital signature from the end of the binary,
+    /// verifies it against pinned trusted public keys, and returns the verified payload and hash.
     /// </summary>
     public static (byte[] Payload, Hash256 EmbeddedHash) ExtractAndVerify(ReadOnlySpan<byte> binaryData)
     {
-        if (binaryData.Length < 32)
+        if (binaryData.Length < SignatureSize)
         {
-            throw new InvalidOperationException("AOT native binary is too small to contain a valid hash.");
+            throw new InvalidOperationException("AOT native binary is too small to contain a valid signature.");
         }
 
-        var embeddedHashBytes = binaryData.Slice(binaryData.Length - 32);
-        var expectedHashStruct = new Hash256(embeddedHashBytes);
-        var expectedHashString = Convert.ToHexStringLower(embeddedHashBytes);
+        var signature = binaryData.Slice(binaryData.Length - SignatureSize);
+        var payloadSpan = binaryData.Slice(0, binaryData.Length - SignatureSize);
 
-        var payload = binaryData.Slice(0, binaryData.Length - 32).ToArray();
-        var actualHash = Convert.ToHexStringLower(SHA256.HashData(payload));
+        var trustedKeys = GpuSecurityPolicy.EmbeddedKeys;
+        var verified = false;
 
-        if (!string.Equals(actualHash, expectedHashString, StringComparison.OrdinalIgnoreCase))
+        if (!trustedKeys.IsEmpty)
         {
-            throw new InvalidOperationException($"AOT native binary hash mismatch. Expected: {expectedHashString}");
+            for (var offset = 0; offset < trustedKeys.Length; offset += Ed25519.PublicKeySize)
+            {
+                var key = trustedKeys.Slice(offset, Ed25519.PublicKeySize);
+                if (Ed25519.Verify(payloadSpan, signature, key))
+                {
+                    verified = true;
+                    break;
+                }
+            }
         }
+
+        if (!verified)
+        {
+            throw new InvalidOperationException("AOT native binary signature verification failed: signature does not match any trusted public key.");
+        }
+
+        var payload = payloadSpan.ToArray();
+        var expectedHashStruct = new Hash256(signature.Slice(0, 32));
 
         return (payload, expectedHashStruct);
     }

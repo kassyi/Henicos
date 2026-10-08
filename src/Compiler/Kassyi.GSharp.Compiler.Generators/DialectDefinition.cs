@@ -38,5 +38,8 @@ public class DialectDefinition
 
     /// <summary>Gets or sets the capabilities of this dialect.</summary>
     [YamlMember(Alias = "Capabilities")]
-    public string? Capabilities { get; set; }
+    public string? Capabilities
+    {
+        get; set;
+    }
 }

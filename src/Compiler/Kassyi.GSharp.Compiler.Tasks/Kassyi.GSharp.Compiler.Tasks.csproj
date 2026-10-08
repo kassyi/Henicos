@@ -13,6 +13,9 @@
     <PackageReference Include="Microsoft.Build.Framework" Version="18.10.1" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\Shared\Cryptography\Ed25519.cs" Link="Cryptography\Ed25519.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Integration" />
   </ItemGroup>
 

@@ -63,8 +63,8 @@ public static partial class GpuBigIntFermatKernels
         var gridY = (height + 31) / 32;
         var totalBlocks = gridX * gridY;
 
-    for (int bIdx = BlockIndex.X; bIdx < totalBlocks; bIdx += GridDimension.X)
-    {
+        for (int bIdx = BlockIndex.X; bIdx < totalBlocks; bIdx += GridDimension.X)
+        {
             var bx = bIdx % gridX;
             var by = bIdx / gridX;
 

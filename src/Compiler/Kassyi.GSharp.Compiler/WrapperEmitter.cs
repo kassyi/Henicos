@@ -77,32 +77,32 @@ internal static class WrapperEmitter
         switch (isDevicePtr)
         {
             case true when (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out):
-            {
-                if (p.HasExplicitDefaultValue)
                 {
-                    defaultValue = "default";
+                    if (p.HasExplicitDefaultValue)
+                    {
+                        defaultValue = "default";
+                    }
+
+                    return new InteropParameterInfo(string.Empty, null, true, defaultValue);
                 }
-
-                return new InteropParameterInfo(string.Empty, null, true, defaultValue);
-            }
             case true when CudaLayoutRules.IsCustomStruct(p.Type):
-            {
-                var tempWriter = new SourceWriter();
-                tempWriter.AppendAotStructPath(p.Type);
-                var rawTypeName = tempWriter.ToString();
-                return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
-            }
-            default:
-            {
-                var modifier = p.RefKind switch
                 {
-                    RefKind.Ref => "ref",
-                    RefKind.Out => "out",
-                    _ => string.Empty
-                };
+                    var tempWriter = new SourceWriter();
+                    tempWriter.AppendAotStructPath(p.Type);
+                    var rawTypeName = tempWriter.ToString();
+                    return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
+                }
+            default:
+                {
+                    var modifier = p.RefKind switch
+                    {
+                        RefKind.Ref => "ref",
+                        RefKind.Out => "out",
+                        _ => string.Empty
+                    };
 
-                return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
-            }
+                    return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
+                }
         }
     }
 
@@ -440,7 +440,7 @@ internal static class WrapperEmitter
 
             var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_{{safeAssemblyName}}).Assembly.Location) ??
                 System.AppContext.BaseDirectory;
-            var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_{{safeAssemblyName}}.fatbin");
+            var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_{{safeAssemblyName}}.gfatbin");
             if (!System.IO.File.Exists(fatbinPath))
             {
             throw new System.InvalidOperationException($"AOT kernel binary was not found at '{fatbinPath}'.");

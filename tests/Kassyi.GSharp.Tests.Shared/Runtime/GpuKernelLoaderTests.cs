@@ -1,10 +1,10 @@
-#nullable enable
 using System;
-using System.Threading.Tasks;
-using Xunit;
-using Kassyi.GSharp.Runtime.Aot;
-using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
+using Kassyi.GSharp.Cryptography;
+using Kassyi.GSharp.Runtime.Aot;
+using Kassyi.GSharp.Runtime.Fatbin;
+using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
@@ -16,8 +16,8 @@ public class GpuKernelLoaderAotTests
     static GpuKernelLoaderAotTests()
     {
         var basePtx = Encoding.UTF8.GetBytes(".version 7.0\n.target sm_50\n.address_size 64\n.visible .entry empty_kernel() { ret; }\0");
-        var hash = System.Security.Cryptography.SHA256.HashData(basePtx);
-        s_validPtx = [.. basePtx, .. hash];
+        var signature = Ed25519.Sign(basePtx, Ed25519.DefaultDevKeySeed);
+        s_validPtx = [.. basePtx, .. signature];
     }
 
     [Fact]
@@ -35,5 +35,43 @@ public class GpuKernelLoaderAotTests
             // Call SynchronizeDevice to ensure context binding is correct per-thread
             GpuKernelLoader.SynchronizeDevice();
         });
+    }
+
+    [Fact]
+    [Trait("Category", "SadPath")]
+    public void Test_LoadAotKernel_IncompatibleFatbin_ThrowsInvalidOperationException()
+    {
+        if (!GpuKernelLoader.IsDriverAvailable) return;
+
+        // Create a mock Fatbin targeted at sm_99 (a future architecture higher than any current physical GPU)
+        byte[] mockFatbin = FatbinParserTests.CreateMockFatbin(FatbinItemInfo.TypePtx, 990, 99, 0);
+        byte[] signature = Ed25519.Sign(mockFatbin, Ed25519.DefaultDevKeySeed);
+        byte[] signedFatbin = [.. mockFatbin, .. signature];
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            GpuKernelLoader.LoadAotKernel(signedFatbin, "dummy_kernel");
+        });
+
+        Assert.Contains("does not contain any PTX or cuBIN compatible with the current GPU", ex.Message);
+    }
+
+    [Fact]
+    [Trait("Category", "SadPath")]
+    public void Test_LoadModule_IncompatibleFatbin_ThrowsInvalidOperationException()
+    {
+        if (!GpuKernelLoader.IsDriverAvailable) return;
+
+        // Create a mock Fatbin targeted at sm_99 (a future architecture)
+        byte[] mockFatbin = FatbinParserTests.CreateMockFatbin(FatbinItemInfo.TypeCubin, 990, 99, 0);
+        byte[] signature = Ed25519.Sign(mockFatbin, Ed25519.DefaultDevKeySeed);
+        byte[] signedFatbin = [.. mockFatbin, .. signature];
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+        {
+            GpuKernelLoader.LoadModule(signedFatbin);
+        });
+
+        Assert.Contains("does not contain any PTX or cuBIN compatible with the current GPU", ex.Message);
     }
 }

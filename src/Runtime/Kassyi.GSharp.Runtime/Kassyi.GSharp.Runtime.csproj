@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>obj/generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +19,20 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
+    <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\..\trusted_keys.txt" Link="trusted_keys.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Shared\Cryptography\Ed25519.cs" Link="Cryptography\Ed25519.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cpu" />
+    <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cuda" />
   </ItemGroup>
 
   <ItemGroup>

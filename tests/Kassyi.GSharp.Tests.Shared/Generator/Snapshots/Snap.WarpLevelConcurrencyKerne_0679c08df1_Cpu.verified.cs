@@ -161,10 +161,10 @@ public int warpId;
 public int val;
 public // Warp synchronous reduction
         uint mask;
-public int _warpTemp_0;
-public int _warpTemp_1;
-public int _warpTemp_2;
-public int _warpTemp_3;
+public dynamic _warpTemp_0;
+public dynamic _warpTemp_1;
+public dynamic _warpTemp_2;
+public dynamic _warpTemp_3;
 }
 public static unsafe void __gsharp_statemachine_WarpLevelConcurrencyKernels_WarpReduceSumKernel(int[] input, int[] output, __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel _ctx) {
 {
@@ -452,11 +452,11 @@ public bool _yieldedForGridSync;
 public int tid;
 public uint mask;
 public int val;
-public int _warpTemp_0;
-public int _warpTemp_1;
-public int _warpTemp_2;
-public int _warpTemp_3;
-public int _warpTemp_4;
+public dynamic _warpTemp_0;
+public dynamic _warpTemp_1;
+public dynamic _warpTemp_2;
+public dynamic _warpTemp_3;
+public dynamic _warpTemp_4;
 }
 public static unsafe void __gsharp_statemachine_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(int[] input, int[] output, __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel _ctx) {
 {

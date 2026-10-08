@@ -4,7 +4,7 @@ namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static partial class NativeKernelInvoker
 {
-    public const string FatbinName = "native_benchmarks.fatbin";
+    public const string FatbinName = "native_benchmarks.gfatbin";
 
     private static readonly Lazy<byte[]> s_fatbin = new(() =>
         File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, FatbinName)));

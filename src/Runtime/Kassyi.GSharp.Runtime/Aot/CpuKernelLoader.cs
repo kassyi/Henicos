@@ -8,7 +8,10 @@ public sealed class CpuKernelLoader
     /// <summary>
     /// Gets or sets a value indicating whether to forcefully bypass native AOT DLL execution and use pure C# managed execution.
     /// </summary>
-    public static bool ForceManagedExecution { get; set; }
+    public static bool ForceManagedExecution
+    {
+        get; set;
+    }
 
     /// <summary>
     /// Determines whether the managed execution fallback should be used.

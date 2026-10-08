@@ -16,12 +16,18 @@ public class FermatAlgorithm : IDisposable
     /// <summary>
     /// Gets the Fermat number exponent parameter $E$, where the target test number is $F_E = 2^{2^E} + 1$.
     /// </summary>
-    public int E { get; }
+    public int E
+    {
+        get;
+    }
 
     /// <summary>
     /// Gets the number of 32-bit words allocated in the output state buffer.
     /// </summary>
-    public int OutNumWords { get; }
+    public int OutNumWords
+    {
+        get;
+    }
 
     private int _numWords;
 
