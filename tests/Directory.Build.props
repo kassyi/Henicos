@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.csv" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
     <None Include="$(MSBuildThisFileDirectory)xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Visible="false" Condition="!Exists('$(MSBuildProjectDirectory)\xunit.runner.json')" />
     <None Include="$(MSBuildProjectDirectory)\xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(MSBuildProjectDirectory)\xunit.runner.json')" />
   </ItemGroup>
