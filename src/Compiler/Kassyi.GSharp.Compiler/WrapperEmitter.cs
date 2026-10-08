@@ -544,7 +544,7 @@ internal static class WrapperEmitter
             "var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);");
 
         writer.AppendLine(
-            $"if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))");
+            "if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))");
         using (writer.Scope())
         {
             writer.AppendLine("int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);");
@@ -740,7 +740,8 @@ internal static class WrapperEmitter
 
                 if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
                 {
-                    writer.Append($"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{p.Name}, Length = {p.Name}.Length }}");
+                    writer.Append(
+                        $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{p.Name}, Length = {p.Name}.Length }}");
                 }
                 else if (p.RefKind is RefKind.Ref or RefKind.Out)
                 {

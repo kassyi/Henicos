@@ -1,6 +1,3 @@
-using System;
-using System.Runtime.InteropServices;
-
 namespace Kassyi.GSharp.Runtime.Interop;
 
 /// <summary>
@@ -22,5 +19,5 @@ public struct GSharpArrayProxy
     /// Implicitly converts a raw device pointer to a proxy struct with unknown length (0).
     /// Used for backward compatibility with manual AOT marshaling.
     /// </summary>
-    public static implicit operator GSharpArrayProxy(IntPtr ptr) => new GSharpArrayProxy { Data = ptr, Length = 0 };
+    public static implicit operator GSharpArrayProxy(IntPtr ptr) => new() { Data = ptr, Length = 0 };
 }

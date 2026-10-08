@@ -121,8 +121,7 @@ internal static class CudaLayoutRules
             return true;
         }
 
-        if (type.TypeKind == TypeKind.Enum && type is INamedTypeSymbol namedEnum &&
-            namedEnum.EnumUnderlyingType != null)
+        if (type.TypeKind == TypeKind.Enum && type is INamedTypeSymbol { EnumUnderlyingType: not null } namedEnum)
         {
             return TryGetPredefinedLayout(namedEnum.EnumUnderlyingType, out layout);
         }
@@ -145,10 +144,14 @@ internal static class CudaLayoutRules
     {
         var primitive = type.SpecialType switch
         {
-            SpecialType.System_Boolean or SpecialType.System_Byte or SpecialType.System_SByte => new CudaLayoutInfo(1, 1),
-            SpecialType.System_Char or SpecialType.System_Int16 or SpecialType.System_UInt16 => new CudaLayoutInfo(2, 2),
-            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Single => new CudaLayoutInfo(4, 4),
-            SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double => new CudaLayoutInfo(8, 8),
+            SpecialType.System_Boolean or SpecialType.System_Byte or SpecialType.System_SByte => new CudaLayoutInfo(1,
+                1),
+            SpecialType.System_Char or SpecialType.System_Int16 or SpecialType.System_UInt16 =>
+                new CudaLayoutInfo(2, 2),
+            SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Single => new CudaLayoutInfo(4,
+                4),
+            SpecialType.System_Int64 or SpecialType.System_UInt64 or SpecialType.System_Double => new CudaLayoutInfo(8,
+                8),
             _ => default(CudaLayoutInfo?)
         };
 
