@@ -12,7 +12,8 @@ public static class PrimeSearchAlgorithm
     /// Uses CPU trial division for small primes, followed by robust Miller-Rabin / Fermat PRP testing.
     /// (Automatically offloads to GPU FermatAlgorithm for extremely large bit lengths > 4096).
     /// </summary>
-    /// <returns></returns>
+    /// <param name="bitLength">The required bit length of the prime.</param>
+    /// <returns>A generated probable prime of the specified bit length.</returns>
     public static BigInteger Generate(int bitLength)
     {
         if (bitLength < 2)

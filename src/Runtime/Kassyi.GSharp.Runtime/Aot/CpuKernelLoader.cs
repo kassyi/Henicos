@@ -13,6 +13,8 @@ public sealed class CpuKernelLoader
     /// <summary>
     /// Determines whether the managed execution fallback should be used.
     /// </summary>
+    /// <param name="dllPath">The path to the native DLL to check.</param>
+    /// <returns><see langword="true"/> if managed execution should be used; otherwise, <see langword="false"/>.</returns>
     public static bool ShouldUseManagedExecution(string dllPath) => ForceManagedExecution || !File.Exists(dllPath);
 
     // Cache for loaded delegates: Hash of Source and Args -> Lazy<Delegate>

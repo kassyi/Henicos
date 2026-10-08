@@ -78,6 +78,13 @@ public partial class ChudnovskyAlgorithm
         }
     }
 
+    /// <summary>
+    /// Computes high-precision Pi using the Chudnovsky binary splitting algorithm on the GPU.
+    /// </summary>
+    /// <param name="digits">The number of decimal digits to compute.</param>
+    /// <param name="outputWriter">The text writer to output the computed Pi.</param>
+    /// <param name="thresholdTerms">The threshold number of terms to switch to CPU fallback.</param>
+    /// <param name="asHex">If true, outputs in hexadecimal format instead of base 10.</param>
     public static void ComputePi(int digits, TextWriter outputWriter, int thresholdTerms = 8192,
         bool asHex = false)
     {
