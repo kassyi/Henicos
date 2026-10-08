@@ -68,7 +68,7 @@
     <Touch Files="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" AlwaysCreate="true" />
   </Target>
 
-  <Target Name="GenerateNativeApi" BeforeTargets="CoreCompile" Outputs="$(IntermediateOutputPath)GeneratedNativeApi.stamp">
+  <Target Name="GenerateNativeApi" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)..\..\NativeApi\**\*.yml" Outputs="$(IntermediateOutputPath)GeneratedNativeApi.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedNativeApi" />
     <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)../../NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedNativeApi.stamp" AlwaysCreate="true" />

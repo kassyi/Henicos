@@ -462,8 +462,8 @@ methods:
         description: The 64-bit integer to inspect.
 
   - name: BitReverse
-    nativeName: __brev64
-    summary: Reverses the bit order of a 64-bit unsigned integer using the __brev64 hardware instruction.
+    nativeName: __brevll
+    summary: Reverses the bit order of a 64-bit unsigned integer using the __brevll hardware instruction.
     returnType: ulong
     returnDescription: The bit-reversed 64-bit unsigned integer.
     parameters:
@@ -678,3 +678,226 @@ methods:
         type: T
         description: The value to XOR.
 
+  # --- Advanced Bitwise & Arithmetic Intrinsics ---
+  - name: BitFieldExtract
+    nativeName: __gsharp_bfe
+    summary: Extracts a bit field from a 32-bit unsigned integer using the PTX bfe instruction.
+    returnType: uint
+    returnDescription: The extracted bit field.
+    parameters:
+      - name: a
+        type: uint
+        description: The source 32-bit unsigned integer.
+      - name: pos
+        type: int
+        description: The starting bit position (0 to 31).
+      - name: len
+        type: int
+        description: The bit field length (0 to 32).
+
+  - name: BitFieldExtract
+    nativeName: __gsharp_bfe64
+    summary: Extracts a bit field from a 64-bit unsigned integer using the PTX bfe instruction.
+    returnType: ulong
+    returnDescription: The extracted bit field.
+    parameters:
+      - name: a
+        type: ulong
+        description: The source 64-bit unsigned integer.
+      - name: pos
+        type: int
+        description: The starting bit position (0 to 63).
+      - name: len
+        type: int
+        description: The bit field length (0 to 64).
+
+  - name: BitFieldInsert
+    nativeName: __gsharp_bfi
+    summary: Inserts a bit field into a 32-bit unsigned integer using the PTX bfi instruction.
+    returnType: uint
+    returnDescription: The result after bit field insertion.
+    parameters:
+      - name: a
+        type: uint
+        description: The insert value.
+      - name: b
+        type: uint
+        description: The base target value.
+      - name: pos
+        type: int
+        description: The starting bit position (0 to 31).
+      - name: len
+        type: int
+        description: The bit field length (0 to 32).
+
+  - name: BitFieldInsert
+    nativeName: __gsharp_bfi64
+    summary: Inserts a bit field into a 64-bit unsigned integer using the PTX bfi instruction.
+    returnType: ulong
+    returnDescription: The result after bit field insertion.
+    parameters:
+      - name: a
+        type: ulong
+        description: The insert value.
+      - name: b
+        type: ulong
+        description: The base target value.
+      - name: pos
+        type: int
+        description: The starting bit position (0 to 63).
+      - name: len
+        type: int
+        description: The bit field length (0 to 64).
+
+  - name: Lop3
+    nativeName: __gsharp_lop3
+    summary: Computes an arbitrary 3-input bitwise logic operation defined by an 8-bit lookup table (LUT) using the PTX lop3 instruction.
+    returnType: uint
+    returnDescription: The result of the 3-input logic function.
+    parameters:
+      - name: a
+        type: uint
+        description: The first 32-bit input.
+      - name: b
+        type: uint
+        description: The second 32-bit input.
+      - name: c
+        type: uint
+        description: The third 32-bit input.
+      - name: immLut
+        type: byte
+        description: The 8-bit immediate truth table lookup.
+
+  - name: CountTrailingZeros
+    nativeName: __gsharp_tzc_32
+    summary: Returns the number of consecutive zero bits starting from the least significant bit of a 32-bit integer.
+    returnType: uint
+    returnDescription: The count of trailing zero bits.
+    parameters:
+      - name: val
+        type: uint
+        description: The 32-bit integer to inspect.
+
+  - name: CountTrailingZeros
+    nativeName: __gsharp_tzc_64
+    summary: Returns the number of consecutive zero bits starting from the least significant bit of a 64-bit integer.
+    returnType: uint
+    returnDescription: The count of trailing zero bits.
+    parameters:
+      - name: val
+        type: ulong
+        description: The 64-bit integer to inspect.
+
+  - name: BitReverse64
+    nativeName: __brevll
+    summary: Reverses the bit order of a 64-bit unsigned integer using the __brevll hardware instruction.
+    returnType: ulong
+    returnDescription: The bit-reversed 64-bit unsigned integer.
+    parameters:
+      - name: val
+        type: ulong
+        description: The 64-bit unsigned integer whose bits are to be reversed.
+
+  - name: DotProduct4
+    nativeName: __dp4a
+    summary: Computes the 4-way 8-bit integer dot product with 32-bit accumulation using the __dp4a hardware intrinsic.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint]
+    returnType: T
+    returnDescription: The dot product result accumulated with c.
+    parameters:
+      - name: a
+        type: T
+        description: The first vector of 4 packed 8-bit integers.
+      - name: b
+        type: T
+        description: The second vector of 4 packed 8-bit integers.
+      - name: c
+        type: T
+        description: The 32-bit accumulator.
+
+  - name: Sad4
+    nativeName: __gsharp_vabsdiff4
+    summary: Computes the SIMD sum of absolute differences of 4 packed unsigned bytes and accumulates with c (PTX vabsdiff4).
+    returnType: uint
+    returnDescription: The sum of byte differences accumulated with c.
+    parameters:
+      - name: a
+        type: uint
+        description: The first 32-bit operand with 4 packed bytes.
+      - name: b
+        type: uint
+        description: The second 32-bit operand with 4 packed bytes.
+      - name: c
+        type: uint
+        description: The accumulator.
+
+  - name: MatchAnySync
+    nativeName: __match_any_sync
+    summary: Performs a broadcast-and-compare operation across threads in a warp, returning a mask of threads holding the same value.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, long, ulong, float, double]
+    returnType: uint
+    returnDescription: A bitmask of lanes within mask that hold value.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit participating lane mask.
+      - name: value
+        type: T
+        description: The value to compare.
+
+  - name: MatchAllSync
+    nativeName: __match_all_sync
+    summary: Tests whether all threads in mask hold the same value, returning the mask if true and updating the predicate flag.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, long, ulong, float, double]
+    returnType: uint
+    returnDescription: A bitmask of lanes if all match; otherwise 0.
+    parameters:
+      - name: mask
+        type: uint
+        description: The 32-bit participating lane mask.
+      - name: value
+        type: T
+        description: The value to compare.
+      - name: pred
+        type: ref int
+        description: Output predicate set to 1 if all threads match, 0 otherwise.
+
+  - name: NanoSleep
+    nativeName: __nanosleep
+    summary: Suspends the calling thread for approximately the specified duration in nanoseconds.
+    returnType: void
+    parameters:
+      - name: duration
+        type: uint
+        description: The duration to sleep in nanoseconds.
+
+  - name: SyncWarp
+    nativeName: __syncwarp
+    summary: Causes executing threads to wait until all warp threads specified in mask have executed the instruction.
+    returnType: void
+    parameters:
+      - name: mask
+        type: uint
+        defaultValue: 0xFFFFFFFFU
+        description: The 32-bit mask of participating threads.
+
+  - name: ReductionAdd
+    nativeName: atomicAdd
+    summary: Performs a fire-and-forget reduction addition directly in memory.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, ulong, float]
+    returnType: void
+    parameters:
+      - name: address
+        type: ref T
+        description: The memory address to update.
+      - name: val
+        type: T
+        description: The value to add.

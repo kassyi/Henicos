@@ -30,6 +30,8 @@ public class ContractsAndPtxTests
     [Trait("Category", "GpuExecution")]
     public void TestInlinePtxKernel()
     {
+        SkipIfCpuDialect("Inline PTX is only executable on CUDA devices");
+
         uint[] data = [0];
         ContractsAndPtxKernels.LaunchInlinePtxKernel(data);
         Assert.Equal(999u, data[0]);

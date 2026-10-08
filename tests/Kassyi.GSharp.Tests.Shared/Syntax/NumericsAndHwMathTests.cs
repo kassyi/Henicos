@@ -184,9 +184,40 @@ public class NumericsAndHwMathTests
         Assert.Null(ex);
     }
 
-    [Fact()]
-    [Trait("Category", "Syntax")]
-    public void Test_AddWithCarry64_Transpilation()
+    [SkippableFact]
+    [Trait("Category", "GpuExecution")]
+    public void Test_PtxIntrinsicsExpansion_Execution()
     {
+        SkipIfCpuDialect("PTX hardware intrinsics require CUDA execution environment");
+
+        uint[] u32Out = new uint[10];
+        ulong[] u64Out = new ulong[10];
+        int[] i32Out = new int[5];
+
+        NumericsAndHwMathKernels.LaunchPtxIntrinsicsExpansionKernel(u32Out, u64Out, i32Out, blockDimX: 1);
+
+        // 0x12345678, pos=4, len=8 -> bits 4..11: (0x12345678 >> 4) & 0xFF = 0x67
+        Assert.Equal(0x67u, u32Out[0]);
+        // 0x0123456789ABCDEF, pos=8, len=16 -> (val >> 8) & 0xFFFF = 0xABCD
+        Assert.Equal(0xABCDul, u64Out[0]);
+
+        // BFI: insert 0xFF into 0x12345678 at pos=4, len=8 -> 0x12345FF8
+        Assert.Equal(0x12345FF8u, u32Out[1]);
+
+        // Lop3: F(A, B, C) with LUT 0x54: (A | B) & ~C
+        // A=0x12345678, B=0x0F0F0F0F, C=0xAAAAAAAA
+        uint expectedLop3 = (0x12345678u | 0x0F0F0F0Fu) & ~0xAAAAAAAAu;
+        Assert.Equal(expectedLop3, u32Out[2]);
+
+        // CountTrailingZeros: 0x12345678 has 3 trailing zeros (8 ends with 1000)
+        Assert.Equal(3u, u32Out[3]);
+
+        // DotProduct4: (1*5 + 2*6 + 3*7 + 4*8) + 10 = (5 + 12 + 21 + 32) + 10 = 70 + 10 = 80
+        Assert.Equal(80, i32Out[0]);
+        Assert.Equal(80u, u32Out[4]);
+
+        // ReductionAdd: 42u
+        Assert.Equal(42u, u32Out[8]);
     }
 }
+

@@ -43,6 +43,7 @@ public static void Warmup()
 // Force load the module first
 GetOrLoadModule();
 global::Kassyi.GSharp.Tests.Shared.Syntax.NumericsAndHwMathKernels.WarmupFunctionPointerBitOperationsTestKernel();
+global::Kassyi.GSharp.Tests.Shared.Syntax.NumericsAndHwMathKernels.WarmupFunctionPointerPtxIntrinsicsExpansionKernel();
 }}}
 
 
@@ -215,6 +216,203 @@ void** kernelParams = stackalloc void*[2];
 kernelParams[0] = &u32Data;
 // Marshal device array: u64Data
 kernelParams[1] = &u64Data;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string PtxIntrinsicsExpansionKernel_Source = @"extern ""C"" __global__ void NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel(unsigned int* __restrict__ u32Out, unsigned long long* __restrict__ u64Out, int* __restrict__ i32Out){
+unsigned int u32Val = 0x12345678u;
+unsigned long long u64Val = 0x0123456789ABCDEFul;
+u32Out[0]=__gsharp_bfe(u32Val,4,8);
+u64Out[0]=__gsharp_bfe64(u64Val,8,16);
+u32Out[1]=__gsharp_bfi(0xFFu,u32Val,4,8);
+u64Out[1]=__gsharp_bfi64(0xFFFFul,u64Val,8,16);
+u32Out[2]=__gsharp_lop3(u32Val,0x0F0F0F0Fu,0xAAAAAAAAu,0x54);
+u32Out[3]=__gsharp_tzc_32(u32Val);
+u64Out[2]=__gsharp_tzc_64(u64Val);
+u64Out[3]=__brevll(u64Val);
+i32Out[0]=__dp4a(0x01020304,0x05060708,10);
+u32Out[4]=__dp4a(0x01020304u,0x05060708u,10u);
+u32Out[5]=__gsharp_vabsdiff4(0x10203040u,0x01020304u,5u);
+u32Out[6]=__match_any_sync(0xFFFFFFFFu,u32Val);
+int matchPred = 0;
+u32Out[7]=__match_all_sync(0xFFFFFFFFu,u32Val,&matchPred);
+__nanosleep(10);
+__syncwarp(4294967295u);
+atomicAdd(&u32Out[8],42u);
+}
+";
+public static readonly string PtxIntrinsicsExpansionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PtxIntrinsicsExpansionKernel_Source;
+private static IntPtr? s_hfunc_PtxIntrinsicsExpansionKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerPtxIntrinsicsExpansionKernel()
+{
+if (s_hfunc_PtxIntrinsicsExpansionKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_PtxIntrinsicsExpansionKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+public static unsafe void LaunchPtxIntrinsicsExpansionKernel(global::System.UInt32[] u32Out, global::System.UInt64[] u64Out, global::System.Int32[] i32Out, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (u32Out.Length == 0 || u64Out.Length == 0 || i32Out.Length == 0){
+return;
+}
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerPtxIntrinsicsExpansionKernel();
+IntPtr hfunc = s_hfunc_PtxIntrinsicsExpansionKernel!.Value;
+IntPtr d_u32Out = IntPtr.Zero;
+IntPtr d_u64Out = IntPtr.Zero;
+IntPtr d_i32Out = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[3];
+// Marshal array: u32Out
+int u32Out_size = u32Out.Length * sizeof(global::System.UInt32);
+if (u32Out_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_u32Out, (IntPtr)u32Out_size, hStream));
+System.Runtime.InteropServices.GCHandle handle_u32Out = System.Runtime.InteropServices.GCHandle.Alloc(u32Out, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+IntPtr p_u32Out = handle_u32Out.AddrOfPinnedObject();
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_u32Out, p_u32Out, (IntPtr)u32Out_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+finally
+{
+handle_u32Out.Free();
+}
+}
+kernelParams[0] = &d_u32Out;
+// Marshal array: u64Out
+int u64Out_size = u64Out.Length * sizeof(global::System.UInt64);
+if (u64Out_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_u64Out, (IntPtr)u64Out_size, hStream));
+System.Runtime.InteropServices.GCHandle handle_u64Out = System.Runtime.InteropServices.GCHandle.Alloc(u64Out, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+IntPtr p_u64Out = handle_u64Out.AddrOfPinnedObject();
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_u64Out, p_u64Out, (IntPtr)u64Out_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+finally
+{
+handle_u64Out.Free();
+}
+}
+kernelParams[1] = &d_u64Out;
+// Marshal array: i32Out
+int i32Out_size = i32Out.Length * sizeof(global::System.Int32);
+if (i32Out_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_i32Out, (IntPtr)i32Out_size, hStream));
+System.Runtime.InteropServices.GCHandle handle_i32Out = System.Runtime.InteropServices.GCHandle.Alloc(i32Out, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+IntPtr p_i32Out = handle_i32Out.AddrOfPinnedObject();
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_i32Out, p_i32Out, (IntPtr)i32Out_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+finally
+{
+handle_i32Out.Free();
+}
+}
+kernelParams[2] = &d_i32Out;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: u32Out
+if (u32Out_size > 0 && d_u32Out != IntPtr.Zero)
+{
+System.Runtime.InteropServices.GCHandle handleBack_u32Out = System.Runtime.InteropServices.GCHandle.Alloc(u32Out, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+IntPtr p_u32Out = handleBack_u32Out.AddrOfPinnedObject();
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_u32Out, d_u32Out, (IntPtr)u32Out_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+finally
+{
+handleBack_u32Out.Free();
+}
+}
+// Copy back array: u64Out
+if (u64Out_size > 0 && d_u64Out != IntPtr.Zero)
+{
+System.Runtime.InteropServices.GCHandle handleBack_u64Out = System.Runtime.InteropServices.GCHandle.Alloc(u64Out, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+IntPtr p_u64Out = handleBack_u64Out.AddrOfPinnedObject();
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_u64Out, d_u64Out, (IntPtr)u64Out_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+finally
+{
+handleBack_u64Out.Free();
+}
+}
+// Copy back array: i32Out
+if (i32Out_size > 0 && d_i32Out != IntPtr.Zero)
+{
+System.Runtime.InteropServices.GCHandle handleBack_i32Out = System.Runtime.InteropServices.GCHandle.Alloc(i32Out, System.Runtime.InteropServices.GCHandleType.Pinned);
+try
+{
+IntPtr p_i32Out = handleBack_i32Out.AddrOfPinnedObject();
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(p_i32Out, d_i32Out, (IntPtr)i32Out_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+finally
+{
+handleBack_i32Out.Free();
+}
+}
+}
+finally
+{
+if (d_u32Out != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_u32Out, hStream);
+if (d_u64Out != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_u64Out, hStream);
+if (d_i32Out != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_i32Out, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+public static unsafe void LaunchPtxIntrinsicsExpansionKernelPtr(IntPtr u32Out, IntPtr u64Out, IntPtr i32Out, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerPtxIntrinsicsExpansionKernel();
+IntPtr hfunc = s_hfunc_PtxIntrinsicsExpansionKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[3];
+// Marshal device array: u32Out
+kernelParams[0] = &u32Out;
+// Marshal device array: u64Out
+kernelParams[1] = &u64Out;
+// Marshal device array: i32Out
+kernelParams[2] = &i32Out;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
