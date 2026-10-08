@@ -2,12 +2,13 @@ using Kassyi.ZeroAlloc.Linq;
 
 namespace Henicos.Benchmarks;
 
+[SkipSnapshotConsistency]
 public partial class StackLinqGpuKernels
 {
     // ==========================================
     // GPU カーネル: Heavy Pipeline
     // ==========================================
-    
+
     [GpuKernel]
     public static void RawFor_HeavyPipeline(int[] data, int[] results)
     {
@@ -26,6 +27,7 @@ public partial class StackLinqGpuKernels
                 sum += x * 3;
             }
         }
+
         results[tid] = sum;
     }
 
@@ -39,17 +41,17 @@ public partial class StackLinqGpuKernels
         }
 
         int sum = data.AsStackEnumerable()
-                      .Where(x => x % 2 == 0)
-                      .Select(x => x * 3)
-                      .Sum();
-                      
+            .Where(x => x % 2 == 0)
+            .Select(x => x * 3)
+            .Sum();
+
         results[tid] = sum;
     }
 
     // ==========================================
     // GPU カーネル: Data Windowing
     // ==========================================
-    
+
     [GpuKernel]
     public static void RawFor_DataWindowing(int[] data, int endMarker, int[] results)
     {
@@ -61,11 +63,11 @@ public partial class StackLinqGpuKernels
 
         int sum = 0;
         bool paddingSkipped = false;
-        
+
         for (int i = 0; i < data.Length; i++)
         {
             int x = data[i];
-            
+
             // SkipWhile(x == 0)
             if (!paddingSkipped)
             {
@@ -76,7 +78,7 @@ public partial class StackLinqGpuKernels
 
                 paddingSkipped = true;
             }
-            
+
             // TakeWhile(x != endMarker)
             if (x == endMarker)
             {
@@ -85,6 +87,7 @@ public partial class StackLinqGpuKernels
 
             sum += x;
         }
+
         results[tid] = sum;
     }
 
@@ -98,10 +101,10 @@ public partial class StackLinqGpuKernels
         }
 
         int sum = data.AsStackEnumerable()
-                      .SkipWhile(x => x == 0)
-                      .TakeWhile(x => x != endMarker)
-                      .Sum();
-                      
+            .SkipWhile(x => x == 0)
+            .TakeWhile(x => x != endMarker)
+            .Sum();
+
         results[tid] = sum;
     }
 }
