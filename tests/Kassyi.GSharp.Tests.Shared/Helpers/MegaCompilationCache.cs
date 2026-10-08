@@ -36,6 +36,13 @@ public static class MegaCompilationCache
             references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(mathDllPath)));
         }
 
+        // Implicitly reference ZeroAlloc.Linq library if present
+        var linqDllPath = Path.Combine(Path.GetDirectoryName(coreDllPath) ?? baseDir, "Kassyi.ZeroAlloc.Linq.dll");
+        if (File.Exists(linqDllPath) && !references.Any(r => string.Equals(r.Display, linqDllPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(linqDllPath)));
+        }
+
         var baseComp = CSharpCompilation.Create("MegaTestCompilationBase")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
             .AddReferences(references);
