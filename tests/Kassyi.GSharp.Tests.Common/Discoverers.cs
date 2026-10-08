@@ -29,7 +29,7 @@ public sealed class TestTargetDiscoverer : ITraitDiscoverer
             _ => args[0]?.ToString()
         };
 
-        if (string.IsNullOrEmpty(valueStr))
+        if (valueStr is null || valueStr.Length == 0)
         {
             yield break;
         }
@@ -60,7 +60,7 @@ public sealed class CategoryDiscoverer : ITraitDiscoverer
             _ => args[0]?.ToString()
         };
 
-        if (string.IsNullOrEmpty(valueStr))
+        if (valueStr is null || valueStr.Length == 0)
         {
             yield break;
         }
@@ -90,7 +90,7 @@ public sealed class ScenarioDiscoverer : ITraitDiscoverer
             _ => args[0]?.ToString()
         };
 
-        if (string.IsNullOrEmpty(valueStr))
+        if (valueStr is null || valueStr.Length == 0)
         {
             yield break;
         }
