@@ -12,6 +12,11 @@
     <Using Include="System.Linq" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Kassyi.GSharp.Tests.Common' and '$(IsRoslynComponent)' != 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Kassyi.GSharp.Tests.Common\Kassyi.GSharp.Tests.Common.csproj" />
+    <Using Include="Kassyi.GSharp.Tests.Common" />
+  </ItemGroup>
+
   <ItemGroup>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.csv" />
     <None Include="$(MSBuildThisFileDirectory)xunit.runner.json" CopyToOutputDirectory="PreserveNewest" Visible="false" Condition="!Exists('$(MSBuildProjectDirectory)\xunit.runner.json')" />
