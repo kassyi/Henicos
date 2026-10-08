@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <LangVersion>12</LangVersion>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="PolySharp" Version="1.15.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -19,8 +23,6 @@
 
   <ItemGroup>
     <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\SourceWriter.cs" Link="SourceWriter.cs" />
-    <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\InterpolatedStringHandlerAttribute.cs" Link="InterpolatedStringHandlerAttribute.cs" />
-    <Compile Include="..\..\Compiler\Kassyi.GSharp.Compiler\UnscopedRefAttribute.cs" Link="UnscopedRefAttribute.cs" />
   </ItemGroup>
 
 </Project>
