@@ -18,7 +18,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     private static readonly ImmutableArray<IInvocationTranspilerRule> s_invocationRules =
         ImmutableArray.Create<IInvocationTranspilerRule>(
             new BclIntrinsicTranspilerRule(),
-            new GpuMacroTranspilerRule()
+            new GpuMacroTranspilerRule(),
+            new StackLinqTranspilerRule()
         );
 
     /// <inheritdoc />
