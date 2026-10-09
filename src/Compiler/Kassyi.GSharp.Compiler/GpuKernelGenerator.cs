@@ -397,6 +397,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         preludeWriter.AppendLine("namespace Kassyi.GSharp.Generated");
         using (preludeWriter.Scope())
         {
+            preludeWriter.AppendLine("[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"Kassyi.GSharp.Compiler\", \"1.0.0.0\")]");
+            preludeWriter.AppendLine("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
             preludeWriter.AppendLine($"internal static class GSharpShared{config.TargetDialect}Prelude");
             using (preludeWriter.Scope())
             {
@@ -414,6 +416,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         deviceWriter.AppendLine("namespace Kassyi.GSharp.Generated");
         using (deviceWriter.Scope())
         {
+            deviceWriter.AppendLine("[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"Kassyi.GSharp.Compiler\", \"1.0.0.0\")]");
+            deviceWriter.AppendLine("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
             deviceWriter.AppendLine($"internal static class GSharpShared{config.TargetDialect}DeviceCode");
             using (deviceWriter.Scope())
             {

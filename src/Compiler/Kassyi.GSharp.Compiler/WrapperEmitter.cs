@@ -143,6 +143,8 @@ internal static class WrapperEmitter
         writer.AppendLine(className);
         using (writer.Scope())
         {
+            writer.AppendLine("[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"Kassyi.GSharp.Compiler\", \"1.0.0.0\")]");
+            writer.AppendLine("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
             writer.AppendLine("public static partial class AotContexts");
             using (writer.Scope())
             {
@@ -258,6 +260,8 @@ internal static class WrapperEmitter
 
     private static void WriteLaunchMethodSignature(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
+        writer.AppendLine("[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"Kassyi.GSharp.Compiler\", \"1.0.0.0\")]");
+        writer.AppendLine("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
         writer.Append("public static unsafe ");
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
         {
@@ -426,6 +430,8 @@ internal static class WrapperEmitter
 
             namespace Kassyi.GSharp.Generated
             {
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+            [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
             public static class GSharpModuleContext_{{safeAssemblyName}}
             {
             private static IntPtr? s_hModule;
