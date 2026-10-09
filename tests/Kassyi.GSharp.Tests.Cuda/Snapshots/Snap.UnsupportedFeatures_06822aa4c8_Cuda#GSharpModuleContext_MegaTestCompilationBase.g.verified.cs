@@ -6,6 +6,8 @@ using System.Threading;
 
 namespace Kassyi.GSharp.Generated
 {
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static class GSharpModuleContext_MegaTestCompilationBase
 {
 private static IntPtr? s_hModule;
