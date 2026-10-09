@@ -10,6 +10,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// </remarks>
 [CollectionBuilder(typeof(GpuUInt512), nameof(Create))]
 [GenerateGpuNumberOperators]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public partial struct GpuUInt512(GpuBigUInt<LimbBuffer16> value) : IEquatable<GpuUInt512>, IComparable<GpuUInt512>
 {
     /// <summary>

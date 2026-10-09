@@ -110,7 +110,7 @@ public class GpuWorkspace : IGpuResourceScope
     /// </summary>
     /// <returns>A new <see cref="IGpuResourceScope"/> instance.</returns>
     /// <exception cref="NotImplementedException">Thrown unconditionally as nested scopes are not yet supported on the root workspace.</exception>
-    public IGpuResourceScope CreateScope() =>
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] public IGpuResourceScope CreateScope() =>
         throw new NotImplementedException("Nested scopes are not yet supported on GpuWorkspace.");
 
     /// <summary>

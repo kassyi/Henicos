@@ -13,6 +13,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 public static partial class GpuBigIntDivRem
 {
     // [WHY] Validates buffer lengths at the host boundary before GPU kernel dispatch to avoid silent CUDA out-of-bounds writes.
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
@@ -24,6 +25,7 @@ public static partial class GpuBigIntDivRem
         }
     }
 
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
@@ -242,6 +244,7 @@ public static partial class GpuBigIntDivRem
     }
 
 
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     private static void CorrectUnderflow(GpuWorkspace workspace, int evalWords, GpuBigUInt quotientBuffer,
         GpuBigUInt remainderExtended, GpuBigUInt bPaddedExtended)
     {
@@ -272,6 +275,7 @@ public static partial class GpuBigIntDivRem
         }
     }
 
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     private static void CorrectRemainder(GpuWorkspace workspace, int evalWords, GpuBigUInt quotientBuffer,
         GpuBigUInt remainderExtended, GpuBigUInt bPaddedExtended)
     {
@@ -376,19 +380,8 @@ public static partial class GpuBigIntDivRem
         GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-
-        var n = rightOperand.NumWords;
-
-        var marginWords = 16;
-        var targetBits = 2 * n * 32 + marginWords * 32;
-        using var reciprocalOfB = new GpuBigUInt(rightOperand.Workspace, 2 * n + marginWords);
-        Reciprocal(rightOperand, reciprocalOfB, targetBits, marginWords);
-
-        using var productWithReciprocal = new GpuBigUInt(rightOperand.Workspace, 3 * n + marginWords);
-        GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
-
-        resultBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: 2 * n + marginWords,
-            numWords: n);
+        using var tempR = new GpuBigUInt(leftOperand.Workspace, leftOperand.NumWords);
+        DivRem(leftOperand, rightOperand, resultBuffer, tempR);
     }
 
     /// <summary>

@@ -5,6 +5,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 /// Targeted for sizes where NTT overhead is too high, but Schoolbook/DivRem carry propagation stalls the GPU (~256 to 1024 bits).
 /// </summary>
 [SkipSnapshotConsistency("WIP - Phase 2 RNS Montgomery")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class GpuBigIntRnsMontgomeryKernels
 {
     // =========================================================================

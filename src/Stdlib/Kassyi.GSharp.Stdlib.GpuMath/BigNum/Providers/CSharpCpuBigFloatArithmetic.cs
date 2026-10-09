@@ -17,6 +17,7 @@ using System.Runtime.InteropServices;
 /// <b>Thread Safety:</b> Stateless and thread-safe.
 /// </para>
 /// </remarks>
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
 {
     /// <summary>

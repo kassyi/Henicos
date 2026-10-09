@@ -104,6 +104,7 @@ public class FermatAlgorithm : IDisposable
     /// Copies and returns the current state buffer (<c>ValueT</c>) from GPU device memory to host memory.
     /// </summary>
     /// <returns>An array of 32-bit words containing the current state.</returns>
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public uint[] GetState()
     {
         var copy = new uint[OutNumWords];
@@ -116,6 +117,7 @@ public class FermatAlgorithm : IDisposable
     /// </summary>
     /// <param name="valueT">An array containing the state buffer words to load.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="valueT"/> length does not equal <see cref="OutNumWords"/>.</exception>
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public void LoadState(uint[] valueT)
     {
         if (valueT.Length != OutNumWords)

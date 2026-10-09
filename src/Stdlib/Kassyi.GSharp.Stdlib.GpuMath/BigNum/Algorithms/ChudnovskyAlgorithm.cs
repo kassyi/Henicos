@@ -400,6 +400,7 @@ public partial class ChudnovskyAlgorithm
 /// Obsolete compatibility type for <see cref="ChudnovskyAlgorithm"/>.
 /// </summary>
 [Obsolete("Use ChudnovskyAlgorithm instead.")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static class GpuChudnovskyAlgorithm
 {
     /// <inheritdoc cref="ChudnovskyAlgorithm.ComputePi(int, TextWriter, int, bool)" />

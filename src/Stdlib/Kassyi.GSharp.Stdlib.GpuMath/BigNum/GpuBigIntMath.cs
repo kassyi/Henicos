@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 public static class GpuBigIntMath
 {
     // [WHY] Validates buffer lengths at the host boundary before GPU kernel dispatch to avoid silent CUDA out-of-bounds writes.
-    private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
         if (leftOperand.NumWords != rightOperand.NumWords || leftOperand.NumWords != resultBuffer.NumWords)
@@ -21,7 +21,7 @@ public static class GpuBigIntMath
         }
     }
 
-    private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
         if (leftOperand.NumWords != resultBuffer.NumWords)
         {

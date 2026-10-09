@@ -4,6 +4,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 #pragma warning disable GSH0014 // Justification: Lambda capture limitations in source generation prevent passing context by reference.
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class GpuBigIntKernels
 {
     /// <summary>

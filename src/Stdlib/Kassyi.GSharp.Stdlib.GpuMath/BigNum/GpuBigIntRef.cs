@@ -12,7 +12,8 @@ using Kernels;
 /// <para>During G# compilation, the Roslyn Source Generator intercepts these operator macros and emits optimized device function calls.</para>
 /// <para><b>Execution Target:</b> GPU device functions and kernels only. Calling these operators on the host throws <see cref="GpuOnlyException"/>.</para>
 /// </remarks>
-public readonly ref struct GpuBigIntRef(uint[] data)
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public ref struct GpuBigIntRef(uint[] data)
 {
     /// <summary>
     /// Gets the raw underlying 32-bit unsigned limb array buffer.

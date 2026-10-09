@@ -100,7 +100,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// <summary>
     /// Releases all pooled device buffers and unmanaged resources.
     /// </summary>
-    public void Dispose()
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1)
         {

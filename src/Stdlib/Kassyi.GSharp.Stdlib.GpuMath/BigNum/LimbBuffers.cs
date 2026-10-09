@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <remarks>
 /// <para><b>Execution Target:</b> Host compile-time contract support for collection expressions. Never allocated or iterated at runtime.</para>
 /// </remarks>
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public struct DummyUIntEnumerator
 {
     /// <summary>
