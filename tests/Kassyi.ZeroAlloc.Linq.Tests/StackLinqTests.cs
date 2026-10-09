@@ -349,4 +349,238 @@ public class StackLinqTests
         Assert.Equal(data, data.AsStackEnumerable().SkipLast(0).ToArray());
         Assert.Empty(data.AsStackEnumerable().SkipLast(15).ToArray());
     }
+
+    [Fact]
+    public void Take_ShouldMatchStandardLinq()
+    {
+        int[] data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+        Assert.Equal(data.Take(3).ToArray(), data.AsStackEnumerable().Take(3).ToArray());
+        Assert.Equal(data.Take(0).ToArray(), data.AsStackEnumerable().Take(0).ToArray());
+        Assert.Equal(data.Take(-3).ToArray(), data.AsStackEnumerable().Take(-3).ToArray());
+        Assert.Equal(data.Take(15).ToArray(), data.AsStackEnumerable().Take(15).ToArray());
+
+        // Chained
+        Assert.Equal(
+            data.Where(x => x > 4).Take(3).ToArray(),
+            data.AsStackEnumerable().Where(x => x > 4).Take(3).ToArray());
+
+        // Empty
+        Assert.Empty(Array.Empty<int>().AsStackEnumerable().Take(5).ToArray());
+    }
+
+    [Fact]
+    public void Skip_ShouldMatchStandardLinq()
+    {
+        int[] data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+        Assert.Equal(data.Skip(3).ToArray(), data.AsStackEnumerable().Skip(3).ToArray());
+        Assert.Equal(data.Skip(0).ToArray(), data.AsStackEnumerable().Skip(0).ToArray());
+        Assert.Equal(data.Skip(-3).ToArray(), data.AsStackEnumerable().Skip(-3).ToArray());
+        Assert.Equal(data.Skip(15).ToArray(), data.AsStackEnumerable().Skip(15).ToArray());
+
+        // Chained
+        Assert.Equal(
+            data.Where(x => x > 4).Skip(2).ToArray(),
+            data.AsStackEnumerable().Where(x => x > 4).Skip(2).ToArray());
+
+        // Empty
+        Assert.Empty(Array.Empty<int>().AsStackEnumerable().Skip(5).ToArray());
+    }
+
+    [Fact]
+    public void TakeWhile_SkipWhile_Indexed_ShouldMatchStandardLinq()
+    {
+        int[] data = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+
+        var expectedTake = data.TakeWhile((x, i) => x < 6 && i < 4).ToArray();
+        var actualTake = data.AsStackEnumerable().TakeWhile((x, i) => x < 6 && i < 4).ToArray();
+        Assert.Equal(expectedTake, actualTake);
+
+        var expectedSkip = data.SkipWhile((x, i) => x < 6 && i < 4).ToArray();
+        var actualSkip = data.AsStackEnumerable().SkipWhile((x, i) => x < 6 && i < 4).ToArray();
+        Assert.Equal(expectedSkip, actualSkip);
+
+        // Immediate false
+        Assert.Empty(data.AsStackEnumerable().TakeWhile((_, _) => false).ToArray());
+        Assert.Equal(data, data.AsStackEnumerable().SkipWhile((_, _) => false).ToArray());
+
+        // All true
+        Assert.Equal(data, data.AsStackEnumerable().TakeWhile((_, _) => true).ToArray());
+        Assert.Empty(data.AsStackEnumerable().SkipWhile((_, _) => true).ToArray());
+    }
+
+    [Fact]
+    public void Aggregate_ShouldMatchStandardLinq()
+    {
+        int[] data = { 1, 2, 3, 4, 5 };
+
+        int expected = data.Aggregate(10, (acc, x) => acc + x);
+        int actual = data.AsStackEnumerable().Aggregate(10, (acc, x) => acc + x);
+        Assert.Equal(expected, actual);
+
+        // Empty source
+        Assert.Equal(42, Array.Empty<int>().AsStackEnumerable().Aggregate(42, (acc, x) => acc + x));
+    }
+
+    [Fact]
+    public void Max_Min_Average_Int_ShouldReturnCorrectResult()
+    {
+        int[] data = { 5, 2, 9, 1, 7 };
+        Assert.Equal(9, data.AsStackEnumerable().Max());
+        Assert.Equal(1, data.AsStackEnumerable().Min());
+        Assert.Equal(4.8, data.AsStackEnumerable().Average(), precision: 5);
+
+        // Empty sequence throws
+        int[] empty = Array.Empty<int>();
+        Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Max());
+        Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Min());
+        Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Average());
+    }
+
+    [Fact]
+    public void Max_Min_Average_Float_ShouldReturnCorrectResult()
+    {
+        float[] data = { 5.5f, 2.2f, 9.9f, 1.1f, 7.7f };
+        Assert.Equal(9.9f, data.AsStackEnumerable().Max());
+        Assert.Equal(1.1f, data.AsStackEnumerable().Min());
+        Assert.Equal(5.28f, data.AsStackEnumerable().Average(), precision: 4);
+
+        // Empty sequence throws
+        float[] empty = Array.Empty<float>();
+        Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Max());
+        Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Min());
+        Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Average());
+    }
+
+    [Fact]
+    public void Max_Min_Average_Double_ShouldReturnCorrectResult()
+    {
+        double[] data = { 5.5, 2.2, 9.9, 1.1, 7.7 };
+        Assert.Equal(9.9, data.AsStackEnumerable().Max());
+        Assert.Equal(1.1, data.AsStackEnumerable().Min());
+        Assert.Equal(5.28, data.AsStackEnumerable().Average(), precision: 5);
+
+        // Empty sequence throws
+        double[] empty = Array.Empty<double>();
+        Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Max());
+        Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Min());
+        Assert.Throws<InvalidOperationException>(() => empty.AsStackEnumerable().Average());
+    }
+
+    [Fact]
+    public void ReadOnlySpan_And_Span_TakeLast_SkipLast_Coverage()
+    {
+        int[] data = { 10, 20, 30, 40, 50 };
+        ReadOnlySpan<int> roSpan = data;
+        Span<int> span = data;
+
+        // ReadOnlySpan wrapping
+        Assert.Equal(150, roSpan.AsStackEnumerable().Sum());
+        Assert.Equal(30, roSpan.AsStackEnumerable().ElementAt(2));
+
+        // Span TakeLast / SkipLast
+        Assert.Equal(new[] { 40, 50 }, span.AsStackEnumerable().TakeLast(2).ToArray());
+        Assert.Empty(span.AsStackEnumerable().TakeLast(0).ToArray());
+        Assert.Equal(data, span.AsStackEnumerable().TakeLast(10).ToArray());
+
+        Assert.Equal(new[] { 10, 20, 30 }, span.AsStackEnumerable().SkipLast(2).ToArray());
+        Assert.Equal(data, span.AsStackEnumerable().SkipLast(0).ToArray());
+        Assert.Empty(span.AsStackEnumerable().SkipLast(10).ToArray());
+
+        // Span Single & Last optimizations
+        Span<int> singleSpan = stackalloc int[] { 42 };
+        Assert.Equal(42, singleSpan.AsStackEnumerable().Single());
+        Assert.Equal(42, singleSpan.AsStackEnumerable().SingleOrDefault());
+        Assert.Equal(42, singleSpan.AsStackEnumerable().Last());
+        Assert.Equal(42, singleSpan.AsStackEnumerable().LastOrDefault());
+
+        Span<int> emptySpan = Span<int>.Empty;
+        bool singleThrew = false;
+        try
+        {
+            emptySpan.AsStackEnumerable().Single();
+        }
+        catch (InvalidOperationException)
+        {
+            singleThrew = true;
+        }
+        Assert.True(singleThrew);
+
+        Assert.Equal(0, emptySpan.AsStackEnumerable().SingleOrDefault());
+
+        bool lastThrew = false;
+        try
+        {
+            emptySpan.AsStackEnumerable().Last();
+        }
+        catch (InvalidOperationException)
+        {
+            lastThrew = true;
+        }
+        Assert.True(lastThrew);
+
+        Assert.Equal(0, emptySpan.AsStackEnumerable().LastOrDefault());
+        Assert.Equal(0, emptySpan.AsStackEnumerable().ElementAtOrDefault(5));
+    }
+
+    [Fact]
+    public void Simd_Sum_ShouldMatchStandardLinq()
+    {
+        // 64 elements to trigger Vector<T> hardware acceleration paths
+        int[] intData = Enumerable.Range(1, 64).ToArray();
+        Span<int> intSpan = intData;
+        int expectedInt = intData.Sum();
+        Assert.Equal(expectedInt, intData.AsStackEnumerable().Sum());
+        Assert.Equal(expectedInt, intSpan.AsStackEnumerable().Sum());
+        Assert.Equal(expectedInt, intData.AsStackEnumerable().Where(_ => true).Sum());
+
+        float[] floatData = Enumerable.Range(1, 64).Select(i => (float)i).ToArray();
+        Span<float> floatSpan = floatData;
+        float expectedFloat = floatData.Sum();
+        Assert.Equal(expectedFloat, floatData.AsStackEnumerable().Sum());
+        Assert.Equal(expectedFloat, floatSpan.AsStackEnumerable().Sum());
+        Assert.Equal(expectedFloat, floatData.AsStackEnumerable().Where(_ => true).Sum());
+
+        double[] doubleData = Enumerable.Range(1, 64).Select(i => (double)i).ToArray();
+        Span<double> doubleSpan = doubleData;
+        double expectedDouble = doubleData.Sum();
+        Assert.Equal(expectedDouble, doubleData.AsStackEnumerable().Sum());
+        Assert.Equal(expectedDouble, doubleSpan.AsStackEnumerable().Sum());
+        Assert.Equal(expectedDouble, doubleData.AsStackEnumerable().Where(_ => true).Sum());
+    }
+
+    [Fact]
+    public void ArgumentNullExceptions_ShouldThrowOnNullInputs()
+    {
+        int[] nullArray = null!;
+        List<int> nullList = null!;
+        int[] data = { 1, 2, 3 };
+
+        Assert.Throws<ArgumentNullException>(() => nullArray.AsStackEnumerable());
+        Assert.Throws<ArgumentNullException>(() => nullList.AsStackEnumerable());
+
+        AssertThrowsArgNull(() => data.AsStackEnumerable().Where((Func<int, bool>)null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().Where((Func<int, int, bool>)null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().Select((Func<int, int>)null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().Select((Func<int, int, int>)null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().TakeWhile((Func<int, bool>)null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().TakeWhile((Func<int, int, bool>)null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().SkipWhile((Func<int, bool>)null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().SkipWhile((Func<int, int, bool>)null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().Aggregate(0, null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().Count((Func<int, bool>)null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().Count((Func<int, int, bool>)null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().Any(null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().All(null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().First(null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().FirstOrDefault(null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().Single(null!));
+        AssertThrowsArgNull(() => data.AsStackEnumerable().SingleOrDefault(null!));
+    }
+
+    private static void AssertThrowsArgNull(Action action)
+    {
+        Assert.Throws<ArgumentNullException>(action);
+    }
 }
