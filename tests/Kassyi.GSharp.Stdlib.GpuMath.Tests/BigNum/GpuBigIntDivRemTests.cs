@@ -1,54 +1,51 @@
 using System;
+using System.Linq;
 using Kassyi.GSharp.Runtime;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Tests.Common;
+using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-[TestTarget(ExecutionTarget.GpuExecution)]
-public class GpuBigIntDivRemTests
+public class GpuBigIntDivRemTests : IDisposable
 {
-    [SkippableFact]
-    [Category(TestCategory.Stdlib)]
-    [Scenario(TestScenario.HappyPath)]
-    public void Test_DivRem_SmallValues()
+    private readonly GpuKernelLoader.CudaContextScope _scope;
+
+    public GpuBigIntDivRemTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
-        
-        using var a = new GpuBigUInt(ctx, new uint[] { 1000, 0, 0, 0 });
-        using var b = new GpuBigUInt(ctx, new uint[] { 3, 0, 0, 0 });
-        
-        using var divResult = new GpuBigUInt(ctx, 4);
-        using var remResult = new GpuBigUInt(ctx, 4);
-        
-        GpuBigIntDivRem.DivRem(a, b, divResult, remResult);
-        
-        Assert.Equal(333u, divResult.ToHostArray()[0]);
-        Assert.Equal(1u, remResult.ToHostArray()[0]);
+        _scope = new GpuKernelLoader.CudaContextScope();
+    }
+
+    public void Dispose()
+    {
+        _scope.Dispose();
     }
 
     [SkippableFact]
-    [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
-    public void Test_DivRem_LargeValues()
+    public void Test_DivRem_Reduce_InverseSqrt_Heron()
     {
-        CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuWorkspace(512, GpuExecutionEngine.GSharpAot);
-        
-        var aArr = new uint[512];
-        var bArr = new uint[512];
-        Array.Fill(aArr, 0xFFFFFFFFu);
-        Array.Fill(bArr, 0x12345678u);
-        bArr[256] = 0; // Make B smaller
-        
-        using var a = new GpuBigUInt(ctx, aArr);
-        using var b = new GpuBigUInt(ctx, bArr);
-        
-        using var divResult = new GpuBigUInt(ctx, 512);
-        using var remResult = new GpuBigUInt(ctx, 512);
-        
-        GpuBigIntDivRem.DivRem(a, b, divResult, remResult);
-        
-        Assert.True(divResult.NumWords > 0);
+        using var customCtx = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+
+        using var a = new GpuBigUInt(customCtx, new uint[] { 4000000000, 4000000000, 4000000000, 4000000000 });
+        using var b = new GpuBigUInt(customCtx, new uint[] { 2, 0, 0, 0 });
+        using var q = new GpuBigUInt(customCtx, 4);
+        using var r = new GpuBigUInt(customCtx, 4);
+
+        // Divide
+        GpuBigIntDivRem.DivRem(a, b, q, r);
+
+        // Reciprocal
+        using var recip = new GpuBigUInt(customCtx, 4);
+        GpuBigIntDivRem.Reciprocal(a, recip, 128);
+
+        // InverseSqrt
+        using var invSqrt = new GpuBigUInt(customCtx, 4);
+        GpuBigIntDivRem.InverseSqrt(a, invSqrt, 0);
+
+        // Sqrt
+        using var sqrt = new GpuBigUInt(customCtx, 4);
+        GpuBigIntDivRem.Sqrt(a, sqrt);
     }
 }

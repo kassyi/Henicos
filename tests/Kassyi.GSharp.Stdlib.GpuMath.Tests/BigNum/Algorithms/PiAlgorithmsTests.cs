@@ -17,14 +17,29 @@ public class PiAlgorithmsTests
         
         var next10 = BbpAlgorithm.ExtractHexDigits(10, 10);
         Assert.Equal("A308D31319", next10.ToUpperInvariant());
+
+        var largeOff = BbpAlgorithm.ExtractHexDigits(10000, 2);
+        Assert.Equal(2, largeOff.Length);
     }
 
     [Theory]
     [InlineData(10, "31415926535")] // 10 digits after 3, making length 11 (3.1415926535)
     [InlineData(50, "314159265358979323846264338327950288419716939937510")]
-    public void Test_ChudnovskyAlgorithm_ComputesPiCorrectly(int digits, string expectedDecimal)
+    public void Test_ChudnovskyAlgorithm_Cpu_ComputesPiCorrectly(int digits, string expectedDecimal)
     {
         var piString = ChudnovskyAlgorithm.ComputePi(digits);
         Assert.Equal(expectedDecimal, piString);
+    }
+
+    [SkippableTheory]
+    [InlineData(10, false, "3.1415926535")]
+    [InlineData(10, true, "3.243F6A88")]
+    public void Test_ChudnovskyAlgorithm_Gpu_ComputesPiCorrectly(int digits, bool asHex, string expected)
+    {
+        Kassyi.GSharp.Stdlib.GpuMath.Tests.CudaCapability.EnsureGpuAvailable();
+        using var sw = new System.IO.StringWriter();
+        ChudnovskyAlgorithm.ComputePi(digits, sw, 1, asHex);
+        var output = sw.ToString();
+        Assert.Contains(expected.ToUpperInvariant(), output.ToUpperInvariant());
     }
 }
