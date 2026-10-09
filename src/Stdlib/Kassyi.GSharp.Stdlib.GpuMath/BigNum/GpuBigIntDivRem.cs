@@ -256,7 +256,9 @@ public static partial class GpuBigIntDivRem
             loopCount++;
             if (loopCount > 10000)
             {
-                throw new Exception("DivRem underflow correction failed to converge.");
+                var r = string.Join(",", remainderExtended.ToHostArray());
+                var b = string.Join(",", bPaddedExtended.ToHostArray());
+                throw new Exception($"DivRem underflow correction failed to converge. evalWords: {evalWords}, RemExtended: {r}, BPadded: {b}");
             }
 
             GpuBigIntMath.Sub(quotientBuffer, one, tempQuot);
@@ -332,8 +334,11 @@ public static partial class GpuBigIntDivRem
         try
         {
             gpuBigInt.Workspace.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n, gpuBigInt.Workspace.Stream);
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuStreamSynchronize(gpuBigInt.Workspace.Stream));
+            if (!Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.IsCpuFallbackMode)
+            {
+                CudaException.ThrowIfError(
+                    CudaDriverApi.cuStreamSynchronize(gpuBigInt.Workspace.Stream));
+            }
             for (var i = n - 1; i >= 0; i--)
             {
                 if (hostData[i] == 0)
@@ -417,7 +422,10 @@ public static partial class GpuBigIntDivRem
         try
         {
             operand.Workspace.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n, operand.Workspace.Stream);
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(operand.Workspace.Stream));
+            if (!Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.IsCpuFallbackMode)
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(operand.Workspace.Stream));
+            }
             var topIndex = (actualBits - 1) / 32;
 
             var wordsToExtract = Math.Min(4, topIndex + 1);
@@ -490,8 +498,11 @@ public static partial class GpuBigIntDivRem
             Buffer.BlockCopy(xBytes, 0, xData, 0, Math.Min(xBytes.Length, numWords * 4));
             targetOperand.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords,
                 targetOperand.Workspace.Stream);
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuStreamSynchronize(targetOperand.Workspace.Stream));
+            if (!Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.IsCpuFallbackMode)
+            {
+                CudaException.ThrowIfError(
+                    CudaDriverApi.cuStreamSynchronize(targetOperand.Workspace.Stream));
+            }
         }
         finally
         {

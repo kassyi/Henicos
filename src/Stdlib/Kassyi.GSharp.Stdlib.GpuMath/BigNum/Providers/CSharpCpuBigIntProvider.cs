@@ -302,7 +302,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
             throw new DivideByZeroException();
         }
 
-        var constant = BigInteger.One << (targetBits + numBits);
+        var constant = BigInteger.One << targetBits;
         var result = constant / x;
         Write(result, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
