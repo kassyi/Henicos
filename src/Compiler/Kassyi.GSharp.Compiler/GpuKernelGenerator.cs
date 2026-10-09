@@ -1,6 +1,4 @@
-using Kassyi.GSharp.Compiler.Dialects;
 using Kassyi.GSharp.Compiler.Models;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Kassyi.GSharp.Compiler;
 
@@ -178,7 +176,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             var collector = new DiagnosticCollector();
 #pragma warning disable RS1035
-            System.IO.File.AppendAllText(@"P:\Projects\Active\Henicos\tmp\gsharp_error.txt", ex.ToString() + "\n\n");
+            File.AppendAllText(@"P:\Projects\Active\Henicos\tmp\gsharp_error.txt", ex.ToString() + "\n\n");
 #pragma warning restore RS1035
             collector.Report(Diagnostic.Create(
                 GSharpDiagnostics.InternalCompilerError,
@@ -240,7 +238,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             var collector = new DiagnosticCollector();
 #pragma warning disable RS1035
-            System.IO.File.AppendAllText(@"P:\Projects\Active\Henicos\tmp\gsharp_error.txt", ex.ToString() + "\n\n");
+            File.AppendAllText(@"P:\Projects\Active\Henicos\tmp\gsharp_error.txt", ex.ToString() + "\n\n");
 #pragma warning restore RS1035
             collector.Report(Diagnostic.Create(
                 GSharpDiagnostics.InternalCompilerError,

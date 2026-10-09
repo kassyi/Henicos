@@ -1,6 +1,3 @@
-using System;
-using Henicos.Benchmarks.ComputeBenchmarks;
-using Xunit;
 
 namespace Henicos.Benchmarks.Tests.ComputeBenchmarks;
 
@@ -31,7 +28,7 @@ public class ComputeBenchmarkRunnerTests
     public void RunBenchmark_SuccessfulLifecycle_ReturnsSuccessResult()
     {
         var fake = new FakeBenchmark();
-        using var sw = new System.IO.StringWriter();
+        using var sw = new StringWriter();
 
         var result = ComputeBenchmarkRunner.RunBenchmark(fake, 3, sw);
 
@@ -48,7 +45,7 @@ public class ComputeBenchmarkRunnerTests
     public void RunBenchmark_VerificationFails_ReturnsFailureResult()
     {
         var fake = new FakeBenchmark { ShouldFailVerify = true };
-        using var sw = new System.IO.StringWriter();
+        using var sw = new StringWriter();
 
         var result = ComputeBenchmarkRunner.RunBenchmark(fake, 2, sw);
 
@@ -59,7 +56,7 @@ public class ComputeBenchmarkRunnerTests
     [Fact]
     public void RunSuite_UnknownSuite_ReturnsEmptyList()
     {
-        using var sw = new System.IO.StringWriter();
+        using var sw = new StringWriter();
         var results = ComputeBenchmarkRunner.RunSuite("nonexistent", 1, sw);
 
         Assert.Empty(results);

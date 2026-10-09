@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;

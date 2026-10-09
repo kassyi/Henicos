@@ -1,4 +1,3 @@
-using Xunit;
 
 // Important note on CUDA Stream Capture (CUDA Graph: GBI-31) and xUnit parallel test execution:
 //

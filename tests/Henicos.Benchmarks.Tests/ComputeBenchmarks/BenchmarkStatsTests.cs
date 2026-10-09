@@ -1,5 +1,3 @@
-using Henicos.Benchmarks.ComputeBenchmarks;
-using Xunit;
 
 namespace Henicos.Benchmarks.Tests.ComputeBenchmarks;
 

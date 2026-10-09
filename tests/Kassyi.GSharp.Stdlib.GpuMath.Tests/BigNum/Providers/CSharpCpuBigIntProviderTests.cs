@@ -1,10 +1,3 @@
-using System;
-using System.Numerics;
-using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
-using Kassyi.GSharp.Tests.Common;
-using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Providers;
 
@@ -16,7 +9,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
 
     public CSharpCpuBigIntProviderTests()
     {
-        Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ForceCpuFallback = true;
+        GpuKernelLoader.ForceCpuFallback = true;
         _workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         _provider = CSharpCpuBigIntProvider.Instance;
     }
@@ -24,7 +17,7 @@ public class CSharpCpuBigIntProviderTests : IDisposable
     public void Dispose()
     {
         _workspace.Dispose();
-        Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ForceCpuFallback = false;
+        GpuKernelLoader.ForceCpuFallback = false;
     }
 
     [Fact]

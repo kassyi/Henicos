@@ -14,7 +14,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// <b>Zero-Allocation:</b> Direct P/Invoke bindings communicate with unmanaged GPU memory without managed array allocation overhead.
 /// </para>
 /// </remarks>
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage]
 public class NativeProvider : IGpuExecutionProvider
 {
     /// <summary>

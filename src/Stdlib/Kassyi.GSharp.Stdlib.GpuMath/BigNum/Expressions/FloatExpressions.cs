@@ -55,7 +55,7 @@ public readonly struct SubOp : IFloatOperator<GpuBigFloat>, IFloatOperator<GpuBi
 /// <summary>
 /// Static multiplication operator tag for arbitrary-precision floating-point operands.
 /// </summary>
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage]
 public readonly struct MulOp : IFloatOperator<GpuBigFloat>
 {
     /// <inheritdoc/>

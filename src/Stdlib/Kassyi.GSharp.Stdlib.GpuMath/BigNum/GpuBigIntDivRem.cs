@@ -1,5 +1,3 @@
-using System.Buffers;
-using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
@@ -13,7 +11,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 public static partial class GpuBigIntDivRem
 {
     // [WHY] Validates buffer lengths at the host boundary before GPU kernel dispatch to avoid silent CUDA out-of-bounds writes.
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
@@ -25,7 +23,7 @@ public static partial class GpuBigIntDivRem
         }
     }
 
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
@@ -244,7 +242,7 @@ public static partial class GpuBigIntDivRem
     }
 
 
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage]
     private static void CorrectUnderflow(GpuWorkspace workspace, int evalWords, GpuBigUInt quotientBuffer,
         GpuBigUInt remainderExtended, GpuBigUInt bPaddedExtended)
     {
@@ -275,7 +273,7 @@ public static partial class GpuBigIntDivRem
         }
     }
 
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [ExcludeFromCodeCoverage]
     private static void CorrectRemainder(GpuWorkspace workspace, int evalWords, GpuBigUInt quotientBuffer,
         GpuBigUInt remainderExtended, GpuBigUInt bPaddedExtended)
     {
@@ -338,7 +336,7 @@ public static partial class GpuBigIntDivRem
         try
         {
             gpuBigInt.Workspace.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n, gpuBigInt.Workspace.Stream);
-            if (!Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.IsCpuFallbackMode)
+            if (!GpuKernelLoader.IsCpuFallbackMode)
             {
                 CudaException.ThrowIfError(
                     CudaDriverApi.cuStreamSynchronize(gpuBigInt.Workspace.Stream));
@@ -415,7 +413,7 @@ public static partial class GpuBigIntDivRem
         try
         {
             operand.Workspace.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n, operand.Workspace.Stream);
-            if (!Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.IsCpuFallbackMode)
+            if (!GpuKernelLoader.IsCpuFallbackMode)
             {
                 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(operand.Workspace.Stream));
             }
@@ -491,7 +489,7 @@ public static partial class GpuBigIntDivRem
             Buffer.BlockCopy(xBytes, 0, xData, 0, Math.Min(xBytes.Length, numWords * 4));
             targetOperand.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords,
                 targetOperand.Workspace.Stream);
-            if (!Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.IsCpuFallbackMode)
+            if (!GpuKernelLoader.IsCpuFallbackMode)
             {
                 CudaException.ThrowIfError(
                     CudaDriverApi.cuStreamSynchronize(targetOperand.Workspace.Stream));

@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Compiler.Marshaling;
+using System.Globalization;
 using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler;
@@ -67,8 +67,8 @@ internal static class WrapperEmitter
             {
                 null => "default",
                 bool b => b ? "true" : "false",
-                float f => f.ToString(System.Globalization.CultureInfo.InvariantCulture) + "f",
-                double d => d.ToString(System.Globalization.CultureInfo.InvariantCulture) + "d",
+                float f => f.ToString(CultureInfo.InvariantCulture) + "f",
+                double d => d.ToString(CultureInfo.InvariantCulture) + "d",
                 string s => SymbolDisplay.FormatLiteral(s, true),
                 _ => val.ToString()
             };

@@ -1,7 +1,4 @@
-using System;
 using System.Text;
-using Xunit;
-using Henicos.Benchmarks.ComputeBenchmarks;
 
 namespace Henicos.Benchmarks.Tests.ComputeBenchmarks;
 

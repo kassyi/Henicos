@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
@@ -100,7 +99,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// <summary>
     /// Releases all pooled device buffers and unmanaged resources.
     /// </summary>
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] public void Dispose()
+    [ExcludeFromCodeCoverage] public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1)
         {

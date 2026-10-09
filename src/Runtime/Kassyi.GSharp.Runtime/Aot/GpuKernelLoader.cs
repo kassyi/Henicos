@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Runtime.Fatbin;
-using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Aot;
 

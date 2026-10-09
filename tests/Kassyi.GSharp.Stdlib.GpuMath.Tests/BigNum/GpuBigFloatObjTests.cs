@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Tests.Common;
 using GpuBigFloat = Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigFloat;
 using GpuBigUInt = Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigUInt;
 

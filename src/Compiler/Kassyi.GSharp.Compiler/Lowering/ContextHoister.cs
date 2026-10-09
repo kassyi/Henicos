@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis.Text;
 
 namespace Kassyi.GSharp.Compiler.Lowering;
 

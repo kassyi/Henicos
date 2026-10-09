@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -705,7 +706,7 @@ public static class StackLinqExtensions
         this StackEnumerable<TEnumerator, TSource> source)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
     {
-        var pool = System.Buffers.ArrayPool<TSource>.Shared;
+        var pool = ArrayPool<TSource>.Shared;
         var buffer = pool.Rent(16);
         var count = 0;
         var enumerator = source.Enumerator;

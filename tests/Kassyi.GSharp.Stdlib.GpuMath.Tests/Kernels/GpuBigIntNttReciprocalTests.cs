@@ -1,6 +1,4 @@
-using System;
-using System.Numerics;
-using Xunit;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels;
 
@@ -101,7 +99,7 @@ public class GpuBigIntNttReciprocalTests
         
         // This is a complex internal API, ensure we supply correctly
         // (marginWords, numBits, marginBits, iterations, targetBits)
-        var advancedMath = new Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers.AotAdvancedMathHandler();
+        var advancedMath = new AotAdvancedMathHandler();
         advancedMath.ReciprocalMega(
             workspace, targetOperand, resultBuffer,
             marginWords: 2, 

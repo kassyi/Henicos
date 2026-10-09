@@ -1,22 +1,16 @@
-using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
-using Kassyi.GSharp.Tests.Common;
-using System.Numerics;
-using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Expressions;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class SignedExpressionsTests : IDisposable
 {
-    private readonly Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope _scope;
+    private readonly GpuKernelLoader.CudaContextScope _scope;
     private readonly GpuWorkspace _context;
 
     public SignedExpressionsTests()
     {
         CudaCapability.EnsureGpuAvailable();
-        _scope = new Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
+        _scope = new GpuKernelLoader.CudaContextScope();
         _context = new GpuWorkspace(1024 * 1024, GpuExecutionEngine.GSharpAot);
     }
 

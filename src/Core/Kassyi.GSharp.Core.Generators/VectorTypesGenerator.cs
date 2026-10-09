@@ -1,8 +1,6 @@
+using Kassyi.GSharp.Compiler;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
-using System.Text;
-
-using Kassyi.GSharp.Compiler;
 
 namespace Kassyi.GSharp.Core.Generators;
 

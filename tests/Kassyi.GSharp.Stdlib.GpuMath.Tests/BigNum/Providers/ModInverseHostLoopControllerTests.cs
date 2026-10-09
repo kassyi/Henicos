@@ -1,10 +1,4 @@
-using System;
-using System.Numerics;
-using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
-using Kassyi.GSharp.Tests.Common;
-using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Providers;
 
@@ -16,14 +10,14 @@ public class ModInverseHostLoopControllerTests : IDisposable
     public ModInverseHostLoopControllerTests()
     {
         // For testing the controller logic itself, CPU emulation is sufficient and stable.
-        Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ForceCpuFallback = true;
+        GpuKernelLoader.ForceCpuFallback = true;
         _workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
     }
 
     public void Dispose()
     {
         _workspace.Dispose();
-        Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.ForceCpuFallback = false;
+        GpuKernelLoader.ForceCpuFallback = false;
     }
 
     [Theory]
@@ -46,7 +40,7 @@ public class ModInverseHostLoopControllerTests : IDisposable
 
         // Assert
         var actual = res.ToBigInteger();
-        Assert.Equal(new System.Numerics.BigInteger(expectedResult), actual);
+        Assert.Equal(new BigInteger(expectedResult), actual);
     }
 
     [Theory]

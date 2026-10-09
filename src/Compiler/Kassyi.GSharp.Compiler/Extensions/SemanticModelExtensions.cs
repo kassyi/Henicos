@@ -1,8 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Extensions;
 
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
-
 /// <summary>Provides zero-allocation extension methods for Roslyn <see cref="SemanticModel"/> queries.</summary>
 internal static class SemanticModelExtensions
 {

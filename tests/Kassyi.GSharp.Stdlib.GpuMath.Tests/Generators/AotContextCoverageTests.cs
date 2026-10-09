@@ -1,12 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Tests.Common;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.Generators;
@@ -24,7 +17,7 @@ public class AotContextCoverageTests
     {
         CudaCapability.EnsureGpuAvailable();
 
-        var assembly = typeof(Kassyi.GSharp.Stdlib.GpuMath.BigNum.GpuBigIntMath).Assembly;
+        var assembly = typeof(GpuBigIntMath).Assembly;
         var aotContextTypes = assembly.GetTypes()
             .Where(t => t.Name == "AotContexts" && t.IsClass)
             .ToList();

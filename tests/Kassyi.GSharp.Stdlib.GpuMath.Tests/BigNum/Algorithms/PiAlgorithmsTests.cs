@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
-using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Algorithms;
 
@@ -36,8 +34,8 @@ public class PiAlgorithmsTests
     [InlineData(10, true, "3.243F6A88")]
     public void Test_ChudnovskyAlgorithm_Gpu_ComputesPiCorrectly(int digits, bool asHex, string expected)
     {
-        Kassyi.GSharp.Stdlib.GpuMath.Tests.CudaCapability.EnsureGpuAvailable();
-        using var sw = new System.IO.StringWriter();
+        CudaCapability.EnsureGpuAvailable();
+        using var sw = new StringWriter();
         ChudnovskyAlgorithm.ComputePi(digits, sw, 1, asHex);
         var output = sw.ToString();
         Assert.Contains(expected.ToUpperInvariant(), output.ToUpperInvariant());

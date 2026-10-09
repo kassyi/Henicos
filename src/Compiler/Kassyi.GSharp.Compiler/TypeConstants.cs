@@ -1,3 +1,4 @@
+using System.Numerics;
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>Common type and namespace constants used across compiler transpilation.</summary>
@@ -17,9 +18,9 @@ internal static class TypeConstants
     public const string InterlockedType = nameof(Interlocked);
     public const string BitOperationsType = "BitOperations";
 
-    public const string Vector2Type = nameof(System.Numerics.Vector2);
-    public const string Vector3Type = nameof(System.Numerics.Vector3);
-    public const string Vector4Type = nameof(System.Numerics.Vector4);
+    public const string Vector2Type = nameof(Vector2);
+    public const string Vector3Type = nameof(Vector3);
+    public const string Vector4Type = nameof(Vector4);
 
     public const string SpanType = nameof(Span<byte>);
     public const string ReadOnlySpanType = nameof(ReadOnlySpan<byte>);

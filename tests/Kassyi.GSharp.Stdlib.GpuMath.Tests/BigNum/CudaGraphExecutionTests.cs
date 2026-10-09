@@ -1,12 +1,4 @@
-#nullable enable
-using System;
-using System.Numerics;
 using System.Runtime.ExceptionServices;
-using Kassyi.GSharp.Runtime;
-using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-using Kassyi.ZeroAlloc.Linq;
-using Xunit;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
@@ -20,7 +12,7 @@ public class CudaGraphExecutionTests
         CudaCapability.EnsureGpuAvailable();
 
         Exception? threadEx = null;
-        var thread = new System.Threading.Thread(() =>
+        var thread = new Thread(() =>
         {
             try
             {
@@ -83,7 +75,7 @@ public class CudaGraphExecutionTests
 
         if (threadEx != null)
         {
-            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(threadEx).Throw();
+            ExceptionDispatchInfo.Capture(threadEx).Throw();
         }
     }
 
@@ -94,7 +86,7 @@ public class CudaGraphExecutionTests
         CudaCapability.EnsureGpuAvailable();
 
         Exception? threadEx = null;
-        var thread = new System.Threading.Thread(() =>
+        var thread = new Thread(() =>
         {
             try
             {

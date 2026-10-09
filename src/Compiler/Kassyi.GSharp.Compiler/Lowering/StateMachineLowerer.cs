@@ -1,11 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-
 /// <summary>Lowers flat C# AST statements into a switch-based state machine separated by thread barriers.</summary>
 public class StateMachineLowerer
 {

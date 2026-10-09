@@ -10,7 +10,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// <b>Zero-Allocation:</b> Ensures deterministic deallocation of temporary GPU memory buffers upon exiting the scope without managed heap overhead.
 /// </para>
 /// </remarks>
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage]
 public ref struct ScopedGpuMemory(IGpuExecutionProvider provider, int numWords)
 {
     /// <summary>

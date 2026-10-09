@@ -1,7 +1,5 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
-using System;
-
 /// <summary>
 /// Encapsulates the execution state, memory manager, arithmetic provider, and CUDA stream for a GPU BigNum operation.
 /// </summary>

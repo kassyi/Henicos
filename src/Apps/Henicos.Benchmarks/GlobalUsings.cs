@@ -6,6 +6,8 @@ global using System.IO;
 global using System.Net.Http;
 global using System.Threading;
 global using System.Threading.Tasks;
+global using BenchmarkDotNet.Attributes;
 global using Kassyi.GSharp.Core;
 global using Kassyi.GSharp.Runtime.Aot;
 global using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+global using Kassyi.ZeroAlloc.Linq;

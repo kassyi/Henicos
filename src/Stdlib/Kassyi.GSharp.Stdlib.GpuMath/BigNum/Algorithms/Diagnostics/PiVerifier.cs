@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Diagnostics;
 /// <summary>
 /// Provides verification functionality for computed Pi digits.
 /// </summary>
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage]
 public static class PiVerifier
 {
     /// <summary>
