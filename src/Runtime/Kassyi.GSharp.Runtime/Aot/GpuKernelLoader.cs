@@ -28,10 +28,16 @@ public sealed class GpuKernelLoader
         }
     }
 
+    private static readonly System.Threading.AsyncLocal<bool> s_forceCpuFallback = new();
+
     /// <summary>
     /// Gets or sets a value indicating whether to forcibly emulate GPU runtime on CPU host memory.
     /// </summary>
-    public static bool ForceCpuFallback { get; set; }
+    public static bool ForceCpuFallback
+    {
+        get => s_forceCpuFallback.Value;
+        set => s_forceCpuFallback.Value = value;
+    }
 
     /// <summary>
     /// Gets a value indicating whether the runtime is operating in CPU host fallback mode.

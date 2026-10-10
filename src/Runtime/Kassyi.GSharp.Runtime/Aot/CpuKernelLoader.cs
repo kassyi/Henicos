@@ -6,12 +6,15 @@ namespace Kassyi.GSharp.Runtime.Aot;
 [ExcludeFromCodeCoverage]
 public sealed class CpuKernelLoader
 {
+    private static readonly AsyncLocal<bool> _forceManagedExecution = new();
+    
     /// <summary>
     /// Gets or sets a value indicating whether to forcefully bypass native AOT DLL execution and use pure C# managed execution.
     /// </summary>
     public static bool ForceManagedExecution
     {
-        get; set;
+        get => _forceManagedExecution.Value;
+        set => _forceManagedExecution.Value = value;
     }
 
     /// <summary>
