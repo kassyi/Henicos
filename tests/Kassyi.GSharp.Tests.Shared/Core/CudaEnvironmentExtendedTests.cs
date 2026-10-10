@@ -7,8 +7,14 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
-public class CudaEnvironmentExtendedTests
+[Collection(TestCollections.GlobalStateSequential)]
+public class CudaEnvironmentExtendedTests : IDisposable
 {
+    public void Dispose()
+    {
+        CudaEnvironment.Resolver = new DefaultCudaPathResolver();
+    }
+
     private class MockResolver : DefaultCudaPathResolver
     {
         public Dictionary<string, string?> EnvVars { get; } = new();

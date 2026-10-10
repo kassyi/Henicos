@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
+[Collection(TestCollections.GlobalStateSequential)]
 public class ArtifactHelperTests
 {
     static ArtifactHelperTests()

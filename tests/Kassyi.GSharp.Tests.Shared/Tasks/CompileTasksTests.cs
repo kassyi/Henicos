@@ -12,6 +12,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
+[Collection(TestCollections.GlobalStateSequential)]
 public class CompileTasksTests
 {
     static CompileTasksTests()

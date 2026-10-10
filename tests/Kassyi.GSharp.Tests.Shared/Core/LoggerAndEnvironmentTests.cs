@@ -6,6 +6,7 @@ using GSharpLogLevel = Kassyi.GSharp.Core.LogLevel;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
+[Collection(TestCollections.GlobalStateSequential)]
 public class LoggerAndEnvironmentTests
 {
     private class TestLoggerConsumer : Logger

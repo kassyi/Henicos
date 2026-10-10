@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
+[Collection(TestCollections.GlobalStateSequential)]
 public class LoggerExtendedTests
 {
     private class TestLogger : Logger
