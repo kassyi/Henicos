@@ -29,8 +29,10 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
             $seedInfo = ""; \
         } \
         Write-Host "[$i/{{count}}] Running test iteration$seedInfo..." -ForegroundColor Cyan; \
+        $logHeader = if ('{{shuffle}}' -eq 'true') { "=== Stability Test Iteration $i (Seed: $currentSeed) ===" } else { "=== Stability Test Iteration $i (Shuffle: disabled) ===" }; \
+        Set-Content -Path "TestResults/stability_iter_$i.log" -Value $logHeader -Encoding utf8; \
         $lapSw = [System.Diagnostics.Stopwatch]::StartNew(); \
-        dotnet test --no-build --logger "trx;LogFileName=stability_iter_$i.trx" --filter "Category!=Stress&Category!=Benchmark" {{args}} 2>&1 | Out-File -FilePath TestResults/stability_iter_$i.log -Encoding utf8; \
+        dotnet test --no-build --logger "trx;LogFileName=stability_iter_$i.trx" --filter "Category!=Stress&Category!=Benchmark" {{args}} 2>&1 | Out-File -FilePath TestResults/stability_iter_$i.log -Encoding utf8 -Append; \
         $exitCode = $LASTEXITCODE; \
         $lapSw.Stop(); \
         $lapElapsed = $lapSw.Elapsed; \
