@@ -182,7 +182,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
 
         try
         {
-            var result = ProcessRunner.Default.Run(startInfo);
+            var result = this.ProcessRunner.Run(startInfo);
 
             if (result.ExitCode == 0 && File.Exists(outputDllPath))
             {

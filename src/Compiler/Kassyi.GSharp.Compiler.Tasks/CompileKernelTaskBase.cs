@@ -15,6 +15,9 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
         get; set;
     }
 
+    /// <summary>Gets or sets the process runner to use for executing external tools.</summary>
+    public IProcessRunner ProcessRunner { get; set; } = Helpers.ProcessRunner.Default;
+
     /// <summary>Retrieves source items to be processed by this compilation task.</summary>
     protected abstract ITaskItem[] GetSources();
 
@@ -112,7 +115,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             }
         };
 
-        var vswhereResult = ProcessRunner.Default.Run(vswhereStartInfo);
+        var vswhereResult = this.ProcessRunner.Run(vswhereStartInfo);
         if (vswhereResult.ExitCode != 0)
         {
             return null;
@@ -144,7 +147,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             }
         };
 
-        var envResult = ProcessRunner.Default.Run(envStartInfo);
+        var envResult = this.ProcessRunner.Run(envStartInfo);
         if (envResult.ExitCode != 0)
         {
             return null;
