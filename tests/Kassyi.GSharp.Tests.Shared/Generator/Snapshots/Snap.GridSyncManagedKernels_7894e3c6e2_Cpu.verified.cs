@@ -182,6 +182,8 @@ int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
@@ -223,7 +225,11 @@ if (gridSyncRequested)
 break;
 }
 }
+}
+finally
+{
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 }
 return;
@@ -486,6 +492,8 @@ int bx = _b_idx % (int)gridDimX;
 int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
 int bz = _b_idx / (int)(gridDimX * gridDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
@@ -527,7 +535,11 @@ if (gridSyncRequested)
 break;
 }
 }
+}
+finally
+{
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
 }
 }
 return;

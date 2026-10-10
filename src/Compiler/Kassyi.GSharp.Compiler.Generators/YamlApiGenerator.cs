@@ -67,6 +67,7 @@ public static class YamlApiGenerator
         writer.Line();
 
         writer.Line("// ReSharper disable InconsistentNaming");
+        writer.Line("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
         writer.Line($"public static partial class {def.ClassName}");
         using (writer.Scope())
         {
@@ -150,6 +151,7 @@ public static class YamlApiGenerator
 
         foreach (var group in classGroups)
         {
+            writer.Line("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
             writer.Line($"public static partial class {group.Key}");
             using (writer.Scope())
             {
