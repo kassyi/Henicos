@@ -10,7 +10,7 @@ test-all *args="":
     dotnet test {{args}}
 
 # Run tests multiple times to detect flaky tests
-test-stability count="10" continue_on_error="false" *args="":
+test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args="":
     $null = New-Item -ItemType Directory -Force -Path TestResults; \
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; \
     $OutputEncoding = [System.Text.Encoding]::UTF8; \
@@ -20,7 +20,15 @@ test-stability count="10" continue_on_error="false" *args="":
     $totalSw = [System.Diagnostics.Stopwatch]::StartNew(); \
     $hasFailure = $false; \
     for ($i = 1; $i -le {{count}}; $i++) { \
-        Write-Host "[$i/{{count}}] Running test iteration..." -ForegroundColor Cyan; \
+        if ('{{shuffle}}' -eq 'true') { \
+            $currentSeed = if ('{{seed}}' -ne '') { [int]'{{seed}}' + $i - 1 } else { Get-Random }; \
+            $env:TEST_SEED = "$currentSeed"; \
+            $seedInfo = " (Seed: $currentSeed)"; \
+        } else { \
+            Remove-Item env:TEST_SEED -ErrorAction SilentlyContinue; \
+            $seedInfo = ""; \
+        } \
+        Write-Host "[$i/{{count}}] Running test iteration$seedInfo..." -ForegroundColor Cyan; \
         $lapSw = [System.Diagnostics.Stopwatch]::StartNew(); \
         dotnet test --no-build --logger "trx;LogFileName=stability_iter_$i.trx" --filter "Category!=Stress&Category!=Benchmark" {{args}} 2>&1 | Out-File -FilePath TestResults/stability_iter_$i.log -Encoding utf8; \
         $exitCode = $LASTEXITCODE; \
@@ -29,16 +37,18 @@ test-stability count="10" continue_on_error="false" *args="":
         $lapStr = "{0:mm}:{0:ss}.{0:fff} ({1}s)" -f $lapElapsed, [math]::Round($lapElapsed.TotalSeconds, 2); \
         if ($exitCode -ne 0) { \
             $hasFailure = $true; \
-            Write-Host "Test failed on iteration $i after $lapStr! See TestResults/stability_iter_$i.log for details." -ForegroundColor Red; \
+            Write-Host "Test failed on iteration $i$seedInfo after $lapStr! See TestResults/stability_iter_$i.log for details." -ForegroundColor Red; \
             if ('{{continue_on_error}}' -eq 'false') { \
+                Remove-Item env:TEST_SEED -ErrorAction SilentlyContinue; \
                 exit $exitCode; \
             } else { \
                 Write-Host "Continuing to next iteration (--continue_on_error is set)..." -ForegroundColor Yellow; \
             } \
         } else { \
-            Write-Host "Iteration $i passed in $lapStr" -ForegroundColor Green; \
+            Write-Host "Iteration $i$seedInfo passed in $lapStr" -ForegroundColor Green; \
         } \
     } \
+    Remove-Item env:TEST_SEED -ErrorAction SilentlyContinue; \
     $totalSw.Stop(); \
     $totElapsed = $totalSw.Elapsed; \
     $totalStr = "{0:mm}:{0:ss}.{0:fff} ({1}s)" -f $totElapsed, [math]::Round($totElapsed.TotalSeconds, 2); \
