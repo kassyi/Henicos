@@ -24,7 +24,6 @@ public class AotContextCoverageTests
 
         _output.WriteLine($"Found {aotContextTypes.Count} AotContexts types.");
         
-        int totalMarshal = 0;
         foreach (var aotCtx in aotContextTypes)
         {
             var methods = aotCtx.GetMethods(BindingFlags.Public | BindingFlags.Static);

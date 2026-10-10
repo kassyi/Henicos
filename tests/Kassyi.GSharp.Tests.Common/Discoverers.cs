@@ -1,3 +1,4 @@
+#nullable enable
 using System.Linq;
 using Xunit.Abstractions;
 using Xunit.Sdk;

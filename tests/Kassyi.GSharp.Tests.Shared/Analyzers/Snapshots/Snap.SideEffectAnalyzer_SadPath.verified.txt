@@ -1,0 +1,4 @@
+﻿GSH0023 at (9,38)-(9,56): Property getters must not allocate disposable resources
+GSH0023 at (13,21)-(13,39): Property getters must not allocate disposable resources
+GSH0024 at (16,65)-(16,83): Implicit or explicit cast operators must not allocate disposable resources
+GSH0024 at (20,15)-(20,33): Implicit or explicit cast operators must not allocate disposable resources

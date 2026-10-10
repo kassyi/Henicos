@@ -1,3 +1,4 @@
+#nullable enable
 using System.Runtime.ExceptionServices;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
