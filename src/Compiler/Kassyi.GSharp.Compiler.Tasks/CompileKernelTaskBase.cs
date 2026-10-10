@@ -85,8 +85,15 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
     private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string>?>> s_vcvarsCache =
         new(StringComparer.OrdinalIgnoreCase);
 
+    public bool DisableVcvarsCache { get; set; } = false;
+
     protected Dictionary<string, string>? GetVcvarsEnvironment(string vcvarsArch)
     {
+        if (DisableVcvarsCache)
+        {
+            return ResolveVcvarsEnvironment(vcvarsArch);
+        }
+
         return s_vcvarsCache.GetOrAdd(vcvarsArch,
             arch => new Lazy<Dictionary<string, string>?>(() => ResolveVcvarsEnvironment(arch))).Value;
     }

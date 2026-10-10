@@ -22,8 +22,6 @@ public class AotContextCoverageTests
             .Where(t => t.Name == "AotContexts" && t.IsClass)
             .ToList();
 
-        _output.WriteLine($"Found {aotContextTypes.Count} AotContexts types.");
-        
         foreach (var aotCtx in aotContextTypes)
         {
             var methods = aotCtx.GetMethods(BindingFlags.Public | BindingFlags.Static);
@@ -82,7 +80,6 @@ public class AotContextCoverageTests
                 try
                 {
                     m.Invoke(null, args);
-                    _output.WriteLine($"SUCCESS: {aotCtx.Name}.{m.Name}");
                 }
                 catch (Exception ex)
                 {

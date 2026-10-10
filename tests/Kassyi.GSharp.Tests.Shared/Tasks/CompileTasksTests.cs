@@ -26,11 +26,6 @@ public class CompileTasksTests
         }
     }
 
-    public CompileTasksTests()
-    {
-        ClearVcvarsCache();
-    }
-
     private class MockBuildEngine : IBuildEngine
     {
         public bool ContinueOnError => false;
@@ -155,15 +150,6 @@ public class CompileTasksTests
         }
     }
 
-    private static void ClearVcvarsCache()
-    {
-        var cacheField = typeof(CompileKernelTaskBase).GetField("s_vcvarsCache", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-        if (cacheField?.GetValue(null) is System.Collections.Concurrent.ConcurrentDictionary<string, Lazy<System.Collections.Generic.Dictionary<string, string>?>> cache)
-        {
-            cache.Clear();
-        }
-    }
-
     [Fact]
     public void Test_CompileCudaToFatbinTask_RealCompilation_CallsNvcc()
     {
@@ -184,6 +170,7 @@ public class CompileTasksTests
                 CudaSources = [new TaskItem(sourcePath)],
                 OutputDirectory = tempDir,
                 MockCompilation = false,
+                DisableVcvarsCache = true,
                 TargetArchitectures = "sm_86",
                 ProcessRunner = runner
             };
@@ -219,6 +206,7 @@ public class CompileTasksTests
                 CppSources = [new TaskItem(sourcePath)],
                 OutputDirectory = tempDir,
                 MockCompilation = false,
+                DisableVcvarsCache = true,
                 GSharpMultiTarget = false,
                 ProcessRunner = runner
             };
@@ -640,6 +628,7 @@ public class CompileTasksTests
                 OutputDirectory = tempDir,
                 ProcessRunner = runner,
                 MockCompilation = false, // test caching logic
+                DisableVcvarsCache = true,
                 CombinedFatbinName = "" // individual
             };
 
@@ -682,6 +671,7 @@ public class CompileTasksTests
                 OutputDirectory = tempDir,
                 ProcessRunner = runner,
                 MockCompilation = false,
+                DisableVcvarsCache = true,
                 CombinedFatbinName = ""
             };
 
@@ -725,6 +715,7 @@ public class CompileTasksTests
                 OutputDirectory = tempDir,
                 ProcessRunner = runner,
                 MockCompilation = false,
+                DisableVcvarsCache = true,
                 CombinedFatbinName = ""
             };
 
