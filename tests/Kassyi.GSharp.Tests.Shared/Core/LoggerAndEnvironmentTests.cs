@@ -1,3 +1,4 @@
+#nullable enable
 using Kassyi.GSharp.Core;
 using Microsoft.Extensions.Logging;
 using MSLogLevel = Microsoft.Extensions.Logging.LogLevel;
@@ -232,6 +233,89 @@ public class LoggerAndEnvironmentTests
         finally
         {
             Environment.SetEnvironmentVariable("CUDA_PATH", originalEnv);
+        }
+    }
+
+    private class MockCudaPathResolver : DefaultCudaPathResolver
+    {
+        public Dictionary<string, string?> EnvVars { get; } = new();
+        public HashSet<string> ExistingDirs { get; } = new();
+        public Dictionary<string, string[]> SubDirs { get; } = new();
+        public bool MockIsWindows { get; set; } = false;
+        public bool MockIsLinux { get; set; } = false;
+
+        protected override string? GetEnvironmentVariable(string name) => EnvVars.TryGetValue(name, out var v) ? v : null;
+        protected override bool DirectoryExists(string path) => ExistingDirs.Contains(path);
+        protected override string[] GetDirectories(string path, string searchPattern) => SubDirs.TryGetValue(path, out var dirs) ? dirs : [];
+        protected override bool IsWindows() => MockIsWindows;
+        protected override bool IsLinux() => MockIsLinux;
+    }
+
+    [Fact]
+    public void Test_CudaEnvironment_Windows_FallbackPaths()
+    {
+        var mock = new MockCudaPathResolver { MockIsWindows = true };
+        var baseDir = @"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA";
+        mock.ExistingDirs.Add(baseDir);
+        mock.SubDirs[baseDir] = [
+            Path.Combine(baseDir, "v11.8"),
+            Path.Combine(baseDir, "v12.0"),
+            Path.Combine(baseDir, "v10.0")
+        ];
+
+        CudaEnvironment.Resolver = mock;
+        try
+        {
+            var path = CudaEnvironment.GetCudaPath();
+            Assert.Equal(Path.Combine(baseDir, "v12.0"), path);
+        }
+        finally
+        {
+            CudaEnvironment.Resolver = new DefaultCudaPathResolver();
+        }
+    }
+
+    [Fact]
+    public void Test_CudaEnvironment_Linux_FallbackPath()
+    {
+        var mock = new MockCudaPathResolver { MockIsLinux = true };
+        mock.ExistingDirs.Add("/usr/local/cuda");
+
+        CudaEnvironment.Resolver = mock;
+        try
+        {
+            var path = CudaEnvironment.GetCudaPath();
+            Assert.Equal("/usr/local/cuda", path);
+
+            // Test Bin path logic
+            var expectedBin = Path.Combine("/usr/local/cuda", "bin");
+            mock.ExistingDirs.Add(expectedBin);
+            var binPath = CudaEnvironment.GetCudaBinPath();
+            Assert.Equal(expectedBin, binPath);
+        }
+        finally
+        {
+            CudaEnvironment.Resolver = new DefaultCudaPathResolver();
+        }
+    }
+
+    [Fact]
+    public void Test_CudaEnvironment_Windows_BinPath()
+    {
+        var mock = new MockCudaPathResolver { MockIsWindows = true };
+        mock.EnvVars["CUDA_PATH"] = @"C:\Cuda";
+        mock.ExistingDirs.Add(@"C:\Cuda");
+        mock.ExistingDirs.Add(@"C:\Cuda\bin\x64");
+
+        CudaEnvironment.Resolver = mock;
+        try
+        {
+            var binPath = CudaEnvironment.GetCudaBinPath();
+            Assert.Equal(@"C:\Cuda\bin\x64", binPath);
+        }
+        finally
+        {
+            CudaEnvironment.Resolver = new DefaultCudaPathResolver();
         }
     }
 }
