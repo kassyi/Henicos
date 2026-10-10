@@ -199,6 +199,7 @@ public class FermatAlgorithm : IDisposable
             try
             {
                 graphProvider.LaunchGraph(graphExec, stream);
+                _gpuWorkspace.Provider.SynchronizeStream(stream);
             }
             finally
             {

@@ -273,6 +273,10 @@ public class GpuWorkspace : IGpuResourceScope
 
         try
         {
+            if (Stream != IntPtr.Zero)
+            {
+                try { CudaDriverApi.cuStreamSynchronize(Stream); } catch { /* ignore if already faulted */ }
+            }
             disposableManager.Dispose();
         }
         catch (Exception ex)

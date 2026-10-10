@@ -536,6 +536,8 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             workspace.Provider.CopyHostToDevice(dI1, i1, key, workspace.Stream);
             workspace.Provider.CopyHostToDevice(dI2, i2, key, workspace.Stream);
 
+            workspace.Provider.SynchronizeStream(workspace.Stream);
+
             return new TwiddleCache
             {
                 Forward1 = dF1,

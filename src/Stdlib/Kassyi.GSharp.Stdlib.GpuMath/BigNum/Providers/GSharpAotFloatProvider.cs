@@ -392,16 +392,23 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
         resultExp = valueExp;
         resultSign = valueSign;
 
-        var deviceA = IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4);
-        var deviceResult = IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4);
-
-        var success = NativeMethods.GpuBigFloat_DivideByUInt32(
-            context.GpuWorkspace.WorkspacePointer, deviceA, deviceResult, valueSig.NumWords, divisor, out remainder,
-            context.Stream);
-
-        if (!success)
+        if (useNativeCuda)
         {
-            throw new InvalidOperationException("Native DivideByUInt32 failed (possibly division by zero).");
+            var deviceA = IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4);
+            var deviceResult = IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4);
+
+            var success = NativeMethods.GpuBigFloat_DivideByUInt32(
+                context.GpuWorkspace.WorkspacePointer, deviceA, deviceResult, valueSig.NumWords, divisor, out remainder,
+                context.Stream);
+
+            if (!success)
+            {
+                throw new InvalidOperationException("Native DivideByUInt32 failed (possibly division by zero).");
+            }
+        }
+        else
+        {
+            fallbackStrategy.DivideByUInt32(ref context, valueSig, valueExp, valueSign, divisor, resultSig, out resultExp, out resultSign, out remainder);
         }
     }
 }

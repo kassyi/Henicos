@@ -27,6 +27,8 @@ public class GpuBigIntCoreTests
 
                 c.Value = a + b;
                 d.Value = c * a;
+
+                sharedCtx.Provider.SynchronizeStream(sharedCtx.Stream);
             }
             catch (Exception ex)
             {

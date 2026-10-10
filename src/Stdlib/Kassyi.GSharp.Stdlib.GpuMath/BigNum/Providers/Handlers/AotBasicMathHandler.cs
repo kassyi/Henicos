@@ -15,14 +15,16 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// </remarks>
 public sealed class AotBasicMathHandler : IGpuBasicMathProvider
 {
-    private unsafe T EvaluateKernelResult<T>(GpuWorkspace workspace, int resultWords, Action<IntPtr> launchKernel) where T : unmanaged
+    private unsafe T EvaluateKernelResult<T>(GpuWorkspace workspace, int resultWords, Action<IntPtr> launchKernel)
+        where T : unmanaged
     {
         var byteSize = sizeof(T);
         using var resultBuf = workspace.RentTemp(resultWords);
 
         using (new GpuKernelLoader.CudaContextScope())
         {
-            CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8_v2(resultBuf.DevicePointer, 0, byteSize));
+            CudaException.ThrowIfError(CudaDriverApi.cuMemsetD8Async(resultBuf.DevicePointer, 0, byteSize,
+                workspace.Stream));
         }
 
         launchKernel(resultBuf.DevicePointer);
@@ -30,11 +32,14 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
         T result;
         using (new GpuKernelLoader.CudaContextScope())
         {
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoH_v2((IntPtr)(&result), resultBuf.DevicePointer, byteSize));
+            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)(&result), resultBuf.DevicePointer,
+                byteSize, workspace.Stream));
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(workspace.Stream));
         }
 
         return result;
     }
+
     /// <inheritdoc/>
     public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand,
         GpuBigUInt resultBuffer)
