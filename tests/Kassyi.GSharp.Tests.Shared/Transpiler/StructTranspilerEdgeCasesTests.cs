@@ -24,19 +24,19 @@ public class StructTranspilerEdgeCasesTests : TranspilerTestBase
     [Category(TestCategory.Unit)]
     public void Test_TopologicallySortedStructs_DeepNesting()
     {
-        var symA = GetLocalTypeSymbol("StructA");
-        var symB = GetLocalTypeSymbol("StructB");
-        var symC = GetLocalTypeSymbol("StructC");
-        var symD = GetLocalTypeSymbol("StructD");
+        var symA = GetLocalTypeSymbol("StructEdgeCases_StructA");
+        var symB = GetLocalTypeSymbol("StructEdgeCases_StructB");
+        var symC = GetLocalTypeSymbol("StructEdgeCases_StructC");
+        var symD = GetLocalTypeSymbol("StructEdgeCases_StructD");
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs([symA, symB, symC, symD]);
 
         Assert.Equal(4, sorted.Length);
         // Order must be D -> C -> B -> A (dependents last)
-        Assert.Equal("StructD", sorted[0].Name);
-        Assert.Equal("StructC", sorted[1].Name);
-        Assert.Equal("StructB", sorted[2].Name);
-        Assert.Equal("StructA", sorted[3].Name);
+        Assert.Equal("StructEdgeCases_StructD", sorted[0].Name);
+        Assert.Equal("StructEdgeCases_StructC", sorted[1].Name);
+        Assert.Equal("StructEdgeCases_StructB", sorted[2].Name);
+        Assert.Equal("StructEdgeCases_StructA", sorted[3].Name);
     }
 
     [Fact]
@@ -55,22 +55,22 @@ struct EmptyStruct
 {
 }
 
-struct StructA
+struct StructEdgeCases_StructA
 {
-    public StructB b;
+    public StructEdgeCases_StructB b;
 }
 
-struct StructB
+struct StructEdgeCases_StructB
 {
-    public StructC c;
+    public StructEdgeCases_StructC c;
 }
 
-struct StructC
+struct StructEdgeCases_StructC
 {
-    public StructD d;
+    public StructEdgeCases_StructD d;
 }
 
-struct StructD
+struct StructEdgeCases_StructD
 {
     public int val;
 }
