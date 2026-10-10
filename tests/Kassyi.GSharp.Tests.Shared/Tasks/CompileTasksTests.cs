@@ -1,11 +1,14 @@
 #nullable enable
+using System.Collections;
 using System.IO;
 using Kassyi.GSharp.Compiler.Tasks;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Microsoft.Build.Locator;
 using System.Diagnostics;
+using Kassyi.GSharp.Compiler.Tasks.Helpers;
 using Xunit;
+using Task = System.Threading.Tasks.Task;
 
 namespace Kassyi.GSharp.Tests.Shared.Tasks;
 
@@ -33,8 +36,12 @@ public class CompileTasksTests
         public int ColumnNumberOfTaskNode => 0;
         public string ProjectFileOfTaskNode => "";
 
+        public List<string> LoggedErrors { get; } = new();
+        public List<string> LoggedWarnings { get; } = new();
+        public List<string> LoggedMessages { get; } = new();
+
         public virtual bool BuildProjectFile(string projectFileName, string[] targetNames,
-            System.Collections.IDictionary globalProperties, System.Collections.IDictionary targetOutputs) => true;
+            IDictionary globalProperties, IDictionary targetOutputs) => true;
 
         public virtual void LogCustomEvent(CustomBuildEventArgs e)
         {
@@ -42,20 +49,111 @@ public class CompileTasksTests
 
         public virtual void LogErrorEvent(BuildErrorEventArgs e)
         {
-            System.Console.WriteLine($"ERROR: {e.Message}");
+            if (e.Message != null) LoggedErrors.Add(e.Message);
+            Console.WriteLine($"ERROR: {e.Message}");
         }
 
         public virtual void LogMessageEvent(BuildMessageEventArgs e)
         {
+            if (e.Message != null) LoggedMessages.Add(e.Message);
         }
 
         public virtual void LogWarningEvent(BuildWarningEventArgs e)
         {
-            System.Console.WriteLine($"WARN: {e.Message}");
+            if (e.Message != null) LoggedWarnings.Add(e.Message);
+            Console.WriteLine($"WARN: {e.Message}");
         }
     }
 
-    private class MockProcessRunner : Kassyi.GSharp.Compiler.Tasks.Helpers.IProcessRunner
+    private class CompileTaskTestContext : System.IDisposable
+    {
+        public string TempDir { get; }
+        public MockBuildEngine BuildEngine { get; }
+        public MockProcessRunner Runner { get; }
+        private readonly Dictionary<string, string?> _envOverrides = new();
+
+        public CompileTaskTestContext()
+        {
+            TempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(TempDir);
+            BuildEngine = new MockBuildEngine();
+            Runner = new MockProcessRunner(TempDir) { NextExitCode = 0, NextStandardOutput = "Success" };
+        }
+
+        public void SetEnv(string key, string? value)
+        {
+            if (!_envOverrides.ContainsKey(key))
+            {
+                _envOverrides[key] = Environment.GetEnvironmentVariable(key);
+            }
+
+            Environment.SetEnvironmentVariable(key, value);
+        }
+
+        public string CreateDummySource(string fileName, string content = "dummy")
+        {
+            var p = Path.Combine(TempDir, fileName);
+            File.WriteAllText(p, content);
+            return p;
+        }
+
+        private TaskItem[] CreateTaskItems(string[] sourceFiles)
+        {
+            var items = new TaskItem[sourceFiles.Length];
+            for (var i = 0; i < sourceFiles.Length; i++)
+            {
+                items[i] = new TaskItem(Path.Combine(TempDir, sourceFiles[i]));
+            }
+
+            return items;
+        }
+
+        public CompileCudaToFatbinTask CreateCudaTask(string[] sourceFiles, string? combinedName = "combined_fatbin")
+        {
+            return new CompileCudaToFatbinTask
+            {
+                BuildEngine = BuildEngine,
+                CudaSources = CreateTaskItems(sourceFiles),
+                OutputDirectory = TempDir,
+                ProcessRunner = Runner,
+                CombinedFatbinName = combinedName,
+                MockCompilation = false,
+                DisableVcvarsCache = true
+            };
+        }
+
+        public CompileCppToNativeTask CreateCppTask(string[] sourceFiles)
+        {
+            return new CompileCppToNativeTask
+            {
+                BuildEngine = BuildEngine,
+                CppSources = CreateTaskItems(sourceFiles),
+                OutputDirectory = TempDir,
+                ProcessRunner = Runner,
+                MockCompilation = false,
+                DisableVcvarsCache = true,
+                GSharpMultiTarget = false
+            };
+        }
+
+        public CompileKernelTaskBase CreateTask(bool isCpp, string[] sourceFiles, string? combinedFatbinName = null)
+        {
+            if (isCpp) return CreateCppTask(sourceFiles);
+            return CreateCudaTask(sourceFiles, combinedFatbinName);
+        }
+
+        public void Dispose()
+        {
+            foreach (var kvp in _envOverrides)
+            {
+                Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
+            }
+
+            if (Directory.Exists(TempDir)) Directory.Delete(TempDir, true);
+        }
+    }
+
+    private class MockProcessRunner : IProcessRunner
     {
         private readonly string _mockVsPath;
 
@@ -67,33 +165,47 @@ public class CompileTasksTests
             File.WriteAllText(Path.Combine(vcvarsDir, "vcvarsall.bat"), "@echo off");
         }
 
-        public System.Collections.Generic.List<System.Diagnostics.ProcessStartInfo> Invocations { get; } = new();
+        public List<ProcessStartInfo> Invocations { get; } = new();
         public int NextExitCode { get; set; } = 0;
         public string NextStandardOutput { get; set; } = "";
         public string NextStandardError { get; set; } = "";
+        public Exception? NextException { get; set; }
+        public bool SimulateCompilationOutput { get; set; } = true;
 
         public bool OverrideVswhere { get; set; } = false;
+        public string? VswhereOutput { get; set; }
+        public int CmdExitCode { get; set; } = 0;
 
-        public Kassyi.GSharp.Compiler.Tasks.Helpers.ProcessResult Run(System.Diagnostics.ProcessStartInfo startInfo, System.Threading.CancellationToken cancellationToken = default)
+        public ProcessResult Run(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
         {
             Invocations.Add(startInfo);
             // vswhere mock
             if (startInfo.FileName.EndsWith("vswhere.exe", System.StringComparison.OrdinalIgnoreCase))
             {
-                if (OverrideVswhere) return new Kassyi.GSharp.Compiler.Tasks.Helpers.ProcessResult(1, "", "Not found");
-                return new Kassyi.GSharp.Compiler.Tasks.Helpers.ProcessResult(0, _mockVsPath, "");
+                if (OverrideVswhere) return new ProcessResult(1, "", "Not found");
+                return new ProcessResult(0, VswhereOutput ?? _mockVsPath, "");
             }
+
             if (startInfo.FileName.EndsWith("cmd.exe", System.StringComparison.OrdinalIgnoreCase))
             {
                 // env mock
-                return new Kassyi.GSharp.Compiler.Tasks.Helpers.ProcessResult(0, "INCLUDE=C:\\dummy\r\nLIB=C:\\dummy", "");
+                return new ProcessResult(CmdExitCode, CmdExitCode == 0 ? "INCLUDE=C:\\dummy\r\nLIB=C:\\dummy" : "",
+                    CmdExitCode != 0 ? "error" : "");
             }
+
             if (startInfo.Arguments.Contains("--version"))
             {
-                return new Kassyi.GSharp.Compiler.Tasks.Helpers.ProcessResult(0, "nvcc: NVIDIA (R) Cuda compiler driver", "");
+                return new ProcessResult(0, "nvcc: NVIDIA (R) Cuda compiler driver", "");
             }
+
+            if (NextException != null)
+            {
+                throw NextException;
+            }
+
             // nvcc / cl
-            if (startInfo.FileName.Contains("nvcc") || startInfo.FileName.Contains("cl.exe"))
+            if (SimulateCompilationOutput &&
+                (startInfo.FileName.Contains("nvcc") || startInfo.FileName.Contains("cl.exe")))
             {
                 // To avoid breaking the task check "if (File.Exists(outputFatbinPath))", simulate compilation output
                 var argsStr = startInfo.Arguments;
@@ -106,7 +218,7 @@ public class CompileTasksTests
                 {
                     outFile = argsStr.Split("/Fe:")[1].Split(" ")[0].Trim('"');
                 }
-                
+
                 if (!string.IsNullOrEmpty(outFile) && outFile.EndsWith(".gfatbin"))
                 {
                     File.WriteAllText(outFile, "Mock Fatbin Content from MockProcessRunner");
@@ -116,633 +228,249 @@ public class CompileTasksTests
                     File.WriteAllText(outFile, "Mock DLL Content from MockProcessRunner");
                 }
             }
-            return new Kassyi.GSharp.Compiler.Tasks.Helpers.ProcessResult(NextExitCode, NextStandardOutput, NextStandardError);
+
+            return new ProcessResult(NextExitCode, NextStandardOutput, NextStandardError);
         }
 
-        public System.Threading.Tasks.Task<Kassyi.GSharp.Compiler.Tasks.Helpers.ProcessResult> RunAsync(System.Diagnostics.ProcessStartInfo startInfo, System.Threading.CancellationToken cancellationToken = default)
+        public Task<ProcessResult> RunAsync(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
         {
-            return System.Threading.Tasks.Task.FromResult(Run(startInfo, cancellationToken));
-        }
-    }
-
-    private class MockBuildEngineWithVerification : MockBuildEngine
-    {
-        public System.Collections.Generic.List<string> LoggedErrors { get; } = new();
-        public System.Collections.Generic.List<string> LoggedWarnings { get; } = new();
-        public System.Collections.Generic.List<string> LoggedMessages { get; } = new();
-
-        public override void LogErrorEvent(BuildErrorEventArgs e)
-        {
-            if (e.Message != null) LoggedErrors.Add(e.Message);
-            base.LogErrorEvent(e);
-        }
-
-        public override void LogWarningEvent(BuildWarningEventArgs e)
-        {
-            if (e.Message != null) LoggedWarnings.Add(e.Message);
-            base.LogWarningEvent(e);
-        }
-
-        public override void LogMessageEvent(BuildMessageEventArgs e)
-        {
-            if (e.Message != null) LoggedMessages.Add(e.Message);
-            base.LogMessageEvent(e);
+            return Task.FromResult(Run(startInfo, cancellationToken));
         }
     }
 
-    [Fact]
-    public void Test_CompileCudaToFatbinTask_RealCompilation_CallsNvcc()
+    [Theory]
+    [InlineData(false, "kernel.cu", "nvcc", "-fatbin")]
+    [InlineData(true, "kernel.cpp", "cl.exe", null)]
+    public void Test_CompileTask_RealCompilation_CallsCompiler(bool isCpp, string sourceName, string expectedExe,
+        string? expectedArg)
     {
-        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
-        var tempDir = Path.Combine(Path.GetTempPath(), "CompileCudaRealTaskTest_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
-        try
+        using var ctx = new CompileTaskTestContext();
+        ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
+        ctx.CreateDummySource(sourceName, "// source");
+
+        var task = ctx.CreateTask(isCpp, [sourceName]);
+        if (task is CompileCudaToFatbinTask cudaTask)
         {
-            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", null);
-
-            var sourcePath = Path.Combine(tempDir, "kernel.cu");
-            File.WriteAllText(sourcePath, "// cuda source");
-
-            var runner = new MockProcessRunner(tempDir);
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = new MockBuildEngine(),
-                CudaSources = [new TaskItem(sourcePath)],
-                OutputDirectory = tempDir,
-                MockCompilation = false,
-                DisableVcvarsCache = true,
-                TargetArchitectures = "sm_86",
-                ProcessRunner = runner
-            };
-
-            Assert.True(task.Execute());
-            Assert.NotEmpty(task.OutputFatbins);
-            
-            // Should have invoked vswhere, cmd, nvcc --version, and nvcc compilation
-            Assert.Contains(runner.Invocations, i => i.FileName.Contains("nvcc") && i.Arguments.Contains("-fatbin"));
+            cudaTask.TargetArchitectures = "sm_86";
         }
-        finally
-        {
-            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", prevEnv);
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
-    }
 
-    [Fact]
-    public void Test_CompileCppToNativeTask_RealCompilation_CallsCl()
-    {
-        var tempDir = Path.Combine(Path.GetTempPath(), "CompileCppRealTaskTest_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var sourcePath = Path.Combine(tempDir, "kernel.cpp");
-            File.WriteAllText(sourcePath, "// cpp source");
-
-            var runner = new MockProcessRunner(tempDir);
-            var task = new CompileCppToNativeTask
-            {
-                BuildEngine = new MockBuildEngine(),
-                CppSources = [new TaskItem(sourcePath)],
-                OutputDirectory = tempDir,
-                MockCompilation = false,
-                DisableVcvarsCache = true,
-                GSharpMultiTarget = false,
-                ProcessRunner = runner
-            };
-
-            Assert.True(task.Execute());
-            Assert.NotEmpty(task.OutputDlls);
-            
-            // Should have invoked vswhere, cmd, and cl.exe
-            Assert.Contains(runner.Invocations, i => i.FileName.Contains("cl.exe"));
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
-    }
-
-    [Fact]
-    public void Test_CompileCudaToFatbinTask_EmptySources_ReturnsTrue()
-    {
-        var task = new CompileCudaToFatbinTask
-        {
-            BuildEngine = new MockBuildEngine(),
-            CudaSources = [],
-            OutputDirectory = "dummy",
-            TargetArchitectures = "sm_50"
-        };
-        // Empty sources should succeed without doing anything
         Assert.True(task.Execute());
+        if (isCpp)
+        {
+            Assert.NotEmpty(((CompileCppToNativeTask)task).OutputDlls);
+        }
+        else
+        {
+            Assert.NotEmpty(((CompileCudaToFatbinTask)task).OutputFatbins);
+        }
+
+        Assert.Contains(ctx.Runner.Invocations,
+            i => i.FileName.Contains(expectedExe) && (expectedArg == null || i.Arguments.Contains(expectedArg)));
     }
 
-    [Fact]
-    public void Test_CompileCppToNativeTask_EmptySources_ReturnsTrue()
+    [Theory]
+    [InlineData(0)] // Cuda Individual
+    [InlineData(1)] // Cuda Combined
+    [InlineData(2)] // Cpp
+    [InlineData(3)] // KernelTaskBase
+    public void Test_CompileTask_EmptySources_ReturnsTrue(int taskKind)
     {
-        var task = new CompileCppToNativeTask
+        using var ctx = new CompileTaskTestContext();
+        CompileKernelTaskBase task = taskKind switch
         {
-            BuildEngine = new MockBuildEngine(),
-            CppSources = [],
-            OutputDirectory = "dummy",
-            GSharpMultiTarget = false
+            0 => ctx.CreateCudaTask([], combinedName: ""),
+            1 => ctx.CreateCudaTask([], combinedName: "combined.fatbin"),
+            2 => ctx.CreateCppTask([]),
+            _ => new TestCompileKernelTask()
         };
-        // Empty sources should succeed without doing anything
+
         Assert.True(task.Execute());
+        if (task is CompileCudaToFatbinTask cuda) Assert.Empty(cuda.OutputFatbins);
+        if (task is CompileCppToNativeTask cpp) Assert.Empty(cpp.OutputDlls);
     }
 
     [Fact]
     public void Test_CompileCudaToFatbinTask_WhenNoCudaEnv_SkipsAndSucceeds()
     {
-        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
-        try
-        {
-            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", "1");
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = new MockBuildEngine(),
-                CudaSources = [new TaskItem("dummy.cu")],
-                OutputDirectory = "dummy_out",
-                TargetArchitectures = "sm_86"
-            };
-            Assert.True(task.Execute());
-            Assert.Empty(task.OutputFatbins);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", prevEnv);
-        }
-    }
-
-
-    [Fact]
-    public void Test_CompileCudaToFatbinTask_WhenNvccMissing_SkipsGracefully()
-    {
-        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
-        try
-        {
-            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", null);
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = new MockBuildEngine(),
-                CudaSources = [new TaskItem("dummy.cu")],
-                OutputDirectory = "dummy_out",
-                NvccPath = "non_existent_nvcc_executable_12345",
-                TargetArchitectures = "sm_86"
-            };
-            Assert.True(task.Execute());
-            Assert.Empty(task.OutputFatbins);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", prevEnv);
-        }
-    }
-
-    [Fact]
-    public void Test_CompileCppToNativeTask_AlwaysRecompiles_And_IgnoresCache()
-    {
-        var tempDir = Path.Combine(Path.GetTempPath(), "CompileCppTaskTest_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var sourcePath = Path.Combine(tempDir, "kernel.cpp");
-            File.WriteAllText(sourcePath, "// cpp source");
-            var baseTime = new DateTime(2025, 1, 1, 12, 0, 0, DateTimeKind.Utc);
-            File.SetLastWriteTimeUtc(sourcePath, baseTime);
-
-            var task = new CompileCppToNativeTask
-            {
-                BuildEngine = new MockBuildEngine(),
-                CppSources = [new TaskItem(sourcePath)],
-                OutputDirectory = tempDir,
-                MockCompilation = true,
-                GSharpMultiTarget = false
-            };
-
-            // 1. Initial compilation generates the output artifact
-            Assert.True(task.Execute());
-            var outputDll = Assert.Single(task.OutputDlls).ItemSpec;
-            Assert.True(File.Exists(outputDll));
-
-            // Write custom sentinel
-            File.WriteAllText(outputDll, "PRESERVED_CACHED_CONTENT");
-            File.SetLastWriteTimeUtc(outputDll, baseTime.AddSeconds(10));
-
-            // 2. Execute again -> should unconditionally recompile and overwrite cached output
-            Assert.True(task.Execute());
-            Assert.NotEqual("PRESERVED_CACHED_CONTENT", File.ReadAllText(outputDll));
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, recursive: true);
-            }
-        }
-    }
-
-    [Fact]
-    public void Test_CompileCudaToFatbinTask_AlwaysRecompiles_And_IgnoresCache()
-    {
-        var tempDir = Path.Combine(Path.GetTempPath(), "CompileCudaTaskTest_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var sourcePath = Path.Combine(tempDir, "kernel.cu");
-            File.WriteAllText(sourcePath, "// cuda source");
-            var baseTime = new DateTime(2025, 1, 1, 12, 0, 0, DateTimeKind.Utc);
-            File.SetLastWriteTimeUtc(sourcePath, baseTime);
-
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = new MockBuildEngine(),
-                CudaSources = [new TaskItem(sourcePath)],
-                OutputDirectory = tempDir,
-                MockCompilation = true,
-                TargetArchitectures = "sm_86"
-            };
-
-            // 1. Initial compilation generates the output fatbin
-            Assert.True(task.Execute());
-            var outputFatbin = Assert.Single(task.OutputFatbins).ItemSpec;
-            Assert.True(File.Exists(outputFatbin));
-
-            // Write custom sentinel
-            File.WriteAllText(outputFatbin, "PRESERVED_CACHED_FATBIN");
-            File.SetLastWriteTimeUtc(outputFatbin, baseTime.AddSeconds(10));
-
-            // 2. Execute again -> should unconditionally recompile and overwrite cached output
-            Assert.True(task.Execute());
-            Assert.NotEqual("PRESERVED_CACHED_FATBIN", File.ReadAllText(outputFatbin));
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, recursive: true);
-            }
-        }
-    }
-
-    [Fact]
-    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_Specified_EmptySources_ReturnsTrue()
-    {
-        var task = new CompileCudaToFatbinTask
-        {
-            BuildEngine = new MockBuildEngine(),
-            CudaSources = [],
-            CombinedFatbinName = "bundled.fatbin",
-            OutputDirectory = "dummy",
-            TargetArchitectures = "sm_86"
-        };
+        using var ctx = new CompileTaskTestContext();
+        ctx.SetEnv("GSHARP_TEST_NO_CUDA", "1");
+        var task = ctx.CreateCudaTask(["dummy.cu"]);
+        task.TargetArchitectures = "sm_86";
         Assert.True(task.Execute());
         Assert.Empty(task.OutputFatbins);
     }
 
     [Fact]
+    public void Test_CompileCudaToFatbinTask_WhenNvccMissing_SkipsGracefully()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
+        var task = ctx.CreateCudaTask(["dummy.cu"], null);
+        task.ProcessRunner = new ProcessRunner();
+        task.NvccPath = "non_existent_nvcc_executable_12345";
+        task.TargetArchitectures = "sm_86";
+        Assert.True(task.Execute());
+        Assert.Empty(task.OutputFatbins);
+        Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("CUDA compiler (nvcc) was not found"));
+    }
+
+    [Theory]
+    [InlineData(false, "kernel.cu")]
+    [InlineData(true, "kernel.cpp")]
+    public void Test_CompileTask_AlwaysRecompiles_And_IgnoresCache(bool isCpp, string sourceName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        var sourcePath = ctx.CreateDummySource(sourceName, "// source");
+        var baseTime = new DateTime(2025, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        File.SetLastWriteTimeUtc(sourcePath, baseTime);
+
+        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: null);
+        task.MockCompilation = true;
+
+        // 1. Initial compilation generates the output artifact
+        Assert.True(task.Execute());
+        var outputItem = isCpp
+            ? Assert.Single(((CompileCppToNativeTask)task).OutputDlls).ItemSpec
+            : Assert.Single(((CompileCudaToFatbinTask)task).OutputFatbins).ItemSpec;
+        Assert.True(File.Exists(outputItem));
+
+        // Write custom sentinel
+        File.WriteAllText(outputItem, "PRESERVED_CACHED_CONTENT");
+        File.SetLastWriteTimeUtc(outputItem, baseTime.AddSeconds(10));
+
+        // 2. Execute again -> should unconditionally recompile and overwrite cached output
+        Assert.True(task.Execute());
+        Assert.NotEqual("PRESERVED_CACHED_CONTENT", File.ReadAllText(outputItem));
+    }
+
+    [Fact]
     public void Test_CompileCudaToFatbinTask_CombinedFatbinName_Specified_ShouldBundleSources()
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), "CompileCudaBundleTest_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var src1 = Path.Combine(tempDir, "kernel1.cu");
-            var src2 = Path.Combine(tempDir, "kernel2.cu");
-            File.WriteAllText(src1, "// cuda source 1");
-            File.WriteAllText(src2, "// cuda source 2");
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel1.cu", "// cuda source 1");
+        ctx.CreateDummySource("kernel2.cu", "// cuda source 2");
 
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = new MockBuildEngine(),
-                CudaSources = [new TaskItem(src1), new TaskItem(src2)],
-                CombinedFatbinName = "native_benchmarks.fatbin",
-                OutputDirectory = tempDir,
-                MockCompilation = true,
-                TargetArchitectures = "sm_86"
-            };
+        var task = ctx.CreateCudaTask(["kernel1.cu", "kernel2.cu"], "native_benchmarks.fatbin");
+        task.MockCompilation = true;
 
-            Assert.True(task.Execute());
-            var outputItem = Assert.Single(task.OutputFatbins);
-            var expectedPath = Path.Combine(tempDir, "native_benchmarks.gfatbin");
-            Assert.Equal(expectedPath, outputItem.ItemSpec);
-            Assert.True(File.Exists(expectedPath));
-            Assert.Equal("Kassyi.GSharp.Kernels.native_benchmarks.gfatbin", outputItem.GetMetadata("LogicalName"));
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, recursive: true);
-            }
-        }
-    }
-    [Fact]
-    public void Test_CompileCudaToFatbinTask_ProcessFails_LogsErrorAndReturnsFalse()
-    {
-        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
-        var tempDir = Path.Combine(Path.GetTempPath(), "CompileCudaRealTaskTest_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", null);
-
-            var sourcePath = Path.Combine(tempDir, "kernel.cu");
-            File.WriteAllText(sourcePath, "// cuda source");
-
-            var runner = new MockProcessRunner(tempDir) { NextExitCode = 1, NextStandardError = "Mock NVCC Error" };
-            var buildEngine = new MockBuildEngineWithVerification();
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = buildEngine,
-                CudaSources = [new TaskItem(sourcePath)],
-                OutputDirectory = tempDir,
-                MockCompilation = false,
-                TargetArchitectures = "sm_86",
-                ProcessRunner = runner
-            };
-
-            Assert.False(task.Execute());
-            Assert.Contains(buildEngine.LoggedErrors, e => e.Contains("Mock NVCC Error"));
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", prevEnv);
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
+        Assert.True(task.Execute());
+        var outputItem = Assert.Single(task.OutputFatbins);
+        var expectedPath = Path.Combine(ctx.TempDir, "native_benchmarks.gfatbin");
+        Assert.Equal(expectedPath, outputItem.ItemSpec);
+        Assert.True(File.Exists(expectedPath));
+        Assert.Equal("Kassyi.GSharp.Kernels.native_benchmarks.gfatbin", outputItem.GetMetadata("LogicalName"));
     }
 
-    [Fact]
-    public void Test_CompileCppToNativeTask_ProcessFails_LogsErrorAndReturnsFalse()
+    [Theory]
+    [InlineData(false, "kernel.cu", "Mock NVCC Error", "")]
+    [InlineData(true, "kernel.cpp", "Mock CL Error", "")]
+    [InlineData(false, "kernel.cu", "nvcc compilation failed with exit code 1", "combined_fatbin")]
+    public void Test_CompileTask_ProcessFails_LogsErrorAndReturnsFalse(bool isCpp, string sourceName,
+        string errorMessage, string? combinedName)
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), "CompileCppRealTaskTest_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var sourcePath = Path.Combine(tempDir, "kernel.cpp");
-            File.WriteAllText(sourcePath, "// cpp source");
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource(sourceName, "// source");
+        ctx.Runner.NextExitCode = 1;
+        ctx.Runner.NextStandardError = errorMessage;
+        ctx.Runner.NextStandardOutput = errorMessage;
 
-            var runner = new MockProcessRunner(tempDir) { NextExitCode = 1, NextStandardError = "Mock CL Error" };
-            var buildEngine = new MockBuildEngineWithVerification();
-            var task = new CompileCppToNativeTask
-            {
-                BuildEngine = buildEngine,
-                CppSources = [new TaskItem(sourcePath)],
-                OutputDirectory = tempDir,
-                MockCompilation = false,
-                GSharpMultiTarget = false,
-                ProcessRunner = runner
-            };
+        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: combinedName);
 
-            Assert.False(task.Execute());
-            Assert.Contains(buildEngine.LoggedErrors, e => e.Contains("Mock CL Error"));
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-                Directory.Delete(tempDir, true);
-        }
+        Assert.False(task.Execute());
+        Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains(errorMessage));
+    }
+
+    [Theory]
+    [InlineData(new[] { "kernel1.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
+    [InlineData(new[] { "kernel.cu" }, "sm_86,compute_86;sm_89,compute_89", "combined_fatbin")]
+    [InlineData(new[] { "combined_fatbin_bundle.cu", "kernel2.cu" }, "sm_86", "combined_fatbin")]
+    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_SuccessCases(string[] sources, string targetArch,
+        string combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        foreach (var s in sources) ctx.CreateDummySource(s);
+        ctx.Runner.NextStandardOutput = "Success combined";
+
+        var task = ctx.CreateCudaTask(sources, combinedName);
+        task.TargetArchitectures = targetArch;
+
+        Assert.True(task.Execute());
+        var output = Assert.Single(task.OutputFatbins);
+        Assert.Contains($"{combinedName}.gfatbin", output.ItemSpec);
+    }
+
+    [Theory]
+    [InlineData("combined_fatbin", true)] // Combined, UpToDate
+    [InlineData("combined_fatbin", false)] // Combined, NotUpToDate
+    [InlineData("", true)] // Individual, UpToDate
+    public void Test_CompileCudaToFatbinTask_TimestampCheck(string? combinedName, bool isUpToDate)
+    {
+        using var ctx = new CompileTaskTestContext();
+        var src = ctx.CreateDummySource("kernel1.cu", "dummy1");
+        var outFileName = string.IsNullOrEmpty(combinedName) ? "kernel1.gfatbin" : $"{combinedName}.gfatbin";
+        var outPath = Path.Combine(ctx.TempDir, outFileName);
+        File.WriteAllText(outPath, "old content");
+
+        // If up to date: dest is newer than src. If not: src is newer than dest.
+        var destOffset = isUpToDate ? 10 : -10;
+        var srcOffset = isUpToDate ? -10 : 10;
+        File.SetLastWriteTimeUtc(outPath, DateTime.UtcNow.AddSeconds(destOffset));
+        File.SetLastWriteTimeUtc(src, DateTime.UtcNow.AddSeconds(srcOffset));
+
+        var task = ctx.CreateCudaTask(["kernel1.cu"], combinedName);
+
+        Assert.True(task.Execute());
+        Assert.Single(task.OutputFatbins);
     }
 
     [Fact]
-    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_Success()
+    public void Test_CompileCudaToFatbinTask_OnBeforeExecute_Fails()
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var sourceFile1 = Path.Combine(tempDir, "kernel1.cu");
-            var sourceFile2 = Path.Combine(tempDir, "kernel2.cu");
-            File.WriteAllText(sourceFile1, "dummy1");
-            File.WriteAllText(sourceFile2, "dummy2");
-            var buildEngine = new MockBuildEngineWithVerification();
-
-            var sourceItem1 = new TaskItem(sourceFile1);
-            var sourceItem2 = new TaskItem(sourceFile2);
-
-            var combinedFatbinPath = Path.Combine(tempDir, "combined_fatbin.gfatbin");
-            var runner = new MockProcessRunner(tempDir) 
-            { 
-                NextExitCode = 0, 
-                NextStandardOutput = "Success combined"
-            };
-
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = buildEngine,
-                CudaSources = [sourceItem1, sourceItem2],
-                OutputDirectory = tempDir,
-                ProcessRunner = runner,
-                CombinedFatbinName = "combined_fatbin",
-                MockCompilation = false,
-                TargetArchitectures = "sm_86"
-            };
-
-            var result = task.Execute();
-
-            Assert.True(result);
-            Assert.Single(task.OutputFatbins);
-            Assert.Contains("combined_fatbin.gfatbin", task.OutputFatbins[0].ItemSpec);
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, true);
-            }
-        }
+        using var ctx = new CompileTaskTestContext();
+        ctx.Runner.OverrideVswhere = true;
+        var task = ctx.CreateCudaTask(["dummy.cu"]);
+        Assert.False(task.Execute());
     }
 
     [Fact]
-    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_UpToDate()
+    public void Test_CompileCudaToFatbinTask_SkipCompilation_GsharpTestNoCuda()
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var sourceFile1 = Path.Combine(tempDir, "kernel1.cu");
-            File.WriteAllText(sourceFile1, "dummy1");
-            var combinedFatbinPath = Path.Combine(tempDir, "combined_fatbin.gfatbin");
-            File.WriteAllText(combinedFatbinPath, "old content");
-            
-            // Make dest newer than src
-            File.SetLastWriteTimeUtc(combinedFatbinPath, DateTime.UtcNow.AddSeconds(10));
-            File.SetLastWriteTimeUtc(sourceFile1, DateTime.UtcNow.AddSeconds(-10));
+        using var ctx = new CompileTaskTestContext();
+        ctx.SetEnv("GSHARP_TEST_NO_CUDA", "1");
+        var task = ctx.CreateCudaTask(["dummy.cu"]);
 
-            var buildEngine = new MockBuildEngineWithVerification();
-            var sourceItem1 = new TaskItem(sourceFile1);
-
-            var runner = new MockProcessRunner(tempDir) { NextExitCode = 0 };
-
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = buildEngine,
-                CudaSources = [sourceItem1],
-                OutputDirectory = tempDir,
-                ProcessRunner = runner,
-                CombinedFatbinName = "combined_fatbin",
-                MockCompilation = false
-            };
-
-            var result = task.Execute();
-
-            Assert.True(result);
-            Assert.Single(task.OutputFatbins);
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, true);
-            }
-        }
+        Assert.True(task.Execute());
+        Assert.Empty(task.OutputFatbins);
     }
 
-    [Fact]
-    public void Test_CompileCudaToFatbinTask_Individual_UpToDate()
+    [Theory]
+    [InlineData(false, "dummy.cu")]
+    [InlineData(true, "dummy.cpp")]
+    public void Test_CompileTask_NoVswhere(bool isCpp, string sourceName)
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var sourceFile1 = Path.Combine(tempDir, "kernel1.cu");
-            File.WriteAllText(sourceFile1, "dummy1");
-            var fatbinPath = Path.Combine(tempDir, "kernel1.gfatbin");
-            File.WriteAllText(fatbinPath, "old content");
-            
-            // Make dest newer than src
-            File.SetLastWriteTimeUtc(fatbinPath, DateTime.UtcNow.AddSeconds(10));
-            File.SetLastWriteTimeUtc(sourceFile1, DateTime.UtcNow.AddSeconds(-10));
+        using var ctx = new CompileTaskTestContext();
+        ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
+        ctx.CreateDummySource(sourceName, "dummy");
+        ctx.Runner.OverrideVswhere = true;
 
-            var buildEngine = new MockBuildEngineWithVerification();
-            var sourceItem1 = new TaskItem(sourceFile1);
+        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: "");
 
-            var runner = new MockProcessRunner(tempDir) { NextExitCode = 0 };
-
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = buildEngine,
-                CudaSources = [sourceItem1],
-                OutputDirectory = tempDir,
-                ProcessRunner = runner,
-                MockCompilation = false, // test caching logic
-                DisableVcvarsCache = true,
-                CombinedFatbinName = "" // individual
-            };
-
-            var result = task.Execute();
-
-            Assert.True(result);
-            Assert.Single(task.OutputFatbins);
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, true);
-            }
-        }
-    }
-
-    [Fact]
-    public void Test_CompileCudaToFatbinTask_RunNvcc_Fails()
-    {
-        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            var sourceFile1 = Path.Combine(tempDir, "kernel1.cu");
-            File.WriteAllText(sourceFile1, "dummy1");
-            var buildEngine = new MockBuildEngineWithVerification();
-            var sourceItem1 = new TaskItem(sourceFile1);
-
-            var runner = new MockProcessRunner(tempDir) 
-            { 
-                NextExitCode = 1, // trigger failure
-                NextStandardError = "error: syntax error",
-            };
-
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = buildEngine,
-                CudaSources = [sourceItem1],
-                OutputDirectory = tempDir,
-                ProcessRunner = runner,
-                MockCompilation = false,
-                DisableVcvarsCache = true,
-                CombinedFatbinName = ""
-            };
-
-            var result = task.Execute();
-
-            Assert.False(result); // nvcc failed
-            Assert.Contains(buildEngine.LoggedErrors, e => e.Contains("syntax error"));
-        }
-        finally
-        {
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, true);
-            }
-        }
-    }
-
-    [Fact]
-    public void Test_CompileCudaToFatbinTask_NoVswhere()
-    {
-        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_TEST_NO_CUDA");
-        var tempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-        Directory.CreateDirectory(tempDir);
-        try
-        {
-            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", null);
-
-            var sourceFile = Path.Combine(tempDir, "dummy.cu");
-            File.WriteAllText(sourceFile, "dummy");
-
-            var buildEngine = new MockBuildEngineWithVerification();
-
-            // Setup a process runner that fails when vswhere is called
-            var runner = new MockProcessRunner(tempDir);
-            runner.OverrideVswhere = true; // We'll add this to mock
-
-            var task = new CompileCudaToFatbinTask
-            {
-                BuildEngine = buildEngine,
-                CudaSources = [new TaskItem(sourceFile)],
-                OutputDirectory = tempDir,
-                ProcessRunner = runner,
-                MockCompilation = false,
-                DisableVcvarsCache = true,
-                CombinedFatbinName = ""
-            };
-
-            var result = task.Execute();
-
-            Assert.False(result); // OnBeforeExecute should fail
-            Assert.Contains(buildEngine.LoggedErrors, e => e.Contains("vcvarsall"));
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("GSHARP_TEST_NO_CUDA", prevEnv);
-            if (Directory.Exists(tempDir))
-            {
-                Directory.Delete(tempDir, true);
-            }
-        }
+        Assert.False(task.Execute());
+        Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("vcvarsall"));
     }
 
     // --- Infrastructure Tests ---
 
     [Fact]
-    public void Test_MockBuildEngineWithVerification_LogsCorrectly()
+    public void Test_MockBuildEngine_LogsCorrectly()
     {
-        var buildEngine = new MockBuildEngineWithVerification();
-        buildEngine.LogErrorEvent(new BuildErrorEventArgs("subcategory", "code", "file", 1, 1, 1, 1, "Test Error", "helpKeyword", "senderName"));
-        buildEngine.LogWarningEvent(new BuildWarningEventArgs("subcategory", "code", "file", 1, 1, 1, 1, "Test Warning", "helpKeyword", "senderName"));
-        buildEngine.LogMessageEvent(new BuildMessageEventArgs("Test Message", "helpKeyword", "senderName", MessageImportance.Normal));
+        var buildEngine = new MockBuildEngine();
+        buildEngine.LogErrorEvent(new BuildErrorEventArgs("subcategory", "code", "file", 1, 1, 1, 1, "Test Error",
+            "helpKeyword", "senderName"));
+        buildEngine.LogWarningEvent(new BuildWarningEventArgs("subcategory", "code", "file", 1, 1, 1, 1, "Test Warning",
+            "helpKeyword", "senderName"));
+        buildEngine.LogMessageEvent(new BuildMessageEventArgs("Test Message", "helpKeyword", "senderName",
+            MessageImportance.Normal));
 
         Assert.Single(buildEngine.LoggedErrors);
         Assert.Contains("Test Error", buildEngine.LoggedErrors[0]);
@@ -788,5 +516,216 @@ public class CompileTasksTests
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains("Not found", result.StandardError);
+    }
+
+    [Theory]
+    [InlineData(false, "kernel1.cu", "nvcc")]
+    [InlineData(true, "kernel1.cpp", "cl.exe")]
+    public void Test_CompileTask_RunProcess_ThrowsException(bool isCpp, string sourceName, string expectedExe)
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource(sourceName, "dummy1");
+        ctx.Runner.NextException = new System.Exception("Simulated process start failure");
+
+        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: "");
+
+        Assert.False(task.Execute());
+        Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains($"Failed to start {expectedExe}"));
+    }
+
+    [Fact]
+    public async Task Test_ProcessRunner_CancellationRequested_BeforeStart()
+    {
+        var runner = new ProcessRunner();
+        var startInfo = new ProcessStartInfo("dummy_executable_that_will_not_be_run.exe");
+        using var cts = new CancellationTokenSource();
+        cts.Cancel(); // Cancel before start
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => runner.RunAsync(startInfo, cts.Token));
+    }
+
+    [Fact]
+    public async Task Test_ProcessRunner_ProcessStartFailed()
+    {
+        var runner = new ProcessRunner();
+        // Use a definitely non-existent executable to force Start() to fail
+        var startInfo = new ProcessStartInfo("this_executable_should_not_exist_xyz123.exe");
+
+        await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => runner.RunAsync(startInfo));
+    }
+
+    [Fact]
+    public async Task Test_ProcessRunner_Cancellation_KillsProcess()
+    {
+        var runner = new ProcessRunner();
+
+        // An actual executable process (e.g. ping) is required to test the post-start kill callback.
+        var startInfo = new ProcessStartInfo("ping", "127.0.0.1 -n 10");
+        using var cts = new CancellationTokenSource();
+
+        var task = runner.RunAsync(startInfo, cts.Token);
+
+        // Cancel immediately to trigger the cancellation token registration callback.
+        cts.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => task);
+    }
+
+    private class TestCompileKernelTask : CompileKernelTaskBase
+    {
+        public Func<ITaskItem[]> SourcesFunc { get; set; } = () => [];
+        public Func<ITaskItem, ITaskItem[]?> ProcessFunc { get; set; } = _ => null;
+
+        public Action<ITaskItem[]> SetOutputFunc { get; set; } = _ =>
+        {
+        };
+
+        protected override ITaskItem[] GetSources() => SourcesFunc();
+        protected override ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem) => ProcessFunc(sourceItem);
+        protected override void SetOutputItems(ITaskItem[] outputItems) => SetOutputFunc(outputItems);
+
+        public new Dictionary<string, string>? GetVcvarsEnvironment(string arch) => base.GetVcvarsEnvironment(arch);
+        public new void SafeDeleteFiles(params string[] paths) => base.SafeDeleteFiles(paths);
+    }
+
+
+    [Fact]
+    public void Test_CompileKernelTaskBase_ProcessSourceReturnsNull_Fails()
+    {
+        using var ctx = new CompileTaskTestContext();
+        var task = new TestCompileKernelTask
+        {
+            OutputDirectory = ctx.TempDir,
+            SourcesFunc = () => [new TaskItem("test.cs")],
+            ProcessFunc = _ => null // Simulates failure
+        };
+        Assert.False(task.Execute());
+    }
+
+    [Fact]
+    public void Test_CompileKernelTaskBase_SafeDeleteFiles_IgnoresExceptions()
+    {
+        var task = new TestCompileKernelTask();
+        // Null or empty paths
+        task.SafeDeleteFiles(null!, "");
+
+        // Invalid path that throws an exception inside File.Exists or File.Delete
+        task.SafeDeleteFiles("||invalid_path<>?*");
+
+        // Should not throw
+    }
+
+    [Fact]
+    public void Test_CompileKernelTaskBase_VcvarsCache_And_MissingVswhere()
+    {
+        var runner = new MockProcessRunner("C:\\dummy") { OverrideVswhere = true };
+
+        var task = new TestCompileKernelTask
+        {
+            ProcessRunner = runner,
+            DisableVcvarsCache = false
+        };
+
+        var env1 = task.GetVcvarsEnvironment("missing_arch_cache_test");
+        Assert.Null(env1);
+
+        // Call again to hit the cache
+        var env2 = task.GetVcvarsEnvironment("missing_arch_cache_test");
+        Assert.Null(env2);
+
+        // Assert that runner was only called once because the result (even null) is cached
+        Assert.Single(runner.Invocations);
+    }
+
+    [Theory]
+    [InlineData("   ", 0)] // empty vswhere
+    [InlineData("missing_bat_dir", 0)] // vcvarsall.bat not found
+    [InlineData(null, 1)] // cmd.exe failed
+    public void Test_CompileKernelTaskBase_GetVcvarsEnvironment_FailureCases(string? vswhereOutput, int cmdExitCode)
+    {
+        using var ctx = new CompileTaskTestContext();
+        if (vswhereOutput == "missing_bat_dir")
+        {
+            ctx.Runner.VswhereOutput = ctx.TempDir;
+        }
+        else if (vswhereOutput != null)
+        {
+            ctx.Runner.VswhereOutput = vswhereOutput;
+        }
+
+        ctx.Runner.CmdExitCode = cmdExitCode;
+
+        var task = new TestCompileKernelTask { ProcessRunner = ctx.Runner, DisableVcvarsCache = true };
+        Assert.Null(task.GetVcvarsEnvironment("x64_fail_test"));
+    }
+
+    [Fact]
+    public void Test_CompileCudaToFatbinTask_DetectRegisterSpillSuppressGs0001()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel1.cu", "// gsharp:suppress GS0001\ndummy");
+
+        ctx.Runner.NextStandardError = "ptxas warning : 10 bytes spill\nFunction properties for _Z3foo";
+
+        var task = ctx.CreateCudaTask(["kernel1.cu"], null);
+        Assert.True(task.Execute());
+        Assert.DoesNotContain(ctx.BuildEngine.LoggedWarnings, w => w.Contains("GS0001"));
+    }
+
+
+    [Fact]
+    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_CreateOutputDirectory()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cu");
+
+        var outDir = Path.Combine(ctx.TempDir, "OutDir"); // Does not exist
+        var task = ctx.CreateCudaTask(["kernel.cu"]);
+        task.OutputDirectory = outDir;
+        task.MockCompilation = true;
+
+        Assert.True(task.Execute());
+        Assert.True(Directory.Exists(outDir));
+        Assert.Single(task.OutputFatbins);
+    }
+
+    [Fact]
+    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_BundleFile_WriteFailure()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cu");
+
+        // Create a directory with the exact name of the bundle file, so File.WriteAllText throws UnauthorizedAccessException
+        Directory.CreateDirectory(Path.Combine(ctx.TempDir, "combined_fatbin_bundle.cu"));
+
+        var task = ctx.CreateCudaTask(["kernel.cu"]);
+        Assert.False(task.Execute());
+        Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("Failed to write bundle file"));
+    }
+
+    [Theory]
+    [InlineData("combined_fatbin")]
+    [InlineData(null)]
+    public void Test_CompileCudaToFatbinTask_OutputMissing_LogsError(string? combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cu");
+        ctx.Runner.SimulateCompilationOutput = false;
+
+        var task = ctx.CreateCudaTask(["kernel.cu"], combinedName);
+        Assert.False(task.Execute());
+        Assert.Contains(ctx.BuildEngine.LoggedErrors,
+            e => e.Contains("nvcc succeeded but output fatbin was not found"));
+    }
+
+    [Fact]
+    public void Test_CompileCudaToFatbinTask_CombinedFatbinName_MissingSourceFile_NotUpToDate()
+    {
+        using var ctx = new CompileTaskTestContext();
+        // File is missing, but output exists
+        File.WriteAllText(Path.Combine(ctx.TempDir, "combined_fatbin.gfatbin"), "old content");
+
+        var task = ctx.CreateCudaTask(["missing.cu"]);
+        Assert.True(task.Execute());
     }
 }
