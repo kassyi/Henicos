@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Tests.Common;
+namespace Kassyi.GSharp.Tests.Infrastructure;
 
 /// <summary>
 /// Specifies the target execution environment for the test.

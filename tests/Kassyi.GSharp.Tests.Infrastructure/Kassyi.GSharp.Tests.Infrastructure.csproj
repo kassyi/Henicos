@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>false</IsTestProject>
-    <RootNamespace>Kassyi.GSharp.Tests.Common</RootNamespace>
+    <RootNamespace>Kassyi.GSharp.Tests.Infrastructure</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="xunit" Version="2.9.3" />

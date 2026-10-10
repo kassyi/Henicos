@@ -16,7 +16,7 @@
     <Project Path="src/ZeroAlloc/Kassyi.ZeroAlloc.Linq/Kassyi.ZeroAlloc.Linq.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Kassyi.GSharp.Tests.Common/Kassyi.GSharp.Tests.Common.csproj" />
+    <Project Path="tests/Kassyi.GSharp.Tests.Infrastructure/Kassyi.GSharp.Tests.Infrastructure.csproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Shared/Kassyi.GSharp.Tests.Shared.shproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj" />
     <Project Path="tests/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj" />

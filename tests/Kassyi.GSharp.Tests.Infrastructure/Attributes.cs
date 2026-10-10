@@ -1,11 +1,11 @@
 using Xunit.Sdk;
 
-namespace Kassyi.GSharp.Tests.Common;
+namespace Kassyi.GSharp.Tests.Infrastructure;
 
 /// <summary>
 /// Specifies the execution target environment (GPU vs CPU) for an xUnit test.
 /// </summary>
-[TraitDiscoverer("Kassyi.GSharp.Tests.Common.TestTargetDiscoverer", "Kassyi.GSharp.Tests.Common")]
+[TraitDiscoverer("Kassyi.GSharp.Tests.Infrastructure.TestTargetDiscoverer", "Kassyi.GSharp.Tests.Infrastructure")]
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
 public sealed class TestTargetAttribute(ExecutionTarget target) : Attribute, ITraitAttribute
 {
@@ -15,7 +15,7 @@ public sealed class TestTargetAttribute(ExecutionTarget target) : Attribute, ITr
 /// <summary>
 /// Specifies the functional subsystem or domain category for an xUnit test.
 /// </summary>
-[TraitDiscoverer("Kassyi.GSharp.Tests.Common.CategoryDiscoverer", "Kassyi.GSharp.Tests.Common")]
+[TraitDiscoverer("Kassyi.GSharp.Tests.Infrastructure.CategoryDiscoverer", "Kassyi.GSharp.Tests.Infrastructure")]
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
 public sealed class CategoryAttribute(TestCategory category) : Attribute, ITraitAttribute
 {
@@ -25,7 +25,7 @@ public sealed class CategoryAttribute(TestCategory category) : Attribute, ITrait
 /// <summary>
 /// Specifies the behavioral scenario (HappyPath, SadPath, Boundary) for an xUnit test.
 /// </summary>
-[TraitDiscoverer("Kassyi.GSharp.Tests.Common.ScenarioDiscoverer", "Kassyi.GSharp.Tests.Common")]
+[TraitDiscoverer("Kassyi.GSharp.Tests.Infrastructure.ScenarioDiscoverer", "Kassyi.GSharp.Tests.Infrastructure")]
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = true)]
 public sealed class ScenarioAttribute(TestScenario scenario) : Attribute, ITraitAttribute
 {

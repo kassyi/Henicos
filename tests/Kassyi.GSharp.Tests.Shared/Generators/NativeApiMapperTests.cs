@@ -1,5 +1,5 @@
 using Kassyi.GSharp.Compiler.Transpiler;
-using Kassyi.GSharp.Tests.Common;
+using Kassyi.GSharp.Tests.Infrastructure;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Generators;

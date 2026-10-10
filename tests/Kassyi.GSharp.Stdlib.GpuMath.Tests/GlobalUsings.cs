@@ -17,7 +17,7 @@ global using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 global using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 global using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 global using Kassyi.GSharp.Stdlib.GpuMath.Tests;
-global using Kassyi.GSharp.Tests.Common;
+global using Kassyi.GSharp.Tests.Infrastructure;
 global using Kassyi.ZeroAlloc.Linq;
 global using VerifyTests;
 global using VerifyXunit;

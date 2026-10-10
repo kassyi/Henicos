@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Tests.Common;
+namespace Kassyi.GSharp.Tests.Infrastructure;
 
 /// <summary>
 /// Specifies the functional subsystem or domain under test.

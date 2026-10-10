@@ -1,5 +1,5 @@
 using Xunit;
-using Kassyi.GSharp.Tests.Common;
+using Kassyi.GSharp.Tests.Infrastructure;
 
 public class MyTests : TranspilerTestBase
 {

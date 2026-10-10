@@ -1,5 +1,5 @@
 using Kassyi.GSharp.Compiler;
-using Kassyi.GSharp.Tests.Common;
+using Kassyi.GSharp.Tests.Infrastructure;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
