@@ -309,8 +309,11 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         }
 
         using var currentProduct = new GpuBigUInt(workspace, n + resultWords);
+        currentProduct.Clear();
         using var diff = new GpuBigUInt(workspace, n + resultWords);
+        diff.Clear();
         using var nextIter = new GpuBigUInt(workspace, n + 2 * resultWords);
+        nextIter.Clear();
 
         var maxOutWords = n + 2 * resultWords;
         var requiredLen = maxOutWords * 2;
