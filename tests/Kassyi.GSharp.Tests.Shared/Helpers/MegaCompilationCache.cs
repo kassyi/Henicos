@@ -10,7 +10,7 @@ public static class MegaCompilationCache
         var references = trustedAssemblies
             .Split(Path.PathSeparator)
             .Where(p => !string.IsNullOrWhiteSpace(p))
-            .Select(p => 
+            .Select(p =>
             {
                 // To avoid MSB3026 (file lock by testhost.exe), load assemblies built by us (in the test output directory) in-memory.
                 // System and framework assemblies can be safely loaded from file to massively improve performance.
@@ -18,6 +18,7 @@ public static class MegaCompilationCache
                 {
                     return (MetadataReference)MetadataReference.CreateFromImage(File.ReadAllBytes(p));
                 }
+
                 return (MetadataReference)MetadataReference.CreateFromFile(p);
             })
             .ToList();
@@ -30,15 +31,18 @@ public static class MegaCompilationCache
         }
 
         // Implicitly reference Math library if present in the same directory, to support standard library tests
-        var mathDllPath = Path.Combine(Path.GetDirectoryName(coreDllPath) ?? baseDir, "Kassyi.GSharp.Stdlib.GpuMath.dll");
-        if (File.Exists(mathDllPath) && !references.Any(r => string.Equals(r.Display, mathDllPath, StringComparison.OrdinalIgnoreCase)))
+        var mathDllPath =
+            Path.Combine(Path.GetDirectoryName(coreDllPath) ?? baseDir, "Kassyi.GSharp.Stdlib.GpuMath.dll");
+        if (File.Exists(mathDllPath) &&
+            !references.Any(r => string.Equals(r.Display, mathDllPath, StringComparison.OrdinalIgnoreCase)))
         {
             references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(mathDllPath)));
         }
 
         // Implicitly reference ZeroAlloc.Linq library if present
         var linqDllPath = Path.Combine(Path.GetDirectoryName(coreDllPath) ?? baseDir, "Kassyi.ZeroAlloc.Linq.dll");
-        if (File.Exists(linqDllPath) && !references.Any(r => string.Equals(r.Display, linqDllPath, StringComparison.OrdinalIgnoreCase)))
+        if (File.Exists(linqDllPath) &&
+            !references.Any(r => string.Equals(r.Display, linqDllPath, StringComparison.OrdinalIgnoreCase)))
         {
             references.Add(MetadataReference.CreateFromImage(File.ReadAllBytes(linqDllPath)));
         }
@@ -101,22 +105,51 @@ public static class MegaCompilationCache
     public static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext(
         Type targetType,
         string methodName,
-        [CallerFilePath] string callerFilePath = "")
+        params string[] sourceFilePaths)
     {
-        var compilation = GetDynamicCompilation(callerFilePath);
+        var compilation = BaseCompilation;
+        foreach (var path in sourceFilePaths)
+        {
+            if (File.Exists(path))
+            {
+                compilation = GetDynamicCompilation(path);
+            }
+        }
 
-        var typeSymbol = compilation.GetTypeByMetadataName(targetType.FullName ?? targetType.Name)
-                         ?? compilation.GetSymbolsWithName(targetType.Name, SymbolFilter.Type)
-                             .OfType<INamedTypeSymbol>().FirstOrDefault()
-                         ?? throw new InvalidOperationException(
-                             $"Type {targetType.FullName} not found in the dynamic compilation.");
+        INamedTypeSymbol? typeSymbol = null;
+        SemanticModel? model = null;
 
-        var methodSymbol = typeSymbol.GetMembers(methodName).OfType<IMethodSymbol>().FirstOrDefault()
+        foreach (var path in sourceFilePaths)
+        {
+            if (!File.Exists(path)) continue;
+            var tree = compilation.SyntaxTrees.FirstOrDefault(t => t.FilePath == path);
+            if (tree == null) continue;
+
+            var currentModel = compilation.GetSemanticModel(tree);
+            var foundSymbol = tree.GetRoot().DescendantNodes()
+                                 .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.TypeDeclarationSyntax>()
+                                 .Select(s => currentModel.GetDeclaredSymbol(s))
+                                 .OfType<INamedTypeSymbol>()
+                                 .FirstOrDefault(s => s.Name == targetType.Name);
+
+            if (foundSymbol != null)
+            {
+                typeSymbol = foundSymbol;
+                model = currentModel;
+                break;
+            }
+        }
+
+        if (typeSymbol == null || model == null)
+        {
+            throw new InvalidOperationException($"Type {targetType.Name} with source code not found in {string.Join(", ", sourceFilePaths)}.");
+        }
+
+        var methodSymbol = typeSymbol.GetMembers(methodName).OfType<IMethodSymbol>()
+                               .FirstOrDefault(m => m.DeclaringSyntaxReferences.Length > 0)
                            ?? throw new InvalidOperationException(
-                               $"Method {methodName} not found in {typeSymbol.Name}.");
+                               $"Method {methodName} with source code not found in {typeSymbol.Name}.");
 
-        var syntaxTree = methodSymbol.DeclaringSyntaxReferences[0].SyntaxTree;
-        var model = compilation.GetSemanticModel(syntaxTree);
         return (model, methodSymbol);
     }
 
@@ -124,7 +157,16 @@ public static class MegaCompilationCache
         string methodName,
         [CallerFilePath] string callerFilePath = "")
     {
-        return GetMethodContext(typeof(TTarget), methodName, callerFilePath);
+        // If the caller explicitly passed a .cu.cs file (e.g., manually calling this overload with the target file), use it directly.
+        if (callerFilePath.EndsWith(".cu.cs"))
+        {
+            return GetMethodContext(typeof(TTarget), methodName, callerFilePath);
+        }
+
+        // Auto-resolve kernel file based on test class name
+        var targetFile = RoslynTestUtility.ResolveKernelFilePath(callerFilePath);
+
+        return GetMethodContext(typeof(TTarget), methodName, targetFile);
     }
 
     public static INamedTypeSymbol GetNamedTypeSymbol(string typeName)
