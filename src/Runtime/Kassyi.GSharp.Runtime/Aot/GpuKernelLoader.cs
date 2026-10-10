@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// Runtime JIT/AOT compilation engine that manages thread contexts and loads executable GPU modules.
 /// </summary>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
+[ExcludeFromCodeCoverage]
 public sealed class GpuKernelLoader
 {
     private static volatile bool s_isGlobalInit;

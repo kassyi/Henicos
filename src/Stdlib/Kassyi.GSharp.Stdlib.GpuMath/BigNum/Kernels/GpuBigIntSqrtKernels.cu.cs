@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage]
 public static partial class GpuBigIntSqrtKernels
 {
     // Dummy kernel to force the generator to emit the DualNtt struct definition before we use it

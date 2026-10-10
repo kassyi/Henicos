@@ -1,5 +1,3 @@
-using Kassyi.ZeroAlloc.Linq;
-
 namespace Henicos.Benchmarks;
 
 [SkipSnapshotConsistency]

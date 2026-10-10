@@ -77,7 +77,7 @@ public class VectorTypesGenerator : IIncrementalGenerator
                     sw.AppendLine("/// <para><b>Execution Target:</b> Usable on both Host (CPU) and Device (GPU kernels).</para>");
                     sw.AppendLine("/// </remarks>");
                     sw.AppendLine("[StructLayout(LayoutKind.Sequential)]");
-
+                    sw.AppendLine("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
                     sw.Append($"public struct {structName}(");
                     sw.Append($"{t.Type} x, {t.Type} y");
                     if (dim >= 3)

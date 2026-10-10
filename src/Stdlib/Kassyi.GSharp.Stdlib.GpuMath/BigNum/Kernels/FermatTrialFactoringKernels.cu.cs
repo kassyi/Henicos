@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 [SkipSnapshotConsistency("New Feature WIP")]
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage]
 public static partial class FermatTrialFactoringKernels
 {
     [GpuDeviceFunction, GpuInline]

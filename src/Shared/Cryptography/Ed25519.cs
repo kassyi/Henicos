@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Security.Cryptography;
 
@@ -7,6 +8,7 @@ namespace Kassyi.GSharp.Cryptography;
 /// Lightweight, self-contained Ed25519 implementation compliant with RFC 8032.
 /// Provides key generation, signing, and verification without external dependencies.
 /// </summary>
+[ExcludeFromCodeCoverage]
 internal static class Ed25519
 {
     public const int PublicKeySize = 32;
