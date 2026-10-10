@@ -2,6 +2,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
+[Collection(TestCollections.GlobalStateSequential)]
 public class GpuBigIntFermatTests
 {
     [SkippableFact]

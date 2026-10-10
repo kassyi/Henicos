@@ -1,6 +1,7 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
+[Collection(TestCollections.GlobalStateSequential)]
 public class GSharpAotFloatProviderTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;

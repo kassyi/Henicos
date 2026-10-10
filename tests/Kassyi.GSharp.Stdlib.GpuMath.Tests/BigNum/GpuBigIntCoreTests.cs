@@ -4,6 +4,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.References;
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
+[Collection(TestCollections.GlobalStateSequential)]
 public class GpuBigIntCoreTests
 {
     [SkippableFact]
