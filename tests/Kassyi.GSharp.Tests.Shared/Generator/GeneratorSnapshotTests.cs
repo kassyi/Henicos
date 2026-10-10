@@ -69,7 +69,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
     public static TheoryData<string> GetSnapshotTestCases() => SnapshotTestCaseSource.GetTestCases();
 
-    private async Task VerifyGeneratorAsync(string source, string testName, string sourceDir)
+    private async Task VerifyGeneratorSnapshotAsync(string source, string testName, string sourceDir)
     {
 #pragma warning disable RS0030
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
@@ -89,7 +89,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
         var compilation = CSharpCompilation.Create("SnapshotTest")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
-            .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.MegaCompilationCache.BaseCompilation.References);
+            .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.RoslynTestUtility.BaseReferences);
 
         if (isStdlibKernel)
         {
@@ -233,7 +233,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         var source = await File.ReadAllTextAsync(sourcePath);
         var testName = Path.GetFileNameWithoutExtension(sourcePath).Replace(".cu", "");
 
-        await VerifyGeneratorAsync(source, testName, sourceDir);
+        await VerifyGeneratorSnapshotAsync(source, testName, sourceDir);
     }
 
     [Fact]
@@ -244,7 +244,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         var syntaxTrees = new List<SyntaxTree> { CSharpSyntaxTree.ParseText(src, options: parseOptions) };
         var compilation = CSharpCompilation.Create("DummyCompilation")
             .WithOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary).WithAllowUnsafe(true))
-            .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.MegaCompilationCache.BaseCompilation.References)
+            .AddReferences(Kassyi.GSharp.Tests.Shared.Helpers.RoslynTestUtility.BaseReferences)
             .AddSyntaxTrees(syntaxTrees);
 
         var generator = new GpuKernelGenerator();

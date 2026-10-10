@@ -11,12 +11,12 @@ public class NativeApiMapperTests
     [Scenario(TestScenario.HappyPath)]
     public void Test_TryGetNativeName_ReturnsTrue_ForKnownApi()
     {
-        var sig = "Kassyi.GSharp.Core.Gpu.SyncThreads()";
+        var sig = "Kassyi.GSharp.Core.Gpu.AtomicAdd(ref int, int)";
         
         bool result = NativeApiMapper.TryGetNativeName(sig, out var nativeName);
         
         Assert.True(result);
-        Assert.Equal("__syncthreads", nativeName);
+        Assert.Equal("atomicAdd", nativeName);
     }
     
     [Fact]
