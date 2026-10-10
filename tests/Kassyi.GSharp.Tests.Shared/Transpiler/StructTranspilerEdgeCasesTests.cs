@@ -3,9 +3,8 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 public class StructTranspilerEdgeCasesTests : TranspilerTestBase
 {
-    private static INamedTypeSymbol GetLocalTypeSymbol(string name, [CallerFilePath] string callerFilePath = "")
+    private static INamedTypeSymbol GetLocalTypeSymbol(Compilation comp, string name)
     {
-        var comp = MegaCompilationCache.GetDynamicCompilation(callerFilePath);
         return comp.GetSymbolsWithName(name, SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
     }
 
@@ -13,7 +12,8 @@ public class StructTranspilerEdgeCasesTests : TranspilerTestBase
     [Category(TestCategory.Unit)]
     public void Test_TopologicallySortedStructs_EmptyStruct()
     {
-        var structSym = GetLocalTypeSymbol("EmptyStruct");
+        var comp = MegaCompilationCache.GetDynamicCompilation();
+        var structSym = GetLocalTypeSymbol(comp, "EmptyStruct");
         var sorted = StructTranspiler.GetTopologicallySortedStructs([structSym]);
 
         Assert.Single(sorted);
@@ -24,10 +24,11 @@ public class StructTranspilerEdgeCasesTests : TranspilerTestBase
     [Category(TestCategory.Unit)]
     public void Test_TopologicallySortedStructs_DeepNesting()
     {
-        var symA = GetLocalTypeSymbol("StructEdgeCases_StructA");
-        var symB = GetLocalTypeSymbol("StructEdgeCases_StructB");
-        var symC = GetLocalTypeSymbol("StructEdgeCases_StructC");
-        var symD = GetLocalTypeSymbol("StructEdgeCases_StructD");
+        var comp = MegaCompilationCache.GetDynamicCompilation();
+        var symA = GetLocalTypeSymbol(comp, "StructEdgeCases_StructA");
+        var symB = GetLocalTypeSymbol(comp, "StructEdgeCases_StructB");
+        var symC = GetLocalTypeSymbol(comp, "StructEdgeCases_StructC");
+        var symD = GetLocalTypeSymbol(comp, "StructEdgeCases_StructD");
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs([symA, symB, symC, symD]);
 
@@ -43,11 +44,12 @@ public class StructTranspilerEdgeCasesTests : TranspilerTestBase
     [Category(TestCategory.Unit)]
     public void Test_TopologicallySortedStructs_ExcludesSystemTypes()
     {
-        var structSym = GetLocalTypeSymbol("MyStruct");
+        var comp = MegaCompilationCache.GetDynamicCompilation();
+        var structSym = GetLocalTypeSymbol(comp, nameof(MyStruct));
         var sorted = StructTranspiler.GetTopologicallySortedStructs([structSym]);
 
         Assert.Single(sorted);
-        Assert.Equal("MyStruct", sorted[0].Name);
+        Assert.Equal(nameof(MyStruct), sorted[0].Name);
     }
 }
 
