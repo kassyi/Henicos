@@ -66,20 +66,7 @@ public class BitOperationsTests : TranspilerTestBase
         Assert.Contains("__gsharp_rotr32", source);
 
         // 2. Verify MethodTranspiler generates __gsharp_rotl32 and __gsharp_rotr32 from AST
-        var kernelPath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "..", "Syntax",
-            "BitOperationsKernels.cu.cs");
-        var kernelCode = File.ReadAllText(kernelPath);
-        var compilation = RoslynTestUtility.CreateCompilation(kernelCode);
-        var tree = compilation.SyntaxTrees.First();
-        var semanticModel = compilation.GetSemanticModel(tree);
-
-        var methodDecl = tree.GetRoot().DescendantNodes()
-            .OfType<MethodDeclarationSyntax>()
-            .First(m => m.Identifier.Text == "Rotate32Kernel");
-
-        var diagnostics = new List<Diagnostic>();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), false,
-            new GSharpCudaDialect(), out var _);
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(typeof(BitOperationsKernels), "Rotate32Kernel");
 
         Assert.Empty(diagnostics);
         Assert.Contains("__gsharp_rotl32", cudaSource);

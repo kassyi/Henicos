@@ -4,33 +4,11 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class LoopUnrollTests : TranspilerTestBase
 {
-    private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileKernelMethod(string methodName)
-    {
-        var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "..", "Syntax",
-            "LoopUnrollKernels.cu.cs");
-        var compilation = MegaCompilationCache.GetDynamicCompilation(testCasePath);
 
-        var tree = compilation.SyntaxTrees.First(t => t.FilePath == testCasePath);
-        var semanticModel = compilation.GetSemanticModel(tree);
-
-        var methodDecl = tree.GetRoot().DescendantNodes()
-            .OfType<MethodDeclarationSyntax>()
-            .First(m => m.Identifier.Text == methodName);
-
-        var diagnostics = new List<Diagnostic>();
-        var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), false,
-            new GSharpCudaDialect(), out var _);
-        return (cudaSource, diagnostics);
-    }
 
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileTestCaseMethod(string methodName)
     {
-        var testCasePath =
-            Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "LoopUnrollStatements.cs");
-        var compilation = MegaCompilationCache.GetDynamicCompilation(testCasePath);
-
-        var tree = compilation.SyntaxTrees.First(t => t.FilePath == testCasePath);
-        var semanticModel = compilation.GetSemanticModel(tree);
+        var (compilation, tree, semanticModel) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "LoopUnrollStatements.cs"));
 
         var methodDecl = tree.GetRoot().DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
@@ -91,7 +69,7 @@ public class LoopUnrollTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Test_LoopUnrollFor_TranspilesPragmaUnroll()
     {
-        var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollForKernel");
+        var (cudaSource1, diagnostics1) = RoslynTestUtility.TranspileMethod(typeof(LoopUnrollKernels), "LoopUnrollForKernel");
         Assert.Empty(diagnostics1);
         Assert.Contains("#pragma unroll", cudaSource1);
         Assert.Contains("#pragma unroll\nfor", cudaSource1.Replace("\r", ""));
@@ -119,7 +97,7 @@ public class LoopUnrollTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Test_LoopUnrollFactor_TranspilesPragmaUnrollFactor()
     {
-        var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollFactorKernel");
+        var (cudaSource1, diagnostics1) = RoslynTestUtility.TranspileMethod(typeof(LoopUnrollKernels), "LoopUnrollFactorKernel");
         Assert.Empty(diagnostics1);
         Assert.Contains("#pragma unroll 4", cudaSource1);
         Assert.Contains("#pragma unroll 4\nfor", cudaSource1.Replace("\r", ""));
@@ -163,7 +141,7 @@ public class LoopUnrollTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Test_LoopUnrollWhile_TranspilesPragmaUnroll()
     {
-        var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollWhileKernel");
+        var (cudaSource1, diagnostics1) = RoslynTestUtility.TranspileMethod(typeof(LoopUnrollKernels), "LoopUnrollWhileKernel");
         Assert.Empty(diagnostics1);
         Assert.Contains("#pragma unroll", cudaSource1);
         Assert.Contains("#pragma unroll\nwhile", cudaSource1.Replace("\r", ""));
@@ -198,7 +176,7 @@ public class LoopUnrollTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Test_LoopUnrollSingleStatement_TranspilesPragmaUnroll()
     {
-        var (cudaSource1, diagnostics1) = TranspileKernelMethod("LoopUnrollSingleStatementKernel");
+        var (cudaSource1, diagnostics1) = RoslynTestUtility.TranspileMethod(typeof(LoopUnrollKernels), "LoopUnrollSingleStatementKernel");
         Assert.Empty(diagnostics1);
         Assert.Contains("#pragma unroll\nfor", cudaSource1.Replace("\r", ""));
 
