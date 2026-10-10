@@ -9,7 +9,33 @@ test *args="":
 test-all *args="":
     dotnet test -m:1 {{args}}
 
+# Run tests multiple times to detect flaky tests
+test-stability count="10" *args="":
+    $null = New-Item -ItemType Directory -Force -Path TestResults; \
+    [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; \
+    $OutputEncoding = [System.Text.Encoding]::UTF8; \
+    $totalSw = [System.Diagnostics.Stopwatch]::StartNew(); \
+    for ($i = 1; $i -le {{count}}; $i++) { \
+        Write-Host "[$i/{{count}}] Running test iteration..." -ForegroundColor Cyan; \
+        $lapSw = [System.Diagnostics.Stopwatch]::StartNew(); \
+        dotnet test -m:1 --logger "trx;LogFileName=stability_iter_$i.trx" --filter "Category!=Stress&Category!=Benchmark" {{args}} 2>&1 | Out-File -FilePath TestResults/stability_iter_$i.log -Encoding utf8; \
+        $exitCode = $LASTEXITCODE; \
+        $lapSw.Stop(); \
+        $lapElapsed = $lapSw.Elapsed; \
+        $lapStr = "{0:mm}:{0:ss}.{0:fff} ({1}s)" -f $lapElapsed, [math]::Round($lapElapsed.TotalSeconds, 2); \
+        if ($exitCode -ne 0) { \
+            Write-Host "Test failed on iteration $i after $lapStr! See TestResults/stability_iter_$i.log for details." -ForegroundColor Red; \
+            exit $exitCode; \
+        } \
+        Write-Host "Iteration $i passed in $lapStr" -ForegroundColor Green; \
+    } \
+    $totalSw.Stop(); \
+    $totElapsed = $totalSw.Elapsed; \
+    $totalStr = "{0:mm}:{0:ss}.{0:fff} ({1}s)" -f $totElapsed, [math]::Round($totElapsed.TotalSeconds, 2); \
+    Write-Host "All {{count}} iterations passed successfully in $totalStr." -ForegroundColor Green
+
 # Watch and run tests with debounce delay (requires watchexec)
+
 watch delay="3s" *args="":
     watchexec --debounce {{delay}} -w src -w tests -e cs,csproj --restart --clear -- just test {{args}}
 
