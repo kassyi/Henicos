@@ -97,38 +97,45 @@ public class ManagedExecutionTests : TranspilerTestBase
     [Fact]
     public void Test_ManagedGpuContext_DirectCalls_ForCoverage()
     {
-        ManagedGpuContext.ClearThreadContext();
-        ManagedGpuContext.SetThreadContext(new Kassyi.GSharp.Core.GpuThreadContext(
-            0, 0, 0, 0, 0, 0, 32, 1, 1, 1, 1, 1
-        ));
+        try
+        {
+            ManagedGpuContext.ClearThreadContext();
+            ManagedGpuContext.SetThreadContext(new Kassyi.GSharp.Core.GpuThreadContext(
+                0, 0, 0, 0, 0, 0, 32, 1, 1, 1, 1, 1
+            ));
 
-        ManagedGpuContext.InitializeGrid(1);
-        ManagedGpuContext.ResetAllocationIndex();
+            ManagedGpuContext.InitializeGrid(1);
+            ManagedGpuContext.ResetAllocationIndex();
 
-        // Test AllocateSharedMemory
-        var span = ManagedGpuContext.AllocateSharedMemory<int>(10);
-        Assert.Equal(10, span.Length);
-        
-        // Negative case
-        var emptySpan = ManagedGpuContext.AllocateSharedMemory<int>(0);
-        Assert.Equal(0, emptySpan.Length);
+            // Test AllocateSharedMemory
+            var span = ManagedGpuContext.AllocateSharedMemory<int>(10);
+            Assert.Equal(10, span.Length);
+            
+            // Negative case
+            var emptySpan = ManagedGpuContext.AllocateSharedMemory<int>(0);
+            Assert.Equal(0, emptySpan.Length);
 
-        // Test InitializeGrid array resize
-        ManagedGpuContext.InitializeGrid(10);
-        ManagedGpuContext.InitializeGrid(5);
+            // Test InitializeGrid array resize
+            ManagedGpuContext.InitializeGrid(10);
+            ManagedGpuContext.InitializeGrid(5);
 
-        // Test warp shuffles directly
-        ManagedGpuContext.__gsharp_warp_exchange_assign(42);
-        
-        var valUp = ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
-        var valDown = ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
-        var valXor = ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
-        var valSync = ManagedGpuContext.__gsharp_warp_shuffle_read_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
+            // Test warp shuffles directly
+            ManagedGpuContext.__gsharp_warp_exchange_assign(42);
+            
+            var valUp = ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
+            var valDown = ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
+            var valXor = ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
+            var valSync = ManagedGpuContext.__gsharp_warp_shuffle_read_sync<object, int>(null, 0xFFFFFFFF, 0, 1, 32);
 
-        // Out of bounds cases
-        ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
-        ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
-        ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
-        ManagedGpuContext.__gsharp_warp_shuffle_read_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
+            // Out of bounds cases
+            ManagedGpuContext.__gsharp_warp_shuffle_read_up_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
+            ManagedGpuContext.__gsharp_warp_shuffle_read_down_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
+            ManagedGpuContext.__gsharp_warp_shuffle_read_xor_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
+            ManagedGpuContext.__gsharp_warp_shuffle_read_sync<object, int>(null, 0xFFFFFFFF, 0, 33, 32);
+        }
+        finally
+        {
+            ManagedGpuContext.ClearThreadContext();
+        }
     }
 }
