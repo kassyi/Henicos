@@ -255,6 +255,7 @@ public static class YamlApiGenerator
         writer.Line();
         writer.Line("namespace Kassyi.GSharp.Compiler.Transpiler;");
         writer.Line();
+        writer.Line("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
         writer.Line("public static class NativeApiMapper");
         using (writer.Scope())
         {
