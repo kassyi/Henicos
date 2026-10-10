@@ -175,6 +175,7 @@ public class CompileTasksTests
         public bool OverrideVswhere { get; set; } = false;
         public string? VswhereOutput { get; set; }
         public int CmdExitCode { get; set; } = 0;
+        public string CmdStandardOutput { get; set; } = "INCLUDE=C:\\dummy\r\nLIB=C:\\dummy";
 
         public ProcessResult Run(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
         {
@@ -189,7 +190,7 @@ public class CompileTasksTests
             if (startInfo.FileName.EndsWith("cmd.exe", System.StringComparison.OrdinalIgnoreCase))
             {
                 // env mock
-                return new ProcessResult(CmdExitCode, CmdExitCode == 0 ? "INCLUDE=C:\\dummy\r\nLIB=C:\\dummy" : "",
+                return new ProcessResult(CmdExitCode, CmdExitCode == 0 ? CmdStandardOutput : "",
                     CmdExitCode != 0 ? "error" : "");
             }
 
@@ -398,6 +399,59 @@ public class CompileTasksTests
         var output = Assert.Single(task.OutputFatbins);
         Assert.Contains($"{combinedName}.gfatbin", output.ItemSpec);
     }
+
+    [Fact]
+    public void Test_CompileCppToNativeTask_GSharpMultiTarget_CompilesForTwoArchitectures()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+
+        var task = ctx.CreateCppTask(["kernel.cpp"]);
+        task.GSharpMultiTarget = true;
+        task.MockCompilation = true;
+
+        Assert.True(task.Execute());
+
+        Assert.Equal(2, task.OutputDlls.Length);
+        Assert.Contains(task.OutputDlls, d => d.ItemSpec.EndsWith("_x64.dll"));
+        Assert.Contains(task.OutputDlls, d => d.ItemSpec.EndsWith("_arm64.dll"));
+    }
+
+    [Fact]
+    public void Test_CompileCppToNativeTask_VswhereFails_LogsErrorAndReturnsFalse()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+        ctx.Runner.OverrideVswhere = true;
+
+        var task = ctx.CreateCppTask(["kernel.cpp"]);
+        task.MockCompilation = false;
+
+        Assert.False(task.Execute());
+        Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("Could not locate vcvarsall.bat"));
+    }
+
+    [Fact]
+    public void Test_CompileCppToNativeTask_ClExePathResolvedFromPath()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+
+        var dummyClDir = Path.Combine(ctx.TempDir, "FakeMSVC");
+        Directory.CreateDirectory(dummyClDir);
+        File.WriteAllText(Path.Combine(dummyClDir, "cl.exe"), "");
+
+        ctx.Runner.CmdStandardOutput = $"INCLUDE=C:\\dummy\r\nLIB=C:\\dummy\r\nPATH={dummyClDir};C:\\Windows\\System32";
+
+        var task = ctx.CreateCppTask(["kernel.cpp"]);
+        task.MockCompilation = false;
+        ctx.Runner.SimulateCompilationOutput = true;
+
+        Assert.True(task.Execute());
+
+        Assert.Contains(ctx.Runner.Invocations, i => i.FileName == Path.Combine(dummyClDir, "cl.exe"));
+    }
+
 
     [Theory]
     [InlineData("combined_fatbin", true)] // Combined, UpToDate
