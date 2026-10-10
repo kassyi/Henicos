@@ -2,7 +2,7 @@ using Kassyi.GSharp.Cryptography;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
-internal static class ArtifactHelper
+public static class ArtifactHelper
 {
     public static bool ProcessArtifact(string outputFilePath, TaskLoggingHelper log)
     {
