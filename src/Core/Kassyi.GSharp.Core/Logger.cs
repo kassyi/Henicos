@@ -54,11 +54,11 @@ public abstract class Logger : ILogger
     } =
         LogLevel.Trace; // Trace by default to output everything during debugging
 
+    private static readonly AsyncLocal<bool> _writeToConsole = new() { Value = true };
+
     /// <summary>
     /// Gets or sets a value indicating whether log entries are written to standard console output.
     /// </summary>
-    private static readonly AsyncLocal<bool> _writeToConsole = new() { Value = true };
-    
     public static bool WriteToConsole
     {
         get => _writeToConsole.Value;

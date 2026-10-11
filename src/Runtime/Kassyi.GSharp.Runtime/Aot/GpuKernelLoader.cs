@@ -28,7 +28,7 @@ public sealed class GpuKernelLoader
         }
     }
 
-    private static readonly System.Threading.AsyncLocal<bool> s_forceCpuFallback = new();
+    private static readonly AsyncLocal<bool> s_forceCpuFallback = new();
 
     /// <summary>
     /// Gets or sets a value indicating whether to forcibly emulate GPU runtime on CPU host memory.
@@ -139,6 +139,10 @@ public sealed class GpuKernelLoader
         }
     }
 
+    /// <summary>
+    /// Ensures that the global CUDA driver and primary context are initialized in a thread-safe manner.
+    /// Falls back to CPU emulation mode if the CUDA driver or hardware is unavailable.
+    /// </summary>
     public static void EnsureInitialized()
     {
         // ReSharper disable once InconsistentlySynchronizedField -- Double-checked locking pattern
