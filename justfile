@@ -40,7 +40,7 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
             exit 1; \
         } \
         $tsObj = [TimeSpan]::FromSeconds($timeLimitSec); \
-        $timeLimitStr = if ($tsObj.Days -gt 0) { "{0}d {1:hh\:mm\:ss}" -f $tsObj.Days, $tsObj } else { "{0:hh\:mm\:ss}" -f $tsObj }; \
+        $timeLimitStr = $(if ($tsObj.Days -gt 0) { "{0}d {1:hh\:mm\:ss}" -f $tsObj.Days, $tsObj } else { "{0:hh\:mm\:ss}" -f $tsObj }); \
         $modeDesc = "Time-based ($targetInput / $timeLimitStr)"; \
     } \
     Write-Host "Stability test mode: $modeDesc" -ForegroundColor Cyan; \
@@ -56,21 +56,21 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
         if (-not $isTimeMode -and $i -gt $maxCount) { break; } \
         if ($isTimeMode -and $i -gt 1 -and $totalSw.Elapsed.TotalSeconds -ge $timeLimitSec) { break; } \
         if ('{{shuffle}}' -eq 'true') { \
-            $currentSeed = if ('{{seed}}' -ne '') { [int]'{{seed}}' + $i - 1 } else { Get-Random }; \
+            $currentSeed = $(if ('{{seed}}' -ne '') { [int]'{{seed}}' + $i - 1 } else { Get-Random }); \
             $env:TEST_SEED = "$currentSeed"; \
             $seedInfo = " (Seed: $currentSeed)"; \
         } else { \
             Remove-Item env:TEST_SEED -ErrorAction SilentlyContinue; \
             $seedInfo = ""; \
         } \
-        $iterProgress = if ($isTimeMode) { \
+        $iterProgress = $(if ($isTimeMode) { \
             $curElapsed = $totalSw.Elapsed; \
             "[$i] (Elapsed: {0:hh\:mm\:ss} / $timeLimitStr)" -f $curElapsed \
         } else { \
             "[$i/$maxCount]" \
-        }; \
+        }); \
         Write-Host "$iterProgress Running test iteration$seedInfo..." -ForegroundColor Cyan; \
-        $logHeader = if ('{{shuffle}}' -eq 'true') { "=== Stability Test Iteration $i (Seed: $currentSeed) ===" } else { "=== Stability Test Iteration $i (Shuffle: disabled) ===" }; \
+        $logHeader = $(if ('{{shuffle}}' -eq 'true') { "=== Stability Test Iteration $i (Seed: $currentSeed) ===" } else { "=== Stability Test Iteration $i (Shuffle: disabled) ===" }); \
         $iterLog = "$resultDir/stability_iter_$i.log"; \
         Set-Content -Path $iterLog -Value $logHeader -Encoding utf8; \
         $lapSw = [System.Diagnostics.Stopwatch]::StartNew(); \
@@ -83,14 +83,14 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
             $hasFailure = $true; \
             $failItem = [ordered]@{ \
                 iteration = $i; \
-                seed = (if ('{{shuffle}}' -eq 'true') { "$currentSeed" } else { $null }); \
+                seed = $(if ('{{shuffle}}' -eq 'true') { "$currentSeed" } else { $null }); \
                 elapsedSeconds = [math]::Round($lapElapsed.TotalSeconds, 2); \
                 log = "stability_iter_$i.log"; \
             }; \
             $failedList += [pscustomobject]$failItem; \
             $interimSummary = [ordered]@{ \
                 timestamp = $ts; \
-                mode = (if ($isTimeMode) { "duration" } else { "count" }); \
+                mode = $(if ($isTimeMode) { "duration" } else { "count" }); \
                 target = $targetInput; \
                 executed = $i; \
                 passed = $i - $failedList.Count; \
@@ -118,7 +118,7 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
     $executedCount = $i - 1; \
     $summary = [ordered]@{ \
         timestamp = $ts; \
-        mode = (if ($isTimeMode) { "duration" } else { "count" }); \
+        mode = $(if ($isTimeMode) { "duration" } else { "count" }); \
         target = $targetInput; \
         executed = $executedCount; \
         passed = $executedCount - $failedList.Count; \
@@ -152,7 +152,7 @@ update-agents:
     npx --yes "git+ssh://git@github.com/kassyi/antigravity-global-agents.git" --copy
 
 build-cuda:
-    cmd /c ".\src\Native\Kassyi.GSharp.Stdlib.Math.Cuda\build.bat"
+    cmd /c ".\src\Native\Kassyi.GSharp.Stdlib.GpuMath.Cuda\build.bat"
 build-cs:
     dotnet build
 
