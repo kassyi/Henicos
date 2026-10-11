@@ -88,14 +88,14 @@ public class GpuBigIntNttReciprocalTests
 
         // resultBuffer holds the initial guess, and will receive the final answer
         // size: same as D, but can be slightly larger depending on target bits
-        int resultWords = kWords;
+        int targetBits = 2 * kBits;
+        int resultWords = (targetBits + 31) / 32;
         BigInteger initialGuess = BigInteger.One << kBits;
         using var resultBuffer = GpuBigUInt.FromBigInteger(workspace, initialGuess, resultWords);
 
         // Execute MegaKernel
         // Margin and bit counts as per standard NR integers
         int iterations = 10;
-        int targetBits = 2 * kBits;
         
         // This is a complex internal API, ensure we supply correctly
         // (marginWords, numBits, marginBits, iterations, targetBits)
