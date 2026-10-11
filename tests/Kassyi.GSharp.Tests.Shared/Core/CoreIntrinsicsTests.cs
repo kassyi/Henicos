@@ -203,4 +203,46 @@ public class CoreIntrinsicsTests
         Assert.Equal((double)z, d4.Z);
         Assert.Equal((double)w, d4.W);
     }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_AddedPtxIntrinsics_HostInvocation_ThrowsGpuOnlyException()
+    {
+        // Verify all Phase 3 PTX Intrinsics throw GpuOnlyException when invoked on the host CPU
+        uint a = 10, b = 20;
+        ulong c = 30, carry = 0;
+        int sa = 10, sb = 20;
+        long sc = 30;
+
+        Assert.Throws<GpuOnlyException>(() => Gpu.MultiplyAddWide(a, b, c));
+        Assert.Throws<GpuOnlyException>(() => Gpu.MultiplyAddWide(sa, sb, sc));
+        Assert.Throws<GpuOnlyException>(() => Gpu.MultiplyAddWideWithCarry(a, b, c, ref carry));
+
+        Assert.Throws<GpuOnlyException>(() => Gpu.LaneId());
+        Assert.Throws<GpuOnlyException>(() => Gpu.WarpId());
+        Assert.Throws<GpuOnlyException>(() => Gpu.SmId());
+
+        int intVal = 42;
+        Assert.Throws<GpuOnlyException>(() => Gpu.LoadCachedGlobal(ref intVal));
+        Assert.Throws<GpuOnlyException>(() => Gpu.StoreCachedGlobal(ref intVal, 100));
+        Assert.Throws<GpuOnlyException>(() => Gpu.Prefetch(IntPtr.Zero));
+        Assert.Throws<GpuOnlyException>(() => Gpu.PrefetchUniform(IntPtr.Zero));
+        Assert.Throws<GpuOnlyException>(() => Gpu.ApplyPriorityL2(IntPtr.Zero, 128, 0.5f));
+        Assert.Throws<GpuOnlyException>(() => Gpu.ConvertToSharedMemory(ref intVal));
+
+        byte sharedByte = 0;
+        byte globalByte = 0;
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsync(ref sharedByte, in globalByte, 4));
+
+        ulong barrier = 0;
+        Assert.Throws<GpuOnlyException>(() => Gpu.MBarrierInit(ref barrier, 32));
+        Assert.Throws<GpuOnlyException>(() => Gpu.MBarrierArrive(ref barrier));
+        Assert.Throws<GpuOnlyException>(() => Gpu.MBarrierWait(ref barrier, 0));
+
+        int frag = 0;
+        Assert.Throws<GpuOnlyException>(() => Gpu.WmmaLoadMatrixSync(ref frag, IntPtr.Zero, 16));
+        Assert.Throws<GpuOnlyException>(() => Gpu.WmmaStoreMatrixSync(IntPtr.Zero, ref frag, 16));
+        Assert.Throws<GpuOnlyException>(() => Gpu.WmmaMmaSync(ref frag, ref frag, ref frag, ref frag));
+    }
 }
+

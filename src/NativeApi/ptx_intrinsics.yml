@@ -2,7 +2,9 @@ namespace: Kassyi.GSharp.Core
 className: Gpu
 
 methods:
-  # --- Gpu Bitwise & Arithmetic Intrinsics ---
+  # ===========================================================================
+  # 1. Gpu Bitwise, Arithmetic & Basic Operations
+  # ===========================================================================
   - name: BitReverse
     nativeName: __brev
     summary: Reverses the bit order of a 32-bit unsigned integer using the __brev hardware instruction.
@@ -172,7 +174,9 @@ methods:
     summary: Synchronizes all threads across the entire cooperative grid (cg::this_grid().sync()).
     returnType: void
 
-  # --- Warp Intrinsics ---
+  # ===========================================================================
+  # 2. Warp Synchronous Primitives
+  # ===========================================================================
   - name: ActiveMask
     className: Warp
     nativeName: __activemask
@@ -420,7 +424,9 @@ methods:
         type: T
         description: The value contributed by this thread.
 
-  # --- Gpu Bit Manipulation & Crypto ---
+  # ===========================================================================
+  # 3. Bit Manipulation & Cryptographic Intrinsics
+  # ===========================================================================
   - name: PopCount
     nativeName: __popc
     summary: Counts the number of set bits (population count) in a 32-bit unsigned integer.
@@ -539,7 +545,9 @@ methods:
         type: uint
         description: The second operand.
 
-  # --- Memory Synchronization & Fences ---
+  # ===========================================================================
+  # 4. Memory Synchronization, Fences & Timers
+  # ===========================================================================
   - name: ThreadFence
     nativeName: __threadfence
     summary: Ensures memory writes are visible across all threads on device.
@@ -568,7 +576,9 @@ methods:
     returnType: ulong
     returnDescription: The 64-bit cycle counter value.
 
-  # --- Additional Hardware Atomics ---
+  # ===========================================================================
+  # 5. Additional Hardware Atomics
+  # ===========================================================================
   - name: AtomicExch
     nativeName: atomicExch
     summary: Atomically exchanges the value at address with val.
@@ -678,7 +688,9 @@ methods:
         type: T
         description: The value to XOR.
 
-  # --- Advanced Bitwise & Arithmetic Intrinsics ---
+  # ===========================================================================
+  # 6. Advanced Bitwise, Logic & SIMD Intrinsics (BFE/BFI/LOP3/DP4A/SAD4)
+  # ===========================================================================
   - name: BitFieldExtract
     nativeName: __gsharp_bfe
     summary: Extracts a bit field from a 32-bit unsigned integer using the PTX bfe instruction.
@@ -833,6 +845,9 @@ methods:
         type: uint
         description: The accumulator.
 
+  # ===========================================================================
+  # 7. Warp Synchronous Match & Execution Control
+  # ===========================================================================
   - name: MatchAnySync
     nativeName: __match_any_sync
     summary: Performs a broadcast-and-compare operation across threads in a warp, returning a mask of threads holding the same value.
@@ -901,3 +916,263 @@ methods:
       - name: val
         type: T
         description: The value to add.
+
+  # ===========================================================================
+  # 8. Extended Arithmetic - Multi-Precision / BigInt
+  # ===========================================================================
+  - name: MultiplyAddWide
+    nativeName: __gsharp_mad_wide
+    summary: Computes (a * b) + c with full 64-bit precision without intermediate overflow.
+    returnType: ulong
+    returnDescription: The 64-bit result of (a * b) + c.
+    parameters:
+      - name: a
+        type: uint
+        description: The first 32-bit unsigned multiplicand.
+      - name: b
+        type: uint
+        description: The second 32-bit unsigned multiplicand.
+      - name: c
+        type: ulong
+        description: The 64-bit unsigned addend.
+
+  - name: MultiplyAddWide
+    nativeName: __gsharp_mad_wide_s
+    summary: Computes (a * b) + c with full 64-bit signed precision without intermediate overflow.
+    returnType: long
+    returnDescription: The 64-bit result of (a * b) + c.
+    parameters:
+      - name: a
+        type: int
+        description: The first 32-bit signed multiplicand.
+      - name: b
+        type: int
+        description: The second 32-bit signed multiplicand.
+      - name: c
+        type: long
+        description: The 64-bit signed addend.
+
+  - name: MultiplyAddWideWithCarry
+    nativeName: __gsharp_madc_cc
+    summary: Computes (a * b) + c + carry-in with carry-out propagation.
+    returnType: ulong
+    returnDescription: The 64-bit result.
+    parameters:
+      - name: a
+        type: uint
+        description: The first 32-bit unsigned multiplicand.
+      - name: b
+        type: uint
+        description: The second 32-bit unsigned multiplicand.
+      - name: c
+        type: ulong
+        description: The 64-bit unsigned addend.
+      - name: carry
+        type: ref ulong
+        description: The carry-in value (0 or 1), updated with the carry-out result.
+
+  # ===========================================================================
+  # 9. Special Registers & Hardware IDs
+  # ===========================================================================
+  - name: LaneId
+    nativeName: __lane_id
+    summary: Returns the lane ID of the calling thread within its warp (0-31).
+    returnType: int
+    returnDescription: The lane index within the current warp.
+
+  - name: WarpId
+    nativeName: __warp_id
+    summary: Returns the warp ID of the calling warp within its thread block.
+    returnType: int
+    returnDescription: The warp index within the current thread block.
+
+  - name: SmId
+    nativeName: __smid
+    summary: Returns the streaming multiprocessor ID on which the calling thread is executing (%smid).
+    returnType: int
+    returnDescription: The streaming multiprocessor ID.
+
+  # ===========================================================================
+  # 10. Memory, Cache, Async DMA & Barriers
+  # ===========================================================================
+  - name: LoadCachedGlobal
+    nativeName: __ldcg
+    summary: Loads data from global memory bypassing the L1 cache directly into registers (PTX ld.cg).
+    typeTemplate:
+      placeholder: T
+      types: [byte, sbyte, short, ushort, int, uint, long, ulong, float, double]
+    returnType: T
+    returnDescription: The loaded value.
+    parameters:
+      - name: address
+        type: ref T
+        description: Reference to the global memory location to load from.
+
+  - name: StoreCachedGlobal
+    nativeName: __stcg
+    summary: Stores data to global memory caching in L2 only (PTX st.cg).
+    typeTemplate:
+      placeholder: T
+      types: [byte, sbyte, short, ushort, int, uint, long, ulong, float, double]
+    returnType: void
+    parameters:
+      - name: address
+        type: ref T
+        description: Reference to the global memory location to store into.
+      - name: val
+        type: T
+        description: The value to store.
+
+  - name: Prefetch
+    nativeName: __prefetch
+    summary: Prefetches data at the specified address into the L2 cache (PTX prefetch.global.L2).
+    returnType: void
+    parameters:
+      - name: address
+        type: IntPtr
+        description: The memory address to prefetch into L2.
+
+  - name: PrefetchUniform
+    nativeName: __prefetchu
+    summary: Prefetches uniform data at the specified address into the L1 cache (PTX prefetchu.L1).
+    returnType: void
+    parameters:
+      - name: address
+        type: IntPtr
+        description: The uniform memory address to prefetch into L1.
+
+  - name: ApplyPriorityL2
+    nativeName: __applypriority
+    summary: Eviction policy hint for the L2 cache line containing address (PTX applypriority).
+    returnType: void
+    parameters:
+      - name: address
+        type: IntPtr
+        description: Memory address within the target cache line.
+      - name: bytes
+        type: uint
+        description: Number of bytes to apply the priority to.
+      - name: priority
+        type: float
+        description: The cache eviction priority (0.0 to 1.0).
+
+  - name: ConvertToSharedMemory
+    nativeName: __cvta_generic_to_shared
+    summary: Converts a generic pointer referencing shared memory to a shared state space address (PTX cvta.to.shared).
+    typeTemplate:
+      placeholder: T
+      types: [byte, int, uint, long, ulong, float, double]
+    returnType: IntPtr
+    returnDescription: The shared space pointer.
+    parameters:
+      - name: address
+        type: ref T
+        description: The reference in shared memory.
+
+  - name: CopyAsync
+    nativeName: __gsharp_cp_async
+    summary: Asynchronously copies bytes from global memory directly into shared memory bypassing registers (PTX cp.async).
+    returnType: void
+    parameters:
+      - name: sharedDst
+        type: ref byte
+        description: The destination reference in shared memory.
+      - name: globalSrc
+        type: in byte
+        description: The source reference in global memory.
+      - name: bytes
+        type: uint
+        description: Number of bytes to asynchronously transfer (4, 8, or 16).
+
+  - name: MBarrierInit
+    nativeName: __gsharp_mbarrier_init
+    summary: Initializes an asynchronous barrier object in shared memory (PTX mbarrier.init).
+    returnType: void
+    parameters:
+      - name: barrier
+        type: ref ulong
+        description: The 64-bit mbarrier object in shared memory.
+      - name: expectedCount
+        type: uint
+        description: The number of threads expected to arrive at the barrier.
+
+  - name: MBarrierArrive
+    nativeName: __gsharp_mbarrier_arrive
+    summary: Signals arrival of the calling thread at the mbarrier object (PTX mbarrier.arrive).
+    returnType: void
+    parameters:
+      - name: barrier
+        type: ref ulong
+        description: The 64-bit mbarrier object.
+
+  - name: MBarrierWait
+    nativeName: __gsharp_mbarrier_wait
+    summary: Blocks the calling thread until the barrier completes the specified phase (PTX mbarrier.test_wait).
+    returnType: void
+    parameters:
+      - name: barrier
+        type: ref ulong
+        description: The 64-bit mbarrier object.
+      - name: phase
+        type: uint
+        description: The phase parity to wait for.
+
+  # ===========================================================================
+  # 11. Tensor Core (WMMA - Warp Matrix Multiply-Accumulate)
+  # ===========================================================================
+  - name: WmmaLoadMatrixSync
+    nativeName: __gsharp_wmma_load_matrix_sync
+    summary: Loads a matrix fragment from memory across the warp synchronously.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, float]
+    returnType: void
+    parameters:
+      - name: fragment
+        type: ref T
+        description: The local fragment storage receiving matrix elements.
+      - name: ptr
+        type: IntPtr
+        description: Source memory address.
+      - name: ldm
+        type: uint
+        description: Leading dimension stride in elements.
+
+  - name: WmmaStoreMatrixSync
+    nativeName: __gsharp_wmma_store_matrix_sync
+    summary: Stores an accumulator matrix fragment back to memory across the warp synchronously.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, float]
+    returnType: void
+    parameters:
+      - name: ptr
+        type: IntPtr
+        description: Destination memory address.
+      - name: fragment
+        type: ref T
+        description: The local fragment storage holding matrix elements to store.
+      - name: ldm
+        type: uint
+        description: Leading dimension stride in elements.
+
+  - name: WmmaMmaSync
+    nativeName: __gsharp_wmma_mma_sync
+    summary: Performs a warp-synchronous matrix multiply-accumulate D = A * B + C on Tensor Cores.
+    typeTemplate:
+      placeholder: T
+      types: [int, float]
+    returnType: void
+    parameters:
+      - name: d
+        type: ref T
+        description: Destination accumulator fragment.
+      - name: a
+        type: ref T
+        description: Multiplicand A fragment.
+      - name: b
+        type: ref T
+        description: Multiplicand B fragment.
+      - name: c
+        type: ref T
+        description: Addend C fragment.
