@@ -1,30 +1,18 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
-public class GpuBigIntBitwiseTests : IDisposable
+public class GpuBigIntBitwiseTests
 {
-    private readonly GpuKernelLoader.CudaContextScope _scope;
-    private readonly GpuWorkspace _context;
-
-    public GpuBigIntBitwiseTests()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
-    }
-
-    public void Dispose()
-    {
-        _context.Dispose();
-        _scope.Dispose();
-    }
-
-    [Fact]
+    [SkippableFact]
     public void Test_Bitwise_Operations()
     {
-        using var a = new GpuBigUInt(_context, 4);
-        using var b = new GpuBigUInt(_context, 4);
-        using var r = new GpuBigUInt(_context, 4);
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
+
+        using var a = new GpuBigUInt(context, 4);
+        using var b = new GpuBigUInt(context, 4);
+        using var r = new GpuBigUInt(context, 4);
         
         GpuBigIntMath.BitwiseAnd(a, b, r);
         GpuBigIntMath.BitwiseOr(a, b, r);
