@@ -105,3 +105,114 @@ public static partial class CudaDriverApi
     }
 }
 
+/// <summary>Represents a 1D or 2D CUDA array descriptor.</summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct CudaArrayDescriptor
+{
+    /// <summary>Width of the array.</summary>
+    public nuint Width;
+
+    /// <summary>Height of the array.</summary>
+    public nuint Height;
+
+    /// <summary>Array format code.</summary>
+    public int Format;
+
+    /// <summary>Number of channels per element.</summary>
+    public uint NumChannels;
+}
+
+/// <summary>Represents a CUDA resource descriptor.</summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct CudaResourceDescriptor
+{
+    /// <summary>Resource type.</summary>
+    public int ResType;
+
+    /// <summary>Resource handle or pointer.</summary>
+    public IntPtr Res;
+
+    /// <summary>Flags.</summary>
+    public uint Flags;
+}
+
+/// <summary>Represents a CUDA texture descriptor.</summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct CudaTextureDescriptor
+{
+    /// <summary>Address mode 0.</summary>
+    public int AddressMode0;
+
+    /// <summary>Address mode 1.</summary>
+    public int AddressMode1;
+
+    /// <summary>Address mode 2.</summary>
+    public int AddressMode2;
+
+    /// <summary>Filter mode.</summary>
+    public int FilterMode;
+
+    /// <summary>Flags.</summary>
+    public uint Flags;
+
+    /// <summary>Max anisotropy.</summary>
+    public uint MaxAnisotropy;
+
+    /// <summary>Mipmap filter mode.</summary>
+    public int MipmapFilterMode;
+
+    /// <summary>Mipmap level bias.</summary>
+    public float MipmapLevelBias;
+
+    /// <summary>Min mipmap level clamp.</summary>
+    public float MinMipmapLevelClamp;
+
+    /// <summary>Max mipmap level clamp.</summary>
+    public float MaxMipmapLevelClamp;
+
+    /// <summary>Border color 0.</summary>
+    public float BorderColor0;
+
+    /// <summary>Border color 1.</summary>
+    public float BorderColor1;
+
+    /// <summary>Border color 2.</summary>
+    public float BorderColor2;
+
+    /// <summary>Border color 3.</summary>
+    public float BorderColor3;
+}
+
+/// <summary>Represents a CUDA resource view descriptor.</summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct CudaResourceViewDescriptor
+{
+    /// <summary>Resource view format.</summary>
+    public int Format;
+
+    /// <summary>Width in elements.</summary>
+    public nuint Width;
+
+    /// <summary>Height in elements.</summary>
+    public nuint Height;
+
+    /// <summary>Depth in elements.</summary>
+    public nuint Depth;
+
+    /// <summary>First mipmap level.</summary>
+    public uint FirstMipmapLevel;
+
+    /// <summary>Last mipmap level.</summary>
+    public uint LastMipmapLevel;
+
+    /// <summary>First layer index.</summary>
+    public uint FirstLayer;
+
+    /// <summary>Last layer index.</summary>
+    public uint LastLayer;
+
+    /// <summary>Flags.</summary>
+    public uint Flags;
+}
+
+

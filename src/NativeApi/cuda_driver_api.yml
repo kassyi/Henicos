@@ -3,6 +3,9 @@ className: CudaDriverApi
 libraryName: nvcuda.dll
 
 methods:
+  # ---------------------------------
+  # 1. Initialization & Device Management
+  # ---------------------------------
   - name: cuInit
     returnType: CUresult
     summary: Initializes the CUDA driver API.
@@ -60,6 +63,9 @@ methods:
         type: out nint
         description: Returned total memory in bytes.
 
+  # ---------------------------------
+  # 2. Context Management
+  # ---------------------------------
   - name: cuCtxCreate_v2
     returnType: CUresult
     summary: Creates a new CUDA context.
@@ -125,6 +131,9 @@ methods:
     summary: Blocks until the device has completed all preceding requested tasks.
     returnDescription: CudaSuccess on success; otherwise, an error code.
 
+  # ---------------------------------
+  # 3. Events & Profiling / Timing
+  # ---------------------------------
   - name: cuEventCreate
     returnType: CUresult
     summary: Creates an event.
@@ -182,6 +191,9 @@ methods:
         type: IntPtr
         description: Event to destroy.
 
+  # ---------------------------------
+  # 4. Module & Function Management
+  # ---------------------------------
   - name: cuModuleLoadDataEx
     returnType: CUresult
     summary: Loads a module with options from byte array.
@@ -249,6 +261,9 @@ methods:
         type: IntPtr
         description: Module handle to unload.
 
+  # ---------------------------------
+  # 5. Memory Management - Device Allocation & Copies
+  # ---------------------------------
   - name: cuMemAlloc_v2
     returnType: CUresult
     summary: Allocates device memory.
@@ -348,6 +363,9 @@ methods:
         type: IntPtr
         description: Stream identifier.
 
+  # ---------------------------------
+  # 6. Kernel Execution & Cooperative Launch
+  # ---------------------------------
   - name: cuLaunchKernel
     isUnsafe: true
     returnType: CUresult
@@ -425,6 +443,9 @@ methods:
         type: void**
         description: Array of pointers to kernel parameters.
 
+  # ---------------------------------
+  # 7. Streams & Asynchronous Memory Operations
+  # ---------------------------------
   - name: cuStreamCreate
     returnType: CUresult
     summary: Creates a stream.
@@ -536,6 +557,9 @@ methods:
         type: IntPtr
         description: Stream identifier.
 
+  # ---------------------------------
+  # 8. CUDA Graph Management
+  # ---------------------------------
   - name: cuStreamBeginCapture
     returnType: CUresult
     summary: Begins graph capture on a stream.
@@ -624,6 +648,9 @@ methods:
         type: IntPtr
         description: Graph to destroy.
 
+  # ---------------------------------
+  # 9. Function & Device Attributes / Peer Access
+  # ---------------------------------
   - name: cuFuncGetAttribute
     returnType: CUresult
     summary: Returns information about a function.
@@ -687,6 +714,9 @@ methods:
         type: IntPtr
         description: Context to disable access to.
 
+  # ---------------------------------
+  # 10. Unified / Managed Memory & Memory Advice
+  # ---------------------------------
   - name: cuMemAllocManaged
     returnType: CUresult
     summary: Allocates memory that will be automatically managed by the Unified Memory system.
@@ -738,6 +768,9 @@ methods:
         type: int
         description: Device to apply advice to.
 
+  # ---------------------------------
+  # 11. Page-locked / Host Pinned Memory
+  # ---------------------------------
   - name: cuMemAllocHost
     returnType: CUresult
     summary: Allocates page-locked host memory.
@@ -813,6 +846,9 @@ methods:
         type: uint
         description: Flags (must be 0).
 
+  # ---------------------------------
+  # 12. Occupancy Calculator
+  # ---------------------------------
   - name: cuOccupancyMaxActiveBlocksPerMultiprocessor
     returnType: CUresult
     summary: Returns occupancy for a device function.
@@ -854,3 +890,114 @@ methods:
       - name: blockSizeLimit
         type: int
         description: Maximum block size limit (0 for no limit).
+
+  # ---------------------------------
+  # 13. Device Information & Memory Range Attributes
+  # ---------------------------------
+  - name: cuDeviceGetName
+    returnType: CUresult
+    summary: Returns an identifer string for the device.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: name
+        type: byte[]
+        description: Returned identifier string.
+      - name: len
+        type: int
+        description: Maximum length of string to store in name.
+      - name: dev
+        type: int
+        description: Device to query.
+
+  - name: cuMemRangeGetAttribute
+    returnType: CUresult
+    summary: Queries an attribute of a given memory range.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: data
+        type: IntPtr
+        description: A returned attribute value.
+      - name: dataSize
+        type: IntPtr
+        description: Size of the data in bytes.
+      - name: attribute
+        type: int
+        description: The attribute to query.
+      - name: devPtr
+        type: IntPtr
+        description: Start of the memory range.
+      - name: count
+        type: IntPtr
+        description: Size of the memory range in bytes.
+  # ---------------------------------
+  # 14. Texture & Surface Object APIs
+  # ---------------------------------
+  - name: cuArrayCreate
+    returnType: CUresult
+    summary: Creates a 1D or 2D CUDA array.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pHandle
+        type: out IntPtr
+        description: Returned array handle.
+      - name: pAllocateArray
+        type: ref CudaArrayDescriptor
+        description: Array creation descriptor.
+
+  - name: cuArrayDestroy
+    returnType: CUresult
+    summary: Destroys a CUDA array.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hArray
+        type: IntPtr
+        description: Array to destroy.
+
+  - name: cuTexObjectCreate
+    returnType: CUresult
+    summary: Creates a texture object.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pTexObject
+        type: out IntPtr
+        description: Returned texture object.
+      - name: pResDesc
+        type: ref CudaResourceDescriptor
+        description: Resource descriptor.
+      - name: pTexDesc
+        type: ref CudaTextureDescriptor
+        description: Texture descriptor.
+      - name: pResViewDesc
+        type: IntPtr
+        description: Resource view descriptor or IntPtr.Zero.
+
+  - name: cuTexObjectDestroy
+    returnType: CUresult
+    summary: Destroys a texture object.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: texObject
+        type: IntPtr
+        description: Texture object to destroy.
+
+  - name: cuSurfObjectCreate
+    returnType: CUresult
+    summary: Creates a surface object.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: pSurfObject
+        type: out IntPtr
+        description: Returned surface object.
+      - name: pResDesc
+        type: ref CudaResourceDescriptor
+        description: Resource descriptor.
+
+  - name: cuSurfObjectDestroy
+    returnType: CUresult
+    summary: Destroys a surface object.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: surfObject
+        type: IntPtr
+        description: Surface object to destroy.
+
