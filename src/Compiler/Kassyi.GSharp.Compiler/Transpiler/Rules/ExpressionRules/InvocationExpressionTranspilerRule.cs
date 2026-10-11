@@ -20,6 +20,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             new BclIntrinsicTranspilerRule(),
             new GpuMacroTranspilerRule(),
             new MemoryExtensionsTranspilerRule(),
+            new StackLinqFusionRule(),
             new StackLinqTranspilerRule()
         );
 
