@@ -1,4 +1,3 @@
-using Xunit.Sdk;
 
 namespace Kassyi.GSharp.Tests.Infrastructure;
 
