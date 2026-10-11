@@ -1,5 +1,4 @@
 using System.Text;
-using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -211,7 +210,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                 FileName = NvccPath,
                 Arguments = "--version"
             };
-            var result = ProcessRunner.Default.Run(checkInfo);
+            var result = this.ProcessRunner.Run(checkInfo);
             return result.ExitCode == 0;
         }
         catch (Exception ex)
@@ -359,7 +358,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
         try
         {
-            var result = ProcessRunner.Default.Run(startInfo);
+            var result = this.ProcessRunner.Run(startInfo);
             var output = result.StandardOutput;
             var error = result.StandardError;
 

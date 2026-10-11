@@ -12,9 +12,13 @@
     <Using Include="System.Linq" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Kassyi.GSharp.Tests.Common' and '$(IsRoslynComponent)' != 'true'">
-    <ProjectReference Include="$(MSBuildThisFileDirectory)Kassyi.GSharp.Tests.Common\Kassyi.GSharp.Tests.Common.csproj" />
-    <Using Include="Kassyi.GSharp.Tests.Common" />
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'Kassyi.GSharp.Tests.Infrastructure' and '$(IsRoslynComponent)' != 'true'">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Kassyi.GSharp.Tests.Infrastructure\Kassyi.GSharp.Tests.Infrastructure.csproj" />
+    <Using Include="Kassyi.GSharp.Tests.Infrastructure" />
+    <AssemblyAttribute Include="Xunit.TestCaseOrdererAttribute">
+      <_Parameter1>Kassyi.GSharp.Tests.Infrastructure.RandomTestCaseOrderer</_Parameter1>
+      <_Parameter2>Kassyi.GSharp.Tests.Infrastructure</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>

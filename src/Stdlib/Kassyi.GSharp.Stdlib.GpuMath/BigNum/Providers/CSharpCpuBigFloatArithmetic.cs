@@ -1,10 +1,5 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
-using System;
-using System.Buffers;
-using System.Numerics;
-using System.Runtime.InteropServices;
-
 /// <summary>
 /// Provides a reference host (CPU) execution implementation for arbitrary-precision floating-point arithmetic.
 /// </summary>
@@ -17,6 +12,7 @@ using System.Runtime.InteropServices;
 /// <b>Thread Safety:</b> Stateless and thread-safe.
 /// </para>
 /// </remarks>
+[ExcludeFromCodeCoverage]
 public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
 {
     /// <summary>

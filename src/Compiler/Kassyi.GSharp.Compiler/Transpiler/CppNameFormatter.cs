@@ -117,7 +117,7 @@ internal static class CppNameFormatter
         AppendParentDelegate<TState> appendParent,
         ref TState state)
     {
-        if (symbol.ContainingType is { } parentType && Marshaling.CudaLayoutRules.IsCustomStruct(parentType))
+        if (symbol.ContainingType is { } parentType && CudaLayoutRules.IsCustomStruct(parentType))
         {
             appendParent(ref state, parentType);
             appendSeparator(ref state);

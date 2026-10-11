@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Generated;
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public interface IComputeBenchmark
@@ -21,7 +22,7 @@ public interface IComputeBenchmark
             return IntPtr.Zero;
         }
 
-        var hModule = Kassyi.GSharp.Generated.GSharpModuleContext_Henicos_Benchmarks.GetOrLoadModule();
+        var hModule = GSharpModuleContext_Henicos_Benchmarks.GetOrLoadModule();
         return GpuKernelLoader.GetFunction(hModule, GSharpKernelName);
     }
     string NativeKernelName => "";

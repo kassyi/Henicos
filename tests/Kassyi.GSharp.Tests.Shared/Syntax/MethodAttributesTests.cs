@@ -26,12 +26,7 @@ public partial class MethodAttributesTests
 
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileDeviceMethod(string methodName)
     {
-        var testCasePath = Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Analyzers", "MethodAttributes.cs");
-        var compilation = MegaCompilationCache.GetDynamicCompilation(testCasePath);
-
-        var tree = compilation.SyntaxTrees.First(t => t.FilePath == testCasePath);
-        var semanticModel = compilation.GetSemanticModel(tree);
-
+        var (compilation, tree, semanticModel) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "MethodAttributes.cs"));
         var methodDecl = tree.GetRoot().DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .First(m => m.Identifier.Text == methodName);

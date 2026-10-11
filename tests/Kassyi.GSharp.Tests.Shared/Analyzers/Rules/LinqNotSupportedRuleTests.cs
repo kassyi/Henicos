@@ -9,7 +9,7 @@ public class LinqNotSupportedRuleTests
     {
         // Arrange
         var rule = LinqNotSupportedRule.Instance;
-        var (model, method) = Kassyi.GSharp.Tests.Shared.Helpers.MegaCompilationCache.GetMethodContext<Dummy_GSH02>("Invalid");
+        var (model, method) = RoslynTestUtility.GetLocalMethodContext(nameof(Dummy_GSH02), "Invalid");
         var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<QueryExpressionSyntax>().First();
         
         var reportedDiagnostics = new List<Diagnostic>();

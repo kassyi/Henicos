@@ -1,6 +1,4 @@
-using System.Buffers;
 using System.Collections.Concurrent;
-using Kassyi.GSharp.Runtime.Interop;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 /// <summary>
@@ -311,8 +309,11 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         }
 
         using var currentProduct = new GpuBigUInt(workspace, n + resultWords);
+        currentProduct.Clear();
         using var diff = new GpuBigUInt(workspace, n + resultWords);
+        diff.Clear();
         using var nextIter = new GpuBigUInt(workspace, n + 2 * resultWords);
+        nextIter.Clear();
 
         var maxOutWords = n + 2 * resultWords;
         var requiredLen = maxOutWords * 2;
@@ -537,6 +538,8 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             workspace.Provider.CopyHostToDevice(dF2, f2, key, workspace.Stream);
             workspace.Provider.CopyHostToDevice(dI1, i1, key, workspace.Stream);
             workspace.Provider.CopyHostToDevice(dI2, i2, key, workspace.Stream);
+
+            workspace.Provider.SynchronizeStream(workspace.Stream);
 
             return new TwiddleCache
             {

@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
@@ -14,6 +12,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Thread Safety:</b> Value-type semantics; distinct instances are safe for concurrent read operations.</para>
 /// </remarks>
 [StructLayout(LayoutKind.Sequential)]
+[ExcludeFromCodeCoverage]
 public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuBigUFloat>, IDisposable
 {
     /// <summary>

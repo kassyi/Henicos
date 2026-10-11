@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -15,6 +14,9 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
     {
         get; set;
     }
+
+    /// <summary>Gets or sets the process runner to use for executing external tools.</summary>
+    public IProcessRunner ProcessRunner { get; set; } = Helpers.ProcessRunner.Default;
 
     /// <summary>Retrieves source items to be processed by this compilation task.</summary>
     protected abstract ITaskItem[] GetSources();
@@ -83,8 +85,15 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
     private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string>?>> s_vcvarsCache =
         new(StringComparer.OrdinalIgnoreCase);
 
+    public bool DisableVcvarsCache { get; set; } = false;
+
     protected Dictionary<string, string>? GetVcvarsEnvironment(string vcvarsArch)
     {
+        if (DisableVcvarsCache)
+        {
+            return ResolveVcvarsEnvironment(vcvarsArch);
+        }
+
         return s_vcvarsCache.GetOrAdd(vcvarsArch,
             arch => new Lazy<Dictionary<string, string>?>(() => ResolveVcvarsEnvironment(arch))).Value;
     }
@@ -113,7 +122,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             }
         };
 
-        var vswhereResult = ProcessRunner.Default.Run(vswhereStartInfo);
+        var vswhereResult = this.ProcessRunner.Run(vswhereStartInfo);
         if (vswhereResult.ExitCode != 0)
         {
             return null;
@@ -145,7 +154,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             }
         };
 
-        var envResult = ProcessRunner.Default.Run(envStartInfo);
+        var envResult = this.ProcessRunner.Run(envStartInfo);
         if (envResult.ExitCode != 0)
         {
             return null;

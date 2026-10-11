@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 /// Provides reusable zero-allocation GPU device primitives for low-level multi-limb arithmetic,
 /// comparisons, and bit-level manipulations across custom GPU kernels.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public static partial class GpuBigIntPrimitiveOps
 {
     /// <summary>

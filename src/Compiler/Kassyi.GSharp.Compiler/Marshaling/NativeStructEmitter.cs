@@ -22,7 +22,8 @@ internal static class NativeStructEmitter
             writer.AppendLine("{");
         }
 
-        writer.AppendLine($"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = {layout.Size})]");
+        writer.AppendLine(
+            $"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = {layout.Size})]");
         writer.Append($"public unsafe partial struct {CppNameFormatter.TrimContextSuffix(s.Name)}");
         writer.AppendLine();
 
@@ -39,7 +40,8 @@ internal static class NativeStructEmitter
                 var fieldLayout = CudaLayoutRules.GetCudaLayout(field.Type);
                 currentOffset = CudaLayoutRules.AlignUp(currentOffset, fieldLayout.Alignment);
 
-                writer.AppendLine($"public const string DebugName_{field.Name} = \"{field.Type.GetFullyQualifiedName()}\";");
+                writer.AppendLine(
+                    $"public const string DebugName_{field.Name} = \"{field.Type.GetFullyQualifiedName()}\";");
                 writer.AppendLine($"[System.Runtime.InteropServices.FieldOffset({currentOffset})]");
 
                 MapToNativeField(writer, field, fieldLayout.Size);

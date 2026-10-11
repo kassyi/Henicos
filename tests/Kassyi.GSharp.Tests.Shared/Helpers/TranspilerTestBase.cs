@@ -31,9 +31,16 @@ public abstract class TranspilerTestBase
 
     protected string DialectName => IsCudaDialect ? "Cuda" : "Cpu";
 
-    protected GeneratorTestConfig TestGenerator(string relativePathToTestCases,
+    protected GeneratorTestConfig TestGenerator(string relativePathToTestCases = "",
         [CallerFilePath] string callerFilePath = "")
     {
+        if (string.IsNullOrEmpty(relativePathToTestCases))
+        {
+            var resolvedFile = RoslynTestUtility.ResolveKernelFilePath(callerFilePath);
+            // By-pass GetTestCasesDirectory since we already have absolute path
+            return new GeneratorTestConfig(resolvedFile).WithDialect(DialectName);
+        }
+
         return RoslynTestUtility.TestGenerator(relativePathToTestCases, callerFilePath)
             .WithDialect(DialectName);
     }
@@ -61,6 +68,20 @@ public abstract class TranspilerTestBase
         [CallerMemberName] string methodName = "")
     {
         return Verifier.Verify(target.ToFullString(), "cs").UseFastHashSnapshotName(methodName, DialectName);
+    }
+
+    /// <summary>
+    /// A convenient one-liner to generate and verify a source generator's output.
+    /// Combines TestGenerator(path).GetDriverAsync() and Verify(driver).
+    /// </summary>
+    protected async Task<SettingsTask> VerifyGeneratorAsync(
+        string relativePathToTestCases = "",
+        [CallerFilePath] string callerFilePath = "",
+        [CallerMemberName] string methodName = "")
+    {
+        var config = TestGenerator(relativePathToTestCases, callerFilePath);
+        var driver = await config.GetDriverAsync();
+        return Verify(driver, methodName);
     }
 }
 

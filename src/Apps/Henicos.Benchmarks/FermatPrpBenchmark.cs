@@ -1,3 +1,4 @@
+using Henicos.Benchmarks.Repositories;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 namespace Henicos.Benchmarks;
@@ -19,7 +20,7 @@ public class FermatPrpBenchmark
         using var scope = new GpuKernelLoader.CudaContextScope();
 
         var runner = new FermatAlgorithm(E);
-        var repository = new Repositories.FileCheckpointRepository(CheckpointFile, TempCheckpointFile);
+        var repository = new FileCheckpointRepository(CheckpointFile, TempCheckpointFile);
 
         var startIter = 0;
 

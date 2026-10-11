@@ -3,4 +3,14 @@
   <RunConfiguration>
     <MaxCpuCount>1</MaxCpuCount>
   </RunConfiguration>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <ExcludeByFile>**/obj/**/*.cs,**/*.g.cs,**/GeneratedDialects/**/*.cs,**/GeneratedNativeApi/**/*.cs</ExcludeByFile>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
 </RunSettings>

@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Compiler.Transpiler.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;/// <summary>
 /// Transpiles anonymous function syntax nodes (simple lambdas, parenthesized lambdas, and anonymous methods)

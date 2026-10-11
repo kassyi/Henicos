@@ -57,7 +57,13 @@ public abstract class Logger : ILogger
     /// <summary>
     /// Gets or sets a value indicating whether log entries are written to standard console output.
     /// </summary>
-    public static bool WriteToConsole { get; set; } = true;
+    private static readonly AsyncLocal<bool> _writeToConsole = new() { Value = true };
+    
+    public static bool WriteToConsole
+    {
+        get => _writeToConsole.Value;
+        set => _writeToConsole.Value = value;
+    }
 
     /// <summary>
     /// Writes a log entry.

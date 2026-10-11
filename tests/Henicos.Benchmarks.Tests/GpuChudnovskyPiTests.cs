@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Runtime.Interop;
-using Xunit;
 
 namespace Henicos.Benchmarks.Tests;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;

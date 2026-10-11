@@ -6,7 +6,7 @@ public class PoolStressTests
     [Category(TestCategory.Stress)]
     public void RoslynToCudaVisitor_PoolIsThreadSafeAndResetsProperly()
     {
-        var context = MegaCompilationCache.GetMethodContext<Dummy>("M");
+        var context = RoslynTestUtility.CreateDummyContext();
         var semanticModel = context.Model;
 
         var exceptions = new ConcurrentBag<Exception>();
@@ -37,7 +37,7 @@ public class PoolStressTests
     [Category(TestCategory.Stress)]
     public void GpuKernelValidationWalker_PoolIsThreadSafeAndResetsProperly()
     {
-        var context = MegaCompilationCache.GetMethodContext<Dummy>("M");
+        var context = RoslynTestUtility.CreateDummyContext();
         var semanticModel = context.Model;
         var methodSymbol = context.MethodSymbol;
         var methodDecl =

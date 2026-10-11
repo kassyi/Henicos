@@ -6,6 +6,7 @@ using Core;
 // Reference/Inspiration: stillwater-sc/universal (Mathematical concepts)
 
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
+[ExcludeFromCodeCoverage]
 public static partial class GpuBigFloatKernels
 {
     public struct GpuBigFloatAddContext

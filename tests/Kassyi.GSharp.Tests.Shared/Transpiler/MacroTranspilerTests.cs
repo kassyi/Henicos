@@ -13,10 +13,7 @@ public class MacroTranspilerTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public async Task Test_MacroTranspiler_ExpandsMacrosCorrectly_Snapshots()
     {
-        var config = TestGenerator("Transpiler/MacroTranspiler_InGpuKernel.cu.cs");
-        var driver = await config.GetDriverAsync();
-
-        await Verify(driver);
+        await VerifyGeneratorAsync();
     }
 }
 

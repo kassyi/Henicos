@@ -1,4 +1,5 @@
 #nullable enable
+#pragma warning disable RS0030 // Do not use banned APIs
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Tests.Shared.Helpers;
@@ -25,6 +26,74 @@ public static class RoslynTestUtility
         return testCasesDir;
     }
 
+    /// <summary>Automatically resolves the appropriate .cu.cs kernel file for a given test class based on naming conventions.</summary>
+    public static string ResolveKernelFilePath([CallerFilePath] string callerFilePath = "")
+    {
+        var directory = Path.GetDirectoryName(callerFilePath) ?? string.Empty;
+        var testClassName = Path.GetFileNameWithoutExtension(callerFilePath);
+
+        string baseName = testClassName.EndsWith("Tests")
+            ? testClassName.Substring(0, testClassName.Length - 5)
+            : testClassName;
+
+        var candidates = new[]
+        {
+            Path.Combine(directory, $"{baseName}TestKernels.cu.cs"),
+            Path.Combine(directory, $"{baseName}Kernels.cu.cs"),
+            Path.Combine(directory, $"{testClassName}Kernels.cu.cs"),
+            Path.Combine(directory, $"{testClassName}.cu.cs")
+        };
+
+        var targetFile = candidates.FirstOrDefault(File.Exists);
+        if (targetFile == null)
+        {
+            throw new FileNotFoundException(
+                $"Could not automatically resolve kernel file for test {testClassName}. Tried: {string.Join(", ", candidates.Select(Path.GetFileName))}");
+        }
+
+        return targetFile;
+    }
+
+    /// <summary>Retrieves the compilation context (Compilation, SyntaxTree, SemanticModel) for a dynamically resolved test kernel file.</summary>
+    public static (Compilation Compilation, SyntaxTree Tree, SemanticModel Model) GetKernelContext(
+        [CallerFilePath] string callerFilePath = "")
+    {
+        var filePath = ResolveKernelFilePath(callerFilePath);
+        var compilation = MegaCompilationCache.GetDynamicCompilation(filePath);
+        var tree = compilation.SyntaxTrees.First(t => t.FilePath == filePath);
+        var model = compilation.GetSemanticModel(tree);
+        return (compilation, tree, model);
+    }
+
+    /// <summary>Retrieves the compilation context for a specific test case file relative to the TestCases directory.</summary>
+    public static (Compilation Compilation, SyntaxTree Tree, SemanticModel Model) GetTestCaseContext(
+        string relativePathToTestCase, [CallerFilePath] string callerFilePath = "")
+    {
+        var testCasesDir = GetTestCasesDirectory(callerFilePath);
+        var filePath = Path.Combine(testCasesDir, relativePathToTestCase);
+        var compilation = MegaCompilationCache.GetDynamicCompilation(filePath);
+        var tree = compilation.SyntaxTrees.First(t => t.FilePath == filePath);
+        var model = compilation.GetSemanticModel(tree);
+        return (compilation, tree, model);
+    }
+
+    /// <summary>Gets the base compilation references to be used for dynamically compiled tests or analyzers.</summary>
+    public static IEnumerable<MetadataReference> BaseReferences => MegaCompilationCache.BaseCompilation.References;
+
+    /// <summary>Retrieves the semantic model and method symbol for a given method in a dynamically resolved test kernel file.</summary>
+    public static (SemanticModel Model, IMethodSymbol MethodSymbol) GetMethodContext<TTarget>(
+        string methodName,
+        [CallerFilePath] string callerFilePath = "")
+    {
+        return MegaCompilationCache.GetMethodContext<TTarget>(methodName, callerFilePath);
+    }
+
+    /// <summary>Retrieves a named type symbol from the base mega compilation.</summary>
+    public static INamedTypeSymbol GetNamedTypeSymbol(string typeName)
+    {
+        return MegaCompilationCache.GetNamedTypeSymbol(typeName);
+    }
+
     /// <summary>Creates a Roslyn compilation by parsing source text and adding it to the mega compilation cache.</summary>
     public static Compilation CreateCompilation(string source)
     {
@@ -34,6 +103,33 @@ public static class RoslynTestUtility
 #pragma warning restore RS0030
 
         return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
+    }
+
+    /// <summary>Creates a dummy semantic model and method symbol for testing analyzers or isolated transpiler nodes.</summary>
+    public static (SemanticModel Model, IMethodSymbol MethodSymbol) CreateDummyContext()
+    {
+        var src = "class Dummy_RoslynTestUtility { public void M() {} }";
+        var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(src);
+        var comp = Microsoft.CodeAnalysis.CSharp.CSharpCompilation.Create("Dummy")
+            .AddReferences(BaseReferences)
+            .AddSyntaxTrees(tree);
+        var model = comp.GetSemanticModel(tree);
+        var sym = model.GetDeclaredSymbol(tree.GetRoot().DescendantNodes().OfType<Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax>().First()) as IMethodSymbol;
+        return (model, sym!);
+    }
+
+    /// <summary>Retrieves the semantic model and method symbol for a method located within the caller's own source file.</summary>
+    public static (SemanticModel Model, IMethodSymbol MethodSymbol) GetLocalMethodContext(
+        string typeName,
+        string methodName,
+        [CallerFilePath] string callerFilePath = "")
+    {
+        var source = File.ReadAllText(callerFilePath);
+        var comp = CreateCompilation(source);
+        var typeSymbol = comp.GetSymbolsWithName(typeName, SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
+        var methodSymbol = typeSymbol.GetMembers(methodName).OfType<IMethodSymbol>().First();
+        var tree = methodSymbol.DeclaringSyntaxReferences[0].SyntaxTree;
+        return (comp.GetSemanticModel(tree), methodSymbol);
     }
 
     /// <summary>Transpiles a method declared in the mega compilation by type and method name into CUDA C++ source.</summary>
@@ -62,8 +158,14 @@ public static class RoslynTestUtility
         bool isDevice = true,
         ITranspilerDialect? dialect = null)
     {
+        // Try to resolve the kernel file, but don't fail if it doesn't exist yet (might be testing local .cs file)
+        string? kernelFile = null;
+        try { kernelFile = callerFilePath.EndsWith(".cu.cs") ? callerFilePath : ResolveKernelFilePath(callerFilePath); } catch { }
+
+        var paths = kernelFile != null ? new[] { callerFilePath, kernelFile } : new[] { callerFilePath };
+        
         var (semanticModel, methodSymbol) =
-            MegaCompilationCache.GetMethodContext(targetType, methodName, callerFilePath);
+            MegaCompilationCache.GetMethodContext(targetType, methodName, paths);
         var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
         var diagnostics = new List<Diagnostic>();

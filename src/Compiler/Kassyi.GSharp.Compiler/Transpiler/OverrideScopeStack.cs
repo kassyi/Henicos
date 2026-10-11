@@ -1,8 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
-
-using System;
 using System.Collections;
-using System.Collections.Generic;
 
 /// <summary>
 /// A zero-allocation or minimal-allocation stack for local variable overrides during macro transpilation.

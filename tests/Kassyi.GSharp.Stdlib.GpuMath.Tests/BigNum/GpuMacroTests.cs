@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels;
-using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 

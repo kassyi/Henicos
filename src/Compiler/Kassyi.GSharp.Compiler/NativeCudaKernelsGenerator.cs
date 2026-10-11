@@ -1,9 +1,5 @@
 namespace Kassyi.GSharp.Compiler;
 
-using System;
-using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
-
 [Generator]
 public class NativeCudaKernelsGenerator : IIncrementalGenerator
 {

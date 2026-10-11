@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using Kassyi.GSharp.Compiler.Tasks.Helpers;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
@@ -183,7 +182,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
 
         try
         {
-            var result = ProcessRunner.Default.Run(startInfo);
+            var result = this.ProcessRunner.Run(startInfo);
 
             if (result.ExitCode == 0 && File.Exists(outputDllPath))
             {

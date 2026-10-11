@@ -1,7 +1,6 @@
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [TestTarget(ExecutionTarget.GpuExecution)]
@@ -71,7 +70,7 @@ public class GpuBigIntContextTests
             "_twiddleCache",
             BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.NotNull(twiddleCacheField);
-        var twiddleCache = Assert.IsAssignableFrom<System.Collections.IDictionary>(twiddleCacheField.GetValue(advancedMath));
+        var twiddleCache = Assert.IsAssignableFrom<IDictionary>(twiddleCacheField.GetValue(advancedMath));
 
         Assert.True(twiddleCache.Count > 0, "Cache should be populated after multiplication.");
         int cachedCountBefore = twiddleCache.Count;

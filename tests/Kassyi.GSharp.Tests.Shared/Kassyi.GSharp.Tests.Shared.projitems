@@ -6,7 +6,10 @@
     <SharedGUID>3b5eb789-2997-40b9-b8d4-59e35560b411</SharedGUID>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="$(MSBuildThisFileDirectory)**\*.cs" Exclude="$(MSBuildThisFileDirectory)Generator\Snapshots\**\*.cs;$(MSBuildThisFileDirectory)**\*.verified.cs;$(MSBuildThisFileDirectory)TestCases\**\*.cs;$(MSBuildThisFileDirectory)obj\**\*.cs;$(MSBuildThisFileDirectory)bin\**\*.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)**\*.cs" Exclude="$(MSBuildThisFileDirectory)Generator\Snapshots\**\*.cs;$(MSBuildThisFileDirectory)**\*.verified.cs;$(MSBuildThisFileDirectory)TestCases\**\*.cs;$(MSBuildThisFileDirectory)Transpiler\GpuMacroTranspilerRuleKernels.cu.cs;$(MSBuildThisFileDirectory)Transpiler\MacroTranspilerKernels.cu.cs;$(MSBuildThisFileDirectory)Transpiler\MemoryExtensionsTranspilerRuleKernels.cu.cs;$(MSBuildThisFileDirectory)obj\**\*.cs;$(MSBuildThisFileDirectory)bin\**\*.cs" />
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)TestCases\**\*.cs" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Transpiler\GpuMacroTranspilerRuleKernels.cu.cs" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Transpiler\MacroTranspilerKernels.cu.cs" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Transpiler\MemoryExtensionsTranspilerRuleKernels.cu.cs" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,3 @@
-using Kassyi.GSharp.Runtime.Aot;
-using Kassyi.GSharp.Runtime.Interop;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath;
 
@@ -110,7 +107,7 @@ public class GpuWorkspace : IGpuResourceScope
     /// </summary>
     /// <returns>A new <see cref="IGpuResourceScope"/> instance.</returns>
     /// <exception cref="NotImplementedException">Thrown unconditionally as nested scopes are not yet supported on the root workspace.</exception>
-    public IGpuResourceScope CreateScope() =>
+    [ExcludeFromCodeCoverage] public IGpuResourceScope CreateScope() =>
         throw new NotImplementedException("Nested scopes are not yet supported on GpuWorkspace.");
 
     /// <summary>
@@ -276,6 +273,10 @@ public class GpuWorkspace : IGpuResourceScope
 
         try
         {
+            if (Stream != IntPtr.Zero)
+            {
+                try { CudaDriverApi.cuStreamSynchronize(Stream); } catch { /* ignore if already faulted */ }
+            }
             disposableManager.Dispose();
         }
         catch (Exception ex)

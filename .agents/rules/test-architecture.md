@@ -130,7 +130,15 @@ public abstract class StateMachineTestBase
     - **Axis 3 (Behavior Scenario)**: `[Scenario(TestScenario.HappyPath)]`, `[Scenario(TestScenario.SadPath)]`, `[Scenario(TestScenario.Boundary)]`
     - Never hardcode ticket numbers, roadmap IDs, or Feature IDs into test attributes.
 
-### 3.3. Snapshot Format & Fast-Hash Naming (`.verified.cs`)
+### 3.3. Test Parallelization & Global State Protection
+
+- **Default Parallelism**: By default, xUnit runs test classes in parallel. Do not interfere with this behavior for pure, stateless tests (e.g., AST logic, mathematical operations).
+- **Global State Sequentialization**: Tests that mutate or depend on global process states (e.g., `NativeLibrary.Load`, `Environment.SetEnvironmentVariable`, `CudaEnvironment` initialization) MUST be isolated to run sequentially to prevent flaky tests and process zombification.
+- **Rule**: Never use magic strings for collection names. Always use the strongly-typed constant from `TestCollections` defined in `Kassyi.GSharp.Tests.Common`.
+    - **[NG]**: `[Collection("GlobalStateSequential")]` (Prone to AI hallucinations like "Global" or "NonParallel")
+    - **[OK]**: `[Collection(TestCollections.GlobalStateSequential)]`
+
+### 3.4. Snapshot Format & Fast-Hash Naming (`.verified.cs`)
 
 - **Extension Priority**: Unless the target is purely non-code data (e.g. JSON dumps in stdlib math tests) or syntactically invalid edge cases, all snapshot tests **must emit `.verified.cs`**. If testing statements or partial constructs, the test harness must format/wrap them into valid C# code.
 - **Short Hash Naming**: Use the standardized zero-allocation FNV-1a 64-bit 10-hex naming scheme:

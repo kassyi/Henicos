@@ -3,9 +3,8 @@ namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
 public class StructTranspilerEdgeCasesTests : TranspilerTestBase
 {
-    private static INamedTypeSymbol GetLocalTypeSymbol(string name, [CallerFilePath] string callerFilePath = "")
+    private static INamedTypeSymbol GetLocalTypeSymbol(Compilation comp, string name)
     {
-        var comp = MegaCompilationCache.GetDynamicCompilation(callerFilePath);
         return comp.GetSymbolsWithName(name, SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
     }
 
@@ -13,7 +12,8 @@ public class StructTranspilerEdgeCasesTests : TranspilerTestBase
     [Category(TestCategory.Unit)]
     public void Test_TopologicallySortedStructs_EmptyStruct()
     {
-        var structSym = GetLocalTypeSymbol("EmptyStruct");
+        var comp = MegaCompilationCache.GetDynamicCompilation();
+        var structSym = GetLocalTypeSymbol(comp, "EmptyStruct");
         var sorted = StructTranspiler.GetTopologicallySortedStructs([structSym]);
 
         Assert.Single(sorted);
@@ -25,30 +25,31 @@ public class StructTranspilerEdgeCasesTests : TranspilerTestBase
     public void Test_TopologicallySortedStructs_DeepNesting()
     {
         var comp = MegaCompilationCache.GetDynamicCompilation();
-        var symA = comp.GetSymbolsWithName("StructA", SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
-        var symB = comp.GetSymbolsWithName("StructB", SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
-        var symC = comp.GetSymbolsWithName("StructC", SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
-        var symD = comp.GetSymbolsWithName("StructD", SymbolFilter.Type).OfType<INamedTypeSymbol>().First();
+        var symA = GetLocalTypeSymbol(comp, "StructEdgeCases_StructA");
+        var symB = GetLocalTypeSymbol(comp, "StructEdgeCases_StructB");
+        var symC = GetLocalTypeSymbol(comp, "StructEdgeCases_StructC");
+        var symD = GetLocalTypeSymbol(comp, "StructEdgeCases_StructD");
 
         var sorted = StructTranspiler.GetTopologicallySortedStructs([symA, symB, symC, symD]);
 
         Assert.Equal(4, sorted.Length);
         // Order must be D -> C -> B -> A (dependents last)
-        Assert.Equal("StructD", sorted[0].Name);
-        Assert.Equal("StructC", sorted[1].Name);
-        Assert.Equal("StructB", sorted[2].Name);
-        Assert.Equal("StructA", sorted[3].Name);
+        Assert.Equal("StructEdgeCases_StructD", sorted[0].Name);
+        Assert.Equal("StructEdgeCases_StructC", sorted[1].Name);
+        Assert.Equal("StructEdgeCases_StructB", sorted[2].Name);
+        Assert.Equal("StructEdgeCases_StructA", sorted[3].Name);
     }
 
     [Fact]
     [Category(TestCategory.Unit)]
     public void Test_TopologicallySortedStructs_ExcludesSystemTypes()
     {
-        var structSym = GetLocalTypeSymbol("MyStruct");
+        var comp = MegaCompilationCache.GetDynamicCompilation();
+        var structSym = GetLocalTypeSymbol(comp, nameof(MyStruct));
         var sorted = StructTranspiler.GetTopologicallySortedStructs([structSym]);
 
         Assert.Single(sorted);
-        Assert.Equal("MyStruct", sorted[0].Name);
+        Assert.Equal(nameof(MyStruct), sorted[0].Name);
     }
 }
 
@@ -56,22 +57,22 @@ struct EmptyStruct
 {
 }
 
-struct StructA
+struct StructEdgeCases_StructA
 {
-    public StructB b;
+    public StructEdgeCases_StructB b;
 }
 
-struct StructB
+struct StructEdgeCases_StructB
 {
-    public StructC c;
+    public StructEdgeCases_StructC c;
 }
 
-struct StructC
+struct StructEdgeCases_StructC
 {
-    public StructD d;
+    public StructEdgeCases_StructD d;
 }
 
-struct StructD
+struct StructEdgeCases_StructD
 {
     public int val;
 }

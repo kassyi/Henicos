@@ -1,8 +1,10 @@
+#pragma warning disable RS0030 // Do not use banned APIs
 
 namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 public class MegaCompilationCacheTests
-:  TranspilerTestBase{
+    : TranspilerTestBase
+{
     [Fact]
     [Category(TestCategory.Stress)]
     public void GetDynamicCompilation_ConcurrentAccess_IsThreadSafe()

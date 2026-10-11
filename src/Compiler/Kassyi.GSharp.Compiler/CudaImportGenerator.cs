@@ -1,9 +1,6 @@
 namespace Kassyi.GSharp.Compiler;
 
 using Extensions;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 /// <summary>
 /// Roslyn source generator that generates boilerplate for invoking CUDA kernels via [CudaImport].

@@ -9,7 +9,7 @@ public class ForEachNotSupportedRuleTests
         // Arrange
         var rule = ForEachNotSupportedRule.Instance;
         var node = (ForEachStatementSyntax)SyntaxFactory.ParseStatement("foreach (var x in list) { }");
-        var (model, method) = TestHelpers.CreateDummyContext();
+        var (model, method) = RoslynTestUtility.CreateDummyContext();
         
         var reportedDiagnostics = new List<Diagnostic>();
         var context = new ValidationContext(model, method, reportedDiagnostics.Add);

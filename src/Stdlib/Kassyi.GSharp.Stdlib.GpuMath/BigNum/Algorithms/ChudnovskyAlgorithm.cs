@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Diagnostics;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
@@ -400,6 +398,7 @@ public partial class ChudnovskyAlgorithm
 /// Obsolete compatibility type for <see cref="ChudnovskyAlgorithm"/>.
 /// </summary>
 [Obsolete("Use ChudnovskyAlgorithm instead.")]
+[ExcludeFromCodeCoverage]
 public static class GpuChudnovskyAlgorithm
 {
     /// <inheritdoc cref="ChudnovskyAlgorithm.ComputePi(int, TextWriter, int, bool)" />

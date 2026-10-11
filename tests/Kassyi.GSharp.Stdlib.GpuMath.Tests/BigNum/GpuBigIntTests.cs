@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 

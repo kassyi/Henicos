@@ -7,7 +7,7 @@ public class ImplicitVarNeedsSuffixRuleTests
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
-        var (model, method) = MegaCompilationCache.GetMethodContext<Dummy_GSH03>("WithoutSuffix");
+        var (model, method) = RoslynTestUtility.GetLocalMethodContext(nameof(Dummy_GSH03), "WithoutSuffix");
         var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<VariableDeclaratorSyntax>()
             .First();
 
@@ -28,7 +28,7 @@ public class ImplicitVarNeedsSuffixRuleTests
     {
         // Arrange
         var rule = ImplicitVarNeedsSuffixRule.Instance;
-        var (model, method) = MegaCompilationCache.GetMethodContext<Dummy_GSH03>("WithSuffix");
+        var (model, method) = RoslynTestUtility.GetLocalMethodContext(nameof(Dummy_GSH03), "WithSuffix");
         var node = method.DeclaringSyntaxReferences[0].GetSyntax().DescendantNodes().OfType<VariableDeclaratorSyntax>()
             .First();
 

@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Compiler.Tasks;
-using Xunit;
 
 namespace Kassyi.GSharp.Tests.Integration;
 

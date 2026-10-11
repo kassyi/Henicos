@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Runtime.Fatbin;
-using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Runtime.Aot;
 
@@ -7,6 +6,7 @@ namespace Kassyi.GSharp.Runtime.Aot;
 /// Runtime JIT/AOT compilation engine that manages thread contexts and loads executable GPU modules.
 /// </summary>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
+[ExcludeFromCodeCoverage]
 public sealed class GpuKernelLoader
 {
     private static volatile bool s_isGlobalInit;
@@ -17,9 +17,27 @@ public sealed class GpuKernelLoader
     private static int s_deviceMinor;
 
     /// <summary>
+    /// Gets the global CUDA context handle.
+    /// </summary>
+    public static IntPtr GlobalContext
+    {
+        get
+        {
+            EnsureInitialized();
+            return s_globalContext;
+        }
+    }
+
+    private static readonly System.Threading.AsyncLocal<bool> s_forceCpuFallback = new();
+
+    /// <summary>
     /// Gets or sets a value indicating whether to forcibly emulate GPU runtime on CPU host memory.
     /// </summary>
-    public static bool ForceCpuFallback { get; set; }
+    public static bool ForceCpuFallback
+    {
+        get => s_forceCpuFallback.Value;
+        set => s_forceCpuFallback.Value = value;
+    }
 
     /// <summary>
     /// Gets a value indicating whether the runtime is operating in CPU host fallback mode.
@@ -121,7 +139,7 @@ public sealed class GpuKernelLoader
         }
     }
 
-    private static void EnsureInitialized()
+    public static void EnsureInitialized()
     {
         // ReSharper disable once InconsistentlySynchronizedField -- Double-checked locking pattern
         if (s_isGlobalInit)
@@ -136,19 +154,14 @@ public sealed class GpuKernelLoader
                 return;
             }
 
-            if (ForceCpuFallback)
-            {
-                s_isCpuFallbackMode = true;
-                s_isGlobalInit = true;
-                return;
-            }
-
             try
             {
                 CudaException.ThrowIfError(CudaDriverApi.cuInit(0));
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
 
                 CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out s_globalContext, 0, device));
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _)); // Immediately pop to avoid poisoning the ThreadPool thread
+                
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMajor,
                     CudaDriverApi.CuDeviceAttribute.ComputeCapabilityMajor, device));
                 CudaException.ThrowIfError(CudaDriverApi.cuDeviceGetAttribute(out s_deviceMinor,
@@ -159,8 +172,9 @@ public sealed class GpuKernelLoader
             {
                 s_isCpuFallbackMode = true;
             }
-            catch (CudaException)
+            catch (CudaException ex)
             {
+                Console.WriteLine($"[GpuKernelLoader] EnsureInitialized failed: {ex.Message}");
                 s_isCpuFallbackMode = true;
             }
 

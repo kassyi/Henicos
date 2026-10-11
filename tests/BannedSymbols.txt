@@ -38,5 +38,6 @@
 #   in tests/Directory.Build.props.
 # ==============================================================================
 
-M:Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(System.String,Microsoft.CodeAnalysis.CSharp.CSharpParseOptions,System.String,System.Text.Encoding,System.Threading.CancellationToken);Don't use ParseText directly in tests. Use MegaCompilationCache.GetDynamicCompilation() instead.
-M:Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(Microsoft.CodeAnalysis.Text.SourceText,Microsoft.CodeAnalysis.CSharp.CSharpParseOptions,System.String,System.Threading.CancellationToken);Don't use ParseText directly in tests. Use MegaCompilationCache.GetDynamicCompilation() instead.
+M:Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(System.String,Microsoft.CodeAnalysis.CSharp.CSharpParseOptions,System.String,System.Text.Encoding,System.Threading.CancellationToken);Don't use ParseText directly in tests. Use RoslynTestUtility.GetKernelContext() instead.
+M:Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(Microsoft.CodeAnalysis.Text.SourceText,Microsoft.CodeAnalysis.CSharp.CSharpParseOptions,System.String,System.Threading.CancellationToken);Don't use ParseText directly in tests. Use RoslynTestUtility.GetKernelContext() instead.
+T:Kassyi.GSharp.Tests.Shared.Helpers.MegaCompilationCache;Don't use MegaCompilationCache directly in tests. Use RoslynTestUtility instead.

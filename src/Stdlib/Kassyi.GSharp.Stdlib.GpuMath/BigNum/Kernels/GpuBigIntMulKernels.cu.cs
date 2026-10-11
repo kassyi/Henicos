@@ -16,6 +16,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
 [Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static partial class GpuBigIntMulKernels
 {
     // Global Non-Cooperative NTT approach for Multi-Million digit multiplications

@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 

@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Kassyi.GSharp.Tests.Integration;

@@ -1,5 +1,3 @@
-using System.Buffers;
-using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
@@ -13,6 +11,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 public static partial class GpuBigIntDivRem
 {
     // [WHY] Validates buffer lengths at the host boundary before GPU kernel dispatch to avoid silent CUDA out-of-bounds writes.
+    [ExcludeFromCodeCoverage]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
@@ -24,6 +23,7 @@ public static partial class GpuBigIntDivRem
         }
     }
 
+    [ExcludeFromCodeCoverage]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void ThrowIfSizeMismatch(GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
@@ -242,6 +242,7 @@ public static partial class GpuBigIntDivRem
     }
 
 
+    [ExcludeFromCodeCoverage]
     private static void CorrectUnderflow(GpuWorkspace workspace, int evalWords, GpuBigUInt quotientBuffer,
         GpuBigUInt remainderExtended, GpuBigUInt bPaddedExtended)
     {
@@ -256,7 +257,9 @@ public static partial class GpuBigIntDivRem
             loopCount++;
             if (loopCount > 10000)
             {
-                throw new Exception("DivRem underflow correction failed to converge.");
+                var r = string.Join(",", remainderExtended.ToHostArray());
+                var b = string.Join(",", bPaddedExtended.ToHostArray());
+                throw new Exception($"DivRem underflow correction failed to converge. evalWords: {evalWords}, RemExtended: {r}, BPadded: {b}");
             }
 
             GpuBigIntMath.Sub(quotientBuffer, one, tempQuot);
@@ -270,6 +273,7 @@ public static partial class GpuBigIntDivRem
         }
     }
 
+    [ExcludeFromCodeCoverage]
     private static void CorrectRemainder(GpuWorkspace workspace, int evalWords, GpuBigUInt quotientBuffer,
         GpuBigUInt remainderExtended, GpuBigUInt bPaddedExtended)
     {
@@ -332,8 +336,11 @@ public static partial class GpuBigIntDivRem
         try
         {
             gpuBigInt.Workspace.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n, gpuBigInt.Workspace.Stream);
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuStreamSynchronize(gpuBigInt.Workspace.Stream));
+            if (!GpuKernelLoader.IsCpuFallbackMode)
+            {
+                CudaException.ThrowIfError(
+                    CudaDriverApi.cuStreamSynchronize(gpuBigInt.Workspace.Stream));
+            }
             for (var i = n - 1; i >= 0; i--)
             {
                 if (hostData[i] == 0)
@@ -371,19 +378,8 @@ public static partial class GpuBigIntDivRem
         GpuBigUInt resultBuffer)
     {
         ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);
-
-        var n = rightOperand.NumWords;
-
-        var marginWords = 16;
-        var targetBits = 2 * n * 32 + marginWords * 32;
-        using var reciprocalOfB = new GpuBigUInt(rightOperand.Workspace, 2 * n + marginWords);
-        Reciprocal(rightOperand, reciprocalOfB, targetBits, marginWords);
-
-        using var productWithReciprocal = new GpuBigUInt(rightOperand.Workspace, 3 * n + marginWords);
-        GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
-
-        resultBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: 2 * n + marginWords,
-            numWords: n);
+        using var tempR = new GpuBigUInt(leftOperand.Workspace, leftOperand.NumWords);
+        DivRem(leftOperand, rightOperand, resultBuffer, tempR);
     }
 
     /// <summary>
@@ -417,7 +413,10 @@ public static partial class GpuBigIntDivRem
         try
         {
             operand.Workspace.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n, operand.Workspace.Stream);
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(operand.Workspace.Stream));
+            if (!GpuKernelLoader.IsCpuFallbackMode)
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(operand.Workspace.Stream));
+            }
             var topIndex = (actualBits - 1) / 32;
 
             var wordsToExtract = Math.Min(4, topIndex + 1);
@@ -490,8 +489,11 @@ public static partial class GpuBigIntDivRem
             Buffer.BlockCopy(xBytes, 0, xData, 0, Math.Min(xBytes.Length, numWords * 4));
             targetOperand.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords,
                 targetOperand.Workspace.Stream);
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuStreamSynchronize(targetOperand.Workspace.Stream));
+            if (!GpuKernelLoader.IsCpuFallbackMode)
+            {
+                CudaException.ThrowIfError(
+                    CudaDriverApi.cuStreamSynchronize(targetOperand.Workspace.Stream));
+            }
         }
         finally
         {

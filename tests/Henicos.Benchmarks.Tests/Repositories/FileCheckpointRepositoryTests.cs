@@ -1,6 +1,3 @@
-using System;
-using System.IO;
-using Xunit;
 using Henicos.Benchmarks.Repositories;
 
 namespace Henicos.Benchmarks.Tests.Repositories;

@@ -1,4 +1,3 @@
-using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
 namespace Kassyi.GSharp.Compiler.Generators;
@@ -68,6 +67,7 @@ public static class YamlApiGenerator
         writer.Line();
 
         writer.Line("// ReSharper disable InconsistentNaming");
+        writer.Line("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
         writer.Line($"public static partial class {def.ClassName}");
         using (writer.Scope())
         {
@@ -151,6 +151,7 @@ public static class YamlApiGenerator
 
         foreach (var group in classGroups)
         {
+            writer.Line("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
             writer.Line($"public static partial class {group.Key}");
             using (writer.Scope())
             {
@@ -256,6 +257,7 @@ public static class YamlApiGenerator
         writer.Line();
         writer.Line("namespace Kassyi.GSharp.Compiler.Transpiler;");
         writer.Line();
+        writer.Line("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
         writer.Line("public static class NativeApiMapper");
         using (writer.Scope())
         {

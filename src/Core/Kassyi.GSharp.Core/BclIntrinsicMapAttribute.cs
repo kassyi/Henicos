@@ -8,6 +8,7 @@ namespace Kassyi.GSharp.Core;
 /// <para><b>Target:</b> Assembly declaration.</para>
 /// </remarks>
 [AttributeUsage(AttributeTargets.Assembly, AllowMultiple = true)]
+[ExcludeFromCodeCoverage]
 public sealed class BclIntrinsicMapAttribute : Attribute
 {
     /// <summary>

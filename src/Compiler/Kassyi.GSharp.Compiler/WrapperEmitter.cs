@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Compiler.Marshaling;
+using System.Globalization;
 using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler;
@@ -67,8 +67,8 @@ internal static class WrapperEmitter
             {
                 null => "default",
                 bool b => b ? "true" : "false",
-                float f => f.ToString(System.Globalization.CultureInfo.InvariantCulture) + "f",
-                double d => d.ToString(System.Globalization.CultureInfo.InvariantCulture) + "d",
+                float f => f.ToString(CultureInfo.InvariantCulture) + "f",
+                double d => d.ToString(CultureInfo.InvariantCulture) + "d",
                 string s => SymbolDisplay.FormatLiteral(s, true),
                 _ => val.ToString()
             };
@@ -143,6 +143,8 @@ internal static class WrapperEmitter
         writer.AppendLine(className);
         using (writer.Scope())
         {
+            writer.AppendLine("[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"Kassyi.GSharp.Compiler\", \"1.0.0.0\")]");
+            writer.AppendLine("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
             writer.AppendLine("public static partial class AotContexts");
             using (writer.Scope())
             {
@@ -258,6 +260,8 @@ internal static class WrapperEmitter
 
     private static void WriteLaunchMethodSignature(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
+        writer.AppendLine("[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"Kassyi.GSharp.Compiler\", \"1.0.0.0\")]");
+        writer.AppendLine("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
         writer.Append("public static unsafe ");
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
         {
@@ -426,6 +430,8 @@ internal static class WrapperEmitter
 
             namespace Kassyi.GSharp.Generated
             {
+            [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+            [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
             public static class GSharpModuleContext_{{safeAssemblyName}}
             {
             private static IntPtr? s_hModule;
@@ -570,12 +576,15 @@ internal static class WrapperEmitter
                     writer.AppendLine("int bz = _b_idx / (int)(gridDimX * gridDimY);");
 
                     writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;");
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;");
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;");
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;");
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;");
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;");
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;");
+                    writer.AppendLine("try");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;");
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;");
                     writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;");
                     writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;");
                     writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;");
@@ -656,7 +665,12 @@ internal static class WrapperEmitter
                         }
                     }
 
-                    writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;");
+                    }
+                    writer.AppendLine("finally");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;");
+                    }
                 }
             }
 
