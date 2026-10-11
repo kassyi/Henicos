@@ -97,13 +97,16 @@ public static partial class GpuBigIntDivRemKernels
 
             // 2. diff = constant - currentProduct
             Gpu.SyncGrid();
-            var subCtx = new GpuBigIntContext
+            Gpu.SingleThread(() =>
             {
-                Operands = new OperandContext { CarryBuffer = ctx.CarryBuffer },
-                NumberOfWords = n + resultWords
-            };
-            GpuBigIntKernels.ExecuteSub(ref subCtx, ctx.Workspace.Diff, ctx.Operands.Constant,
-                ctx.Workspace.CurrentProduct);
+                var subCtx = new GpuBigIntContext
+                {
+                    Operands = new OperandContext { CarryBuffer = ctx.CarryBuffer },
+                    NumberOfWords = n + resultWords
+                };
+                GpuBigIntKernels.ExecuteSub(ref subCtx, ctx.Workspace.Diff, ctx.Operands.Constant,
+                    ctx.Workspace.CurrentProduct);
+            });
             Gpu.SyncGrid();
 
             // 3. nextIter = resultBuffer * diff (resultWords, n + resultWords -> n + 2 * resultWords)
