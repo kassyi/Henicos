@@ -79,6 +79,7 @@ public class CompileTasksTests
             Directory.CreateDirectory(TempDir);
             BuildEngine = new MockBuildEngine();
             Runner = new MockProcessRunner(TempDir) { NextExitCode = 0, NextStandardOutput = "Success" };
+            SetEnv("GSHARP_TEST_NO_CUDA", null);
         }
 
         public void SetEnv(string key, string? value)
