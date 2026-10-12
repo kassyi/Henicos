@@ -1,6 +1,7 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests;
 
+[Trait("Category", "GpuExecution")]
 public class GpuStreamCompactionTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;
