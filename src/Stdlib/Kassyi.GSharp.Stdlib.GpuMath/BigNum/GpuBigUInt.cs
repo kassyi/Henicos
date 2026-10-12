@@ -80,7 +80,11 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     public GpuBigUInt(GpuWorkspace workspace, int numWords)
     {
         Workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
-        if (numWords <= 0) throw new ArgumentOutOfRangeException(nameof(numWords), "Number of words must be greater than zero.");
+        if (numWords <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(numWords), "Number of words must be greater than zero.");
+        }
+
         Handle = Workspace.MemoryManager.Allocate(numWords);
         IsTemp = false;
     }
@@ -95,7 +99,11 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     {
         Workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
         ArgumentNullException.ThrowIfNull(hostData);
-        if (hostData.Length == 0) throw new ArgumentException("Data cannot be empty.", nameof(hostData));
+        if (hostData.Length == 0)
+        {
+            throw new ArgumentException("Data cannot be empty.", nameof(hostData));
+        }
+
         Handle = Workspace.MemoryManager.Allocate(hostData.Length);
         IsTemp = false;
         Workspace.Provider.CopyHostToDevice(DevicePointer, hostData, NumWords, Workspace.Stream);

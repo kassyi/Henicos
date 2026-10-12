@@ -28,7 +28,11 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// <returns>A <see cref="GpuBigIntMemoryHandle"/> referencing the device buffer.</returns>
     public GpuBigIntMemoryHandle Allocate(int numWords)
     {
-        if (numWords == 0) return default;
+        if (numWords == 0)
+        {
+            return default;
+        }
+
         if (_tempPool.TryGetValue(numWords, out var lazyBag) && lazyBag.IsValueCreated &&
             lazyBag.Value.TryTake(out var temp))
         {

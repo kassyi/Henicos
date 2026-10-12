@@ -167,12 +167,19 @@ public static partial class GpuBigIntCmpKernels
             uint high = Warp.ShuffleDownSync(mask, (uint)(myVal >> 32), offset);
             uint low = Warp.ShuffleDownSync(mask, (uint)myVal, offset);
             ulong otherVal = ((ulong)high << 32) | low;
-            if (otherVal > myVal) myVal = otherVal;
+            if (otherVal > myVal)
+            {
+                myVal = otherVal;
+            }
         }
 
         int laneId = tid % 32;
         int warpId = tid / 32;
-        if (laneId == 0) warpMax[warpId] = myVal;
+        if (laneId == 0)
+        {
+            warpMax[warpId] = myVal;
+        }
+
         Gpu.SyncThreads();
 
         if (warpId == 0)
@@ -186,10 +193,16 @@ public static partial class GpuBigIntCmpKernels
                 uint high = Warp.ShuffleDownSync(activeMask, (uint)(val >> 32), offset);
                 uint low = Warp.ShuffleDownSync(activeMask, (uint)val, offset);
                 ulong otherVal = ((ulong)high << 32) | low;
-                if (otherVal > val) val = otherVal;
+                if (otherVal > val)
+                {
+                    val = otherVal;
+                }
             }
 
-            if (laneId == 0) warpMax[0] = val;
+            if (laneId == 0)
+            {
+                warpMax[0] = val;
+            }
         }
         Gpu.SyncThreads();
 
@@ -265,12 +278,19 @@ public static partial class GpuBigIntCmpKernels
             uint high = Warp.ShuffleDownSync(mask, (uint)(myVal >> 32), offset);
             uint low = Warp.ShuffleDownSync(mask, (uint)myVal, offset);
             ulong otherVal = ((ulong)high << 32) | low;
-            if (otherVal > myVal) myVal = otherVal;
+            if (otherVal > myVal)
+            {
+                myVal = otherVal;
+            }
         }
 
         int laneId = tid % 32;
         int warpId = tid / 32;
-        if (laneId == 0) warpMax[warpId] = myVal;
+        if (laneId == 0)
+        {
+            warpMax[warpId] = myVal;
+        }
+
         Gpu.SyncThreads();
 
         if (warpId == 0)
@@ -284,10 +304,16 @@ public static partial class GpuBigIntCmpKernels
                 uint high = Warp.ShuffleDownSync(activeMask, (uint)(val >> 32), offset);
                 uint low = Warp.ShuffleDownSync(activeMask, (uint)val, offset);
                 ulong otherVal = ((ulong)high << 32) | low;
-                if (otherVal > val) val = otherVal;
+                if (otherVal > val)
+                {
+                    val = otherVal;
+                }
             }
 
-            if (laneId == 0) warpMax[0] = val;
+            if (laneId == 0)
+            {
+                warpMax[0] = val;
+            }
         }
         Gpu.SyncThreads();
 

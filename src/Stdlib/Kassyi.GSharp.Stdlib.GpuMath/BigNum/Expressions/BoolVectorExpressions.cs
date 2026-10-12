@@ -66,7 +66,11 @@ internal class VectorCompareVectorExpression([TakesOwnership] IGpuBigIntVectorEx
 
     public GpuBigUIntArray Evaluate(GpuWorkspace workspace)
     {
-        if (left.Length != right.Length) throw new ArgumentException("Lengths must match");
+        if (left.Length != right.Length)
+        {
+            throw new ArgumentException("Lengths must match");
+        }
+
         int words = Math.Max(left.WordsPerElement, right.WordsPerElement);
 
         var leftResult = left.Evaluate(workspace);
@@ -114,7 +118,10 @@ internal class VectorLogicalExpression([TakesOwnership] IGpuBoolVectorExpression
 
     public GpuBigUIntArray Evaluate(GpuWorkspace workspace)
     {
-        if (left.Length != right.Length) throw new ArgumentException("Lengths must match");
+        if (left.Length != right.Length)
+        {
+            throw new ArgumentException("Lengths must match");
+        }
 
         var leftResult = left.Evaluate(workspace);
         var rightResult = right.Evaluate(workspace);

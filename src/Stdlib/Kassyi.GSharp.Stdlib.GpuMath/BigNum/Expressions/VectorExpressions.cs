@@ -36,7 +36,11 @@ internal class GpuBigIntVectorLeafExpression(GpuBigIntArray array) : IGpuBigIntV
     public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
     {
         int count = elementCount ?? (Length - elementOffset);
-        if (elementOffset == 0 && count == Length) return array;
+        if (elementOffset == 0 && count == Length)
+        {
+            return array;
+        }
+
         return array.Slice(elementOffset, count);
     }
 

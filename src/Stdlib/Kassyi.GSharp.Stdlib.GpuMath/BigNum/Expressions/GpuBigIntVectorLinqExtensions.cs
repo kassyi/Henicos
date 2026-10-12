@@ -142,7 +142,11 @@ public static class GpuBigIntVectorLinqExtensions
     public static IGpuBigIntVectorExpression Skip(this IGpuBigIntVectorExpression source, int count)
     {
         ArgumentNullException.ThrowIfNull(source);
-        if (count <= 0) return source;
+        if (count <= 0)
+        {
+            return source;
+        }
+
         return new VectorSkipExpression(source, count);
     }
 

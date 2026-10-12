@@ -77,7 +77,9 @@ public readonly struct GpuBigUIntArray : IDisposable
     public GpuBigUInt GetElement(int index)
     {
         if (index < 0 || index >= Length)
+        {
             throw new ArgumentOutOfRangeException(nameof(index));
+        }
 
         var elementOffset = Handle.WordOffset + (index * WordsPerElement);
         var elementHandle = new GpuBigIntMemoryHandle(Handle.Buffer, elementOffset, WordsPerElement);
@@ -90,7 +92,9 @@ public readonly struct GpuBigUIntArray : IDisposable
     public GpuBigUIntArray Slice(int elementOffset, int elementCount)
     {
         if (elementOffset < 0 || elementCount < 0 || elementOffset + elementCount > Length)
+        {
             throw new ArgumentOutOfRangeException();
+        }
 
         int wordOffset = Handle.WordOffset + (elementOffset * WordsPerElement);
         var newHandle = new GpuBigIntMemoryHandle(Handle.Buffer, wordOffset, elementCount * WordsPerElement);

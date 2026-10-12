@@ -48,7 +48,10 @@ public readonly struct GpuBigIntArray : IDisposable
     internal GpuBigIntArray([TakesOwnership] GpuBigUIntArray values, [TakesOwnership] GpuBigUIntArray signs)
     {
         if (values.Length != signs.Length)
+        {
             throw new ArgumentException("Values and Signs array lengths must match.");
+        }
+
         Values = values;
         Signs = signs;
     }
@@ -75,7 +78,9 @@ public readonly struct GpuBigIntArray : IDisposable
     public GpuBigIntArray Slice(int elementOffset, int elementCount)
     {
         if (elementOffset < 0 || elementCount < 0 || elementOffset + elementCount > Length)
+        {
             throw new ArgumentOutOfRangeException();
+        }
 
         return new GpuBigIntArray(
             Values.Slice(elementOffset, elementCount),
