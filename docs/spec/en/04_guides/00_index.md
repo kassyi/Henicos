@@ -34,6 +34,8 @@ Writing high-performance GPU code requires shifting from a CPU-centric mental mo
   Best practices and common hallucination guards for AI coding assistants writing G# code.
 - **[4.11 Deep Struct Marshaling and Argument Hell Elimination Guide](11_deep_struct_marshaling_guide.md)**
   A comprehensive guide to eliminating Argument Hell using deep struct marshaling, AOT Contexts, named arguments, and default parameters.
+- **[4.12 GPU LINQ & Execution Guide for C# Developers](12_gpu_linq_and_execution_guide.md)**
+  Bridging standard C# LINQ concepts to GPU execution models: AsStackEnumerable, AsParallel, AsVectorizedEnumerable, and CUDA Graph evaluation strategies.
 
 ## See also
 
