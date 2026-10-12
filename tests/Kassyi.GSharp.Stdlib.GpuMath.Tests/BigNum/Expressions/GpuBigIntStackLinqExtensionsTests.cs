@@ -87,9 +87,9 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
 
         // Act
         var sumExpr = array.AsStackEnumerable()
-                           .AsParallel()
-                           .Select(x => x + constant)
-                           .Sum();
+            .AsParallel()
+            .Select(x => x + constant)
+            .Sum();
 
         var result = sumExpr.Evaluate(_context);
 
@@ -172,8 +172,8 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         // Act
         // Use Aggregate to implement a sum
         var aggregateExpr = array.AsStackEnumerable()
-                                 .AsParallel()
-                                 .Aggregate((a, b) => a + b);
+            .AsParallel()
+            .Aggregate((a, b) => a + b);
         var result = aggregateExpr.Evaluate(_context);
 
         // Assert
@@ -239,7 +239,7 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         {
             BigInteger val = (i + 1) * 10;
             array[i] = Create(val);
-            
+
             // Only sum values > 100 on host for verification
             if (val > 100)
             {
@@ -252,12 +252,37 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         // Note: predicate is evaluated on host. We read back to CPU just for the test if needed, 
         // but here we can just use ToBigInt.
         var sumExpr = array.AsStackEnumerable()
-                           .Where(x => ToBigInt(x) > 100)
-                           .AsParallel()
-                           .Sum();
+            .Where(x => ToBigInt(x) > 100)
+            .AsParallel()
+            .Sum();
         var result = sumExpr.Evaluate(_context);
 
         // Assert
+        Assert.Equal(expectedSum, ToBigInt(result));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    public void ParallelStackEnumerable_Sum_CompileToGraph_CalculatesCorrectSum()
+    {
+        // Arrange
+        const int numElements = 16;
+        var array = new GpuBigInt[numElements];
+        BigInteger expectedSum = 0;
+
+        for (int i = 0; i < numElements; i++)
+        {
+            BigInteger val = (i + 1) * 10;
+            array[i] = Create(val);
+            expectedSum += val;
+        }
+
+        // Act
+        var result = array.AsStackEnumerable()
+            .AsParallel()
+            .Sum()
+            .EvaluateWithCudaGraph(_context);
+
         Assert.Equal(expectedSum, ToBigInt(result));
     }
 }
