@@ -46,6 +46,42 @@ public static class GpuBigIntStackLinqExtensions
     }
 
     /// <summary>
+    /// Filters a parallel sequence of values based on a predicate.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">An enumerable to filter.</param>
+    /// <param name="predicate">A function to test each element for a condition.</param>
+    /// <returns>A new parallel sequence that contains elements from the input sequence that satisfy the condition.</returns>
+    public static ParallelStackEnumerable<WhereEnumerator<TEnumerator, GpuBigInt>, GpuBigInt>
+        Where<TEnumerator>(
+            this ParallelStackEnumerable<TEnumerator, GpuBigInt> source,
+            Func<GpuBigInt, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        return new ParallelStackEnumerable<WhereEnumerator<TEnumerator, GpuBigInt>, GpuBigInt>(
+            new WhereEnumerator<TEnumerator, GpuBigInt>(source.Enumerator, predicate));
+    }
+
+    /// <summary>
+    /// Filters a parallel sequence of expressions based on a predicate.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">An enumerable to filter.</param>
+    /// <param name="predicate">A function to test each element for a condition.</param>
+    /// <returns>A new parallel sequence that contains elements from the input sequence that satisfy the condition.</returns>
+    public static ParallelStackEnumerable<WhereEnumerator<TEnumerator, GpuBigIntExpr>, GpuBigIntExpr>
+        Where<TEnumerator>(
+            this ParallelStackEnumerable<TEnumerator, GpuBigIntExpr> source,
+            Func<GpuBigIntExpr, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        return new ParallelStackEnumerable<WhereEnumerator<TEnumerator, GpuBigIntExpr>, GpuBigIntExpr>(
+            new WhereEnumerator<TEnumerator, GpuBigIntExpr>(source.Enumerator, predicate));
+    }
+
+    /// <summary>
     /// Computes the sum of a parallel sequence of <see cref="GpuBigInt"/> values by constructing a balanced binary evaluation tree.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
@@ -421,6 +457,231 @@ public static class GpuBigIntStackLinqExtensions
         var left = BuildBalancedTreeMin(span.Slice(0, mid));
         var right = BuildBalancedTreeMin(span.Slice(mid));
         return GpuBigIntExpr.Min(left, right);
+    }
+
+    /// <summary>
+    /// Applies an accumulator function over a parallel sequence of <see cref="GpuBigInt"/> values by constructing a balanced binary evaluation tree.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A parallel sequence of values to aggregate.</param>
+    /// <param name="func">An accumulator function to be invoked on each pair of expressions.</param>
+    /// <returns>A deferred expression tree representing the parallel aggregation.</returns>
+    public static GpuBigIntExpr Aggregate<TEnumerator>(
+        this ParallelStackEnumerable<TEnumerator, GpuBigInt> source,
+        Func<GpuBigIntExpr, GpuBigIntExpr, GpuBigIntExpr> func)
+        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var first))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        if (!enumerator.TryGetNext(out var second))
+        {
+            return first;
+        }
+
+        var pool = ArrayPool<GpuBigIntExpr>.Shared;
+        var capacity = 16;
+        var buffer = pool.Rent(capacity);
+        var count = 0;
+
+        try
+        {
+            buffer[count++] = first;
+            buffer[count++] = second;
+
+            while (enumerator.TryGetNext(out var value))
+            {
+                if (count == capacity)
+                {
+                    var newCapacity = capacity * 2;
+                    var newBuffer = pool.Rent(newCapacity);
+                    Array.Copy(buffer, newBuffer, count);
+                    pool.Return(buffer, clearArray: true);
+                    buffer = newBuffer;
+                    capacity = newCapacity;
+                }
+
+                buffer[count++] = value;
+            }
+
+            return BuildBalancedTreeAggregate(buffer.AsSpan(0, count), func);
+        }
+        finally
+        {
+            pool.Return(buffer, clearArray: true);
+        }
+    }
+
+    /// <summary>
+    /// Applies an accumulator function over a parallel sequence of <see cref="GpuBigIntExpr"/> expressions by constructing a balanced binary evaluation tree.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A parallel sequence of expressions to aggregate.</param>
+    /// <param name="func">An accumulator function to be invoked on each pair of expressions.</param>
+    /// <returns>A deferred expression tree representing the parallel aggregation.</returns>
+    public static GpuBigIntExpr Aggregate<TEnumerator>(
+        this ParallelStackEnumerable<TEnumerator, GpuBigIntExpr> source,
+        Func<GpuBigIntExpr, GpuBigIntExpr, GpuBigIntExpr> func)
+        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(func);
+
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var first))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        if (!enumerator.TryGetNext(out var second))
+        {
+            return first;
+        }
+
+        var pool = ArrayPool<GpuBigIntExpr>.Shared;
+        var capacity = 16;
+        var buffer = pool.Rent(capacity);
+        var count = 0;
+
+        try
+        {
+            buffer[count++] = first;
+            buffer[count++] = second;
+
+            while (enumerator.TryGetNext(out var value))
+            {
+                if (count == capacity)
+                {
+                    var newCapacity = capacity * 2;
+                    var newBuffer = pool.Rent(newCapacity);
+                    Array.Copy(buffer, newBuffer, count);
+                    pool.Return(buffer, clearArray: true);
+                    buffer = newBuffer;
+                    capacity = newCapacity;
+                }
+
+                buffer[count++] = value;
+            }
+
+            return BuildBalancedTreeAggregate(buffer.AsSpan(0, count), func);
+        }
+        finally
+        {
+            pool.Return(buffer, clearArray: true);
+        }
+    }
+
+    private static GpuBigIntExpr BuildBalancedTreeAggregate(ReadOnlySpan<GpuBigIntExpr> span, Func<GpuBigIntExpr, GpuBigIntExpr, GpuBigIntExpr> func)
+    {
+        switch (span.Length)
+        {
+            case 1:
+                return span[0];
+            case 2:
+                return func(span[0], span[1]);
+        }
+
+        var mid = span.Length / 2;
+        var left = BuildBalancedTreeAggregate(span.Slice(0, mid), func);
+        var right = BuildBalancedTreeAggregate(span.Slice(mid), func);
+        return func(left, right);
+    }
+
+    /// <summary>
+    /// Computes the average of a parallel sequence of <see cref="GpuBigInt"/> values.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A parallel sequence of values to calculate the average of.</param>
+    /// <returns>A deferred expression tree representing the parallel average.</returns>
+    public static GpuBigIntExpr Average<TEnumerator>(
+        this ParallelStackEnumerable<TEnumerator, GpuBigInt> source)
+        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var first))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+
+        var pool = ArrayPool<GpuBigIntExpr>.Shared;
+        var capacity = 16;
+        var buffer = pool.Rent(capacity);
+        var count = 0;
+
+        try
+        {
+            buffer[count++] = first;
+            while (enumerator.TryGetNext(out var value))
+            {
+                if (count == capacity)
+                {
+                    var newCapacity = capacity * 2;
+                    var newBuffer = pool.Rent(newCapacity);
+                    Array.Copy(buffer, newBuffer, count);
+                    pool.Return(buffer, clearArray: true);
+                    buffer = newBuffer;
+                    capacity = newCapacity;
+                }
+                buffer[count++] = value;
+            }
+
+            var sumTree = BuildBalancedTreeAggregate(buffer.AsSpan(0, count), (a, b) => a + b);
+            
+            var workspace = first.Value.Workspace;
+            var numWords = first.Value.NumWords;
+            var uintBuffer = new uint[numWords];
+            uintBuffer[0] = (uint)count;
+            var countBuffer = new GpuBigUInt(workspace, uintBuffer); 
+            var countExpr = (GpuBigIntExpr)new GpuBigInt(countBuffer, false);
+
+            return sumTree / countExpr;
+        }
+        finally
+        {
+            pool.Return(buffer, clearArray: true);
+        }
+    }
+
+    /// <summary>
+    /// Computes the number of elements in a parallel sequence.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A parallel sequence.</param>
+    /// <returns>The number of elements in the sequence.</returns>
+    public static int Count<TEnumerator>(
+        this ParallelStackEnumerable<TEnumerator, GpuBigInt> source)
+        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        var count = 0;
+        while (enumerator.TryGetNext(out _))
+        {
+            count++;
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// Computes the number of elements in a parallel sequence.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A parallel sequence.</param>
+    /// <returns>The number of elements in the sequence.</returns>
+    public static int Count<TEnumerator>(
+        this ParallelStackEnumerable<TEnumerator, GpuBigIntExpr> source)
+        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        var count = 0;
+        while (enumerator.TryGetNext(out _))
+        {
+            count++;
+        }
+        return count;
     }
 }
 #pragma warning restore GSH0005 // GpuBigIntExpr Direct Assignment
