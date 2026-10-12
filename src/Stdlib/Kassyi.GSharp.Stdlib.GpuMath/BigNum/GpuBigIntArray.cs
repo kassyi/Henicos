@@ -70,6 +70,19 @@ public readonly struct GpuBigIntArray : IDisposable
     }
 
     /// <summary>
+    /// Creates a zero-allocation sub-slice of this GPU array.
+    /// </summary>
+    public GpuBigIntArray Slice(int elementOffset, int elementCount)
+    {
+        if (elementOffset < 0 || elementCount < 0 || elementOffset + elementCount > Length)
+            throw new ArgumentOutOfRangeException();
+
+        return new GpuBigIntArray(
+            Values.Slice(elementOffset, elementCount),
+            Signs.Slice(elementOffset, elementCount));
+    }
+
+    /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying buffers.
     /// </summary>
     public void Dispose()
