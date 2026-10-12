@@ -50,10 +50,7 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         {
             leftResult = Left.Evaluate(workspace);
             rightResult = Right.Evaluate(workspace);
-            if (!finalBuffer.HasValue)
-            {
-                finalBuffer = workspace.RentTemp(NumWords);
-            }
+            finalBuffer ??= workspace.RentTemp(NumWords);
 
             var result = Execute(leftResult, rightResult, finalBuffer.Value);
             finalBuffer = null; // Evaluated successfully, do not return the result buffer
@@ -61,12 +58,12 @@ internal abstract class SignedBinaryExpression(IGpuBigIntExpression left, IGpuBi
         }
         finally
         {
-            if (true && leftResult.Value.IsTemp)
+            if (leftResult.Value.IsTemp)
             {
                 workspace.ReturnTemp(leftResult.Value);
             }
 
-            if (true && rightResult.Value.IsTemp)
+            if (rightResult.Value.IsTemp)
             {
                 workspace.ReturnTemp(rightResult.Value);
             }
@@ -179,10 +176,7 @@ internal abstract class SignedUnaryExpression(IGpuBigIntExpression target) : IGp
         try
         {
             targetEval = Target.Evaluate(workspace);
-            if (!finalBuffer.HasValue)
-            {
-                finalBuffer = workspace.RentTemp(NumWords);
-            }
+            finalBuffer ??= workspace.RentTemp(NumWords);
 
             var result = Execute(targetEval, finalBuffer.Value);
             finalBuffer = null;
@@ -211,5 +205,39 @@ internal class SignedBitwiseNotExpression(IGpuBigIntExpression target) : SignedU
     {
         GpuBigIntMath.BitwiseNot(targetEval.Value, resultBuffer);
         return new GpuBigInt(resultBuffer, targetEval.IsNegative);
+    }
+}
+
+internal class SignedMaxExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+    : SignedBinaryExpression(left, right)
+{
+    protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
+    {
+        var cmp = a.CompareTo(b);
+        if (cmp >= 0)
+        {
+            resultBuffer.CopyFrom(a.Value);
+            return new GpuBigInt(resultBuffer, a.IsNegative);
+        }
+
+        resultBuffer.CopyFrom(b.Value);
+        return new GpuBigInt(resultBuffer, b.IsNegative);
+    }
+}
+
+internal class SignedMinExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+    : SignedBinaryExpression(left, right)
+{
+    protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
+    {
+        var cmp = a.CompareTo(b);
+        if (cmp <= 0)
+        {
+            resultBuffer.CopyFrom(a.Value);
+            return new GpuBigInt(resultBuffer, a.IsNegative);
+        }
+
+        resultBuffer.CopyFrom(b.Value);
+        return new GpuBigInt(resultBuffer, b.IsNegative);
     }
 }

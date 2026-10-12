@@ -47,6 +47,7 @@ internal class Program
             "arithmetic" => RunArithmeticBench(args[1..]),
             "stacklinq" => RunStackLinqBench(args[1..]),
             "stacklinq-gpu" => RunStackLinqGpuBench(args[1..]),
+            "gbi-linq" => RunGpuBigIntLinqBench(args[1..]),
             _ when LooksLikeDigits(args[0]) => RunCpuPi(args),
             _ => HandleUnknownCommand(command)
         };
@@ -73,6 +74,9 @@ internal class Program
                                          Options:
                                            --json              Output benchmark results in JSON format
               arithmetic [words] [iters] Run GpuBigFloat arithmetic benchmark (default: 2048 words, 1000 iters)
+              gbi-linq [elements] [words] Run GpuBigInt + StackLinq + CUDA Graph benchmark
+                                         Options:
+                                           --benchmark         Run via BenchmarkDotNet instead of instant runner
               help, -h, --help           Display this help message
 
             Digits supports SI prefixes like 100k, 1M, 100M (e.g. `gpu-pi 100M`).
@@ -171,6 +175,45 @@ internal class Program
     {
         Logger<Program>.Info("Running StackLinq GPU Benchmark...");
         BenchmarkRunner.Run<StackLinqGpuBenchmark>();
+        return 0;
+    }
+
+    private static int RunGpuBigIntLinqBench(string[] args)
+    {
+        var elements = 256;
+        var words = 8;
+        var isBenchmarkDotNet = false;
+
+        for (var i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+            if (arg.Equals("--benchmark", StringComparison.OrdinalIgnoreCase))
+            {
+                isBenchmarkDotNet = true;
+            }
+            else if (int.TryParse(arg, out var val))
+            {
+                if (i == 0)
+                {
+                    elements = val;
+                }
+                else if (i == 1)
+                {
+                    words = val;
+                }
+            }
+        }
+
+        if (isBenchmarkDotNet)
+        {
+            Logger<Program>.Info("Running BenchmarkDotNet suite for GpuBigIntLinqBenchmark...");
+            BenchmarkRunner.Run<GpuBigIntLinqBenchmark>();
+        }
+        else
+        {
+            GpuBigIntLinqBenchmark.RunDirectBenchmark(elements, words);
+        }
+
         return 0;
     }
 

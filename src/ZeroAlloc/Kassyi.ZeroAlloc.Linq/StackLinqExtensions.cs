@@ -72,6 +72,18 @@ public static class StackLinqExtensions
         new(new SpanEnumerator<T>(source));
 
     /// <summary>
+    /// Instructs the compiler to execute the subsequent reduction operations in parallel on the GPU.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">The source sequence to parallelize.</param>
+    /// <returns>A zero-allocation marker struct <see cref="ParallelStackEnumerable{TEnumerator, TSource}"/>.</returns>
+    public static ParallelStackEnumerable<TEnumerator, TSource> AsParallel<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
+        new(source.Enumerator);
+
+    /// <summary>
     /// Filters a stack-allocated sequence of values based on a predicate.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
@@ -500,6 +512,46 @@ public static class StackLinqExtensions
             sum += value;
         }
 
+        return sum;
+    }
+
+    /// <summary>
+    /// Computes the sum of a parallel sequence of <see cref="int"/> values. CPU fallback implementation.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">A parallel sequence of values that are used to calculate a sum.</param>
+    /// <returns>The sum of the values in the sequence.</returns>
+    public static int Sum<TEnumerator>(
+        this ParallelStackEnumerable<TEnumerator, int> source)
+        where TEnumerator : struct, IStackEnumerator<int>, allows ref struct
+    {
+        var enumerator = source.Enumerator;
+        int sum = 0;
+        while (enumerator.TryGetNext(out var value))
+        {
+            sum += value;
+        }
+        return sum;
+    }
+
+    /// <summary>
+    /// Computes the sum of a parallel sequence of custom types. CPU fallback implementation.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
+    /// <param name="source">A parallel sequence of values that are used to calculate a sum.</param>
+    /// <returns>The sum of the values in the sequence.</returns>
+    public static TSource Sum<TEnumerator, TSource>(
+        this ParallelStackEnumerable<TEnumerator, TSource> source)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+        where TSource : IAdditionOperators<TSource, TSource, TSource>, IAdditiveIdentity<TSource, TSource>
+    {
+        var enumerator = source.Enumerator;
+        TSource sum = TSource.AdditiveIdentity;
+        while (enumerator.TryGetNext(out var value))
+        {
+            sum += value;
+        }
         return sum;
     }
 
@@ -1019,6 +1071,8 @@ public static class StackLinqExtensions
     /// <summary>
     /// Returns the last element of a sequence that satisfies a specified condition.
     /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
     /// <param name="source">An sequence to return an element from.</param>
     /// <param name="predicate">A function to test each element for a condition.</param>
     /// <returns>The last element in the sequence that passes the test in the specified predicate function.</returns>
@@ -1085,6 +1139,8 @@ public static class StackLinqExtensions
     /// <summary>
     /// Returns the last element of a sequence that satisfies a condition or a default value if no such element is found.
     /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
     /// <param name="source">An sequence to return an element from.</param>
     /// <param name="predicate">A function to test each element for a condition.</param>
     /// <returns><see langword="default"/>(TSource) if the sequence is empty or if no elements pass the test in the predicate function; otherwise, the last element that passes the test in the predicate function.</returns>
@@ -1332,10 +1388,10 @@ public static class StackLinqExtensions
     }
 
     /// <summary>
-    /// Applies an accumulator function over a stack-allocated sequence. The specified seed value is used as the initial accumulator value.
-    /// <summary>
     /// Applies an accumulator function over a sequence.
     /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
     /// <param name="source">A sequence to aggregate over.</param>
     /// <param name="func">An accumulator function to be invoked on each element.</param>
     /// <returns>The final accumulator value.</returns>

@@ -506,7 +506,7 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
 
-                if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out var elementType))
+                if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
                 {
                     writer.Append("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ");
                     writer.Append(p.Name);
