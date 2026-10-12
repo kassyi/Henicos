@@ -41,6 +41,9 @@ public class GpuBigIntLinqBenchmark : IDisposable
 
     private GpuBigIntExecutableGraph _precompiledGraph;
 
+    private GpuBigIntArray _gpuVector;
+    private GpuBigIntExecutableGraph _precompiledVectorGraph;
+
     [Params(256, 1024)]
     public int ElementCount { get; set; } = 256;
 
@@ -60,6 +63,9 @@ public class GpuBigIntLinqBenchmark : IDisposable
         _cpuConstant = 12345;
         _gpuConstant = CreateGpuBigInt(_cpuConstant, NumWords);
 
+        var flatValues = new uint[ElementCount * NumWords];
+        var flatSigns = new uint[ElementCount];
+
         for (var i = 0; i < ElementCount; i++)
         {
             var rawBytes = new byte[NumWords * 4];
@@ -68,12 +74,36 @@ public class GpuBigIntLinqBenchmark : IDisposable
 
             var val = new BigInteger(rawBytes);
             _cpuScalars[i] = val;
-            _gpuScalars[i] = CreateGpuBigInt(val, NumWords);
+
+            var valBytes = val.ToByteArray();
+            var uSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, uint>(valBytes);
+            for (int j = 0; j < uSpan.Length && j < NumWords; j++)
+            {
+                flatValues[i * NumWords + j] = uSpan[j];
+            }
+            flatSigns[i] = val.Sign < 0 ? 1u : 0u;
         }
 
-        _precompiledGraph = _gpuScalars.AsStackEnumerable()
-            .Select(s => s * _gpuConstant)
-            .AsParallel()
+        _gpuVector = new GpuBigIntArray(_context, ElementCount, NumWords);
+        _context.Provider.CopyHostToDevice(_gpuVector.Values.DevicePointer, flatValues, flatValues.Length, _context.Stream);
+        _context.Provider.CopyHostToDevice(_gpuVector.Signs.DevicePointer, flatSigns, flatSigns.Length, _context.Stream);
+
+        if (ElementCount <= 1024)
+        {
+            for (var i = 0; i < ElementCount; i++)
+            {
+                _gpuScalars[i] = CreateGpuBigInt(_cpuScalars[i], NumWords);
+            }
+
+            _precompiledGraph = _gpuScalars.AsStackEnumerable()
+                .Select(s => s * _gpuConstant)
+                .AsParallel()
+                .Sum()
+                .CompileToGraph(_context);
+        }
+
+        _precompiledVectorGraph = _gpuVector.AsVectorizedEnumerable()
+            .SelectMultiply(_gpuConstant)
             .Sum()
             .CompileToGraph(_context);
     }
@@ -83,12 +113,19 @@ public class GpuBigIntLinqBenchmark : IDisposable
 
     public void Dispose()
     {
-        _precompiledGraph.Dispose();
+        if (ElementCount <= 1024)
+        {
+            _precompiledGraph.Dispose();
+        }
+        _precompiledVectorGraph.Dispose();
 
         for (var i = 0; i < _gpuScalars.Length; i++)
         {
-            _gpuScalars[i].Dispose();
+            if (_gpuScalars[i].Value.DevicePointer != IntPtr.Zero) 
+                _gpuScalars[i].Dispose();
         }
+
+        _gpuVector.Dispose();
 
         _gpuConstant.Dispose();
         _context.Dispose();
@@ -155,6 +192,13 @@ public class GpuBigIntLinqBenchmark : IDisposable
         return _precompiledGraph.Result;
     }
 
+    [Benchmark]
+    public GpuBigInt Gpu_CudaGraph_Vectorized_PolynomialInnerProduct()
+    {
+        _precompiledVectorGraph.Execute();
+        return _precompiledVectorGraph.Result;
+    }
+
     // =========================================================================
     // Direct CLI Runner for Instant Visual Feedback
     // =========================================================================
@@ -182,9 +226,13 @@ public class GpuBigIntLinqBenchmark : IDisposable
         // 1. Warm-up
         Logger<GpuBigIntLinqBenchmark>.Info("Warming up engines...");
         _ = bench.Cpu_PolynomialInnerProduct_PLINQ();
-        using var warmSeq = bench.Gpu_SequentialEvaluate_PolynomialInnerProduct();
-        using var warmGraph = bench.Gpu_CudaGraph_PolynomialInnerProduct();
-        _ = bench.Gpu_CudaGraph_Precompiled_PolynomialInnerProduct();
+        if (elementCount <= 1024)
+        {
+            using var warmSeq = bench.Gpu_SequentialEvaluate_PolynomialInnerProduct();
+            using var warmGraph = bench.Gpu_CudaGraph_PolynomialInnerProduct();
+            _ = bench.Gpu_CudaGraph_Precompiled_PolynomialInnerProduct();
+        }
+        _ = bench.Gpu_CudaGraph_Vectorized_PolynomialInnerProduct();
 
         // 2. CPU PLINQ Measurement
         var sw = Stopwatch.StartNew();
@@ -196,37 +244,59 @@ public class GpuBigIntLinqBenchmark : IDisposable
         sw.Stop();
         var cpuElapsedMs = (double)sw.ElapsedMilliseconds / iterations;
 
-        // 3. GPU Sequential Evaluate Measurement
+        // 3. GPU Sequential Evaluate Measurement (Skip if too large to prevent driver OOM/Timeout)
+        double gpuSeqElapsedMs = 0;
+        if (elementCount <= 1024)
+        {
+            sw.Restart();
+            for (var i = 0; i < iterations; i++)
+            {
+                using var r = bench.Gpu_SequentialEvaluate_PolynomialInnerProduct();
+            }
+
+            sw.Stop();
+            gpuSeqElapsedMs = (double)sw.ElapsedMilliseconds / iterations;
+        }
+
+        // 4. GPU CUDA Graph Measurement (Skip if too large)
+        double gpuGraphElapsedMs = 0;
+        if (elementCount <= 1024)
+        {
+            sw.Restart();
+            for (var i = 0; i < iterations; i++)
+            {
+                using var r = bench.Gpu_CudaGraph_PolynomialInnerProduct();
+            }
+
+            sw.Stop();
+            gpuGraphElapsedMs = (double)sw.ElapsedMilliseconds / iterations;
+        }
+
+        // 5. GPU CUDA Graph Precompiled Measurement (Skip if too large)
+        double gpuPrecompElapsedMs = 0;
+        if (elementCount <= 1024)
+        {
+            sw.Restart();
+            for (var i = 0; i < iterations; i++)
+            {
+                _ = bench.Gpu_CudaGraph_Precompiled_PolynomialInnerProduct();
+            }
+
+            sw.Stop();
+            gpuPrecompElapsedMs = (double)sw.ElapsedMilliseconds / iterations;
+        }
+
+        // 6. GPU CUDA Graph Vectorized Measurement
         sw.Restart();
         for (var i = 0; i < iterations; i++)
         {
-            using var r = bench.Gpu_SequentialEvaluate_PolynomialInnerProduct();
+            _ = bench.Gpu_CudaGraph_Vectorized_PolynomialInnerProduct();
         }
 
         sw.Stop();
-        var gpuSeqElapsedMs = (double)sw.ElapsedMilliseconds / iterations;
+        var gpuVectorElapsedMs = (double)sw.ElapsedMilliseconds / iterations;
 
-        // 4. GPU CUDA Graph Measurement
-        sw.Restart();
-        for (var i = 0; i < iterations; i++)
-        {
-            using var r = bench.Gpu_CudaGraph_PolynomialInnerProduct();
-        }
-
-        sw.Stop();
-        var gpuGraphElapsedMs = (double)sw.ElapsedMilliseconds / iterations;
-
-        // 5. GPU CUDA Graph Precompiled Measurement
-        sw.Restart();
-        for (var i = 0; i < iterations; i++)
-        {
-            _ = bench.Gpu_CudaGraph_Precompiled_PolynomialInnerProduct();
-        }
-
-        sw.Stop();
-        var gpuPrecompElapsedMs = (double)sw.ElapsedMilliseconds / iterations;
-
-        // 6. Output formatted results table
+        // 7. Output formatted results table
         Logger<GpuBigIntLinqBenchmark>.Info("");
         Logger<GpuBigIntLinqBenchmark>.Info(
             "| Engine / Mode                      | Latency (ms) | Speedup vs CPU | Graph Launch Gain |");
@@ -234,12 +304,23 @@ public class GpuBigIntLinqBenchmark : IDisposable
             "|:-----------------------------------|-------------:|---------------:|------------------:|");
         Logger<GpuBigIntLinqBenchmark>.Info(
             $"| CPU (System.Numerics + PLINQ)      | {cpuElapsedMs,10:F2} ms |          1.00x |                 - |");
-        Logger<GpuBigIntLinqBenchmark>.Info(
-            $"| GPU (GpuBigInt Sequential Evaluate)| {gpuSeqElapsedMs,10:F2} ms | {cpuElapsedMs / Math.Max(0.001, gpuSeqElapsedMs),13:F2}x |             1.00x |");
-        Logger<GpuBigIntLinqBenchmark>.Info(
-            $"| GPU (GpuBigInt + CUDA Graph)       | {gpuGraphElapsedMs,10:F2} ms | {cpuElapsedMs / Math.Max(0.001, gpuGraphElapsedMs),13:F2}x | {gpuSeqElapsedMs / Math.Max(0.001, gpuGraphElapsedMs),16:F2}x |");
-        Logger<GpuBigIntLinqBenchmark>.Info(
-            $"| GPU (CUDA Graph Precompiled)       | {gpuPrecompElapsedMs,10:F2} ms | {cpuElapsedMs / Math.Max(0.001, gpuPrecompElapsedMs),13:F2}x | {gpuSeqElapsedMs / Math.Max(0.001, gpuPrecompElapsedMs),16:F2}x |");
+
+        if (elementCount <= 1024)
+        {
+            Logger<GpuBigIntLinqBenchmark>.Info(
+                $"| GPU (GpuBigInt Sequential Evaluate)| {gpuSeqElapsedMs,10:F2} ms | {cpuElapsedMs / Math.Max(0.001, gpuSeqElapsedMs),13:F2}x |             1.00x |");
+            Logger<GpuBigIntLinqBenchmark>.Info(
+                $"| GPU (GpuBigInt + CUDA Graph)       | {gpuGraphElapsedMs,10:F2} ms | {cpuElapsedMs / Math.Max(0.001, gpuGraphElapsedMs),13:F2}x | {gpuSeqElapsedMs / Math.Max(0.001, gpuGraphElapsedMs),16:F2}x |");
+            Logger<GpuBigIntLinqBenchmark>.Info(
+                $"| GPU (CUDA Graph Precompiled)       | {gpuPrecompElapsedMs,10:F2} ms | {cpuElapsedMs / Math.Max(0.001, gpuPrecompElapsedMs),13:F2}x | {gpuSeqElapsedMs / Math.Max(0.001, gpuPrecompElapsedMs),16:F2}x |");
+            Logger<GpuBigIntLinqBenchmark>.Info(
+                $"| GPU (Vectorized + Precompiled Graph)| {gpuVectorElapsedMs,9:F2} ms | {cpuElapsedMs / Math.Max(0.001, gpuVectorElapsedMs),13:F2}x | {gpuSeqElapsedMs / Math.Max(0.001, gpuVectorElapsedMs),16:F2}x |");
+        }
+        else
+        {
+            Logger<GpuBigIntLinqBenchmark>.Info(
+                $"| GPU (Vectorized + Precompiled Graph)| {gpuVectorElapsedMs,9:F2} ms | {cpuElapsedMs / Math.Max(0.001, gpuVectorElapsedMs),13:F2}x |     (Skipped) |");
+        }
         Logger<GpuBigIntLinqBenchmark>.Info(
             "================================================================================");
     }
