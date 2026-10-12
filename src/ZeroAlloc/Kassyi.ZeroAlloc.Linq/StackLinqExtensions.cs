@@ -1017,6 +1017,20 @@ public static class StackLinqExtensions
     }
 
     /// <summary>
+    /// Returns the last element of a sequence that satisfies a specified condition.
+    /// </summary>
+    /// <param name="source">An sequence to return an element from.</param>
+    /// <param name="predicate">A function to test each element for a condition.</param>
+    /// <returns>The last element in the sequence that passes the test in the specified predicate function.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="predicate"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">No element satisfies the condition in <paramref name="predicate"/>, or the source sequence is empty.</exception>
+    public static TSource Last<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
+        source.Where(predicate).Last();
+
+    /// <summary>
     /// Returns the last element of a stack-allocated sequence.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
@@ -1067,6 +1081,19 @@ public static class StackLinqExtensions
         }
         return result;
     }
+
+    /// <summary>
+    /// Returns the last element of a sequence that satisfies a condition or a default value if no such element is found.
+    /// </summary>
+    /// <param name="source">An sequence to return an element from.</param>
+    /// <param name="predicate">A function to test each element for a condition.</param>
+    /// <returns><see langword="default"/>(TSource) if the sequence is empty or if no elements pass the test in the predicate function; otherwise, the last element that passes the test in the predicate function.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="predicate"/> is <see langword="null"/>.</exception>
+    public static TSource? LastOrDefault<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, bool> predicate)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
+        source.Where(predicate).LastOrDefault();
 
     /// <summary>
     /// Returns the last element of a stack-allocated sequence, or a default value if the sequence contains no elements.
@@ -1306,6 +1333,35 @@ public static class StackLinqExtensions
 
     /// <summary>
     /// Applies an accumulator function over a stack-allocated sequence. The specified seed value is used as the initial accumulator value.
+    /// <summary>
+    /// Applies an accumulator function over a sequence.
+    /// </summary>
+    /// <param name="source">A sequence to aggregate over.</param>
+    /// <param name="func">An accumulator function to be invoked on each element.</param>
+    /// <returns>The final accumulator value.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">The source sequence is empty.</exception>
+    public static TSource Aggregate<TEnumerator, TSource>(
+        this StackEnumerable<TEnumerator, TSource> source,
+        Func<TSource, TSource, TSource> func)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        ArgumentNullException.ThrowIfNull(func);
+        var enumerator = source.Enumerator;
+        if (!enumerator.TryGetNext(out var result))
+        {
+            throw new InvalidOperationException("Sequence contains no elements");
+        }
+        while (enumerator.TryGetNext(out var value))
+        {
+            result = func(result, value);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Applies an accumulator function over a stack-allocated sequence.
+    /// The specified seed value is used as the initial accumulator value.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <typeparam name="TSource">The type of the elements in the sequence.</typeparam>
