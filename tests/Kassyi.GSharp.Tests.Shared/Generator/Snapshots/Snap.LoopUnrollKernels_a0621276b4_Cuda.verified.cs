@@ -77,6 +77,7 @@ using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
+using global::Kassyi.ZeroAlloc.Linq;
 namespace Kassyi.GSharp.Tests.Shared.Syntax
 {
 public partial class LoopUnrollKernels

@@ -126,6 +126,7 @@ internal static class WrapperEmitter
             using global::Kassyi.GSharp.Core;
             using global::Kassyi.GSharp.Runtime.Interop;
             using static global::Kassyi.GSharp.Core.ManagedGpuContext;
+            using global::Kassyi.ZeroAlloc.Linq;
             """);
 
         writer.AppendLine();
