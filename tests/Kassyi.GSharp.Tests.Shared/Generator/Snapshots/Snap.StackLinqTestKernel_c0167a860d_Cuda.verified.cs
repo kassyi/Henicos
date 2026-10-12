@@ -77,6 +77,7 @@ using System.Runtime.InteropServices;
 using global::Kassyi.GSharp.Core;
 using global::Kassyi.GSharp.Runtime.Interop;
 using static global::Kassyi.GSharp.Core.ManagedGpuContext;
+using global::Kassyi.ZeroAlloc.Linq;
 namespace Kassyi.GSharp.Tests.Shared.TestCases
 {
 public partial class StackLinqTestKernel
@@ -90,13 +91,26 @@ public const string RunLinq_Source = @"extern ""C"" __global__ void StackLinqTes
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid==0)
 {
-int count = Kassyi::ZeroAlloc::Linq::StackLinq::Count(Kassyi::ZeroAlloc::Linq::StackLinq::Select(Kassyi::ZeroAlloc::Linq::StackLinq::Where(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(data),[&](auto x) {
+int count = ([&]() -> auto {
+int __fusion_res = 0;
+int __fusion_length = data.length;
+for (int __i = 0; __i < __fusion_length; __i++)
+{
+auto __val_0 = data[__i];
+if (([&](auto x) {
 return x>5;
 }
-),[&](auto x) {
+)(__val_0))
+{
+auto __val_1 = ([&](auto x) {
 return x*2;
 }
-));
+)(__val_0);
+__fusion_res++;
+}
+}
+return __fusion_res;
+}());
 data[0]=count;
 }
 }
@@ -205,10 +219,20 @@ public const string RunLinqAny_Source = @"extern ""C"" __global__ void StackLinq
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid==0)
 {
-bool hasEven = Kassyi::ZeroAlloc::Linq::StackLinq::Any(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(data),[&](auto x) {
+bool hasEven = ([&]() -> auto {
+bool __fusion_res = false;
+int __fusion_length = data.length;
+for (int __i = 0; __i < __fusion_length; __i++)
+{
+auto __val_0 = data[__i];
+if (([&](auto x) {
 return x%2==0;
 }
-);
+)(__val_0))
+{__fusion_res = true; break;
+}}
+return __fusion_res;
+}());
 data[0]=(hasEven?1:0);
 }
 }
@@ -317,10 +341,20 @@ public const string RunLinqSum_Source = @"extern ""C"" __global__ void StackLinq
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid==0)
 {
-int sum = Kassyi::ZeroAlloc::Linq::StackLinq::Sum(Kassyi::ZeroAlloc::Linq::StackLinq::Select(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(data),[&](auto x) {
+int sum = ([&]() -> auto {
+int __fusion_res = 0;
+int __fusion_length = data.length;
+for (int __i = 0; __i < __fusion_length; __i++)
+{
+auto __val_0 = data[__i];
+auto __val_1 = ([&](auto x) {
 return x*2;
 }
-));
+)(__val_0);
+__fusion_res += __val_1;
+}
+return __fusion_res;
+}());
 data[0]=sum;
 }
 }
@@ -429,10 +463,20 @@ public const string RunLinqFirst_Source = @"extern ""C"" __global__ void StackLi
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid==0)
 {
-int first = Kassyi::ZeroAlloc::Linq::StackLinq::FirstOrDefault(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(data),[&](auto x) {
+int first = ([&]() -> auto {
+int __fusion_res = {};
+int __fusion_length = data.length;
+for (int __i = 0; __i < __fusion_length; __i++)
+{
+auto __val_0 = data[__i];
+if (([&](auto x) {
 return x>10;
 }
-);
+)(__val_0))
+{__fusion_res = __val_0; break;
+}}
+return __fusion_res;
+}());
 data[0]=first;
 }
 }
@@ -541,16 +585,29 @@ public const string RunLinqIndexedAndSelectorSum_Source = @"extern ""C"" __globa
 int tid = blockIdx.x*blockDim.x+threadIdx.x;
 if(tid==0)
 {
-int sum = Kassyi::ZeroAlloc::Linq::StackLinq::Sum(Kassyi::ZeroAlloc::Linq::StackLinq::SelectAt(Kassyi::ZeroAlloc::Linq::StackLinq::WhereAt(Kassyi::ZeroAlloc::Linq::StackLinq::AsStackEnumerable(data),[&](auto x, auto i) {
+int sum = ([&]() -> auto {
+int __fusion_res = 0;
+int __fusion_length = data.length;
+for (int __i = 0; __i < __fusion_length; __i++)
+{
+auto __val_0 = data[__i];
+if (([&](auto x, auto i) {
 return x>5&&i%2==0;
 }
-),[&](auto x, auto i) {
+)(__val_0))
+{
+auto __val_1 = ([&](auto x, auto i) {
 return x+i;
 }
-),[&](auto x) {
+)(__val_0);
+__fusion_res += ([&](auto x) {
 return x*3;
 }
-);
+)(__val_1);
+}
+}
+return __fusion_res;
+}());
 data[0]=sum;
 }
 }
