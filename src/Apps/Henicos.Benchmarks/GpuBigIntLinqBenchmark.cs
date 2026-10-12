@@ -1,11 +1,10 @@
-using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Toolchains.InProcess.Emit;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
-using Kassyi.ZeroAlloc.Linq;
 
 #nullable disable
 
@@ -44,6 +43,8 @@ public class GpuBigIntLinqBenchmark : IDisposable
     private GpuBigIntExecutableGraph _precompiledFilterGraph;
     private GpuBigIntExecutableGraph _precompiledPipelineGraph;
     private GpuBigIntExecutableGraph _precompiledVectorMapGraph;
+    private GpuBigIntExecutableGraph _precompiledVectorFilterGraph;
+    private GpuBigIntExecutableGraph _precompiledVectorPipelineGraph;
 
     private GpuBigIntArray _gpuVector;
 
@@ -79,17 +80,20 @@ public class GpuBigIntLinqBenchmark : IDisposable
             _cpuScalars[i] = val;
 
             var valBytes = val.ToByteArray();
-            var uSpan = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, uint>(valBytes);
+            var uSpan = MemoryMarshal.Cast<byte, uint>(valBytes);
             for (int j = 0; j < uSpan.Length && j < NumWords; j++)
             {
                 flatValues[i * NumWords + j] = uSpan[j];
             }
+
             flatSigns[i] = val.Sign < 0 ? 1u : 0u;
         }
 
         _gpuVector = new GpuBigIntArray(_context, ElementCount, NumWords);
-        _context.Provider.CopyHostToDevice(_gpuVector.Values.DevicePointer, flatValues, flatValues.Length, _context.Stream);
-        _context.Provider.CopyHostToDevice(_gpuVector.Signs.DevicePointer, flatSigns, flatSigns.Length, _context.Stream);
+        _context.Provider.CopyHostToDevice(_gpuVector.Values.DevicePointer, flatValues, flatValues.Length,
+            _context.Stream);
+        _context.Provider.CopyHostToDevice(_gpuVector.Signs.DevicePointer, flatSigns, flatSigns.Length,
+            _context.Stream);
 
         if (ElementCount <= 1024)
         {
@@ -122,6 +126,17 @@ public class GpuBigIntLinqBenchmark : IDisposable
             .SelectMultiply(_gpuConstant)
             .Sum()
             .CompileToGraph(_context);
+
+        _precompiledVectorFilterGraph = _gpuVector.AsVectorizedEnumerable()
+            .Where(_gpuVector.AsVectorizedEnumerable().IsGreaterThan(_gpuConstant))
+            .Sum()
+            .CompileToGraph(_context);
+
+        _precompiledVectorPipelineGraph = _gpuVector.AsVectorizedEnumerable()
+            .Where(_gpuVector.AsVectorizedEnumerable().IsGreaterThan(_gpuConstant))
+            .SelectMultiply(_gpuConstant)
+            .Sum()
+            .CompileToGraph(_context);
     }
 
     [GlobalCleanup]
@@ -135,7 +150,10 @@ public class GpuBigIntLinqBenchmark : IDisposable
             _precompiledFilterGraph.Dispose();
             _precompiledPipelineGraph.Dispose();
         }
+
         _precompiledVectorMapGraph.Dispose();
+        _precompiledVectorFilterGraph.Dispose();
+        _precompiledVectorPipelineGraph.Dispose();
 
         for (var i = 0; i < _gpuScalars.Length; i++)
         {
@@ -154,7 +172,10 @@ public class GpuBigIntLinqBenchmark : IDisposable
     private GpuBigInt CreateGpuBigInt(BigInteger val, int numWords)
     {
         var isNeg = val < 0;
-        if (isNeg) val = -val;
+        if (isNeg)
+        {
+            val = -val;
+        }
 
         var bytes = val.ToByteArray(isUnsigned: true, isBigEndian: false);
         var buffer = new uint[numWords];
@@ -169,9 +190,9 @@ public class GpuBigIntLinqBenchmark : IDisposable
     public BigInteger Cpu_MapReduce_PLINQ()
     {
 #pragma warning disable RS0030
-        return System.Linq.ParallelEnumerable.Aggregate(
-            System.Linq.ParallelEnumerable.Select(
-                System.Linq.ParallelEnumerable.AsParallel(_cpuScalars),
+        return ParallelEnumerable.Aggregate(
+            ParallelEnumerable.Select(
+                ParallelEnumerable.AsParallel(_cpuScalars),
                 s => s * _cpuConstant),
             BigInteger.Zero,
             (acc, cur) => acc + cur);
@@ -181,9 +202,9 @@ public class GpuBigIntLinqBenchmark : IDisposable
     public BigInteger Cpu_FilterReduce_PLINQ()
     {
 #pragma warning disable RS0030
-        return System.Linq.ParallelEnumerable.Aggregate(
-            System.Linq.ParallelEnumerable.Where(
-                System.Linq.ParallelEnumerable.AsParallel(_cpuScalars),
+        return ParallelEnumerable.Aggregate(
+            ParallelEnumerable.Where(
+                ParallelEnumerable.AsParallel(_cpuScalars),
                 s => s > _cpuConstant),
             BigInteger.Zero,
             (acc, cur) => acc + cur);
@@ -193,10 +214,10 @@ public class GpuBigIntLinqBenchmark : IDisposable
     public BigInteger Cpu_Pipeline_PLINQ()
     {
 #pragma warning disable RS0030
-        return System.Linq.ParallelEnumerable.Aggregate(
-            System.Linq.ParallelEnumerable.Select(
-                System.Linq.ParallelEnumerable.Where(
-                    System.Linq.ParallelEnumerable.AsParallel(_cpuScalars),
+        return ParallelEnumerable.Aggregate(
+            ParallelEnumerable.Select(
+                ParallelEnumerable.Where(
+                    ParallelEnumerable.AsParallel(_cpuScalars),
                     s => s > _cpuConstant),
                 s => s * _cpuConstant),
             BigInteger.Zero,
@@ -206,19 +227,24 @@ public class GpuBigIntLinqBenchmark : IDisposable
 
     // --- GPU Executions ---
     public void Gpu_VectorMap_Precompiled() => _precompiledVectorMapGraph.Execute();
+    public void Gpu_VectorFilter_Precompiled() => _precompiledVectorFilterGraph.Execute();
+    public void Gpu_VectorPipeline_Precompiled() => _precompiledVectorPipelineGraph.Execute();
     public void Gpu_Filter_Precompiled() => _precompiledFilterGraph.Execute();
     public void Gpu_Pipeline_Precompiled() => _precompiledPipelineGraph.Execute();
     public void Gpu_StackMap_Precompiled() => _precompiledMapGraph.Execute();
 
     public static void RunDirectBenchmark(int elementCount = 256, int numWords = 8, int iterations = 10)
     {
-        Logger<GpuBigIntLinqBenchmark>.Info("================================================================================");
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            "================================================================================");
         Logger<GpuBigIntLinqBenchmark>.Info(" Henicos LINQ to GPU Comprehensive Benchmark Suite");
-        Logger<GpuBigIntLinqBenchmark>.Info("================================================================================");
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            "================================================================================");
         Logger<GpuBigIntLinqBenchmark>.Info($"Elements    : {elementCount:N0}");
         Logger<GpuBigIntLinqBenchmark>.Info($"Word Width  : {numWords} words ({numWords * 32} bits)");
         Logger<GpuBigIntLinqBenchmark>.Info($"Iterations  : {iterations}");
-        Logger<GpuBigIntLinqBenchmark>.Info("================================================================================");
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            "================================================================================");
 
         using var bench = new GpuBigIntLinqBenchmark { ElementCount = elementCount, NumWords = numWords };
         bench.Setup();
@@ -228,6 +254,8 @@ public class GpuBigIntLinqBenchmark : IDisposable
         _ = bench.Cpu_FilterReduce_PLINQ();
         _ = bench.Cpu_Pipeline_PLINQ();
         bench.Gpu_VectorMap_Precompiled();
+        bench.Gpu_VectorFilter_Precompiled();
+        bench.Gpu_VectorPipeline_Precompiled();
 
         if (elementCount <= 1024)
         {
@@ -238,65 +266,80 @@ public class GpuBigIntLinqBenchmark : IDisposable
 
         var sw = new Stopwatch();
 
-        double Measure(Action action)
-        {
-            sw.Restart();
-            for (var i = 0; i < iterations; i++) action();
-            sw.Stop();
-            return (double)sw.ElapsedMilliseconds / iterations;
-        }
+        var cpuMapMs = measure(() => _ = bench.Cpu_MapReduce_PLINQ());
+        var cpuFilterMs = measure(() => _ = bench.Cpu_FilterReduce_PLINQ());
+        var cpuPipelineMs = measure(() => _ = bench.Cpu_Pipeline_PLINQ());
 
-        var cpuMapMs = Measure(() => _ = bench.Cpu_MapReduce_PLINQ());
-        var cpuFilterMs = Measure(() => _ = bench.Cpu_FilterReduce_PLINQ());
-        var cpuPipelineMs = Measure(() => _ = bench.Cpu_Pipeline_PLINQ());
-
-        var gpuVecMapMs = Measure(() => bench.Gpu_VectorMap_Precompiled());
+        var gpuVecMapMs = measure(bench.Gpu_VectorMap_Precompiled);
+        var gpuVecFilterMs = measure(bench.Gpu_VectorFilter_Precompiled);
+        var gpuVecPipelineMs = measure(bench.Gpu_VectorPipeline_Precompiled);
 
         double gpuStackMapMs = 0, gpuFilterMs = 0, gpuPipelineMs = 0;
         if (elementCount <= 1024)
         {
-            gpuStackMapMs = Measure(() => bench.Gpu_StackMap_Precompiled());
-            gpuFilterMs = Measure(() => bench.Gpu_Filter_Precompiled());
-            gpuPipelineMs = Measure(() => bench.Gpu_Pipeline_Precompiled());
+            gpuStackMapMs = measure(bench.Gpu_StackMap_Precompiled);
+            gpuFilterMs = measure(bench.Gpu_Filter_Precompiled);
+            gpuPipelineMs = measure(bench.Gpu_Pipeline_Precompiled);
         }
 
-        double CalcThroughput(double ms) => ms > 0 ? (elementCount / ms) / 1000.0 : 0;
-        string FormatThroughput(double ms) => ms > 0 ? $"{CalcThroughput(ms),11:F2} M/s" : "        N/A";
-        string FormatSpeedup(double cpuMs, double gpuMs) => gpuMs > 0 ? $"{cpuMs / Math.Max(0.001, gpuMs),13:F2}x" : "          N/A";
-
         Logger<GpuBigIntLinqBenchmark>.Info("");
-        Logger<GpuBigIntLinqBenchmark>.Info("| Scenario / Mode                     | Latency (ms) | Speedup vs CPU | M Elements / s |");
-        Logger<GpuBigIntLinqBenchmark>.Info("|:------------------------------------|-------------:|---------------:|---------------:|");
-        
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            "| Scenario / Mode                     | Latency (ms) | Speedup vs CPU | M Elements / s |");
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            "|:------------------------------------|-------------:|---------------:|---------------:|");
+
         // Scenario 1: MapReduce
-        Logger<GpuBigIntLinqBenchmark>.Info($"| [Map] CPU (Numerics + PLINQ)        | {cpuMapMs,10:F2} ms |          1.00x | {FormatThroughput(cpuMapMs)} |");
-        Logger<GpuBigIntLinqBenchmark>.Info($"| [Map] GPU (Vectorized CUDA Graph)   | {gpuVecMapMs,10:F2} ms | {FormatSpeedup(cpuMapMs, gpuVecMapMs)} | {FormatThroughput(gpuVecMapMs)} |");
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            $"| [Map] CPU (Numerics + PLINQ)        | {cpuMapMs,10:F2} ms |          1.00x | {formatThroughput(cpuMapMs)} |");
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            $"| [Map] GPU (Vectorized CUDA Graph)   | {gpuVecMapMs,10:F2} ms | {formatSpeedup(cpuMapMs, gpuVecMapMs)} | {formatThroughput(gpuVecMapMs)} |");
         if (elementCount <= 1024)
         {
-            Logger<GpuBigIntLinqBenchmark>.Info($"| [Map] GPU (Stack CUDA Graph)        | {gpuStackMapMs,10:F2} ms | {FormatSpeedup(cpuMapMs, gpuStackMapMs)} | {FormatThroughput(gpuStackMapMs)} |");
+            Logger<GpuBigIntLinqBenchmark>.Info(
+                $"| [Map] GPU (Stack CUDA Graph)        | {gpuStackMapMs,10:F2} ms | {formatSpeedup(cpuMapMs, gpuStackMapMs)} | {formatThroughput(gpuStackMapMs)} |");
         }
 
         // Scenario 2: FilterReduce
-        Logger<GpuBigIntLinqBenchmark>.Info($"| [Filter] CPU (Numerics + PLINQ)     | {cpuFilterMs,10:F2} ms |          1.00x | {FormatThroughput(cpuFilterMs)} |");
-        if (elementCount <= 1024)
-        {
-            Logger<GpuBigIntLinqBenchmark>.Info($"| [Filter] GPU (Stack CUDA Graph)     | {gpuFilterMs,10:F2} ms | {FormatSpeedup(cpuFilterMs, gpuFilterMs)} | {FormatThroughput(gpuFilterMs)} |");
-        }
-        else
-        {
-            Logger<GpuBigIntLinqBenchmark>.Info("| [Filter] GPU (Stack CUDA Graph)     |          N/A |            N/A | (Limit: 1024)  |");
-        }
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            $"| [Filter] CPU (Numerics + PLINQ)     | {cpuFilterMs,10:F2} ms |          1.00x | {formatThroughput(cpuFilterMs)} |");
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            $"| [Filter] GPU (Vectorized CUDA Graph)| {gpuVecFilterMs,10:F2} ms | {formatSpeedup(cpuFilterMs, gpuVecFilterMs)} | {formatThroughput(gpuVecFilterMs)} |");
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            elementCount <= 1024
+                ? $"| [Filter] GPU (Stack CUDA Graph)     | {gpuFilterMs,10:F2} ms | {formatSpeedup(cpuFilterMs, gpuFilterMs)} | {formatThroughput(gpuFilterMs)} |"
+                : "| [Filter] GPU (Stack CUDA Graph)     |          N/A |            N/A | (Limit: 1024)  |");
 
         // Scenario 3: Pipeline (Filter + Map + Reduce)
-        Logger<GpuBigIntLinqBenchmark>.Info($"| [Pipeline] CPU (Numerics + PLINQ)   | {cpuPipelineMs,10:F2} ms |          1.00x | {FormatThroughput(cpuPipelineMs)} |");
-        if (elementCount <= 1024)
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            $"| [Pipeline] CPU (Numerics + PLINQ)   | {cpuPipelineMs,10:F2} ms |          1.00x | {formatThroughput(cpuPipelineMs)} |");
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            $"| [Pipeline] GPU (Vectorized CUDA Graph)| {gpuVecPipelineMs,10:F2} ms | {formatSpeedup(cpuPipelineMs, gpuVecPipelineMs)} | {formatThroughput(gpuVecPipelineMs)} |");
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            elementCount <= 1024
+                ? $"| [Pipeline] GPU (Stack CUDA Graph)   | {gpuPipelineMs,10:F2} ms | {formatSpeedup(cpuPipelineMs, gpuPipelineMs)} | {formatThroughput(gpuPipelineMs)} |"
+                : "| [Pipeline] GPU (Stack CUDA Graph)   |          N/A |            N/A | (Limit: 1024)  |");
+
+        Logger<GpuBigIntLinqBenchmark>.Info(
+            "==================================================================================");
+        return;
+
+        string formatSpeedup(double cpuMs, double gpuMs) =>
+            gpuMs > 0 ? $"{cpuMs / Math.Max(0.001, gpuMs),13:F2}x" : "          N/A";
+
+        double calcThroughput(double ms) => ms > 0 ? elementCount / ms / 1000.0 : 0;
+
+        string formatThroughput(double ms) => ms > 0 ? $"{calcThroughput(ms),11:F2} M/s" : "        N/A";
+
+        double measure(Action action)
         {
-            Logger<GpuBigIntLinqBenchmark>.Info($"| [Pipeline] GPU (Stack CUDA Graph)   | {gpuPipelineMs,10:F2} ms | {FormatSpeedup(cpuPipelineMs, gpuPipelineMs)} | {FormatThroughput(gpuPipelineMs)} |");
+            sw.Restart();
+            for (var i = 0; i < iterations; i++)
+            {
+                action();
+            }
+
+            sw.Stop();
+            return (double)sw.ElapsedMilliseconds / iterations;
         }
-        else
-        {
-            Logger<GpuBigIntLinqBenchmark>.Info("| [Pipeline] GPU (Stack CUDA Graph)   |          N/A |            N/A | (Limit: 1024)  |");
-        }
-        Logger<GpuBigIntLinqBenchmark>.Info("==================================================================================");
     }
 }
