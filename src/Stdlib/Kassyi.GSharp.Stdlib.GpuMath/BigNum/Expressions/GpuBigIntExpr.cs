@@ -124,6 +124,23 @@ public readonly struct GpuBigIntExpr
     /// <returns>An executable graph instance that can be launched repeatedly.</returns>
     public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
+        // 1. Warm-up execution to trigger all lazy memory allocations and JIT compilation
+        // before graph capture begins, otherwise cuMemAlloc invalidates the stream.
+        try
+        {
+            var warmupResult = Node.Evaluate(workspace, targetResult);
+            if (!targetResult.HasValue)
+            {
+                // We don't need the warmup result if it's dynamically allocated
+                warmupResult.Dispose();
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Failed during warmup execution for CUDA Graph capture.", ex);
+        }
+
+        // 2. Capture the graph
         workspace.Provider.BeginCapture(workspace.Stream);
 
         GpuBigInt result;
