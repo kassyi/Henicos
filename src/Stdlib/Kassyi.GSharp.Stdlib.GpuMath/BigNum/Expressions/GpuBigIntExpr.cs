@@ -17,10 +17,7 @@ public readonly struct GpuBigIntExpr
     /// <summary>
     /// Gets the root AST node of this signed expression tree.
     /// </summary>
-    public IGpuBigIntExpression Node
-    {
-        get;
-    }
+    public IGpuBigIntExpression Node { get; }
 
     internal GpuBigIntExpr(IGpuBigIntExpression node)
     {
@@ -117,5 +114,88 @@ public readonly struct GpuBigIntExpr
     /// <param name="workspace">The GPU workspace used for temporary buffer allocation.</param>
     /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the temporary buffer with the evaluated sign.</returns>
     public GpuBigInt Evaluate(GpuWorkspace workspace) => Node.Evaluate(workspace);
+
+    /// <summary>
+    /// Compiles this expression tree into an executable CUDA Graph, eliminating launch overhead for repeated executions.
+    /// The caller is responsible for disposing the returned graph.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace.</param>
+    /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
+    /// <returns>An executable graph instance that can be launched repeatedly.</returns>
+    public GpuBigIntExecutableGraph CompileToGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
+    {
+        workspace.Provider.BeginCapture(workspace.Stream);
+
+        GpuBigInt result;
+        try
+        {
+            result = Node.Evaluate(workspace, targetResult);
+        }
+        catch
+        {
+            workspace.Provider.EndCapture(workspace.Stream);
+            throw;
+        }
+
+        var graph = workspace.Provider.EndCapture(workspace.Stream);
+        var graphExec = workspace.Provider.InstantiateGraph(graph);
+        return new GpuBigIntExecutableGraph(workspace, graph, graphExec, result);
+    }
+
+    /// <summary>
+    /// Evaluates this expression tree by dynamically compiling it into a CUDA Graph, launching it, and destroying it immediately.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace.</param>
+    /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
+    /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the evaluated result.</returns>
+    public GpuBigInt EvaluateWithCudaGraph(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
+    {
+        using var executableGraph = CompileToGraph(workspace, targetResult);
+        executableGraph.Execute();
+        return executableGraph.Result;
+    }
 }
 
+/// <summary>
+/// Represents a compiled, executable CUDA Graph for a GpuBigInt expression tree.
+/// </summary>
+public readonly struct GpuBigIntExecutableGraph : IDisposable
+{
+    private readonly GpuWorkspace _workspace;
+    private readonly IntPtr _graph;
+    private readonly IntPtr _graphExec;
+
+    /// <summary>
+    /// Gets the buffer holding the result of the graph execution. 
+    /// This buffer is only valid and updated after <see cref="Execute"/> is called.
+    /// </summary>
+    public GpuBigInt Result { get; }
+
+    internal GpuBigIntExecutableGraph(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result)
+    {
+        _workspace = workspace;
+        _graph = graph;
+        _graphExec = graphExec;
+        Result = result;
+    }
+
+    /// <summary>
+    /// Launches the executable graph on the GPU and waits for completion.
+    /// </summary>
+    public void Execute()
+    {
+        _workspace.Provider.LaunchGraph(_graphExec, _workspace.Stream);
+        _workspace.Provider.SynchronizeStream(_workspace.Stream);
+    }
+
+    /// <summary>
+    /// Destroys the underlying CUDA Graph and executable graph instances.
+    /// </summary>
+    public void Dispose()
+    {
+        if (_workspace != null && _graph != IntPtr.Zero)
+        {
+            _workspace.Provider.DestroyGraph(_graph, _graphExec);
+        }
+    }
+}

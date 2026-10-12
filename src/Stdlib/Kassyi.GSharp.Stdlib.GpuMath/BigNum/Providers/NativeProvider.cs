@@ -41,12 +41,6 @@ public class NativeProvider : IGpuExecutionProvider
         {
             return;
         }
-
-        if (!NativeMethods.GpuBigInt_ClearMemory(devicePointer, numWords, stream))
-        {
-            // temporarily suppress to see if tests pass
-            Console.WriteLine($"Failed to clear memory on GPU device pointer 0x{devicePointer.ToInt64():X}.");
-        }
     }
 
     /// <inheritdoc/>
