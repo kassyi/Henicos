@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 #pragma warning disable GSH0014 // Justification: Lambda capture limitations in source generation prevent passing context by reference.
-[Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[SkipSnapshotConsistency("Tested in separate suites or WIP")]
+[ExcludeFromCodeCoverage]
 public static partial class GpuBigIntCmpKernels
 {
     [GpuKernel]

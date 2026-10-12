@@ -1,16 +1,26 @@
-using System;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
-using Kassyi.ZeroAlloc.Linq;
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
+/// <summary>
+/// Specifies the type of comparison operation between GPU vector elements.
+/// </summary>
 public enum VectorCompareOperator
 {
+    /// <summary>Tests for equality (==).</summary>
     Equal = 0,
+
+    /// <summary>Tests for inequality (!=).</summary>
     NotEqual = 1,
+
+    /// <summary>Tests for strictly greater than (&gt;).</summary>
     GreaterThan = 2,
+
+    /// <summary>Tests for greater than or equal (&gt;=).</summary>
     GreaterThanOrEqual = 3,
+
+    /// <summary>Tests for strictly less than (&lt;).</summary>
     LessThan = 4,
+
+    /// <summary>Tests for less than or equal (&lt;=).</summary>
     LessThanOrEqual = 5
 }
 
@@ -240,10 +250,7 @@ internal class VectorAnyTrueExpression([TakesOwnership] IGpuBoolVectorExpression
         return hResult[0] != 0;
     }
 
-    public void Dispose()
-    {
-        source.Dispose();
-    }
+    public void Dispose() => source.Dispose();
 }
 
 internal class VectorAllTrueExpression([TakesOwnership] IGpuBoolVectorExpression source) : IGpuBoolExpr
@@ -275,13 +282,18 @@ internal class VectorAllTrueExpression([TakesOwnership] IGpuBoolVectorExpression
         return hResult[0] != 0;
     }
 
-    public void Dispose()
-    {
-        source.Dispose();
-    }
+    public void Dispose() => source.Dispose();
 }
 
-public interface IGpuBoolExpr : System.IDisposable
+/// <summary>
+/// Represents a deferred scalar boolean expression on the GPU.
+/// </summary>
+public interface IGpuBoolExpr : IDisposable
 {
+    /// <summary>
+    /// Evaluates the boolean expression on the GPU and copies the scalar boolean result to host.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace memory context.</param>
+    /// <returns><c>true</c> if the condition evaluated to true; otherwise, <c>false</c>.</returns>
     bool Evaluate(GpuWorkspace workspace);
 }

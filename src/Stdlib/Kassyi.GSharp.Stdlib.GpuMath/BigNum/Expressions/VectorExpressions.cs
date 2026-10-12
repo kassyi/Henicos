@@ -1,5 +1,4 @@
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
-
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 /// <summary>
@@ -35,7 +34,7 @@ internal class GpuBigIntVectorLeafExpression(GpuBigIntArray array) : IGpuBigIntV
 
     public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
     {
-        int count = elementCount ?? (Length - elementOffset);
+        var count = elementCount ?? (Length - elementOffset);
         if (elementOffset == 0 && count == Length)
         {
             return array;
@@ -61,7 +60,7 @@ internal class VectorMulScalarExpression([TakesOwnership] IGpuBigIntVectorExpres
 
     public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
     {
-        int evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Length - elementOffset);
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
         var scalarResult = scalar.Evaluate(workspace);
 
@@ -76,8 +75,8 @@ internal class VectorMulScalarExpression([TakesOwnership] IGpuBigIntVectorExpres
             _allocated = true;
         }
 
-        int gridDimX = evalCount;
-        int blockDimX = Math.Min(1024, WordsPerElement);
+        var gridDimX = evalCount;
+        var blockDimX = Math.Min(1024, WordsPerElement);
 
         GpuBigIntVectorKernels.LaunchVectorMulScalarKernelPtr(
             vecResult.Values.DevicePointer,
@@ -119,7 +118,7 @@ internal class VectorAddScalarExpression([TakesOwnership] IGpuBigIntVectorExpres
 
     public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
     {
-        int evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Length - elementOffset);
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
         var scalarResult = scalar.Evaluate(workspace);
 
@@ -134,8 +133,8 @@ internal class VectorAddScalarExpression([TakesOwnership] IGpuBigIntVectorExpres
             _allocated = true;
         }
 
-        int gridDimX = evalCount;
-        int blockDimX = Math.Min(1024, WordsPerElement);
+        var gridDimX = evalCount;
+        var blockDimX = Math.Min(1024, WordsPerElement);
 
         GpuBigIntVectorKernels.LaunchVectorAddScalarKernelPtr(
             vecResult.Values.DevicePointer,
@@ -177,7 +176,7 @@ internal class VectorSubScalarExpression([TakesOwnership] IGpuBigIntVectorExpres
 
     public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
     {
-        int evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Length - elementOffset);
         var vecResult = vector.Evaluate(workspace, elementOffset, evalCount);
         var scalarResult = scalar.Evaluate(workspace);
 
@@ -192,8 +191,8 @@ internal class VectorSubScalarExpression([TakesOwnership] IGpuBigIntVectorExpres
             _allocated = true;
         }
 
-        int gridDimX = evalCount;
-        int blockDimX = Math.Min(1024, WordsPerElement);
+        var gridDimX = evalCount;
+        var blockDimX = Math.Min(1024, WordsPerElement);
 
         GpuBigIntVectorKernels.LaunchVectorSubScalarKernelPtr(
             vecResult.Values.DevicePointer,
@@ -235,7 +234,7 @@ internal class VectorAddVectorExpression([TakesOwnership] IGpuBigIntVectorExpres
 
     public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
     {
-        int evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Length - elementOffset);
         var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
         var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
 
@@ -255,8 +254,8 @@ internal class VectorAddVectorExpression([TakesOwnership] IGpuBigIntVectorExpres
             _allocated = true;
         }
 
-        int gridDimX = evalCount;
-        int blockDimX = Math.Min(1024, WordsPerElement);
+        var gridDimX = evalCount;
+        var blockDimX = Math.Min(1024, WordsPerElement);
 
         GpuBigIntVectorKernels.LaunchVectorZipAddKernelPtr(
             leftResult.Values.DevicePointer,
@@ -300,7 +299,7 @@ internal class VectorSubVectorExpression([TakesOwnership] IGpuBigIntVectorExpres
 
     public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
     {
-        int evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Length - elementOffset);
         var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
         var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
 
@@ -320,8 +319,8 @@ internal class VectorSubVectorExpression([TakesOwnership] IGpuBigIntVectorExpres
             _allocated = true;
         }
 
-        int gridDimX = evalCount;
-        int blockDimX = Math.Min(1024, WordsPerElement);
+        var gridDimX = evalCount;
+        var blockDimX = Math.Min(1024, WordsPerElement);
 
         GpuBigIntVectorKernels.LaunchVectorZipSubKernelPtr(
             leftResult.Values.DevicePointer,
@@ -365,7 +364,7 @@ internal class VectorMulVectorExpression([TakesOwnership] IGpuBigIntVectorExpres
 
     public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
     {
-        int evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Length - elementOffset);
         var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
         var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
 
@@ -385,8 +384,8 @@ internal class VectorMulVectorExpression([TakesOwnership] IGpuBigIntVectorExpres
             _allocated = true;
         }
 
-        int gridDimX = evalCount;
-        int blockDimX = Math.Min(1024, WordsPerElement);
+        var gridDimX = evalCount;
+        var blockDimX = Math.Min(1024, WordsPerElement);
 
         GpuBigIntVectorKernels.LaunchVectorZipMulKernelPtr(
             leftResult.Values.DevicePointer,
@@ -425,8 +424,8 @@ internal class VectorSumReductionExpression : IGpuBigIntExpression, IDisposable
     public int NumWords => _vector.WordsPerElement;
 
     private GpuBigUInt? _finalValue;
-    private readonly List<GpuBigUIntArray> _tempBuffers = new();
-    private readonly List<(int GridDimX, int BatchSize, int ChunkSize)> _passes = new();
+    private readonly List<GpuBigUIntArray> _tempBuffers = [];
+    private readonly List<(int GridDimX, int BatchSize, int ChunkSize)> _passes = [];
     private bool _allocated;
 
     public VectorSumReductionExpression([TakesOwnership] IGpuBigIntVectorExpression vector)
@@ -434,12 +433,12 @@ internal class VectorSumReductionExpression : IGpuBigIntExpression, IDisposable
         _vector = vector;
 
         // Pre-calculate tree reduction passes sizes
-        int batchSize = vector.Length;
-        int chunkSize = 256; // Tune this: number of elements each block will reduce
+        var batchSize = vector.Length;
+        var chunkSize = 256; // Tune this: number of elements each block will reduce
 
         while (batchSize > 1)
         {
-            int nextBatchSize = (batchSize + chunkSize - 1) / chunkSize;
+            var nextBatchSize = (batchSize + chunkSize - 1) / chunkSize;
             _passes.Add((GridDimX: nextBatchSize, BatchSize: batchSize, ChunkSize: chunkSize));
             batchSize = nextBatchSize;
         }
@@ -493,7 +492,7 @@ internal class VectorSumReductionExpression : IGpuBigIntExpression, IDisposable
             return new GpuBigInt(_finalValue.Value, false);
         }
 
-        IntPtr initialPtr = _tempBuffers[0].DevicePointer;
+        var initialPtr = _tempBuffers[0].DevicePointer;
         GpuBigIntVectorKernels.LaunchVectorSignMagnitudeToTwosComplementKernelPtr(
             vecResult.Values.DevicePointer,
             vecResult.Signs.DevicePointer,
@@ -504,15 +503,15 @@ internal class VectorSumReductionExpression : IGpuBigIntExpression, IDisposable
             (uint)Math.Min(1024, NumWords), 1, 1,
             0, workspace.Stream);
 
-        IntPtr currentInputPtr = initialPtr;
-        int tempBufferIndex = 1;
+        var currentInputPtr = initialPtr;
+        var tempBufferIndex = 1;
 
-        for (int i = 0; i < _passes.Count; i++)
+        for (var i = 0; i < _passes.Count; i++)
         {
             var pass = _passes[i];
-            bool isLastPass = (i == _passes.Count - 1);
+            var isLastPass = (i == _passes.Count - 1);
             
-            IntPtr currentOutputPtr = isLastPass 
+            var currentOutputPtr = isLastPass 
                 ? _finalValue.Value.DevicePointer 
                 : _tempBuffers[tempBufferIndex++].DevicePointer;
 
@@ -529,7 +528,7 @@ internal class VectorSumReductionExpression : IGpuBigIntExpression, IDisposable
             currentInputPtr = currentOutputPtr; // Output becomes input for next pass
         }
 
-        bool isNegative = false;
+        var isNegative = false;
         var cpuValue = _finalValue.Value.ToBigInteger();
         
         // Two's complement check: if MSB is set, it's negative
@@ -537,7 +536,7 @@ internal class VectorSumReductionExpression : IGpuBigIntExpression, IDisposable
         {
             isNegative = true;
             // CPU fallback for Two's Complement to Sign-Magnitude
-            var shift = (System.Numerics.BigInteger)1 << (NumWords * 32);
+            var shift = (BigInteger)1 << (NumWords * 32);
             cpuValue = shift - cpuValue;
         }
         
@@ -573,20 +572,20 @@ internal class VectorMaxReductionExpression : IGpuBigIntExpression, IDisposable
     public int NumWords => _vector.WordsPerElement;
 
     private GpuBigUInt? _finalValue;
-    private readonly List<GpuBigUIntArray> _tempBuffers = new();
-    private readonly List<(int GridDimX, int BatchSize, int ChunkSize)> _passes = new();
+    private readonly List<GpuBigUIntArray> _tempBuffers = [];
+    private readonly List<(int GridDimX, int BatchSize, int ChunkSize)> _passes = [];
     private bool _allocated;
 
     public VectorMaxReductionExpression([TakesOwnership] IGpuBigIntVectorExpression vector)
     {
         _vector = vector;
 
-        int batchSize = vector.Length;
-        int chunkSize = 256; 
+        var batchSize = vector.Length;
+        var chunkSize = 256; 
 
         while (batchSize > 1)
         {
-            int nextBatchSize = (batchSize + chunkSize - 1) / chunkSize;
+            var nextBatchSize = (batchSize + chunkSize - 1) / chunkSize;
             _passes.Add((GridDimX: nextBatchSize, BatchSize: batchSize, ChunkSize: chunkSize));
             batchSize = nextBatchSize;
         }
@@ -635,7 +634,7 @@ internal class VectorMaxReductionExpression : IGpuBigIntExpression, IDisposable
             return new GpuBigInt(_finalValue.Value, false);
         }
 
-        IntPtr initialPtr = _tempBuffers[0].DevicePointer;
+        var initialPtr = _tempBuffers[0].DevicePointer;
         GpuBigIntVectorKernels.LaunchVectorSignMagnitudeToOffsetBinaryKernelPtr(
             vecResult.Values.DevicePointer,
             vecResult.Signs.DevicePointer,
@@ -646,15 +645,15 @@ internal class VectorMaxReductionExpression : IGpuBigIntExpression, IDisposable
             (uint)Math.Min(1024, NumWords), 1, 1,
             0, workspace.Stream);
 
-        IntPtr currentInputPtr = initialPtr;
-        int tempBufferIndex = 1;
+        var currentInputPtr = initialPtr;
+        var tempBufferIndex = 1;
 
-        for (int i = 0; i < _passes.Count; i++)
+        for (var i = 0; i < _passes.Count; i++)
         {
             var pass = _passes[i];
-            bool isLastPass = (i == _passes.Count - 1);
+            var isLastPass = (i == _passes.Count - 1);
             
-            IntPtr currentOutputPtr = isLastPass 
+            var currentOutputPtr = isLastPass 
                 ? _finalValue.Value.DevicePointer 
                 : _tempBuffers[tempBufferIndex++].DevicePointer;
 
@@ -671,11 +670,11 @@ internal class VectorMaxReductionExpression : IGpuBigIntExpression, IDisposable
             currentInputPtr = currentOutputPtr; 
         }
 
-        bool isNegative = false;
+        var isNegative = false;
         var cpuValue = _finalValue.Value.ToBigInteger();
         
         // Offset Binary check: Un-bias the MSB
-        var msbMask = (System.Numerics.BigInteger)1 << (NumWords * 32 - 1);
+        var msbMask = (BigInteger)1 << (NumWords * 32 - 1);
         cpuValue ^= msbMask;
         
         // Two's complement check: if MSB is set, it's negative
@@ -683,7 +682,7 @@ internal class VectorMaxReductionExpression : IGpuBigIntExpression, IDisposable
         {
             isNegative = true;
             // CPU fallback for Two's Complement to Sign-Magnitude
-            var shift = (System.Numerics.BigInteger)1 << (NumWords * 32);
+            var shift = (BigInteger)1 << (NumWords * 32);
             cpuValue = shift - cpuValue;
         }
         
@@ -719,20 +718,20 @@ internal class VectorMinReductionExpression : IGpuBigIntExpression, IDisposable
     public int NumWords => _vector.WordsPerElement;
 
     private GpuBigUInt? _finalValue;
-    private readonly List<GpuBigUIntArray> _tempBuffers = new();
-    private readonly List<(int GridDimX, int BatchSize, int ChunkSize)> _passes = new();
+    private readonly List<GpuBigUIntArray> _tempBuffers = [];
+    private readonly List<(int GridDimX, int BatchSize, int ChunkSize)> _passes = [];
     private bool _allocated;
 
     public VectorMinReductionExpression([TakesOwnership] IGpuBigIntVectorExpression vector)
     {
         _vector = vector;
 
-        int batchSize = vector.Length;
-        int chunkSize = 256; 
+        var batchSize = vector.Length;
+        var chunkSize = 256; 
 
         while (batchSize > 1)
         {
-            int nextBatchSize = (batchSize + chunkSize - 1) / chunkSize;
+            var nextBatchSize = (batchSize + chunkSize - 1) / chunkSize;
             _passes.Add((GridDimX: nextBatchSize, BatchSize: batchSize, ChunkSize: chunkSize));
             batchSize = nextBatchSize;
         }
@@ -781,7 +780,7 @@ internal class VectorMinReductionExpression : IGpuBigIntExpression, IDisposable
             return new GpuBigInt(_finalValue.Value, false);
         }
 
-        IntPtr initialPtr = _tempBuffers[0].DevicePointer;
+        var initialPtr = _tempBuffers[0].DevicePointer;
         GpuBigIntVectorKernels.LaunchVectorSignMagnitudeToOffsetBinaryKernelPtr(
             vecResult.Values.DevicePointer,
             vecResult.Signs.DevicePointer,
@@ -792,15 +791,15 @@ internal class VectorMinReductionExpression : IGpuBigIntExpression, IDisposable
             (uint)Math.Min(1024, NumWords), 1, 1,
             0, workspace.Stream);
 
-        IntPtr currentInputPtr = initialPtr;
-        int tempBufferIndex = 1;
+        var currentInputPtr = initialPtr;
+        var tempBufferIndex = 1;
 
-        for (int i = 0; i < _passes.Count; i++)
+        for (var i = 0; i < _passes.Count; i++)
         {
             var pass = _passes[i];
-            bool isLastPass = (i == _passes.Count - 1);
+            var isLastPass = (i == _passes.Count - 1);
             
-            IntPtr currentOutputPtr = isLastPass 
+            var currentOutputPtr = isLastPass 
                 ? _finalValue.Value.DevicePointer 
                 : _tempBuffers[tempBufferIndex++].DevicePointer;
 
@@ -817,11 +816,11 @@ internal class VectorMinReductionExpression : IGpuBigIntExpression, IDisposable
             currentInputPtr = currentOutputPtr; 
         }
 
-        bool isNegative = false;
+        var isNegative = false;
         var cpuValue = _finalValue.Value.ToBigInteger();
         
         // Offset Binary check: Un-bias the MSB
-        var msbMask = (System.Numerics.BigInteger)1 << (NumWords * 32 - 1);
+        var msbMask = (BigInteger)1 << (NumWords * 32 - 1);
         cpuValue ^= msbMask;
         
         // Two's complement check: if MSB is set, it's negative
@@ -829,7 +828,7 @@ internal class VectorMinReductionExpression : IGpuBigIntExpression, IDisposable
         {
             isNegative = true;
             // CPU fallback for Two's Complement to Sign-Magnitude
-            var shift = (System.Numerics.BigInteger)1 << (NumWords * 32);
+            var shift = (BigInteger)1 << (NumWords * 32);
             cpuValue = shift - cpuValue;
         }
         
@@ -859,20 +858,15 @@ internal class VectorMinReductionExpression : IGpuBigIntExpression, IDisposable
     }
 }
 
-internal class VectorCountExpression : IGpuBigIntExpression, IDisposable
+internal class VectorCountExpression([TakesOwnership] IGpuBigIntVectorExpression vector)
+    : IGpuBigIntExpression, IDisposable
 {
-    private readonly IGpuBigIntVectorExpression _vector;
     public int NumWords => 1;
-
-    public VectorCountExpression([TakesOwnership] IGpuBigIntVectorExpression vector)
-    {
-        _vector = vector;
-    }
 
     public GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
     {
-        int count = _vector.Length;
-        _vector.Dispose(); // Skip GPU evaluation (O(1) optimization), but free resources
+        var count = vector.Length;
+        vector.Dispose(); // Skip GPU evaluation (O(1) optimization), but free resources
 
         if (targetResult.HasValue)
         {
@@ -883,15 +877,12 @@ internal class VectorCountExpression : IGpuBigIntExpression, IDisposable
         }
         else
         {
-            var countVal = new uint[] { (uint)count };
+            var countVal = new[] { (uint)count };
             return new GpuBigInt(new GpuBigUInt(workspace, countVal), false);
         }
     }
 
-    public void Dispose()
-    {
-        _vector.Dispose();
-    }
+    public void Dispose() => vector.Dispose();
 }
 
 internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count) : IGpuBigIntVectorExpression
@@ -901,10 +892,10 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
 
     public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
     {
-        int evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Length - elementOffset);
         
         // Ensure we do not evaluate beyond the Take boundary
-        int effectiveCount = Math.Min(evalCount, Length - elementOffset);
+        var effectiveCount = Math.Min(evalCount, Length - elementOffset);
         
         if (effectiveCount <= 0)
         {
@@ -916,10 +907,7 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
         return source.Evaluate(workspace, elementOffset, effectiveCount, targetResult);
     }
 
-    public void Dispose()
-    {
-        source.Dispose();
-    }
+    public void Dispose() => source.Dispose();
 }
 
 internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count) : IGpuBigIntVectorExpression
@@ -931,7 +919,7 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
 
     public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
     {
-        int evalCount = elementCount ?? (Length - elementOffset);
+        var evalCount = elementCount ?? (Length - elementOffset);
         
         if (evalCount <= 0)
         {
@@ -944,8 +932,95 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
         return source.Evaluate(workspace, elementOffset + _skipCount, evalCount, targetResult);
     }
 
+    public void Dispose() => source.Dispose();
+}
+
+internal class VectorWhereExpression([TakesOwnership] IGpuBigIntVectorExpression source, [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigIntVectorExpression, IDisposable
+{
+    public int Length => source.Length;
+    public int WordsPerElement => source.WordsPerElement;
+
+    private GpuBigUIntArray _compactedValues;
+    private GpuBigUIntArray _compactedSigns;
+    private GpuBigUIntArray _scanResult;
+    private bool _allocated;
+
+    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
+    {
+        if (targetResult != null)
+        {
+            throw new NotSupportedException("Where expression does not support targetResult because its size is dynamic.");
+        }
+
+        var evaluatedSource = source.Evaluate(workspace);
+        var evaluatedPredicates = predicate.Evaluate(workspace);
+
+        var originalCount = evaluatedSource.Length;
+        if (originalCount == 0)
+        {
+            return new GpuBigIntArray(
+                new GpuBigUIntArray(workspace, 0, WordsPerElement),
+                new GpuBigUIntArray(workspace, 0, 1));
+        }
+
+        if (!_allocated)
+        {
+            _scanResult = new GpuBigUIntArray(workspace, originalCount, 1);
+            _compactedValues = new GpuBigUIntArray(workspace, originalCount, WordsPerElement);
+            _compactedSigns = new GpuBigUIntArray(workspace, originalCount, 1);
+            _allocated = true;
+        }
+
+        // 1. Exclusive Scan on Predicates
+        StreamCompactionOrchestrator.ExecuteExclusiveScan(
+            workspace, _scanResult.DevicePointer, evaluatedPredicates.DevicePointer, originalCount);
+
+        var scatterThreadsPerBlock = 256;
+        var scatterGridDim = (originalCount + scatterThreadsPerBlock - 1) / scatterThreadsPerBlock;
+
+        // Memset to 0 to pad the remainder (acting as identity for subsequent Map/Reduce like Sum)
+        var totalValuesWords = originalCount * WordsPerElement;
+        var memsetValuesGridDim = (totalValuesWords + scatterThreadsPerBlock - 1) / scatterThreadsPerBlock;
+
+        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
+            _compactedValues.DevicePointer, totalValuesWords,
+            gridDimX: (uint)memsetValuesGridDim, blockDimX: (uint)scatterThreadsPerBlock, hStream: workspace.Stream);
+
+        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
+            _compactedSigns.DevicePointer, originalCount,
+            gridDimX: (uint)scatterGridDim, blockDimX: (uint)scatterThreadsPerBlock, hStream: workspace.Stream);
+
+        // 3. Scatter (Compact) Data
+
+        GpuStreamCompactionKernels.LaunchCompactBigUIntArrayPtr(
+            _compactedValues.DevicePointer, evaluatedSource.Values.DevicePointer,
+            evaluatedPredicates.DevicePointer, _scanResult.DevicePointer,
+            originalCount, WordsPerElement,
+            gridDimX: (uint)scatterGridDim, blockDimX: (uint)scatterThreadsPerBlock, hStream: workspace.Stream);
+
+        GpuStreamCompactionKernels.LaunchCompactBigUIntArrayPtr(
+            _compactedSigns.DevicePointer, evaluatedSource.Signs.DevicePointer,
+            evaluatedPredicates.DevicePointer, _scanResult.DevicePointer,
+            originalCount, 1,
+            gridDimX: (uint)scatterGridDim, blockDimX: (uint)scatterThreadsPerBlock, hStream: workspace.Stream);
+
+        var finalCount = elementCount ?? (originalCount - elementOffset);
+        return new GpuBigIntArray(
+            _compactedValues.Slice(elementOffset, finalCount),
+            _compactedSigns.Slice(elementOffset, finalCount));
+    }
+
     public void Dispose()
     {
         source.Dispose();
+        predicate.Dispose();
+        if (!_allocated)
+        {
+            return;
+        }
+
+        _scanResult.Dispose();
+        _compactedValues.Dispose();
+        _compactedSigns.Dispose();
     }
 }

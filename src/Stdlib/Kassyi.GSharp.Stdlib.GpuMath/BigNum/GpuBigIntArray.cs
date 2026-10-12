@@ -75,6 +75,9 @@ public readonly struct GpuBigIntArray : IDisposable
     /// <summary>
     /// Creates a zero-allocation sub-slice of this GPU array.
     /// </summary>
+    /// <param name="elementOffset">The starting element index of the slice.</param>
+    /// <param name="elementCount">The number of elements in the slice.</param>
+    /// <returns>A sliced view of the <see cref="GpuBigIntArray"/>.</returns>
     public GpuBigIntArray Slice(int elementOffset, int elementCount)
     {
         if (elementOffset < 0 || elementCount < 0 || elementOffset + elementCount > Length)
