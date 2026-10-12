@@ -87,6 +87,24 @@ public readonly struct GpuBigIntExpr
         => new(new SignedBitwiseNotExpression(left.Node));
 
     /// <summary>
+    /// Constructs a lazy expression that resolves to the maximum of two signed big integer expressions.
+    /// </summary>
+    /// <param name="left">The first signed expression operand.</param>
+    /// <param name="right">The second signed expression operand.</param>
+    /// <returns>A new <see cref="GpuBigIntExpr"/> representing the Max AST node.</returns>
+    public static GpuBigIntExpr Max(GpuBigIntExpr left, GpuBigIntExpr right)
+        => new(new SignedMaxExpression(left.Node, right.Node));
+
+    /// <summary>
+    /// Constructs a lazy expression that resolves to the minimum of two signed big integer expressions.
+    /// </summary>
+    /// <param name="left">The first signed expression operand.</param>
+    /// <param name="right">The second signed expression operand.</param>
+    /// <returns>A new <see cref="GpuBigIntExpr"/> representing the Min AST node.</returns>
+    public static GpuBigIntExpr Min(GpuBigIntExpr left, GpuBigIntExpr right)
+        => new(new SignedMinExpression(left.Node, right.Node));
+
+    /// <summary>
     /// Evaluates this signed expression into the provided destination buffer.
     /// </summary>
     /// <param name="destination">The pre-allocated GPU buffer to store the evaluated magnitude.</param>
