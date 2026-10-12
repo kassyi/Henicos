@@ -5,4 +5,5 @@ internal readonly record struct LinqStage(string Name, InvocationExpressionSynta
 internal readonly record struct StackLinqChain(
     ExpressionSyntax SourceArrayExpression,
     ImmutableArray<LinqStage> Stages,
-    string TerminalMethodName);
+    string TerminalMethodName,
+    bool IsParallel);
