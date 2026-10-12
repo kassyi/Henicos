@@ -71,8 +71,11 @@ public partial class ChudnovskyAlgorithm
             var filled = (int)(progress * BarSize);
             var bar = new string('█', filled) + new string('-', BarSize - filled);
 
-            Console.Write(
-                $"\r[GPU-Pi] [{bar}] {progress:P2} (Digits: {currentDigits:N0}/{TotalDigits:N0}) | Speed: {digitsPerSec:N0} digits/s | ETA: {TimeSpan.FromSeconds(etaSec):hh\\:mm\\:ss}   ");
+            if (!Console.IsOutputRedirected)
+            {
+                Console.Write(
+                    $"\r[GPU-Pi] [{bar}] {progress:P2} (Digits: {currentDigits:N0}/{TotalDigits:N0}) | Speed: {digitsPerSec:N0} digits/s | ETA: {TimeSpan.FromSeconds(etaSec):hh\\:mm\\:ss}   ");
+            }
         }
     }
 
@@ -304,7 +307,7 @@ public partial class ChudnovskyAlgorithm
 
             PiVerifier.VerifyWithBbp(computedHexTail, offset);
         }
-        else
+        else if (!Console.IsOutputRedirected)
         {
             Logger.Error("Verification", "FAIL: Not enough valid words to verify with BBP safety margin.");
         }
@@ -389,7 +392,6 @@ public partial class ChudnovskyAlgorithm
             new GpuBigInt(gpuT, tNeg)
         );
         sw.Stop();
-        Logger.Debug("GPU-Pi", $"UploadToGpu took {sw.ElapsedMilliseconds} ms");
         return result;
     }
 }
