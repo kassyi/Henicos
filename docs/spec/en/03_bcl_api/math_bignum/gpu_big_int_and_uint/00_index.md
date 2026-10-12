@@ -6,7 +6,7 @@ language: "en"
 description: "Overview of the GpuBigInt module, detailing the separation of unsigned memory buffers and signed wrappers."
 ---
 
-# Arbitrary-Precision Integers (GpuBigInt)
+## Arbitrary-Precision Integers (GpuBigInt)
 
 The `GpuBigInt` module provides high-performance multi-precision arithmetic on the GPU. It is designed to handle extremely large integers (e.g., millions of bits) for applications such as cryptography, prime number generation, and advanced mathematics.
 
@@ -30,8 +30,18 @@ This separation ensures that GPU kernels remain purely mathematical and branchle
 
 - **[GpuBigUInt.md](GpuBigUInt.md)**: The underlying unsigned memory buffer on the GPU.
 - **[GpuBigInt.md](GpuBigInt.md)**: The signed wrapper struct for host-side orchestration.
+- **[GpuBigUIntArray.md](GpuBigUIntArray.md)**: Contiguous batch array of unsigned multi-precision integers.
+- **[GpuBigIntArray.md](GpuBigIntArray.md)**: Contiguous batch array of signed multi-precision integers.
 - **[Operators.md](Operators.md)**: Overloads for `+`, `-`, `*`, `/`, and bitwise operators.
 - **[BigIntegerExtensions.md](BigIntegerExtensions.md)**: Host-side math extensions for `System.Numerics.BigInteger`.
+
+### Lazy Expressions, CUDA Graphs & Vector LINQ
+
+- **[GpuBigIntExpr.md](expressions/GpuBigIntExpr.md)**: AST builder and lazy expression evaluation on GPU.
+- **[GpuBigIntExecutableGraph.md](expressions/GpuBigIntExecutableGraph.md)**: Compiled, reusable CUDA Graph execution engine.
+- **[GpuBigIntVectorLinqExtensions.md](expressions/GpuBigIntVectorLinqExtensions.md)**: Batched LINQ extensions and parallel sum reductions.
+- **[GpuBigIntStackLinqExtensions.md](expressions/GpuBigIntStackLinqExtensions.md)**: Zero-allocation stack-based parallel LINQ operations.
+- **[IGpuBigIntVectorExpression.md](expressions/IGpuBigIntVectorExpression.md)**: Interface for vectorized deferred GPU expressions.
 
 ### Advanced Algorithms & Transforms
 
