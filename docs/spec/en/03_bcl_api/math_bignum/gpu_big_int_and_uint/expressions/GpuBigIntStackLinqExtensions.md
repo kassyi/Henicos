@@ -209,6 +209,10 @@ A new parallel sequence that contains elements from the input sequence that sati
 > [!NOTE]
 > All reduction operations (`Sum`, `Max`, `Min`, `Aggregate`, `Average`) construct balanced binary evaluation trees out of `GpuBigIntExpr` elements to optimize the reduction path depth. Instead of an $O(N)$ sequential chain, the resulting AST reduces evaluating depth to $O(\log N)$, allowing parallel device kernels to operate effectively over large enumerations.
 
+Because reduction operations return a [GpuBigIntExpr](GpuBigIntExpr.md), the entire reduction pipeline can be compiled directly into a native CUDA Graph:
+- **One-Liner Evaluation:** Chain `.EvaluateWithCudaGraph(workspace)` to capture, instantiate, execute, and destroy a CUDA Graph in a single statement.
+- **Precompiled Reusable Execution:** Chain `.CompileToGraph(workspace)` to produce a reusable [GpuBigIntExecutableGraph](GpuBigIntExecutableGraph.md) that can be dispatched repeatedly via `.Execute()` with zero CPU launch latency.
+
 ## Examples
 
 ### Building a Balanced Binary Tree Reduction with StackLinq
@@ -254,9 +258,47 @@ finally
 }
 ```
 
+### One-Liner CUDA Graph Execution
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath, Kassyi.ZeroAlloc.Linq
+
+```csharp
+// Evaluate StackLinq reduction tree using a one-liner CUDA Graph execution
+using var graphResult = bigInts
+    .AsParallelStackEnumerable()
+    .Sum()
+    .EvaluateWithCudaGraph(workspace);
+
+Console.WriteLine($"Graph result: {graphResult.Value.ToBigInteger(graphResult.IsNegative)}");
+```
+
+### Precompiled CUDA Graph for High-Frequency Repetition
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath, Kassyi.ZeroAlloc.Linq
+
+```csharp
+// Compile the StackLinq reduction tree into a reusable CUDA Graph
+using var precompiledGraph = bigInts
+    .AsParallelStackEnumerable()
+    .Sum()
+    .CompileToGraph(workspace);
+
+// Execute repeatedly on GPU with minimal driver launch latency
+for (int i = 0; i < 10; i++)
+{
+    precompiledGraph.Execute();
+}
+
+Console.WriteLine($"Precompiled result: {precompiledGraph.Result.Value.ToBigInteger(precompiledGraph.Result.IsNegative)}");
+```
+
 ## See also
 
 ### BCL API > Math Bignum
 - [GpuBigIntExpr Struct](GpuBigIntExpr.md)
+- [GpuBigIntExecutableGraph Struct](GpuBigIntExecutableGraph.md)
 - [GpuBigIntVectorLinqExtensions Class](GpuBigIntVectorLinqExtensions.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
+

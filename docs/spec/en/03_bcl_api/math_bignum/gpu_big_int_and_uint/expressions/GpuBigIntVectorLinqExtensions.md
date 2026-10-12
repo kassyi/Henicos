@@ -90,6 +90,10 @@ A deferred expression tree representing the parallel sum reduction, yielding a s
 
 Unlike standard LINQ or scalar expression trees that evaluate element-by-element, `GpuBigIntVectorLinqExtensions` constructs execution plans that operate directly over contiguous arrays. Reduction operations like [Sum](#sumigpubigintvectorexpression) automatically partition the workload into multi-pass chunk kernels, scaling efficiently up to millions of elements.
 
+Because [Sum](#sumigpubigintvectorexpression) returns a [GpuBigIntExpr](GpuBigIntExpr.md), the entire vector reduction pipeline can be compiled directly into a native CUDA Graph:
+- **One-Liner Evaluation:** Chain `.EvaluateWithCudaGraph(workspace)` to capture, instantiate, execute, and destroy a CUDA Graph in a single statement.
+- **Precompiled Reusable Execution:** Chain `.CompileToGraph(workspace)` to produce a reusable [GpuBigIntExecutableGraph](GpuBigIntExecutableGraph.md) that can be dispatched repeatedly via `.Execute()` with zero CPU launch latency.
+
 ## Examples
 
 ### Vectorized Inner Product and Parallel Sum Reduction
@@ -125,9 +129,47 @@ var result = array.AsVectorizedEnumerable()
 Console.WriteLine($"Reduction result: {result.Value.ToBigInteger(result.IsNegative)}");
 ```
 
+### One-Liner CUDA Graph Execution
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
+
+```csharp
+// Evaluate vector pipeline using a one-liner CUDA Graph execution
+using var graphResult = array.AsVectorizedEnumerable()
+    .SelectMultiply(scalar)
+    .Sum()
+    .EvaluateWithCudaGraph(workspace);
+
+Console.WriteLine($"Graph result: {graphResult.Value.ToBigInteger(graphResult.IsNegative)}");
+```
+
+### Precompiled CUDA Graph for High-Frequency Repetition
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
+
+```csharp
+// Compile the vector pipeline AST into a reusable CUDA Graph
+using var precompiledGraph = array.AsVectorizedEnumerable()
+    .SelectMultiply(scalar)
+    .Sum()
+    .CompileToGraph(workspace);
+
+// Execute the graph repeatedly with minimal driver launch latency
+for (int i = 0; i < 10; i++)
+{
+    precompiledGraph.Execute();
+}
+
+Console.WriteLine($"Precompiled result: {precompiledGraph.Result.Value.ToBigInteger(precompiledGraph.Result.IsNegative)}");
+```
+
 ## See also
 
 ### BCL API > Math Bignum
 - [GpuBigIntArray Struct](../GpuBigIntArray.md)
 - [GpuBigIntExpr Struct](GpuBigIntExpr.md)
+- [GpuBigIntExecutableGraph Struct](GpuBigIntExecutableGraph.md)
 - [IGpuBigIntVectorExpression Interface](IGpuBigIntVectorExpression.md)
+
