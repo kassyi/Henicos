@@ -115,16 +115,17 @@ int arraySum = array.AsStackEnumerable()
 StackLinq implements an extensive suite of standard query operators optimized for stack execution:
 
 | Category | Supported Methods |
-| :--- | :--- |
-| **Filtering** | `Where(predicate)`, `Where((item, index) => ...)` (`WhereAt`) |
-| **Projection** | `Select(selector)`, `Select((item, index) => ...)` (`SelectAt`) |
+| --- | --- |
+| **Filtering** | `Where(predicate)` (`WhereEnumerator`), `Where((item, index) => ...)` (`WhereAtEnumerator`) |
+| **Projection** | `Select(selector)` (`SelectEnumerator`), `Select((item, index) => ...)` (`SelectAtEnumerator`) |
 | **Partitioning & Slicing** | `Skip(count)`, `Take(count)`, `SkipLast(count)`, `TakeLast(count)` |
-| **Conditional Slicing** | `SkipWhile(predicate)`, `TakeWhile(predicate)`, `SkipWhileAt`, `TakeWhileAt` |
-| **Terminal Aggregation** | `Sum()`, `Count()`, `Aggregate(seed, func)` |
+| **Conditional Slicing** | `SkipWhile(predicate)`, `TakeWhile(predicate)`, `SkipWhile((item, index) => ...)`, `TakeWhile((item, index) => ...)` |
+| **Terminal Aggregation** | `Sum()`, `Count()`, `Aggregate(func)`, `Aggregate(seed, func)`, `Max()`, `Min()`, `Average()` |
 | **Quantifiers & Search** | `Any()`, `All()`, `Contains(value)` |
-| **Element Selection** | `First()`, `First(predicate)`, `Single()`, `Single(predicate)` |
+| **Element Selection** | `First()`, `FirstOrDefault()`, `Last()`, `LastOrDefault()`, `Single()`, `SingleOrDefault()`, `ElementAt(index)`, `ElementAtOrDefault(index)` |
+| **Materialization & Parallel** | `CopyTo(Span<T>)`, `ToArray()`, `AsParallel()` |
 
-For full method signatures and examples, refer to the individual method reference pages (e.g., [Select](Select.md), [Where](Where.md)).
+For full method signatures and examples, refer to [StackLinqExtensions Class](StackLinqExtensions.md) and the individual method/enumerator reference pages below.
 
 ---
 
@@ -143,6 +144,22 @@ GSharp provides the compile-time diagnostic **[`SLQ0001`](../diagnostics/SLQ0001
 ---
 
 ## Related Documentation
+
+### Core Types & Enumerators
+
+* [IStackEnumerator&lt;T&gt; Interface](IStackEnumerator.md)
+* [StackEnumerable&lt;TEnumerator, T&gt; Struct](StackEnumerable.md)
+* [ParallelStackEnumerable&lt;TEnumerator, TSource&gt; Struct](ParallelStackEnumerable.md)
+* [StackLinqExtensions Class](StackLinqExtensions.md)
+* [SpanEnumerator&lt;T&gt; Struct](SpanEnumerator.md)
+* [ArrayEnumerator&lt;T&gt; Struct](ArrayEnumerator.md)
+* [WhereEnumerator&lt;TEnumerator, TSource&gt; Struct](WhereEnumerator.md) / [WhereAtEnumerator&lt;TEnumerator, TSource&gt; Struct](WhereAtEnumerator.md)
+* [SelectEnumerator&lt;TEnumerator, TSource, TResult&gt; Struct](SelectEnumerator.md) / [SelectAtEnumerator&lt;TEnumerator, TSource, TResult&gt; Struct](SelectAtEnumerator.md)
+* [TakeEnumerator&lt;TEnumerator, TSource&gt; Struct](TakeEnumerator.md) / [SkipEnumerator&lt;TEnumerator, TSource&gt; Struct](SkipEnumerator.md)
+* [TakeWhileEnumerator&lt;TEnumerator, TSource&gt; Struct](TakeWhileEnumerator.md) / [TakeWhileAtEnumerator&lt;TEnumerator, TSource&gt; Struct](TakeWhileAtEnumerator.md)
+* [SkipWhileEnumerator&lt;TEnumerator, TSource&gt; Struct](SkipWhileEnumerator.md) / [SkipWhileAtEnumerator&lt;TEnumerator, TSource&gt; Struct](SkipWhileAtEnumerator.md)
+
+### Extension Method Pages
 
 * [AsStackEnumerable Method](AsStackEnumerable.md)
 * [Where Method](Where.md)
