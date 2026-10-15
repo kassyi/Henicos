@@ -17,60 +17,73 @@ Because G# kernels execute on GPUs—architectures that lack garbage collectors,
 The Core Framework provides the essential building blocks for writing, synchronizing, and launching GPU kernels.
 
 ### 1. Core Attributes
+
 Specialized C# attributes that govern compilation, entry point semantics, and JIT optimizations.
-* **[GpuKernelAttribute](attributes/GpuKernelAttribute.md)**: Marks the entry point for the G# transpilation process (`__global__`).
-* **[GpuDeviceFunctionAttribute](attributes/GpuDeviceFunctionAttribute.md)**: Marks a helper method intended for execution solely on the GPU (`__device__`).
-* **[ConstantAttribute](attributes/ConstantAttribute.md)**: Marks a kernel argument as an Ahead-Of-Time (AOT) preprocessor constant.
-* **[ParameterInteropAttributes](attributes/ParameterInteropAttributes.md)**: Optimizes PCIe memory transfers for array parameters (`InAttribute`, `OutAttribute`).
-* **[TakesOwnershipAttribute](attributes/TakesOwnershipAttribute.md)**: Enforces ownership transfer of disposable GPU resources.
-* **[AdvancedMappingAttributes](attributes/AdvancedMappingAttributes.md)**: Internal attributes mapping C# constructs to native CUDA C++.
+
+- **[GpuKernelAttribute](attributes/GpuKernelAttribute.md)**: Marks the entry point for the G# transpilation process (`__global__`).
+- **[GpuDeviceFunctionAttribute](attributes/GpuDeviceFunctionAttribute.md)**: Marks a helper method intended for execution solely on the GPU (`__device__`).
+- **[ConstantAttribute](attributes/ConstantAttribute.md)**: Marks a kernel argument as an Ahead-Of-Time (AOT) preprocessor constant.
+- **[ParameterInteropAttributes](attributes/ParameterInteropAttributes.md)**: Optimizes PCIe memory transfers for array parameters (`InAttribute`, `OutAttribute`).
+- **[TakesOwnershipAttribute](attributes/TakesOwnershipAttribute.md)**: Enforces ownership transfer of disposable GPU resources.
+- **[AdvancedMappingAttributes](attributes/AdvancedMappingAttributes.md)**: Internal attributes mapping C# constructs to native CUDA C++.
 
 ### 2. Execution Context Indices
+
 Provides access to CUDA's built-in execution context variables.
-* **[ThreadIndex](execution_context/ThreadIndex.md)** (`threadIdx`)
-* **[BlockIndex](execution_context/BlockIndex.md)** (`blockIdx`)
-* **[BlockDimension](execution_context/BlockDimension.md)** (`blockDim`)
-* **[GridDimension](execution_context/GridDimension.md)** (`gridDim`)
+
+- **[ThreadIndex](execution_context/ThreadIndex.md)** (`threadIdx`)
+- **[BlockIndex](execution_context/BlockIndex.md)** (`blockIdx`)
+- **[BlockDimension](execution_context/BlockDimension.md)** (`blockDim`)
+- **[GridDimension](execution_context/GridDimension.md)** (`gridDim`)
 
 ### 3. The `Gpu` Class Intrinsics
+
 Intrinsic static methods and macros providing direct access to GPU hardware features.
-* **[Gpu.SyncThreads](gpu_class/SyncThreads.md)**: Barrier synchronization for threads in a block.
-* **[Gpu.SyncGrid](gpu_class/SyncGrid.md)**: Barrier synchronization for threads across a cooperative grid.
-* **[Gpu.AtomicAdd](gpu_class/AtomicAdd.md)**: Atomic read-modify-write addition.
-* **[Gpu.InlinePtx](gpu_class/InlinePtx.md)**: Injects raw PTX or CUDA C++ strings.
-* **[Gpu.GridStrideLoop](gpu_class/GridStrideLoop.md)**: High-level CUDA grid-stride loop macro.
-* **[Gpu.Hint.Unroll](gpu_class/HintUnroll.md)**: Zero-allocation compiler marker for loop unrolling.
-* **Warp Shuffles**: Direct access to warp-level shuffle operations (**[WarpShuffleDown](gpu_class/WarpShuffleDown.md)**, **[WarpShuffleUp](gpu_class/WarpShuffleUp.md)**, **[WarpShuffleXor](gpu_class/WarpShuffleXor.md)**).
+
+- **[Gpu.SyncThreads](gpu_class/SyncThreads.md)**: Barrier synchronization for threads in a block.
+- **[Gpu.SyncGrid](gpu_class/SyncGrid.md)**: Barrier synchronization for threads across a cooperative grid.
+- **[Gpu.AtomicAdd](gpu_class/AtomicAdd.md)**: Atomic read-modify-write addition.
+- **[Gpu.InlinePtx](gpu_class/InlinePtx.md)**: Injects raw PTX or CUDA C++ strings.
+- **[Gpu.GridStrideLoop](gpu_class/GridStrideLoop.md)**: High-level CUDA grid-stride loop macro.
+- **[Gpu.Hint.Unroll](gpu_class/HintUnroll.md)**: Zero-allocation compiler marker for loop unrolling.
+- **Warp Shuffles**: Direct access to warp-level shuffle operations (**[WarpShuffleDown](gpu_class/WarpShuffleDown.md)**, **[WarpShuffleUp](gpu_class/WarpShuffleUp.md)**, **[WarpShuffleXor](gpu_class/WarpShuffleXor.md)**).
 
 ### 4. Memory
-* **[SharedMemory<T>](memory/SharedMemory.md)**: Abstracts CUDA's high-throughput `__shared__` block-local memory allocations.
+
+- **[SharedMemory<T>](memory/SharedMemory.md)**: Abstracts CUDA's high-throughput `__shared__` block-local memory allocations.
 
 ### 5. Math and Numerics (Primitives)
+
 Standard C# math functions are transpiled to their highly-optimized CUDA equivalents.
 
 > [!NOTE]
 > **Device & Host Execution**
 > Because these are standard C# BCL methods (like `System.Math.Sin`), they can naturally be executed on the Host (CPU). GSharp's transpiler extends this capability, allowing them to also be executed seamlessly inside GPU kernels (Device).
 
-* **[System.Math and System.MathF](math_primitives/00_index.md)**
-* **[System.Numerics.BitOperations](math_primitives/00_index.md)**
-* **[FastMath](math_primitives/00_index.md)**: Hardware-accelerated approximate instructions (`__expf`, `__logf`).
-* **[Built-in Vector Types](math_primitives/VectorTypes.md)**: Strongly-typed, aligned vector structs (`Float4`, `Int2`) for maximized memory bandwidth.
+- **[System.Math and System.MathF](math_primitives/00_index.md)**
+- **[System.Numerics.BitOperations](math_primitives/00_index.md)**
+- **[FastMath](math_primitives/00_index.md)**: Hardware-accelerated approximate instructions (`__expf`, `__logf`).
+- **[Built-in Vector Types](math_primitives/VectorTypes.md)**: Strongly-typed, aligned vector structs (`Float4`, `Int2`) for maximized memory bandwidth.
 
 ### 6. Standard BCL and Diagnostics
-* **[Standard BCL Mappings](02_bcl_mappings.md)** — Standard .NET methods mapped to PTX (`System.Math`, `System.Numerics.BitOperations`, `System.Threading.Interlocked`).
-* **[Diagnostics and Exceptions](01_diagnostics_and_exceptions.md)** — Exception handling constraints, `GpuOnlyException`, and the complete list of Transpiler Diagnostic Codes (`GSHxxxx`).
-* **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0001`–`GSH0031`, `RS0030`).
+
+- **[Standard BCL Mappings](02_bcl_mappings.md)** — Standard .NET methods mapped to PTX (`System.Math`, `System.Numerics.BitOperations`, `System.Threading.Interlocked`).
+- **[Diagnostics and Exceptions](01_diagnostics_and_exceptions.md)** — Exception handling constraints, `GpuOnlyException`, and the complete list of Transpiler Diagnostic Codes (`GSHxxxx`).
+- **[Diagnostic Reference Catalog](diagnostics/00_index.md)** — Detailed pages with causes, solutions, and Before/After examples for each diagnostic code (`GSH0001`–`GSH0031`, `RS0030`).
 
 ### 7. Utilities
-* **[CudaEnvironment](CudaEnvironment.md)**: Discover and resolve local NVIDIA CUDA Toolkit installation directories.
+
+- **[CudaEnvironment](CudaEnvironment.md)**: Discover and resolve local NVIDIA CUDA Toolkit installation directories.
+- **[Logger](Logger.md)**: Structured diagnostic logging and performance interval tracking.
 
 ### 8. Host Runtime
+
 Host-side types for driving CUDA streams without blocking threads (CPU only; not callable from a `[GpuKernel]`).
-* **[CudaStream](host_runtime/CudaStream.md)**: A non-blocking CUDA stream with an asynchronous `SynchronizeAsync`.
-* **[CudaStreamCompletion](host_runtime/CudaStreamCompletion.md)**: Awaits all work queued on a stream without parking a thread.
-* **[CudaHostTransfer](host_runtime/CudaHostTransfer.md)**: Copies device memory to the host through pooled page-locked buffers without blocking.
-* **[CudaEventTimer](host_runtime/CudaEventTimer.md)**: Measures GPU execution time with CUDA events.
+
+- **[CudaStream](host_runtime/CudaStream.md)**: A non-blocking CUDA stream with an asynchronous `SynchronizeAsync`.
+- **[CudaStreamCompletion](host_runtime/CudaStreamCompletion.md)**: Awaits all work queued on a stream without parking a thread.
+- **[CudaHostTransfer](host_runtime/CudaHostTransfer.md)**: Copies device memory to the host through pooled page-locked buffers without blocking.
+- **[CudaEventTimer](host_runtime/CudaEventTimer.md)**: Measures GPU execution time with CUDA events.
 
 ---
 
@@ -80,12 +93,12 @@ The `Stdlib.Math` library is a highly specialized suite built on top of the Core
 
 > [!WARNING]
 > **Host-Side Only API**
-> Unlike standard C# math primitives, BigNum operations orchestrate multiple GPU kernels and allocate device memory. Therefore, these APIs are strictly **Host-Only** and *cannot* be called from within a `[GpuKernel]`.
+> Unlike standard C# math primitives, BigNum operations orchestrate multiple GPU kernels and allocate device memory. Therefore, these APIs are strictly **Host-Only** and _cannot_ be called from within a `[GpuKernel]`.
 
-* **[BigNum Overview](math_bignum/00_index.md)**
-* **[GPU Big Integer (Signed & Unsigned)](math_bignum/gpu_big_int_and_uint/00_index.md)**
-* **[GPU Big Float](math_bignum/gpu_big_float/00_index.md)**
-* **[GPU Execution Contexts](math_bignum/gpu_workspace/GpuWorkspace.md)**
+- **[BigNum Overview](math_bignum/00_index.md)**
+- **[GPU Big Integer (Signed & Unsigned)](math_bignum/gpu_big_int_and_uint/00_index.md)**
+- **[GPU Big Float](math_bignum/gpu_big_float/00_index.md)**
+- **[GPU Execution Contexts](math_bignum/gpu_workspace/GpuWorkspace.md)**
 
 ---
 
@@ -93,13 +106,11 @@ The `Stdlib.Math` library is a highly specialized suite built on top of the Core
 
 `StackLinq` provides zero-allocation fluent sequence transformations built entirely on C# 12 `ref struct` state machines. Pipelines are executed without garbage collection overhead on CPUs and are directly lowered into thread-local register state machines for execution on NVIDIA GPUs.
 
-* **[StackLinq Overview & Architecture](linq/00_index.md)**: Architectural tenets, loop fusion, zero-allocation design, and GPU execution model.
-* **[StackLinq API Reference](linq/api_reference.md)**: Complete reference of sequence operators (`Where`, `Select`, `Take`, `Skip`, `Sum`, etc.) and enumerator types.
-* **[Diagnostic SLQ0001](diagnostics/SLQ0001.md)**: Compile-time analyzer governing maximum query chain depth to prevent GPU register spilling.
+- **[StackLinq Overview & Architecture](linq/00_index.md)**: Architectural tenets, loop fusion, zero-allocation design, and GPU execution model.
+- **[StackLinq API Reference](linq/api_reference.md)**: Complete reference of sequence operators (`Where`, `Select`, `Take`, `Skip`, `Sum`, etc.) and enumerator types.
+- **[Diagnostic SLQ0001](diagnostics/SLQ0001.md)**: Compile-time analyzer governing maximum query chain depth to prevent GPU register spilling.
 
 ## See also
-
-
 
 ### Language Specification
 
@@ -113,4 +124,3 @@ The `Stdlib.Math` library is a highly specialized suite built on top of the Core
 ### Guides
 
 - [4. Practical Guides and Best Practices](../04_guides/00_index.md)
-

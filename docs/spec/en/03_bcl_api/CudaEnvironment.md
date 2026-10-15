@@ -19,12 +19,26 @@ Provides utility methods for discovering and resolving local NVIDIA CUDA Toolkit
 public static class CudaEnvironment
 ```
 
+## Properties
+
+| Name | Description |
+| --- | --- |
+| [Resolver](#resolver) | Gets or sets the active CUDA path resolver strategy. Defaults to `DefaultCudaPathResolver`. |
+
+## Resolver
+
+Gets or sets the active CUDA path resolver strategy. Defaults to `DefaultCudaPathResolver`.
+
+```csharp
+public static ICudaPathResolver Resolver { get; set; }
+```
+
 ## Methods
 
-| Name                                | Description                                                                       |
-| ----------------------------------- | --------------------------------------------------------------------------------- |
-| [GetCudaPath()](#getcudapath)       | Discovers and returns the root installation directory of the NVIDIA CUDA Toolkit. |
-| [GetCudaBinPath()](#getcudabinpath) | Discovers and returns the path to the `bin` directory of the CUDA Toolkit.        |
+| Name | Description |
+| --- | --- |
+| [GetCudaPath()](#getcudapath) | Discovers and returns the root installation directory of the NVIDIA CUDA Toolkit. |
+| [GetCudaBinPath()](#getcudabinpath) | Discovers and returns the path to the `bin` directory of the CUDA Toolkit. |
 
 ## GetCudaPath()
 
@@ -36,7 +50,7 @@ public static string? GetCudaPath();
 
 #### Returns
 
-_string?_
+_string?_<br>
 The absolute path to the CUDA installation directory if located; otherwise, `null`.
 
 #### Exceptions
@@ -89,6 +103,31 @@ else
 
 This utility queries system environment variables and default OS filesystem paths across Windows and Linux.
 It searches the `CUDA_PATH` environment variable first, then inspects standard OS directories (e.g. `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA` on Windows or `/usr/local/cuda` on Linux).
+
+### Customizing Path Discovery (`ICudaPathResolver` and `DefaultCudaPathResolver`)
+
+Path discovery is delegated to the `ICudaPathResolver` strategy configured on `CudaEnvironment.Resolver`:
+
+```csharp
+public interface ICudaPathResolver
+{
+    string? GetCudaPath();
+    string? GetCudaBinPath();
+}
+
+public class DefaultCudaPathResolver : ICudaPathResolver
+{
+    protected virtual string? GetEnvironmentVariable(string name);
+    protected virtual bool DirectoryExists(string path);
+    protected virtual string[] GetDirectories(string path, string searchPattern);
+    protected virtual bool IsWindows();
+    protected virtual bool IsLinux();
+    public virtual string? GetCudaPath();
+    public virtual string? GetCudaBinPath();
+}
+```
+
+For unit testing or custom deployment environments, you can either implement `ICudaPathResolver` or subclass `DefaultCudaPathResolver` and override its protected virtual I/O methods.
 
 ## See also
 
