@@ -91,6 +91,50 @@ public static partial class NativeInterop
 }
 ```
 
+#### Zero-Boilerplate Bindings from YAML
+
+Host libraries (cuBLAS, cuRAND, your own `.dll` / `.so`) and kernels in third-party `.fatbin` modules can be bound by describing them in YAML. The `NativeApiGenerator` source generator evaluates the file at compile time, so IntelliSense, XML documentation and type checking are available immediately, without any reflection or runtime parsing.
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="native/*.yml" GSharpApi="true" />
+</ItemGroup>
+```
+
+```yaml
+# native/my_kernels.yml: kernels inside a fatbin shipped next to the application
+namespace: MyApp.Native
+className: MyKernels
+moduleName: ./native/my_custom_kernels.fatbin   # relative to AppContext.BaseDirectory
+methods:
+  - name: SgemmCustom
+    entryPoint: sgemm_kernel_v1                  # kernel symbol resolved via cuModuleGetFunction
+    summary: User-defined custom matrix multiplication kernel.
+    parameters:
+      - { name: a, type: "float[]", description: Matrix A. }
+      - { name: c, type: "float[]", description: Matrix C. }
+      - { name: n, type: int }
+      - { name: gridDimX, type: uint }
+      - { name: blockDimX, type: uint }
+```
+
+```csharp
+MyKernels.SgemmCustom(a, c, n, gridDimX: 64, blockDimX: 256);
+```
+
+A definition with `libraryName` instead of `moduleName` produces `[DllImport]` bindings; `libraryNames` lists per-platform probing candidates (bare names, paths relative to the application, or `%ENV%`-expanded paths). The built-in showcases [`cublas_api.yml`](src/NativeApi/cublas_api.yml) and [`curand_api.yml`](src/NativeApi/curand_api.yml) are consumed exactly this way and exposed as `CuBlasApi` / `CuRandApi`:
+
+```csharp
+using var scope = new GpuKernelLoader.CudaContextScope();
+CuBlasApi.cublasCreate_v2(out var handle);
+CuBlasApi.cublasSgemm_v2(handle, CuBlasOperation.None, CuBlasOperation.None,
+    m, n, k, 1.0f, dA.DevicePointer, m, dB.DevicePointer, k, 0.0f, dC.DevicePointer, m);
+CuBlasApi.cublasDestroy_v2(handle);
+```
+
+> [!NOTE]
+> Fatbins loaded through `moduleName` go through the same signature verification as `[CudaImport]` modules. Schema and syntax errors in a definition are reported as [GSH0054](docs/spec/en/03_bcl_api/diagnostics/GSH0054.md) / [GSH0055](docs/spec/en/03_bcl_api/diagnostics/GSH0055.md) on the offending YAML line.
+
 ---
 
 ## How It Works
