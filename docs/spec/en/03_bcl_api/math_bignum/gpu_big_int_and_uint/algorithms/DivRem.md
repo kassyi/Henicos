@@ -1,7 +1,7 @@
 ---
 title: "GpuBigIntDivRem.DivRem Method (G#)"
 site: "G# Documentation"
-published: "2026-09-22T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Reference for calculating Quotient and Remainder simultaneously on the GPU."
 ---
@@ -15,61 +15,78 @@ description: "Reference for calculating Quotient and Remainder simultaneously on
 
 When performing division (`/`) or modulo (`%`) on massive multi-precision integers, the computational cost is extremely high. Often, an algorithm requires both the quotient and the remainder simultaneously (e.g., base conversion, Euclidean algorithms).
 
-`GpuBigIntDivRem` provides an optimized way to calculate and return both values in a single GPU dispatch, cutting execution time in half compared to calling `/` and `%` separately.
+[`GpuBigIntDivRem.DivRem`](../GpuBigIntDivRem.md) calculates and writes both values in a single Newton-Raphson reciprocal pass on the GPU, cutting execution time in half compared to calling `Div` and `Mod` separately.
 
 ## Overloads
 
-| Name                                                                        | Description                                         |
-| --------------------------------------------------------------------------- | --------------------------------------------------- |
-| [DivRem(GpuBigInt, GpuBigInt)](#divrem-gpubiginteger-gpubiginteger) | Computes the quotient and remainder of two numbers. |
+| Name | Description |
+| --- | --- |
+| [DivRem(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#divremgpubiguint-gpubiguint-gpubiguint-gpubiguint) | Computes both the quotient and the remainder of two arbitrary-precision unsigned integers on the GPU. |
 
-## DivRem(GpuBigInt, GpuBigInt)
+## DivRem(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
-Returns a tuple of lazy-evaluated expression trees representing the Quotient and Remainder.
+Computes both the quotient and the remainder of two arbitrary-precision unsigned integers on the GPU.
 
 ```csharp
-public static void DivRem(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer);
+public static void DivRem(
+    GpuBigUInt leftOperand,
+    GpuBigUInt rightOperand,
+    GpuBigUInt quotientBuffer,
+    GpuBigUInt remainderBuffer);
 ```
 
 #### Parameters
 
-`dividend` _GpuBigInteger_<br>
-The number to divide.
+`leftOperand` _[GpuBigUInt](../GpuBigUInt.md)_<br>
+The dividend operand ($A$).
 
-`divisor` _GpuBigInteger_<br>
-The number to divide by.
+`rightOperand` _[GpuBigUInt](../GpuBigUInt.md)_<br>
+The divisor operand ($B$).
 
-#### Returns
+`quotientBuffer` _[GpuBigUInt](../GpuBigUInt.md)_<br>
+The destination buffer receiving the quotient ($\lfloor A / B \rfloor$).
 
-_(GpuBigIntExpr Quotient, GpuBigIntExpr Remainder)_<br>
-A tuple containing two AST nodes. Evaluating them produces the respective quotient and remainder.
+`remainderBuffer` _[GpuBigUInt](../GpuBigUInt.md)_<br>
+The destination buffer receiving the remainder ($A \bmod B$).
+
+#### Exceptions
+
+`DivideByZeroException`<br>
+Thrown when `rightOperand` is zero.
 
 ## Examples
 
 ### Simultaneous Division and Remainder
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
+
 ```csharp
+#nullable enable
 // Execution Context: Host (CPU)
+using System;
+using System.Numerics;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
-using var workspace = new GpuWorkspace(1024);
+using var workspace = new GpuWorkspace(2048, GpuExecutionEngine.GSharpAot);
 
-var dividend = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, ...));
-var divisor = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, ...));
+using var dividend = GpuBigUInt.FromBigInteger(workspace, new BigInteger(123456789), minWords: 4);
+using var divisor = GpuBigUInt.FromBigInteger(workspace, new BigInteger(10000), minWords: 4);
 
-// 1. Build the Expression Trees
-var (quotientExpr, remainderExpr) = GpuBigIntDivRem.DivRem(dividend, divisor);
+using var quotient = new GpuBigUInt(workspace, 4);
+using var remainder = new GpuBigUInt(workspace, 4);
 
-// 2. Evaluate both using the workspace pool
-// The GPU executes the division kernel once and extracts both results.
-using var quotient = quotientExpr.Node.Evaluate(workspace, null);
-using var remainder = remainderExpr.Node.Evaluate(workspace, null);
+// Execute division and remainder simultaneously in a single Newton-Raphson pass
+GpuBigIntDivRem.DivRem(dividend, divisor, quotient, remainder);
 
-Console.WriteLine($"Q: {quotient.ToBigInteger()}, R: {remainder.ToBigInteger()}");
+Console.WriteLine($"Q: {quotient.ToBigInteger(false)}, R: {remainder.ToBigInteger(false)}");
 ```
 
 ## See also
 
 ### BCL API > Math Bignum
 
+- [GpuBigIntDivRem Class (G#)](../GpuBigIntDivRem.md)
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
 - [GpuBigInt and GpuBigUInt Operators (G#)](../Operators.md)

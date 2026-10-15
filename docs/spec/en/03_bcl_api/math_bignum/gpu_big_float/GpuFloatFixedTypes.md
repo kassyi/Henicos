@@ -26,10 +26,10 @@ public struct GpuFloat512
 
 ## Constructors
 
-| Name                                                                           | Description                                                                                           |
-| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| [GpuFloat128(GpuUInt128, int, bool)](#gpufloat128gpuuint128-int-bool)          | Initializes a new instance of the 128-bit GPU float with the specified magnitude, exponent, and sign. |
-| [GpuFloat128(GpuBigFloat\<LimbBuffer4\>)`](#gpufloat128gpubigfloatlimbbuffer4) | Initializes a new wrapper instance from an existing generic 128-bit big float.                        |
+| Name | Description |
+| --- | --- |
+| [GpuFloat128(GpuUInt128, int, bool)](#gpufloat128gpuuint128-int-bool) | Initializes a new instance of the 128-bit GPU float with the specified magnitude, exponent, and sign. |
+| [GpuFloat128(GpuBigFloat\<LimbBuffer4\>)`](#gpufloat128gpubigfloatlimbbuffer4) | Initializes a new wrapper instance from an existing generic 128-bit big float. |
 
 > [!NOTE]
 > Identical constructors exist for `GpuFloat256` (using `GpuUInt256` and `LimbBuffer8`) and `GpuFloat512` (using `GpuUInt512` and `LimbBuffer16`).

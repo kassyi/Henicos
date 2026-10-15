@@ -1,22 +1,49 @@
 ---
-title: "FermatContext Struct (G#)"
+title: "Fermat Struct (G#)"
 site: "G# Documentation"
-published: "2026-09-24T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Context parameters for the Fermat sequence computation."
 ---
 
-## FermatContext Struct
+## Fermat Struct
 
 ## Definition
 
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Context parameters for the Fermat sequence computation.
+Context parameters for the Fermat sequence computation (formerly `FermatContext`).
 
 ```csharp
-public struct FermatContext
+public struct Fermat
+{
+    public BufferContext Buffers;
+    public Ntt Ntt;
+}
+```
+
+## Fields
+
+| Name | Description |
+| --- | --- |
+| [Buffers](#buffers) | The scratch buffer context (`BufferContext`) for intermediate evaluations. |
+| [Ntt](#ntt) | The NTT configuration and twiddle factor context (`Ntt`). |
+
+## Buffers
+
+The scratch buffer context for intermediate evaluations.
+
+```csharp
+public BufferContext Buffers;
+```
+
+## Ntt
+
+The NTT configuration and twiddle factor context.
+
+```csharp
+public Ntt Ntt;
 ```
 
 ## Examples
@@ -24,30 +51,22 @@ public struct FermatContext
 ### Creating a Fermat Context
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
-// Initialize dimensions for a Fermat transform context
-var dimensions = new FermatContext.DimensionsContext
+var context = new Fermat
 {
-    NumberOfWords = 8,
-    NumberOfWordsExtended = 16,
-    Exponent = 3,
-    BitOffset2E1 = 1
+    Ntt = new Ntt
+    {
+        TransformLength = 1024,
+        Buffers = new BufferContext { Buffer1 = new uint[1024] }
+    }
 };
 
-var context = new FermatContext
-{
-    Dimensions = dimensions
-};
-
-// Outputs: Fermat Context configured for 8 words.
-Console.WriteLine($"Fermat Context configured for {context.Dimensions.NumberOfWords} words.");
-// Outputs: Extended words: 16
-Console.WriteLine($"Extended words: {context.Dimensions.NumberOfWordsExtended}");
+Console.WriteLine($"Fermat NTT TransformLength: {context.Ntt.TransformLength}");
 ```
 
 ## See also
@@ -56,13 +75,5 @@ Console.WriteLine($"Extended words: {context.Dimensions.NumberOfWordsExtended}")
 
 - [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuWorkspace](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
-
-### Architecture
-
-- [2. Compiler and Runtime Architecture](../../../../02_architecture/00_index.md)
-
-### Guides
-
-- [4. Practical Guides and Best Practices](../../../../04_guides/00_index.md)
-- [Advanced: Extending GpuBigInt with Custom Algorithms](../../../../04_guides/08_advanced_custom_math_kernels.md)
+- [GpuBigIntContext and Algorithm Context Structs](BigIntKernelContext.md)
+- [Ntt and DualNtt Structs](NttContext.md)

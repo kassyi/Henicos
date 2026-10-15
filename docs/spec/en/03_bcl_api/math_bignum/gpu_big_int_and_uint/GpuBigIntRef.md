@@ -1,7 +1,7 @@
 ---
 title: "GpuBigIntRef Struct (G#)"
 site: "G# Documentation"
-published: "2026-09-24T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "A ref struct representing a pointer to a BigInteger limb array in GPU device/shared memory during G# kernel transpilation."
 ---
@@ -13,37 +13,37 @@ description: "A ref struct representing a pointer to a BigInteger limb array in 
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-A `ref struct` representing a pointer to a BigInteger limb array in GPU device/shared memory during G# kernel transpilation.
+A `ref struct` representing a pointer/reference to a BigInteger limb array in GPU device or shared memory during G# kernel transpilation.
 
 ```csharp
-public readonly ref struct GpuBigIntRef
+public ref struct GpuBigIntRef
 ```
 
 ## Constructors
 
-| Name                   | Description                                                          |
-| ---------------------- | -------------------------------------------------------------------- |
+| Name | Description |
+| --- | --- |
 | `GpuBigIntRef(uint[])` | Initializes a new reference struct wrapping the raw limb array data. |
 
-## Properties / Fields
+## Fields
 
-| Name   | Description                                     |
-| ------ | ----------------------------------------------- |
-| `Data` | Gets the raw underlying uint limb array buffer. |
+| Name | Description |
+| --- | --- |
+| `Data` | The raw underlying `uint[]` limb array buffer (`public readonly uint[] Data`). |
 
 ## Operators
 
-| Name                                     | Description                                                        |
-| ---------------------------------------- | ------------------------------------------------------------------ |
-| `operator +(GpuBigIntRef, GpuBigIntRef)` | Transpiles to `Device_Add` on the GPU.                             |
-| `operator -(GpuBigIntRef, GpuBigIntRef)` | Transpiles to `Device_Sub` on the GPU.                             |
-| `operator <<(GpuBigIntRef, int)`         | Transpiles to `Device_ShiftLeft` on the GPU.                       |
-| `operator >>(GpuBigIntRef, int)`         | Transpiles to `Device_ShiftRight` on the GPU.                      |
-| `operator &(GpuBigIntRef, GpuBigIntRef)` | Transpiles to `Device_BitwiseAnd` on the GPU.                      |
-| `operator                                | (GpuBigIntRef, GpuBigIntRef)`                                      | Transpiles to `Device_BitwiseOr` on the GPU. |
-| `operator ^(GpuBigIntRef, GpuBigIntRef)` | Transpiles to `Device_BitwiseXor` on the GPU.                      |
-| `operator ~(GpuBigIntRef)`               | Transpiles to `Device_BitwiseNot` on the GPU.                      |
-| `implicit operator GpuBigIntRef(uint[])` | Implicitly casts a raw `uint[]` to a `GpuBigIntRef`.               |
+| Name | Description |
+| --- | --- |
+| `operator +(GpuBigIntRef, GpuBigIntRef)` | Transpiles to `GpuBigIntKernels.ExecuteAdd` on the GPU. |
+| `operator -(GpuBigIntRef, GpuBigIntRef)` | Transpiles to `GpuBigIntKernels.ExecuteSub` on the GPU. |
+| `operator <<(GpuBigIntRef, int)` | Transpiles to `GpuBigIntKernels.ExecuteShiftLeft` on the GPU. |
+| `operator >>(GpuBigIntRef, int)` | Transpiles to `GpuBigIntKernels.ExecuteShiftRight` on the GPU. |
+| `operator &(GpuBigIntRef, GpuBigIntRef)` | Transpiles to `GpuBigIntKernels.ExecuteBitwiseAnd` on the GPU. |
+| `operator \|(GpuBigIntRef, GpuBigIntRef)` | Transpiles to `GpuBigIntKernels.ExecuteBitwiseOr` on the GPU. |
+| `operator ^(GpuBigIntRef, GpuBigIntRef)` | Transpiles to `GpuBigIntKernels.ExecuteBitwiseXor` on the GPU. |
+| `operator ~(GpuBigIntRef)` | Transpiles to `GpuBigIntKernels.ExecuteBitwiseNot` on the GPU. |
+| `implicit operator GpuBigIntRef(uint[])` | Implicitly casts a raw `uint[]` to a `GpuBigIntRef`. |
 | `implicit operator uint[](GpuBigIntRef)` | Implicitly casts a `GpuBigIntRef` back to its underlying `uint[]`. |
 
 ## Examples
@@ -51,37 +51,43 @@ public readonly ref struct GpuBigIntRef
 ### CPU Simulation (Host)
 
 > [!NOTE]
-> `GpuBigIntRef` cannot be executed directly on the CPU. This example demonstrates the equivalent host-side simulation using `GpuBigIntMath`.
+> `GpuBigIntRef` cannot be executed directly on the CPU. This example demonstrates the equivalent host-side simulation using AST expression evaluation.
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using System.Numerics;
-using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
-using var uintA = GpuBigUInt.FromBigInteger(workspace, new System.Numerics.BigInteger(150), 4);
-using var uintB = GpuBigUInt.FromBigInteger(workspace, new System.Numerics.BigInteger(50), 4);
+using var uintA = GpuBigUInt.FromBigInteger(workspace, new BigInteger(150), 4);
+using var uintB = GpuBigUInt.FromBigInteger(workspace, new BigInteger(50), 4);
 
 // GpuBigIntRef operators throw on CPU. We use AST expression evaluation to simulate the result.
 var sumExpr = uintA + uintB;
-using var sumResult = (GpuBigUInt)sumExpr.Node.Evaluate(workspace, null);
+using var dest = new GpuBigUInt(workspace, 4);
+var sumResult = sumExpr.Node.Evaluate(workspace, dest);
 
-Console.WriteLine($"Conceptually computes on GPU: 150 + 50 = {sumResult.ToBigInteger()}");
+Console.WriteLine($"Conceptually computes on GPU: 150 + 50 = {sumResult.ToBigInteger(false)}");
 ```
 
 ### Immediate Evaluation (GPU)
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+
+// Execution Context: Host (CPU)
+Console.WriteLine("GpuBigIntRef kernel definition compiled.");
 
 public class Example
 {

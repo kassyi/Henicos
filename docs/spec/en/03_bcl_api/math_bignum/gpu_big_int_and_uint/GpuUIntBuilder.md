@@ -3,7 +3,7 @@ title: "GpuBigUIntBuilder Class (G#)"
 site: "G# Documentation"
 published: "2026-09-24T00:00:00.000Z"
 language: "en"
-description: "A shared generic builder for C# 12 Collection Expressions."
+description: "A factory builder facilitating C# 12 Collection Expression construction for GpuBigUInt<TSize>."
 ---
 
 ## GpuBigUIntBuilder Class
@@ -13,7 +13,7 @@ description: "A shared generic builder for C# 12 Collection Expressions."
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-A shared generic builder for C# 12 Collection Expressions.
+A factory builder facilitating C# 12 Collection Expression construction for `GpuBigUInt<TSize>`.
 
 ```csharp
 public static class GpuBigUIntBuilder
@@ -21,13 +21,13 @@ public static class GpuBigUIntBuilder
 
 ## Methods
 
-| Name                                                                            | Description                                                                   |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| [Create&lt;TSize&gt;(ReadOnlySpan&lt;uint&gt;)](#createt-sizereadonlyspan-uint) | Creates a fixed-size GPU unsigned big integer buffer from a span of elements. |
+| Name | Description |
+| --- | --- |
+| [Create&lt;TSize&gt;(ReadOnlySpan&lt;uint&gt;)](#createtsizereadonlyspanuint) | Creates a new `GpuBigUInt<TSize>` instance initialized from a span of 32-bit unsigned limbs. |
 
 ## Create&lt;TSize&gt;(ReadOnlySpan&lt;uint&gt;)
 
-Creates a fixed-size GPU unsigned big integer buffer from a span of elements.
+Creates a new `GpuBigUInt<TSize>` instance initialized from a span of 32-bit unsigned limbs.
 
 ```csharp
 public static GpuBigUInt<TSize> Create<TSize>(ReadOnlySpan<uint> elements) where TSize : unmanaged;
@@ -36,40 +36,37 @@ public static GpuBigUInt<TSize> Create<TSize>(ReadOnlySpan<uint> elements) where
 #### Type Parameters
 
 `TSize`<br>
-The unmanaged type defining the length of the fixed buffer.
+The unmanaged struct type representing the limb storage layout.
 
 #### Parameters
 
 `elements` _ReadOnlySpan&lt;uint&gt;_<br>
-The elements to copy into the fixed-size buffer.
+A read-only span containing the 32-bit unsigned limbs in little-endian order.
 
 #### Returns
 
-_GpuUIntBigInteger&lt;TSize&gt;_<br>
-A newly allocated fixed-size GPU unsigned big integer buffer.
+_GpuBigUInt&lt;TSize&gt;_<br>
+A new `GpuBigUInt<TSize>` instance containing the specified limbs.
 
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when the number of elements provided exceeds the capacity of the target fixed-size buffer.
+Thrown when `elements` length exceeds the capacity of `TSize`.
 
 ## Examples
 
 ### Constructing Fixed-Size Buffers
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
-using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // Execution Context: Host (CPU) or G# Kernel (GPU)
-
 // GpuBigUIntBuilder provides the infrastructure for C# 12 collection expressions.
 // It allows constructing fixed-size GpuBigUInt<TSize> instances elegantly.
-
 GpuBigUInt<LimbBuffer4> fromLimbs = GpuBigUIntBuilder.Create<LimbBuffer4>([1, 2, 3, 4]);
 
 Console.WriteLine($"fromLimbs.Limbs[0] = {fromLimbs.Limbs[0]}");

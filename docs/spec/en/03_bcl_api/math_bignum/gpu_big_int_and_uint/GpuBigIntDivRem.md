@@ -1,9 +1,9 @@
 ---
 title: "GpuBigIntDivRem Class (G#)"
 site: "G# Documentation"
-published: "2026-09-24T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
-description: "Provides static division and remainder operations, including Newton-Raphson approximation for GpuBigUInt."
+description: "Provides static arbitrary-precision division, remainder, modulo, Barrett reduction, and root extraction algorithms on the GPU."
 ---
 
 ## GpuBigIntDivRem Class
@@ -13,22 +13,26 @@ description: "Provides static division and remainder operations, including Newto
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Provides static division and remainder operations, including Newton-Raphson approximation for `GpuBigUInt`.
+Provides static arbitrary-precision division, remainder, modulo, Barrett reduction, and root extraction algorithms on the GPU using Newton-Raphson approximation and reciprocal multiplication.
 
 ```csharp
-public static class GpuBigIntDivRem
+public static partial class GpuBigIntDivRem
 ```
+
+Inheritance: `Object` $\rightarrow$ `GpuBigIntDivRem`
 
 ## Methods
 
-| Name                                                                                                                                                                 | Description                                                                      |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [Div(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#divgpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)                                            | Computes arbitrary-precision division (`leftOperand / rightOperand`) on the GPU. |
-| [DivRem(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#divremgpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes arbitrary-precision division and remainder simultaneously on the GPU.   |
-| [GetActualBits(GpuBigUInt)](#getactualbitsgpuuintbiginteger)                                                                                                  | Gets the actual bit length of the GPU unsigned big integer.                      |
-| [Mod(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modgpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)                                            | Computes arbitrary-precision modulo (`leftOperand % rightOperand`) on the GPU.   |
-| [ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modpowgpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes modular exponentiation (`baseVal^exp mod mod`) on the GPU.              |
-| [Sqrt(GpuBigUInt, GpuBigUInt)](#sqrtgpuuintbiginteger-gpuuintbiginteger)                                                                               | Computes the integer square root (`floor(sqrt(leftOperand))`) on the GPU.        |
+| Name | Description |
+| --- | --- |
+| [Div(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#divgpubiguint-gpubiguint-gpubiguint) | Computes arbitrary-precision division (`leftOperand / rightOperand`) on the GPU. |
+| [DivRem(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#divremgpubiguint-gpubiguint-gpubiguint-gpubiguint) | Computes arbitrary-precision division and remainder simultaneously on the GPU. |
+| [GetActualBits(GpuBigUInt)](#getactualbitsgpubiguint) | Calculates the exact number of significant bits in the specified `GpuBigUInt` by inspecting the highest non-zero bit. |
+| [Mod(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modgpubiguint-gpubiguint-gpubiguint) | Computes arbitrary-precision modulo (`leftOperand % rightOperand`) on the GPU. |
+| [ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modpowgpubiguint-gpubiguint-gpubiguint-gpubiguint) | Computes modular exponentiation (`baseVal^exp mod mod`) on the GPU. |
+| [Reduce(GpuBigUInt, GpuBigUInt, GpuBigUInt, Int32, Int32, GpuBigUInt, GpuBigUInt)](#reducegpubiguint-gpubiguint-gpubiguint-int32-int32-gpubiguint-gpubiguint) | Performs a Barrett reduction using a precomputed reciprocal. |
+| [ReduceZeroSync(GpuBigUInt, GpuBigUInt, GpuBigUInt, Int32, Int32, GpuBigUInt, GpuBigUInt)](#reducezerosyncgpubiguint-gpubiguint-gpubiguint-int32-int32-gpubiguint-gpubiguint) | Performs a zero-sync Barrett reduction using a precomputed reciprocal without host synchronization (CUDA Graph safe). |
+| [Sqrt(GpuBigUInt, GpuBigUInt)](#sqrtgpubiguint-gpubiguint) | Computes the integer square root (`floor(sqrt(leftOperand))`) on the GPU. |
 
 ## Div(GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
@@ -40,48 +44,57 @@ public static void Div(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUI
 
 #### Parameters
 
-`leftOperand` _GpuUIntBigInteger_<br>
-The dividend.
+`leftOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The dividend operand.
 
-`rightOperand` _GpuUIntBigInteger_<br>
-The divisor.
+`rightOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The divisor operand.
 
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the quotient.
-
-## DivRem(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
-
-Computes arbitrary-precision division and remainder simultaneously on the GPU.
-
-```csharp
-public static void DivRem(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer);
-```
-
-#### Parameters
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The dividend.
-
-`rightOperand` _GpuUIntBigInteger_<br>
-The divisor.
-
-`quotientBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the quotient.
-
-`remainderBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the remainder.
+`resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The destination buffer receiving the quotient.
 
 #### Exceptions
 
 `ArgumentException`<br>
-Thrown when the operands and result buffers do not have the same number of words.
+Thrown when `leftOperand`, `rightOperand`, and `resultBuffer` do not have the same word length.
+
+`DivideByZeroException`<br>
+Thrown when `rightOperand` is zero.
+
+## DivRem(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
+
+Computes both the quotient and the remainder of two arbitrary-precision unsigned integers on the GPU.
+
+```csharp
+public static void DivRem(
+    GpuBigUInt leftOperand,
+    GpuBigUInt rightOperand,
+    GpuBigUInt quotientBuffer,
+    GpuBigUInt remainderBuffer);
+```
+
+#### Parameters
+
+`leftOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The dividend operand ($A$).
+
+`rightOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The divisor operand ($B$).
+
+`quotientBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The destination buffer receiving the quotient ($\lfloor A / B \rfloor$).
+
+`remainderBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The destination buffer receiving the remainder ($A \bmod B$).
+
+#### Exceptions
 
 `DivideByZeroException`<br>
 Thrown when the divisor (`rightOperand`) is zero.
 
 ## GetActualBits(GpuBigUInt)
 
-Gets the actual bit length of the GPU unsigned big integer (excluding leading zero bits).
+Calculates the exact number of significant bits in the specified `GpuBigUInt` by inspecting the highest non-zero bit.
 
 ```csharp
 public static int GetActualBits(GpuBigUInt gpuBigInt);
@@ -89,21 +102,17 @@ public static int GetActualBits(GpuBigUInt gpuBigInt);
 
 #### Parameters
 
-`gpuBigInt` _GpuUIntBigInteger_<br>
-The GPU unsigned big integer.
+`gpuBigInt` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The big integer to inspect.
 
 #### Returns
 
-_int_<br>
-The minimum number of bits required to represent the value.
-
-#### Exceptions
-
-None. Returns `0` if all limb words are zero.
+_Int32_<br>
+The bit length of the big integer, or `0` if all limb words are zero.
 
 ## Mod(GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
-Computes arbitrary-precision modulo (`leftOperand % rightOperand`) on the GPU.
+Computes arbitrary-precision remainder (modulo) of two numbers on the GPU (`resultBuffer = leftOperand % rightOperand`).
 
 ```csharp
 public static void Mod(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
@@ -111,14 +120,14 @@ public static void Mod(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUI
 
 #### Parameters
 
-`leftOperand` _GpuUIntBigInteger_<br>
-The dividend.
+`leftOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The dividend operand.
 
-`rightOperand` _GpuUIntBigInteger_<br>
-The divisor.
+`rightOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The divisor operand.
 
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the remainder.
+`resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The destination buffer receiving the remainder.
 
 #### Exceptions
 
@@ -130,7 +139,7 @@ Thrown when the divisor (`rightOperand`) is zero.
 
 ## ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
-Computes modular exponentiation (`baseVal^exp mod mod`) on the GPU.
+Computes modular exponentiation (`baseVal^exp mod mod`) on the GPU using binary exponentiation (square-and-multiply).
 
 ```csharp
 public static void ModPow(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer);
@@ -138,17 +147,17 @@ public static void ModPow(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, Gp
 
 #### Parameters
 
-`baseVal` _GpuUIntBigInteger_<br>
+`baseVal` _[GpuBigUInt](GpuBigUInt.md)_<br>
 The base value.
 
-`exp` _GpuUIntBigInteger_<br>
+`exp` _[GpuBigUInt](GpuBigUInt.md)_<br>
 The exponent value.
 
-`mod` _GpuUIntBigInteger_<br>
+`mod` _[GpuBigUInt](GpuBigUInt.md)_<br>
 The modulus value.
 
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
+`resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The destination buffer in GPU device memory receiving the modular power.
 
 #### Exceptions
 
@@ -158,9 +167,85 @@ Thrown when `baseVal`, `mod`, and `resultBuffer` have mismatched word lengths.
 `DivideByZeroException`<br>
 Thrown when the modulus (`mod`) is zero.
 
+## Reduce(GpuBigUInt, GpuBigUInt, GpuBigUInt, Int32, Int32, GpuBigUInt, GpuBigUInt)
+
+Performs a Barrett reduction using a precomputed reciprocal.
+
+```csharp
+public static void Reduce(
+    GpuBigUInt leftOperand,
+    GpuBigUInt rightOperand,
+    GpuBigUInt reciprocalOfB,
+    int targetBits,
+    int aActualWords,
+    GpuBigUInt quotientBuffer,
+    GpuBigUInt remainderBuffer);
+```
+
+#### Parameters
+
+`leftOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The dividend.
+
+`rightOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The divisor.
+
+`reciprocalOfB` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The precomputed reciprocal of the divisor.
+
+`targetBits` _Int32_<br>
+The target precision in bits.
+
+`aActualWords` _Int32_<br>
+The actual number of words in the dividend.
+
+`quotientBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The buffer to store the computed quotient.
+
+`remainderBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The buffer to store the computed remainder.
+
+## ReduceZeroSync(GpuBigUInt, GpuBigUInt, GpuBigUInt, Int32, Int32, GpuBigUInt, GpuBigUInt)
+
+Performs a zero-sync Barrett reduction using a precomputed reciprocal. This method does not synchronize with the CPU for remainder correction, enabling CUDA Graph capture.
+
+```csharp
+public static void ReduceZeroSync(
+    GpuBigUInt leftOperand,
+    GpuBigUInt rightOperand,
+    GpuBigUInt reciprocalOfB,
+    int targetBits,
+    int aActualWords,
+    GpuBigUInt quotientBuffer,
+    GpuBigUInt remainderBuffer);
+```
+
+#### Parameters
+
+`leftOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The left operand (dividend).
+
+`rightOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The right operand (divisor).
+
+`reciprocalOfB` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The precomputed reciprocal of the right operand.
+
+`targetBits` _Int32_<br>
+The target precision in bits.
+
+`aActualWords` _Int32_<br>
+The actual word count of the left operand.
+
+`quotientBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The buffer to store the quotient result.
+
+`remainderBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The buffer to store the remainder result.
+
 ## Sqrt(GpuBigUInt, GpuBigUInt)
 
-Computes the integer square root (`floor(sqrt(leftOperand))`) on the GPU.
+Computes the integer square root ($\lfloor\sqrt{\text{leftOperand}}\rfloor$) on the GPU using inverse square root approximation and Heron's refinement.
 
 ```csharp
 public static void Sqrt(GpuBigUInt leftOperand, GpuBigUInt resultBuffer);
@@ -168,11 +253,11 @@ public static void Sqrt(GpuBigUInt leftOperand, GpuBigUInt resultBuffer);
 
 #### Parameters
 
-`leftOperand` _GpuUIntBigInteger_<br>
-The operand to calculate the square root for.
+`leftOperand` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The non-negative big integer operand.
 
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the square root.
+`resultBuffer` _[GpuBigUInt](GpuBigUInt.md)_<br>
+The destination buffer receiving the integer square root.
 
 #### Exceptions
 
@@ -182,7 +267,7 @@ Thrown when `leftOperand` and `resultBuffer` do not have the same word length (`
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
@@ -193,7 +278,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(2048, GpuExecutionEngine.GSharpAot);
 
-using var valA = GpuBigUInt.FromBigInteger(workspace, new BigInteger(150), minWords: 4);
+using var valA = GpuBigUInt.FromBigInteger(workspace, new BigInteger(155), minWords: 4);
 using var valB = GpuBigUInt.FromBigInteger(workspace, new BigInteger(10), minWords: 4);
 
 using var q = new GpuBigUInt(workspace, 4);

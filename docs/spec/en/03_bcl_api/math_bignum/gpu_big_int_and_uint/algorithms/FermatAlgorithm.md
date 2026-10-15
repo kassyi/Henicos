@@ -21,9 +21,9 @@ public class FermatAlgorithm : IDisposable
 
 ## Constructors
 
-| Name                                | Description                                                              |
-| ----------------------------------- | ------------------------------------------------------------------------ |
-| [FermatAlgorithm(int)](#fermatalgorithmint) | Initializes a new instance configured for Fermat exponent `e`.          |
+| Name | Description |
+| --- | --- |
+| [FermatAlgorithm(int)](#fermatalgorithmint) | Initializes a new instance configured for Fermat exponent `e`. |
 
 ## FermatAlgorithm(int)
 
@@ -45,10 +45,10 @@ GPU context initialization fails.
 
 ## Properties
 
-| Name                          | Description                                                    |
-| ----------------------------- | -------------------------------------------------------------- |
-| [E](#e)                       | Gets the Fermat number exponent parameter $E$.                 |
-| [OutNumWords](#outnumwords)   | Gets the number of 32-bit words allocated in the output state buffer. |
+| Name | Description |
+| --- | --- |
+| [E](#e) | Gets the Fermat number exponent parameter $E$. |
+| [OutNumWords](#outnumwords) | Gets the number of 32-bit words allocated in the output state buffer. |
 
 ## E
 
@@ -68,15 +68,15 @@ public int OutNumWords { get; }
 
 ## Methods
 
-| Name                                                          | Description                                                                 |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| [Dispose()](#dispose)                                         | Releases all GPU buffers and the workspace.                                 |
-| [GetState()](#getstate)                                       | Copies the current state buffer to host memory (blocking).                  |
+| Name | Description |
+| --- | --- |
+| [Dispose()](#dispose) | Releases all GPU buffers and the workspace. |
+| [GetState()](#getstate) | Copies the current state buffer to host memory (blocking). |
 | [GetStateAsync(CancellationToken)](#getstateasynccancellationtoken) | Copies the current state buffer to host memory without blocking the calling thread. |
-| [LoadState(UInt32[])](#loadstateuint32)                       | Loads a previously saved state buffer into the GPU.                         |
-| [RunBenchmarkChunk(int)](#runbenchmarkchunkint)               | Executes a number of squaring iterations (blocking).                        |
+| [LoadState(UInt32[])](#loadstateuint32) | Loads a previously saved state buffer into the GPU. |
+| [RunBenchmarkChunk(int)](#runbenchmarkchunkint) | Executes a number of squaring iterations (blocking). |
 | [RunBenchmarkChunkAsync(int, CancellationToken)](#runbenchmarkchunkasyncint-cancellationtoken) | Executes a number of squaring iterations, waiting without blocking the calling thread. |
-| [RunFermatPrp()](#runfermatprp)                               | Executes the full Fermat PRP loop (blocking).                               |
+| [RunFermatPrp()](#runfermatprp) | Executes the full Fermat PRP loop (blocking). |
 | [RunFermatPrpAsync(CancellationToken)](#runfermatprpasynccancellationtoken) | Executes the full Fermat PRP loop, waiting without blocking the calling thread. |
 
 ## Dispose()

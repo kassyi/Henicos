@@ -1,7 +1,7 @@
 ---
 title: "NativeProvider Class (G#)"
 site: "G# Documentation"
-published: "2026-09-24T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Execution provider implementing arbitrary-precision arithmetic via pre-compiled native CUDA C++ dynamic libraries."
 ---
@@ -13,579 +13,294 @@ description: "Execution provider implementing arbitrary-precision arithmetic via
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Execution provider implementing arbitrary-precision arithmetic via pre-compiled native CUDA C++ dynamic libraries.
+Execution provider implementing arbitrary-precision arithmetic via pre-compiled native CUDA C++ dynamic libraries (`Kassyi.GSharp.GpuBigInt.Cuda`).
 
 ```csharp
+[ExcludeFromCodeCoverage]
 public class NativeProvider : IGpuExecutionProvider
+```
+
+## Fields
+
+| Name | Description |
+| --- | --- |
+| [Instance](#instance) | Gets the singleton instance of the `NativeProvider`. |
+
+## Instance
+
+Gets the singleton instance of the `NativeProvider`.
+
+```csharp
+public static readonly NativeProvider Instance;
 ```
 
 ## Methods
 
 | Name | Description |
-| ---- | ----------- |
+| --- | --- |
+| [Add(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#addgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes addition via the legacy native library. |
+| [Add(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#addgpuworkspace-gpubiguint-uint32-gpubiguint) | Throws `NotImplementedException` on the native backend. |
 | [AllocateMemory(Int32)](#allocatememoryint32) | Allocates unmanaged global device memory for the specified word count. |
-| [FreeMemory(IntPtr)](#freememoryintptr) | Frees the allocated unmanaged global device memory. |
-| [CopyHostToDevice(IntPtr, UInt32[], Int32)](#copyhosttodeviceintptr-uint32-int32) | Copies limb data from host managed memory to GPU device memory. |
-| [CopyDeviceToHost(UInt32[], IntPtr, Int32)](#copydevicetohostuint32-intptr-int32) | Copies limb data from GPU device memory to host managed memory. |
-| [CopyDeviceToDevice(IntPtr, IntPtr, Int32)](#copydevicetodeviceintptr-intptr-int32) | Copies limb data between two GPU device memory locations. |
-| [Add(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#addgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes addition on GPU. |
-| [Sub(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#subgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes subtraction on GPU. |
-| [Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#mulgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes multiplication on GPU. |
-| [Add(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#addgpuworkspace-gpuuintbiginteger-uint32-gpuuintbiginteger) | Computes scalar addition on GPU. |
-| [Sub(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#subgpuworkspace-gpuuintbiginteger-uint32-gpuuintbiginteger) | Computes scalar subtraction on GPU. |
-| [Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#mulgpuworkspace-gpuuintbiginteger-uint32-gpuuintbiginteger) | Computes scalar multiplication on GPU. |
-| [BitwiseAnd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#bitwiseandgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes bitwise AND on GPU. |
-| [BitwiseOr(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#bitwiseorgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes bitwise OR on GPU. |
-| [BitwiseXor(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#bitwisexorgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes bitwise XOR on GPU. |
-| [BitwiseNot(GpuWorkspace, GpuBigUInt, GpuBigUInt)](#bitwisenotgpuworkspace-gpuuintbiginteger-gpuuintbiginteger) | Computes bitwise NOT on GPU. |
-| [ShiftLeft(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftleftgpuworkspace-gpuuintbiginteger-int32-gpuuintbiginteger) | Computes left bit shift on GPU. |
-| [ShiftRight(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftrightgpuworkspace-gpuuintbiginteger-int32-gpuuintbiginteger) | Computes right bit shift on GPU. |
-| [Square(GpuWorkspace, IntPtr, Int32)](#squaregpuworkspace-intptr-int32) | Computes in-place self squaring on GPU. |
-| [Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcdgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes Greatest Common Divisor on GPU. |
-| [IsZero(GpuWorkspace, GpuBigUInt)](#iszerogpuworkspace-gpuuintbiginteger) | Checks whether operand equals zero on GPU. |
-| [IsOne(GpuWorkspace, GpuBigUInt)](#isonegpuworkspace-gpuuintbiginteger) | Checks whether operand equals one on GPU. |
-| [GetBitLength(GpuWorkspace, GpuBigUInt)](#getbitlengthgpuworkspace-gpuuintbiginteger) | Gets the bit length of the operand on GPU. |
-| [CompareTo(GpuWorkspace, GpuBigUInt, GpuBigUInt)](#comparetogpuworkspace-gpuuintbiginteger-gpuuintbiginteger) | Compares two operands on GPU. |
+| [BeginCapture(IntPtr)](#begincaptureintptr) | Throws `NotImplementedException` on the native backend. |
+| [BitwiseAnd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#bitwiseandgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes bitwise AND via the legacy native library. |
+| [BitwiseNot(GpuWorkspace, GpuBigUInt, GpuBigUInt)](#bitwisenotgpuworkspace-gpubiguint-gpubiguint) | Throws `NotImplementedException` on the native backend. |
+| [BitwiseOr(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#bitwiseorgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Throws `NotImplementedException` on the native backend. |
+| [BitwiseXor(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#bitwisexorgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Throws `NotImplementedException` on the native backend. |
+| [ClearMemoryAsync(IntPtr, Int32, IntPtr)](#clearmemoryasyncintptr-int32-intptr) | No-op on the legacy native provider. |
+| [CompareTo(GpuWorkspace, GpuBigUInt, GpuBigUInt)](#comparetogpuworkspace-gpubiguint-gpubiguint) | Throws `NotImplementedException` on the native backend. |
+| [CopyDeviceToDevice(IntPtr, IntPtr, Int32, IntPtr)](#copydevicetodeviceintptr-intptr-int32-intptr) | Copies limb data between two GPU device memory locations. |
+| [CopyDeviceToHost(UInt32[], IntPtr, Int32, IntPtr)](#copydevicetohostuint32-intptr-int32-intptr) | Synchronously copies limb data from GPU device memory to host managed memory. |
+| [CopyDeviceToHostAsync(Memory&lt;UInt32&gt;, IntPtr, Int32, IntPtr, CancellationToken)](#copydevicetohostasyncmemoryuint32-intptr-int32-intptr-cancellationtoken) | Copies limb data from GPU device memory to host memory and returns a completed `ValueTask`. |
+| [CopyHostToDevice(IntPtr, UInt32[], Int32, IntPtr)](#copyhosttodeviceintptr-uint32-int32-intptr) | Synchronously copies limb data from host managed memory to GPU device memory. |
+| [DestroyGraph(IntPtr, IntPtr)](#destroygraphintptr-intptr) | Throws `NotImplementedException` on the native backend. |
+| [EndCapture(IntPtr)](#endcaptureintptr) | Throws `NotImplementedException` on the native backend. |
+| [FreeMemory(IntPtr, IntPtr)](#freememoryintptr-intptr) | Synchronously frees allocated unmanaged global device memory (`stream` is ignored). |
+| [Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcdgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Throws `NotImplementedException` on the native backend. |
+| [GetBitLength(GpuWorkspace, GpuBigUInt)](#getbitlengthgpuworkspace-gpubiguint) | Copies limbs to host and computes the bit length of the operand. |
+| [InstantiateGraph(IntPtr)](#instantiategraphintptr) | Throws `NotImplementedException` on the native backend. |
+| [InverseSqrtMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32)](#inversesqrtmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32) | Throws `NotImplementedException` on the native backend. |
+| [IsOne(GpuWorkspace, GpuBigUInt)](#isonegpuworkspace-gpubiguint) | Throws `NotImplementedException` on the native backend. |
+| [IsZero(GpuWorkspace, GpuBigUInt)](#iszerogpuworkspace-gpubiguint) | Copies limbs to host and checks whether all words equal zero. |
+| [LaunchGraph(IntPtr, IntPtr)](#launchgraphintptr-intptr) | Throws `NotImplementedException` on the native backend. |
+| [ModInverse(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modinversegpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Throws `NotImplementedException` on the native backend. |
+| [Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#mulgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Throws `NotImplementedException` on the native backend. |
+| [Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#mulgpuworkspace-gpubiguint-uint32-gpubiguint) | Throws `NotImplementedException` on the native backend. |
+| [ReadWord(IntPtr, Int32, IntPtr)](#readwordintptr-int32-intptr) | Synchronously reads a single 32-bit word from device memory at `wordOffset`. |
+| [ReciprocalMega(GpuWorkspace, GpuBigUInt, GpuBigUInt, Int32, Int32, Int32, Int32, Int32)](#reciprocalmegagpuworkspace-gpubiguint-gpubiguint-int32-int32-int32-int32-int32) | Throws `NotImplementedException` on the native backend. |
+| [ShiftLeft(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftleftgpuworkspace-gpubiguint-int32-gpubiguint) | Computes left bit shift via the legacy native library. |
+| [ShiftRight(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)](#shiftrightgpuworkspace-gpubiguint-int32-gpubiguint) | Computes right bit shift via the legacy native library. |
+| [Square(GpuWorkspace, IntPtr, Int32)](#squaregpuworkspace-intptr-int32) | Computes in-place self squaring via the legacy native library. |
+| [Sub(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#subgpuworkspace-gpubiguint-gpubiguint-gpubiguint) | Computes subtraction via the legacy native library. |
+| [Sub(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)](#subgpuworkspace-gpubiguint-uint32-gpubiguint) | Throws `NotImplementedException` on the native backend. |
+| [SynchronizeStream(IntPtr)](#synchronizestreamintptr) | No-op for legacy native synchronous calls. |
+| [SynchronizeStreamAsync(IntPtr, CancellationToken)](#synchronizestreamasyncintptr-cancellationtoken) | Returns a completed `ValueTask` (or canceled if `cancellationToken` is canceled). |
+| [WriteWord(IntPtr, Int32, UInt32, IntPtr)](#writewordintptr-int32-uint32-intptr) | Synchronously writes a single 32-bit word to device memory at `wordOffset`. |
 
 ## AllocateMemory(Int32)
 
-Allocates unmanaged global device memory for the specified word count.
+Allocates unmanaged global device memory for the specified word count via `NativeMethods.GpuBigInt_Alloc`.
 
 ```csharp
-IntPtr AllocateMemory(int numWords);
+public IntPtr AllocateMemory(int numWords);
 ```
 
-#### Parameters
+## FreeMemory(IntPtr, IntPtr)
 
-`numWords` _Int32_<br>
-The number of 32-bit words to allocate.
-
-#### Returns
-
-_IntPtr_<br>
-A pointer to the allocated device memory.
-
-## FreeMemory(IntPtr)
-
-Frees the allocated unmanaged global device memory.
+Synchronously frees the allocated unmanaged global device memory (`stream` is ignored).
 
 ```csharp
-void FreeMemory(IntPtr devicePointer);
+public void FreeMemory(IntPtr devicePointer, IntPtr stream = 0);
 ```
 
-#### Parameters
+## ClearMemoryAsync(IntPtr, Int32, IntPtr)
 
-`devicePointer` _IntPtr_<br>
-The pointer to the device memory to free.
-
-## CopyHostToDevice(IntPtr, UInt32[], Int32)
-
-Copies limb data from host managed memory to GPU device memory.
+No-op on the legacy native provider.
 
 ```csharp
-void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords);
+public void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream);
 ```
 
-#### Parameters
+## CopyHostToDevice(IntPtr, UInt32[], Int32, IntPtr)
 
-`devicePointer` _IntPtr_<br>
-The destination pointer on the device.
+Synchronously copies limb data from host managed memory to GPU device memory (`stream` is ignored).
 
-`hostData` _UInt32[]_<br>
-The source data array on the host.
-
-`numWords` _Int32_<br>
-The number of 32-bit words to copy.
+```csharp
+public void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords, IntPtr stream = 0);
+```
 
 #### Exceptions
 
 `InvalidOperationException`<br>
 Thrown when copying data from host managed memory to GPU device memory fails.
 
-## CopyDeviceToHost(UInt32[], IntPtr, Int32)
+## CopyDeviceToHost(UInt32[], IntPtr, Int32, IntPtr)
 
-Copies limb data from GPU device memory to host managed memory.
+Synchronously copies limb data from GPU device memory to host managed memory (`stream` is ignored).
 
 ```csharp
-void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords);
+public void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0);
 ```
-
-#### Parameters
-
-`hostData` _UInt32[]_<br>
-The destination array on the host.
-
-`devicePointer` _IntPtr_<br>
-The source pointer on the device.
-
-`numWords` _Int32_<br>
-The number of 32-bit words to copy.
 
 #### Exceptions
 
 `InvalidOperationException`<br>
 Thrown when copying data from GPU device memory to host managed memory fails.
 
-## CopyDeviceToDevice(IntPtr, IntPtr, Int32)
+## CopyDeviceToHostAsync(Memory&lt;UInt32&gt;, IntPtr, Int32, IntPtr, CancellationToken)
 
-Copies limb data between two GPU device memory locations.
+Copies limb data from GPU device memory to `hostData` synchronously and returns a completed `ValueTask`.
 
 ```csharp
-void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords);
+public ValueTask CopyDeviceToHostAsync(
+    Memory<uint> hostData,
+    IntPtr devicePointer,
+    int numWords,
+    IntPtr stream,
+    CancellationToken cancellationToken = default);
 ```
 
-#### Parameters
+#### Exceptions
 
-`destPointer` _IntPtr_<br>
-The destination pointer on the device.
+`ArgumentOutOfRangeException`<br>
+`numWords` exceeds `hostData.Length`.
 
-`srcPointer` _IntPtr_<br>
-The source pointer on the device.
+## CopyDeviceToDevice(IntPtr, IntPtr, Int32, IntPtr)
 
-`numWords` _Int32_<br>
-The number of 32-bit words to copy.
+Synchronously copies limb data between two GPU device memory locations (`stream` is ignored).
+
+```csharp
+public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords, IntPtr stream = 0);
+```
 
 #### Exceptions
 
 `InvalidOperationException`<br>
 Thrown when copying data between device memory locations fails.
 
-## Add(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## ReadWord(IntPtr, Int32, IntPtr)
 
-Computes addition on GPU.
+Synchronously reads a single 32-bit word from device memory at `wordOffset`.
 
 ```csharp
-void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0);
 ```
 
-#### Parameters
+## WriteWord(IntPtr, Int32, UInt32, IntPtr)
 
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
+Synchronously writes a single 32-bit word to device memory at `wordOffset`.
 
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
+```csharp
+public void WriteWord(IntPtr devicePointer, int wordOffset, uint value, IntPtr stream = 0);
+```
 
-`rightOperand` _GpuUIntBigInteger_<br>
-The second operand.
+## SynchronizeStream(IntPtr)
 
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
+No-op because legacy native calls execute synchronously.
+
+```csharp
+public void SynchronizeStream(IntPtr stream);
+```
+
+## SynchronizeStreamAsync(IntPtr, CancellationToken)
+
+Returns `ValueTask.CompletedTask` unless `cancellationToken.IsCancellationRequested` is `true`.
+
+```csharp
+public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default);
+```
+
+## Add(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
+
+Computes addition on GPU via `NativeMethods.GpuBigInt_Add`.
+
+```csharp
+public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+```
 
 ## Sub(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
-Computes subtraction on GPU.
+Computes subtraction on GPU via `NativeMethods.GpuBigInt_Sub`.
 
 ```csharp
-void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
 ```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
-
-`rightOperand` _GpuUIntBigInteger_<br>
-The second operand.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
-
-## Mul(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
-
-Computes multiplication on GPU.
-
-```csharp
-void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
-```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
-
-`rightOperand` _GpuUIntBigInteger_<br>
-The second operand.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
-
-## Add(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)
-
-Computes scalar addition on GPU.
-
-```csharp
-void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
-```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
-
-`rightOperand` _UInt32_<br>
-The scalar second operand.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
-
-## Sub(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)
-
-Computes scalar subtraction on GPU.
-
-```csharp
-void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
-```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
-
-`rightOperand` _UInt32_<br>
-The scalar second operand.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
-
-## Mul(GpuWorkspace, GpuBigUInt, UInt32, GpuBigUInt)
-
-Computes scalar multiplication on GPU.
-
-```csharp
-void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
-```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
-
-`rightOperand` _UInt32_<br>
-The scalar second operand.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
 
 ## BitwiseAnd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
-Computes bitwise AND on GPU.
+Computes bitwise AND on GPU via `NativeMethods.GpuBigInt_BitwiseAnd`.
 
 ```csharp
-void BitwiseAnd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public void BitwiseAnd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
 ```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
-
-`rightOperand` _GpuUIntBigInteger_<br>
-The second operand.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
-
-## BitwiseOr(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
-
-Computes bitwise OR on GPU.
-
-```csharp
-void BitwiseOr(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
-```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
-
-`rightOperand` _GpuUIntBigInteger_<br>
-The second operand.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
-
-## BitwiseXor(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
-
-Computes bitwise XOR on GPU.
-
-```csharp
-void BitwiseXor(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
-```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
-
-`rightOperand` _GpuUIntBigInteger_<br>
-The second operand.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
-
-## BitwiseNot(GpuWorkspace, GpuBigUInt, GpuBigUInt)
-
-Computes bitwise NOT on GPU.
-
-```csharp
-void BitwiseNot(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt resultBuffer);
-```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The operand.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
 
 ## ShiftLeft(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)
 
-Computes left bit shift on GPU.
+Computes left bit shift on GPU via `NativeMethods.GpuBigInt_ShiftLeft`.
 
 ```csharp
-void ShiftLeft(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer);
+public void ShiftLeft(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer);
 ```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The operand to shift.
-
-`shiftBits` _Int32_<br>
-The number of bits to shift.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
 
 ## ShiftRight(GpuWorkspace, GpuBigUInt, Int32, GpuBigUInt)
 
-Computes right bit shift on GPU.
+Computes right bit shift on GPU via `NativeMethods.GpuBigInt_ShiftRight`.
 
 ```csharp
-void ShiftRight(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer);
+public void ShiftRight(GpuWorkspace workspace, GpuBigUInt leftOperand, int shiftBits, GpuBigUInt resultBuffer);
 ```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The operand to shift.
-
-`shiftBits` _Int32_<br>
-The number of bits to shift.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
 
 ## Square(GpuWorkspace, IntPtr, Int32)
 
-Computes in-place self squaring on GPU.
+Computes in-place self squaring on GPU via `NativeMethods.GpuBigInt_Square`.
 
 ```csharp
-bool Square(GpuWorkspace workspace, IntPtr devicePointer, int logicalWords);
+public bool Square(GpuWorkspace workspace, IntPtr devicePointer, int logicalWords);
 ```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`devicePointer` _IntPtr_<br>
-The pointer to the device memory containing the operand.
-
-`logicalWords` _Int32_<br>
-The logical number of words of the operand.
-
-#### Returns
-
-_Boolean_<br>
-`true` if successful; otherwise, `false`.
-
-## Gcd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
-
-Computes Greatest Common Divisor on GPU.
-
-```csharp
-void Gcd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
-```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
-
-`rightOperand` _GpuUIntBigInteger_<br>
-The second operand.
-
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to store the result.
 
 ## IsZero(GpuWorkspace, GpuBigUInt)
 
-Checks whether operand equals zero on GPU.
+Copies the operand limbs to host memory and checks whether all words equal zero.
 
 ```csharp
-bool IsZero(GpuWorkspace workspace, GpuBigUInt leftOperand);
+public bool IsZero(GpuWorkspace workspace, GpuBigUInt leftOperand);
 ```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The operand to check.
-
-#### Returns
-
-_Boolean_<br>
-`true` if the operand is zero; otherwise, `false`.
-
-## IsOne(GpuWorkspace, GpuBigUInt)
-
-Checks whether operand equals one on GPU.
-
-```csharp
-bool IsOne(GpuWorkspace workspace, GpuBigUInt leftOperand);
-```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The operand to check.
-
-#### Returns
-
-_Boolean_<br>
-`true` if the operand is one; otherwise, `false`.
 
 ## GetBitLength(GpuWorkspace, GpuBigUInt)
 
-Gets the bit length of the operand on GPU.
+Copies the operand limbs to host memory and computes the active bit length.
 
 ```csharp
-int GetBitLength(GpuWorkspace workspace, GpuBigUInt leftOperand);
+public int GetBitLength(GpuWorkspace workspace, GpuBigUInt leftOperand);
 ```
 
-#### Parameters
+## Add / Sub / Mul / BitwiseOr / BitwiseXor / BitwiseNot / IsOne / CompareTo / Gcd / ModInverse / InverseSqrtMega / ReciprocalMega / Graph Capture Methods
 
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The operand.
-
-#### Returns
-
-_Int32_<br>
-The bit length.
-
-## CompareTo(GpuWorkspace, GpuBigUInt, GpuBigUInt)
-
-Compares two operands on GPU.
+These operations are not implemented on the legacy native provider and unconditionally throw `NotImplementedException`. Use [GSharpAotProvider](GSharpAotProvider.md) instead.
 
 ```csharp
-int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand);
+public void Add(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
+public void Sub(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
+public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, uint rightOperand, GpuBigUInt resultBuffer);
+public void BitwiseOr(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public void BitwiseXor(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public void BitwiseNot(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt resultBuffer);
+public bool IsOne(GpuWorkspace workspace, GpuBigUInt leftOperand);
+public int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand);
+public void Gcd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
+public void ModInverse(GpuWorkspace workspace, GpuBigUInt value, GpuBigUInt modulus, GpuBigUInt resultBuffer);
+public void InverseSqrtMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords, int actualBits, int iterations);
+public void ReciprocalMega(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer, int marginWords, int numBits, int marginBits, int iterations, int targetBits);
+public void BeginCapture(IntPtr stream);
+public IntPtr EndCapture(IntPtr stream);
+public IntPtr InstantiateGraph(IntPtr graph);
+public void LaunchGraph(IntPtr graphExec, IntPtr stream);
+public void DestroyGraph(IntPtr graph, IntPtr graphExec);
 ```
-
-#### Parameters
-
-`workspace` _GpuWorkspace_<br>
-The GPU execution workspace.
-
-`leftOperand` _GpuUIntBigInteger_<br>
-The first operand.
-
-`rightOperand` _GpuUIntBigInteger_<br>
-The second operand.
-
-#### Returns
-
-_Int32_<br>
-A signed integer that indicates the relative values of the operands.
 
 ## Remarks
 
-No remarks available.
+Every operation in the legacy native library (`Kassyi.GSharp.GpuBigInt.Cuda`) completes synchronously before returning. Stream parameters are ignored, and `SynchronizeStreamAsync` / `CopyDeviceToHostAsync` return already-completed `ValueTask` instances. For full feature coverage (NTT multiplication, scalar operations, bitwise OR/XOR/NOT, Lehmer GCD, modular inverse, and CUDA Graphs), use [GSharpAotProvider](GSharpAotProvider.md).
+
+## Examples
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
+
+```csharp
+// Execution Context: Host (CPU)
+using System;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
+
+IGpuExecutionProvider provider = NativeProvider.Instance;
+provider.SynchronizeStream(IntPtr.Zero);
+Console.WriteLine($"Singleton provider: {provider.GetType().Name}");
+```
 
 ## See also
 
 ### BCL API > Math (BigNum)
 
-- [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
-- [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuWorkspace](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
-
-### Architecture
-
-- [2. Compiler and Runtime Architecture](../../../../02_architecture/00_index.md)
-- [1. Generator Architecture (`Kassyi.GSharp.Compiler.Generators`)](../../../../02_architecture/01_aot_transpiler.md)
-
-
-## Examples
-
-> [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
-
-```csharp
-// Execution Context: Host (CPU)
-using System;
-using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
-
-using var workspace = new GpuWorkspace(maxWords: 1024, engine: GpuExecutionEngine.LegacyNative);
-IGpuExecutionProvider provider = workspace.Provider;
-
-using var a = new GpuBigUInt(workspace, new uint[] { 100 });
-using var b = new GpuBigUInt(workspace, new uint[] { 50 });
-using var result = new GpuBigUInt(workspace, 1);
-
-provider.BitwiseOr(workspace, a, b, result);
-
-uint[] hostResult = new uint[1];
-provider.CopyDeviceToHost(hostResult, result.DevicePointer, 1);
-
-// 100 = 0x64, 50 = 0x32, 100 | 50 = 118 (0x76)
-Console.WriteLine($"100 | 50 = {hostResult[0]}");
-```
+- [IGpuExecutionProvider Interface](IGpuExecutionProvider.md)
+- [GSharpAotProvider Class](GSharpAotProvider.md)
+- [GpuWorkspace Class](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)

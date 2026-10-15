@@ -22,7 +22,7 @@ public ref struct ScopedGpuMemory(IGpuExecutionProvider provider, int numWords)
 ## Constructors
 
 | Name | Description |
-| ---- | ----------- |
+| --- | --- |
 | [ScopedGpuMemory(IGpuExecutionProvider, int)](#scopedgpumemoryigpuexecutionprovider-int) | Allocates a scoped GPU memory buffer of the specified word capacity. |
 
 ## ScopedGpuMemory(IGpuExecutionProvider, int)
@@ -51,8 +51,8 @@ Thrown if `provider` is `null`.
 
 ## Properties
 
-| Name                | Description                                                  |
-| ------------------- | ------------------------------------------------------------ |
+| Name | Description |
+| --- | --- |
 | [Pointer](#pointer) | Gets the raw native GPU device pointer (<c>CUdeviceptr</c>). |
 
 ## Pointer
@@ -65,8 +65,8 @@ public IntPtr Pointer { get; }
 
 ## Methods
 
-| Name                  | Description                            |
-| --------------------- | -------------------------------------- |
+| Name | Description |
+| --- | --- |
 | [Dispose()](#dispose) | Frees the allocated GPU memory buffer. |
 
 ## Dispose()
@@ -97,6 +97,9 @@ Ensures deterministic deallocation of temporary GPU memory buffers upon exiting 
 
 ## Examples
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
+
 ```csharp
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath;
@@ -109,7 +112,7 @@ var provider = workspace.Provider;
 // Create a scoped GPU memory allocation
 using (var memory = new ScopedGpuMemory(provider, numWords: 256))
 {
-    Console.WriteLine($"Allocated 256 words at device pointer");
+    Console.WriteLine($"Allocated 256 words at device pointer: 0x{memory.Pointer:X}");
 } // memory is automatically freed here via Dispose()
 
 Console.WriteLine("ScopedGpuMemory successfully disposed.");

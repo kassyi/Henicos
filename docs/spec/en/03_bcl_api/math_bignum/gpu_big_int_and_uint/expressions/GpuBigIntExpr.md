@@ -21,8 +21,8 @@ public readonly struct GpuBigIntExpr
 
 ## Properties
 
-| Name          | Description                                            |
-| ------------- | ------------------------------------------------------ |
+| Name | Description |
+| --- | --- |
 | [Node](#node) | Gets the root AST node of this signed expression tree. |
 
 ## Node
@@ -35,15 +35,15 @@ public IGpuBigIntExpression Node { get; }
 
 ## Methods
 
-| Name                                                                               | Description                                                                                     |
-| ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| [CompileToGraph(GpuWorkspace, GpuBigUInt?)](#compiletographgpuworkspace-gpubiguint) | Compiles this expression tree into an executable CUDA Graph, eliminating launch overhead.       |
-| [Evaluate(GpuBigUInt)](#evaluategpubiguint)                                         | Evaluates this signed expression into the provided destination buffer.                          |
-| [Evaluate(GpuWorkspace)](#evaluategpuworkspace)                                   | Evaluates this signed expression into a newly rented temporary GPU buffer.                      |
+| Name | Description |
+| --- | --- |
+| [CompileToGraph(GpuWorkspace, GpuBigUInt?)](#compiletographgpuworkspace-gpubiguint) | Compiles this expression tree into an executable CUDA Graph, eliminating launch overhead. |
+| [Evaluate(GpuBigUInt)](#evaluategpubiguint) | Evaluates this signed expression into the provided destination buffer. |
+| [Evaluate(GpuWorkspace)](#evaluategpuworkspace) | Evaluates this signed expression into a newly rented temporary GPU buffer. |
 | [EvaluateWithCudaGraph(GpuWorkspace, GpuBigUInt?)](#evaluatewithcudagraphgpuworkspace-gpubiguint) | Evaluates this expression tree by dynamically compiling into a CUDA Graph, launching, and destroying it. |
 | [EvaluateWithCudaGraphAsync(GpuWorkspace, GpuBigUInt?, CancellationToken)](#evaluatewithcudagraphasyncgpuworkspace-gpubiguint-cancellationtoken) | Like `EvaluateWithCudaGraph`, but waits for the graph without blocking the calling thread. |
-| [Max(GpuBigIntExpr, GpuBigIntExpr)](#maxgpubigintexpr-gpubigintexpr)              | Constructs a lazy expression that resolves to the maximum of two signed big integer expressions.|
-| [Min(GpuBigIntExpr, GpuBigIntExpr)](#mingpubigintexpr-gpubigintexpr)              | Constructs a lazy expression that resolves to the minimum of two signed big integer expressions.|
+| [Max(GpuBigIntExpr, GpuBigIntExpr)](#maxgpubigintexpr-gpubigintexpr) | Constructs a lazy expression that resolves to the maximum of two signed big integer expressions. |
+| [Min(GpuBigIntExpr, GpuBigIntExpr)](#mingpubigintexpr-gpubigintexpr) | Constructs a lazy expression that resolves to the minimum of two signed big integer expressions. |
 
 ## CompileToGraph(GpuWorkspace, GpuBigUInt?)
 
@@ -204,15 +204,15 @@ A new `GpuBigIntExpr` representing the Min AST node.
 
 ## Operators
 
-| Name                                         | Description                                                             |
-| -------------------------------------------- | ----------------------------------------------------------------------- |
-| `implicit operator GpuBigIntExpr(GpuBigInt)` | Implicitly wraps a `GpuBigInt` as a signed expression leaf node.        |
-| `operator *(GpuBigIntExpr, GpuBigIntExpr)`   | Constructs a lazy multiplication expression.                            |
-| `operator /(GpuBigIntExpr, GpuBigIntExpr)`   | Constructs a lazy division expression.                                  |
-| `operator +(GpuBigIntExpr, GpuBigIntExpr)`   | Constructs a lazy addition expression with deferred sign resolution.    |
-| `operator -(GpuBigIntExpr, GpuBigIntExpr)`   | Constructs a lazy subtraction expression with deferred sign resolution. |
-| `operator -(GpuBigIntExpr)`                  | Constructs a lazy negation expression.                                  |
-| `operator ~(GpuBigIntExpr)`                  | Constructs a lazy bitwise NOT expression.                               |
+| Name | Description |
+| --- | --- |
+| `implicit operator GpuBigIntExpr(GpuBigInt)` | Implicitly wraps a `GpuBigInt` as a signed expression leaf node. |
+| `operator *(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy multiplication expression. |
+| `operator /(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy division expression. |
+| `operator +(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy addition expression with deferred sign resolution. |
+| `operator -(GpuBigIntExpr, GpuBigIntExpr)` | Constructs a lazy subtraction expression with deferred sign resolution. |
+| `operator -(GpuBigIntExpr)` | Constructs a lazy negation expression. |
+| `operator ~(GpuBigIntExpr)` | Constructs a lazy bitwise NOT expression. |
 
 ## Remarks
 

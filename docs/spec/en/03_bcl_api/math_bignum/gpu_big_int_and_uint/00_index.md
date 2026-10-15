@@ -32,16 +32,42 @@ This separation ensures that GPU kernels remain purely mathematical and branchle
 - **[GpuBigInt.md](GpuBigInt.md)**: The signed wrapper struct for host-side orchestration.
 - **[GpuBigUIntArray.md](GpuBigUIntArray.md)**: Contiguous batch array of unsigned multi-precision integers.
 - **[GpuBigIntArray.md](GpuBigIntArray.md)**: Contiguous batch array of signed multi-precision integers.
+- **[GpuBigUIntGeneric.md](GpuBigUIntGeneric.md)**: Fixed-size unsigned multi-precision integer struct (`GpuBigUInt<TSize>`) for value-type/kernel execution.
+- **[GpuUInt128.md](GpuUInt128.md)** / **[GpuUInt256.md](GpuUInt256.md)** / **[GpuUInt512.md](GpuUInt512.md)**: Fixed-width 128/256/512-bit unsigned integer structs for GPU device and host execution.
+- **[GpuBigUIntBuilder.md](GpuBigUIntBuilder.md)**: Factory builder facilitating C# 12 Collection Expression construction for fixed-size `GpuBigUInt<TSize>`.
+- **[IGpuNumber.md](IGpuNumber.md)**: Marker interface (`IGpuNumber<TSelf>`) and `[GenerateGpuNumberOperators]` attribute for source-generated GPU number operators.
+- **[IGpuBigIntArithmetic.md](IGpuBigIntArithmetic.md)**: Handle-based GPU device memory contract for arbitrary-precision integer arithmetic.
+- **[IGpuMemoryManager.md](IGpuMemoryManager.md)**: Memory allocation and scoped temporary buffer lifetime contract (`ScopedBigIntMemory`).
+- **[ScopedBigIntMemory.md](ScopedBigIntMemory.md)**: Stack-scoped `ref struct` RAII wrapper for temporary device memory allocations.
 - **[Operators.md](Operators.md)**: Overloads for `+`, `-`, `*`, `/`, and bitwise operators.
-- **[BigIntegerExtensions.md](BigIntegerExtensions.md)**: Host-side math extensions for `System.Numerics.BigInteger`.
+- **[BigIntegerExtensions.md](BigIntegerExtensions.md)**: Host-side math extensions (`BigIntExtensions.Sqrt`) for `System.Numerics.BigInteger`.
+
+### Execution Providers & Handlers
+
+- **[IGpuExecutionProvider.md](providers/IGpuExecutionProvider.md)**: Aggregated contract (`IGpuMemoryProvider`, `IGpuBasicMathProvider`, `IGpuAdvancedMathProvider`, `IGpuGraphProvider`) for GPU execution backends.
+- **[GSharpAotProvider.md](providers/GSharpAotProvider.md)**: Primary execution provider using AOT-compiled PTX kernels and CPU fallback orchestration.
+- **[CSharpCpuBigIntProvider.md](providers/CSharpCpuBigIntProvider.md)**: Pure C# CPU execution provider for hardware-free fallback and diagnostic verification.
+- **[NativeProvider.md](providers/NativeProvider.md)**: Legacy native CUDA C++ dynamic library execution provider.
+- **[ScopedGpuMemory.md](providers/ScopedGpuMemory.md)**: Disposable stack-only `ref struct` for scoped raw device memory pointers.
+- **[AotMemoryHandler.md](providers/AotMemoryHandler.md)** / **[AotBasicMathHandler.md](providers/AotBasicMathHandler.md)** / **[AotAdvancedMathHandler.md](providers/AotAdvancedMathHandler.md)** / **[AotGraphHandler.md](providers/AotGraphHandler.md)**: Specialized modular handlers backing `GSharpAotProvider`.
+- **[StreamCompactionOrchestrator.md](providers/StreamCompactionOrchestrator.md)**: Multi-block recursive Blelloch exclusive prefix sum orchestrator.
 
 ### Lazy Expressions, CUDA Graphs & Vector LINQ
 
 - **[GpuBigIntExpr.md](expressions/GpuBigIntExpr.md)**: AST builder and lazy expression evaluation on GPU.
+- **[GpuBigUIntExpr.md](expressions/GpuBigUIntExpr.md)**: Unsigned AST builder and bitwise/arithmetic expression evaluation on GPU.
+- **[IGpuBigIntExpression.md](expressions/IGpuBigIntExpression.md)**: Interface for lazily evaluated signed GPU BigInteger AST nodes.
+- **[IGpuBigUIntExpression.md](expressions/IGpuBigUIntExpression.md)**: Interface for lazily evaluated unsigned GPU BigInteger AST nodes using `BigIntExpressionVisitor`.
+- **[GpuBigUIntExpressionExtensions.md](expressions/GpuBigUIntExpressionExtensions.md)**: Extension method (`Evaluate`) for evaluating `IGpuBigUIntExpression` AST nodes.
+- **[BigIntExpressionVisitor.md](expressions/BigIntExpressionVisitor.md)**: Stack-scoped `ref struct` visitor that evaluates `IGpuBigUIntExpression` AST nodes.
+- **[GpuBigIntExecutionContext.md](GpuBigIntExecutionContext.md)**: Stack-scoped `readonly ref struct` encapsulating the workspace, memory manager, arithmetic provider, and CUDA stream.
+- **[FloatExpressions.md](expressions/FloatExpressions.md)**: Zero-allocation generic binary float expressions (`BinaryExpr<T, TOp>`) and `GpuBigFloatExpressionVisitor`.
 - **[GpuBigIntExecutableGraph.md](expressions/GpuBigIntExecutableGraph.md)**: Compiled, reusable CUDA Graph execution engine.
 - **[GpuBigIntVectorLinqExtensions.md](expressions/GpuBigIntVectorLinqExtensions.md)**: Batched LINQ extensions and parallel sum reductions.
 - **[GpuBigIntStackLinqExtensions.md](expressions/GpuBigIntStackLinqExtensions.md)**: Zero-allocation stack-based parallel LINQ operations.
 - **[IGpuBigIntVectorExpression.md](expressions/IGpuBigIntVectorExpression.md)**: Interface for vectorized deferred GPU expressions.
+- **[IGpuBoolVectorExpression.md](expressions/IGpuBoolVectorExpression.md)**: Interface for deferred GPU vector boolean predicate expressions.
+- **[BoolVectorExpressions.md](expressions/BoolVectorExpressions.md)**: Deferred scalar boolean expression (`IGpuBoolExpr`) and `VectorCompareOperator` enum.
 
 ### Advanced Algorithms & Transforms
 
@@ -51,13 +77,18 @@ GSharp includes a vast suite of advanced algorithms designed to leverage the GPU
 - **[ModPow.md](algorithms/ModPow.md)**: Modular Exponentiation (RSA cryptography).
 - **[Ntt.md](algorithms/Ntt.md)**: Number Theoretic Transform for $O(N \log N)$ convolution of massive numbers.
 - **[FermatAlgorithm.md](algorithms/FermatAlgorithm.md)**: Fermat number PRP test and NTT squaring on the GPU (formerly `FermatRunner`, see [Fermat.md](algorithms/Fermat.md)), with non-blocking `RunFermatPrpAsync` / `GetStateAsync`.
-- **[Hypergeometric.md](algorithms/Hypergeometric.md)**: Binary Splitting primitives for Hypergeometric Series (Chudnovsky Pi calculation).
+- **[PrimeSearchAlgorithm.md](algorithms/PrimeSearchAlgorithm.md)**: High-performance probable prime generation using trial division and Fermat PRP testing.
+- **[ChudnovskyAlgorithm.md](algorithms/ChudnovskyAlgorithm.md)**: Hybrid CPU/GPU Chudnovsky binary splitting pipeline for multi-million-digit $\pi$ computation.
+- **[BbpAlgorithm.md](algorithms/BbpAlgorithm.md)**: Bailey-Borwein-Plouffe (BBP) spigot algorithm for direct hexadecimal $\pi$ digit extraction.
+- **[PiVerifier.md](algorithms/PiVerifier.md)**: Verifies trailing hexadecimal $\pi$ digits computed on the GPU against `BbpAlgorithm`.
+- **[Hypergeometric.md](algorithms/Hypergeometric.md)**: Binary Splitting primitives (`HypergeometricTerms`) for Hypergeometric Series (Chudnovsky Pi calculation).
 - **[Matrix2x2.md](algorithms/Matrix2x2.md)**: 2x2 Matrix arithmetic for $O(\log N)$ linear recurrences (e.g., Fibonacci).
 - **[DivRem.md](algorithms/DivRem.md)**: Simultaneous extraction of Quotient and Remainder.
 
 ### Input / Output
 
 - **[IO_GpuRadixConverter.md](IO_GpuRadixConverter.md)**: Divide-and-Conquer Base-10 string conversion for printing millions of digits in $O(N \log^2 N)$ time.
+- **[IO_HeadTailTrackerWriter.md](IO_HeadTailTrackerWriter.md)**: Memory-efficient `TextWriter` retaining only the leading and trailing $N$ characters of massive output streams.
 
 ## See also
 

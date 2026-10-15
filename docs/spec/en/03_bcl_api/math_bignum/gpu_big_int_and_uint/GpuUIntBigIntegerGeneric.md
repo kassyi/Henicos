@@ -17,14 +17,19 @@ Represents a fixed-size arbitrary-precision unsigned integer stored in value-typ
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
-public struct GpuBigUInt<TSize> : IEquatable<GpuBigUInt<TSize>> where TSize : unmanaged
+public struct GpuBigUInt<TSize> : IEquatable<GpuBigUInt<TSize>>, IComparable<GpuBigUInt<TSize>> where TSize : unmanaged
 ```
+
+### Type Parameters
+
+`TSize` _unmanaged_<br>
+The unmanaged struct type representing the limb storage layout (e.g., `LimbBuffer4`, `LimbBuffer8`, `LimbBuffer16`).
 
 ## Constructors
 
 | Name | Description |
 | --- | --- |
-| [GpuBigUInt&lt;TSize&gt;(TSize)](#gpuuintbigintegertsizetsize) | Initializes a new instance of the `GpuBigUInt<TSize>` struct with specified limbs. |
+| [GpuBigUInt&lt;TSize&gt;(TSize)](#gpubiguinttsizetsize) | Initializes a new instance of the `GpuBigUInt<TSize>` struct with specified limbs. |
 
 ## GpuBigUInt&lt;TSize&gt;(TSize)
 
@@ -39,7 +44,7 @@ public GpuBigUInt(TSize limbs);
 `limbs` _TSize_<br>
 The limb storage payload.
 
-## Properties
+## Fields / Properties
 
 | Name | Description |
 | --- | --- |
@@ -75,10 +80,10 @@ public static GpuBigUInt<TSize> Zero { get; }
 
 | Name | Description |
 | --- | --- |
-| [Add(GpuBigUInt&lt;TSize&gt;, out bool)](#addgpuuintbigintegertsize-out-bool) | Adds two big integers and returns the carry flag. |
-| [CompareTo(GpuBigUInt&lt;TSize&gt;)](#comparetogpuuintbigintegertsize) | Compares this instance to another big integer. |
+| [Add(GpuBigUInt&lt;TSize&gt;, out bool)](#addgpubiguinttsize-out-bool) | Adds two big integers and returns the carry flag. |
+| [CompareTo(GpuBigUInt&lt;TSize&gt;)](#comparetogpubiguinttsize) | Compares this instance to another big integer. |
 | [CountLeadingZeros()](#countleadingzeros) | Counts the number of leading zero bits. |
-| [Equals(GpuBigUInt&lt;TSize&gt;)](#equalsgpuuintbigintegertsize) | Returns a value indicating whether this instance is equal to another. |
+| [Equals(GpuBigUInt&lt;TSize&gt;)](#equalsgpubiguinttsize) | Returns a value indicating whether this instance is equal to another. |
 | [Equals(object?)](#equalsobject) | Returns a value indicating whether this instance is equal to a specified object. |
 | [GetHashCode()](#gethashcode) | Returns the hash code for this instance. |
 | [IsOdd()](#isodd) | Returns a value indicating whether this big integer is an odd number. |
@@ -87,7 +92,7 @@ public static GpuBigUInt<TSize> Zero { get; }
 | [ShiftLeft(int)](#shiftleftint) | Shifts the bits of the value left by a specified amount. |
 | [ShiftRight(int, out bool)](#shiftrightint-out-bool) | Shifts the bits of the value right by a specified amount, producing a sticky bit. |
 | [ShiftRight(int, out bool, out bool, out bool)](#shiftrightint-out-bool-out-bool-out-bool) | Shifts the bits of the value right, producing guard, round, and sticky bits. |
-| [Subtract(GpuBigUInt&lt;TSize&gt;, out bool)](#subtractgpuuintbigintegertsize-out-bool) | Subtracts a big integer from this instance and returns the borrow flag. |
+| [Subtract(GpuBigUInt&lt;TSize&gt;, out bool)](#subtractgpubiguinttsize-out-bool) | Subtracts a big integer from this instance and returns the borrow flag. |
 
 ## Add(GpuBigUInt&lt;TSize&gt;, out bool)
 
@@ -99,7 +104,7 @@ public readonly GpuBigUInt<TSize> Add(GpuBigUInt<TSize> other, out bool carry);
 
 #### Parameters
 
-`other` _GpuUIntBigInteger&lt;TSize&gt;_<br>
+`other` _GpuBigUInt&lt;TSize&gt;_<br>
 The value to add.
 
 `carry` _out bool_<br>
@@ -107,7 +112,7 @@ The value to add.
 
 #### Returns
 
-_GpuUIntBigInteger&lt;TSize&gt;_<br>
+_GpuBigUInt&lt;TSize&gt;_<br>
 The sum of the two values.
 
 ## CompareTo(GpuBigUInt&lt;TSize&gt;)
@@ -120,7 +125,7 @@ public readonly int CompareTo(GpuBigUInt<TSize> other);
 
 #### Parameters
 
-`other` _GpuUIntBigInteger&lt;TSize&gt;_<br>
+`other` _GpuBigUInt&lt;TSize&gt;_<br>
 The value to compare to.
 
 #### Returns
@@ -151,7 +156,7 @@ public readonly bool Equals(GpuBigUInt<TSize> other);
 
 #### Parameters
 
-`other` _GpuUIntBigInteger&lt;TSize&gt;_<br>
+`other` _GpuBigUInt&lt;TSize&gt;_<br>
 The value to compare.
 
 #### Returns
@@ -226,7 +231,7 @@ public GpuBigUInt<TSize> SetMsb();
 
 #### Returns
 
-_GpuUIntBigInteger&lt;TSize&gt;_<br>
+_GpuBigUInt&lt;TSize&gt;_<br>
 A new instance with the MSB set.
 
 ## ShiftLeft(int)
@@ -244,7 +249,7 @@ The number of bits to shift.
 
 #### Returns
 
-_GpuUIntBigInteger&lt;TSize&gt;_<br>
+_GpuBigUInt&lt;TSize&gt;_<br>
 The shifted value.
 
 ## ShiftRight(int, out bool)
@@ -265,7 +270,7 @@ Set to `true` if any non-zero bits were shifted out past the LSB.
 
 #### Returns
 
-_GpuUIntBigInteger&lt;TSize&gt;_<br>
+_GpuBigUInt&lt;TSize&gt;_<br>
 The shifted value.
 
 ## ShiftRight(int, out bool, out bool, out bool)
@@ -292,7 +297,7 @@ Set to `true` if any bits after the round bit were non-zero.
 
 #### Returns
 
-_GpuUIntBigInteger&lt;TSize&gt;_<br>
+_GpuBigUInt&lt;TSize&gt;_<br>
 The shifted value.
 
 ## Subtract(GpuBigUInt&lt;TSize&gt;, out bool)
@@ -305,7 +310,7 @@ public readonly GpuBigUInt<TSize> Subtract(GpuBigUInt<TSize> other, out bool bor
 
 #### Parameters
 
-`other` _GpuUIntBigInteger&lt;TSize&gt;_<br>
+`other` _GpuBigUInt&lt;TSize&gt;_<br>
 The value to subtract.
 
 `borrow` _out bool_<br>
@@ -313,7 +318,7 @@ The value to subtract.
 
 #### Returns
 
-_GpuUIntBigInteger&lt;TSize&gt;_<br>
+_GpuBigUInt&lt;TSize&gt;_<br>
 The difference of the two values.
 
 ## Operators
@@ -330,6 +335,8 @@ The difference of the two values.
 | `GreaterThanOrEqual(GpuBigUInt<TSize>, GpuBigUInt<TSize>)` | Returns a value indicating whether a specified `GpuBigUInt<TSize>` is greater than or equal to another. |
 
 ## Examples
+
+### Fixed-Size Arithmetic Operations
 
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath

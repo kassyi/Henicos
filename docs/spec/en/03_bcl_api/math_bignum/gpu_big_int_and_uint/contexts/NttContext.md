@@ -1,40 +1,94 @@
 ---
-title: "NttContext Struct (G#)"
+title: "Ntt and DualNtt Structs (G#)"
 site: "G# Documentation"
-published: "2026-09-24T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
-description: "Context parameters for NTT-related operations in Fermat sequences."
+description: "Context parameters for single-pass and dual-pass NTT operations in GPU big integer kernels."
 ---
 
-## NttContext Struct
+## Ntt and DualNtt Structs
 
 ## Definition
 
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Context parameters for NTT-related operations in Fermat sequences.
+Context parameters for NTT-related operations (`Ntt`, formerly `NttContext`) and dual-pass NTT GPU execution (`DualNtt`).
 
 ```csharp
-public struct NttContext
+public struct Ntt
+{
+    public int TransformLength;
+    public BufferContext Buffers;
+    public TwiddleFactorContext TwiddleFactors;
+}
+
+public struct DualNtt
+{
+    public uint[] Buffer1;
+    public uint[] Buffer2;
+    public uint[] TemporaryBuffer;
+    [GpuReadOnly] public uint[] Twiddle1;
+    [GpuReadOnly] public uint[] Twiddle2;
+    public int M;
+    public int N1;
+    public int N2;
+}
+```
+
+## Structs
+
+| Name | Description |
+| --- | --- |
+| [Ntt](#ntt-struct) | Context parameters for NTT-related operations in Fermat and Newton-Raphson sequences. |
+| [DualNtt](#dualntt-struct) | Context parameters for dual-pass NTT GPU execution. |
+
+## Ntt Struct
+
+Context parameters for NTT-related operations in Fermat and Newton-Raphson sequences.
+
+```csharp
+public struct Ntt
+{
+    public int TransformLength;
+    public BufferContext Buffers;
+    public TwiddleFactorContext TwiddleFactors;
+}
+```
+
+## DualNtt Struct
+
+Context parameters for dual-pass NTT GPU execution.
+
+```csharp
+public struct DualNtt
+{
+    public uint[] Buffer1;
+    public uint[] Buffer2;
+    public uint[] TemporaryBuffer;
+    [GpuReadOnly] public uint[] Twiddle1;
+    [GpuReadOnly] public uint[] Twiddle2;
+    public int M;
+    public int N1;
+    public int N2;
+}
 ```
 
 ## Examples
 
-### Creating an NTT Context
+### Creating an Ntt Context
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
-// Configure an NTT Context
-var context = new NttContext
+var context = new Ntt
 {
     TransformLength = 1024,
-    Buffers = new NttContext.BuffersContext
+    Buffers = new BufferContext
     {
         Buffer1 = new uint[1024],
         Buffer2 = new uint[1024],
@@ -43,9 +97,7 @@ var context = new NttContext
     }
 };
 
-// Outputs: NTT Context Transform Length: 1024
-Console.WriteLine($"NTT Context Transform Length: {context.TransformLength}");
-// Outputs: Buffer1 Size: 1024
+Console.WriteLine($"NTT Transform Length: {context.TransformLength}");
 Console.WriteLine($"Buffer1 Size: {context.Buffers.Buffer1.Length}");
 ```
 
@@ -55,13 +107,5 @@ Console.WriteLine($"Buffer1 Size: {context.Buffers.Buffer1.Length}");
 
 - [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
-- [GpuWorkspace](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
-
-### Architecture
-
-- [2. Compiler and Runtime Architecture](../../../../02_architecture/00_index.md)
-
-### Guides
-
-- [4. Practical Guides and Best Practices](../../../../04_guides/00_index.md)
-- [Advanced: Extending GpuBigInt with Custom Algorithms](../../../../04_guides/08_advanced_custom_math_kernels.md)
+- [GpuBigIntContext and Algorithm Context Structs](BigIntKernelContext.md)
+- [NumberTheoreticTransform Struct](NumberTheoreticTransformKernelArgs.md)

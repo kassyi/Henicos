@@ -17,8 +17,8 @@ Calculates the Greatest Common Divisor (GCD) of two arbitrary-precision integers
 
 ## Overloads
 
-| Name                                                                                                                       | Description                                                  |
-| -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Name | Description |
+| --- | --- |
 | [Gcd(GpuBigUInt, GpuBigUInt, GpuBigUInt)](#gcd-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger) | Computes the greatest common divisor of two absolute values. |
 
 ## Gcd(GpuBigUInt, GpuBigUInt, GpuBigUInt)

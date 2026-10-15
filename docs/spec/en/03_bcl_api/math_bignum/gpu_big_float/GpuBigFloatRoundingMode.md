@@ -21,12 +21,12 @@ public enum GpuBigFloatRoundingMode
 
 ## Members
 
-| Member Name                   | Value | Description                                                                                      |
-| ----------------------------- | ----- | ------------------------------------------------------------------------------------------------ |
-| [`RoundToNearestEven`](#roundtonearesteven)                   | `0`   | Round to nearest, with ties rounding to the nearest even integer significand (IEEE 754 default). |
-| [`RoundTowardZero`](#roundtowardzero)                      | `1`   | Round toward zero (truncation).                                                                  |
-| [`RoundTowardPositiveInfinity`](#roundtowardpositiveinfinity)  | `2`   | Round toward positive infinity.                                                                  |
-| [`RoundTowardNegativeInfinity`](#roundtowardnegativeinfinity)  | `3`   | Round toward negative infinity.                                                                  |
+| Member Name | Value | Description |
+| --- | --- | --- |
+| [`RoundToNearestEven`](#roundtonearesteven) | `0` | Round to nearest, with ties rounding to the nearest even integer significand (IEEE 754 default). |
+| [`RoundTowardZero`](#roundtowardzero) | `1` | Round toward zero (truncation). |
+| [`RoundTowardPositiveInfinity`](#roundtowardpositiveinfinity) | `2` | Round toward positive infinity. |
+| [`RoundTowardNegativeInfinity`](#roundtowardnegativeinfinity) | `3` | Round toward negative infinity. |
 
 ## Members Detail
 
@@ -56,38 +56,29 @@ Round toward negative infinity.
 
 ## Examples
 
-### Specifying a Rounding Mode
+### Specifying an IEEE 754 Rounding Mode
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath, Kassyi.GSharp.Core
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
-
-
-using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-
+#nullable enable
 // Execution Context: Host (CPU)
-Example.RoundFloat(new GpuBigUFloat<LimbBuffer8>(default, 0));
+using System;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
-public class Example
+var mode = GpuBigFloatRoundingMode.RoundToNearestEven;
+
+string description = mode switch
 {
-    // Execution Context: G# Kernel (GPU)
-    [GpuKernel]
-    public static void RoundFloat(GpuBigUFloat<LimbBuffer8> ufloat)
-    {
-        // Apply rounding towards zero (truncation)
-        var rounded = ufloat.Round(
-            GpuBigFloatRoundingMode.RoundTowardZero,
-            guardBit: true,
-            roundBit: false,
-            stickyBit: true
-        );
-        
-        Console.WriteLine($"Rounded Exponent: {rounded.Exponent}");
-    }
-}
+    GpuBigFloatRoundingMode.RoundToNearestEven => "IEEE 754 default (ties to even)",
+    GpuBigFloatRoundingMode.RoundTowardZero => "Truncation toward zero",
+    GpuBigFloatRoundingMode.RoundTowardPositiveInfinity => "Ceiling toward +Infinity",
+    GpuBigFloatRoundingMode.RoundTowardNegativeInfinity => "Floor toward -Infinity",
+    _ => "Unknown"
+};
+
+Console.WriteLine($"Mode: {mode} ({(int)mode}) - {description}");
 ```
 
 ## See also
@@ -95,5 +86,5 @@ public class Example
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
-- [GpuBigFloat<TSize> Struct (G#)](GpuBigFloat.md)
-- [GpuBigUFloat<TSize> Struct (G#)](GpuBigUFloat.md)
+- [GpuBigFloat Struct (G#)](GpuBigFloat.md)
+- [GpuBigUFloat Struct (G#)](GpuBigUFloat.md)

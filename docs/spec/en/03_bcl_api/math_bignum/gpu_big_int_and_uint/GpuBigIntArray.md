@@ -21,9 +21,9 @@ public readonly struct GpuBigIntArray : IDisposable
 
 ## Constructors
 
-| Name                                                                                      | Description                                                                                    |
-| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [GpuBigIntArray(GpuWorkspace, int, int)](#gpubigintarraygpuworkspace-int-int)           | Initializes a new instance of the `GpuBigIntArray` struct allocating GPU global device memory. |
+| Name | Description |
+| --- | --- |
+| [GpuBigIntArray(GpuWorkspace, int, int)](#gpubigintarraygpuworkspace-int-int) | Initializes a new instance of the `GpuBigIntArray` struct allocating GPU global device memory. |
 
 ## GpuBigIntArray(GpuWorkspace, int, int)
 
@@ -46,12 +46,12 @@ The number of 32-bit words per element.
 
 ## Properties
 
-| Name                                  | Description                                                                                                    |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [Length](#length)                     | Gets the length of the array (number of elements).                                                             |
-| [Signs](#signs)                       | Gets the underlying contiguous array of sign indicators (1 word per element: 0 = positive, 1 = negative).      |
-| [Values](#values)                     | Gets the underlying contiguous array of absolute values (magnitudes).                                          |
-| [WordsPerElement](#wordsperelement)   | Gets the number of 32-bit words per element.                                                                   |
+| Name | Description |
+| --- | --- |
+| [Length](#length) | Gets the length of the array (number of elements). |
+| [Signs](#signs) | Gets the underlying contiguous array of sign indicators (1 word per element: 0 = positive, 1 = negative). |
+| [Values](#values) | Gets the underlying contiguous array of absolute values (magnitudes). |
+| [WordsPerElement](#wordsperelement) | Gets the number of 32-bit words per element. |
 
 ## Length
 
@@ -87,10 +87,11 @@ public int WordsPerElement { get; }
 
 ## Methods
 
-| Name                                | Description                                                                               |
-| ----------------------------------- | ----------------------------------------------------------------------------------------- |
-| [Dispose()](#dispose)               | Releases the GPU global device memory resources allocated for the underlying buffers.     |
-| [GetElement(int)](#getelementint)   | Gets a scalar representation of the specified element (incurs device-to-host read).       |
+| Name | Description |
+| --- | --- |
+| [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying buffers. |
+| [GetElement(int)](#getelementint) | Gets a scalar representation of the specified element (incurs device-to-host read). |
+| [Slice(int, int)](#sliceint-int) | Creates a zero-allocation sub-slice of this GPU array. |
 
 ## Dispose()
 
@@ -118,8 +119,34 @@ The zero-based index of the element.
 
 #### Returns
 
-_GpuBigInt_<br>
+_[GpuBigInt](GpuBigInt.md)_<br>
 A `GpuBigInt` pointing to the element's device memory.
+
+## Slice(int, int)
+
+Creates a zero-allocation sub-slice of this GPU array.
+
+```csharp
+public GpuBigIntArray Slice(int elementOffset, int elementCount);
+```
+
+#### Parameters
+
+`elementOffset` _int_<br>
+The starting element index of the slice.
+
+`elementCount` _int_<br>
+The number of elements in the slice.
+
+#### Returns
+
+_[GpuBigIntArray](GpuBigIntArray.md)_<br>
+A sliced view of the `GpuBigIntArray`.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+Thrown when `elementOffset < 0`, `elementCount < 0`, or `elementOffset + elementCount > Length`.
 
 ## Remarks
 
@@ -127,7 +154,7 @@ A `GpuBigInt` pointing to the element's device memory.
 
 ## Examples
 
-### Allocating and Inspecting GPU BigInt Vector Array
+### Allocating and Slicing a GPU BigInt Vector Array
 
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
@@ -143,7 +170,10 @@ using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
 // Allocate an array of 32 signed big integers (8 words = 256 bits each)
 using var signedArray = new GpuBigIntArray(workspace, length: 32, wordsPerElement: 8);
 
-Console.WriteLine($"Signed array allocated: Length={signedArray.Length}, Words={signedArray.WordsPerElement}");
+// Create a zero-allocation 16-element sub-slice starting at index 8
+GpuBigIntArray subSlice = signedArray.Slice(elementOffset: 8, elementCount: 16);
+
+Console.WriteLine($"Signed array allocated: Length={signedArray.Length}, Slice Length={subSlice.Length}, Words={subSlice.WordsPerElement}");
 ```
 
 ## See also

@@ -6,21 +6,23 @@ language: "en"
 description: "Overview of the GpuBigFloat module for arbitrary-precision floating-point arithmetic."
 ---
 
-# Arbitrary-Precision Floats (GpuBigFloat)
+## Arbitrary-Precision Floats (GpuBigFloat)
 
-The `GpuBigFloat` module provides high-performance, arbitrary-precision floating-point arithmetic on the GPU. It is designed for applications requiring precision far beyond standard IEEE 754 `float` or `double` (e.g., fractal generation, precise physics simulations).
-
-Unlike earlier versions that required Host orchestration, the types in this module are purely unmanaged structs (`where TSize : unmanaged`) that execute entirely on the GPU within `[GpuKernel]` functions.
+The `GpuBigFloat` module provides high-performance, arbitrary-precision floating-point arithmetic on the GPU. It is designed for applications requiring precision far beyond standard IEEE 754 `float` or `double` (e.g., multi-million-digit $\pi$ computation, fractal generation, and high-precision scientific simulations).
 
 ## Core Types
 
-| Type                                                              | Description                                                                                                                            |
-| :---------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
-| [`GpuBigFloat<TSize>`](GpuBigFloat.md)                            | Represents an arbitrary-precision signed floating-point number. Acts as a wrapper around an unsigned magnitude and a sign bit.         |
-| [`GpuBigUFloat<TSize>`](GpuBigUFloat.md)                          | Represents the unsigned magnitude of an arbitrary-precision floating-point number, eliminating branching overhead during calculations. |
-| [`GpuBigFloatRoundingMode`](GpuBigFloatRoundingMode.md)           | Specifies the IEEE 754 compliant rounding mode.                                                                                        |
-| [`Fixed-Precision Wrappers (128/256/512)`](GpuFloatFixedTypes.md) | High-level `GpuFloat128` etc. wrappers for zero-allocation GPU execution without generic arguments.                                    |
-| [`Operators (+, -, *, /)`](Operators.md)                          | Operator overloads for `GpuBigFloat`.                                                                                                  |
+| Type | Description |
+| --- | --- |
+| [`GpuBigFloat`](GpuBigFloat.md) | Represents an arbitrary-precision signed floating-point number wrapping a [`GpuBigUFloat`](GpuBigUFloat.md) magnitude and a sign bit. |
+| [`GpuBigUFloat`](GpuBigUFloat.md) | Represents the unsigned magnitude ($\text{Significand} \times 2^{\text{Exponent}}$) of an arbitrary-precision floating-point number. |
+| [`GpuBigFloatRoundingMode`](GpuBigFloatRoundingMode.md) | Specifies the IEEE 754 compliant rounding mode. |
+| [`IGpuBigFloatArithmetic`](IGpuBigFloatArithmetic.md) | Defines the contract for arbitrary-precision floating-point arithmetic operations executed across GPU and CPU backends. |
+| [`GSharpAotFloatProvider`](GSharpAotFloatProvider.md) | Execution provider dispatching `IGpuBigFloatArithmetic` operations to native CUDA kernels, GSharp AOT kernels, or a fallback strategy. |
+| [`CSharpCpuBigFloatArithmetic`](CSharpCpuBigFloatArithmetic.md) | Stateless host (CPU) reference implementation of `IGpuBigFloatArithmetic`. |
+| [`GpuBigFloatKernels`](../gpu_big_int_and_uint/kernels/GpuBigFloatKernels.md) | Native G# (CUDA) kernels for radix-aligned floating-point addition and significand normalization. |
+| [`FloatExpressions`](../gpu_big_int_and_uint/expressions/FloatExpressions.md) | Zero-allocation generic binary float expressions (`BinaryExpr<T, TOp>`) and `GpuBigFloatExpressionVisitor`. |
+| [`Operators (+, -, *)`](Operators.md) | Operator overloads for `GpuBigFloat` and `GpuBigUFloat`. |
 
 ## Advanced Algorithms
 

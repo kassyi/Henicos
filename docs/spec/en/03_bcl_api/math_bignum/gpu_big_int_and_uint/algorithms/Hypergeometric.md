@@ -1,98 +1,93 @@
 ---
-title: "GpuHypergeometricPqt Class (G#)"
+title: "HypergeometricTerms Struct (G#)"
 site: "G# Documentation"
-published: "2026-09-22T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
-description: "Reference for Hypergeometric Series (Chudnovsky algorithm) components."
+description: "Reference for Hypergeometric Series (Chudnovsky algorithm) binary splitting terms."
 ---
 
-## GpuHypergeometricPqt Class
+## HypergeometricTerms Struct
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-The `GpuHypergeometricPqt` class provides specialized primitives for evaluating hypergeometric series. Its primary use case in computational mathematics is the **Chudnovsky algorithm**, which is currently the fastest known method for calculating millions (or billions) of digits of $\pi$ (Pi).
+The `HypergeometricTerms` struct (formerly `GpuHypergeometricPqt`) provides specialized primitives for evaluating hypergeometric series using **Binary Splitting** on the GPU. Its primary use case in computational mathematics is the [ChudnovskyAlgorithm](ChudnovskyAlgorithm.md), which is used for calculating millions of digits of $\pi$ (Pi).
+
+```csharp
+public readonly struct HypergeometricTerms(
+    [TakesOwnership] GpuBigInt p,
+    [TakesOwnership] GpuBigUInt q,
+    [TakesOwnership] GpuBigInt t) : IDisposable
+```
 
 ## Binary Splitting
 
-The algorithm relies on a technique called **Binary Splitting**, which recursively computes three terms: $P$, $Q$, and $T$.
+The algorithm relies on **Binary Splitting**, which recursively computes three terms: $P$, $Q$, and $T$.
 
-- $P$: Product of numerators.
-- $Q$: Product of denominators.
-- $T$: Partial sum.
+- $P$: Product of numerators ($P = P_l \cdot P_r$).
+- $Q$: Product of denominators ($Q = Q_l \cdot Q_r$).
+- $T$: Partial sum ($T = T_l \cdot Q_r + P_l \cdot T_r$).
 
-Because binary splitting is inherently a massive reduction tree, it is an ideal candidate for GPU acceleration.
+Because binary splitting is a reduction tree, subtree states can be merged directly in GPU VRAM via `HypergeometricTerms.Merge(workspace, left, right)`.
 
 ## Properties
 
-| Name | Description                            |
-| ---- | -------------------------------------- |
-| `P`  | Gets the P term (Numerator product).   |
-| `Q`  | Gets the Q term (Denominator product). |
-| `T`  | Gets the T term (Partial sum).         |
+| Name | Description |
+| --- | --- |
+| `P` | Gets the `P` term (`GpuBigInt`). |
+| `Q` | Gets the `Q` term (`GpuBigUInt`). |
+| `T` | Gets the `T` term (`GpuBigInt`). |
+
+## Methods
+
+| Name | Description |
+| --- | --- |
+| `Dispose()` | Releases the GPU global device memory resources allocated for `P`, `Q`, and `T`. |
+| `Merge(GpuWorkspace, HypergeometricTerms, HypergeometricTerms)` | Merges two adjacent `HypergeometricTerms` states on the GPU. |
 
 ## Examples
 
-### Orchestrating the Chudnovsky Algorithm
-
-This example demonstrates the core recursive step (combining left and right branches of the tree) in a binary splitting algorithm orchestrated on the GPU.
+### Merging Hypergeometric Binary Splitting States on the GPU
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
-using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 // Execution Context: Host (CPU)
-
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
-// Initialize some placeholder values
 var pLeft = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
-var qLeft = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
+var qLeft = GpuBigUInt.FromBigInteger(workspace, 1, 4);
 var tLeft = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
+using var left = new HypergeometricTerms(pLeft, qLeft, tLeft);
 
 var pRight = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
-var qRight = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
+var qRight = GpuBigUInt.FromBigInteger(workspace, 1, 4);
 var tRight = new GpuBigInt(GpuBigUInt.FromBigInteger(workspace, 1, 4), false);
+using var right = new HypergeometricTerms(pRight, qRight, tRight);
 
-// The binary splitting combination formula:
-// P_new = P_left * P_right
-// Q_new = Q_left * Q_right
-// T_new = (T_left * Q_right) + (P_left * T_right)
+using var merged = HypergeometricTerms.Merge(workspace, left, right);
 
-// 1. Build the Expression Trees
-var pNewExpr = pLeft * pRight;
-var qNewExpr = qLeft * qRight;
-var tNewExpr = (tLeft * qRight) + (pLeft * tRight);
-
-// 2. Evaluate concurrently using the Context pool
-using var pNewDest = new GpuBigUInt(workspace, 8);
-var pNew = pNewExpr.Evaluate(pNewDest);
-
-using var qNewDest = new GpuBigUInt(workspace, 8);
-var qNew = qNewExpr.Evaluate(qNewDest);
-
-using var tNewDest = new GpuBigUInt(workspace, 8);
-var tNew = tNewExpr.Evaluate(tNewDest);
-
-Console.WriteLine($"pNew = {pNew.Value.ToBigInteger(pNew.IsNegative)}");
-Console.WriteLine($"qNew = {qNew.Value.ToBigInteger(qNew.IsNegative)}");
-Console.WriteLine($"tNew = {tNew.Value.ToBigInteger(tNew.IsNegative)}");
+Console.WriteLine($"pNew = {merged.P.Value.ToBigInteger(merged.P.IsNegative)}");
+Console.WriteLine($"qNew = {merged.Q.ToBigInteger(false)}");
+Console.WriteLine($"tNew = {merged.T.Value.ToBigInteger(merged.T.IsNegative)}");
 ```
 
 ## Remarks
 
-The `GpuHypergeometricPqt` structure is designed to hold the three values required for a single binary splitting frame on the GPU memory heap, preventing fragmentation.
+The `HypergeometricTerms` structure holds the three GPU buffers required for a single binary splitting frame on the GPU memory heap. See [GpuHypergeometricPqt.md](../GpuHypergeometricPqt.md) for the complete API signature reference.
 
 ## See also
 
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
+- [ChudnovskyAlgorithm Class](ChudnovskyAlgorithm.md)
 - [Arbitrary-Precision Floats (GpuBigFloat)](../../gpu_big_float/00_index.md)
