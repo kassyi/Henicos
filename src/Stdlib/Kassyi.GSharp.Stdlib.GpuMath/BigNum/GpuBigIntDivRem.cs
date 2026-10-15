@@ -336,11 +336,6 @@ public static partial class GpuBigIntDivRem
         try
         {
             gpuBigInt.Workspace.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n, gpuBigInt.Workspace.Stream);
-            if (!GpuKernelLoader.IsCpuFallbackMode)
-            {
-                CudaException.ThrowIfError(
-                    CudaDriverApi.cuStreamSynchronize(gpuBigInt.Workspace.Stream));
-            }
             for (var i = n - 1; i >= 0; i--)
             {
                 if (hostData[i] == 0)
@@ -413,10 +408,6 @@ public static partial class GpuBigIntDivRem
         try
         {
             operand.Workspace.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n, operand.Workspace.Stream);
-            if (!GpuKernelLoader.IsCpuFallbackMode)
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(operand.Workspace.Stream));
-            }
             var topIndex = (actualBits - 1) / 32;
 
             var wordsToExtract = Math.Min(4, topIndex + 1);
