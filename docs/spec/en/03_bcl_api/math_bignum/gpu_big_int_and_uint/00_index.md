@@ -50,7 +50,7 @@ GSharp includes a vast suite of advanced algorithms designed to leverage the GPU
 - **[Gcd.md](algorithms/Gcd.md)**: Greatest Common Divisor (Lehmer's GCD).
 - **[ModPow.md](algorithms/ModPow.md)**: Modular Exponentiation (RSA cryptography).
 - **[Ntt.md](algorithms/Ntt.md)**: Number Theoretic Transform for $O(N \log N)$ convolution of massive numbers.
-- **[Fermat.md](algorithms/Fermat.md)**: Fermat's Little Theorem orchestrator for primality testing and factorization.
+- **[FermatAlgorithm.md](algorithms/FermatAlgorithm.md)**: Fermat number PRP test and NTT squaring on the GPU (formerly `FermatRunner`, see [Fermat.md](algorithms/Fermat.md)), with non-blocking `RunFermatPrpAsync` / `GetStateAsync`.
 - **[Hypergeometric.md](algorithms/Hypergeometric.md)**: Binary Splitting primitives for Hypergeometric Series (Chudnovsky Pi calculation).
 - **[Matrix2x2.md](algorithms/Matrix2x2.md)**: 2x2 Matrix arithmetic for $O(\log N)$ linear recurrences (e.g., Fibonacci).
 - **[DivRem.md](algorithms/DivRem.md)**: Simultaneous extraction of Quotient and Remainder.
