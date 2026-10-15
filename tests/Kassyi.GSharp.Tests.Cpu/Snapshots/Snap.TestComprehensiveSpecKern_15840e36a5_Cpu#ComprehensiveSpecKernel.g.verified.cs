@@ -278,7 +278,7 @@ __gsharp_switch_1_state_1:
 {
 if(_ctx->tx==0)
 {
-atomicAdd((*totalMagnitude),_ctx->dynamicCache[0]);
+atomicAdd(&(*totalMagnitude),_ctx->dynamicCache[0]);
 (*successFlag)=true;
 }
 DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec = DebugReduc_ComprehensiveSpecKernel_Vector8{};

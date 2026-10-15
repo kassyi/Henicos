@@ -532,7 +532,30 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // C# long/ulong are always 64-bit, but C++ 'L'/'UL' are 32-bit under LLP64 (MSVC, Windows nvcc).
+        if (node.IsKind(SyntaxKind.NumericLiteralExpression) && node.Token.Value is long or ulong)
+        {
+            AppendInt64Literal(node.Token.Text, node.Token.Value is ulong);
+            return;
+        }
+
         Context.Emitter.Writer.Append(node.Token.Text);
+    }
+
+    private void AppendInt64Literal(string text, bool isUnsigned)
+    {
+        var end = text.Length;
+        while (end > 0 && text[end - 1] is 'u' or 'U' or 'l' or 'L')
+        {
+            end--;
+        }
+
+        for (var i = 0; i < end; i++)
+        {
+            Context.Emitter.Writer.Append(text[i]);
+        }
+
+        Context.Emitter.Writer.Append(isUnsigned ? "ull" : "ll");
     }
 
     public override void VisitDefaultExpression(DefaultExpressionSyntax node) =>
