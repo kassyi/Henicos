@@ -476,6 +476,15 @@ methods:
         type: IntPtr
         description: Stream handle to destroy.
 
+  - name: cuStreamQuery
+    returnType: CUresult
+    summary: Determines the status of a compute stream without blocking the calling thread.
+    returnDescription: CudaSuccess if all operations in the stream have completed; CudaErrorNotReady if work is still pending; otherwise, an error code, including sticky errors from previous asynchronous launches.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream to query.
+
   - name: cuStreamSynchronize
     returnType: CUresult
     summary: Waits for a stream's tasks to complete.

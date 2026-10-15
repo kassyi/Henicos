@@ -16,10 +16,12 @@ public class CudaDriverApiAsyncBindingTests
     {
         // Compile-time contract: method group conversions fail to build if a binding or its signature is missing.
         Func<IntPtr, CUresult> eventQuery = CudaDriverApi.cuEventQuery;
+        Func<IntPtr, CUresult> streamQuery = CudaDriverApi.cuStreamQuery;
         Func<IntPtr, IntPtr, IntPtr, CUresult> launchHostFunc = CudaDriverApi.cuLaunchHostFunc;
         Func<IntPtr, uint, IntPtr, IntPtr, CUresult> memsetD32Async = CudaDriverApi.cuMemsetD32Async;
 
         Assert.NotNull(eventQuery);
+        Assert.NotNull(streamQuery);
         Assert.NotNull(launchHostFunc);
         Assert.NotNull(memsetD32Async);
     }
@@ -28,6 +30,7 @@ public class CudaDriverApiAsyncBindingTests
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.Boundary)]
     [InlineData("cuEventQuery", 1)]
+    [InlineData("cuStreamQuery", 1)]
     [InlineData("cuLaunchHostFunc", 3)]
     [InlineData("cuMemsetD32Async", 4)]
     public void Test_DriverApiYaml_DeclaresAsyncBinding_ExactlyOnce(string methodName, int parameterCount)
@@ -39,8 +42,7 @@ public class CudaDriverApiAsyncBindingTests
         Assert.True(parsed, error is null ? null : $"line {error.Line}: {error.Message}");
         Assert.NotNull(definition);
 
-        var matches = definition.Methods.Where(m => m.Name == methodName).ToArray();
-        var declaration = Assert.Single(matches);
+        var declaration = Assert.Single(definition.Methods, m => m.Name == methodName);
         Assert.Equal(parameterCount, declaration.Parameters.Length);
     }
 }

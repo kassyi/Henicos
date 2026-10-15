@@ -10,6 +10,7 @@ public sealed class CudaEventTimer : IDisposable
     private readonly bool _isFallback;
     private IntPtr _startEvent;
     private IntPtr _endEvent;
+    private IntPtr _endStream;
     private long _startTimestamp;
     private long _endTimestamp;
     private bool _disposed;
@@ -72,6 +73,7 @@ public sealed class CudaEventTimer : IDisposable
         }
 
         CudaException.ThrowIfError(CudaDriverApi.cuEventRecord(_endEvent, hStream));
+        _endStream = hStream;
     }
 
     /// <summary>
@@ -86,6 +88,24 @@ public sealed class CudaEventTimer : IDisposable
         }
 
         CudaException.ThrowIfError(CudaDriverApi.cuEventSynchronize(_endEvent));
+    }
+
+    /// <summary>
+    /// Asynchronously waits until the end event has been recorded, without blocking the calling thread.
+    /// </summary>
+    /// <param name="cancellationToken">A token that detaches the awaiter; the GPU work itself is not canceled.</param>
+    /// <returns>A <see cref="ValueTask"/> that completes once <see cref="GetElapsedTimeMilliseconds"/> can be called.</returns>
+    /// <remarks>
+    /// Waits for the stream passed to <see cref="Stop"/> to drain. This is a superset of the end event, because the
+    /// event is the last recorded item on that stream at the time of <see cref="Stop"/>.
+    /// </remarks>
+    /// <exception cref="ObjectDisposedException">The timer has been disposed.</exception>
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        return _isFallback
+            ? ValueTask.CompletedTask
+            : CudaStreamCompletion.WaitAsync(_endStream, cancellationToken);
     }
 
     /// <summary>
