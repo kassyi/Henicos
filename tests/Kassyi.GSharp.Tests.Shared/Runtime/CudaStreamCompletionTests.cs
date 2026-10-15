@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime;
@@ -316,61 +315,5 @@ public class CudaStreamCompletionTests
         }
 
         pending.GetAwaiter().GetResult();
-    }
-
-    /// <summary>
-    /// Holds a stream in a pending state by enqueuing a host function that blocks until a thread-pool timer releases it.
-    /// </summary>
-    /// <remarks>
-    /// The gate opens itself instead of being opened by the test's continuation, so it can never deadlock against a
-    /// starved thread pool.
-    /// </remarks>
-    private sealed unsafe class StreamGate : IDisposable
-    {
-        private readonly ManualResetEventSlim _released = new(false);
-        private readonly Timer _releaseTimer;
-        private GCHandle _handle;
-
-        private StreamGate(TimeSpan holdTime)
-        {
-            _handle = GCHandle.Alloc(this);
-            _releaseTimer = new Timer(static state =>
-            {
-                if (state is StreamGate gate)
-                {
-                    gate._released.Set();
-                }
-            }, this, holdTime, Timeout.InfiniteTimeSpan);
-        }
-
-        public bool IsReleased => _released.IsSet;
-
-        public static StreamGate Enqueue(IntPtr stream, TimeSpan holdTime)
-        {
-            var gate = new StreamGate(holdTime);
-            delegate* unmanaged<IntPtr, void> callback = &OnStreamReached;
-            CudaException.ThrowIfError(
-                CudaDriverApi.cuLaunchHostFunc(stream, (IntPtr)callback, GCHandle.ToIntPtr(gate._handle)));
-            return gate;
-        }
-
-        public void Dispose()
-        {
-            // Guarantees the driver thread is never left blocked, even when an assertion fails early.
-            _released.Set();
-            _releaseTimer.Dispose();
-        }
-
-        [UnmanagedCallersOnly]
-        private static void OnStreamReached(IntPtr userData)
-        {
-            if (GCHandle.FromIntPtr(userData).Target is not StreamGate gate)
-            {
-                return;
-            }
-
-            gate._released.Wait();
-            gate._handle.Free();
-        }
     }
 }
