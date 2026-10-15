@@ -54,19 +54,78 @@ public class FastMathBoundaryTests
         FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Sqrt(input, outputSqrt);
         FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Abs(input, outputAbs);
 
-        // 3. Assert
-        // In boundary test we primarily care that it doesn't crash the GPU/Runtime
-        // FastMath intrinsics on GPU have different precision/NaN handling than CPU MathF,
-        // so strict IEEE-754 equality is not enforced here, but basic safety and mapping is verified.
-
-        if (inputVal == -1.0f)
+        // 3. Assert all 4 operations across all 12 boundary inputs
+        if (float.IsNaN(inputVal))
         {
-            Assert.Equal(1.0f, outputAbs[0]);
+            Assert.True(float.IsNaN(outputAbs[0]));
+            Assert.True(float.IsNaN(outputExp[0]));
+            Assert.True(float.IsNaN(outputLog[0]));
+            Assert.True(float.IsNaN(outputSqrt[0]));
+        }
+        else if (float.IsPositiveInfinity(inputVal))
+        {
+            Assert.True(float.IsPositiveInfinity(outputAbs[0]));
+            Assert.True(float.IsPositiveInfinity(outputExp[0]));
+            Assert.True(float.IsPositiveInfinity(outputLog[0]));
+            Assert.True(float.IsPositiveInfinity(outputSqrt[0]));
+        }
+        else if (float.IsNegativeInfinity(inputVal))
+        {
+            Assert.True(float.IsPositiveInfinity(outputAbs[0]));
+            Assert.Equal(0.0f, outputExp[0]);
+            Assert.True(float.IsNaN(outputLog[0]));
+            Assert.True(float.IsNaN(outputSqrt[0]));
         }
         else if (inputVal == 0.0f)
         {
             Assert.Equal(0.0f, outputAbs[0]);
-            Assert.Equal(1.0f, outputExp[0]);
+            Assert.Equal(1.0f, outputExp[0], 1e-5f);
+            Assert.True(float.IsNegativeInfinity(outputLog[0]));
+            Assert.Equal(0.0f, outputSqrt[0]);
+        }
+        else if (inputVal == 1.0f)
+        {
+            Assert.Equal(1.0f, outputAbs[0]);
+            Assert.Equal(MathF.E, outputExp[0], 1e-4f);
+            Assert.Equal(0.0f, outputLog[0], 1e-5f);
+            Assert.Equal(1.0f, outputSqrt[0], 1e-5f);
+        }
+        else if (inputVal == -1.0f)
+        {
+            Assert.Equal(1.0f, outputAbs[0]);
+            Assert.Equal(1.0f / MathF.E, outputExp[0], 1e-4f);
+            Assert.True(float.IsNaN(outputLog[0]));
+            Assert.True(float.IsNaN(outputSqrt[0]));
+        }
+        else if (inputVal == float.MaxValue)
+        {
+            Assert.Equal(float.MaxValue, outputAbs[0]);
+            Assert.True(float.IsPositiveInfinity(outputExp[0]));
+            Assert.True(outputLog[0] > 88.0f && !float.IsNaN(outputLog[0]));
+            Assert.True(outputSqrt[0] > 1e19f && !float.IsNaN(outputSqrt[0]));
+        }
+        else if (inputVal == float.MinValue)
+        {
+            Assert.Equal(float.MaxValue, outputAbs[0]);
+            Assert.Equal(0.0f, outputExp[0]);
+            Assert.True(float.IsNaN(outputLog[0]));
+            Assert.True(float.IsNaN(outputSqrt[0]));
+        }
+        else if (inputVal > 0.0f)
+        {
+            // Positive subnormal / Epsilon
+            Assert.True(outputAbs[0] >= 0.0f);
+            Assert.Equal(1.0f, outputExp[0], 1e-4f);
+            Assert.True(outputLog[0] < 0.0f);
+            Assert.True(outputSqrt[0] >= 0.0f);
+        }
+        else
+        {
+            // Negative subnormal
+            Assert.True(outputAbs[0] >= 0.0f);
+            Assert.Equal(1.0f, outputExp[0], 1e-4f);
+            Assert.True(float.IsNaN(outputLog[0]));
+            Assert.True(float.IsNaN(outputSqrt[0]));
         }
     }
 
@@ -75,11 +134,14 @@ public class FastMathBoundaryTests
     public void Test_GpuSide_FastMath_EmptyInputs()
     {
         float[] empty = [];
-        // Should not throw or crash
-        FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Exp(empty, empty);
-        FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Log(empty, empty);
-        FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Sqrt(empty, empty);
-        FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Abs(empty, empty);
+        var ex = Record.Exception(() =>
+        {
+            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Exp(empty, empty);
+            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Log(empty, empty);
+            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Sqrt(empty, empty);
+            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Abs(empty, empty);
+        });
+        Assert.Null(ex);
     }
 
     [SkippableFact]

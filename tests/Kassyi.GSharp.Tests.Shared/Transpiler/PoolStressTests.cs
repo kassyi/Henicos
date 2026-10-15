@@ -37,7 +37,7 @@ public class PoolStressTests
     [Category(TestCategory.Stress)]
     public void GpuKernelValidationWalker_PoolIsThreadSafeAndResetsProperly()
     {
-        var context = RoslynTestUtility.CreateDummyContext();
+        var context = RoslynTestUtility.GetLocalMethodContext(nameof(Dummy), nameof(Dummy.M));
         var semanticModel = context.Model;
         var methodSymbol = context.MethodSymbol;
         var methodDecl =
@@ -46,20 +46,21 @@ public class PoolStressTests
 
         var exceptions = new ConcurrentBag<Exception>();
 
-        Parallel.For(0, 10000, new ParallelOptions { MaxDegreeOfParallelism = 16 }, i =>
+        Parallel.For(0, 10000, new ParallelOptions { MaxDegreeOfParallelism = 16 }, _ =>
         {
             try
             {
+                var reportedDiagnostics = new List<Diagnostic>();
                 var dummyContext = new ValidationContext(semanticModel,
-                    methodSymbol, _ =>
-                    {
-                    });
+                    methodSymbol, reportedDiagnostics.Add);
                 using var walker = GpuKernelValidationWalker.Rent(dummyContext);
+
+                // Ensure context is set properly upon rent
+                Assert.NotNull(walker.Context.SemanticModel);
 
                 walker.Visit(methodDecl);
 
-                // Ensure context is set properly
-                Assert.NotNull(walker.Context.SemanticModel);
+                Assert.NotEmpty(reportedDiagnostics);
             }
             catch (Exception ex)
             {
@@ -73,7 +74,10 @@ public class PoolStressTests
 
 class Dummy
 {
-    public void M()
+    public void M(params int[] args)
     {
+        _ = args;
     }
 }
+
+

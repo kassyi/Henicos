@@ -1,14 +1,10 @@
+using Kassyi.GSharp.Core;
 using Kassyi.ZeroAlloc.Linq;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
-public class ConcurrencyAndWarpTests
-:  TranspilerTestBase{
-    [SkippableFact()]
-    [Category(TestCategory.Syntax)]
-    public void Test_WarpPrimitives_Transpilation()
-    {
-    }
+public class ConcurrencyAndWarpTests : TranspilerTestBase
+{
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void TestSharedMemoryKernel()
@@ -29,26 +25,20 @@ public class ConcurrencyAndWarpTests
     public void TestSharedMemory_WarpSyncAcross256Threads()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
-        const int size = 256;
-        int[] dataArray = new int[size];
-        for (int i = 0; i < size; i++)
+        const int Size = 256;
+        int[] dataArray = new int[Size];
+        for (int i = 0; i < Size; i++)
         {
             dataArray[i] = i * 3 + 1;
         }
 
         ConcurrencyAndWarpKernels.LaunchSharedMemoryReverseKernel(
             dataArray,
-            size,
-            blockDimX: size
+            Size,
+            blockDimX: Size
         );
 
-        Assert.True(dataArray.AsStackEnumerable().Select((val, i) => val == (size - 1 - i) * 3 + 1).All(ok => ok));
-    }
-
-    [SkippableFact()]
-    [Category(TestCategory.Syntax)]
-    public void Test_CooperativeGroups_Transpilation()
-    {
+        Assert.True(dataArray.AsStackEnumerable().Select((val, i) => val == (Size - 1 - i) * 3 + 1).All(ok => ok));
     }
 
     [SkippableFact]
@@ -111,9 +101,56 @@ public class ConcurrencyAndWarpTests
         Assert.Equal(expectedTotalThreads - 1, globalState[1]);
     }
 
-    [SkippableFact()]
+    [Fact]
+    [Category(TestCategory.Syntax)]
+    public void Test_WarpPrimitives_Transpilation()
+    {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
+            typeof(WarpShuffleKernels), nameof(WarpShuffleKernels.WarpReductionKernel), isDevice: false, dialect: new GSharpCudaDialect());
+
+        Assert.Empty(diagnostics);
+        Assert.Contains("__shfl_down_sync", cudaSource);
+    }
+
+    [Fact]
+    [Category(TestCategory.Syntax)]
+    public void Test_CooperativeGroups_Transpilation()
+    {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ConcurrencyAndWarpTarget>(
+            nameof(ConcurrencyAndWarpTarget.CooperativeGroups), dialect: new GSharpCudaDialect());
+
+        Assert.Empty(diagnostics);
+        Assert.Contains("cg::this_grid().sync();", cudaSource);
+    }
+
+    [Fact]
     [Category(TestCategory.Syntax)]
     public void Test_AsyncCopyTma_Transpilation()
     {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ConcurrencyAndWarpTarget>(
+            nameof(ConcurrencyAndWarpTarget.AsyncCopyTma), dialect: new GSharpCudaDialect());
+
+        Assert.Empty(diagnostics);
+        Assert.Contains("cp.async.commit_group;", cudaSource);
+        Assert.Contains("cp.async.wait_all;", cudaSource);
     }
 }
+
+public class ConcurrencyAndWarpTarget
+{
+    public static void CooperativeGroups(int[] data)
+    {
+        data[ThreadIndex.X] += 1;
+        Gpu.SyncGrid();
+        data[ThreadIndex.X] *= 2;
+    }
+
+    public static void AsyncCopyTma(uint[] data)
+    {
+        Gpu.InlinePtx("cp.async.commit_group;");
+        Gpu.InlinePtx("cp.async.wait_all;");
+        data[0] = 1u;
+    }
+}
+
+

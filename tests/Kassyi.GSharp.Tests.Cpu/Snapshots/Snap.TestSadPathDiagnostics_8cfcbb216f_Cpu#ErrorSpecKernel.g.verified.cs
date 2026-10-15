@@ -36,7 +36,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 System_String s = ""hello"";
-System_Object obj = object;
+System_Object obj = /*unsupported:ObjectCreationExpression*/;
 __gsharp_auto_result[__gsharp_global_tid] = 0;
 _state = -1;return;
 _state=-1;

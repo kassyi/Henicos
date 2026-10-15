@@ -43,15 +43,25 @@ public class WarpLevelConcurrencyTests
         int length = 32;
         var input = new int[length];
         var output = new int[length];
-        
+
+        for (int i = 0; i < length; i++)
+        {
+            input[i] = 100 + i;
+        }
+
         WarpLevelConcurrencyKernels.LaunchWarpPrimitivesKernel(
             input,
             output,
             blockDimX: 32
         );
-        
-        // This test mostly verifies that all warp intrinsics can be transpiled and compiled by NVCC.
-        // It executes successfully without crashing.
+
+        // WarpPrimitivesKernel broadcasts lane 0's value (100) via ShuffleSync(..., 0),
+        // so subsequent down/up/xor shuffles across the uniform warp preserve 100 in all lanes.
+        for (int i = 0; i < length; i++)
+        {
+            Assert.Equal(100, output[i]);
+        }
     }
 }
 #endif
+

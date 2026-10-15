@@ -56,25 +56,6 @@
         DefaultSeverity: Error,
         IsEnabledByDefault: true
       }
-    },
-    {
-      Location: /*
-            string s = "hello";
-            object obj = new object();
-                                   ^^
-            return 0;
-*/
- : (11,35)-(11,37),
-      Message: The syntax 'ArgumentList' is not supported in GSharp GPU kernels,
-      Severity: Error,
-      Descriptor: {
-        Id: GSH0003,
-        Title: Unsupported syntax in GPU kernel,
-        MessageFormat: The syntax '{0}' is not supported in GSharp GPU kernels,
-        Category: GSharpTranspiler,
-        DefaultSeverity: Error,
-        IsEnabledByDefault: true
-      }
     }
   ]
 }

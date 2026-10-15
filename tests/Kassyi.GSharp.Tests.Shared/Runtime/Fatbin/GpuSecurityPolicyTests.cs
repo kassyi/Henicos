@@ -15,6 +15,7 @@ public class GpuSecurityPolicyTests
     [Fact]
     public void VerifyImage_NullImage_ThrowsArgumentNullException()
     {
+        // [WHY] Intentionally pass null to verify ArgumentNullException guard in VerifyImage.
         Assert.Throws<ArgumentNullException>(() => GpuSecurityPolicy.VerifyImage(null!));
     }
 
@@ -23,8 +24,12 @@ public class GpuSecurityPolicyTests
     {
         var dummyKey = new byte[32];
         Array.Fill(dummyKey, (byte)0xAB);
-        
+
+        Assert.False(GpuSecurityPolicy.EmbeddedKeys.IsEmpty);
+
         // This validates the array expansion in the locking block
-        GpuSecurityPolicy.RegisterTrustedKey(dummyKey.AsSpan());
+        var ex = Record.Exception(() => GpuSecurityPolicy.RegisterTrustedKey(dummyKey.AsSpan()));
+        Assert.Null(ex);
     }
 }
+
