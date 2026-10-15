@@ -66,6 +66,11 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         MemoryProvider.CopyDeviceToHost(hostData, devicePointer, numWords, stream);
 
     /// <inheritdoc />
+    public ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords, IntPtr stream,
+        CancellationToken cancellationToken = default) =>
+        MemoryProvider.CopyDeviceToHostAsync(hostData, devicePointer, numWords, stream, cancellationToken);
+
+    /// <inheritdoc />
     public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords, IntPtr stream = 0) =>
         MemoryProvider.CopyDeviceToDevice(destPointer, srcPointer, numWords, stream);
 
@@ -80,6 +85,10 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     /// <inheritdoc />
     public void SynchronizeStream(IntPtr stream) =>
         MemoryProvider.SynchronizeStream(stream);
+
+    /// <inheritdoc />
+    public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default) =>
+        MemoryProvider.SynchronizeStreamAsync(stream, cancellationToken);
 
     #endregion
 

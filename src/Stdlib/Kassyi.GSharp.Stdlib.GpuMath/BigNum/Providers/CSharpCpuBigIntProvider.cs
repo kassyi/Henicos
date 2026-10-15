@@ -146,6 +146,32 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         // No-op in CPU mode
     }
 
+    /// <inheritdoc/>
+    /// <remarks>Nothing runs asynchronously in CPU mode; the returned task is already completed.</remarks>
+    public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default) =>
+        cancellationToken.IsCancellationRequested ? ValueTask.FromCanceled(cancellationToken) : ValueTask.CompletedTask;
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Host memory is copied synchronously; the returned task is already completed and <paramref name="stream"/> is ignored.
+    /// </remarks>
+    public unsafe ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords,
+        IntPtr stream, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(numWords, hostData.Length);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return ValueTask.FromCanceled(cancellationToken);
+        }
+
+        if (numWords > 0)
+        {
+            new ReadOnlySpan<uint>((void*)devicePointer, numWords).CopyTo(hostData.Span);
+        }
+
+        return ValueTask.CompletedTask;
+    }
+
     // --- IGpuBasicMathProvider ---
 
     /// <inheritdoc/>

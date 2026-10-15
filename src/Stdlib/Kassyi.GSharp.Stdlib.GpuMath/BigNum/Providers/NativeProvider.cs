@@ -13,6 +13,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// <para>
 /// <b>Zero-Allocation:</b> Direct P/Invoke bindings communicate with unmanaged GPU memory without managed array allocation overhead.
 /// </para>
+/// <para>
+/// <b>Synchronous execution:</b> every operation of the legacy native library completes before it returns. Stream
+/// parameters are ignored, and the asynchronous members return already completed tasks.
+/// </para>
 /// </remarks>
 [ExcludeFromCodeCoverage]
 public class NativeProvider : IGpuExecutionProvider
@@ -96,6 +100,46 @@ public class NativeProvider : IGpuExecutionProvider
     public void SynchronizeStream(IntPtr stream)
     {
         // No-op for legacy native synchronous calls
+    }
+
+    /// <inheritdoc/>
+    public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default) =>
+        cancellationToken.IsCancellationRequested ? ValueTask.FromCanceled(cancellationToken) : ValueTask.CompletedTask;
+
+    /// <inheritdoc/>
+    public ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords, IntPtr stream,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(numWords, hostData.Length);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return ValueTask.FromCanceled(cancellationToken);
+        }
+
+        if (numWords <= 0)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        // The native entry point takes an array; the caller's array is used directly when the memory starts at its head.
+        if (MemoryMarshal.TryGetArray<uint>(hostData, out var segment) && segment is { Array: { } array, Offset: 0 })
+        {
+            CopyDeviceToHost(array, devicePointer, numWords);
+            return ValueTask.CompletedTask;
+        }
+
+        var buffer = ArrayPool<uint>.Shared.Rent(numWords);
+        try
+        {
+            CopyDeviceToHost(buffer, devicePointer, numWords);
+            buffer.AsSpan(0, numWords).CopyTo(hostData.Span);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(buffer);
+        }
+
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>

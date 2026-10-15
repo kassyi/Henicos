@@ -55,13 +55,40 @@ public interface IGpuMemoryProvider
     void CopyHostToDevice(IntPtr devicePointer, uint[] hostData, int numWords, IntPtr stream = 0);
 
     /// <summary>
-    /// Copies limb data synchronously or asynchronously from device global memory to host memory.
+    /// Copies limb data from device global memory to host memory and waits until the data has arrived.
     /// </summary>
     /// <param name="hostData">The destination managed 32-bit unsigned integer array.</param>
     /// <param name="devicePointer">The source device memory pointer.</param>
     /// <param name="numWords">The number of words to copy.</param>
-    /// <param name="stream">The optional CUDA stream handle for asynchronous copy operations.</param>
+    /// <param name="stream">
+    /// The stream the copy is ordered on; the copy observes all work enqueued on it before the call.
+    /// </param>
+    /// <remarks>
+    /// Synchronous: <paramref name="hostData"/> holds the data when the method returns, whether the array is pageable or
+    /// page-locked, so callers need no additional stream synchronization. Use <see cref="CopyDeviceToHostAsync"/> to
+    /// avoid blocking the calling thread while queued work completes.
+    /// </remarks>
     void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0);
+
+    /// <summary>
+    /// Asynchronously copies limb data from device global memory to host memory without blocking the calling thread.
+    /// </summary>
+    /// <param name="hostData">The destination host memory, at least <paramref name="numWords"/> words long.</param>
+    /// <param name="devicePointer">The source device memory pointer.</param>
+    /// <param name="numWords">The number of words to copy.</param>
+    /// <param name="stream">
+    /// The stream the copy is ordered on; the copy observes all work enqueued on it before the call.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token that detaches the awaiter. Device work is not canceled, and <paramref name="hostData"/> is not written
+    /// after cancellation.
+    /// </param>
+    /// <returns>A <see cref="ValueTask"/> that completes once <paramref name="hostData"/> holds the data.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="numWords"/> exceeds the length of <paramref name="hostData"/>.
+    /// </exception>
+    ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords, IntPtr stream,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Copies data directly between two device memory allocations.
@@ -106,6 +133,20 @@ public interface IGpuMemoryProvider
     /// </summary>
     /// <param name="stream">The unmanaged stream handle to synchronize.</param>
     void SynchronizeStream(IntPtr stream);
+
+    /// <summary>
+    /// Asynchronously waits until all previously submitted work in the specified CUDA stream has completed, without
+    /// blocking the calling thread.
+    /// </summary>
+    /// <param name="stream">
+    /// The unmanaged stream handle to wait for. <see cref="IntPtr.Zero"/> completes immediately, like
+    /// <see cref="SynchronizeStream"/>.
+    /// </param>
+    /// <param name="cancellationToken">
+    /// A token that detaches the awaiter; the stream keeps executing and remains usable.
+    /// </param>
+    /// <returns>A <see cref="ValueTask"/> that completes when the stream has drained.</returns>
+    ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

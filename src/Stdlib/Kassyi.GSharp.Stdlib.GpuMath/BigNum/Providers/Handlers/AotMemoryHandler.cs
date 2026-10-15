@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Runtime;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 /// <summary>
@@ -85,9 +87,29 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
 
         fixed (uint* pHost = hostData)
         {
-            var hostPtr = (IntPtr)pHost;
-            InvokeCuda(() => CudaDriverApi.cuMemcpyDtoHAsync_v2(hostPtr, devicePointer, numWords * 4, stream));
+            using var scope = new GpuKernelLoader.CudaContextScope();
+            CudaException.ThrowIfError(
+                CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)pHost, devicePointer, numWords * 4, stream));
+
+            // A pageable destination already makes the copy synchronous, but a page-locked one does not. Waiting
+            // explicitly keeps the synchronous contract for both, and before 'fixed' unpins the array.
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));
         }
+    }
+
+    /// <inheritdoc/>
+    public ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords, IntPtr stream,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(numWords, hostData.Length);
+        if (numWords <= 0)
+        {
+            return cancellationToken.IsCancellationRequested
+                ? ValueTask.FromCanceled(cancellationToken)
+                : ValueTask.CompletedTask;
+        }
+
+        return CudaHostTransfer.CopyToHostAsync(devicePointer, hostData[..numWords], stream, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -150,5 +172,19 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
         }
 
         InvokeCuda(() => CudaDriverApi.cuStreamSynchronize(stream));
+    }
+
+    /// <inheritdoc/>
+    public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return ValueTask.FromCanceled(cancellationToken);
+        }
+
+        // Mirrors SynchronizeStream, which has nothing to wait for on the null stream.
+        return stream == IntPtr.Zero
+            ? ValueTask.CompletedTask
+            : CudaStreamCompletion.WaitAsync(stream, cancellationToken);
     }
 }
