@@ -11,14 +11,11 @@ public class CuRandInteropTests
 {
     private const int SampleCount = 1 << 16;
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CurandGenerateUniform_ProducesValuesInHalfOpenUnitInterval()
     {
-        if (!TryGenerateUniform(seed: 1234UL, out var samples))
-        {
-            return;
-        }
+        Skip.IfNot(TryGenerateUniform(seed: 1234UL, out var samples), "CUDA driver or cuRAND library is not available.");
 
         var sum = 0.0;
         foreach (var value in samples)
@@ -31,44 +28,48 @@ public class CuRandInteropTests
         Assert.InRange(sum / samples.Length, 0.49, 0.51);
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CurandGenerateUniform_SameSeed_IsDeterministic()
     {
-        if (!TryGenerateUniform(seed: 42UL, out var first) || !TryGenerateUniform(seed: 42UL, out var second))
-        {
-            return;
-        }
+        float[] second = [];
+        Skip.IfNot(TryGenerateUniform(seed: 42UL, out var first) && TryGenerateUniform(seed: 42UL, out second),
+            "CUDA driver or cuRAND library is not available.");
 
         Assert.Equal(first, second);
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void Test_CurandGenerateUniform_DifferentSeeds_Diverge()
     {
-        if (!TryGenerateUniform(seed: 1UL, out var first) || !TryGenerateUniform(seed: 2UL, out var second))
-        {
-            return;
-        }
+        float[] second = [];
+        Skip.IfNot(TryGenerateUniform(seed: 1UL, out var first) && TryGenerateUniform(seed: 2UL, out second),
+            "CUDA driver or cuRAND library is not available.");
 
         Assert.NotEqual(first, second);
+
+        var divergedCount = 0;
+        for (var i = 0; i < first.Length; i++)
+        {
+            if (first[i] != second[i])
+            {
+                divergedCount++;
+            }
+        }
+
+        Assert.True(divergedCount > first.Length * 99 / 100,
+            $"Expected >99% element-wise divergence between different seeds, got {divergedCount}/{first.Length}.");
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CurandGenerateNormal_MatchesRequestedMoments()
     {
-        if (!GpuKernelLoader.IsDriverAvailable)
-        {
-            return;
-        }
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        if (!TryCreateGenerator(out var generator))
-        {
-            return;
-        }
+        Skip.IfNot(TryCreateGenerator(out var generator), "cuRAND library is not available.");
 
         var samples = new float[SampleCount];
         try
@@ -102,20 +103,14 @@ public class CuRandInteropTests
         Assert.InRange(Math.Sqrt(variance), 0.48, 0.52);
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Test_CurandGenerateNormal_OddCount_ReturnsLengthNotMultiple()
     {
-        if (!GpuKernelLoader.IsDriverAvailable)
-        {
-            return;
-        }
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        if (!TryCreateGenerator(out var generator))
-        {
-            return;
-        }
+        Skip.IfNot(TryCreateGenerator(out var generator), "cuRAND library is not available.");
 
         try
         {
