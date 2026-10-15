@@ -10,6 +10,7 @@ internal static class MethodSignatureTranspiler
         ref TranspileContext context)
     {
         var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
+        ReportUnsupportedParameterTypes(methodSymbol, ref context);
 
         if (isDevice)
         {
@@ -54,6 +55,28 @@ internal static class MethodSignatureTranspiler
 
             context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
             context.Emitter.Writer.Append("* __restrict__ __gsharp_auto_result");
+        }
+    }
+
+    // [WHY] Reported here rather than in WriteParameters, which also runs for the CPU host launcher
+    // and would duplicate the diagnostic for the same parameter.
+    private static void ReportUnsupportedParameterTypes(IMethodSymbol? methodSymbol, ref TranspileContext context)
+    {
+        if (methodSymbol is null)
+        {
+            return;
+        }
+
+        foreach (var parameter in methodSymbol.Parameters)
+        {
+            if (parameter.Type is not IFunctionPointerTypeSymbol ||
+                parameter.DeclaringSyntaxReferences.IsEmpty ||
+                parameter.DeclaringSyntaxReferences[0].GetSyntax() is not ParameterSyntax { Type: { } typeSyntax })
+            {
+                continue;
+            }
+
+            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
         }
     }
 
@@ -115,7 +138,18 @@ internal static class MethodSignatureTranspiler
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })
         {
+            // C# ref returns map onto C++ lvalue references; 'ref readonly' adds const.
+            if (methodSymbol is { RefKind: RefKind.RefReadOnly })
+            {
+                context.Emitter.Writer.Append("const ");
+            }
+
             context.Emitter.Dialect.AppendType(ref context, returnType);
+
+            if (methodSymbol is { RefKind: RefKind.Ref or RefKind.RefReadOnly })
+            {
+                context.Emitter.Writer.Append("&");
+            }
         }
         else
         {

@@ -36,8 +36,14 @@ public enum DialectCapabilities
     SharedMemory = 1 << 2,
 
     /// <summary>
-    /// Aggregates all standard GPU hardware acceleration features (warp intrinsics, atomics, and shared memory).
+    /// Indicates that the dialect can embed raw target assembly or native code through <c>Gpu.InlinePtx</c>.
+    /// Dialects without this capability emit a runtime failure at the call site and report a warning.
     /// </summary>
-    AllGpuFeatures = WarpIntrinsics | HardwareAtomics | SharedMemory
+    InlineAssembly = 1 << 3,
+
+    /// <summary>
+    /// Aggregates all standard GPU hardware acceleration features (warp intrinsics, atomics, shared memory, and inline assembly).
+    /// </summary>
+    AllGpuFeatures = WarpIntrinsics | HardwareAtomics | SharedMemory | InlineAssembly
 }
 

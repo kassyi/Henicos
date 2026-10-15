@@ -57,9 +57,11 @@ For cases where you only need to output empty brackets or parentheses without an
 
 This prevents mismatched scopes and eliminates the risk of missing closing characters.
 
-## No Spacing Rule (Dense Formatting)
+## No Spacing & Left-Aligned Rule (Dense Formatting)
 
-When generating C# code or ultimately `.cu` C++ code, **do not insert spaces around operators or symbols** (e.g., `=`, `,`, `+`). To prevent spacing errors, let the AI output dense code without manual visual formatting. Rely exclusively on `SourceWriter` helpers (`AppendComma()`, `AppendOperator()`, `AppendKeyword()`, etc.) instead of hardcoding spaces in string literals.
+When generating C# code or ultimately `.cu` C++ code:
+1. **Left-Aligned Output (Zero Indentation)**: All generated source lines (including Roslyn Source Generator `spc.AddSource` outputs) **MUST** be completely left-aligned with zero leading spaces/indentation.
+2. **Dense Formatting**: **Do not insert spaces around operators or symbols** (e.g., `=`, `,`, `+`). To prevent spacing errors, let the AI output dense code without manual visual formatting. Rely exclusively on `SourceWriter` helpers (`AppendComma()`, `AppendOperator()`, `AppendKeyword()`, etc.) instead of hardcoding spaces in string literals.
 
 ## Mandatory Snapshot Testing for New Features (Test-Driven AI Vibe Coding)
 

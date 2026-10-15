@@ -494,5 +494,14 @@
     "category": "GSharpCompiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "InlinePtxNotSupportedByDialect",
+    "id": "GSH0056",
+    "title": "Gpu.InlinePtx is not supported by the target dialect",
+    "messageFormat": "Gpu.InlinePtx is not supported by the '{0}' dialect; the call is replaced with a runtime failure",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
   }
 ]

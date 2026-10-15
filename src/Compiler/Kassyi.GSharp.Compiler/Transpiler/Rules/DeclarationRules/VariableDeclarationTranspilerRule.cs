@@ -59,6 +59,11 @@ public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<Va
             context.Reporter.Report(GSharpDiagnostics.StringNotSupported, typeSyntax);
         }
 
+        if (typeSymbol is IFunctionPointerTypeSymbol)
+        {
+            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
+        }
+
         StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
     }
 

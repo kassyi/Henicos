@@ -18,6 +18,24 @@ public sealed class ConditionalExpressionTranspilerRule : SyntaxNodeTranspilerRu
     /// <inheritdoc />
     public override void Transpile(ConditionalExpressionSyntax node, ref TranspileContext context)
     {
+        if (node.WhenTrue is RefExpressionSyntax || node.WhenFalse is RefExpressionSyntax)
+        {
+            // [WHY] A ref conditional is an lvalue in C#. Selecting between addresses and dereferencing the result
+            // yields an equivalent C++ lvalue, so it works both as a value and as a 'ref' argument ('&(*(...))').
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Writer.Append('*');
+                TranspileBranches(node, ref context);
+            }
+
+            return;
+        }
+
+        TranspileBranches(node, ref context);
+    }
+
+    private static void TranspileBranches(ConditionalExpressionSyntax node, ref TranspileContext context)
+    {
         using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(node.Condition);

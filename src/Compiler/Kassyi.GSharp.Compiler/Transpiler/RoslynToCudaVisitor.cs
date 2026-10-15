@@ -124,7 +124,28 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void DefaultVisit(SyntaxNode node)
     {
         Context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
-        base.DefaultVisit(node);
+
+        // [WHY] Descending into the children would splice their raw tokens into the output (invalid C++)
+        // and re-report every nested node. A single diagnostic plus a placeholder keeps the output inspectable.
+        Context.Emitter.Writer.Append("/*unsupported:");
+        Context.Emitter.Writer.Append(node.Kind().ToString());
+        Context.Emitter.Writer.Append("*/");
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Only <c>return ref expr;</c> and <c>=&gt; ref expr</c> are supported: the enclosing method is emitted with a C++
+    /// reference return type, so the operand is emitted as a plain lvalue. Ref locals and other positions remain unsupported.
+    /// </remarks>
+    public override void VisitRefExpression(RefExpressionSyntax node)
+    {
+        if (node.Parent is ReturnStatementSyntax or ArrowExpressionClauseSyntax)
+        {
+            Visit(node.Expression);
+            return;
+        }
+
+        DefaultVisit(node);
     }
 
     /// <inheritdoc />
