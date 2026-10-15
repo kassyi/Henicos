@@ -487,13 +487,11 @@ public static partial class GpuBigIntDivRem
             Array.Clear(xData, 0, numWords);
             var xBytes = shiftedApproximation.ToByteArray(isUnsigned: true, isBigEndian: false);
             Buffer.BlockCopy(xBytes, 0, xData, 0, Math.Min(xBytes.Length, numWords * 4));
+
+            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the pooled
+            // host buffer may be returned immediately, and later work using resultBuffer is ordered on the same stream.
             targetOperand.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords,
                 targetOperand.Workspace.Stream);
-            if (!GpuKernelLoader.IsCpuFallbackMode)
-            {
-                CudaException.ThrowIfError(
-                    CudaDriverApi.cuStreamSynchronize(targetOperand.Workspace.Stream));
-            }
         }
         finally
         {

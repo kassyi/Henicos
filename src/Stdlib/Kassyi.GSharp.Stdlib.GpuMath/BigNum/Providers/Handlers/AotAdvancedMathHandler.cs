@@ -187,9 +187,10 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             var bit2B = 2 * n * 32 + 2 * marginBits;
             hostConstant3[bit2B / 32] |= 1u << (bit2B % 32);
             hostConstant3[(bit2B + 1) / 32] |= 1u << ((bit2B + 1) % 32);
+            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the pooled
+            // host buffer may be returned immediately, and the kernels using the constant are ordered on the same stream.
             workspace.Provider.CopyHostToDevice(constant3.DevicePointer, hostConstant3, constant3Words,
                 workspace.Stream);
-            workspace.Provider.SynchronizeStream(workspace.Stream);
         }
         finally
         {
@@ -300,8 +301,9 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             Array.Clear(hostConstant, 0, constantWords);
             var bitTarget = targetBits + 1;
             hostConstant[bitTarget / 32] |= 1u << (bitTarget % 32);
+            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the pooled
+            // host buffer may be returned immediately, and the kernels using the constant are ordered on the same stream.
             workspace.Provider.CopyHostToDevice(constant.DevicePointer, hostConstant, constantWords, workspace.Stream);
-            workspace.Provider.SynchronizeStream(workspace.Stream);
         }
         finally
         {

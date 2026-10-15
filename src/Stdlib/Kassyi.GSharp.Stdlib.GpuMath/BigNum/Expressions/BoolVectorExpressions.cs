@@ -244,10 +244,7 @@ internal class VectorAnyTrueExpression([TakesOwnership] IGpuBoolVectorExpression
             (uint)blockDimX, 1, 1,
             0, workspace.Stream);
 
-        var hResult = new uint[1];
-        workspace.Provider.CopyDeviceToHost(hResult, tempResult.DevicePointer, 1, workspace.Stream);
-
-        return hResult[0] != 0;
+        return workspace.Provider.ReadWord(tempResult.DevicePointer, 0, workspace.Stream) != 0;
     }
 
     public void Dispose() => source.Dispose();
@@ -262,8 +259,7 @@ internal class VectorAllTrueExpression([TakesOwnership] IGpuBoolVectorExpression
         using var tempResult = new GpuBigUIntArray(workspace, 1, 1);
         
         // Initialize with 1
-        var initVal = new uint[] { 1u };
-        workspace.Provider.CopyHostToDevice(tempResult.DevicePointer, initVal, 1, workspace.Stream);
+        workspace.Provider.WriteWord(tempResult.DevicePointer, 0, 1u, workspace.Stream);
 
         int gridDimX = (source.Length + 255) / 256;
         int blockDimX = 256;
@@ -276,10 +272,7 @@ internal class VectorAllTrueExpression([TakesOwnership] IGpuBoolVectorExpression
             (uint)blockDimX, 1, 1,
             0, workspace.Stream);
 
-        var hResult = new uint[1];
-        workspace.Provider.CopyDeviceToHost(hResult, tempResult.DevicePointer, 1, workspace.Stream);
-
-        return hResult[0] != 0;
+        return workspace.Provider.ReadWord(tempResult.DevicePointer, 0, workspace.Stream) != 0;
     }
 
     public void Dispose() => source.Dispose();
