@@ -17,7 +17,7 @@ public class WarpShuffleAnalyzerTests : TranspilerTestBase
         // Asserting diagnostic error for host-side intrinsic use
         // Replace with actual analyzer if HostIntrinsicAnalyzer doesn't exist
         await RoslynTestUtility.TestAnalyzer("Analyzers/WarpShuffleSadPath.cs", s_analyzer)
-                               .ReportsErrorsAsync("GSH0018");
+                               .ReportsErrorsAsync(GSharpDiagnostics.HostIntrinsicCallError);
     }
 
     [SkippableFact]

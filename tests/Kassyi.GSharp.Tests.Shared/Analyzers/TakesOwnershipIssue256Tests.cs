@@ -15,7 +15,7 @@ public class TakesOwnershipIssue256Tests : TranspilerTestBase
     public async Task Test_11_3_X_MissingIDisposableOnTakesOwnership_Primary()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
-            .ReportsErrorsAsync("GSH0020");
+            .ReportsErrorsAsync(GSharpDiagnostics.MissingIDisposable);
     }
 
     [Fact]
@@ -23,6 +23,6 @@ public class TakesOwnershipIssue256Tests : TranspilerTestBase
     public async Task Test_11_3_X_MissingIDisposableOnTakesOwnership_Standard()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
-            .ReportsErrorsAsync("GSH0020");
+            .ReportsErrorsAsync(GSharpDiagnostics.MissingIDisposable);
     }
 }

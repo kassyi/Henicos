@@ -12,6 +12,6 @@ public class GpuKernelDirectInvocationAnalyzerTests : TranspilerTestBase
     public async Task Test_GpuKernelDirectInvocation_ReportsGSH0031()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/DirectGpuKernelInvocation.cs", s_analyzer)
-                               .ReportsErrorsAsync("GSH0031");
+                               .ReportsErrorsAsync(GSharpDiagnostics.DirectGpuKernelInvocation);
     }
 }
