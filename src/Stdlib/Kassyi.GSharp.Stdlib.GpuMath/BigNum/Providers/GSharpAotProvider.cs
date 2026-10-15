@@ -51,7 +51,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     public IntPtr AllocateMemory(int numWords) => MemoryProvider.AllocateMemory(numWords);
 
     /// <inheritdoc />
-    public void FreeMemory(IntPtr devicePointer) => MemoryProvider.FreeMemory(devicePointer);
+    public void FreeMemory(IntPtr devicePointer, IntPtr stream = 0) => MemoryProvider.FreeMemory(devicePointer, stream);
 
     /// <inheritdoc />
     public void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream) =>
@@ -66,20 +66,29 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         MemoryProvider.CopyDeviceToHost(hostData, devicePointer, numWords, stream);
 
     /// <inheritdoc />
+    public ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords, IntPtr stream,
+        CancellationToken cancellationToken = default) =>
+        MemoryProvider.CopyDeviceToHostAsync(hostData, devicePointer, numWords, stream, cancellationToken);
+
+    /// <inheritdoc />
     public void CopyDeviceToDevice(IntPtr destPointer, IntPtr srcPointer, int numWords, IntPtr stream = 0) =>
         MemoryProvider.CopyDeviceToDevice(destPointer, srcPointer, numWords, stream);
 
     /// <inheritdoc />
-    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0) =>
-        MemoryProvider.ReadWord(devicePointer, wordOffset);
+    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0) =>
+        MemoryProvider.ReadWord(devicePointer, wordOffset, stream);
 
     /// <inheritdoc />
-    public void WriteWord(IntPtr devicePointer, int wordOffset, uint value) =>
-        MemoryProvider.WriteWord(devicePointer, wordOffset, value);
+    public void WriteWord(IntPtr devicePointer, int wordOffset, uint value, IntPtr stream = 0) =>
+        MemoryProvider.WriteWord(devicePointer, wordOffset, value, stream);
 
     /// <inheritdoc />
     public void SynchronizeStream(IntPtr stream) =>
         MemoryProvider.SynchronizeStream(stream);
+
+    /// <inheritdoc />
+    public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default) =>
+        MemoryProvider.SynchronizeStreamAsync(stream, cancellationToken);
 
     #endregion
 

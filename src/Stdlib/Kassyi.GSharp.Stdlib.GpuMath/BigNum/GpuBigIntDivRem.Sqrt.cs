@@ -97,24 +97,17 @@ public static partial class GpuBigIntDivRem
             return false;
         }
 
-        var n = leftOperand.NumWords;
-        var hostDataSingle = ArrayPool<uint>.Shared.Rent(n);
-        try
+        // Only word 0 can be non-zero here, so a single-word read suffices instead of transferring every limb.
+        var val = leftOperand.Workspace.Provider.ReadWord(leftOperand.DevicePointer, 0, leftOperand.Workspace.Stream);
+        var sqrtVal = (uint)Math.Sqrt(val);
+        resultBuffer.Clear();
+        if (sqrtVal > 0)
         {
-            leftOperand.Workspace.Provider.CopyDeviceToHost(hostDataSingle, leftOperand.DevicePointer, n, leftOperand.Workspace.Stream);
-            var val = hostDataSingle[0];
-            var sqrtVal = (uint)Math.Sqrt(val);
-            resultBuffer.Clear();
-            if (sqrtVal > 0)
-            {
-                resultBuffer.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, [sqrtVal], 1, resultBuffer.Workspace.Stream);
-            }
-            return true;
+            resultBuffer.Workspace.Provider.WriteWord(resultBuffer.DevicePointer, 0, sqrtVal,
+                resultBuffer.Workspace.Stream);
         }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(hostDataSingle);
-        }
+
+        return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -204,17 +197,25 @@ public static partial class GpuBigIntDivRem
         using var squaredRoot = new GpuBigUInt(leftOperand.Workspace, 2 * n);
         GpuBigIntMath.Mul(currentRoot, currentRoot, squaredRoot);
 
-        var topHalf = new uint[n];
-        leftOperand.Workspace.Provider.CopyDeviceToHost(topHalf, IntPtr.Add(squaredRoot.DevicePointer, n * 4), n, leftOperand.Workspace.Stream);
         var isGreater = false;
-        for (var i = 0; i < n; i++)
+        var topHalf = ArrayPool<uint>.Shared.Rent(n);
+        try
         {
-            if (topHalf[i] == 0)
+            leftOperand.Workspace.Provider.CopyDeviceToHost(topHalf, IntPtr.Add(squaredRoot.DevicePointer, n * 4), n, leftOperand.Workspace.Stream);
+            for (var i = 0; i < n; i++)
             {
-                continue;
+                if (topHalf[i] == 0)
+                {
+                    continue;
+                }
+
+                isGreater = true;
+                break;
             }
-            isGreater = true;
-            break;
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(topHalf);
         }
 
         if (!isGreater)
@@ -227,7 +228,7 @@ public static partial class GpuBigIntDivRem
         if (isGreater)
         {
             using var one = new GpuBigUInt(leftOperand.Workspace, n);
-            one.Workspace.Provider.CopyHostToDevice(one.DevicePointer, [1u], 1, one.Workspace.Stream);
+            one.Workspace.Provider.WriteWord(one.DevicePointer, 0, 1u, one.Workspace.Stream);
             GpuBigIntMath.Sub(currentRoot, one, resultBuffer);
         }
         else

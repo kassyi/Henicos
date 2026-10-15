@@ -221,6 +221,9 @@ public class GpuWorkspace : IGpuResourceScope
 
         try
         {
+            // Must precede every release: stream-ordered frees on a capturing stream would become nodes of the
+            // discarded graph instead of releasing memory.
+            AbortLeakedCapture(exceptions);
             DisposeTrackedResources(exceptions);
             DisposeMemoryManager(exceptions);
             DisposeEngineResources(exceptions);
@@ -240,6 +243,33 @@ public class GpuWorkspace : IGpuResourceScope
         if (exceptions is { Count: > 0 })
         {
             throw new AggregateException("One or more errors occurred while disposing GpuWorkspace.", exceptions);
+        }
+    }
+
+    private void AbortLeakedCapture(List<Exception>? exceptions)
+    {
+        if (Engine != GpuExecutionEngine.GSharpAot || Stream == IntPtr.Zero)
+        {
+            return;
+        }
+
+        try
+        {
+            // Check if stream was abandoned in a capturing state (e.g., due to an exception)
+            if (CudaDriverApi.cuStreamIsCapturing(Stream, out var captureStatus) == CUresult.CudaSuccess &&
+                captureStatus != CUstreamCaptureStatus.None)
+            {
+                // Abort and discard uncommitted graph to prevent cross-test / cross-task contamination
+                CudaDriverApi.cuStreamEndCapture(Stream, out var leakedGraph);
+                if (leakedGraph != IntPtr.Zero)
+                {
+                    CudaDriverApi.cuGraphDestroy(leakedGraph);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            exceptions?.Add(ex);
         }
     }
 
@@ -273,10 +303,7 @@ public class GpuWorkspace : IGpuResourceScope
 
         try
         {
-            if (Stream != IntPtr.Zero)
-            {
-                try { CudaDriverApi.cuStreamSynchronize(Stream); } catch { /* ignore if already faulted */ }
-            }
+            // No host-side synchronization: the manager releases its buffers in stream order on Stream.
             disposableManager.Dispose();
         }
         catch (Exception ex)
@@ -296,18 +323,6 @@ public class GpuWorkspace : IGpuResourceScope
 
             try
             {
-                // Check if stream was abandoned in a capturing state (e.g., due to an exception)
-                if (CudaDriverApi.cuStreamIsCapturing(Stream, out var captureStatus) == CUresult.CudaSuccess &&
-                    captureStatus != CUstreamCaptureStatus.None)
-                {
-                    // Abort and discard uncommitted graph to prevent cross-test / cross-task contamination
-                    CudaDriverApi.cuStreamEndCapture(Stream, out var leakedGraph);
-                    if (leakedGraph != IntPtr.Zero)
-                    {
-                        CudaDriverApi.cuGraphDestroy(leakedGraph);
-                    }
-                }
-
                 CudaDriverApi.cuStreamDestroy(Stream);
 
                 if (_isolatedContext != IntPtr.Zero)

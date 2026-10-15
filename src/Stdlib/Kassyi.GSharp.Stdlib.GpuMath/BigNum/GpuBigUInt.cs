@@ -161,6 +161,22 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     }
 
     /// <summary>
+    /// Asynchronously copies all limb words from GPU device memory to a newly allocated host array, without blocking
+    /// the calling thread while work queued on the workspace stream completes.
+    /// </summary>
+    /// <param name="cancellationToken">A token that stops waiting; queued device work is not canceled.</param>
+    /// <returns>An array of 32-bit unsigned integers representing the limbs in little-endian order.</returns>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
+    public async ValueTask<uint[]> ToHostArrayAsync(CancellationToken cancellationToken = default)
+    {
+        var hostData = new uint[NumWords];
+        await Workspace.Provider
+            .CopyDeviceToHostAsync(hostData, DevicePointer, NumWords, Workspace.Stream, cancellationToken)
+            .ConfigureAwait(false);
+        return hostData;
+    }
+
+    /// <summary>
     /// Clears (zeros out) a range of limb words in GPU device memory.
     /// </summary>
     /// <param name="offsetWords">The word offset within this buffer from which to start clearing.</param>
@@ -351,7 +367,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     /// <returns><see langword="true"/> if the least significant bit is 0; otherwise, <see langword="false"/>.</returns>
     public bool GetIsEven()
     {
-        var word = Workspace.Provider.ReadWord(DevicePointer);
+        var word = Workspace.Provider.ReadWord(DevicePointer, stream: Workspace.Stream);
         return (word & 1) == 0;
     }
 
@@ -361,7 +377,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     /// <returns><see langword="true"/> if the MSB of the highest word is set; otherwise, <see langword="false"/>.</returns>
     public bool GetIsNegative()
     {
-        var word = Workspace.Provider.ReadWord(DevicePointer, NumWords - 1);
+        var word = Workspace.Provider.ReadWord(DevicePointer, NumWords - 1, Workspace.Stream);
         return (word & 0x80000000) != 0;
     }
 
@@ -371,7 +387,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     /// <param name="value"><see langword="true"/> to set the sign bit; <see langword="false"/> to clear it.</param>
     public void SetIsNegative(bool value)
     {
-        var word = Workspace.Provider.ReadWord(DevicePointer, NumWords - 1);
+        var word = Workspace.Provider.ReadWord(DevicePointer, NumWords - 1, Workspace.Stream);
         if (value)
         {
             word |= 0x80000000;
@@ -381,7 +397,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
             word &= 0x7FFFFFFF;
         }
 
-        Workspace.Provider.WriteWord(DevicePointer, NumWords - 1, word);
+        Workspace.Provider.WriteWord(DevicePointer, NumWords - 1, word, Workspace.Stream);
     }
 
     /// <summary>
@@ -465,6 +481,34 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
         }
         finally
         {
+            ArrayPool<uint>.Shared.Return(hostData);
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously copies limb data from GPU device memory and reconstructs a .NET standard <see cref="BigInteger"/>,
+    /// without blocking the calling thread while work queued on the workspace stream completes.
+    /// </summary>
+    /// <param name="isNegative"><see langword="true"/> to return a negative <see cref="BigInteger"/>; otherwise, <see langword="false"/>.</param>
+    /// <param name="cancellationToken">A token that stops waiting; queued device work is not canceled.</param>
+    /// <returns>A .NET <see cref="BigInteger"/> representing the value stored in GPU memory.</returns>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
+    public async ValueTask<BigInteger> ToBigIntegerAsync(bool isNegative = false,
+        CancellationToken cancellationToken = default)
+    {
+        var hostData = ArrayPool<uint>.Shared.Rent(NumWords);
+        try
+        {
+            await Workspace.Provider
+                .CopyDeviceToHostAsync(hostData, DevicePointer, NumWords, Workspace.Stream, cancellationToken)
+                .ConfigureAwait(false);
+            var big = new BigInteger(MemoryMarshal.AsBytes(hostData.AsSpan(0, NumWords)), isUnsigned: true,
+                isBigEndian: false);
+            return isNegative ? -big : big;
+        }
+        finally
+        {
+            // Safe even after cancellation: the asynchronous copy never writes to the destination once canceled.
             ArrayPool<uint>.Shared.Return(hostData);
         }
     }

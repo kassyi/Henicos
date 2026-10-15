@@ -41,6 +41,7 @@ public IGpuBigIntExpression Node { get; }
 | [Evaluate(GpuBigUInt)](#evaluategpubiguint)                                         | Evaluates this signed expression into the provided destination buffer.                          |
 | [Evaluate(GpuWorkspace)](#evaluategpuworkspace)                                   | Evaluates this signed expression into a newly rented temporary GPU buffer.                      |
 | [EvaluateWithCudaGraph(GpuWorkspace, GpuBigUInt?)](#evaluatewithcudagraphgpuworkspace-gpubiguint) | Evaluates this expression tree by dynamically compiling into a CUDA Graph, launching, and destroying it. |
+| [EvaluateWithCudaGraphAsync(GpuWorkspace, GpuBigUInt?, CancellationToken)](#evaluatewithcudagraphasyncgpuworkspace-gpubiguint-cancellationtoken) | Like `EvaluateWithCudaGraph`, but waits for the graph without blocking the calling thread. |
 | [Max(GpuBigIntExpr, GpuBigIntExpr)](#maxgpubigintexpr-gpubigintexpr)              | Constructs a lazy expression that resolves to the maximum of two signed big integer expressions.|
 | [Min(GpuBigIntExpr, GpuBigIntExpr)](#mingpubigintexpr-gpubigintexpr)              | Constructs a lazy expression that resolves to the minimum of two signed big integer expressions.|
 
@@ -126,6 +127,38 @@ An optional pre-allocated buffer for the final result magnitude.
 
 _GpuBigInt_<br>
 A new `GpuBigInt` instance wrapping the evaluated result.
+
+## EvaluateWithCudaGraphAsync(GpuWorkspace, GpuBigUInt?, CancellationToken)
+
+Evaluates this expression tree through a CUDA Graph like [EvaluateWithCudaGraph](#evaluatewithcudagraphgpuworkspace-gpubiguint), but waits for the graph without blocking the calling thread.
+
+```csharp
+public async ValueTask<GpuBigInt> EvaluateWithCudaGraphAsync(GpuWorkspace workspace, GpuBigUInt? targetResult = null, CancellationToken cancellationToken = default);
+```
+
+#### Parameters
+
+`workspace` _GpuWorkspace_<br>
+The GPU workspace managing memory pool and CUDA stream execution.
+
+`targetResult` _GpuBigUInt?_<br>
+An optional pre-allocated buffer for the final result magnitude.
+
+`cancellationToken` _CancellationToken_<br>
+A token that stops waiting for the graph. The graph itself still runs to completion.
+
+#### Returns
+
+_ValueTask&lt;GpuBigInt&gt;_<br>
+A new `GpuBigInt` instance wrapping the evaluated result.
+
+#### Exceptions
+
+`OperationCanceledException`<br>
+`cancellationToken` was canceled. A result buffer allocated by this method is released in stream order behind the graph; a supplied `targetResult` is left to the caller and receives the result once the graph completes.
+
+> [!NOTE]
+> Only the final wait is asynchronous. Compilation (a warm-up evaluation, capture and instantiation) runs synchronously on the calling thread and includes host synchronization. To evaluate the same expression repeatedly, call [CompileToGraph](#compiletographgpuworkspace-gpubiguint) once and use [GpuBigIntExecutableGraph.ExecuteAsync](GpuBigIntExecutableGraph.md#executeasynccancellationtoken).
 
 ## Max(GpuBigIntExpr, GpuBigIntExpr)
 

@@ -13,6 +13,10 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// <para>
 /// <b>Zero-Allocation:</b> Direct P/Invoke bindings communicate with unmanaged GPU memory without managed array allocation overhead.
 /// </para>
+/// <para>
+/// <b>Synchronous execution:</b> every operation of the legacy native library completes before it returns. Stream
+/// parameters are ignored, and the asynchronous members return already completed tasks.
+/// </para>
 /// </remarks>
 [ExcludeFromCodeCoverage]
 public class NativeProvider : IGpuExecutionProvider
@@ -47,7 +51,8 @@ public class NativeProvider : IGpuExecutionProvider
     public IntPtr AllocateMemory(int numWords) => NativeMethods.GpuBigInt_Alloc(numWords);
 
     /// <inheritdoc/>
-    public void FreeMemory(IntPtr devicePointer)
+    /// <remarks>The legacy native library frees synchronously; <paramref name="stream"/> is ignored.</remarks>
+    public void FreeMemory(IntPtr devicePointer, IntPtr stream = 0)
     {
         if (devicePointer != IntPtr.Zero)
         {
@@ -75,7 +80,8 @@ public class NativeProvider : IGpuExecutionProvider
 
 
     /// <inheritdoc/>
-    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0)
+    /// <remarks>The legacy native library copies synchronously; <paramref name="stream"/> is ignored.</remarks>
+    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0)
     {
         var temp = new uint[1];
         CopyDeviceToHost(temp, IntPtr.Add(devicePointer, wordOffset * 4), 1);
@@ -83,7 +89,8 @@ public class NativeProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void WriteWord(IntPtr devicePointer, int wordOffset, uint value)
+    /// <remarks>The legacy native library copies synchronously; <paramref name="stream"/> is ignored.</remarks>
+    public void WriteWord(IntPtr devicePointer, int wordOffset, uint value, IntPtr stream = 0)
     {
         var temp = new[] { value };
         CopyHostToDevice(IntPtr.Add(devicePointer, wordOffset * 4), temp, 1);
@@ -93,6 +100,46 @@ public class NativeProvider : IGpuExecutionProvider
     public void SynchronizeStream(IntPtr stream)
     {
         // No-op for legacy native synchronous calls
+    }
+
+    /// <inheritdoc/>
+    public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default) =>
+        cancellationToken.IsCancellationRequested ? ValueTask.FromCanceled(cancellationToken) : ValueTask.CompletedTask;
+
+    /// <inheritdoc/>
+    public ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords, IntPtr stream,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(numWords, hostData.Length);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return ValueTask.FromCanceled(cancellationToken);
+        }
+
+        if (numWords <= 0)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        // The native entry point takes an array; the caller's array is used directly when the memory starts at its head.
+        if (MemoryMarshal.TryGetArray<uint>(hostData, out var segment) && segment is { Array: { } array, Offset: 0 })
+        {
+            CopyDeviceToHost(array, devicePointer, numWords);
+            return ValueTask.CompletedTask;
+        }
+
+        var buffer = ArrayPool<uint>.Shared.Rent(numWords);
+        try
+        {
+            CopyDeviceToHost(buffer, devicePointer, numWords);
+            buffer.AsSpan(0, numWords).CopyTo(hostData.Span);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(buffer);
+        }
+
+        return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc/>

@@ -62,7 +62,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 
         while (!b.IsZero())
         {
-            workspace.Provider.WriteWord(statusBuf.DevicePointer, 0, 0); // 0 = Running
+            workspace.Provider.WriteWord(statusBuf.DevicePointer, 0, 0, workspace.Stream); // 0 = Running
 
             // Execute Lehmer GCD loop entirely on GPU up to 1000 iterations per launch
             unsafe
@@ -82,7 +82,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
                     gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
             }
 
-            var status = (int)workspace.Provider.ReadWord(statusBuf.DevicePointer);
+            var status = (int)workspace.Provider.ReadWord(statusBuf.DevicePointer, stream: workspace.Stream);
 
             if (status == 2)
             {
@@ -103,8 +103,8 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
     {
         var numWords = value.NumWords;
 
-        var hostVal0 = workspace.Provider.ReadWord(value.DevicePointer);
-        var hostMod0 = workspace.Provider.ReadWord(modulus.DevicePointer);
+        var hostVal0 = workspace.Provider.ReadWord(value.DevicePointer, stream: workspace.Stream);
+        var hostMod0 = workspace.Provider.ReadWord(modulus.DevicePointer, stream: workspace.Stream);
 
         if ((hostVal0 & 1) == 0 && (hostMod0 & 1) == 0)
         {
@@ -131,7 +131,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
 
         x1.Clear();
         x2.Clear();
-        workspace.Provider.WriteWord(x1.DevicePointer, 0, 1);
+        workspace.Provider.WriteWord(x1.DevicePointer, 0, 1, workspace.Stream);
 
         // Max iterations for binary GCD is up to 4 * bits
         int maxIterations = numWords * 32 * 4 + 100;
@@ -151,7 +151,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             ctx,
             gridDimX: 1, blockDimX: 1, hStream: workspace.Stream);
 
-        var statusHost = (int)workspace.Provider.ReadWord(statusBuf.DevicePointer);
+        var statusHost = (int)workspace.Provider.ReadWord(statusBuf.DevicePointer, stream: workspace.Stream);
 
         switch (statusHost)
         {
@@ -187,9 +187,10 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             var bit2B = 2 * n * 32 + 2 * marginBits;
             hostConstant3[bit2B / 32] |= 1u << (bit2B % 32);
             hostConstant3[(bit2B + 1) / 32] |= 1u << ((bit2B + 1) % 32);
+            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the pooled
+            // host buffer may be returned immediately, and the kernels using the constant are ordered on the same stream.
             workspace.Provider.CopyHostToDevice(constant3.DevicePointer, hostConstant3, constant3Words,
                 workspace.Stream);
-            workspace.Provider.SynchronizeStream(workspace.Stream);
         }
         finally
         {
@@ -300,8 +301,9 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
             Array.Clear(hostConstant, 0, constantWords);
             var bitTarget = targetBits + 1;
             hostConstant[bitTarget / 32] |= 1u << (bitTarget % 32);
+            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the pooled
+            // host buffer may be returned immediately, and the kernels using the constant are ordered on the same stream.
             workspace.Provider.CopyHostToDevice(constant.DevicePointer, hostConstant, constantWords, workspace.Stream);
-            workspace.Provider.SynchronizeStream(workspace.Stream);
         }
         finally
         {

@@ -30,6 +30,16 @@ public sealed class CudaStream : IDisposable
     public void Synchronize() => CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Handle));
 
     /// <summary>
+    /// Asynchronously waits until all operations currently enqueued on this stream have completed,
+    /// without blocking the calling thread.
+    /// </summary>
+    /// <param name="cancellationToken">A token that detaches the awaiter; the GPU work itself is not canceled.</param>
+    /// <returns>A <see cref="ValueTask"/> that completes when the stream has drained.</returns>
+    /// <seealso cref="CudaStreamCompletion.WaitAsync"/>
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) =>
+        CudaStreamCompletion.WaitAsync(Handle, cancellationToken);
+
+    /// <summary>
     /// Destroys the CUDA stream.
     /// </summary>
     public void Dispose()

@@ -171,48 +171,161 @@ public readonly struct GpuBigIntExpr
         executableGraph.Execute();
         return executableGraph.Result;
     }
+
+    /// <summary>
+    /// Evaluates this expression tree through a CUDA Graph like <see cref="EvaluateWithCudaGraph"/>, but waits for the
+    /// graph without blocking the calling thread.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace.</param>
+    /// <param name="targetResult">An optional pre-allocated buffer for the final result.</param>
+    /// <param name="cancellationToken">
+    /// A token that stops waiting for the graph. The graph itself still runs to completion.
+    /// </param>
+    /// <returns>A new <see cref="GpuBigInt"/> instance wrapping the evaluated result.</returns>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
+    /// <remarks>
+    /// <para>
+    /// Only the final wait is asynchronous. Compilation (a warm-up evaluation, capture and instantiation) runs
+    /// synchronously on the calling thread and includes host synchronization. To evaluate the same expression
+    /// repeatedly, compile it once with <see cref="CompileToGraph"/> and call
+    /// <see cref="GpuBigIntExecutableGraph.ExecuteAsync"/>.
+    /// </para>
+    /// <para>
+    /// On cancellation, a result buffer allocated by this method is released in stream order behind the graph;
+    /// <paramref name="targetResult"/> is left to the caller and receives the result once the graph completes.
+    /// </para>
+    /// </remarks>
+    public async ValueTask<GpuBigInt> EvaluateWithCudaGraphAsync(GpuWorkspace workspace,
+        GpuBigUInt? targetResult = null, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var executableGraph = CompileToGraph(workspace, targetResult);
+        try
+        {
+            await executableGraph.ExecuteAsync(cancellationToken).ConfigureAwait(false);
+            return executableGraph.Result;
+        }
+        catch (OperationCanceledException) when (!targetResult.HasValue)
+        {
+            // Continuations run on pool threads, so the workspace context is activated explicitly.
+            using (workspace.ActivateContext())
+            {
+                executableGraph.Result.Dispose();
+            }
+
+            throw;
+        }
+        finally
+        {
+            executableGraph.Dispose();
+        }
+    }
 }
 
 /// <summary>
 /// Represents a compiled, executable CUDA Graph for a GpuBigInt expression tree.
 /// </summary>
+/// <remarks>
+/// <para>
+/// <b>Lifetime:</b> copies of this value share one set of graph handles. <see cref="Dispose"/> may be called on any copy
+/// and more than once; afterwards every copy rejects execution with <see cref="ObjectDisposedException"/>.
+/// Disposing while a launch is still running is safe and does not wait: the driver releases the executable graph once
+/// the launch completes. <see cref="Result"/> is not released by <see cref="Dispose"/>.
+/// </para>
+/// <para>
+/// <b>Thread safety:</b> launches are ordered on the workspace stream. Disposing concurrently with a launch on another
+/// thread is not supported.
+/// </para>
+/// </remarks>
 public readonly struct GpuBigIntExecutableGraph : IDisposable
 {
-    private readonly GpuWorkspace _workspace;
-    private readonly IntPtr _graph;
-    private readonly IntPtr _graphExec;
+    private readonly GraphHandles? _handles;
 
     /// <summary>
-    /// Gets the buffer holding the result of the graph execution. 
-    /// This buffer is only valid and updated after <see cref="Execute"/> is called.
+    /// Gets the buffer holding the result of the graph execution.
     /// </summary>
+    /// <remarks>
+    /// The contents are final once <see cref="Execute"/> returns or <see cref="ExecuteAsync"/> completes. After a
+    /// canceled <see cref="ExecuteAsync"/> the graph is still running; reads ordered on the workspace stream (such as
+    /// <see cref="GpuBigUInt.ToBigInteger"/>) wait for it and observe the completed result.
+    /// </remarks>
     public GpuBigInt Result { get; }
 
     internal GpuBigIntExecutableGraph(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec, GpuBigInt result)
     {
-        _workspace = workspace;
-        _graph = graph;
-        _graphExec = graphExec;
+        _handles = new GraphHandles(workspace, graph, graphExec);
         Result = result;
     }
 
     /// <summary>
     /// Launches the executable graph on the GPU and waits for completion.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The graph has been disposed.</exception>
     public void Execute()
     {
-        _workspace.Provider.LaunchGraph(_graphExec, _workspace.Stream);
-        _workspace.Provider.SynchronizeStream(_workspace.Stream);
+        var handles = GetLiveHandles();
+        handles.Workspace.Provider.LaunchGraph(handles.GraphExec, handles.Workspace.Stream);
+        handles.Workspace.Provider.SynchronizeStream(handles.Workspace.Stream);
+    }
+
+    /// <summary>
+    /// Launches the executable graph on the GPU and waits for completion without blocking the calling thread.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// A token that stops waiting. An already canceled token prevents the launch; a later cancellation leaves the graph
+    /// running to completion (see <see cref="Result"/>).
+    /// </param>
+    /// <returns>A <see cref="ValueTask"/> that completes when the graph has finished.</returns>
+    /// <exception cref="ObjectDisposedException">The graph has been disposed.</exception>
+    /// <remarks>Does not allocate in steady state.</remarks>
+    public ValueTask ExecuteAsync(CancellationToken cancellationToken = default)
+    {
+        var handles = GetLiveHandles();
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return ValueTask.FromCanceled(cancellationToken);
+        }
+
+        handles.Workspace.Provider.LaunchGraph(handles.GraphExec, handles.Workspace.Stream);
+        return handles.Workspace.Provider.SynchronizeStreamAsync(handles.Workspace.Stream, cancellationToken);
     }
 
     /// <summary>
     /// Destroys the underlying CUDA Graph and executable graph instances.
     /// </summary>
-    public void Dispose()
+    public void Dispose() => _handles?.Destroy();
+
+    private GraphHandles GetLiveHandles() =>
+        _handles is { IsDestroyed: false } handles
+            ? handles
+            : throw new ObjectDisposedException(nameof(GpuBigIntExecutableGraph));
+
+    /// <summary>
+    /// The graph handles shared by every copy of a <see cref="GpuBigIntExecutableGraph"/>.
+    /// </summary>
+    private sealed class GraphHandles(GpuWorkspace workspace, IntPtr graph, IntPtr graphExec)
     {
-        if (_workspace != null && _graph != IntPtr.Zero)
+        private int _destroyed;
+
+        public GpuWorkspace Workspace { get; } = workspace;
+
+        public IntPtr GraphExec { get; } = graphExec;
+
+        public bool IsDestroyed => Volatile.Read(ref _destroyed) != 0;
+
+        public void Destroy()
         {
-            _workspace.Provider.DestroyGraph(_graph, _graphExec);
+            if (Interlocked.Exchange(ref _destroyed, 1) != 0)
+            {
+                return;
+            }
+
+            // Dispose may run on a pool thread after an await, where the workspace context is not current.
+            using (Workspace.ActivateContext())
+            {
+                Workspace.Provider.DestroyGraph(graph, GraphExec);
+            }
         }
     }
 }

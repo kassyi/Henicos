@@ -73,7 +73,8 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
     public IntPtr AllocateMemory(int numWords) => Marshal.AllocHGlobal(numWords * 4);
 
     /// <inheritdoc/>
-    public void FreeMemory(IntPtr devicePointer)
+    /// <remarks>Host memory is freed immediately; <paramref name="stream"/> is ignored.</remarks>
+    public void FreeMemory(IntPtr devicePointer, IntPtr stream = 0)
     {
         if (devicePointer != IntPtr.Zero)
         {
@@ -130,17 +131,45 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public unsafe uint ReadWord(IntPtr devicePointer, int wordOffset = 0) =>
+    /// <remarks>Host memory is accessed directly; <paramref name="stream"/> is ignored.</remarks>
+    public unsafe uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0) =>
         *(uint*)IntPtr.Add(devicePointer, wordOffset * 4);
 
     /// <inheritdoc/>
-    public unsafe void WriteWord(IntPtr devicePointer, int wordOffset, uint value) =>
+    /// <remarks>Host memory is accessed directly; <paramref name="stream"/> is ignored.</remarks>
+    public unsafe void WriteWord(IntPtr devicePointer, int wordOffset, uint value, IntPtr stream = 0) =>
         *(uint*)IntPtr.Add(devicePointer, wordOffset * 4) = value;
 
     /// <inheritdoc/>
     public void SynchronizeStream(IntPtr stream)
     {
         // No-op in CPU mode
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>Nothing runs asynchronously in CPU mode; the returned task is already completed.</remarks>
+    public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default) =>
+        cancellationToken.IsCancellationRequested ? ValueTask.FromCanceled(cancellationToken) : ValueTask.CompletedTask;
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Host memory is copied synchronously; the returned task is already completed and <paramref name="stream"/> is ignored.
+    /// </remarks>
+    public unsafe ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords,
+        IntPtr stream, CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(numWords, hostData.Length);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return ValueTask.FromCanceled(cancellationToken);
+        }
+
+        if (numWords > 0)
+        {
+            new ReadOnlySpan<uint>((void*)devicePointer, numWords).CopyTo(hostData.Span);
+        }
+
+        return ValueTask.CompletedTask;
     }
 
     // --- IGpuBasicMathProvider ---

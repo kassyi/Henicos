@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Runtime;
+
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 /// <summary>
@@ -5,7 +7,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>[WHY]:</b> Bridges low-level CUDA Driver API memory operations (<c>cuMemAlloc_v2</c>, <c>cuMemFree_v2</c>, <c>cuMemcpyHtoDAsync_v2</c>)
+/// <b>[WHY]:</b> Bridges low-level CUDA Driver API memory operations (<c>cuMemAlloc_v2</c>, <c>cuMemFree_v2</c> / <c>cuMemFreeAsync</c>, <c>cuMemcpyHtoDAsync_v2</c>)
 /// into the <see cref="IGpuMemoryProvider"/> contract for GSharp execution pipelines.
 /// </para>
 /// </remarks>
@@ -46,12 +48,18 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
     }
 
     /// <inheritdoc/>
-    public void FreeMemory(IntPtr devicePointer)
+    public void FreeMemory(IntPtr devicePointer, IntPtr stream = 0)
     {
-        if (devicePointer != IntPtr.Zero)
+        if (devicePointer == IntPtr.Zero)
         {
-            InvokeCuda(() => CudaDriverApi.cuMemFree_v2(devicePointer));
+            return;
         }
+
+        // cuMemFree_v2 waits for every stream of the device; cuMemFreeAsync only orders the release on 'stream'.
+        // Allocations from cuMemAlloc_v2 may be released either way.
+        InvokeCuda(stream == IntPtr.Zero
+            ? () => CudaDriverApi.cuMemFree_v2(devicePointer)
+            : () => CudaDriverApi.cuMemFreeAsync(devicePointer, stream));
     }
 
     /// <inheritdoc/>
@@ -79,26 +87,69 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
 
         fixed (uint* pHost = hostData)
         {
-            var hostPtr = (IntPtr)pHost;
-            InvokeCuda(() => CudaDriverApi.cuMemcpyDtoHAsync_v2(hostPtr, devicePointer, numWords * 4, stream));
+            using var scope = new GpuKernelLoader.CudaContextScope();
+            CudaException.ThrowIfError(
+                CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)pHost, devicePointer, numWords * 4, stream));
+
+            // A pageable destination already makes the copy synchronous, but a page-locked one does not. Waiting
+            // explicitly keeps the synchronous contract for both, and before 'fixed' unpins the array.
+            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));
         }
     }
 
     /// <inheritdoc/>
-    public unsafe uint ReadWord(IntPtr devicePointer, int wordOffset = 0)
+    public ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords, IntPtr stream,
+        CancellationToken cancellationToken = default)
     {
-        var pWord = stackalloc uint[1];
-        var ptr = (IntPtr)pWord;
-        return InvokeCuda(() => CudaDriverApi.cuMemcpyDtoH_v2(ptr, IntPtr.Add(devicePointer, wordOffset * 4), 4), () => *pWord);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(numWords, hostData.Length);
+        if (numWords <= 0)
+        {
+            return cancellationToken.IsCancellationRequested
+                ? ValueTask.FromCanceled(cancellationToken)
+                : ValueTask.CompletedTask;
+        }
+
+        return CudaHostTransfer.CopyToHostAsync(devicePointer, hostData[..numWords], stream, cancellationToken);
     }
 
     /// <inheritdoc/>
-    public unsafe void WriteWord(IntPtr devicePointer, int wordOffset, uint value)
+    public unsafe uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0)
     {
         var pWord = stackalloc uint[1];
-        *pWord = value;
         var ptr = (IntPtr)pWord;
-        InvokeCuda(() => CudaDriverApi.cuMemcpyHtoD_v2(IntPtr.Add(devicePointer, wordOffset * 4), ptr, 4));
+        var source = IntPtr.Add(devicePointer, wordOffset * 4);
+
+        if (stream == IntPtr.Zero)
+        {
+            // Legacy null-stream copy: also waits for all work on every blocking stream of the context.
+            return InvokeCuda(() => CudaDriverApi.cuMemcpyDtoH_v2(ptr, source, 4), () => *pWord);
+        }
+
+        // Ordered on 'stream' only. The destination is pageable stack memory, so the host must wait for the stream
+        // before reading it; that wait covers this stream and does not involve any other stream.
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(ptr, source, 4, stream));
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));
+        return *pWord;
+    }
+
+    /// <inheritdoc/>
+    public unsafe void WriteWord(IntPtr devicePointer, int wordOffset, uint value, IntPtr stream = 0)
+    {
+        var destination = IntPtr.Add(devicePointer, wordOffset * 4);
+
+        if (stream == IntPtr.Zero)
+        {
+            // Legacy null-stream copy: completes before returning and waits for blocking streams.
+            var pWord = stackalloc uint[1];
+            *pWord = value;
+            var ptr = (IntPtr)pWord;
+            InvokeCuda(() => CudaDriverApi.cuMemcpyHtoD_v2(destination, ptr, 4));
+            return;
+        }
+
+        // The value travels in the command itself, so no host buffer has to stay alive and the host does not block.
+        InvokeCuda(() => CudaDriverApi.cuMemsetD32Async(destination, value, 1, stream));
     }
 
     /// <inheritdoc/>
@@ -121,5 +172,19 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
         }
 
         InvokeCuda(() => CudaDriverApi.cuStreamSynchronize(stream));
+    }
+
+    /// <inheritdoc/>
+    public ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return ValueTask.FromCanceled(cancellationToken);
+        }
+
+        // Mirrors SynchronizeStream, which has nothing to wait for on the null stream.
+        return stream == IntPtr.Zero
+            ? ValueTask.CompletedTask
+            : CudaStreamCompletion.WaitAsync(stream, cancellationToken);
     }
 }

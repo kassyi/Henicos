@@ -63,7 +63,6 @@ internal static class ModPowZeroSyncController
         try
         {
             exp.Workspace.Provider.CopyDeviceToHost(hostExp, exp.DevicePointer, expWords, exp.Workspace.Stream);
-            CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(exp.Workspace.Stream));
 
             for (var i = 0; i < expWords; i++)
             {

@@ -67,7 +67,7 @@ public readonly struct GpuBigIntArray : IDisposable
         var signWord = Signs.GetElement(index);
         
         // Note: Reading from device memory to host is slow, this is just for debugging or single-element retrieval
-        var isNegative = signWord.Workspace.Provider.ReadWord(signWord.DevicePointer) != 0;
+        var isNegative = signWord.Workspace.Provider.ReadWord(signWord.DevicePointer, stream: signWord.Workspace.Stream) != 0;
         
         return new GpuBigInt(value, isNegative);
     }

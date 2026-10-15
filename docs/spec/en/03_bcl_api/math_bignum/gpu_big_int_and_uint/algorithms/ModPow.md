@@ -110,4 +110,4 @@ This orchestration leverages Montgomery reduction to prevent massive allocation 
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
-- [FermatRunner Class (G#)](Fermat.md)
+- [FermatAlgorithm Class (G#)](FermatAlgorithm.md)

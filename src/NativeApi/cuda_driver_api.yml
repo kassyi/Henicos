@@ -158,6 +158,15 @@ methods:
         type: IntPtr
         description: Stream to record event in.
 
+  - name: cuEventQuery
+    returnType: CUresult
+    summary: Queries an event's status without blocking the calling thread.
+    returnDescription: CudaSuccess if all captured work has completed; CudaErrorNotReady if work is still pending; otherwise, an error code.
+    parameters:
+      - name: hEvent
+        type: IntPtr
+        description: Event to query.
+
   - name: cuEventSynchronize
     returnType: CUresult
     summary: Waits for an event to complete.
@@ -467,6 +476,27 @@ methods:
         type: IntPtr
         description: Stream handle to destroy.
 
+  - name: cuStreamQuery
+    returnType: CUresult
+    summary: Determines the status of a compute stream without blocking the calling thread.
+    returnDescription: CudaSuccess if all operations in the stream have completed; CudaErrorNotReady if work is still pending; otherwise, an error code, including sticky errors from previous asynchronous launches.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream to query.
+
+  - name: cuStreamGetCtx
+    returnType: CUresult
+    summary: Returns the context that owns a stream, independent of the context current to the calling thread.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream to query. For the legacy or per-thread default stream, the calling thread's current context is returned.
+      - name: pctx
+        type: out IntPtr
+        description: Returned context handle.
+
   - name: cuStreamSynchronize
     returnType: CUresult
     summary: Waits for a stream's tasks to complete.
@@ -475,6 +505,21 @@ methods:
       - name: hStream
         type: IntPtr
         description: Stream identifier.
+
+  - name: cuLaunchHostFunc
+    returnType: CUresult
+    summary: Enqueues a host function call in a stream.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream to enqueue the host function in.
+      - name: fn
+        type: IntPtr
+        description: Function pointer of type CUhostFn (unmanaged, cdecl/stdcall per platform). The callback must not call any CUDA API.
+      - name: userData
+        type: IntPtr
+        description: User data passed to the host function.
 
   - name: cuMemAllocAsync
     returnType: CUresult
@@ -517,6 +562,24 @@ methods:
       - name: byteCount
         type: IntPtr
         description: Number of bytes to set.
+      - name: hStream
+        type: IntPtr
+        description: Stream identifier.
+
+  - name: cuMemsetD32Async
+    returnType: CUresult
+    summary: Sets device memory to a 32-bit value asynchronously, ordered on the specified stream.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: dstDevice
+        type: IntPtr
+        description: Destination device pointer (must be 4-byte aligned).
+      - name: ui
+        type: uint
+        description: Value to set.
+      - name: count
+        type: IntPtr
+        description: Number of 32-bit elements to set.
       - name: hStream
         type: IntPtr
         description: Stream identifier.

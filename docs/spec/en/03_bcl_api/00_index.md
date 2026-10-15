@@ -65,6 +65,13 @@ Standard C# math functions are transpiled to their highly-optimized CUDA equival
 ### 7. Utilities
 * **[CudaEnvironment](CudaEnvironment.md)**: Discover and resolve local NVIDIA CUDA Toolkit installation directories.
 
+### 8. Host Runtime
+Host-side types for driving CUDA streams without blocking threads (CPU only; not callable from a `[GpuKernel]`).
+* **[CudaStream](host_runtime/CudaStream.md)**: A non-blocking CUDA stream with an asynchronous `SynchronizeAsync`.
+* **[CudaStreamCompletion](host_runtime/CudaStreamCompletion.md)**: Awaits all work queued on a stream without parking a thread.
+* **[CudaHostTransfer](host_runtime/CudaHostTransfer.md)**: Copies device memory to the host through pooled page-locked buffers without blocking.
+* **[CudaEventTimer](host_runtime/CudaEventTimer.md)**: Measures GPU execution time with CUDA events.
+
 ---
 
 ## Group 2: Domain Specific Libraries (`Stdlib.Math` / BigNum)

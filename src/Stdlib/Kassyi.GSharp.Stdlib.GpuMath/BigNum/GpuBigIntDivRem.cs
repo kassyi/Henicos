@@ -336,11 +336,6 @@ public static partial class GpuBigIntDivRem
         try
         {
             gpuBigInt.Workspace.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n, gpuBigInt.Workspace.Stream);
-            if (!GpuKernelLoader.IsCpuFallbackMode)
-            {
-                CudaException.ThrowIfError(
-                    CudaDriverApi.cuStreamSynchronize(gpuBigInt.Workspace.Stream));
-            }
             for (var i = n - 1; i >= 0; i--)
             {
                 if (hostData[i] == 0)
@@ -413,10 +408,6 @@ public static partial class GpuBigIntDivRem
         try
         {
             operand.Workspace.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n, operand.Workspace.Stream);
-            if (!GpuKernelLoader.IsCpuFallbackMode)
-            {
-                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(operand.Workspace.Stream));
-            }
             var topIndex = (actualBits - 1) / 32;
 
             var wordsToExtract = Math.Min(4, topIndex + 1);
@@ -487,13 +478,11 @@ public static partial class GpuBigIntDivRem
             Array.Clear(xData, 0, numWords);
             var xBytes = shiftedApproximation.ToByteArray(isUnsigned: true, isBigEndian: false);
             Buffer.BlockCopy(xBytes, 0, xData, 0, Math.Min(xBytes.Length, numWords * 4));
+
+            // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the pooled
+            // host buffer may be returned immediately, and later work using resultBuffer is ordered on the same stream.
             targetOperand.Workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, xData, numWords,
                 targetOperand.Workspace.Stream);
-            if (!GpuKernelLoader.IsCpuFallbackMode)
-            {
-                CudaException.ThrowIfError(
-                    CudaDriverApi.cuStreamSynchronize(targetOperand.Workspace.Stream));
-            }
         }
         finally
         {

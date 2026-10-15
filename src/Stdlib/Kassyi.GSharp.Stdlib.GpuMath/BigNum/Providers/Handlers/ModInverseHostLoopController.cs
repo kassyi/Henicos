@@ -37,7 +37,7 @@ internal static class ModInverseHostLoopController
         d.Clear();
         using var one = workspace.RentTemp(numWords);
         one.Clear();
-        workspace.Provider.WriteWord(one.DevicePointer, 0, 1);
+        workspace.Provider.WriteWord(one.DevicePointer, 0, 1, workspace.Stream);
         workspace.Provider.CopyDeviceToDevice(d.DevicePointer, one.DevicePointer, numWords, workspace.Stream);
 
         while (true)

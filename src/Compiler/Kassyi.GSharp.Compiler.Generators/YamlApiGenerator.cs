@@ -1,6 +1,3 @@
-using System.Collections.Immutable;
-using Kassyi.GSharp.Compiler.NativeApi;
-
 namespace Kassyi.GSharp.Compiler.Generators;
 
 /// <summary>
