@@ -19,6 +19,8 @@
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
     <CompilerVisibleProperty Include="GSharpMockCompilation" />
     <CompilerVisibleProperty Include="GSharpCombinedFatbinName" />
+    <!-- Opt-in marker for YAML native API definitions: <AdditionalFiles Include="*.yml" GSharpApi="true" /> -->
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="GSharpApi" />
   </ItemGroup>
 
   <PropertyGroup>

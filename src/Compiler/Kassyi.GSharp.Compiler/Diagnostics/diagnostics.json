@@ -476,5 +476,23 @@
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "NativeApiYamlSyntaxError",
+    "id": "GSH0054",
+    "title": "Native API definition is not valid YAML",
+    "messageFormat": "Native API definition '{0}' could not be parsed: {1}",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "NativeApiSchemaViolation",
+    "id": "GSH0055",
+    "title": "Native API definition violates the schema",
+    "messageFormat": "Native API definition '{0}' is invalid: {1}",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
   }
 ]
