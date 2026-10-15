@@ -30,7 +30,7 @@ public class HostSyncReductionTests
     [Scenario(TestScenario.HappyPath)]
     public void ReciprocalMega_DoesNotWaitForQueuedWorkOnOwnStream()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(1024);
@@ -61,7 +61,7 @@ public class HostSyncReductionTests
     [Scenario(TestScenario.Boundary)]
     public void ReciprocalMega_ConstantUploadIsOrderedBeforeKernel_ResultStaysCorrectAcrossRepeats()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(1024);
@@ -106,12 +106,5 @@ public class HostSyncReductionTests
         // Newton-Raphson may differ from the exact quotient in the least significant bits.
         var difference = BigInteger.Abs(expected - actual);
         Assert.True(difference <= 2, $"Reciprocal difference too large. Expected: {expected}, Actual: {actual}");
-    }
-
-    private static void SkipIfNoDevice()
-    {
-        // The fallback flag is only populated by driver initialization, so it must run before the flag is read.
-        GpuKernelLoader.EnsureInitialized();
-        Skip.If(GpuKernelLoader.IsCpuFallbackMode, "Requires a CUDA device.");
     }
 }

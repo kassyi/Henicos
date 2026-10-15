@@ -27,7 +27,7 @@ public class StreamOrderedFreeTests
     [Scenario(TestScenario.HappyPath)]
     public void FreeMemory_WithStream_DoesNotWaitForOtherStreams()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -46,7 +46,7 @@ public class StreamOrderedFreeTests
     [Scenario(TestScenario.Boundary)]
     public void FreeMemory_WithoutStream_KeepsImmediateDeviceWideSemantics()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -66,7 +66,7 @@ public class StreamOrderedFreeTests
     [Scenario(TestScenario.HappyPath)]
     public void GpuWorkspace_Dispose_DoesNotWaitForOtherStreams()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var busy = new CudaStream();
@@ -88,7 +88,7 @@ public class StreamOrderedFreeTests
     [Scenario(TestScenario.SadPath)]
     public void GpuWorkspace_Dispose_WithAbandonedCapture_ReleasesMemoryWithoutError()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
         var workspace = new GpuWorkspace(NumWords);
         var pooled = new GpuBigUInt(workspace, NumWords);
@@ -108,12 +108,5 @@ public class StreamOrderedFreeTests
         using var value = new GpuBigUInt(next, 4);
         value.Clear();
         Assert.True(value.IsZero());
-    }
-
-    private static void SkipIfNoDevice()
-    {
-        // The fallback flag is only populated by driver initialization, so it must run before the flag is read.
-        GpuKernelLoader.EnsureInitialized();
-        Skip.If(GpuKernelLoader.IsCpuFallbackMode, "Requires a CUDA device.");
     }
 }

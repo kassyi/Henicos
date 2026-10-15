@@ -32,7 +32,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.HappyPath)]
     public void WriteWord_ThenReadWord_OnSameStream_RoundTripsAtOffset()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -60,7 +60,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.HappyPath)]
     public void ReadWord_WithStream_ObservesEarlierWorkOnThatStream()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -88,7 +88,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.HappyPath)]
     public void ReadWord_WithStream_DoesNotWaitForOtherBlockingStreams()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -115,7 +115,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.HappyPath)]
     public void WriteWord_WithStream_DoesNotWaitForOtherBlockingStreams()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -142,7 +142,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.Boundary)]
     public void WordAccess_WithoutStream_KeepsLegacyNullStreamSemantics()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -169,7 +169,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.HappyPath)]
     public void GpuBigUIntSignAndParityQueries_DoNotWaitForAnotherWorkspaceStream()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var holder = new GpuWorkspace(NumWords);
@@ -226,11 +226,4 @@ public class StreamOrderedWordAccessTests
     }
 
     private static void DestroyStream(IntPtr stream) => CudaDriverApi.cuStreamDestroy(stream);
-
-    private static void SkipIfNoDevice()
-    {
-        // The fallback flag is only populated by driver initialization, so it must run before the flag is read.
-        GpuKernelLoader.EnsureInitialized();
-        Skip.If(GpuKernelLoader.IsCpuFallbackMode, "Requires a CUDA device.");
-    }
 }
