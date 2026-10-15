@@ -23,8 +23,8 @@ public static class CudaStreamCompletion
 
 ## Methods
 
-| Name                                                                   | Description                                                                 |
-| ---------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Name | Description |
+| --- | --- |
 | [WaitAsync(IntPtr, CancellationToken)](#waitasyncintptr-cancellationtoken) | Asynchronously waits until all work currently enqueued on a stream has completed. |
 
 ## WaitAsync(IntPtr, CancellationToken)

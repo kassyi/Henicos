@@ -21,8 +21,8 @@ public sealed class CudaStream : IDisposable
 
 ## Constructors
 
-| Name                    | Description                              |
-| ----------------------- | ---------------------------------------- |
+| Name | Description |
+| --- | --- |
 | [CudaStream()](#cudastream) | Creates a new non-blocking CUDA stream. |
 
 ## CudaStream()
@@ -40,8 +40,8 @@ The driver could not create the stream.
 
 ## Properties
 
-| Name              | Description                        |
-| ----------------- | ---------------------------------- |
+| Name | Description |
+| --- | --- |
 | [Handle](#handle) | The underlying CUDA stream handle. |
 
 ## Handle
@@ -54,10 +54,10 @@ public IntPtr Handle { get; }
 
 ## Methods
 
-| Name                                                  | Description                                                                     |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------- |
-| [Dispose()](#dispose)                                 | Destroys the CUDA stream.                                                       |
-| [Synchronize()](#synchronize)                         | Blocks the current host thread until all operations in this stream have completed. |
+| Name | Description |
+| --- | --- |
+| [Dispose()](#dispose) | Destroys the CUDA stream. |
+| [Synchronize()](#synchronize) | Blocks the current host thread until all operations in this stream have completed. |
 | [SynchronizeAsync(CancellationToken)](#synchronizeasynccancellationtoken) | Asynchronously waits until all operations currently enqueued on this stream have completed. |
 
 ## Dispose()
