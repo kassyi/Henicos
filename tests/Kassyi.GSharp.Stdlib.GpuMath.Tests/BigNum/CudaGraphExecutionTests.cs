@@ -134,6 +134,7 @@ public class CudaGraphExecutionTests
 
                 // 1 + 1 (1000 times accumulative addition) = 1 + 1000 = 1001
                 Assert.Equal(1001u, hostC[0]);
+                Assert.True(hostC.AsSpan(1).AsStackEnumerable().All(w => w == 0u));
 
                 ctx.Provider.DestroyGraph(graph, graphExec);
             }
@@ -292,12 +293,16 @@ public class CudaGraphExecutionTests
         CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(ctx.Stream));
 
         // Assert
+        var hostQuotient = new uint[n * 2];
         var hostRemainder = new uint[n * 2];
+        ctx.Provider.CopyDeviceToHost(hostQuotient, quotient.DevicePointer, n * 2, ctx.Stream);
         ctx.Provider.CopyDeviceToHost(hostRemainder, remainder.DevicePointer, n * 2, ctx.Stream);
         
-        // 100 % 7 = 2
+        // 100 / 7 = 14, 100 % 7 = 2
+        Assert.Equal(14u, hostQuotient[0]);
+        Assert.True(hostQuotient.AsSpan(1).AsStackEnumerable().All(w => w == 0u));
         Assert.Equal(2u, hostRemainder[0]);
-        Assert.Equal(0u, hostRemainder[1]);
+        Assert.True(hostRemainder.AsSpan(1).AsStackEnumerable().All(w => w == 0u));
 
         ctx.Provider.DestroyGraph(graph, graphExec);
     }

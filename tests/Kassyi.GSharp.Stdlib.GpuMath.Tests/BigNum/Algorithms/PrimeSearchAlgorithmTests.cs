@@ -45,9 +45,14 @@ public class PrimeSearchAlgorithmTests
         }
 
         Assert.Equal(bitLength, actualBitLength);
+        Assert.Equal(bitLength, result.GetBitLength());
 
-        // Verify primality using System.Numerics.BigInteger for sanity check (for small enough numbers)
-        // Since Generate returns Kassyi.GSharp.Stdlib.GpuMath.BigNum.BigInteger (or System.Numerics? wait)
-        // Wait, what type does PrimeSearchAlgorithm.Generate return?
+        // Verify probable primality using Fermat / Miller-Rabin witnesses
+        ReadOnlySpan<int> bases = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29];
+        foreach (int b in bases)
+        {
+            if (result <= b) break;
+            Assert.Equal(BigInteger.One, BigInteger.ModPow(b, result - 1, result));
+        }
     }
 }

@@ -21,8 +21,10 @@ public class GpuBigIntCoreTests
         {
             try
             {
-                using var a = new GpuBigUInt(sharedCtx, new uint[] { (uint)i + 1, 0, 0, 0 });
-                using var b = new GpuBigUInt(sharedCtx, new uint[] { (uint)i + 2, 0, 0, 0 });
+                uint valA = (uint)i + 1;
+                uint valB = (uint)i + 2;
+                using var a = new GpuBigUInt(sharedCtx, new uint[] { valA, 0, 0, 0 });
+                using var b = new GpuBigUInt(sharedCtx, new uint[] { valB, 0, 0, 0 });
                 using var c = new GpuBigUInt(sharedCtx, 4);
                 using var d = new GpuBigUInt(sharedCtx, 8);
 
@@ -30,6 +32,13 @@ public class GpuBigIntCoreTests
                 d.Value = c * a;
 
                 sharedCtx.Provider.SynchronizeStream(sharedCtx.Stream);
+
+                var hostC = c.ToHostArray();
+                var hostD = d.ToHostArray();
+                Assert.Equal(valA + valB, hostC[0]);
+                Assert.Equal(0u, hostC[1]);
+                Assert.Equal((valA + valB) * valA, hostD[0]);
+                Assert.Equal(0u, hostD[1]);
             }
             catch (Exception ex)
             {
@@ -346,12 +355,9 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [InlineData(GpuExecutionEngine.LegacyNative)]
     public void Test_Mul_Correctness(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
-        if (engine == GpuExecutionEngine.LegacyNative)
-            return;
 
         RunBinaryOpTest(
             engine,
@@ -417,6 +423,10 @@ public class GpuBigIntCoreTests
         using var gpuA = new GpuBigUInt(context, arrA);
         using var gpuB = new GpuBigUInt(context, arrB);
         using var gpuResult = new GpuBigUInt(context, TestSizeWords);
+
+        // Test AND
+        gpuResult.Value = gpuA & gpuB;
+        Assert.Equal(arrA.Zip(arrB, (a, b) => a & b).ToArray(), gpuResult.ToHostArray());
 
         // Test OR
         gpuResult.Value = gpuA | gpuB;
@@ -735,7 +745,8 @@ public class GpuBigIntCoreTests
         var bigA = ToBigInteger(arrA);
 
         using var gpuA = new GpuBigUInt(context, TestSizeWords * 4);
-        gpuA.CopyFrom(new GpuBigUInt(context, arrA));
+        using var tempA = new GpuBigUInt(context, arrA);
+        gpuA.CopyFrom(tempA);
         gpuA.Square(TestSizeWords);
         var actual = ToBigInteger(gpuA.ToHostArray().Take(TestSizeWords * 2).ToArray());
         var expected = bigA * bigA;
@@ -1118,10 +1129,11 @@ public class GpuBigIntCoreTests
     }
 
 
-    [Theory]
+    [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
     public void Test_ModPow_Correctness(GpuExecutionEngine engine)
     {
+        CudaCapability.EnsureGpuAvailable();
         using var context = new GpuWorkspace(TestSizeWords * 13, engine);
 
         var arrBase = GenerateRandomArray(TestSizeWords, 800);
