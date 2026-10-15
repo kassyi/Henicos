@@ -110,6 +110,22 @@ public class FermatAlgorithm : IDisposable
     }
 
     /// <summary>
+    /// Asynchronously copies the current state buffer (<c>ValueT</c>) to host memory, without blocking the calling
+    /// thread while queued iterations complete.
+    /// </summary>
+    /// <param name="cancellationToken">A token that stops waiting; queued device work is not canceled.</param>
+    /// <returns>An array of 32-bit words containing the current state.</returns>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
+    public async ValueTask<uint[]> GetStateAsync(CancellationToken cancellationToken = default)
+    {
+        var copy = new uint[OutNumWords];
+        await _gpuWorkspace.Provider
+            .CopyDeviceToHostAsync(copy, _valueT.DevicePointer, OutNumWords, _gpuWorkspace.Stream, cancellationToken)
+            .ConfigureAwait(false);
+        return copy;
+    }
+
+    /// <summary>
     /// Loads a previously saved state buffer (<c>ValueT</c>) into the GPU device execution context.
     /// </summary>
     /// <param name="valueT">An array containing the state buffer words to load.</param>
@@ -156,7 +172,14 @@ public class FermatAlgorithm : IDisposable
         (_valueT, _remainder) = (_remainder, _valueT);
     }
 
-    private void RunWithGraph(int iterations)
+    /// <summary>
+    /// Enqueues <paramref name="iterations"/> squaring iterations on the workspace stream without waiting for them.
+    /// </summary>
+    /// <remarks>
+    /// The first iteration runs eagerly as a warm-up and the rest are captured into a CUDA Graph, which includes host
+    /// synchronization. The graph is destroyed right after its launch; the driver defers the release until it completes.
+    /// </remarks>
+    private void EnqueueIterations(int iterations)
     {
         if (iterations <= 0)
         {
@@ -199,7 +222,6 @@ public class FermatAlgorithm : IDisposable
             try
             {
                 graphProvider.LaunchGraph(graphExec, stream);
-                _gpuWorkspace.Provider.SynchronizeStream(stream);
             }
             finally
             {
@@ -223,7 +245,7 @@ public class FermatAlgorithm : IDisposable
     {
         var sw = Stopwatch.StartNew();
 
-        RunWithGraph(E);
+        EnqueueIterations(E);
 
         GpuKernelLoader.SynchronizeDevice();
         sw.Stop();
@@ -232,14 +254,64 @@ public class FermatAlgorithm : IDisposable
     }
 
     /// <summary>
+    /// Executes the full Fermat Probable Prime (PRP) loop like <see cref="RunFermatPrp"/>, but waits for the GPU without
+    /// blocking the calling thread.
+    /// </summary>
+    /// <param name="cancellationToken">
+    /// A token that stops waiting. An already canceled token prevents any work; a later cancellation leaves the queued
+    /// iterations running, after which the state is only defined once the workspace stream has drained.
+    /// </param>
+    /// <returns>A tuple containing the final state array and the elapsed execution time in milliseconds.</returns>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
+    /// <remarks>
+    /// Graph preparation (one warm-up iteration, capture and instantiation) still runs on the calling thread; only the
+    /// wait for the iterations is asynchronous.
+    /// </remarks>
+    public async ValueTask<(uint[] Result, long ElapsedMs)> RunFermatPrpAsync(
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var sw = Stopwatch.StartNew();
+
+        EnqueueIterations(E);
+        await _gpuWorkspace.Provider.SynchronizeStreamAsync(_gpuWorkspace.Stream, cancellationToken)
+            .ConfigureAwait(false);
+        sw.Stop();
+
+        return (await GetStateAsync(cancellationToken).ConfigureAwait(false), sw.ElapsedMilliseconds);
+    }
+
+    /// <summary>
     /// Executes a specified number of squaring iterations on the GPU for benchmarking purposes.
     /// </summary>
     /// <param name="chunkSize">The number of squaring iterations to execute.</param>
     public void RunBenchmarkChunk(int chunkSize = 100)
     {
-        RunWithGraph(chunkSize);
+        EnqueueIterations(chunkSize);
 
         GpuKernelLoader.SynchronizeDevice();
+    }
+
+    /// <summary>
+    /// Executes a specified number of squaring iterations like <see cref="RunBenchmarkChunk"/>, but waits for the GPU
+    /// without blocking the calling thread.
+    /// </summary>
+    /// <param name="chunkSize">The number of squaring iterations to execute.</param>
+    /// <param name="cancellationToken">
+    /// A token that stops waiting. An already canceled token prevents any work; a later cancellation leaves the queued
+    /// iterations running.
+    /// </param>
+    /// <returns>A <see cref="ValueTask"/> that completes when the iterations have finished.</returns>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
+    public ValueTask RunBenchmarkChunkAsync(int chunkSize = 100, CancellationToken cancellationToken = default)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return ValueTask.FromCanceled(cancellationToken);
+        }
+
+        EnqueueIterations(chunkSize);
+        return _gpuWorkspace.Provider.SynchronizeStreamAsync(_gpuWorkspace.Stream, cancellationToken);
     }
 
     private bool _disposed;
