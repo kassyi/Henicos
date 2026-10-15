@@ -17,9 +17,22 @@ public class MSBuildTransitiveCopyTests : IDisposable
         _testRoot = Path.Combine(Path.GetTempPath(), "GSharpIntegrationTests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testRoot);
 
-        // Find repo root (assuming test assembly is in tests/Kassyi.GSharp.Tests.Integration/bin/Debug/net10.0)
-        var currentDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? AppContext.BaseDirectory;
-        _repoRoot = Path.GetFullPath(Path.Combine(currentDir, "..", "..", "..", "..", ".."));
+        _repoRoot = GetRepositoryRoot();
+    }
+
+    private static string GetRepositoryRoot()
+    {
+        var current = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (current != null)
+        {
+            if (current.GetFiles("Henicos.slnx").Length > 0)
+            {
+                return current.FullName;
+            }
+            current = current.Parent;
+        }
+
+        throw new InvalidOperationException("Repository root containing Henicos.slnx not found.");
     }
 
     public void Dispose()
@@ -31,9 +44,9 @@ public class MSBuildTransitiveCopyTests : IDisposable
                 Directory.Delete(_testRoot, true);
             }
         }
-        catch
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // Ignore cleanup failures
+            _output.WriteLine($"Warning: Failed to delete temporary test directory '{_testRoot}': {ex.Message}");
         }
     }
 

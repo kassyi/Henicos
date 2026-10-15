@@ -1,97 +1,70 @@
 #nullable enable
-using System.Linq;
 using Xunit.Abstractions;
 
 namespace Kassyi.GSharp.Tests.Infrastructure;
 
 /// <summary>
-/// Discovers test traits from <see cref="TestTargetAttribute"/>.
-/// Emits both 'TestTarget' and 'Category' keys for seamless CLI filtering and backward compatibility.
+/// Base discoverer that extracts strongly-typed enum traits from xUnit <see cref="IAttributeInfo"/>.
 /// </summary>
-public sealed class TestTargetDiscoverer : ITraitDiscoverer
+public abstract class EnumTraitDiscoverer<TEnum>(string primaryKey, bool emitCategoryAlias) : ITraitDiscoverer
+    where TEnum : struct, Enum
 {
     public IEnumerable<KeyValuePair<string, string>> GetTraits(IAttributeInfo traitAttribute)
     {
-        var args = traitAttribute.GetConstructorArguments().ToArray();
-        if (args.Length == 0 || args[0] == null)
+        if (traitAttribute is null)
         {
             yield break;
         }
 
-        string? valueStr = args[0] switch
+        object? firstArg = null;
+        bool hasArg = false;
+        foreach (var arg in traitAttribute.GetConstructorArguments())
         {
-            ExecutionTarget target => target.ToString(),
-            int intVal => Enum.GetName(typeof(ExecutionTarget), intVal),
-            _ => args[0]?.ToString()
+            firstArg = arg;
+            hasArg = true;
+            break;
+        }
+
+        if (!hasArg || firstArg is null)
+        {
+            yield break;
+        }
+
+        string? valueStr = firstArg switch
+        {
+            TEnum enumVal when Enum.IsDefined(typeof(TEnum), enumVal) => enumVal.ToString(),
+            int intVal => Enum.GetName(typeof(TEnum), intVal),
+            string strVal when Enum.TryParse<TEnum>(strVal, ignoreCase: false, out var parsed) && Enum.IsDefined(typeof(TEnum), parsed) => parsed.ToString(),
+            _ => null
         };
 
-        if (valueStr is null || valueStr.Length == 0)
+        if (string.IsNullOrEmpty(valueStr))
         {
             yield break;
         }
 
-        yield return new KeyValuePair<string, string>("TestTarget", valueStr);
-        yield return new KeyValuePair<string, string>("Category", valueStr);
+        yield return new KeyValuePair<string, string>(primaryKey, valueStr);
+        if (emitCategoryAlias)
+        {
+            yield return new KeyValuePair<string, string>("Category", valueStr);
+        }
     }
 }
+
+/// <summary>
+/// Discovers test traits from <see cref="TestTargetAttribute"/>.
+/// Emits both 'TestTarget' and 'Category' keys for seamless CLI filtering and backward compatibility.
+/// </summary>
+public sealed class TestTargetDiscoverer() : EnumTraitDiscoverer<ExecutionTarget>("TestTarget", emitCategoryAlias: true);
 
 /// <summary>
 /// Discovers test traits from <see cref="CategoryAttribute"/>.
 /// Emits the 'Category' key.
 /// </summary>
-public sealed class CategoryDiscoverer : ITraitDiscoverer
-{
-    public IEnumerable<KeyValuePair<string, string>> GetTraits(IAttributeInfo traitAttribute)
-    {
-        var args = traitAttribute.GetConstructorArguments().ToArray();
-        if (args.Length == 0 || args[0] == null)
-        {
-            yield break;
-        }
-
-        string? valueStr = args[0] switch
-        {
-            TestCategory category => category.ToString(),
-            int intVal => Enum.GetName(typeof(TestCategory), intVal),
-            _ => args[0]?.ToString()
-        };
-
-        if (valueStr is null || valueStr.Length == 0)
-        {
-            yield break;
-        }
-
-        yield return new KeyValuePair<string, string>("Category", valueStr);
-    }
-}
+public sealed class CategoryDiscoverer() : EnumTraitDiscoverer<TestCategory>("Category", emitCategoryAlias: false);
 
 /// <summary>
 /// Discovers test traits from <see cref="ScenarioAttribute"/>.
 /// Emits both 'Scenario' and 'Category' keys for seamless CLI filtering and backward compatibility.
 /// </summary>
-public sealed class ScenarioDiscoverer : ITraitDiscoverer
-{
-    public IEnumerable<KeyValuePair<string, string>> GetTraits(IAttributeInfo traitAttribute)
-    {
-        var args = traitAttribute.GetConstructorArguments().ToArray();
-        if (args.Length == 0 || args[0] == null)
-        {
-            yield break;
-        }
-
-        string? valueStr = args[0] switch
-        {
-            TestScenario scenario => scenario.ToString(),
-            int intVal => Enum.GetName(typeof(TestScenario), intVal),
-            _ => args[0]?.ToString()
-        };
-
-        if (valueStr is null || valueStr.Length == 0)
-        {
-            yield break;
-        }
-
-        yield return new KeyValuePair<string, string>("Scenario", valueStr);
-        yield return new KeyValuePair<string, string>("Category", valueStr);
-    }
-}
+public sealed class ScenarioDiscoverer() : EnumTraitDiscoverer<TestScenario>("Scenario", emitCategoryAlias: true);
