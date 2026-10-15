@@ -46,7 +46,7 @@
 
   <Target Name="GenerateNativeApi" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)..\..\NativeApi\**\*.yml" Outputs="$(IntermediateOutputPath)GeneratedNativeApi.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedNativeApi" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)..\..\Compiler\Kassyi.GSharp.Compiler.Generators\bin\$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)..\..\NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../../Compiler/Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)../../NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedNativeApi.stamp" AlwaysCreate="true" />
   </Target>
 

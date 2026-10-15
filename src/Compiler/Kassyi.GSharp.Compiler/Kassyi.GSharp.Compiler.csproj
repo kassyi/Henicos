@@ -75,7 +75,7 @@
 
   <Target Name="GenerateDiagnostics" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)Diagnostics\diagnostics.json;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\bin\$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedDiagnostics.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedDiagnostics" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; diagnostics &quot;$(MSBuildThisFileDirectory)Diagnostics\diagnostics.json&quot; &quot;$(IntermediateOutputPath)GeneratedDiagnostics&quot;" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; diagnostics &quot;$(MSBuildThisFileDirectory)Diagnostics/diagnostics.json&quot; &quot;$(IntermediateOutputPath)GeneratedDiagnostics&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" AlwaysCreate="true" />
   </Target>
 
