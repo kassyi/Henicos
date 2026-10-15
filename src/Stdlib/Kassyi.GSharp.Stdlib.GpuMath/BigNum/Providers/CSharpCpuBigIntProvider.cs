@@ -131,11 +131,13 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public unsafe uint ReadWord(IntPtr devicePointer, int wordOffset = 0) =>
+    /// <remarks>Host memory is accessed directly; <paramref name="stream"/> is ignored.</remarks>
+    public unsafe uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0) =>
         *(uint*)IntPtr.Add(devicePointer, wordOffset * 4);
 
     /// <inheritdoc/>
-    public unsafe void WriteWord(IntPtr devicePointer, int wordOffset, uint value) =>
+    /// <remarks>Host memory is accessed directly; <paramref name="stream"/> is ignored.</remarks>
+    public unsafe void WriteWord(IntPtr devicePointer, int wordOffset, uint value, IntPtr stream = 0) =>
         *(uint*)IntPtr.Add(devicePointer, wordOffset * 4) = value;
 
     /// <inheritdoc/>

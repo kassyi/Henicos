@@ -351,7 +351,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     /// <returns><see langword="true"/> if the least significant bit is 0; otherwise, <see langword="false"/>.</returns>
     public bool GetIsEven()
     {
-        var word = Workspace.Provider.ReadWord(DevicePointer);
+        var word = Workspace.Provider.ReadWord(DevicePointer, stream: Workspace.Stream);
         return (word & 1) == 0;
     }
 
@@ -361,7 +361,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     /// <returns><see langword="true"/> if the MSB of the highest word is set; otherwise, <see langword="false"/>.</returns>
     public bool GetIsNegative()
     {
-        var word = Workspace.Provider.ReadWord(DevicePointer, NumWords - 1);
+        var word = Workspace.Provider.ReadWord(DevicePointer, NumWords - 1, Workspace.Stream);
         return (word & 0x80000000) != 0;
     }
 
@@ -371,7 +371,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     /// <param name="value"><see langword="true"/> to set the sign bit; <see langword="false"/> to clear it.</param>
     public void SetIsNegative(bool value)
     {
-        var word = Workspace.Provider.ReadWord(DevicePointer, NumWords - 1);
+        var word = Workspace.Provider.ReadWord(DevicePointer, NumWords - 1, Workspace.Stream);
         if (value)
         {
             word |= 0x80000000;
@@ -381,7 +381,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
             word &= 0x7FFFFFFF;
         }
 
-        Workspace.Provider.WriteWord(DevicePointer, NumWords - 1, word);
+        Workspace.Provider.WriteWord(DevicePointer, NumWords - 1, word, Workspace.Stream);
     }
 
     /// <summary>

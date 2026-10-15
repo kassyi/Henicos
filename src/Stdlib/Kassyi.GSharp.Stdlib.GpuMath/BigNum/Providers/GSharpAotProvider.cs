@@ -70,12 +70,12 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
         MemoryProvider.CopyDeviceToDevice(destPointer, srcPointer, numWords, stream);
 
     /// <inheritdoc />
-    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0) =>
-        MemoryProvider.ReadWord(devicePointer, wordOffset);
+    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0) =>
+        MemoryProvider.ReadWord(devicePointer, wordOffset, stream);
 
     /// <inheritdoc />
-    public void WriteWord(IntPtr devicePointer, int wordOffset, uint value) =>
-        MemoryProvider.WriteWord(devicePointer, wordOffset, value);
+    public void WriteWord(IntPtr devicePointer, int wordOffset, uint value, IntPtr stream = 0) =>
+        MemoryProvider.WriteWord(devicePointer, wordOffset, value, stream);
 
     /// <inheritdoc />
     public void SynchronizeStream(IntPtr stream) =>

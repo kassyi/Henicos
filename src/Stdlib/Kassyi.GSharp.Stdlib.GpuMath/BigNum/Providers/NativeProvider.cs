@@ -76,7 +76,8 @@ public class NativeProvider : IGpuExecutionProvider
 
 
     /// <inheritdoc/>
-    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0)
+    /// <remarks>The legacy native library copies synchronously; <paramref name="stream"/> is ignored.</remarks>
+    public uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0)
     {
         var temp = new uint[1];
         CopyDeviceToHost(temp, IntPtr.Add(devicePointer, wordOffset * 4), 1);
@@ -84,7 +85,8 @@ public class NativeProvider : IGpuExecutionProvider
     }
 
     /// <inheritdoc/>
-    public void WriteWord(IntPtr devicePointer, int wordOffset, uint value)
+    /// <remarks>The legacy native library copies synchronously; <paramref name="stream"/> is ignored.</remarks>
+    public void WriteWord(IntPtr devicePointer, int wordOffset, uint value, IntPtr stream = 0)
     {
         var temp = new[] { value };
         CopyHostToDevice(IntPtr.Add(devicePointer, wordOffset * 4), temp, 1);

@@ -77,8 +77,14 @@ public interface IGpuMemoryProvider
     /// </summary>
     /// <param name="devicePointer">The base device memory pointer.</param>
     /// <param name="wordOffset">The zero-based 32-bit word offset.</param>
+    /// <param name="stream">
+    /// The stream the read is ordered on, or <see cref="IntPtr.Zero"/> for the legacy null stream.
+    /// A stream observes exactly the work enqueued on it and does not wait for unrelated streams.
+    /// The null stream additionally waits for all work on every blocking stream of the context.
+    /// </param>
     /// <returns>The 32-bit unsigned integer read from the device.</returns>
-    uint ReadWord(IntPtr devicePointer, int wordOffset = 0);
+    /// <remarks>Synchronous: the value is available when the method returns.</remarks>
+    uint ReadWord(IntPtr devicePointer, int wordOffset = 0, IntPtr stream = 0);
 
     /// <summary>
     /// Writes a single 32-bit limb value directly to device memory at the given word offset.
@@ -86,7 +92,14 @@ public interface IGpuMemoryProvider
     /// <param name="devicePointer">The base device memory pointer.</param>
     /// <param name="wordOffset">The zero-based 32-bit word offset.</param>
     /// <param name="value">The 32-bit unsigned integer value to write.</param>
-    void WriteWord(IntPtr devicePointer, int wordOffset, uint value);
+    /// <param name="stream">
+    /// The stream the write is ordered on, or <see cref="IntPtr.Zero"/> for the legacy null stream.
+    /// </param>
+    /// <remarks>
+    /// With a stream the write is only enqueued and the host is not blocked; it is visible to later work enqueued on the
+    /// same stream. Without a stream the write completes before the method returns.
+    /// </remarks>
+    void WriteWord(IntPtr devicePointer, int wordOffset, uint value, IntPtr stream = 0);
 
     /// <summary>
     /// Blocks the host thread until all previously submitted tasks in the specified CUDA stream have completed.
