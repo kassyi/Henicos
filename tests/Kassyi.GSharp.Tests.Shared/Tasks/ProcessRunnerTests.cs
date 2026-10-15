@@ -15,11 +15,7 @@ public class ProcessRunnerTests
     public async Task Test_ProcessRunner_Echo_Success()
     {
         var runner = ProcessRunner.Default;
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = "/c echo Hello World"
-        };
+        var startInfo = ShellCommand.Echo("Hello World");
 
         var result = await runner.RunAsync(startInfo);
         
@@ -33,10 +29,7 @@ public class ProcessRunnerTests
     public async Task Test_ProcessRunner_FileNotFound_ThrowsException()
     {
         var runner = ProcessRunner.Default;
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "this_executable_does_not_exist.exe"
-        };
+        var startInfo = ShellCommand.Missing();
 
         await Assert.ThrowsAsync<System.ComponentModel.Win32Exception>(() => runner.RunAsync(startInfo));
     }
@@ -48,17 +41,13 @@ public class ProcessRunnerTests
         // Generate a large output to fill the buffer (usually 4KB on Windows).
         // If we read synchronously, this would deadlock.
         var runner = ProcessRunner.Default;
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = "/c \"for /L %i in (1,1,1000) do @echo Output line %i\""
-        };
+        var startInfo = ShellCommand.Spam(1000);
 
         // Run synchronously to prove the synchronous path doesn't deadlock inside.
         var result = runner.Run(startInfo);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Contains("Output line 1000", result.StandardOutput);
+        Assert.Contains("out line 1000", result.StandardOutput);
     }
 
     [Fact]
@@ -66,11 +55,7 @@ public class ProcessRunnerTests
     public void Test_ProcessRunner_Run_LargeStdoutAndStderr_DoesNotDeadlock()
     {
         // Both pipes exceed their buffers, so reading one stream after the other would block the child forever.
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = "/c \"for /L %i in (1,1,3000) do @(echo out line %i & echo err line %i 1>&2)\""
-        };
+        var startInfo = ShellCommand.Spam(3000);
 
         var result = RunWithTimeout(startInfo);
 
@@ -83,8 +68,8 @@ public class ProcessRunnerTests
     [Scenario(TestScenario.Boundary)]
     public async Task Test_ProcessRunner_Run_ProducesSameTextAsRunAsync()
     {
-        var startInfo = new ProcessStartInfo { FileName = "cmd.exe", Arguments = "/c echo last line" };
-        var asyncStartInfo = new ProcessStartInfo { FileName = "cmd.exe", Arguments = "/c echo last line" };
+        var startInfo = ShellCommand.Echo("last line");
+        var asyncStartInfo = ShellCommand.Echo("last line");
 
         var sync = ProcessRunner.Default.Run(startInfo);
         var async = await ProcessRunner.Default.RunAsync(asyncStartInfo);
@@ -99,7 +84,7 @@ public class ProcessRunnerTests
     public void Test_ProcessRunner_Run_CanceledWhileRunning_KillsProcess()
     {
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
-        var startInfo = new ProcessStartInfo { FileName = "ping.exe", Arguments = "-n 60 127.0.0.1" };
+        var startInfo = ShellCommand.Sleep(60);
         var stopwatch = Stopwatch.StartNew();
 
         Assert.ThrowsAny<OperationCanceledException>(() => ProcessRunner.Default.Run(startInfo, cts.Token));
@@ -113,7 +98,7 @@ public class ProcessRunnerTests
     {
         using var cts = new CancellationTokenSource();
         cts.Cancel();
-        var startInfo = new ProcessStartInfo { FileName = "this_executable_does_not_exist.exe" };
+        var startInfo = ShellCommand.Missing();
 
         // Cancellation wins over the start failure, which proves the process was never started.
         Assert.ThrowsAny<OperationCanceledException>(() => ProcessRunner.Default.Run(startInfo, cts.Token));
@@ -123,7 +108,7 @@ public class ProcessRunnerTests
     [Scenario(TestScenario.SadPath)]
     public void Test_ProcessRunner_Run_FileNotFound_ThrowsWin32Exception()
     {
-        var startInfo = new ProcessStartInfo { FileName = "this_executable_does_not_exist.exe" };
+        var startInfo = ShellCommand.Missing();
 
         Assert.Throws<System.ComponentModel.Win32Exception>(() => ProcessRunner.Default.Run(startInfo));
     }
@@ -137,7 +122,7 @@ public class ProcessRunnerTests
 
         Parallel.For(0, exitCodes.Length, i =>
         {
-            var startInfo = new ProcessStartInfo { FileName = "cmd.exe", Arguments = $"/c echo item {i}" };
+            var startInfo = ShellCommand.Echo($"item {i}");
             var result = ProcessRunner.Default.Run(startInfo);
             exitCodes[i] = result.StandardOutput.Contains($"item {i}") ? result.ExitCode : -1;
         });
