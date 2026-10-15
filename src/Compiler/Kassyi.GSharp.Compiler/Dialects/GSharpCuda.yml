@@ -1,5 +1,6 @@
 Dialect: GSharpCuda
 Inherits: StandardCpp
+Capabilities: AllGpuFeatures
 RequiredHeaders:
   - "<cuda_runtime.h>"
 StructPrefix: "__device__ "

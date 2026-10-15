@@ -89,20 +89,20 @@ public static partial class AotContexts
 public const string InterlockedKernel_Source = @"extern ""C"" __global__ void InvocationAndIntrinsicsKernels_InterlockedKernel(GSharpArray<int> intBuf, GSharpArray<unsigned int> uintBuf, GSharpArray<long long> longBuf, GSharpArray<unsigned long long> ulongBuf){
 int tid = threadIdx.x;
 __gsharp_atomicAdd(&intBuf[0],1);
-__gsharp_atomicAdd((unsigned long long*)(&longBuf[0]),2L);
+__gsharp_atomicAdd((unsigned long long*)(&longBuf[0]),2ll);
 if(tid==0)
 {
 atomicExch(&intBuf[1],100);
 atomicExch(&uintBuf[1],200u);
-atomicExch((unsigned long long*)(&longBuf[1]),300L);
-atomicExch((unsigned long long*)(&ulongBuf[1]),400ul);
+atomicExch((unsigned long long*)(&longBuf[1]),300ll);
+atomicExch((unsigned long long*)(&ulongBuf[1]),400ull);
 }
 if(tid==0)
 {
 __gsharp_atomicCAS(&intBuf[2],500,0);
 __gsharp_atomicCAS(&uintBuf[2],600u,0u);
-__gsharp_atomicCAS((unsigned long long*)(&longBuf[2]),700L,0L);
-__gsharp_atomicCAS((unsigned long long*)(&ulongBuf[2]),800ul,0ul);
+__gsharp_atomicCAS((unsigned long long*)(&longBuf[2]),700ll,0ll);
+__gsharp_atomicCAS((unsigned long long*)(&ulongBuf[2]),800ull,0ull);
 }
 }
 ";
@@ -317,7 +317,7 @@ int tid = threadIdx.x;
 __gsharp_atomicAdd(&array[tid],10);
 __gsharp_atomicAdd(&structArray[tid].ValueI,1);
 atomicExch(&structArray[tid].ValueU,42u);
-__gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99L,0L);
+__gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99ll,0ll);
 }
 ";
 public static readonly string InterlockedEdgeCasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InterlockedEdgeCasesKernel_Source;

@@ -235,11 +235,11 @@ finally
 #pragma warning restore CS8500
 public const string PtxIntrinsicsExpansionKernel_Source = @"extern ""C"" __global__ void NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel(GSharpArray<unsigned int> u32Out, GSharpArray<unsigned long long> u64Out, GSharpArray<int> i32Out){
 unsigned int u32Val = 0x12345678u;
-unsigned long long u64Val = 0x0123456789ABCDEFul;
+unsigned long long u64Val = 0x0123456789ABCDEFull;
 u32Out[0]=__gsharp_bfe(u32Val,4,8);
 u64Out[0]=__gsharp_bfe64(u64Val,8,16);
 u32Out[1]=__gsharp_bfi(0xFFu,u32Val,4,8);
-u64Out[1]=__gsharp_bfi64(0xFFFFul,u64Val,8,16);
+u64Out[1]=__gsharp_bfi64(0xFFFFull,u64Val,8,16);
 u32Out[2]=__gsharp_lop3(u32Val,0x0F0F0F0Fu,0xAAAAAAAAu,0x54);
 u32Out[3]=__gsharp_tzc_32(u32Val);
 u64Out[2]=__gsharp_tzc_64(u64Val);

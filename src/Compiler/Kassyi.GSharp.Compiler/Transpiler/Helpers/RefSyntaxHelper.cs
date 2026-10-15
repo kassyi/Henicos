@@ -7,14 +7,17 @@ internal static class RefSyntaxHelper
 {
     /// <summary>
     /// Determines whether the given expression requires an address-of operator (&amp;) when passed as a pointer or reference argument.
-    /// Returns false if the expression is already a pointer or a ref-like local/parameter.
+    /// Returns false if the expression is already a pointer or an <c>in</c> parameter.
     /// </summary>
+    /// <remarks>
+    /// <c>ref</c>/<c>out</c> parameters and ref locals are emitted dereferenced as <c>(*x)</c> by
+    /// <see cref="RoslynToCudaVisitor.VisitIdentifierName"/>, so they still require <c>&amp;</c> to recover the pointer (<c>&amp;(*x)</c>).
+    /// </remarks>
     public static bool NeedsAddressOf(ExpressionSyntax expression, SemanticModel semanticModel)
     {
         var symbol = semanticModel.GetSymbol(expression);
 
-        if (symbol is IParameterSymbol { RefKind: not RefKind.None } ||
-            symbol is ILocalSymbol { IsRef: true })
+        if (symbol is IParameterSymbol { RefKind: RefKind.In or RefKind.RefReadOnlyParameter })
         {
             return false;
         }

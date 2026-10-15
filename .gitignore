@@ -67,6 +67,9 @@ dist-ssr/
 # --- BEGIN Antigravity global AGENTS MANAGED FILES ---
 # These files are auto-synced by setup.js. DO NOT EDIT MANUALLY.
 /.agents/bin/
+/.agents/hooks.json
+/.agents/hooks/
+/.agents/rules/command-intent.md
 /.agents/skills/architecture-mapper/
 /.agents/skills/code-review/
 /.agents/skills/design-pattern-cva/
@@ -90,6 +93,39 @@ dist-ssr/
 /.agents/workflows/qodo.ja.prompt.md
 /.agents/workflows/write-csharp-xml-comment.en.prompt.md
 /.agents/workflows/write-csharp-xml-comment.ja.prompt.md
+/.claude/commands/ci.en.prompt.md
+/.claude/commands/ci.ja.prompt.md
+/.claude/commands/clean-branches.prompt.md
+/.claude/commands/commit.en.prompt.md
+/.claude/commands/commit.ja.prompt.md
+/.claude/commands/design-pattern-plan.prompt.md
+/.claude/commands/design-pattern-refactor.prompt.md
+/.claude/commands/grill-you.ja.prompt.md
+/.claude/commands/issue.prompt.md
+/.claude/commands/jules.ja.prompt.md
+/.claude/commands/kickoff.prompt.md
+/.claude/commands/make-pr.prompt.md
+/.claude/commands/phased-code-review-flash.prompt.md
+/.claude/commands/phased-code-review-pro.prompt.md
+/.claude/commands/qodo.en.prompt.md
+/.claude/commands/qodo.ja.prompt.md
+/.claude/commands/report-pr.ja.prompt.md
+/.claude/commands/roadmap.ja.prompt.md
+/.claude/commands/sync-spec.ja.prompt.md
+/.claude/commands/test-failed.ja.prompt.md
+/.claude/commands/write-bcl-xml-comment.en.prompt.md
+/.claude/commands/write-bcl-xml-comment.ja.prompt.md
+/.claude/commands/write-csharp-xml-comment.en.prompt.md
+/.claude/commands/write-csharp-xml-comment.ja.prompt.md
+/.claude/skills/architecture-mapper/
+/.claude/skills/code-review/
+/.claude/skills/design-pattern-cva/
+/.claude/skills/file-enumerator/
+/.claude/skills/gpu-code-review/
+/.claude/skills/gsharp-transpiler-guidelines/
+/.claude/skills/phased-session-manager/
+/.claude/skills/qa-testing-guidelines/
+/.claude/skills/qodo/
 # --- END Antigravity global AGENTS MANAGED FILES ---
 
 # DocTest runtime files
