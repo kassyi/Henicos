@@ -103,7 +103,7 @@ public static class YamlDialectGenerator
             var capabilities = GetInheritedValue(def, definitions, d => d.Capabilities);
             if (capabilities != null)
             {
-                writer.Line($"public override Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities Capabilities => Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities.{capabilities};");
+                writer.Line($"public override Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities Capabilities => {FormatCapabilityFlags(capabilities)};");
             }
 
             // Types
@@ -161,6 +161,37 @@ public static class YamlDialectGenerator
         {
             headers.Add(h);
         }
+    }
+
+    // Converts YAML flags such as "HardwareAtomics, SharedMemory" (',' or '|' separated) into a C# flags OR expression.
+    private static string FormatCapabilityFlags(string capabilities)
+    {
+        const string EnumType = "Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities";
+        var expression = new StringBuilder();
+        var start = 0;
+        for (var i = 0; i <= capabilities.Length; i++)
+        {
+            if (i < capabilities.Length && capabilities[i] != ',' && capabilities[i] != '|')
+            {
+                continue;
+            }
+
+            var name = capabilities.AsSpan(start, i - start).Trim();
+            start = i + 1;
+            if (name.IsEmpty)
+            {
+                continue;
+            }
+
+            if (expression.Length > 0)
+            {
+                expression.Append(" | ");
+            }
+
+            expression.Append(EnumType).Append('.').Append(name);
+        }
+
+        return expression.Length > 0 ? expression.ToString() : EnumType + ".None";
     }
 
     private static string? GetInheritedValue(DialectDefinition def, Dictionary<string, DialectDefinition> definitions,

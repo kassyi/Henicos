@@ -1,5 +1,5 @@
 Dialect: StandardCpp
-Capabilities: None
+Capabilities: HardwareAtomics, SharedMemory
 RequiredHeaders: []
 StructPrefix: ""
 MethodPrefix: "__device__ "
