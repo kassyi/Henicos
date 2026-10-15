@@ -16,46 +16,40 @@ description: "Returns the absolute value of a specified number using hardware fa
 Returns the absolute value of a specified number using hardware fast-math.
 
 ```csharp
-[GpuKernel]
 public static float Abs(float x);
 ```
 
 #### Parameters
 
-`x` <i>float</i><br>
-A single-precision floating-point number.
+`x` _float_<br>
+The single-precision floating-point value.
 
 #### Returns
 
-<i>float</i><br>
-The computed fast-math absolute value.
-
-#### Exceptions
-
-[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+_float_<br>
+The absolute value of `x`.
 
 ## Examples
 
+### Computing Fast Absolute Value
+
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
-// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
 using System;
 using Kassyi.GSharp.Core;
 
-try {
-    // Abs uses fast hardware intrinsics on GPU
-    float f = FastMath.Abs(-5.5f);
-    Console.WriteLine($"FastMath.Abs(-5.5f) = {f:F1}");
-} catch (GpuOnlyException) {
-    Console.WriteLine("FastMath functions can only be executed on the GPU.");
-}
+// Execution Context: G# Kernel (GPU) or Host (CPU fallback)
+float f = FastMath.Abs(-5.5f);
+Console.WriteLine($"FastMath.Abs(-5.5f) = {f:F1}");
 ```
+
+## Remarks
+
+Usable in both CPU fallback (delegating to `MathF.Abs`) and GPU device kernels (mapped to the CUDA `fabsf` intrinsic).
+
 ## See also
-
-
 
 ### BCL API > Math Primitives
 

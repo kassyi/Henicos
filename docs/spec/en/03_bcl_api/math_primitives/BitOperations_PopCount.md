@@ -21,9 +21,9 @@ Returns the population count (number of bits set) of a mask.
 
 ## Overloads
 
-| Name                               | Description                                                           |
-| ---------------------------------- | --------------------------------------------------------------------- |
-| [PopCount(uint)](#popcount-uint)   | Returns the population count (number of bits set) of a mask. (32-bit) |
+| Name | Description |
+| --- | --- |
+| [PopCount(uint)](#popcount-uint) | Returns the population count (number of bits set) of a mask. (32-bit) |
 | [PopCount(ulong)](#popcount-ulong) | Returns the population count (number of bits set) of a mask. (64-bit) |
 
 ## PopCount(uint)

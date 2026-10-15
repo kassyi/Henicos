@@ -65,12 +65,12 @@ This mental model brings compile-time memory safety guarantees to C# without req
 
 Lifecycle of resources allocated and scoped within a single method execution.
 
-| Pattern                        | Code Example                        | Analyzer Evaluation & Diagnostics                                                |
-| :----------------------------- | :---------------------------------- | :------------------------------------------------------------------------------- |
-| **Discarded Allocation**       | `new GpuWorkspace();`                 | ❌ **Error**: Immediate leak. Instantiated without binding or scope management.  |
-| **Undisposed Local**           | `var ctx = new GpuWorkspace();`       | ❌ **Error**: Local variable leaves scope without invoking `Dispose()`.          |
-| **Scoped Disposal (Standard)** | `using var ctx = new GpuWorkspace();` | ⭕ **OK**: Guaranteed automatic disposal upon scope exit.                        |
-| **Explicit Manual Disposal**   | `var ctx = ...; ctx.Dispose();`     | ⭕ **OK**: Satisfies disposal criteria (Warning may suggest `using` preference). |
+| Pattern | Code Example | Analyzer Evaluation & Diagnostics |
+| :--- | :--- | :--- |
+| **Discarded Allocation** | `new GpuWorkspace();` | ❌ **Error**: Immediate leak. Instantiated without binding or scope management. |
+| **Undisposed Local** | `var ctx = new GpuWorkspace();` | ❌ **Error**: Local variable leaves scope without invoking `Dispose()`. |
+| **Scoped Disposal (Standard)** | `using var ctx = new GpuWorkspace();` | ⭕ **OK**: Guaranteed automatic disposal upon scope exit. |
+| **Explicit Manual Disposal** | `var ctx = ...; ctx.Dispose();` | ⭕ **OK**: Satisfies disposal criteria (Warning may suggest `using` preference). |
 
 **Code Examples:**
 
@@ -103,11 +103,11 @@ void ManualScope() {
 
 Patterns where the allocating method does not dispose of the resource, but cleanly transfers ownership responsibility to the caller or downstream consumer.
 
-| Pattern                            | Code Example                      | Analyzer Evaluation & Diagnostics                                                                                       |
-| :--------------------------------- | :-------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
-| **Return Value Transfer**          | `return new GpuWorkspace();`        | ⭕ **OK**: Ownership propagates to the caller. The call-site variable is now subject to Layer 1 validation.             |
-| **Output Parameter (`out`)**       | `out var ctx = new GpuWorkspace();` | ⭕ **OK**: Ownership propagates to the caller's target variable.                                                        |
-| **Deferred Enumeration (`yield`)** | `yield return new GpuWorkspace();`  | ⭕ **OK**: Ownership transfers to the `IEnumerable` consumer. The consumer must explicitly dispose the yielded items. |
+| Pattern | Code Example | Analyzer Evaluation & Diagnostics |
+| :--- | :--- | :--- |
+| **Return Value Transfer** | `return new GpuWorkspace();` | ⭕ **OK**: Ownership propagates to the caller. The call-site variable is now subject to Layer 1 validation. |
+| **Output Parameter (`out`)** | `out var ctx = new GpuWorkspace();` | ⭕ **OK**: Ownership propagates to the caller's target variable. |
+| **Deferred Enumeration (`yield`)** | `yield return new GpuWorkspace();` | ⭕ **OK**: Ownership transfers to the `IEnumerable` consumer. The consumer must explicitly dispose the yielded items. |
 
 **Code Examples:**
 
@@ -144,12 +144,12 @@ public void ConsumeContexts() {
 
 Patterns where resources are retained as class fields and their lifecycle is tied to the containing object's lifetime.
 
-| Pattern                             | Code Example & Preconditions                                                 | Analyzer Evaluation & Diagnostics                                                                            |
-| :---------------------------------- | :--------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- |
-| **Missing `IDisposable` on Class**  | `class A { GpuWorkspace _c = new(); }`                                         | ❌ **Error (GSH0020)**: Class `A` holds a disposable GPU resource but does not implement `IDisposable`.      |
+| Pattern | Code Example & Preconditions | Analyzer Evaluation & Diagnostics |
+| :--- | :--- | :--- |
+| **Missing `IDisposable` on Class** | `class A { GpuWorkspace _c = new(); }` | ❌ **Error (GSH0020)**: Class `A` holds a disposable GPU resource but does not implement `IDisposable`. |
 | **Undisposed Field in `Dispose()`** | `class A : IDisposable { GpuWorkspace _c = new(); public void Dispose() { } }` | ❌ **Error (GSH0021)**: `Dispose()` AST does not contain an invocation of `_c.Dispose()` or `_c?.Dispose()`. |
-| **Clean Chained Disposal**          | `class A : IDisposable { ... public void Dispose() { _c.Dispose(); } }`      | ⭕ **OK**: Layer 3 validation passed. Resource lifecycle is safely chained.                                  |
-| **Unsafe Field Overwrite**          | `_c = new GpuWorkspace();` (Reassignment)                                      | ❌ **Error**: Reassigning an owned field without prior disposal leaks the previous instance.                 |
+| **Clean Chained Disposal** | `class A : IDisposable { ... public void Dispose() { _c.Dispose(); } }` | ⭕ **OK**: Layer 3 validation passed. Resource lifecycle is safely chained. |
+| **Unsafe Field Overwrite** | `_c = new GpuWorkspace();` (Reassignment) | ❌ **Error**: Reassigning an owned field without prior disposal leaks the previous instance. |
 
 **Code Examples:**
 
@@ -191,10 +191,10 @@ class D : IDisposable {
 
 Patterns where an existing resource is injected from the outside. Distinguishes between **Borrowing** and **Ownership Acquisition**.
 
-| Pattern                            | Code Example                              | Analyzer Evaluation & Diagnostics                                                                                                         |
-| :--------------------------------- | :---------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
-| **Standard Injection (Borrowing)** | `public A(GpuWorkspace c) { _c = c; }`      | ⚠️ **Default: Borrowed**: Class `A` does not own `_c`. Calling `_c.Dispose()` inside `A.Dispose()` is flagged as a double-dispose hazard. |
-| **Explicit Ownership Transfer**    | `public A([TakesOwnership] GpuWorkspace c)` | ⭕ **OK**: Explicit attribute transfers ownership. Class `A` is now required to dispose of `_c` in its `Dispose()` implementation.        |
+| Pattern | Code Example | Analyzer Evaluation & Diagnostics |
+| :--- | :--- | :--- |
+| **Standard Injection (Borrowing)** | `public A(GpuWorkspace c) { _c = c; }` | ⚠️ **Default: Borrowed**: Class `A` does not own `_c`. Calling `_c.Dispose()` inside `A.Dispose()` is flagged as a double-dispose hazard. |
+| **Explicit Ownership Transfer** | `public A([TakesOwnership] GpuWorkspace c)` | ⭕ **OK**: Explicit attribute transfers ownership. Class `A` is now required to dispose of `_c` in its `Dispose()` implementation. |
 
 **Code Examples:**
 
@@ -221,10 +221,10 @@ public class B([TakesOwnership] GpuWorkspace c) : IDisposable {
 
 Aggregation of multiple disposable GPU instances.
 
-| Pattern                         | Code Example                                                     | Analyzer Evaluation & Diagnostics                                                            |
-| :------------------------------ | :--------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
-| **Collection Ingestion**        | `var list = new List<GpuWorkspace>(); list.Add(new GpuWorkspace());` | ⚠️ **Not Tracked**: Collection element ownership is not currently tracked by the analyzer.   |
-| **Manual Loop Disposal**        | `foreach (var c in list) c.Dispose();`                           | ⭕ **Required**: The developer must manually ensure exhaustive traversal and disposal.         |
+| Pattern | Code Example | Analyzer Evaluation & Diagnostics |
+| :--- | :--- | :--- |
+| **Collection Ingestion** | `var list = new List<GpuWorkspace>(); list.Add(new GpuWorkspace());` | ⚠️ **Not Tracked**: Collection element ownership is not currently tracked by the analyzer. |
+| **Manual Loop Disposal** | `foreach (var c in list) c.Dispose();` | ⭕ **Required**: The developer must manually ensure exhaustive traversal and disposal. |
 
 **Code Examples:**
 
@@ -250,10 +250,10 @@ class SafeContainer : IDisposable {
 
 Handling partial failures during object initialization when multiple resources are allocated.
 
-| Pattern                        | Code Example                                                                     | Analyzer Evaluation & Diagnostics                                                                                      |
-| :----------------------------- | :------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| Pattern | Code Example | Analyzer Evaluation & Diagnostics |
+| :--- | :--- | :--- |
 | **Unguarded Multi-Allocation** | `_c1 = new GpuWorkspace(); _c2 = new GpuWorkspace(); /* If _c2 throws, _c1 leaks */` | ❌ **Error**: Multiple allocations in a constructor must be wrapped in `try { ... } catch { _c1?.Dispose(); throw; }`. |
-| **Safe Factory Pattern**       | `public static A Create() { ... }`                                               | ⭕ **OK**: Preferred architecture. Assembles resources within a protected `using`/`try` scope before constructing `A`. |
+| **Safe Factory Pattern** | `public static A Create() { ... }` | ⭕ **OK**: Preferred architecture. Assembles resources within a protected `using`/`try` scope before constructing `A`. |
 
 **Code Examples:**
 
@@ -296,12 +296,12 @@ class SafeAlloc : IDisposable {
 
 Honoring C#'s foundational philosophy: **"Safe by default, explicitly bounded in `unsafe` blocks for low-level systems programming."**
 
-| Pattern                             | Code Example                                  | Analyzer Evaluation & Transpilation Behavior                                                                                                                                                           |
-| :---------------------------------- | :-------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Unbounded Pointer Operation**     | `int* ptr = ...;` (Without `unsafe` block)    | ❌ **C# Compile Error**: Prohibited by standard C# language semantics.                                                                                                                                 |
-| **Stack Allocation (`stackalloc`)** | `unsafe { int* p = stackalloc int[10]; }`     | ⭕ **OK (No Warning)**: Transpiles directly to a C++ local stack array (`int p[10];`). Automatically reclaimed on scope exit.                                                                          |
-| **Memory Pinning (`fixed`)**        | `unsafe { fixed (byte* p = arr) { ... } }`    | ⭕ **OK (No Warning)**: GC pinning and unpinning are scoped to the block. Fully safe.                                                                                                                  |
-| **Dynamic Device-side Allocation**  | `unsafe { void* p = Gpu.Unsafe.Malloc(sz); }` | ⚠️ **Warning (GSH0029)**: Emits a compiler warning: _"Manual unmanaged memory allocation detected. Ensure corresponding Free is called."_ Preserves developer freedom for advanced kernel development. |
+| Pattern | Code Example | Analyzer Evaluation & Transpilation Behavior |
+| :--- | :--- | :--- |
+| **Unbounded Pointer Operation** | `int* ptr = ...;` (Without `unsafe` block) | ❌ **C# Compile Error**: Prohibited by standard C# language semantics. |
+| **Stack Allocation (`stackalloc`)** | `unsafe { int* p = stackalloc int[10]; }` | ⭕ **OK (No Warning)**: Transpiles directly to a C++ local stack array (`int p[10];`). Automatically reclaimed on scope exit. |
+| **Memory Pinning (`fixed`)** | `unsafe { fixed (byte* p = arr) { ... } }` | ⭕ **OK (No Warning)**: GC pinning and unpinning are scoped to the block. Fully safe. |
+| **Dynamic Device-side Allocation** | `unsafe { void* p = Gpu.Unsafe.Malloc(sz); }` | ⚠️ **Warning (GSH0029)**: Emits a compiler warning: _"Manual unmanaged memory allocation detected. Ensure corresponding Free is called."_ Preserves developer freedom for advanced kernel development. |
 
 **Code Examples:**
 
