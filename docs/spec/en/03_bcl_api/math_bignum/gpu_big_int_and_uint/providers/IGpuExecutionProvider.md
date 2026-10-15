@@ -26,7 +26,9 @@ public interface IGpuExecutionProvider
 | [AllocateMemory(Int32)](#allocatememoryint32)                                                                                                                  | Allocates unmanaged global device memory for the specified word count. |
 | [FreeMemory(IntPtr)](#freememoryintptr)                                                                                                                        | Frees the allocated unmanaged global device memory.                    |
 | [CopyHostToDevice(IntPtr, UInt32[], Int32)](#copyhosttodeviceintptr-uint32-int32)                                                                              | Copies limb data from host managed memory to GPU device memory.        |
-| [CopyDeviceToHost(UInt32[], IntPtr, Int32)](#copydevicetohostuint32-intptr-int32)                                                                              | Copies limb data from GPU device memory to host managed memory.        |
+| [CopyDeviceToHost(UInt32[], IntPtr, Int32, IntPtr)](#copydevicetohostuint32-intptr-int32-intptr)                                                               | Copies limb data from GPU device memory to host managed memory and waits for it. |
+| [CopyDeviceToHostAsync(Memory&lt;UInt32&gt;, IntPtr, Int32, IntPtr, CancellationToken)](#copydevicetohostasyncmemoryuint32-intptr-int32-intptr-cancellationtoken) | Asynchronously copies limb data to host memory without blocking the calling thread. |
+| [SynchronizeStreamAsync(IntPtr, CancellationToken)](#synchronizestreamasyncintptr-cancellationtoken)                                                           | Asynchronously waits until all work on a CUDA stream has completed.    |
 | [CopyDeviceToDevice(IntPtr, IntPtr, Int32)](#copydevicetodeviceintptr-intptr-int32)                                                                            | Copies limb data between two GPU device memory locations.              |
 | [Add(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#addgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)               | Computes addition on GPU.                                              |
 | [Sub(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#subgpuworkspace-gpuuintbiginteger-gpuuintbiginteger-gpuuintbiginteger)               | Computes subtraction on GPU.                                           |
@@ -97,12 +99,15 @@ The source data array on the host.
 `numWords` _Int32_<br>
 The number of 32-bit words to copy.
 
-## CopyDeviceToHost(UInt32[], IntPtr, Int32)
+> [!NOTE]
+> Signatures on this page that omit the trailing `stream` parameter predate the stream-ordered memory work (Issue #317) and are pending a full resync. The three members below reflect the current interface (`IGpuMemoryProvider`, which `IGpuExecutionProvider` inherits).
 
-Copies limb data from GPU device memory to host managed memory.
+## CopyDeviceToHost(UInt32[], IntPtr, Int32, IntPtr)
+
+Copies limb data from GPU device memory to host managed memory and waits until the data has arrived.
 
 ```csharp
-void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords);
+void CopyDeviceToHost(uint[] hostData, IntPtr devicePointer, int numWords, IntPtr stream = 0);
 ```
 
 #### Parameters
@@ -115,6 +120,74 @@ The source pointer on the device.
 
 `numWords` _Int32_<br>
 The number of 32-bit words to copy.
+
+`stream` _IntPtr_<br>
+The stream the copy is ordered on; the copy observes all work enqueued on it before the call.
+
+> [!IMPORTANT]
+> This method is synchronous: `hostData` holds the data when it returns, whether the array is pageable or page-locked, so callers need no additional stream synchronization. It blocks the calling thread until the stream drains; use [CopyDeviceToHostAsync](#copydevicetohostasyncmemoryuint32-intptr-int32-intptr-cancellationtoken) to avoid that.
+
+## CopyDeviceToHostAsync(Memory&lt;UInt32&gt;, IntPtr, Int32, IntPtr, CancellationToken)
+
+Asynchronously copies limb data from GPU device memory to host memory without blocking the calling thread.
+
+```csharp
+ValueTask CopyDeviceToHostAsync(Memory<uint> hostData, IntPtr devicePointer, int numWords, IntPtr stream, CancellationToken cancellationToken = default);
+```
+
+#### Parameters
+
+`hostData` _Memory&lt;UInt32&gt;_<br>
+The destination host memory, at least `numWords` words long.
+
+`devicePointer` _IntPtr_<br>
+The source pointer on the device.
+
+`numWords` _Int32_<br>
+The number of 32-bit words to copy.
+
+`stream` _IntPtr_<br>
+The stream the copy is ordered on; the copy observes all work enqueued on it before the call.
+
+`cancellationToken` _CancellationToken_<br>
+A token that detaches the awaiter. Device work is not canceled, and `hostData` is not written after cancellation.
+
+#### Returns
+
+_ValueTask_<br>
+A task that completes once `hostData` holds the data.
+
+#### Exceptions
+
+`ArgumentOutOfRangeException`<br>
+`numWords` exceeds the length of `hostData`.
+
+`OperationCanceledException`<br>
+`cancellationToken` was canceled.
+
+> [!NOTE]
+> The GSharpAot provider stages the copy through a pooled page-locked buffer and signals completion from the driver without parking a thread. The CPU and native providers complete synchronously.
+
+## SynchronizeStreamAsync(IntPtr, CancellationToken)
+
+Asynchronously waits until all previously submitted work in the specified CUDA stream has completed, without blocking the calling thread.
+
+```csharp
+ValueTask SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default);
+```
+
+#### Parameters
+
+`stream` _IntPtr_<br>
+The unmanaged stream handle to wait for. `IntPtr.Zero` completes immediately, like `SynchronizeStream`.
+
+`cancellationToken` _CancellationToken_<br>
+A token that detaches the awaiter; the stream keeps executing and remains usable.
+
+#### Returns
+
+_ValueTask_<br>
+A task that completes when the stream has drained.
 
 ## CopyDeviceToDevice(IntPtr, IntPtr, Int32)
 

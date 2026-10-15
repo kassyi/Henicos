@@ -161,7 +161,9 @@ public GpuBigUIntExpr Value { get; set; }
 | [PadTo(int)](#padtoint)                                                                 | Creates a new `GpuBigUInt` padded to the specified target words with zeros.                   |
 | [Square(int)](#squareint)                                                               | Computes self-squaring (`A * A`) in-place on the GPU.                                                |
 | [ToBigInteger(bool)](#tobigintegerbool)                                                 | Downloads the integer from the GPU and converts it to a BCL `BigInteger`.                            |
+| [ToBigIntegerAsync(bool, CancellationToken)](#tobigintegerasyncbool-cancellationtoken) | Like `ToBigInteger`, but waits for the GPU without blocking the calling thread.                      |
 | [ToHostArray()](#tohostarray)                                                           | Copies the limb data from GPU device memory back to a host managed array.                            |
+| [ToHostArrayAsync(CancellationToken)](#tohostarrayasynccancellationtoken)               | Like `ToHostArray`, but waits for the GPU without blocking the calling thread.                       |
 | [ToString()](#tostring)                                                                 | Returns a diagnostic string describing this GPU big integer buffer.                                  |
 
 ## Clear(int, int?)
@@ -465,6 +467,35 @@ Whether the resulting `BigInteger` should be negative.
 _BigInteger_<br>
 A BCL `BigInteger` representation.
 
+## ToBigIntegerAsync(bool, CancellationToken)
+
+Asynchronously downloads the integer from the GPU and converts it to a BCL `BigInteger`, without blocking the calling thread while work queued on the workspace stream completes.
+
+```csharp
+public async ValueTask<BigInteger> ToBigIntegerAsync(bool isNegative = false, CancellationToken cancellationToken = default);
+```
+
+#### Parameters
+
+`isNegative` _bool_<br>
+Whether the resulting `BigInteger` should be negative.
+
+`cancellationToken` _CancellationToken_<br>
+A token that stops waiting. Queued device work is not canceled.
+
+#### Returns
+
+_ValueTask&lt;BigInteger&gt;_<br>
+A BCL `BigInteger` representation.
+
+#### Exceptions
+
+`OperationCanceledException`<br>
+`cancellationToken` was canceled.
+
+> [!NOTE]
+> The copy is ordered on the workspace stream, so it observes all work enqueued before the call. It is staged through a pooled page-locked buffer (see `CudaHostTransfer`), and a canceled call never writes to caller-visible memory.
+
 ## ToHostArray()
 
 Copies the limb data from GPU device memory back to a host managed array.
@@ -477,6 +508,29 @@ public uint[] ToHostArray();
 
 _uint[]_<br>
 A 32-bit unsigned integer array of length `NumWords` in little-endian limb order.
+
+## ToHostArrayAsync(CancellationToken)
+
+Asynchronously copies the limb data from GPU device memory back to a newly allocated host array, without blocking the calling thread.
+
+```csharp
+public async ValueTask<uint[]> ToHostArrayAsync(CancellationToken cancellationToken = default);
+```
+
+#### Parameters
+
+`cancellationToken` _CancellationToken_<br>
+A token that stops waiting. Queued device work is not canceled.
+
+#### Returns
+
+_ValueTask&lt;uint[]&gt;_<br>
+A 32-bit unsigned integer array of length `NumWords` in little-endian limb order.
+
+#### Exceptions
+
+`OperationCanceledException`<br>
+`cancellationToken` was canceled.
 
 ## ToString()
 
