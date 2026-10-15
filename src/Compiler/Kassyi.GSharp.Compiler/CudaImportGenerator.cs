@@ -1,6 +1,7 @@
 namespace Kassyi.GSharp.Compiler;
 
 using Extensions;
+using NativeApi;
 
 /// <summary>
 /// Roslyn source generator that generates boilerplate for invoking CUDA kernels via [CudaImport].
@@ -106,7 +107,7 @@ public class CudaImportGenerator : IIncrementalGenerator
 
                 if (generatedFatbins.Add(moduleName))
                 {
-                    EmitModuleCacheField(writer, moduleName);
+                    KernelLaunchEmitter.EmitModuleCacheField(writer, moduleName);
                 }
             }
 
@@ -134,12 +135,18 @@ public class CudaImportGenerator : IIncrementalGenerator
                 ExtractAttributeArguments(attributeData, methodSyntax, methodSymbol.Name, out var moduleName,
                     out var entryPoint, out var packContext);
 
+                var parameters = CreateLaunchParameters(methodSymbol);
                 if (packContext)
                 {
-                    EmitNativeContextStruct(writer, methodSymbol);
+                    KernelLaunchEmitter.EmitNativeContextStruct(writer, methodSymbol.Name, parameters);
                 }
 
-                EmitMethodImplementation(writer, methodSyntax, methodSymbol, moduleName, entryPoint, packContext);
+                EmitMethodSignature(writer, methodSyntax, methodSymbol);
+                using (writer.Scope())
+                {
+                    KernelLaunchEmitter.EmitLaunchBody(writer, moduleName, entryPoint, methodSymbol.Name, parameters,
+                        packContext);
+                }
             }
         }
 
@@ -224,73 +231,6 @@ public class CudaImportGenerator : IIncrementalGenerator
         writer.AppendLine($" class {containingClass.Name}");
     }
 
-    private static void EmitModuleCacheField(SourceWriter writer, string moduleName)
-    {
-        writer.Append("private static readonly Lazy<byte[]> s_fatbin_");
-        AppendSanitizedIdentifier(writer, moduleName);
-        writer.AppendLine(
-            $" = new(() => System.IO.File.ReadAllBytes(System.IO.Path.Combine(AppContext.BaseDirectory, \"{moduleName}\")));");
-        writer.AppendLine();
-    }
-
-    private static void EmitNativeContextStruct(SourceWriter writer, IMethodSymbol methodSymbol)
-    {
-        writer.AppendLine("[StructLayout(LayoutKind.Sequential)]");
-        writer.AppendLine($"private struct __NativeContext_{methodSymbol.Name}");
-        using (writer.Scope())
-        {
-            foreach (var param in methodSymbol.Parameters)
-            {
-                if (IsLaunchParameter(param.Name))
-                {
-                    continue;
-                }
-
-                if (param.Type is IArrayTypeSymbol)
-                {
-                    writer.AppendLine($"public IntPtr {param.Name};");
-                }
-                else
-                {
-                    writer.Append("public ");
-                    writer.AppendCsharpTypeName(param.Type);
-                    writer.AppendLine($" {param.Name};");
-                }
-            }
-        }
-
-        writer.AppendLine();
-    }
-
-
-    private static void EmitMethodImplementation(
-        SourceWriter writer,
-        MethodDeclarationSyntax methodSyntax,
-        IMethodSymbol methodSymbol,
-        string moduleName,
-        string entryPoint,
-        bool packContext)
-    {
-        EmitMethodSignature(writer, methodSyntax, methodSymbol);
-        using (writer.Scope())
-        {
-            writer.AppendLine("using var scope = new GpuKernelLoader.CudaContextScope();");
-            writer.Append("var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_");
-            AppendSanitizedIdentifier(writer, moduleName);
-            writer.AppendLine($".Value, \"{entryPoint}\");");
-            writer.AppendLine();
-
-            EmitBufferAllocations(writer, methodSymbol);
-            if (packContext)
-            {
-                EmitContextInitialization(writer, methodSymbol);
-            }
-
-            EmitKernelLaunch(writer, methodSymbol, packContext);
-            EmitBufferOutputs(writer, methodSymbol);
-        }
-    }
-
     private static void EmitMethodSignature(SourceWriter writer, MethodDeclarationSyntax methodSyntax,
         IMethodSymbol methodSymbol)
     {
@@ -313,208 +253,6 @@ public class CudaImportGenerator : IIncrementalGenerator
         }
 
         writer.AppendLine(")");
-    }
-
-    private static void EmitBufferAllocations(SourceWriter writer, IMethodSymbol methodSymbol)
-    {
-        foreach (var param in methodSymbol.Parameters)
-        {
-            if (IsLaunchParameter(param.Name))
-            {
-                continue;
-            }
-
-            if (param.Type is not IArrayTypeSymbol arrayType)
-            {
-                continue;
-            }
-
-            writer.Append($"using var d_{param.Name} = new GpuBuffer<");
-            writer.AppendCsharpTypeName(arrayType.ElementType);
-            writer.AppendLine($">({param.Name}.Length);");
-
-            var hasIn = param.HasAttribute("In");
-            var hasOut = param.HasAttribute("Out");
-
-            if (hasIn || (!hasIn && !hasOut))
-            {
-                writer.AppendLine($"d_{param.Name}.CopyToDevice({param.Name});");
-            }
-        }
-
-        writer.AppendLine();
-    }
-
-
-    private static void EmitContextInitialization(SourceWriter writer, IMethodSymbol methodSymbol)
-    {
-        writer.AppendLine($"var ctx = new __NativeContext_{methodSymbol.Name}");
-        using (writer.Scope())
-        {
-            for (var i = 0; i < methodSymbol.Parameters.Length; i++)
-            {
-                var param = methodSymbol.Parameters[i];
-                if (IsLaunchParameter(param.Name))
-                {
-                    continue;
-                }
-
-                if (param.Type is IArrayTypeSymbol)
-                {
-                    writer.Append($"{param.Name} = d_{param.Name}.DevicePointer");
-                }
-                else
-                {
-                    writer.Append($"{param.Name} = {param.Name}");
-                }
-
-                var isLast = true;
-                for (var j = i + 1; j < methodSymbol.Parameters.Length; j++)
-                {
-                    if (!IsLaunchParameter(methodSymbol.Parameters[j].Name))
-                    {
-                        isLast = false;
-                        break;
-                    }
-                }
-
-                if (!isLast)
-                {
-                    writer.AppendLine(",");
-                }
-                else
-                {
-                    writer.AppendLine();
-                }
-            }
-        }
-
-        writer.AppendLine(";");
-        writer.AppendLine();
-    }
-
-    private static void EmitKernelLaunch(SourceWriter writer, IMethodSymbol methodSymbol, bool packContext)
-    {
-        var kernelArgsCount = 0;
-        foreach (var param in methodSymbol.Parameters)
-        {
-            if (!IsLaunchParameter(param.Name))
-            {
-                kernelArgsCount++;
-            }
-        }
-
-        writer.AppendLine("unsafe");
-        using (writer.Scope())
-        {
-            if (packContext)
-            {
-                writer.AppendLine("var kernelParams = stackalloc void*[1];");
-                writer.AppendLine("kernelParams[0] = &ctx;");
-            }
-            else
-            {
-                foreach (var param in methodSymbol.Parameters)
-                {
-                    if (IsLaunchParameter(param.Name))
-                    {
-                        continue;
-                    }
-                    if (param.Type is IArrayTypeSymbol)
-                    {
-                        writer.AppendLine($"var p_{param.Name} = d_{param.Name}.DevicePointer;");
-                    }
-
-                    else
-                    {
-                        writer.AppendLine($"var p_{param.Name} = {param.Name};");
-                    }
-                }
-
-                if (kernelArgsCount > 0)
-                {
-                    writer.AppendLine($"var kernelParams = stackalloc void*[{kernelArgsCount}];");
-                    var paramIndex = 0;
-                    foreach (var param in methodSymbol.Parameters)
-                    {
-                        if (IsLaunchParameter(param.Name))
-                        {
-                            continue;
-                        }
-
-                        writer.AppendLine($"kernelParams[{paramIndex}] = &p_{param.Name};");
-                        paramIndex++;
-                    }
-                }
-                else
-                {
-                    writer.AppendLine("void** kernelParams = null;");
-                }
-            }
-
-            writer.AppendLine();
-
-            var gridX = GetLaunchParamOrValue(methodSymbol, "gridDimX", "1");
-            var gridY = GetLaunchParamOrValue(methodSymbol, "gridDimY", "1");
-            var gridZ = GetLaunchParamOrValue(methodSymbol, "gridDimZ", "1");
-            var blockX = GetLaunchParamOrValue(methodSymbol, "blockDimX", "1");
-            var blockY = GetLaunchParamOrValue(methodSymbol, "blockDimY", "1");
-            var blockZ = GetLaunchParamOrValue(methodSymbol, "blockDimZ", "1");
-            var sharedMem = GetLaunchParamOrValue(methodSymbol, "sharedMemBytes", "0");
-            var stream = GetLaunchParamOrValue(methodSymbol, "stream", "IntPtr.Zero");
-
-            writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(");
-            writer.AppendLine("kernel,");
-            writer.AppendLine($"{gridX}, {gridY}, {gridZ},");
-            writer.AppendLine($"{blockX}, {blockY}, {blockZ},");
-            writer.AppendLine($"{sharedMem}, {stream}, kernelParams, IntPtr.Zero));");
-        }
-
-        writer.AppendLine();
-        writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());");
-    }
-
-    private static void EmitBufferOutputs(SourceWriter writer, IMethodSymbol methodSymbol)
-    {
-        foreach (var param in methodSymbol.Parameters)
-        {
-            if (IsLaunchParameter(param.Name))
-            {
-                continue;
-            }
-
-            if (param.Type is not IArrayTypeSymbol)
-            {
-                continue;
-            }
-
-            var hasIn = param.HasAttribute("In");
-            var hasOut = param.HasAttribute("Out");
-
-            if (hasOut || (!hasIn && !hasOut))
-            {
-                writer.AppendLine($"d_{param.Name}.CopyToHost({param.Name});");
-            }
-        }
-    }
-
-
-    private static bool IsLaunchParameter(string name) =>
-        name is "gridDimX" or "gridDimY" or "gridDimZ"
-            or "blockDimX" or "blockDimY" or "blockDimZ"
-            or "sharedMemBytes" or "stream";
-
-    private static string GetLaunchParamOrValue(IMethodSymbol method, string name, string defaultValue)
-    {
-        foreach (var p in method.Parameters)
-        {
-            if (p.Name == name)
-            {
-                return name;
-            }
-        }
-
-        return defaultValue;
     }
 
     private static void ExtractAttributeArguments(
@@ -621,11 +359,32 @@ public class CudaImportGenerator : IIncrementalGenerator
         };
     }
 
-    private static void AppendSanitizedIdentifier(SourceWriter writer, string name)
+    private static ImmutableArray<KernelLaunchParameter> CreateLaunchParameters(IMethodSymbol methodSymbol)
     {
-        foreach (var c in name)
+        var builder = ImmutableArray.CreateBuilder<KernelLaunchParameter>(methodSymbol.Parameters.Length);
+        foreach (var param in methodSymbol.Parameters)
         {
-            writer.Append(c is '.' or '-' ? '_' : c);
+            using var typeWriter = new SourceWriter();
+            typeWriter.AppendCsharpTypeName(param.Type);
+
+            string? elementTypeName = null;
+            if (param.Type is IArrayTypeSymbol arrayType)
+            {
+                using var elementWriter = new SourceWriter();
+                elementWriter.AppendCsharpTypeName(arrayType.ElementType);
+                elementTypeName = elementWriter.ToString();
+            }
+
+            var hasIn = param.HasAttribute("In");
+            var hasOut = param.HasAttribute("Out");
+            builder.Add(new KernelLaunchParameter(
+                param.Name,
+                typeWriter.ToString(),
+                elementTypeName,
+                CopyIn: hasIn || !hasOut,
+                CopyOut: hasOut || !hasIn));
         }
+
+        return builder.MoveToImmutable();
     }
 }

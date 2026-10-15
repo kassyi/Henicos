@@ -15,6 +15,16 @@
 
   <ItemGroup>
     <Compile Include="..\Kassyi.GSharp.Compiler\SourceWriter.cs" Link="SourceWriter.cs" />
+    <Using Include="System.Collections.Immutable" />
+    <Using Include="System.Diagnostics.CodeAnalysis" />
+    <Using Include="System.Text" />
+    <Using Include="Kassyi.GSharp.Compiler.NativeApi" />
+    <!-- Shared with the NativeApiGenerator source generator so built-in and user YAML are handled identically. -->
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiDefinition.cs" Link="NativeApi\NativeApiDefinition.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\YamlSubsetParser.cs" Link="NativeApi\YamlSubsetParser.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiYamlReader.cs" Link="NativeApi\NativeApiYamlReader.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiEmitter.cs" Link="NativeApi\NativeApiEmitter.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\KernelLaunchEmitter.cs" Link="NativeApi\KernelLaunchEmitter.cs" />
   </ItemGroup>
 
 </Project>
