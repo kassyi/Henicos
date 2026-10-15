@@ -24,6 +24,11 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// running, the count never reaches zero and the instance is simply never reused.
 /// </para>
 /// <para>
+/// <b>Completion hook:</b> an optional <see cref="IStreamCompletionHook"/> is invoked by the host callback before the
+/// awaiter is signaled. It observes the real completion of the device work even when the awaiter has already been
+/// detached by cancellation, which lets callers release device-written resources at the right time.
+/// </para>
+/// <para>
 /// <b>No context-bound state:</b> the instance owns no CUDA objects. The watchdog polls the observed stream with
 /// <c>cuStreamQuery</c> instead of a recorded event, because a pooled event would outlive the context that created it
 /// (e.g. an isolated <c>GpuWorkspace</c> context) and become a dangling handle.
@@ -42,6 +47,7 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
     private GCHandle _selfHandle;
     private IntPtr _stream;
     private IntPtr _context;
+    private IStreamCompletionHook? _hook;
     private int _pendingVersion = NotArmed;
     private int _armedVersion;
     private int _outstanding;
@@ -65,11 +71,16 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
     /// </summary>
     /// <param name="stream">The stream to observe. The caller must have the stream's context current.</param>
     /// <param name="context">The CUDA context that owns <paramref name="stream"/>; made current by the watchdog.</param>
-    /// <param name="cancellationToken">A token that detaches the awaiter without affecting the stream.</param>
+    /// <param name="cancellationToken">
+    /// A token that detaches the awaiter without affecting the stream. An already canceled token still arms the signal,
+    /// so that <paramref name="hook"/> observes the completion of work enqueued before this call.
+    /// </param>
+    /// <param name="hook">An optional hook invoked on the driver thread when the stream reaches the signal.</param>
     /// <returns>The <see cref="ValueTask"/> that completes once the stream has drained.</returns>
-    /// <exception cref="CudaException">The completion signal could not be enqueued.</exception>
-    public static ValueTask Arm(IntPtr stream, IntPtr context, CancellationToken cancellationToken) =>
-        Rent().ArmCore(stream, context, cancellationToken);
+    /// <exception cref="CudaException">The completion signal could not be enqueued; <paramref name="hook"/> will not be invoked.</exception>
+    public static ValueTask Arm(IntPtr stream, IntPtr context, CancellationToken cancellationToken,
+        IStreamCompletionHook? hook = null) =>
+        Rent().ArmCore(stream, context, cancellationToken, hook);
 
     /// <inheritdoc/>
     public ValueTaskSourceStatus GetStatus(short token) => _core.GetStatus(token);
@@ -131,10 +142,12 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
         return new CudaStreamCompletionSource();
     }
 
-    private unsafe ValueTask ArmCore(IntPtr stream, IntPtr context, CancellationToken cancellationToken)
+    private unsafe ValueTask ArmCore(IntPtr stream, IntPtr context, CancellationToken cancellationToken,
+        IStreamCompletionHook? hook)
     {
         _stream = stream;
         _context = context;
+        _hook = hook;
 
         var version = _core.Version;
         _armedVersion = version;
@@ -182,6 +195,8 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
             return;
         }
 
+        // Before signaling, so that an awaiter resuming on the success path already observes the hook's effects.
+        source._hook?.OnStreamCompleted();
         source.TryComplete(source._armedVersion, error: null);
         source.Release();
     }
@@ -252,6 +267,7 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
         _cancellationRegistration = default;
         _stream = IntPtr.Zero;
         _context = IntPtr.Zero;
+        _hook = null;
         _core.Reset();
 
         for (var i = 0; i < s_pool.Length; i++)

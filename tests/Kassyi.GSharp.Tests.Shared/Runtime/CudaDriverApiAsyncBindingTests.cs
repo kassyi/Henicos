@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// </summary>
 public class CudaDriverApiAsyncBindingTests
 {
+    private delegate CUresult StreamContextQuery(IntPtr stream, out IntPtr context);
+
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
@@ -19,11 +21,13 @@ public class CudaDriverApiAsyncBindingTests
         Func<IntPtr, CUresult> streamQuery = CudaDriverApi.cuStreamQuery;
         Func<IntPtr, IntPtr, IntPtr, CUresult> launchHostFunc = CudaDriverApi.cuLaunchHostFunc;
         Func<IntPtr, uint, IntPtr, IntPtr, CUresult> memsetD32Async = CudaDriverApi.cuMemsetD32Async;
+        StreamContextQuery streamGetContext = CudaDriverApi.cuStreamGetCtx;
 
         Assert.NotNull(eventQuery);
         Assert.NotNull(streamQuery);
         Assert.NotNull(launchHostFunc);
         Assert.NotNull(memsetD32Async);
+        Assert.NotNull(streamGetContext);
     }
 
     [Theory]
@@ -33,6 +37,7 @@ public class CudaDriverApiAsyncBindingTests
     [InlineData("cuStreamQuery", 1)]
     [InlineData("cuLaunchHostFunc", 3)]
     [InlineData("cuMemsetD32Async", 4)]
+    [InlineData("cuStreamGetCtx", 2)]
     public void Test_DriverApiYaml_DeclaresAsyncBinding_ExactlyOnce(string methodName, int parameterCount)
     {
         var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,

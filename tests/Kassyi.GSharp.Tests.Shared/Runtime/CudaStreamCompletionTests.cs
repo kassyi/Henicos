@@ -21,15 +21,13 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// </para>
 /// <para>
 /// <see cref="GpuKernelLoader.CudaContextScope"/> binds the context to the calling OS thread, so it is only held in
-/// synchronous sections (<see cref="InContext{T}"/>) and never across an <c>await</c>.
+/// synchronous sections (<see cref="CudaTestEnvironment.InContext{T}"/>) and never across an <c>await</c>.
 /// </para>
 /// </remarks>
 [TestTarget(ExecutionTarget.GpuExecution)]
 [Collection(TestCollections.DeviceExclusive)]
 public class CudaStreamCompletionTests
 {
-    private const string RequiresDevice = "Requires a CUDA device.";
-
     private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan GateHoldTime = TimeSpan.FromMilliseconds(500);
 
@@ -38,12 +36,12 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.HappyPath)]
     public async Task WaitAsync_GatedStream_CompletesOnlyAfterGateRelease()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
-        var stream = InContext(static () => new CudaStream());
+        var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
         try
         {
-            using var gate = InContext(() => StreamGate.Enqueue(stream.Handle, GateHoldTime));
+            using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(stream.Handle, GateHoldTime));
 
             var pending = CudaStreamCompletion.WaitAsync(stream.Handle).AsTask();
             Assert.False(pending.IsCompleted, "Completion must not be signaled while the stream is still gated.");
@@ -53,7 +51,41 @@ public class CudaStreamCompletionTests
         }
         finally
         {
-            InContext(stream.Dispose);
+            CudaTestEnvironment.InContext(stream.Dispose);
+        }
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task WaitAsync_StreamOfAnotherContext_WaitsForThatStream_AndRestoresCurrentContext()
+    {
+        CudaTestEnvironment.SkipIfNoDevice();
+
+        using var isolated = IsolatedContext.Create();
+        var stream = isolated.Run(static () => new CudaStream());
+        try
+        {
+            using var gate = isolated.Run(() => StreamGate.Enqueue(stream.Handle, GateHoldTime));
+
+            // Armed on a thread whose current context is the global one rather than the stream's owner, as when an
+            // isolated GpuWorkspace is awaited from ordinary code.
+            var (pending, currentAfterArming) = CudaTestEnvironment.InContext(() =>
+            {
+                var wait = CudaStreamCompletion.WaitAsync(stream.Handle).AsTask();
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxGetCurrent(out var current));
+                return (wait, current);
+            });
+
+            Assert.Equal(GpuKernelLoader.GlobalContext, currentAfterArming);
+            Assert.False(pending.IsCompleted, "Completion must not be signaled while the stream is still gated.");
+
+            await pending.WaitAsync(CompletionTimeout);
+            Assert.True(gate.IsReleased, "Completion was signaled before the gated work finished.");
+        }
+        finally
+        {
+            isolated.Run(stream.Dispose);
         }
     }
 
@@ -62,12 +94,12 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.HappyPath)]
     public async Task CudaStream_SynchronizeAsync_CompletesAfterGateRelease()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
-        var stream = InContext(static () => new CudaStream());
+        var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
         try
         {
-            using var gate = InContext(() => StreamGate.Enqueue(stream.Handle, GateHoldTime));
+            using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(stream.Handle, GateHoldTime));
 
             var pending = stream.SynchronizeAsync().AsTask();
             Assert.False(pending.IsCompleted);
@@ -77,7 +109,7 @@ public class CudaStreamCompletionTests
         }
         finally
         {
-            InContext(stream.Dispose);
+            CudaTestEnvironment.InContext(stream.Dispose);
         }
     }
 
@@ -87,7 +119,7 @@ public class CudaStreamCompletionTests
     public async Task CudaEventTimer_SynchronizeAsync_ElapsedTimeIsValid()
     {
         // Uses the default stream so that the test also runs (with Stopwatch timing) on hosts without a CUDA device.
-        using var timer = InContext(static () =>
+        using var timer = CudaTestEnvironment.InContext(static () =>
         {
             var created = new CudaEventTimer();
             created.Start();
@@ -99,7 +131,7 @@ public class CudaStreamCompletionTests
         await timer.SynchronizeAsync().AsTask().WaitAsync(CompletionTimeout);
 
         // Reading the elapsed time throws CudaErrorNotReady if the end event has not completed yet.
-        var elapsed = InContext(timer.GetElapsedTimeMilliseconds);
+        var elapsed = CudaTestEnvironment.InContext(timer.GetElapsedTimeMilliseconds);
         Assert.True(elapsed >= 0f);
     }
 
@@ -108,7 +140,7 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.HappyPath)]
     public async Task WaitAsync_ManyConcurrentAwaits_OnIndependentStreams_AllComplete()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
         // Exceeds the completion-source pool size so that rent, overflow allocation and eviction are all exercised.
         const int StreamCount = 24;
@@ -117,7 +149,7 @@ public class CudaStreamCompletionTests
         var waits = new Task[StreamCount];
         try
         {
-            InContext(() =>
+            CudaTestEnvironment.InContext(() =>
             {
                 for (var i = 0; i < StreamCount; i++)
                 {
@@ -136,7 +168,7 @@ public class CudaStreamCompletionTests
         }
         finally
         {
-            InContext(() =>
+            CudaTestEnvironment.InContext(() =>
             {
                 foreach (var stream in streams)
                 {
@@ -151,7 +183,7 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.Boundary)]
     public void WaitAsync_RepeatedSequentialAwaits_DoNotAllocateInSteadyState()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
@@ -172,14 +204,26 @@ public class CudaStreamCompletionTests
             }
         }
 
-        var before = GC.GetAllocatedBytesForCurrentThread();
-        for (var i = 0; i < 256; i++)
+        // A per-call allocation shows up in every window. One-time runtime work on this thread in a cold test process
+        // (seen once as a single 280-byte allocation, which is not a fresh completion source) can land in one window,
+        // so the steady state is confirmed by the first clean window.
+        var allocatedPerWindow = new long[3];
+        for (var window = 0; window < allocatedPerWindow.Length; window++)
         {
-            SpinUntilConsumed(CudaStreamCompletion.WaitAsync(stream.Handle));
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var i = 0; i < 256; i++)
+            {
+                SpinUntilConsumed(CudaStreamCompletion.WaitAsync(stream.Handle));
+            }
+
+            allocatedPerWindow[window] = GC.GetAllocatedBytesForCurrentThread() - before;
+            if (allocatedPerWindow[window] == 0)
+            {
+                return;
+            }
         }
 
-        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
-        Assert.Equal(0, allocated);
+        Assert.Fail($"Every window of 256 awaits allocated (bytes per window): {string.Join(", ", allocatedPerWindow)}.");
     }
 
     [Fact]
@@ -222,12 +266,12 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.SadPath)]
     public async Task WaitAsync_CanceledInFlight_ThrowsAndStreamRemainsUsable()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
-        var stream = InContext(static () => new CudaStream());
+        var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
         try
         {
-            using var gate = InContext(() => StreamGate.Enqueue(stream.Handle, GateHoldTime));
+            using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(stream.Handle, GateHoldTime));
             using var cts = new CancellationTokenSource();
 
             var pending = CudaStreamCompletion.WaitAsync(stream.Handle, cts.Token).AsTask();
@@ -245,7 +289,7 @@ public class CudaStreamCompletionTests
         }
         finally
         {
-            InContext(stream.Dispose);
+            CudaTestEnvironment.InContext(stream.Dispose);
         }
     }
 
@@ -254,7 +298,7 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.SadPath)]
     public void WaitAsync_OnCapturingStream_ThrowsInvalidOperation()
     {
-        SkipIfNoDevice();
+        CudaTestEnvironment.SkipIfNoDevice();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
@@ -280,40 +324,65 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.SadPath)]
     public async Task CudaEventTimer_SynchronizeAsync_AfterDispose_Throws()
     {
-        var timer = InContext(static () => new CudaEventTimer());
+        var timer = CudaTestEnvironment.InContext(static () => new CudaEventTimer());
         timer.Dispose();
 
         await Assert.ThrowsAsync<ObjectDisposedException>(async () => await timer.SynchronizeAsync());
     }
 
-    private static void SkipIfNoDevice()
-    {
-        // The fallback flag is only populated by driver initialization, so it must run before the flag is read.
-        GpuKernelLoader.EnsureInitialized();
-        Skip.If(GpuKernelLoader.IsCpuFallbackMode, RequiresDevice);
-    }
-
-    private static T InContext<T>(Func<T> action)
-    {
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        return action();
-    }
-
-    private static void InContext(Action action)
-    {
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        action();
-    }
-
     private static void SpinUntilConsumed(ValueTask pending)
     {
         // Polls on the calling thread so that no async state machine or continuation is allocated by the test itself.
+        // Sleep(1) is disabled: it rounds every await up to a timer tick and stretches a window of 256 awaits to seconds.
         var spinner = new SpinWait();
         while (!pending.IsCompleted)
         {
-            spinner.SpinOnce();
+            spinner.SpinOnce(sleep1Threshold: -1);
         }
 
         pending.GetAwaiter().GetResult();
+    }
+
+    /// <summary>A CUDA context other than the global one, like the context of an isolated <c>GpuWorkspace</c>.</summary>
+    private sealed class IsolatedContext : IDisposable
+    {
+        private IntPtr _handle;
+
+        private IsolatedContext(IntPtr handle) => _handle = handle;
+
+        public static IsolatedContext Create() =>
+            CudaTestEnvironment.InContext(static () =>
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out var handle, 0, device));
+
+                // cuCtxCreate also makes the new context current; pop it so that it is current only inside Run.
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _));
+                return new IsolatedContext(handle);
+            });
+
+        public T Run<T>(Func<T> action)
+        {
+            using var scope = new GpuKernelLoader.CudaContextScope(_handle);
+            return action();
+        }
+
+        public void Run(Action action)
+        {
+            using var scope = new GpuKernelLoader.CudaContextScope(_handle);
+            action();
+        }
+
+        public void Dispose()
+        {
+            if (_handle == IntPtr.Zero)
+            {
+                return;
+            }
+
+            var handle = _handle;
+            _handle = IntPtr.Zero;
+            CudaException.ThrowIfError(CudaDriverApi.cuCtxDestroy_v2(handle));
+        }
     }
 }

@@ -485,6 +485,18 @@ methods:
         type: IntPtr
         description: Stream to query.
 
+  - name: cuStreamGetCtx
+    returnType: CUresult
+    summary: Returns the context that owns a stream, independent of the context current to the calling thread.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream to query. For the legacy or per-thread default stream, the calling thread's current context is returned.
+      - name: pctx
+        type: out IntPtr
+        description: Returned context handle.
+
   - name: cuStreamSynchronize
     returnType: CUresult
     summary: Waits for a stream's tasks to complete.

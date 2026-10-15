@@ -59,7 +59,10 @@ public static class CudaStreamCompletion
                 "Cannot await a stream that is being captured into a CUDA Graph. End the capture first.");
         }
 
-        CudaException.ThrowIfError(CudaDriverApi.cuCtxGetCurrent(out var context));
+        // The stream's owner rather than the current context: a stream of an isolated workspace is typically awaited
+        // from a thread on which the global context is current.
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamGetCtx(stream, out var context));
+        using var streamScope = new GpuKernelLoader.CudaContextScope(context);
         return CudaStreamCompletionSource.Arm(stream, context, cancellationToken);
     }
 }
