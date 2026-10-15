@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace Henicos.Benchmarks.ComputeBenchmarks;
 
 public static partial class ReductionKernels
