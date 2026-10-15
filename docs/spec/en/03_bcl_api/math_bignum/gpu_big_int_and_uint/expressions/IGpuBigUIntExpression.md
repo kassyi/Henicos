@@ -6,24 +6,32 @@ language: "en"
 description: "Defines the contract for an abstract syntax tree (AST) node representing a lazily evaluated GPU BigInteger expression."
 ---
 
-# IGpuBigUIntExpression Interface
+## IGpuBigUIntExpression Interface
 
 ## Definition
 
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Defines the contract for an abstract syntax tree (AST) node representing a lazily evaluated GPU BigInteger expression.
+Defines the contract for an abstract syntax tree (AST) node representing a lazily evaluated unsigned GPU BigInteger expression.
+
+```csharp
+public interface IGpuBigUIntExpression
+```
+
+## Remarks
+
+`IGpuBigUIntExpression` implements the Visitor pattern via [`BigIntExpressionVisitor`](BigIntExpressionVisitor.md) to traverse expression trees and emit fused or optimized GPU kernel sequences without intermediate managed object allocations. Direct evaluation into a [`GpuBigUInt`](../GpuBigUInt.md) buffer is provided by the [`GpuBigUIntExpressionExtensions.Evaluate`](GpuBigUIntExpressionExtensions.md) extension method.
 
 ## Properties
 
-| Name                  | Description                                                       |
-| --------------------- | ----------------------------------------------------------------- |
-| [NumWords](#numwords) | Gets the word length (limb count) resulting from this expression. |
+| Name | Description |
+| --- | --- |
+| [NumWords](#numwords) | Gets the word length (32-bit limb count) resulting from this expression. |
 
 ## NumWords
 
-Gets the word length (limb count) resulting from this expression.
+Gets the word length (32-bit limb count) resulting from this expression.
 
 ```csharp
 int NumWords { get; }
@@ -31,43 +39,32 @@ int NumWords { get; }
 
 ## Methods
 
-| Name                                                                              | Description                                                            |
-| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| [Evaluate(GpuWorkspace, GpuBigUInt?)](#evaluategpuworkspace-gpuuintbiginteger) | Evaluates this expression on the GPU into the specified target buffer. |
+| Name | Description |
+| --- | --- |
+| [Accept(BigIntExpressionVisitor)](#acceptbigintexpressionvisitor) | Accepts an expression visitor to evaluate the expression tree using a scoped device memory context. |
 
-## Evaluate(GpuWorkspace, GpuBigUInt?)
+## Accept(BigIntExpressionVisitor)
 
-Evaluates this expression on the GPU into the specified target buffer.
+Accepts an expression visitor to evaluate the expression tree using a scoped device memory context.
 
 ```csharp
-GpuBigUInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null);
+ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor);
 ```
 
 #### Parameters
 
-`workspace` _GpuWorkspace_<br>
-The active GPU execution context.
-
-`targetResult` _GpuUIntBigInteger?_<br>
-Optional target buffer to write the evaluated result into.
+`visitor` _[BigIntExpressionVisitor](BigIntExpressionVisitor.md)_<br>
+The expression visitor (passed by `scoped ref`) responsible for evaluating intermediate AST nodes.
 
 #### Returns
 
-_GpuUIntBigInteger_<br>
-The evaluated `GpuBigUInt` result buffer.
-
-## See also
-
-### BCL API > Math Bignum
-
-- [Standard Math Library (Stdlib.Math)](../../../00_index.md)
-- [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
-
+_`ScopedBigIntMemory`_<br>
+A stack-scoped `ScopedBigIntMemory` instance holding the evaluated GPU memory slice.
 
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 #nullable enable
@@ -81,32 +78,25 @@ using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 using var left = new GpuBigUInt(workspace, new uint[] { 500 });
 using var right = new GpuBigUInt(workspace, new uint[] { 700 });
 
-IGpuBigUIntExpression expression = new CustomAddNode(left, right);
-using var result = expression.Evaluate(workspace);
+GpuBigUIntExpr leftExpr = left;
+GpuBigUIntExpr rightExpr = right;
+IGpuBigUIntExpression expression = (leftExpr + rightExpr).Node;
+
+using var dest = new GpuBigUInt(workspace, 2);
+GpuBigUInt result = expression.Evaluate(workspace, dest);
 
 var resultData = new uint[1];
 workspace.Provider.CopyDeviceToHost(resultData, result.DevicePointer, 1);
 
 Console.WriteLine($"500 + 700 = {resultData[0]}");
-
-public class CustomAddNode : IGpuBigUIntExpression
-{
-    private readonly GpuBigUInt _left;
-    private readonly GpuBigUInt _right;
-
-    public CustomAddNode(GpuBigUInt left, GpuBigUInt right)
-    {
-        _left = left;
-        _right = right;
-    }
-
-    public int NumWords => System.Math.Max(_left.NumWords, _right.NumWords) + 1;
-
-    public GpuBigUInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null)
-    {
-        var resultBuf = targetResult ?? new GpuBigUInt(workspace, NumWords);
-        workspace.Provider.Add(workspace, _left, _right, resultBuf);
-        return resultBuf;
-    }
-}
 ```
+
+## See also
+
+### BCL API > Math Bignum
+
+- [GpuBigUIntExpressionExtensions Class](GpuBigUIntExpressionExtensions.md)
+- [BigIntExpressionVisitor Struct](BigIntExpressionVisitor.md)
+- [GpuBigUIntExpr Struct](GpuBigUIntExpr.md)
+- [Standard Math Library (Stdlib.Math)](../../../00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)

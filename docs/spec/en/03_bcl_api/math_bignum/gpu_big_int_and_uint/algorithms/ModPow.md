@@ -1,7 +1,7 @@
 ---
-title: "GpuBigInt.ModPow Method (G#)"
+title: "GpuBigIntDivRem.ModPow Method (G#)"
 site: "G# Documentation"
-published: "2026-09-22T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Reference for multi-precision Modular Exponentiation (RSA) on the GPU."
 ---
@@ -23,13 +23,13 @@ Computes the modular exponentiation $a^b \pmod m$ of extremely large integers on
 
 ## Overloads
 
-| Name                                                                                          | Description                                      |
-| --------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| [ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modpow) | Computes the modular exponentiation of a number. |
+| Name | Description |
+| --- | --- |
+| [ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)](#modpowgpubiguint-gpubiguint-gpubiguint-gpubiguint) | Computes the modular exponentiation of a number. |
 
-## GpuBigIntDivRem.ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
+## ModPow(GpuBigUInt, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
-Computes the modular exponentiation eagerly into the provided result buffer.
+Computes modular exponentiation ($(\text{baseVal}^{\text{exp}} \bmod \text{mod})$) on the GPU using binary exponentiation (square-and-multiply).
 
 ```csharp
 public static void ModPow(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, GpuBigUInt resultBuffer);
@@ -37,22 +37,25 @@ public static void ModPow(GpuBigUInt baseVal, GpuBigUInt exp, GpuBigUInt mod, Gp
 
 #### Parameters
 
-`baseVal` _GpuUIntBigInteger_<br>
-The base number.
+`baseVal` _[GpuBigUInt](../GpuBigUInt.md)_<br>
+The base value.
 
-`exp` _GpuUIntBigInteger_<br>
-The exponent.
+`exp` _[GpuBigUInt](../GpuBigUInt.md)_<br>
+The exponent value.
 
-`mod` _GpuUIntBigInteger_<br>
+`mod` _[GpuBigUInt](../GpuBigUInt.md)_<br>
 The modulus.
 
-`resultBuffer` _GpuUIntBigInteger_<br>
-The buffer to hold the result.
+`resultBuffer` _[GpuBigUInt](../GpuBigUInt.md)_<br>
+The destination buffer in GPU device memory receiving the modular power.
 
-#### Returns
+#### Exceptions
 
-_void_<br>
-The operation writes its result to the `resultBuffer` parameter directly.
+`ArgumentException`<br>
+Thrown when `baseVal`, `mod`, and `resultBuffer` have mismatched word lengths.
+
+`DivideByZeroException`<br>
+Thrown when `mod` is zero.
 
 ## Examples
 
@@ -60,54 +63,41 @@ The operation writes its result to the `resultBuffer` parameter directly.
 
 A concrete example demonstrating how `ModPow` is used to orchestrate RSA decryption ($Message = Ciphertext^d \pmod n$) across the GPU. This is highly effective when batch-processing thousands of payloads simultaneously.
 
-> [!NOTE] 
-> Requires assemblies: `Kassyi.GSharp.Stdlib.GpuMath`
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
+#nullable enable
+// Execution Context: Host (CPU)
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
-class Program
-{
-    static void Main()
-    {
-        // Allocate a workspace large enough for 2048-bit RSA keys
-        using var workspace = new GpuWorkspace(maxWords: 64); // 64 words * 32 bits = 2048 bits
+// Allocate a workspace for modular exponentiation
+using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
 
-        // 1. Prepare RSA Parameters (Modulus 'n', Private Exponent 'd')
-        byte[] modulusN = GetRsaModulus();
-        byte[] privateKeyD = GetRsaPrivateKey();
-        byte[] ciphertextBytes = GetIncomingCiphertext();
+// 1. Prepare RSA Parameters (Modulus 'n', Private Exponent 'd', Ciphertext 'c')
+using var gpuModulus = GpuBigUInt.FromBigInteger(workspace, new BigInteger(3233), minWords: 4);
+using var gpuPrivateKey = GpuBigUInt.FromBigInteger(workspace, new BigInteger(17), minWords: 4);
+using var gpuCiphertext = GpuBigUInt.FromBigInteger(workspace, new BigInteger(65), minWords: 4);
 
-        // 2. Upload to GPU VRAM
-        using var gpuModulus = GpuBigUInt.FromBigInteger(workspace, new BigInteger(modulusN, isUnsigned: true, isBigEndian: true), 64);
-        using var gpuPrivateKey = GpuBigUInt.FromBigInteger(workspace, new BigInteger(privateKeyD, isUnsigned: true, isBigEndian: true), 64);
-        using var gpuCiphertext = GpuBigUInt.FromBigInteger(workspace, new BigInteger(ciphertextBytes, isUnsigned: true, isBigEndian: true), 64);
+// 2. Eagerly evaluate: c^d mod n (65^17 mod 3233 = 2790)
+using var result = new GpuBigUInt(workspace, 4);
+GpuBigIntDivRem.ModPow(gpuCiphertext, gpuPrivateKey, gpuModulus, result);
 
-        // 3. Eagerly evaluate: c^d mod n
-        using var decryptedResult = new GpuBigUInt(workspace, 64);
-        GpuBigIntDivRem.ModPow(gpuCiphertext, gpuPrivateKey, gpuModulus, decryptedResult);
-
-        // 5. Download the decrypted message back to the CPU
-        byte[] originalMessage = decryptedResult.ToBigInteger().ToByteArray(isUnsigned: true, isBigEndian: true);
-        Console.WriteLine($"Decrypted payload: {Convert.ToHexString(originalMessage)}");
-    }
-
-    static byte[] GetRsaModulus() { var b = new byte[256]; b[255] = 1; return b; }
-    static byte[] GetRsaPrivateKey() { var b = new byte[256]; b[255] = 3; return b; }
-    static byte[] GetIncomingCiphertext() { var b = new byte[256]; b[255] = 42; return b; }
-}
+// 3. Download the result back to the CPU
+Console.WriteLine($"Computed payload: {result.ToBigInteger(false)}");
 ```
 
 ## Remarks
 
-This orchestration leverages Montgomery reduction to prevent massive allocation of intermediate memory during exponentiation.
+This orchestration leverages Montgomery/Barrett reduction to prevent massive allocation of intermediate memory during exponentiation.
 
 ## See also
 
 ### BCL API > Math Bignum
 
+- [GpuBigIntDivRem Class (G#)](../GpuBigIntDivRem.md)
 - [Standard Math Library (Stdlib.Math)](../../00_index.md)
 - [FermatAlgorithm Class (G#)](FermatAlgorithm.md)

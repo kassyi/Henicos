@@ -17,10 +17,10 @@ Exchanges a variable by shifting data down by a specified delta.
 
 ## Overloads
 
-| Name                                                                            | Description                                                                                    |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [ShuffleDownSync(uint, int, uint, int)](#shuffledownsync-uint-int-uint-int)     | Exchanges a 32-bit signed integer by shifting data down by a specified delta.                  |
-| [ShuffleDownSync(uint, uint, uint, int)](#shuffledownsync-uint-uint-uint-int)   | Exchanges a 32-bit unsigned integer by shifting data down by a specified delta.                |
+| Name | Description |
+| --- | --- |
+| [ShuffleDownSync(uint, int, uint, int)](#shuffledownsync-uint-int-uint-int) | Exchanges a 32-bit signed integer by shifting data down by a specified delta. |
+| [ShuffleDownSync(uint, uint, uint, int)](#shuffledownsync-uint-uint-uint-int) | Exchanges a 32-bit unsigned integer by shifting data down by a specified delta. |
 | [ShuffleDownSync(uint, float, uint, int)](#shuffledownsync-uint-float-uint-int) | Exchanges a single-precision floating-point number by shifting data down by a specified delta. |
 
 ## ShuffleDownSync(uint, int, uint, int)
@@ -129,12 +129,12 @@ In real-world GPU algorithms, this is heavily used in **Stencil Computations (e.
 
 If a warp has 4 active threads holding values `[A, B, C, D]`, calling `ShuffleDownSync(mask, val, 1, 4)` shifts data "down" the lane IDs by 1:
 
-| Current Lane ID | Initial Value | Target Lane ID (`LaneId + 1`) | Action                    | Final Value |
-| :-------------- | :------------ | :---------------------------- | :------------------------ | :---------- |
-| **0**           | `A`           | `0 + 1 = 1`                   | Fetches value from Lane 1 | `B`         |
-| **1**           | `B`           | `1 + 1 = 2`                   | Fetches value from Lane 2 | `C`         |
-| **2**           | `C`           | `2 + 1 = 3`                   | Fetches value from Lane 3 | `D`         |
-| **3**           | `D`           | `3 + 1 = 4` (Out of bounds)   | Keeps its own value       | `D`         |
+| Current Lane ID | Initial Value | Target Lane ID (`LaneId + 1`) | Action | Final Value |
+| :--- | :--- | :--- | :--- | :--- |
+| **0** | `A` | `0 + 1 = 1` | Fetches value from Lane 1 | `B` |
+| **1** | `B` | `1 + 1 = 2` | Fetches value from Lane 2 | `C` |
+| **2** | `C` | `2 + 1 = 3` | Fetches value from Lane 3 | `D` |
+| **3** | `D` | `3 + 1 = 4` (Out of bounds) | Keeps its own value | `D` |
 
 ## Determining the `mask` Parameter
 
@@ -146,11 +146,11 @@ The `mask` parameter is a 32-bit unsigned integer (`uint`) where each bit corres
 
 In practice, choosing `mask` follows three common patterns:
 
-| Scenario                                    | Recommended Value   | Why / Description                                                                                                                                                                                         |
-| :------------------------------------------ | :------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **All threads participate (95%+ of cases)** | `0xFFFFFFFF`        | Used when all 32 threads in the warp execute the shuffle unconditionally (e.g., prefix sums, convolutions, reductions). In binary, this sets all 32 bits to `1`.                                          |
-| **Divergent execution (`if` branch)**       | `Gpu.ActiveMask()`  | When only a subset of threads inside an `if` block call shuffle, passing `0xFFFFFFFF` causes a **GPU deadlock**. Calling `Gpu.ActiveMask()` dynamically computes the bitmask of currently active threads. |
-| **Partial warp (Tail boundary)**            | `(1u << count) - 1` | When processing data where the final warp only has $K$ valid elements (e.g., $K=10$), use `(1u << 10) - 1` (`0x3FF`) to mark only the first 10 threads as active.                                         |
+| Scenario | Recommended Value | Why / Description |
+| :--- | :--- | :--- |
+| **All threads participate (95%+ of cases)** | `0xFFFFFFFF` | Used when all 32 threads in the warp execute the shuffle unconditionally (e.g., prefix sums, convolutions, reductions). In binary, this sets all 32 bits to `1`. |
+| **Divergent execution (`if` branch)** | `Gpu.ActiveMask()` | When only a subset of threads inside an `if` block call shuffle, passing `0xFFFFFFFF` causes a **GPU deadlock**. Calling `Gpu.ActiveMask()` dynamically computes the bitmask of currently active threads. |
+| **Partial warp (Tail boundary)** | `(1u << count) - 1` | When processing data where the final warp only has $K$ valid elements (e.g., $K=10$), use `(1u << 10) - 1` (`0x3FF`) to mark only the first 10 threads as active. |
 
 ## Examples
 

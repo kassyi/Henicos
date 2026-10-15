@@ -6,24 +6,28 @@ language: "en"
 description: "Represents a signed GPU BigInteger AST node."
 ---
 
-# IGpuBigIntExpression Interface
+## IGpuBigIntExpression Interface
 
 ## Definition
 
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Represents a signed GPU BigInteger AST node.
+Defines the contract for an abstract syntax tree (AST) node representing a lazily evaluated signed GPU BigInteger expression.
+
+```csharp
+public interface IGpuBigIntExpression
+```
 
 ## Properties
 
-| Name                  | Description                                                                                          |
-| --------------------- | ---------------------------------------------------------------------------------------------------- |
-| [NumWords](#numwords) | Gets the number of words (32-bit units) required to store the absolute magnitude of this expression. |
+| Name | Description |
+| --- | --- |
+| [NumWords](#numwords) | Gets the number of words (32-bit limbs) required to store the absolute magnitude of this expression. |
 
 ## NumWords
 
-Gets the number of words (32-bit units) required to store the absolute magnitude of this expression.
+Gets the number of words (32-bit limbs) required to store the absolute magnitude of this expression.
 
 ```csharp
 int NumWords { get; }
@@ -31,9 +35,9 @@ int NumWords { get; }
 
 ## Methods
 
-| Name                                                                              | Description                                                                                    |
-| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| [Evaluate(GpuWorkspace, GpuBigUInt?)](#evaluategpuworkspace-gpuuintbiginteger) | Evaluates this AST node into a new or provided GPU buffer, returning a signed `GpuBigInt`. |
+| Name | Description |
+| --- | --- |
+| [Evaluate(GpuWorkspace, GpuBigUInt?)](#evaluategpuworkspace-gpubiguint) | Evaluates this AST node into a new or provided GPU buffer, returning a signed `GpuBigInt`. |
 
 ## Evaluate(GpuWorkspace, GpuBigUInt?)
 
@@ -45,29 +49,21 @@ GpuBigInt Evaluate(GpuWorkspace workspace, GpuBigUInt? targetResult = null);
 
 #### Parameters
 
-`workspace` _GpuWorkspace_<br>
-The GPU workspace for evaluation.
+`workspace` _[GpuWorkspace](../GpuWorkspace.md)_<br>
+The GPU workspace managing kernel execution and memory pools.
 
-`targetResult` _GpuUIntBigInteger?_<br>
-An optional pre-allocated buffer for the absolute magnitude. If null, a temporary buffer is rented.
+`targetResult` _[GpuBigUInt](../GpuBigUInt.md)?_<br>
+An optional pre-allocated buffer for the absolute magnitude. If `null`, a temporary buffer is rented.
 
 #### Returns
 
-_GpuBigInteger_<br>
-The evaluated result with its sign.
-
-## See also
-
-### BCL API > Math Bignum
-
-- [Standard Math Library (Stdlib.Math)](../../../00_index.md)
-- [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
-
+_[GpuBigInt](../GpuBigInt.md)_<br>
+A `GpuBigInt` containing the evaluated magnitude and sign flag.
 
 ## Examples
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 #nullable enable
@@ -115,3 +111,11 @@ public class CustomSumNode : IGpuBigIntExpression
     }
 }
 ```
+
+## See also
+
+### BCL API > Math Bignum
+
+- [GpuBigIntExpr Struct](GpuBigIntExpr.md)
+- [Standard Math Library (Stdlib.Math)](../../../00_index.md)
+- [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)

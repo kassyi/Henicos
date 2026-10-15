@@ -1,7 +1,7 @@
 ---
 title: "GpuBigIntVectorLinqExtensions Class (G#)"
 site: "G# Documentation"
-published: "2026-10-12T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Provides batched and vectorized LINQ operations for contiguous GpuBigIntArray pipelines."
 ---
@@ -21,11 +21,39 @@ public static class GpuBigIntVectorLinqExtensions
 
 ## Methods
 
-| Name                                                                                              | Description                                                                   |
-| ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| [AsVectorizedEnumerable(GpuBigIntArray)](#asvectorizedenumerablegpubigintarray)                   | Converts a `GpuBigIntArray` into a vectorized deferred expression.            |
+| Name | Description |
+| --- | --- |
+| [All(IGpuBoolVectorExpression)](#alligpuboolvectorexpression) | Determines whether all elements of a boolean vector expression evaluate to `true`. |
+| [And(IGpuBoolVectorExpression, IGpuBoolVectorExpression)](#andigpuboolvectorexpression-igpuboolvectorexpression) | Performs an element-wise logical AND on two boolean vector expressions. |
+| [Any(IGpuBoolVectorExpression)](#anyigpuboolvectorexpression) | Determines whether any element of a boolean vector expression evaluates to `true`. |
+| [AsVectorizedEnumerable(GpuBigIntArray)](#asvectorizedenumerablegpubigintarray) | Converts a `GpuBigIntArray` into a vectorized deferred expression. |
+| [Count(IGpuBigIntVectorExpression)](#countigpubigintvectorexpression) | Computes the number of elements in the vectorized expression. |
+| [IsEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#isequaltoigpubigintvectorexpression-gpubigint) | Evaluates if each element is equal to a scalar. |
+| [IsEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#isequaltoigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are equal to the right vector element-wise. |
+| [IsGreaterThan(IGpuBigIntVectorExpression, GpuBigInt)](#isgreaterthanigpubigintvectorexpression-gpubigint) | Evaluates if each element is greater than a scalar. |
+| [IsGreaterThan(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#isgreaterthanigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are greater than the right vector element-wise. |
+| [IsGreaterThanOrEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#isgreaterthanorequaltoigpubigintvectorexpression-gpubigint) | Evaluates if each element is greater than or equal to a scalar. |
+| [IsGreaterThanOrEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#isgreaterthanorequaltoigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are greater than or equal to the right vector element-wise. |
+| [IsLessThan(IGpuBigIntVectorExpression, GpuBigInt)](#islessthanigpubigintvectorexpression-gpubigint) | Evaluates if each element is less than a scalar. |
+| [IsLessThan(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#islessthanigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are less than the right vector element-wise. |
+| [IsLessThanOrEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#islessthanorequaltoigpubigintvectorexpression-gpubigint) | Evaluates if each element is less than or equal to a scalar. |
+| [IsLessThanOrEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#islessthanorequaltoigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are less than or equal to the right vector element-wise. |
+| [IsNotEqualTo(IGpuBigIntVectorExpression, GpuBigInt)](#isnotequaltoigpubigintvectorexpression-gpubigint) | Evaluates if each element is not equal to a scalar. |
+| [IsNotEqualTo(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#isnotequaltoigpubigintvectorexpression-igpubigintvectorexpression) | Evaluates if elements in the left vector are not equal to the right vector element-wise. |
+| [Max(IGpuBigIntVectorExpression)](#maxigpubigintvectorexpression) | Computes the maximum value of a vectorized expression. |
+| [Min(IGpuBigIntVectorExpression)](#minigpubigintvectorexpression) | Computes the minimum value of a vectorized expression. |
+| [Not(IGpuBoolVectorExpression)](#notigpuboolvectorexpression) | Performs an element-wise logical NOT on a boolean vector expression. |
+| [Or(IGpuBoolVectorExpression, IGpuBoolVectorExpression)](#origpuboolvectorexpression-igpuboolvectorexpression) | Performs an element-wise logical OR on two boolean vector expressions. |
+| [SelectAdd(IGpuBigIntVectorExpression, GpuBigInt)](#selectaddigpubigintvectorexpression-gpubigint) | Adds a scalar to each element of a vectorized expression. |
 | [SelectMultiply(IGpuBigIntVectorExpression, GpuBigInt)](#selectmultiplyigpubigintvectorexpression-gpubigint) | Multiplies each element of a vectorized expression by a scalar on GPU device. |
-| [Sum(IGpuBigIntVectorExpression)](#sumigpubigintvectorexpression)                                 | Computes the parallel sum reduction of a vectorized expression.               |
+| [SelectSubtract(IGpuBigIntVectorExpression, GpuBigInt)](#selectsubtractigpubigintvectorexpression-gpubigint) | Subtracts a scalar from each element of a vectorized expression. |
+| [Skip(IGpuBigIntVectorExpression, Int32)](#skipigpubigintvectorexpression-int32) | Bypasses a specified number of elements in a sequence and returns the remaining elements. |
+| [Sum(IGpuBigIntVectorExpression)](#sumigpubigintvectorexpression) | Computes the parallel sum reduction of a vectorized expression. |
+| [Take(IGpuBigIntVectorExpression, Int32)](#takeigpubigintvectorexpression-int32) | Returns a specified number of contiguous elements from the start of a sequence. |
+| [Where(IGpuBigIntVectorExpression, IGpuBoolVectorExpression)](#whereigpubigintvectorexpression-igpuboolvectorexpression) | Filters a vectorized sequence of values based on a predicate (GPU stream compaction). |
+| [ZipAdd(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipaddigpubigintvectorexpression-igpubigintvectorexpression) | Adds two vectorized expressions element-wise. |
+| [ZipMultiply(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipmultiplyigpubigintvectorexpression-igpubigintvectorexpression) | Multiplies the first vectorized expression by the second element-wise. |
+| [ZipSubtract(IGpuBigIntVectorExpression, IGpuBigIntVectorExpression)](#zipsubtractigpubigintvectorexpression-igpubigintvectorexpression) | Subtracts the second vectorized expression from the first element-wise. |
 
 ## AsVectorizedEnumerable(GpuBigIntArray)
 
@@ -35,64 +63,95 @@ Converts a `GpuBigIntArray` into a vectorized deferred expression leaf node.
 public static IGpuBigIntVectorExpression AsVectorizedEnumerable(this GpuBigIntArray source);
 ```
 
-#### Parameters
+## Where(IGpuBigIntVectorExpression, IGpuBoolVectorExpression)
 
-`source` _GpuBigIntArray_<br>
-The source `GpuBigIntArray` stored in GPU global device memory.
-
-#### Returns
-
-_IGpuBigIntVectorExpression_<br>
-A vectorized expression wrapping the array.
-
-## SelectMultiply(IGpuBigIntVectorExpression, GpuBigInt)
-
-Multiplies each element of a vectorized expression by a scalar value using a grid-stride parallel kernel.
+Filters a vectorized sequence of values based on a predicate. Executes a Stream Compaction (`Where`) operation on the GPU.
 
 ```csharp
-public static IGpuBigIntVectorExpression SelectMultiply(
+public static IGpuBigIntVectorExpression Where(
     this IGpuBigIntVectorExpression source,
-    GpuBigInt scalar);
+    IGpuBoolVectorExpression predicate);
 ```
 
-#### Parameters
+## SelectAdd / SelectSubtract / SelectMultiply
 
-`source` _IGpuBigIntVectorExpression_<br>
-The input vectorized expression pipeline.
+Applies a scalar addition, subtraction, or multiplication to each element of a vectorized expression using a grid-stride parallel kernel.
 
-`scalar` _GpuBigInt_<br>
-The scalar value to multiply each vector element by.
+```csharp
+public static IGpuBigIntVectorExpression SelectAdd(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
+public static IGpuBigIntVectorExpression SelectSubtract(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
+public static IGpuBigIntVectorExpression SelectMultiply(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
+```
 
-#### Returns
+## ZipAdd / ZipSubtract / ZipMultiply
 
-_IGpuBigIntVectorExpression_<br>
-A new vectorized expression representing the element-wise scalar multiplication.
+Performs element-wise addition, subtraction, or multiplication across two vectorized expressions of equal length.
 
-## Sum(IGpuBigIntVectorExpression)
+```csharp
+public static IGpuBigIntVectorExpression ZipAdd(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+public static IGpuBigIntVectorExpression ZipSubtract(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+public static IGpuBigIntVectorExpression ZipMultiply(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+```
 
-Computes the sum of all elements in a vectorized expression using a multi-pass tree reduction kernel.
+## Skip / Take
+
+Slices a vectorized sequence by bypassing `count` leading elements (`Skip`) or taking `count` contiguous elements from the start (`Take`). Throws `ArgumentNullException` if `source` is `null`.
+
+```csharp
+public static IGpuBigIntVectorExpression Skip(this IGpuBigIntVectorExpression source, int count);
+public static IGpuBigIntVectorExpression Take(this IGpuBigIntVectorExpression source, int count);
+```
+
+## Sum / Max / Min / Count
+
+Computes parallel reductions over all elements in a vectorized expression, returning a deferred scalar [GpuBigIntExpr](GpuBigIntExpr.md).
 
 ```csharp
 public static GpuBigIntExpr Sum(this IGpuBigIntVectorExpression source);
+public static GpuBigIntExpr Max(this IGpuBigIntVectorExpression source);
+public static GpuBigIntExpr Min(this IGpuBigIntVectorExpression source);
+public static GpuBigIntExpr Count(this IGpuBigIntVectorExpression source);
 ```
 
-#### Parameters
+## Element-Wise Comparisons (IsEqualTo, IsNotEqualTo, IsGreaterThan, IsGreaterThanOrEqualTo, IsLessThan, IsLessThanOrEqualTo)
 
-`source` _IGpuBigIntVectorExpression_<br>
-The input vectorized expression.
+Compares each element of a vectorized expression against either a `GpuBigInt` scalar or another `IGpuBigIntVectorExpression`, returning an `IGpuBoolVectorExpression`.
 
-#### Returns
+```csharp
+public static IGpuBoolVectorExpression IsEqualTo(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
+public static IGpuBoolVectorExpression IsNotEqualTo(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
+public static IGpuBoolVectorExpression IsGreaterThan(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
+public static IGpuBoolVectorExpression IsGreaterThanOrEqualTo(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
+public static IGpuBoolVectorExpression IsLessThan(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
+public static IGpuBoolVectorExpression IsLessThanOrEqualTo(this IGpuBigIntVectorExpression source, GpuBigInt scalar);
 
-_GpuBigIntExpr_<br>
-A deferred expression tree representing the parallel sum reduction, yielding a scalar `GpuBigInt` when evaluated.
+public static IGpuBoolVectorExpression IsEqualTo(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+public static IGpuBoolVectorExpression IsNotEqualTo(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+public static IGpuBoolVectorExpression IsGreaterThan(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+public static IGpuBoolVectorExpression IsGreaterThanOrEqualTo(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+public static IGpuBoolVectorExpression IsLessThan(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+public static IGpuBoolVectorExpression IsLessThanOrEqualTo(this IGpuBigIntVectorExpression left, IGpuBigIntVectorExpression right);
+```
+
+## Boolean Combinators and Quantifiers (And, Or, Not, Any, All)
+
+Combines boolean vector expressions element-wise (`And`, `Or`, `Not`) or reduces a boolean vector expression to a deferred scalar [IGpuBoolExpr](BoolVectorExpressions.md) (`Any`, `All`).
+
+```csharp
+public static IGpuBoolVectorExpression And(this IGpuBoolVectorExpression left, IGpuBoolVectorExpression right);
+public static IGpuBoolVectorExpression Or(this IGpuBoolVectorExpression left, IGpuBoolVectorExpression right);
+public static IGpuBoolVectorExpression Not(this IGpuBoolVectorExpression source);
+public static IGpuBoolExpr Any(this IGpuBoolVectorExpression source);
+public static IGpuBoolExpr All(this IGpuBoolVectorExpression source);
+```
 
 ## Remarks
 
-Unlike standard LINQ or scalar expression trees that evaluate element-by-element, `GpuBigIntVectorLinqExtensions` constructs execution plans that operate directly over contiguous arrays. Reduction operations like [Sum](#sumigpubigintvectorexpression) automatically partition the workload into multi-pass chunk kernels, scaling efficiently up to millions of elements.
+Unlike standard LINQ or scalar expression trees that evaluate element-by-element, `GpuBigIntVectorLinqExtensions` constructs execution plans that operate directly over contiguous arrays. Reduction operations (`Sum`, `Max`, `Min`, `Count`) automatically partition the workload into multi-pass chunk kernels, scaling efficiently up to millions of elements.
 
-Because [Sum](#sumigpubigintvectorexpression) returns a [GpuBigIntExpr](GpuBigIntExpr.md), the entire vector reduction pipeline can be compiled directly into a native CUDA Graph:
+Because `Sum`, `Max`, `Min`, and `Count` return a [GpuBigIntExpr](GpuBigIntExpr.md), the entire vector reduction pipeline can be compiled directly into a native CUDA Graph:
 - **One-Liner Evaluation:** Chain `.EvaluateWithCudaGraph(workspace)` to capture, instantiate, execute, and destroy a CUDA Graph in a single statement.
-- **Precompiled Reusable Execution:** Chain `.CompileToGraph(workspace)` to produce a reusable [GpuBigIntExecutableGraph](GpuBigIntExecutableGraph.md) that can be dispatched repeatedly via `.Execute()` with zero CPU launch latency.
+- **Precompiled Reusable Execution:** Chain `.CompileToGraph(workspace)` to produce a reusable [GpuBigIntExecutableGraph](GpuBigIntExecutableGraph.md) that can be dispatched repeatedly via `.Execute()` or `.ExecuteAsync()` with zero CPU launch latency.
 
 ## Examples
 
@@ -135,6 +194,17 @@ Console.WriteLine($"Reduction result: {result.Value.ToBigInteger(result.IsNegati
 > Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
+using System;
+using System.Numerics;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
+
+using var workspace = new GpuWorkspace(65536, GpuExecutionEngine.GSharpAot);
+using var array = new GpuBigIntArray(workspace, length: 256, wordsPerElement: 4);
+using var scalarUint = GpuBigUInt.FromBigInteger(workspace, new BigInteger(7), minWords: 4);
+var scalar = new GpuBigInt(scalarUint, isNegative: false);
+
 // Evaluate vector pipeline using a one-liner CUDA Graph execution
 using var graphResult = array.AsVectorizedEnumerable()
     .SelectMultiply(scalar)
@@ -150,6 +220,17 @@ Console.WriteLine($"Graph result: {graphResult.Value.ToBigInteger(graphResult.Is
 > Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
+using System;
+using System.Numerics;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
+
+using var workspace = new GpuWorkspace(65536, GpuExecutionEngine.GSharpAot);
+using var array = new GpuBigIntArray(workspace, length: 256, wordsPerElement: 4);
+using var scalarUint = GpuBigUInt.FromBigInteger(workspace, new BigInteger(7), minWords: 4);
+var scalar = new GpuBigInt(scalarUint, isNegative: false);
+
 // Compile the vector pipeline AST into a reusable CUDA Graph
 using var precompiledGraph = array.AsVectorizedEnumerable()
     .SelectMultiply(scalar)
@@ -172,4 +253,4 @@ Console.WriteLine($"Precompiled result: {precompiledGraph.Result.Value.ToBigInte
 - [GpuBigIntExpr Struct](GpuBigIntExpr.md)
 - [GpuBigIntExecutableGraph Struct](GpuBigIntExecutableGraph.md)
 - [IGpuBigIntVectorExpression Interface](IGpuBigIntVectorExpression.md)
-
+- [IGpuBoolExpr and VectorCompareOperator](BoolVectorExpressions.md)

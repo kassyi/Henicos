@@ -26,13 +26,12 @@ Wraps the provided body in a thread execution guard.
 Wraps the provided body in a thread execution guard.
 
 ```csharp
-[GpuKernel]
 public static void SingleThread(Action body);
 ```
 
 #### Parameters
 
-`body` <i>Action</i><br>
+`body` _Action_<br>
 A delegate or lambda expressing the body to execute once.
 
 #### Exceptions
@@ -44,10 +43,14 @@ Thrown when evaluated on the host CPU.
 
 ### Execution Guard
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
 ```csharp
-// Execution Context: G# Kernel (GPU)
 using System;
 using Kassyi.GSharp.Core;
+
+// Execution Context: G# Kernel (GPU)
 
 try {
     // Ensures the enclosed block only runs on thread 0 of block 0

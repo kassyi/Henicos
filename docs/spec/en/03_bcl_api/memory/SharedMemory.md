@@ -21,28 +21,28 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
 
 ## Constructors
 
-| Name              | Description                               |
-| ----------------- | ----------------------------------------- |
+| Name | Description |
+| --- | --- |
 | SharedMemory(int) | Allocates statically-sized shared memory. |
 
 ## Properties
 
-| Name      | Description                                      |
-| --------- | ------------------------------------------------ |
+| Name | Description |
+| --- | --- |
 | Item[int] | Gets or sets the element at the specified index. |
 
 ## SharedMemory(int)
 
-Allocates statically-sized shared memory.
+Declares static or dynamic shared memory with the specified element capacity.
 
 ```csharp
-public SharedMemory(int length);
+public SharedMemory(int size);
 ```
 
 #### Parameters
 
-`length` <i>int</i><br>
-The number of elements to allocate.
+`size` _int_<br>
+The number of elements allocated in shared memory.
 
 ## Item[int]
 
@@ -54,7 +54,7 @@ public T this[int index] { get; set; }
 
 #### Parameters
 
-`index` <i>int</i><br>
+`index` _int_<br>
 The zero-based element offset.
 
 #### Property Value
@@ -71,10 +71,14 @@ Thrown when evaluated natively on the host CPU outside of the runtime execution 
 
 ### Static Allocation
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
 ```csharp
-// Execution Context: G# Kernel (GPU)
 using System;
 using Kassyi.GSharp.Core;
+
+// Execution Context: G# Kernel (GPU)
 
 try {
     // Declares block-local shared memory cache

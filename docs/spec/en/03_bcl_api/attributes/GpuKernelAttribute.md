@@ -17,8 +17,23 @@ Marks a C# method as a GPU execution entry point.
 
 ```csharp
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class GpuKernelAttribute : Attribute
+public class GpuKernelAttribute : Attribute
 ```
+
+## Properties
+
+| Name | Description |
+| --- | --- |
+| [Cooperative](#cooperative) | Gets or sets a value indicating whether this kernel is launched as a cooperative kernel (`cuLaunchCooperativeKernel` / CUDA Cooperative Groups). |
+
+## Cooperative
+
+Gets or sets a value indicating whether this kernel is launched as a cooperative kernel (`cuLaunchCooperativeKernel` / CUDA Cooperative Groups).
+
+```csharp
+public bool Cooperative { get; set; }
+```
+
 ## Examples
 
 ### Usage
@@ -58,6 +73,7 @@ public class Example
 Methods marked with this attribute are mapped to `__global__` functions in CUDA C++. They are invoked from the CPU (Host) using the G# Runtime.
 
 ### Allowed Parameter Types (Signature Whitelist)
+
 The `[GpuKernel]` method signature strictly permits only the following types:
 
 | Category | Allowed | Prohibited |
@@ -72,8 +88,6 @@ The `[GpuKernel]` method signature strictly permits only the following types:
 > If your kernel accepts only 1D arrays (`T[]`), you do **not** need the `unsafe` keyword. The transpiler handles the host-to-device pointer mapping automatically.
 
 ## See also
-
-
 
 ### Getting Started
 
@@ -98,4 +112,3 @@ The `[GpuKernel]` method signature strictly permits only the following types:
 
 - [Gpu Class](../gpu_class/00_index.md)
 - [Gpu.GridStrideLoop Method (G#)](../gpu_class/GridStrideLoop.md)
-

@@ -21,9 +21,9 @@ Count the number of trailing zero bits in an integer.
 
 ## Overloads
 
-| Name                                                 | Description                                                    |
-| ---------------------------------------------------- | -------------------------------------------------------------- |
-| [TrailingZeroCount(uint)](#trailingzerocount-uint)   | Count the number of trailing zero bits in an integer. (32-bit) |
+| Name | Description |
+| --- | --- |
+| [TrailingZeroCount(uint)](#trailingzerocount-uint) | Count the number of trailing zero bits in an integer. (32-bit) |
 | [TrailingZeroCount(ulong)](#trailingzerocount-ulong) | Count the number of trailing zero bits in an integer. (64-bit) |
 
 ## TrailingZeroCount(uint)

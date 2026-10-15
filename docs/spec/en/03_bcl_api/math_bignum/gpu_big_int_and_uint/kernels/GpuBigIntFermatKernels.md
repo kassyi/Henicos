@@ -13,76 +13,195 @@ description: "CUDA kernel implementations for Fermat number related operations a
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Contains native G# (CUDA) kernels used for Fermat number arithmetic, primarily large modular reductions against Fermat primes on the GPU.
+Contains native G# (CUDA) kernels and device functions used for Fermat number arithmetic, primarily large modular reductions against Fermat primes and shared-memory matrix transpositions on the GPU.
 
 ```csharp
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntFermatKernels
+[ExcludeFromCodeCoverage]
+public static partial class GpuBigIntFermatKernels
 ```
+
+## Nested Types
+
+| Name | Description |
+| --- | --- |
+| `FermatReduceContext` | Encapsulates the device buffers and shift/word parameters for the mega Fermat modular reduction kernel. |
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [Kernel_FermatReduce_Mega(uint[], uint[], uint[], uint[], uint[], uint[], int, int, int, int)](#kernel_fermatreduce_megauint-uint-uint-uint-uint-uint-int-int-int-int) | A GPU kernel (`[GpuKernel]`) that performs a large modular reduction using Fermat number properties. |
+| [DeviceUnpack16(uint[], uint[], uint[], int, int, bool)](#deviceunpack16uint-uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that unpacks 32-bit words into 16-bit elements across dual NTT buffers. |
+| [DeviceTranspose32X32(uint[], uint[], int, int, bool)](#devicetranspose32x32uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that transposes a 2D matrix using 32x32 shared-memory tiles with bank-conflict padding. |
+| [DeviceShiftLeftParallel(uint[], uint[], int, int, bool)](#deviceshiftleftparalleluint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that performs a parallel grid-stride left bit-shift across device buffers. |
+| [KernelTestBlockAddSubParallel(uint[], uint[], uint[], int, int)](#kerneltestblockaddsubparalleluint-uint-uint-int-int) | A GPU kernel (`[GpuKernel]`) entry point that invokes `GpuBigIntKernels.DeviceAddSubParallel` for block-level parallel addition or subtraction. |
+| [KernelFermatReduceMega(FermatReduceContext)](#kernelfermatreducemegafermatreducecontext) | A GPU kernel (`[GpuKernel]`) that performs a large multi-pass modular reduction using Fermat number properties. |
 
-## Kernel_FermatReduce_Mega(uint[], uint[], uint[], uint[], uint[], uint[], int, int, int, int)
+## FermatReduceContext Struct
 
-A GPU kernel (`[GpuKernel]`) that performs a large modular reduction using Fermat number properties.
+Encapsulates the device buffers and shift/word parameters for the mega Fermat modular reduction kernel.
 
 ```csharp
-[GpuKernel]
-public static void Kernel_FermatReduce_Mega(
-    uint[] valueT, uint[] mulResult, uint[] quotient, uint[] remainder, uint[] temp,
-    uint[] remainderMask, int numWords, int outNumWords, int totalShiftBits, int exponent);
+public struct FermatReduceContext
+{
+    public uint[] ValueT;
+    public uint[] MulResult;
+    public uint[] Quotient;
+    public uint[] Remainder;
+    public uint[] Temp;
+    [GpuReadOnly] public uint[] RemainderMask;
+    public int NumWords;
+    public int OutNumWords;
+    public int TotalShiftBits;
+    public int Exponent;
+}
+```
+
+## DeviceUnpack16(uint[], uint[], uint[], int, int, bool)
+
+A GPU device function (`[GpuDeviceFunction]`) that unpacks 32-bit words into 16-bit elements across dual NTT buffers.
+
+```csharp
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void DeviceUnpack16([GpuReadOnly] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n, int numWords, bool syncThreads = true);
 ```
 
 #### Parameters
 
-`valueT` _uint[]_<br>
-The original target value.
+`dSrc` _uint[]_<br>
+The source 32-bit word buffer.
 
-`mulResult` _uint[]_<br>
-The multiplication result buffer.
+`dDst1` _uint[]_<br>
+The first destination NTT buffer receiving 16-bit unpacked elements.
 
-`quotient` _uint[]_<br>
-The quotient output buffer.
+`dDst2` _uint[]_<br>
+The second destination NTT buffer receiving 16-bit unpacked elements.
 
-`remainder` _uint[]_<br>
-The remainder output buffer.
-
-`temp` _uint[]_<br>
-The temporary working buffer.
-
-`remainderMask` _uint[]_<br>
-The bitmask applied to extract the remainder portion.
+`n` _int_<br>
+The transform length (total number of 16-bit elements).
 
 `numWords` _int_<br>
-The base word count.
+The number of 32-bit words in `dSrc`.
 
-`outNumWords` _int_<br>
-The output word count.
+`syncThreads` _bool_<br>
+If `true`, synchronizes threads within the block upon completion.
 
-`totalShiftBits` _int_<br>
-The total number of bits to shift.
+## DeviceTranspose32X32(uint[], uint[], int, int, bool)
 
-`exponent` _int_<br>
-The exponent of the Fermat number $F_n$.
+A GPU device function (`[GpuDeviceFunction]`) that transposes a 2D matrix using 32x32 shared-memory tiles with bank-conflict padding.
+
+```csharp
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void DeviceTranspose32X32([GpuReadOnly] uint[] idata, uint[] odata, int width, int height, bool syncThreads = true);
+```
+
+#### Parameters
+
+`idata` _uint[]_<br>
+The input matrix buffer of dimensions `height` x `width`.
+
+`odata` _uint[]_<br>
+The output transposed matrix buffer of dimensions `width` x `height`.
+
+`width` _int_<br>
+The width (column count) of the input matrix.
+
+`height` _int_<br>
+The height (row count) of the input matrix.
+
+`syncThreads` _bool_<br>
+If `true`, synchronizes threads after each tile write.
+
+## DeviceShiftLeftParallel(uint[], uint[], int, int, bool)
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a parallel grid-stride left bit-shift across device buffers.
+
+```csharp
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void DeviceShiftLeftParallel([GpuReadOnly] uint[] src, uint[] dst, int shiftBits, int numWords, bool syncThreads = true);
+```
+
+#### Parameters
+
+`src` _uint[]_<br>
+The source word buffer.
+
+`dst` _uint[]_<br>
+The destination word buffer.
+
+`shiftBits` _int_<br>
+The total number of bits to shift left.
+
+`numWords` _int_<br>
+The total number of words to process.
+
+`syncThreads` _bool_<br>
+If `true`, synchronizes threads within the block upon completion.
+
+## KernelTestBlockAddSubParallel(uint[], uint[], uint[], int, int)
+
+A GPU kernel (`[GpuKernel]`) entry point that invokes `GpuBigIntKernels.DeviceAddSubParallel` for block-level parallel addition or subtraction.
+
+```csharp
+[GpuKernel]
+public static void KernelTestBlockAddSubParallel([GpuReadOnly] uint[] a, [GpuReadOnly] uint[] b, uint[] result, int numWords, int sign);
+```
+
+#### Parameters
+
+`a` _uint[]_<br>
+The first operand buffer.
+
+`b` _uint[]_<br>
+The second operand buffer.
+
+`result` _uint[]_<br>
+The output result buffer.
+
+`numWords` _int_<br>
+The number of 32-bit words to process.
+
+`sign` _int_<br>
+`1` for addition (`a + b`), or `-1` for subtraction (`a - b`).
+
+## KernelFermatReduceMega(FermatReduceContext)
+
+A GPU kernel (`[GpuKernel]`) that performs a large multi-pass modular reduction using Fermat number properties.
+
+```csharp
+[GpuKernel]
+public static void KernelFermatReduceMega(FermatReduceContext ctx);
+```
+
+#### Parameters
+
+`ctx` _FermatReduceContext_<br>
+The reduction context containing source, quotient, remainder, mask buffers, and bit-shift parameters.
 
 ## Examples
 
 ### Internal Kernel Usage
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
-// This is an internal Kernel class and its methods are launched via the G# execution pipeline.
-Console.WriteLine("GpuBigIntFermatKernels contains static kernel endpoints for Fermat reduction ops.");
+// Configure a FermatReduceContext for launching KernelFermatReduceMega via the G# execution pipeline.
+var ctx = new GpuBigIntFermatKernels.FermatReduceContext
+{
+    NumWords = 64,
+    OutNumWords = 64,
+    TotalShiftBits = 1024,
+    Exponent = 20
+};
+Console.WriteLine($"FermatReduceContext configured: NumWords={ctx.NumWords}, Exponent={ctx.Exponent}");
 ```
 
 ## Remarks

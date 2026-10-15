@@ -6,7 +6,7 @@ language: "en"
 description: "A value type wrapper that builds a lazy expression tree of GPU BigInteger arithmetic and bitwise operations."
 ---
 
-# GpuBigUIntExpr Struct
+## GpuBigUIntExpr Struct
 
 ## Definition
 
@@ -15,10 +15,14 @@ description: "A value type wrapper that builds a lazy expression tree of GPU Big
 
 A value type wrapper that builds a lazy expression tree of GPU BigInteger arithmetic and bitwise operations.
 
+```csharp
+public readonly struct GpuBigUIntExpr
+```
+
 ## Properties
 
-| Name          | Description                                     |
-| ------------- | ----------------------------------------------- |
+| Name | Description |
+| --- | --- |
 | [Node](#node) | Gets the root AST node of this expression tree. |
 
 ## Node
@@ -31,8 +35,8 @@ public IGpuBigUIntExpression Node { get; }
 
 ## Methods
 
-| Name                                        | Description                               |
-| ------------------------------------------- | ----------------------------------------- |
+| Name | Description |
+| --- | --- |
 | [Sqrt(GpuBigUIntExpr)](#sqrtgpubiguintexpr) | Constructs a lazy square root expression. |
 
 ## Sqrt(GpuBigUIntExpr)
@@ -55,19 +59,19 @@ A lazy AST node representing the square root.
 
 ## Operators
 
-| Name                                                  | Description                                                               |
-| ----------------------------------------------------- | ------------------------------------------------------------------------- |
+| Name | Description |
+| --- | --- |
 | `implicit operator GpuBigUIntExpr(GpuBigUInt)` | Implicitly wraps a `GpuBigUInt` buffer as an expression leaf node. |
-| `operator +(GpuBigUIntExpr, GpuBigUIntExpr)`          | Constructs a lazy addition expression.                                    |
-| `operator -(GpuBigUIntExpr, GpuBigUIntExpr)`          | Constructs a lazy subtraction expression.                                 |
-| `operator *(GpuBigUIntExpr, GpuBigUIntExpr)`          | Constructs a lazy multiplication expression.                              |
-| `operator /(GpuBigUIntExpr, GpuBigUIntExpr)`          | Constructs a lazy division expression.                                    |
-| `operator &(GpuBigUIntExpr, GpuBigUIntExpr)`          | Constructs a lazy bitwise AND expression.                                 |
-| `operator \|(GpuBigUIntExpr, GpuBigUIntExpr)`         | Constructs a lazy bitwise OR expression.                                  |
-| `operator ^(GpuBigUIntExpr, GpuBigUIntExpr)`          | Constructs a lazy bitwise XOR expression.                                 |
-| `operator ~(GpuBigUIntExpr)`                          | Constructs a lazy bitwise NOT expression.                                 |
-| `operator <<(GpuBigUIntExpr, int)`                    | Constructs a lazy left shift expression.                                  |
-| `operator >>(GpuBigUIntExpr, int)`                    | Constructs a lazy right shift expression.                                 |
+| `operator +(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy addition expression. |
+| `operator -(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy subtraction expression. |
+| `operator *(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy multiplication expression. |
+| `operator /(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy division expression. |
+| `operator &(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy bitwise AND expression. |
+| `operator \|(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy bitwise OR expression. |
+| `operator ^(GpuBigUIntExpr, GpuBigUIntExpr)` | Constructs a lazy bitwise XOR expression. |
+| `operator ~(GpuBigUIntExpr)` | Constructs a lazy bitwise NOT expression. |
+| `operator <<(GpuBigUIntExpr, int)` | Constructs a lazy left shift expression. |
+| `operator >>(GpuBigUIntExpr, int)` | Constructs a lazy right shift expression. |
 
 ## Remarks
 
@@ -78,13 +82,11 @@ This struct serves as the frontend for operator overloading on GPU Unsigned BigI
 ### Building and Evaluating AST on GPU
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using System.Numerics;
-using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;

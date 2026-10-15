@@ -17,9 +17,9 @@ Synchronizes all threads across a cooperative thread grid.
 
 ## Overloads
 
-| Name                                 | Description                                                                                                                                           |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [SyncGrid()](#syncgrid)              | Synchronizes all threads across a cooperative thread grid.                                                                                            |
+| Name | Description |
+| --- | --- |
+| [SyncGrid()](#syncgrid) | Synchronizes all threads across a cooperative thread grid. |
 | [SyncGrid(Action)](#syncgrid-action) | Synchronizes all threads across a cooperative thread grid and automatically handles synchronization barriers across the provided block of statements. |
 
 ## SyncGrid()
@@ -27,27 +27,25 @@ Synchronizes all threads across a cooperative thread grid.
 Synchronizes all threads across a cooperative thread grid.
 
 ```csharp
-[GpuKernel]
 public static void SyncGrid();
 ```
 
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside of a managed execution context.
 
 ## SyncGrid(Action)
 
 Synchronizes all threads across a cooperative thread grid and automatically handles synchronization barriers across the provided block of statements.
 
 ```csharp
-[GpuKernel]
-public static void SyncGrid(Action action);
+public static void SyncGrid(Action body);
 ```
 
 #### Parameters
 
-`action` <i>Action</i><br>
+`body` _Action_<br>
 A delegate or lambda expressing the body to execute with synchronization barriers.
 
 #### Exceptions

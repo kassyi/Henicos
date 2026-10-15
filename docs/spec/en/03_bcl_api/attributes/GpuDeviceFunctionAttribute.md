@@ -17,8 +17,15 @@ Marks a C# method to be transpiled into a GPU-callable device function.
 
 ```csharp
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class GpuDeviceFunctionAttribute : Attribute
+public class GpuDeviceFunctionAttribute : Attribute
+
+[AttributeUsage(AttributeTargets.Method, Inherited = false)]
+public class GpuInlineAttribute : Attribute
+
+[AttributeUsage(AttributeTargets.Method, Inherited = false)]
+public class GpuNoInlineAttribute : Attribute
 ```
+
 ## Examples
 
 ### Usage
@@ -38,6 +45,7 @@ Example.Run();
 public class Example
 {
     [GpuDeviceFunction]
+    [GpuInline]
     public static float ComputeDelta(float a, float b)
     {
         return MathF.Abs(a - b);
@@ -55,11 +63,14 @@ public class Example
 
 ## Remarks
 
-Methods marked with this attribute are mapped to `__device__` functions in CUDA C++. They can only be called by `[GpuKernel]` methods or other `[GpuDeviceFunction]` methods.
+Methods marked with `[GpuDeviceFunction]` are mapped to `__device__` functions in CUDA C++. They can only be called by `[GpuKernel]` methods or other `[GpuDeviceFunction]` methods.
+
+### Inlining Control (`[GpuInline]` and `[GpuNoInline]`)
+
+- **`[GpuInline]` (`GpuInlineAttribute`)**: Requests force-inlining (`__forceinline__`) of the annotated device function in the transpiled CUDA C++ code.
+- **`[GpuNoInline]` (`GpuNoInlineAttribute`)**: Prevents inlining (`__noinline__`) of the annotated device function in the transpiled CUDA C++ code.
 
 ## See also
-
-
 
 ### Language Specification
 
@@ -75,4 +86,3 @@ Methods marked with this attribute are mapped to `__device__` functions in CUDA 
 
 - [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
 - [Advanced: Extending GpuBigInt with Custom Algorithms](../../04_guides/08_advanced_custom_math_kernels.md)
-

@@ -1,12 +1,12 @@
 ---
-title: "BigIntegerExtensions Class (G#)"
+title: "BigIntExtensions Class (G#)"
 site: "G# Documentation"
-published: "2026-09-24T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Provides mathematical extension methods for System.Numerics.BigInteger."
 ---
 
-## BigIntegerExtensions Class
+## BigIntExtensions Class
 
 ## Definition
 
@@ -16,7 +16,7 @@ description: "Provides mathematical extension methods for System.Numerics.BigInt
 Provides mathematical extension methods for `BigInteger`.
 
 ```csharp
-public static class BigIntegerExtensions
+public static class BigIntExtensions
 ```
 
 ## Methods

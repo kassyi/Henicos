@@ -13,26 +13,57 @@ description: "CUDA kernel implementations for Fermat number trial division facto
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Contains native G# (CUDA) kernels used for trial division factoring searches of Fermat numbers.
+Contains native G# (CUDA) kernels and device functions used for trial division factoring searches of Fermat numbers.
 
 ```csharp
 [SkipSnapshotConsistency("New Feature WIP")]
-public static class FermatTrialFactoringKernels
+public static partial class FermatTrialFactoringKernels
 ```
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [Kernel_SearchFactors32(uint, uint, uint[], uint[], int)](#kernel_searchfactors32uint-uint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that searches for 32-bit factors of a Fermat number. |
+| [Device_ModPow64_Under32Bit(ulong, ulong, ulong)](#device_modpow64_under32bitulong-ulong-ulong) | A GPU device function (`[GpuDeviceFunction, GpuInline]`) that computes 64-bit modular exponentiation for moduli under 32 bits. |
+| [SearchFactors32Kernel(uint, uint, uint[], uint[], int)](#searchfactors32kerneluint-uint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that searches for 32-bit factors of a Fermat number. |
 
-## Kernel_SearchFactors32(uint, uint, uint[], uint[], int)
+## Device_ModPow64_Under32Bit(ulong, ulong, ulong)
+
+A GPU device function (`[GpuDeviceFunction, GpuInline]`) that computes 64-bit modular exponentiation ($\text{baseVal}^{\text{exp}} \bmod m$) for moduli under 32 bits.
+
+```csharp
+[GpuDeviceFunction, GpuInline]
+public static ulong Device_ModPow64_Under32Bit(ulong baseVal, ulong exp, ulong m);
+```
+
+#### Parameters
+
+`baseVal` _ulong_<br>
+The base operand.
+
+`exp` _ulong_<br>
+The exponent operand.
+
+`m` _ulong_<br>
+The modulus operand (under 32 bits).
+
+#### Returns
+
+_ulong_<br>
+The modular exponentiation result.
+
+## SearchFactors32Kernel(uint, uint, uint[], uint[], int)
 
 A GPU kernel (`[GpuKernel]`) that searches for 32-bit factors of a Fermat number.
 
 ```csharp
 [GpuKernel]
-public static void Kernel_SearchFactors32(uint startOdd, uint exp, uint[] results, uint[] resultCount, int maxResults);
+public static void SearchFactors32Kernel(
+    uint startOdd,
+    uint exp,
+    uint[] results,
+    uint[] resultCount,
+    int maxResults);
 ```
 
 #### Parameters
@@ -57,20 +88,21 @@ The maximum number of factors to store in the `results` buffer.
 ### Internal Kernel Usage
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
-// This is an internal Kernel class and its methods are launched via the G# execution pipeline.
-Console.WriteLine("FermatTrialFactoringKernels contains static kernel endpoints for factoring ops.");
+// This is a GPU kernel class and its methods are launched via the G# execution pipeline.
+ulong rem = FermatTrialFactoringKernels.Device_ModPow64_Under32Bit(2UL, 10UL, 1000UL);
+Console.WriteLine($"2^10 mod 1000 = {rem}");
 ```
 
 ## Remarks
 
-This class contains `[GpuKernel]` and `[GpuDeviceFunction]` attributed methods. These methods cannot be executed directly on the CPU (Host). They are transpiled to CUDA PTX/SASS by the G# Roslyn Source Generator and launched via the `GpuWorkspace`.
+This class contains `[GpuKernel]` and `[GpuDeviceFunction]` attributed methods. Kernel methods are transpiled to CUDA PTX/SASS by the G# Roslyn Source Generator and launched via the `GpuWorkspace`.
 
 ## See also
 

@@ -28,13 +28,13 @@ Because of the **Lazy Evaluation** architecture, these operators **do not execut
 
 ## Overloads
 
-| Operator                                | Description                           |
-| --------------------------------------- | ------------------------------------- |
-| [Addition (+)](#addition--)             | Adds two numbers.                     |
-| [Subtraction (-)](#subtraction--)       | Subtracts a number from another.      |
-| [Multiplication (*)](#multiplication--) | Multiplies two numbers.               |
-| [Division (/)](#division--)             | Divides a number by another.          |
-| [Modulus (%)](#modulus--)               | Computes the remainder of a division. |
+| Operator | Description |
+| --- | --- |
+| [Addition (+)](#addition--) | Adds two numbers. |
+| [Subtraction (-)](#subtraction--) | Subtracts a number from another. |
+| [Multiplication (*)](#multiplication--) | Multiplies two numbers. |
+| [Division (/)](#division--) | Divides a number by another. |
+| [Modulus (%)](#modulus--) | Computes the remainder of a division. |
 
 ## Addition (+)
 

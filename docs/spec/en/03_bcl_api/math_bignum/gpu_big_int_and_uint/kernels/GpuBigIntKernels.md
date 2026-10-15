@@ -3,7 +3,7 @@ title: "GpuBigIntKernels Class (G#)"
 site: "G# Documentation"
 published: "2026-09-24T00:00:00.000Z"
 language: "en"
-description: "CUDA kernel implementations for fundamental large integer operations including addition, subtraction, and bitwise shifts."
+description: "CUDA kernel implementations for fundamental large integer operations including parallel addition, subtraction, bitwise logic, and shifts."
 ---
 
 ## GpuBigIntKernels Class
@@ -13,43 +13,62 @@ description: "CUDA kernel implementations for fundamental large integer operatio
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Contains the native G# (CUDA) kernels used for fundamental large integer operations such as chunked addition, subtraction, shifting, and bitwise logic on the GPU.
+Contains the native G# (CUDA) kernels and device functions used for fundamental large integer operations such as parallel Kogge-Stone addition, subtraction, bit-shifting, and bitwise logic on the GPU.
 
 ```csharp
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntKernels
+[ExcludeFromCodeCoverage]
+public static partial class GpuBigIntKernels
 ```
+
+## Nested Types
+
+| Name | Description |
+| --- | --- |
+| [CarryState](#carrystate-struct) | Represents the carry generation (G) and propagation (P) bits for prefix sum operations. |
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [ChunkAddKernel(uint[], uint[], uint[], long[], int, int)](#chunkaddkerneluint-uint-uint-long-int-int) | A GPU kernel (`[GpuKernel]`) that performs addition on large integers in chunks. |
-| [ApplyAddCarryKernel(uint[], long[], int, int, int)](#applyaddcarrykerneluint-long-int-int-int) | A GPU kernel (`[GpuKernel]`) that applies carry values across chunks for addition. |
-| [ChunkSubKernel(uint[], uint[], uint[], long[], int, int)](#chunksubkerneluint-uint-uint-long-int-int) | A GPU kernel (`[GpuKernel]`) that performs subtraction on large integers in chunks. |
-| [ApplySubBorrowKernel(uint[], long[], int, int, int)](#applysubborrowkerneluint-long-int-int-int) | A GPU kernel (`[GpuKernel]`) that applies borrow values across chunks for subtraction. |
+| [PackCarryState(CarryState)](#packcarrystatecarrystate) | A GPU device function (`[GpuDeviceFunction]`) that packs a `CarryState` into a `uint`. |
+| [UnpackCarryState(uint)](#unpackcarrystateuint) | A GPU device function (`[GpuDeviceFunction]`) that unpacks a `uint` into a `CarryState`. |
+| [WarpScanGp(CarryState, int)](#warpscangpcarrystate-int) | A GPU device function (`[GpuDeviceFunction]`) that computes the warp-wide prefix sum of carry generation and propagation. |
+| [ApplyCarry(CarryState, uint)](#applycarrycarrystate-uint) | A GPU device function (`[GpuDeviceFunction]`) that applies an incoming carry to the carry state. |
+| [DeviceAddSubParallel(uint[], uint[], uint[], int, int, bool)](#deviceaddsubparalleluint-uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel addition or subtraction using warp/block Kogge-Stone carry lookahead. |
+| [ParallelAddKernel(uint[], uint[], uint[], int)](#paralleladdkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs parallel addition on large integers. |
+| [ParallelSubKernel(uint[], uint[], uint[], int)](#parallelsubkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs parallel subtraction on large integers. |
 | [ShiftLeftKernel(uint[], int, int, uint[], int)](#shiftleftkerneluint-int-int-uint-int) | A GPU kernel (`[GpuKernel]`) that performs a left bit-shift operation. |
 | [ShiftRightKernel(uint[], int, int, uint[], int)](#shiftrightkerneluint-int-int-uint-int) | A GPU kernel (`[GpuKernel]`) that performs a right bit-shift operation. |
 | [BitwiseAndKernel(uint[], uint[], uint[], int)](#bitwiseandkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs a bitwise AND operation. |
 | [BitwiseOrKernel(uint[], uint[], uint[], int)](#bitwiseorkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs a bitwise OR operation. |
 | [BitwiseXorKernel(uint[], uint[], uint[], int)](#bitwisexorkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs a bitwise XOR operation. |
 | [BitwiseNotKernel(uint[], uint[], int)](#bitwisenotkerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs a bitwise NOT operation. |
-| [PackCarryState(CarryState)](#packcarrystatedcarrystated) | A GPU device function (`[GpuDeviceFunction]`) that packs a CarryState into a uint. |
-| [UnpackCarryState(uint)](#unpackcarrystateuint) | A GPU device function (`[GpuDeviceFunction]`) that unpacks a uint into a CarryState. |
-| [WarpScanGp(CarryState, int)](#warpscangpcarrystate-int) | A GPU device function (`[GpuDeviceFunction]`) that computes the warp-wide prefix sum of carry generation and propagation. |
-| [ApplyCarry(CarryState, uint)](#applycarrycarrystate-uint) | A GPU device function (`[GpuDeviceFunction]`) that applies an incoming carry to the carry state. |
+| [ExecuteShiftLeft(GpuBigIntContext, int, int)](#executeshiftleftgpubigintcontext-int-int) | A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride left bit-shift using `GpuBigIntContext`. |
+| [ExecuteShiftRight(GpuBigIntContext, int, int)](#executeshiftrightgpubigintcontext-int-int) | A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride right bit-shift using `GpuBigIntContext`. |
+| [ExecuteBitwiseAnd(ref GpuBigIntContext)](#executebitwiseandref-gpubigintcontext) | A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride bitwise AND using `GpuBigIntContext`. |
+| [ExecuteBitwiseOr(ref GpuBigIntContext)](#executebitwiseorref-gpubigintcontext) | A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride bitwise OR using `GpuBigIntContext`. |
+| [ExecuteBitwiseXor(ref GpuBigIntContext)](#executebitwisexorref-gpubigintcontext) | A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride bitwise XOR using `GpuBigIntContext`. |
+| [ExecuteBitwiseNot(ref GpuBigIntContext)](#executebitwisenotref-gpubigintcontext) | A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride bitwise NOT using `GpuBigIntContext`. |
+| [ExecuteAdd(ref GpuBigIntContext, uint[], uint[], uint[])](#executeaddref-gpubigintcontext-uint-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that performs sequential multi-word addition with carry propagation for fused expression kernels. |
+| [ExecuteSub(ref GpuBigIntContext, uint[], uint[], uint[])](#executesubref-gpubigintcontext-uint-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that performs sequential multi-word subtraction with borrow propagation for fused expression kernels. |
+| [ExecuteShiftLeft(ref GpuBigIntContext, uint[], uint[], int)](#executeshiftleftref-gpubigintcontext-uint-uint-int) | A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word left bit-shift for fused expression kernels. |
+| [ExecuteShiftRight(ref GpuBigIntContext, uint[], uint[], int)](#executeshiftrightref-gpubigintcontext-uint-uint-int) | A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word right bit-shift for fused expression kernels. |
+| [ExecuteBitwiseAnd(ref GpuBigIntContext, uint[], uint[], uint[])](#executebitwiseandref-gpubigintcontext-uint-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word bitwise AND for fused expression kernels. |
+| [ExecuteBitwiseOr(ref GpuBigIntContext, uint[], uint[], uint[])](#executebitwiseorref-gpubigintcontext-uint-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word bitwise OR for fused expression kernels. |
+| [ExecuteBitwiseXor(ref GpuBigIntContext, uint[], uint[], uint[])](#executebitwisexorref-gpubigintcontext-uint-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word bitwise XOR for fused expression kernels. |
+| [ExecuteBitwiseNot(ref GpuBigIntContext, uint[], uint[])](#executebitwisenotref-gpubigintcontext-uint-uint) | A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word bitwise NOT for fused expression kernels. |
 
 ## CarryState Struct
 
 Represents the carry generation (G) and propagation (P) bits for prefix sum operations.
 
 ```csharp
-public struct CarryState
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public struct CarryState(uint generate, uint propagate)
 {
-    public uint Generate;
-    public uint Propagate;
-
-    public CarryState(uint generate, uint propagate);
+    public uint Generate = generate;
+    public uint Propagate = propagate;
 }
 ```
 
@@ -61,30 +80,13 @@ The carry generation bit. Typically `1` if the current element generates a carry
 `Propagate` _uint_<br>
 The carry propagation bit. Typically `1` if the current element propagates an incoming carry (e.g., sum == max), otherwise `0`.
 
-#### Constructors
-
-##### CarryState(uint, uint)
-
-Initializes a new instance of the `CarryState` struct.
-
-```csharp
-public CarryState(uint generate, uint propagate);
-```
-
-###### Parameters
-
-`generate` _uint_<br>
-The initial generation bit value.
-
-`propagate` _uint_<br>
-The initial propagation bit value.
-
 ## PackCarryState(CarryState)
 
 A GPU device function (`[GpuDeviceFunction]`) that packs a `CarryState` into a single `uint` for shared memory storage.
 
 ```csharp
 [GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 public static uint PackCarryState(CarryState state);
 ```
 
@@ -103,6 +105,7 @@ A GPU device function (`[GpuDeviceFunction]`) that unpacks a `uint` back into a 
 
 ```csharp
 [GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 public static CarryState UnpackCarryState(uint packed);
 ```
 
@@ -121,6 +124,7 @@ A GPU device function (`[GpuDeviceFunction]`) that computes the warp-wide prefix
 
 ```csharp
 [GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 public static CarryState WarpScanGp(CarryState state, int laneId);
 ```
 
@@ -142,6 +146,7 @@ A GPU device function (`[GpuDeviceFunction]`) that applies an incoming carry to 
 
 ```csharp
 [GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
 public static uint ApplyCarry(CarryState state, uint carryIn);
 ```
 
@@ -157,13 +162,49 @@ The carry-in bit to propagate through the P bit.
 _uint_<br>
 The final resolved carry bit (0 or 1) for the current segment.
 
-## ChunkAddKernel(uint[], uint[], uint[], long[], int, int)
+## DeviceAddSubParallel(uint[], uint[], uint[], int, int, bool)
 
-A GPU kernel (`[GpuKernel]`) that performs addition on large integers in chunks.
+A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel addition or subtraction using warp/block Kogge-Stone carry lookahead.
+
+```csharp
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void DeviceAddSubParallel(
+    [GpuReadOnly] uint[] a,
+    [GpuReadOnly] uint[] b,
+    uint[] result,
+    int numWords,
+    int sign = 1,
+    bool syncThreads = true);
+```
+
+#### Parameters
+
+`a` _uint[]_<br>
+The first operand buffer.
+
+`b` _uint[]_<br>
+The second operand buffer.
+
+`result` _uint[]_<br>
+The result buffer.
+
+`numWords` _int_<br>
+The total number of words.
+
+`sign` _int_<br>
+`1` for addition (`a + b`), or `-1` for subtraction (`a - b`).
+
+`syncThreads` _bool_<br>
+If `true`, synchronizes threads within the block upon completion.
+
+## ParallelAddKernel(uint[], uint[], uint[], int)
+
+A GPU kernel (`[GpuKernel]`) that performs parallel addition on large integers.
 
 ```csharp
 [GpuKernel]
-public static void ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize);
+public static void ParallelAddKernel([GpuReadOnly] uint[] dA, [GpuReadOnly] uint[] dB, uint[] dResult, int numWords);
 ```
 
 #### Parameters
@@ -177,48 +218,16 @@ The second operand buffer.
 `dResult` _uint[]_<br>
 The result buffer.
 
-`carryBuffer` _long[]_<br>
-The buffer to store chunk carries.
-
 `numWords` _int_<br>
 The total number of words.
 
-`chunkSize` _int_<br>
-The number of words processed per block.
+## ParallelSubKernel(uint[], uint[], uint[], int)
 
-## ApplyAddCarryKernel(uint[], long[], int, int, int)
-
-A GPU kernel (`[GpuKernel]`) that applies carry values across chunks for addition.
+A GPU kernel (`[GpuKernel]`) that performs parallel subtraction on large integers.
 
 ```csharp
 [GpuKernel]
-public static void ApplyAddCarryKernel(uint[] dResult, long[] carryBuffer, int numChunks, int numWords, int chunkSize);
-```
-
-#### Parameters
-
-`dResult` _uint[]_<br>
-The result buffer to which carries are applied.
-
-`carryBuffer` _long[]_<br>
-The buffer containing chunk carries.
-
-`numChunks` _int_<br>
-The total number of chunks.
-
-`numWords` _int_<br>
-The total number of words.
-
-`chunkSize` _int_<br>
-The number of words processed per chunk.
-
-## ChunkSubKernel(uint[], uint[], uint[], long[], int, int)
-
-A GPU kernel (`[GpuKernel]`) that performs subtraction on large integers in chunks.
-
-```csharp
-[GpuKernel]
-public static void ChunkSubKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize);
+public static void ParallelSubKernel([GpuReadOnly] uint[] dA, [GpuReadOnly] uint[] dB, uint[] dResult, int numWords);
 ```
 
 #### Parameters
@@ -232,40 +241,8 @@ The second operand buffer.
 `dResult` _uint[]_<br>
 The result buffer.
 
-`carryBuffer` _long[]_<br>
-The buffer to store chunk borrows.
-
 `numWords` _int_<br>
 The total number of words.
-
-`chunkSize` _int_<br>
-The number of words processed per chunk.
-
-## ApplySubBorrowKernel(uint[], long[], int, int, int)
-
-A GPU kernel (`[GpuKernel]`) that applies borrow values across chunks for subtraction.
-
-```csharp
-[GpuKernel]
-public static void ApplySubBorrowKernel(uint[] dResult, long[] carryBuffer, int numChunks, int numWords, int chunkSize);
-```
-
-#### Parameters
-
-`dResult` _uint[]_<br>
-The result buffer to which borrows are applied.
-
-`carryBuffer` _long[]_<br>
-The buffer containing chunk borrows.
-
-`numChunks` _int_<br>
-The total number of chunks.
-
-`numWords` _int_<br>
-The total number of words.
-
-`chunkSize` _int_<br>
-The number of words processed per chunk.
 
 ## ShiftLeftKernel(uint[], int, int, uint[], int)
 
@@ -408,20 +385,149 @@ The result buffer.
 `numWords` _int_<br>
 The total number of words.
 
+## ExecuteShiftLeft(GpuBigIntContext, int, int)
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride left bit-shift using `GpuBigIntContext`.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteShiftLeft(GpuBigIntContext ctx, int wordShift, int bitShift);
+```
+
+## ExecuteShiftRight(GpuBigIntContext, int, int)
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride right bit-shift using `GpuBigIntContext`.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteShiftRight(GpuBigIntContext ctx, int wordShift, int bitShift);
+```
+
+## ExecuteBitwiseAnd(ref GpuBigIntContext)
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride bitwise AND using `GpuBigIntContext`.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteBitwiseAnd(ref GpuBigIntContext ctx);
+```
+
+## ExecuteBitwiseOr(ref GpuBigIntContext)
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride bitwise OR using `GpuBigIntContext`.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteBitwiseOr(ref GpuBigIntContext ctx);
+```
+
+## ExecuteBitwiseXor(ref GpuBigIntContext)
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride bitwise XOR using `GpuBigIntContext`.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteBitwiseXor(ref GpuBigIntContext ctx);
+```
+
+## ExecuteBitwiseNot(ref GpuBigIntContext)
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a grid-stride bitwise NOT using `GpuBigIntContext`.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteBitwiseNot(ref GpuBigIntContext ctx);
+```
+
+## ExecuteAdd(ref GpuBigIntContext, uint[], uint[], uint[])
+
+A GPU device function (`[GpuDeviceFunction]`) that performs sequential multi-word addition with carry propagation for fused expression kernels.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteAdd(ref GpuBigIntContext ctx, uint[] result, uint[] left, uint[] right);
+```
+
+## ExecuteSub(ref GpuBigIntContext, uint[], uint[], uint[])
+
+A GPU device function (`[GpuDeviceFunction]`) that performs sequential multi-word subtraction with borrow propagation for fused expression kernels.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteSub(ref GpuBigIntContext ctx, uint[] result, uint[] left, uint[] right);
+```
+
+## ExecuteShiftLeft(ref GpuBigIntContext, uint[], uint[], int)
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word left bit-shift for fused expression kernels.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteShiftLeft(ref GpuBigIntContext ctx, uint[] result, uint[] left, int shiftBits);
+```
+
+## ExecuteShiftRight(ref GpuBigIntContext, uint[], uint[], int)
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word right bit-shift for fused expression kernels.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteShiftRight(ref GpuBigIntContext ctx, uint[] result, uint[] left, int shiftBits);
+```
+
+## ExecuteBitwiseAnd(ref GpuBigIntContext, uint[], uint[], uint[])
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word bitwise AND for fused expression kernels.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteBitwiseAnd(ref GpuBigIntContext ctx, uint[] result, uint[] left, uint[] right);
+```
+
+## ExecuteBitwiseOr(ref GpuBigIntContext, uint[], uint[], uint[])
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word bitwise OR for fused expression kernels.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteBitwiseOr(ref GpuBigIntContext ctx, uint[] result, uint[] left, uint[] right);
+```
+
+## ExecuteBitwiseXor(ref GpuBigIntContext, uint[], uint[], uint[])
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word bitwise XOR for fused expression kernels.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteBitwiseXor(ref GpuBigIntContext ctx, uint[] result, uint[] left, uint[] right);
+```
+
+## ExecuteBitwiseNot(ref GpuBigIntContext, uint[], uint[])
+
+A GPU device function (`[GpuDeviceFunction]`) that performs a sequential multi-word bitwise NOT for fused expression kernels.
+
+```csharp
+[GpuDeviceFunction]
+public static void ExecuteBitwiseNot(ref GpuBigIntContext ctx, uint[] result, uint[] operand);
+```
+
 ## Examples
 
 ### Internal Kernel Usage
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
-// This is an internal Kernel class and its methods are launched via the G# execution pipeline.
-Console.WriteLine("GpuBigIntKernels contains static kernel endpoints.");
+// Inspect CarryState packing and unpacking used by Kogge-Stone carry lookahead kernels.
+var state = new GpuBigIntKernels.CarryState(generate: 1, propagate: 0);
+uint packed = GpuBigIntKernels.PackCarryState(state);
+var unpacked = GpuBigIntKernels.UnpackCarryState(packed);
+Console.WriteLine($"CarryState Generate={unpacked.Generate}, Propagate={unpacked.Propagate}");
 ```
 
 ## Remarks

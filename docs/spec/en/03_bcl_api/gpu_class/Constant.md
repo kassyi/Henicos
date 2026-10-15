@@ -17,33 +17,27 @@ Directly injects a string literal as a raw C++ expression.
 
 ## Overloads
 
-| Name                                       | Description                                                |
-| ------------------------------------------ | ---------------------------------------------------------- |
-| [Constant&lt;T&gt;(string)](#constanttstring) | Directly injects a string literal as a raw C++ expression. |
+| Name | Description |
+| --- | --- |
+| [Constant(string)](#constantstring) | Directly injects a string literal as a raw C++ expression. |
 
-## Constant&lt;T&gt;(string)
+## Constant(string)
 
 Directly injects a string literal as a raw C++ expression.
 
 ```csharp
-[GpuKernel]
-public static T Constant<T>(string expression);
+public static int Constant(string macroName);
 ```
-
-#### Type Parameters
-
-`T`<br>
-The expected type of the constant placeholder (e.g., `int`, `float`).
 
 #### Parameters
 
-`expression` <i>string</i><br>
-The string literal containing the C++ macro or preprocessor `#define` name.
+`macroName` _string_<br>
+The name of the JIT or preprocessor `#define` macro parameter.
 
 #### Returns
 
-<i>T</i><br>
-Returns the specified placeholder type `T` (at compile-time, this satisfies the C# type checker, while the transpiler blindly substitutes the identifier into the C++ AST).
+_int_<br>
+A typed placeholder evaluated at GPU compile-time (at compile-time, this satisfies the C# type checker, while the transpiler substitutes the macro identifier into the C++ AST).
 
 #### Exceptions
 
@@ -54,16 +48,18 @@ Thrown when evaluated on the host CPU.
 
 ### Preprocessor Inject
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
 ```csharp
-// Execution Context: G# Kernel (GPU)
 using System;
 using Kassyi.GSharp.Core;
 
+// Execution Context: G# Kernel (GPU)
 try {
-    // Replaced with literal macro value during GPU runtime compilation
-    int blockSize = Gpu.Constant<int>("BLOCK_SIZE");
-    float pi = Gpu.Constant<float>("PI_CONST");
-    Console.WriteLine($"Constant evaluated to: {blockSize}, {pi}");
+    // Replaced with literal macro value during GPU compilation
+    int blockSize = Gpu.Constant("BLOCK_SIZE");
+    Console.WriteLine($"Constant evaluated to: {blockSize}");
 } catch (GpuOnlyException) {
     Console.WriteLine("Gpu.Constant can only be executed on the GPU.");
 }

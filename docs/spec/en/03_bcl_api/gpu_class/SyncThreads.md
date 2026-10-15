@@ -26,23 +26,26 @@ Synchronizes all threads in a thread block.
 Synchronizes all threads in a thread block.
 
 ```csharp
-[GpuKernel]
 public static void SyncThreads();
 ```
 
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside of a managed execution context.
 
 ## Examples
 
 ### Shared Memory Synchronization
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
 ```csharp
-// Execution Context: G# Kernel (GPU)
 using System;
 using Kassyi.GSharp.Core;
+
+// Execution Context: G# Kernel (GPU)
 
 try {
     // Synchronizes all threads in the current block barrier

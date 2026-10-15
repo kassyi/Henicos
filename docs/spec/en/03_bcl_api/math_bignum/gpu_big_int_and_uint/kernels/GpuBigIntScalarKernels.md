@@ -13,25 +13,27 @@ description: "CUDA kernel implementations for large integer operations involving
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Contains native G# (CUDA) kernels used for arithmetic operations between arbitrary-precision integers and scalar 32-bit values.
+Contains native G# (CUDA) kernels and device functions used for parallel arithmetic operations between arbitrary-precision integers and scalar 32-bit unsigned values.
 
 ```csharp
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntScalarKernels
+[ExcludeFromCodeCoverage]
+public static partial class GpuBigIntScalarKernels
 ```
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [ScalarAddKernel(uint[], uint, uint[], int)](#scalaraddkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs scalar addition on a large integer. |
-| [ScalarSubKernel(uint[], uint, uint[], int)](#scalarsubkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs scalar subtraction on a large integer. |
-| [ScalarMulKernel(uint[], uint, uint[], int)](#scalarmulkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs scalar multiplication on a large integer. |
-| [ChunkScalarMulKernel(uint[], uint, uint[], long[], int, int)](#chunkscalarmulkerneluint-uint-uint-long-int-int) | A GPU kernel (`[GpuKernel]`) that performs scalar multiplication on a large integer in chunks. |
+| [ScalarAddKernel(uint[], uint, uint[], int)](#scalaraddkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs parallel scalar addition on a large integer. |
+| [ScalarSubKernel(uint[], uint, uint[], int)](#scalarsubkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs parallel scalar subtraction on a large integer. |
+| [Device_ScalarAddSubParallel(uint[], uint, uint[], int, int, bool)](#device_scalaraddsubparalleluint-uint-uint-int-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel scalar addition or subtraction using Kogge-Stone carry lookahead. |
+| [ScalarMulKernel(uint[], uint, uint[], int)](#scalarmulkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that performs parallel scalar multiplication on a large integer. |
+| [DeviceScalarMulParallel(uint[], uint, uint[], int, bool)](#devicescalarmulparalleluint-uint-uint-int-bool) | A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel scalar multiplication using warp shuffle and Kogge-Stone carry lookahead. |
 
 ## ScalarAddKernel(uint[], uint, uint[], int)
 
-A GPU kernel (`[GpuKernel]`) that performs scalar addition on a large integer.
+A GPU kernel (`[GpuKernel]`) that performs parallel scalar addition on a large integer.
 
 ```csharp
 [GpuKernel]
@@ -54,7 +56,7 @@ The total number of words.
 
 ## ScalarSubKernel(uint[], uint, uint[], int)
 
-A GPU kernel (`[GpuKernel]`) that performs scalar subtraction on a large integer.
+A GPU kernel (`[GpuKernel]`) that performs parallel scalar subtraction on a large integer.
 
 ```csharp
 [GpuKernel]
@@ -75,9 +77,45 @@ The buffer to store the result.
 `numWords` _int_<br>
 The total number of words.
 
+## Device_ScalarAddSubParallel(uint[], uint, uint[], int, int, bool)
+
+A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel scalar addition or subtraction using Kogge-Stone carry lookahead.
+
+```csharp
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void Device_ScalarAddSubParallel(
+    [GpuReadOnly] uint[] a,
+    uint s,
+    uint[] result,
+    int numWords,
+    int sign,
+    bool syncThreads = true);
+```
+
+#### Parameters
+
+`a` _uint[]_<br>
+The large integer operand buffer.
+
+`s` _uint_<br>
+The scalar 32-bit unsigned integer operand.
+
+`result` _uint[]_<br>
+The destination buffer.
+
+`numWords` _int_<br>
+The total number of words.
+
+`sign` _int_<br>
+`1` for scalar addition (`a + s`), or `-1` for scalar subtraction (`a - s`).
+
+`syncThreads` _bool_<br>
+If `true`, synchronizes threads within the block upon completion.
+
 ## ScalarMulKernel(uint[], uint, uint[], int)
 
-A GPU kernel (`[GpuKernel]`) that performs scalar multiplication on a large integer.
+A GPU kernel (`[GpuKernel]`) that performs parallel scalar multiplication on a large integer.
 
 ```csharp
 [GpuKernel]
@@ -98,49 +136,52 @@ The buffer to store the result.
 `numWords` _int_<br>
 The total number of words.
 
-## ChunkScalarMulKernel(uint[], uint, uint[], long[], int, int)
+## DeviceScalarMulParallel(uint[], uint, uint[], int, bool)
 
-A GPU kernel (`[GpuKernel]`) that performs scalar multiplication on a large integer in chunks.
+A GPU device function (`[GpuDeviceFunction]`) that performs block-parallel scalar multiplication using warp shuffle and Kogge-Stone carry lookahead.
 
 ```csharp
-[GpuKernel]
-public static void ChunkScalarMulKernel(uint[] dA, uint s, uint[] dResult, long[] dCarry, int numWords, int chunkSize);
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void DeviceScalarMulParallel(
+    [GpuReadOnly] uint[] a,
+    uint s,
+    uint[] result,
+    int numWords,
+    bool syncThreads = true);
 ```
 
 #### Parameters
 
-`dA` _uint[]_<br>
+`a` _uint[]_<br>
 The large integer operand buffer.
 
 `s` _uint_<br>
-The scalar 32-bit unsigned integer to multiply by.
+The scalar 32-bit unsigned integer multiplier.
 
-`dResult` _uint[]_<br>
-The buffer to store the result.
-
-`dCarry` _long[]_<br>
-The buffer to store chunk carries.
+`result` _uint[]_<br>
+The destination buffer.
 
 `numWords` _int_<br>
 The total number of words.
 
-`chunkSize` _int_<br>
-The number of words processed per block.
+`syncThreads` _bool_<br>
+If `true`, synchronizes threads within the block upon completion.
 
 ## Examples
 
 ### Internal Kernel Usage
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
-// This is an internal Kernel class and its methods are launched via the G# execution pipeline.
-Console.WriteLine("GpuBigIntScalarKernels contains static kernel endpoints for scalar ops.");
+// This is a static kernel container class whose endpoints are launched via the G# execution pipeline.
+Console.WriteLine($"{nameof(GpuBigIntScalarKernels)} provides parallel scalar add, sub, and mul kernels.");
 ```
 
 ## Remarks

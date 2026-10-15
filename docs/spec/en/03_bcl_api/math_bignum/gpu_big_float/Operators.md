@@ -23,12 +23,12 @@ Additionally, for host-side (CPU) code, the non-generic `GpuBigFloat` class (cur
 
 ## Overloads
 
-| Operator                                | Description                      |
-| --------------------------------------- | -------------------------------- |
-| [Addition (+)](#addition--)             | Adds two numbers.                |
-| [Subtraction (-)](#subtraction--)       | Subtracts a number from another. |
-| [Multiplication (*)](#multiplication--) | Multiplies two numbers.          |
-| [Division (/)](#division--)             | Divides a number by another.     |
+| Operator | Description |
+| --- | --- |
+| [Addition (+)](#addition--) | Adds two numbers. |
+| [Subtraction (-)](#subtraction--) | Subtracts a number from another. |
+| [Multiplication (*)](#multiplication--) | Multiplies two numbers. |
+| [Division (/)](#division--) | Divides a number by another. |
 
 ## Addition (+)
 

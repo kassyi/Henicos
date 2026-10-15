@@ -43,7 +43,7 @@ The X dimension.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside of a managed execution context.
 
 ## Y
 
@@ -61,7 +61,7 @@ The Y dimension.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside of a managed execution context.
 
 ## Z
 
@@ -79,7 +79,7 @@ The Z dimension.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside of a managed execution context.
 
 ## Examples
 

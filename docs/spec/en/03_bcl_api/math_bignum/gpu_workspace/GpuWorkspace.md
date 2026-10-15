@@ -1,7 +1,7 @@
 ---
 title: "GpuWorkspace Class (G#)"
 site: "G# Documentation"
-published: "2026-09-24T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Represents a GPU execution workspace managing memory allocation pools, device workspaces, resource tracking, and backend providers for large integer computations."
 ---
@@ -13,9 +13,15 @@ description: "Represents a GPU execution workspace managing memory allocation po
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Represents a GPU execution workspace managing memory allocation pools, device workspaces, composite resource tracking, and backend providers for large integer computations.
+Represents a GPU execution workspace managing memory allocation pools, device workspaces, composite resource tracking, and backend providers for large integer computations. This file also defines the `GpuExecutionEngine` enumeration (`LegacyNative`, `GSharpAot`).
 
 ```csharp
+public enum GpuExecutionEngine
+{
+    LegacyNative,
+    GSharpAot
+}
+
 public class GpuWorkspace : IGpuResourceScope, IDisposable
 ```
 
@@ -23,23 +29,29 @@ public class GpuWorkspace : IGpuResourceScope, IDisposable
 
 | Name | Description |
 | --- | --- |
-| [GpuWorkspace(int, GpuExecutionEngine)](#gpuworkspaceint-gpuexecutionengine) | Initializes a new instance of the `GpuWorkspace` class with the specified limb capacity and engine backend. |
+| [GpuWorkspace(Int32, GpuExecutionEngine, Boolean)](#gpuworkspaceint32-gpuexecutionengine-boolean) | Initializes a new instance of the `GpuWorkspace` class with the specified limb capacity, engine backend, and optional isolated CUDA context. |
 
-## GpuWorkspace(int, GpuExecutionEngine)
+## GpuWorkspace(Int32, GpuExecutionEngine, Boolean)
 
-Initializes a new instance of the `GpuWorkspace` class with the specified limb capacity and engine backend.
+Initializes a new instance of the `GpuWorkspace` class with the specified limb capacity, engine backend, and optional isolated CUDA context.
 
 ```csharp
-public GpuWorkspace(int maxWords, GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot);
+public GpuWorkspace(
+    int maxWords,
+    GpuExecutionEngine engine = GpuExecutionEngine.GSharpAot,
+    bool useIsolatedContext = false);
 ```
 
 #### Parameters
 
-`maxWords` _int_<br>
+`maxWords` _Int32_<br>
 The maximum word count for BigInteger operations.
 
 `engine` _GpuExecutionEngine_<br>
-The GPU execution backend engine to utilize.
+The GPU execution backend engine to utilize (`GSharpAot` or `LegacyNative`).
+
+`useIsolatedContext` _Boolean_<br>
+Whether to create and use an isolated CUDA context (`cuCtxCreate_v2`) instead of the shared global context.
 
 #### Exceptions
 
@@ -61,7 +73,7 @@ Thrown when CUDA context or native workspace allocation fails.
 
 ## DeviceSmCount
 
-Gets the number of streaming multiprocessors (SMs) on the active CUDA device.
+Gets the number of streaming multiprocessors (SMs) on the active CUDA device. This value is used to clamp grid dimensions for cooperative kernel launches.
 
 ```csharp
 public int DeviceSmCount { get; }
@@ -93,8 +105,7 @@ public IGpuMemoryManager MemoryManager { get; }
 
 ## PolyAlgorithmThreshold
 
-Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow.
-Values smaller than the threshold will use intermediate-scale algorithms (e.g., Host-Loop or RNS), while values greater than or equal to the threshold will dispatch to giant-scale MegaKernels (e.g., NTT). Default is 1024 bits.
+Gets or sets the bit length threshold for algorithm selection in poly-algorithms like ModPow. Values smaller than the threshold will use intermediate-scale algorithms (e.g., Host-Loop or RNS), while values greater than or equal to the threshold will dispatch to giant-scale MegaKernels (e.g., NTT). Default is `1024` bits.
 
 ```csharp
 public int PolyAlgorithmThreshold { get; set; }
@@ -102,7 +113,7 @@ public int PolyAlgorithmThreshold { get; set; }
 
 ## Provider
 
-Gets the active GPU arithmetic execution provider implementation.
+Gets the active GPU arithmetic execution provider implementation (`GSharpAotProvider.Instance` when `Engine == GpuExecutionEngine.GSharpAot`, otherwise `NativeProvider.Instance`).
 
 ```csharp
 public IGpuExecutionProvider Provider { get; }
@@ -128,22 +139,41 @@ public IntPtr WorkspacePointer { get; }
 
 | Name | Description |
 | --- | --- |
-| [CreateScope()](#createscope) | Creates a nested scope. Not currently implemented for the root workspace. |
+| [ActivateContext()](#activatecontext) | Activates the CUDA context associated with this workspace for the lifetime of the returned scope. |
+| [CreateScope()](#createscope) | Creates a nested GPU resource scope. Not currently supported on the root workspace. |
 | [Dispose()](#dispose) | Releases all device memory resources, tracked buffers, and workspace handles held by this workspace. |
-| [Dispose(bool)](#disposebool) | Releases unmanaged and, optionally, managed resources. |
+| [Dispose(Boolean)](#disposeboolean) | Releases unmanaged and, optionally, managed resources. |
 | [Track(IDisposable)](#trackidisposable) | Registers a disposable resource to be tracked and collectively disposed by this workspace. |
+
+## ActivateContext()
+
+Activates the CUDA context associated with this workspace for the lifetime of the returned scope.
+
+```csharp
+public IDisposable ActivateContext();
+```
+
+#### Returns
+
+_IDisposable_<br>
+An `IDisposable` token restoring the previous CUDA context upon disposal.
 
 ## CreateScope()
 
-Creates a nested scope. Not currently implemented for the root workspace.
+Creates a nested GPU resource scope. Not currently supported on the root workspace.
 
 ```csharp
 public IGpuResourceScope CreateScope();
 ```
 
+#### Exceptions
+
+`NotImplementedException`<br>
+Thrown unconditionally as nested scopes are not yet supported on `GpuWorkspace`.
+
 ## Track(IDisposable)
 
-Registers a disposable resource to be tracked and collectively disposed by this workspace.
+Registers a disposable resource to be tracked and deterministically disposed upon workspace disposal.
 
 ```csharp
 public void Track(IDisposable resource);
@@ -162,9 +192,9 @@ Releases all device memory resources, tracked buffers, and workspace handles hel
 public void Dispose();
 ```
 
-## Dispose(bool)
+## Dispose(Boolean)
 
-Releases unmanaged and, optionally, managed resources.
+Releases unmanaged and, optionally, managed resources. Safely aborts any leaked CUDA stream capture before releasing tracked resources, memory manager pools, and engine streams/contexts.
 
 ```csharp
 protected virtual void Dispose(bool disposing);
@@ -172,7 +202,7 @@ protected virtual void Dispose(bool disposing);
 
 #### Parameters
 
-`disposing` _bool_<br>
+`disposing` _Boolean_<br>
 `true` to release both managed and unmanaged resources; `false` to release only unmanaged resources.
 
 ## Remarks
@@ -182,135 +212,33 @@ protected virtual void Dispose(bool disposing);
 `GpuWorkspace` implements `IGpuResourceScope`, introducing a unified **composite scope (tray) pattern** for GPU memory and resource lifecycle management.
 
 Prior to this architecture, GPU data structures required granular, per-field manual `.Dispose()` chains in constructor `catch` blocks and tear-down methods. Under the `Track()` model:
-- **Automatic Registration**: Constructors of GPU data types (such as <see cref="GpuBigUInt"/> and <see cref="GpuBigIntMatrix2x2"/>) automatically register newly allocated instances into their parent `GpuWorkspace` via `Track(this)`.
-- **Deterministic Bulk Disposal**: When `GpuWorkspace.Dispose()` is invoked (typically via a `using` statement), all tracked GPU buffers, streams, and scratchpads are reclaimed collectively within a guarded <c>CudaContextScope</c>, eliminating manual disposal boilerplate and leak risks.
+- **Automatic Registration**: Constructors of GPU data types (such as [GpuBigUInt](../gpu_big_int_and_uint/GpuBigUInt.md) and [GpuBigIntMatrix2x2](../gpu_big_int_and_uint/GpuBigIntMatrix2x2.md)) automatically register newly allocated instances into their parent `GpuWorkspace` via `Track(this)`.
+- **Deterministic Bulk Disposal**: When `GpuWorkspace.Dispose()` is invoked (typically via a `using` statement), any leaked CUDA Graph capture on `Stream` is aborted first, and all tracked GPU buffers, memory manager pools, streams, and scratchpads are reclaimed collectively within a guarded `CudaContextScope`, eliminating manual disposal boilerplate and leak risks.
 - **Double-Free Safety**: The underlying memory manager maintains active allocation registries to ensure that if a tracked resource is manually disposed early by the caller, redundant teardown during workspace disposal is safely ignored.
 
 **Thread Safety:** Instance members are thread-safe for allocation pooling and resource tracking.
 
 ## Examples
 
-### Allocating a Workspace and Native Compilation Engine
-
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
+// Execution Context: Host (CPU)
 using System;
-using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 // 1. Create a GpuWorkspace with a specific capacity
 using var workspace = new GpuWorkspace(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
 
-// 2. Output properties to verify initialization
-// Outputs: MaxWords: 1024, Engine: GSharpAot
-Console.WriteLine($"MaxWords: {workspace.MaxWords}");
-Console.WriteLine($"Engine: {workspace.Engine}");
-```
-
-### Automatic Resource Tracking and Bulk Disposal
-
-GPU data structures automatically register with the parent workspace upon creation, enabling deterministic bulk cleanup without manual disposal chains:
-
-```csharp
-using System;
-using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-
-void ComputeWithAutoCleanup()
+using (workspace.ActivateContext())
 {
-    // The workspace acts as the root resource tray
-    using var workspace = new GpuWorkspace(maxWords: 4096);
-
     // Instances auto-register via workspace.Track(this) inside their constructors
-    var a = new GpuBigUInt(workspace, 128);
-    var b = new GpuBigUInt(workspace, 128);
-    var matrix = GpuBigIntMatrix2x2.Identity(workspace, 128);
+    var a = new GpuBigUInt(workspace, new uint[] { 42 });
+    var b = new GpuBigUInt(workspace, new uint[] { 58 });
 
-    // Custom disposable GPU resources can also be tracked explicitly:
-    // workspace.Track(customDisposableResource);
-
-    // Perform arithmetic operations...
-    // All resources (a, b, matrix) are automatically and safely freed when
-    // the workspace scope exits, eliminating repetitive individual Dispose() calls.
-}
-```
-
-### Explicit Dispose() and Try-Finally Pattern
-
-When a `using` statement cannot be used (e.g., long-lived operations or manual lifecycle control), invoke `workspace.Dispose()` explicitly:
-
-```csharp
-var workspace = new GpuWorkspace(maxWords: 2048);
-try
-{
-    var x = new GpuBigUInt(workspace, 64);
-    var y = new GpuBigUInt(workspace, 64);
-
-    // Compute...
-}
-finally
-{
-    // Explicit bulk disposal: Reclaims workspace device memory and all tracked operands (x, y)
-    workspace.Dispose();
-}
-```
-
-### Implementing IDisposable in Classes Holding Multiple GPU Resources
-
-When designing custom classes or runner services that allocate multiple GPU resources, hold a `GpuWorkspace` and delegate disposal entirely to `_workspace.Dispose()`. Avoid chaining individual `.Dispose()` calls:
-
-```csharp
-using System;
-using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-
-public sealed class GpuTransformPipeline : IDisposable
-{
-    private readonly GpuWorkspace _workspace;
-    private readonly GpuBigUInt _source;
-    private readonly GpuBigUInt _target;
-    private readonly GpuBigIntMatrix2x2 _matrix;
-    private bool _disposed;
-
-    public GpuTransformPipeline(int numWords)
-    {
-        try
-        {
-            _workspace = new GpuWorkspace(numWords);
-            _source = new GpuBigUInt(_workspace, numWords);
-            _target = new GpuBigUInt(_workspace, numWords);
-            _matrix = GpuBigIntMatrix2x2.Identity(_workspace, numWords);
-        }
-        catch
-        {
-            // [WHY] If initialization fails midway, disposing the workspace bulk-reclaims
-            // all resources tracked up to that point. No manual per-field cleanup needed.
-            _workspace?.Dispose();
-            throw;
-        }
-    }
-
-    public void Execute()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        // Execute GPU operations...
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        // [WHY] Bulk disposal: Calling _workspace.Dispose() automatically frees
-        // _source, _target, and _matrix. Do NOT call _source.Dispose(), etc. individually.
-        _workspace.Dispose();
-        _disposed = true;
-    }
+    Console.WriteLine($"MaxWords: {workspace.MaxWords}, Engine: {workspace.Engine}, a={a}, b={b}");
 }
 ```
 

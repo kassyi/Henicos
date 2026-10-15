@@ -21,9 +21,9 @@ public readonly struct GpuBigIntExecutableGraph : IDisposable
 
 ## Properties
 
-| Name              | Description                                                    |
-| ----------------- | -------------------------------------------------------------- |
-| [Result](#result) | Gets the buffer holding the result of the CUDA Graph execution.|
+| Name | Description |
+| --- | --- |
+| [Result](#result) | Gets the buffer holding the result of the CUDA Graph execution. |
 
 ## Result
 
@@ -35,10 +35,10 @@ public GpuBigInt Result { get; }
 
 ## Methods
 
-| Name                   | Description                                                               |
-| ---------------------- | ------------------------------------------------------------------------- |
+| Name | Description |
+| --- | --- |
 | [Dispose()](#dispose) | Destroys the underlying CUDA Graph and executable graph driver resources. |
-| [Execute()](#execute) | Launches the executable graph on the GPU and waits synchronously.         |
+| [Execute()](#execute) | Launches the executable graph on the GPU and waits synchronously. |
 | [ExecuteAsync(CancellationToken)](#executeasynccancellationtoken) | Launches the executable graph and waits without blocking the calling thread. |
 
 ## Dispose()

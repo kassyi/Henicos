@@ -10,7 +10,7 @@ description: "Represents a 2x2 transition matrix of arbitrary-precision integers
 
 ## Definition
 
-**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
+**Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
 Represents a 2x2 transition matrix of arbitrary-precision integers (`GpuBigUInt`) allocated in GPU device memory.
@@ -81,7 +81,7 @@ Thrown when GPU global memory allocation fails for any of the matrix elements.
 Gets the parent `GpuWorkspace` managing the GPU device memory and execution provider for this matrix.
 
 ```csharp
-public GpuWorkspace Context { get; }
+public GpuWorkspace Workspace { get; }
 ```
 
 ## IsOddStep
@@ -237,13 +237,14 @@ public void Dispose();
 ### Using Matrix in HGCD Step
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 // Execution Context: Host (CPU)
 using var workspace = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);

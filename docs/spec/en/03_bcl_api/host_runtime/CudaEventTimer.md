@@ -21,8 +21,8 @@ public sealed class CudaEventTimer : IDisposable
 
 ## Constructors
 
-| Name                          | Description                                          |
-| ----------------------------- | ---------------------------------------------------- |
+| Name | Description |
+| --- | --- |
 | [CudaEventTimer()](#cudaeventtimer) | Initializes a new instance of the `CudaEventTimer` class. |
 
 ## CudaEventTimer()
@@ -35,14 +35,14 @@ public CudaEventTimer();
 
 ## Methods
 
-| Name                                                  | Description                                                         |
-| ----------------------------------------------------- | ------------------------------------------------------------------- |
-| [Dispose()](#dispose)                                 | Destroys the CUDA events.                                           |
+| Name | Description |
+| --- | --- |
+| [Dispose()](#dispose) | Destroys the CUDA events. |
 | [GetElapsedTimeMilliseconds()](#getelapsedtimemilliseconds) | Computes the elapsed time between Start and Stop events in milliseconds. |
-| [Start(IntPtr)](#startintptr)                         | Records the start event in the specified stream.                    |
-| [Stop(IntPtr)](#stopintptr)                           | Records the end event in the specified stream.                      |
-| [Synchronize()](#synchronize)                         | Synchronizes the host thread until the end event has been recorded. |
-| [SynchronizeAsync(CancellationToken)](#synchronizeasynccancellationtoken) | Asynchronously waits until the end event has been recorded.   |
+| [Start(IntPtr)](#startintptr) | Records the start event in the specified stream. |
+| [Stop(IntPtr)](#stopintptr) | Records the end event in the specified stream. |
+| [Synchronize()](#synchronize) | Synchronizes the host thread until the end event has been recorded. |
+| [SynchronizeAsync(CancellationToken)](#synchronizeasynccancellationtoken) | Asynchronously waits until the end event has been recorded. |
 
 ## Dispose()
 

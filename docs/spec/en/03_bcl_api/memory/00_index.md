@@ -13,6 +13,7 @@ Types for allocating and managing device memory, such as Shared Memory.
 ## In This Section
 
 - [SharedMemory](SharedMemory.md): Provides high-speed, on-chip block-local memory allocations.
+- [IGpuResourceScope](IGpuResourceScope.md): Defines a composite scope that tracks and collectively manages the lifetime of GPU resources.
 
 ## See also
 

@@ -23,8 +23,8 @@ A device-to-host copy into pageable memory (any managed array) is synchronous: i
 
 ## Methods
 
-| Name                                                                                          | Description                                                                         |
-| --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Name | Description |
+| --- | --- |
 | [CopyToHostAsync&lt;T&gt;(IntPtr, Memory&lt;T&gt;, IntPtr, CancellationToken)](#copytohostasynctintptr-memoryt-intptr-cancellationtoken) | Asynchronously copies `destination.Length` elements from device memory into host memory. |
 
 ## CopyToHostAsync&lt;T&gt;(IntPtr, Memory&lt;T&gt;, IntPtr, CancellationToken)

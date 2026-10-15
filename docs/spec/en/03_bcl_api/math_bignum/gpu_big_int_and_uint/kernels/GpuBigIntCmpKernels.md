@@ -3,7 +3,7 @@ title: "GpuBigIntCmpKernels Class (G#)"
 site: "G# Documentation"
 published: "2026-09-24T00:00:00.000Z"
 language: "en"
-description: "CUDA kernel implementations for large integer comparisons."
+description: "CUDA kernel implementations for large integer comparisons and vectorized boolean predicates."
 ---
 
 ## GpuBigIntCmpKernels Class
@@ -13,61 +13,30 @@ description: "CUDA kernel implementations for large integer comparisons."
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Contains native G# (CUDA) kernels used for equality checks, comparisons, and bit-length measurements of arbitrary-precision integers on the GPU.
+Contains native G# (CUDA) kernels and device functions used for equality checks, comparisons, bit-length measurements, and batched vector comparisons/boolean reductions of arbitrary-precision integers on the GPU.
 
 ```csharp
 [SkipSnapshotConsistency("Tested in separate suites or WIP")]
-public static class GpuBigIntCmpKernels
+public static partial class GpuBigIntCmpKernels
 ```
 
 ## Methods
 
 | Name | Description |
 | --- | --- |
-| [IsZeroKernel(uint[], uint[], int)](#iszerokerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks if a large integer is zero. |
-| [IsOneKernel(uint[], uint[], int)](#isonekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks if a large integer is equal to one. |
 | [CompareToKernel(uint[], uint[], ulong[], int)](#comparetokerneluint-uint-ulong-int) | A GPU kernel (`[GpuKernel]`) that compares two large integers. |
+| [DeviceVectorCompareScalarParallel(uint[], uint[], uint[], int, int)](#devicevectorcomparescalarparalleluint-uint-uint-int-int) | A GPU device function (`[GpuDeviceFunction]`) that compares each element of a batched vector against a scalar big integer in parallel. |
+| [DeviceVectorCompareVectorParallel(uint[], uint[], uint[], int, int)](#devicevectorcomparevectorparalleluint-uint-uint-int-int) | A GPU device function (`[GpuDeviceFunction]`) that compares corresponding elements of two batched vectors in parallel. |
 | [GetBitLengthKernel(uint[], uint[], int)](#getbitlengthkerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that calculates the bit length of a large integer. |
-
-## IsZeroKernel(uint[], uint[], int)
-
-A GPU kernel (`[GpuKernel]`) that checks if a large integer is zero.
-
-```csharp
-[GpuKernel]
-public static void IsZeroKernel(uint[] dA, uint[] dResult, int numWords);
-```
-
-#### Parameters
-
-`dA` _uint[]_<br>
-The large integer operand buffer.
-
-`dResult` _uint[]_<br>
-The output buffer (single element) to store the result flag. Set to 1 if any non-zero word is found.
-
-`numWords` _int_<br>
-The total number of words.
-
-## IsOneKernel(uint[], uint[], int)
-
-A GPU kernel (`[GpuKernel]`) that checks if a large integer is equal to one.
-
-```csharp
-[GpuKernel]
-public static void IsOneKernel(uint[] dA, uint[] dResult, int numWords);
-```
-
-#### Parameters
-
-`dA` _uint[]_<br>
-The large integer operand buffer.
-
-`dResult` _uint[]_<br>
-The output buffer (single element) to store the result flag. Set to 1 if the value is not exactly one.
-
-`numWords` _int_<br>
-The total number of words.
+| [IsOneKernel(uint[], uint[], int)](#isonekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks if a large integer is equal to one. |
+| [IsZeroKernel(uint[], uint[], int)](#iszerokerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks if a large integer is zero. |
+| [VectorAllTrueKernel(uint[], uint[], int)](#vectoralltruekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks whether all elements in a boolean mask array are non-zero. |
+| [VectorAndKernel(uint[], uint[], uint[], int)](#vectorandkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the element-wise logical AND of two boolean mask arrays. |
+| [VectorAnyTrueKernel(uint[], uint[], int)](#vectoranytruekerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that checks whether any element in a boolean mask array is non-zero. |
+| [VectorCompareScalarKernel(uint[], uint[], uint[], int, int)](#vectorcomparescalarkerneluint-uint-uint-int-int) | A GPU kernel (`[GpuKernel]`) that compares a batched vector of big integers against a scalar big integer. |
+| [VectorCompareVectorKernel(uint[], uint[], uint[], int, int)](#vectorcomparevectorkerneluint-uint-uint-int-int) | A GPU kernel (`[GpuKernel]`) that compares two batched vectors of big integers element-wise. |
+| [VectorNotKernel(uint[], uint[], int)](#vectornotkerneluint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the element-wise logical NOT of a boolean mask array. |
+| [VectorOrKernel(uint[], uint[], uint[], int)](#vectororkerneluint-uint-uint-int) | A GPU kernel (`[GpuKernel]`) that computes the element-wise logical OR of two boolean mask arrays. |
 
 ## CompareToKernel(uint[], uint[], ulong[], int)
 
@@ -78,19 +47,35 @@ A GPU kernel (`[GpuKernel]`) that compares two large integers.
 public static void CompareToKernel(uint[] dA, uint[] dB, ulong[] dResult, int numWords);
 ```
 
-#### Parameters
+## DeviceVectorCompareScalarParallel(uint[], uint[], uint[], int, int)
 
-`dA` _uint[]_<br>
-The first operand buffer.
+A GPU device function (`[GpuDeviceFunction]`) that compares each element of a batched vector against a scalar big integer in parallel.
 
-`dB` _uint[]_<br>
-The second operand buffer.
+```csharp
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void DeviceVectorCompareScalarParallel(
+    [GpuReadOnly] uint[] a,
+    [GpuReadOnly] uint[] s,
+    uint[] result,
+    int numWords,
+    int opType);
+```
 
-`dResult` _ulong[]_<br>
-The output buffer storing the highest differing word index and the comparison result.
+## DeviceVectorCompareVectorParallel(uint[], uint[], uint[], int, int)
 
-`numWords` _int_<br>
-The total number of words.
+A GPU device function (`[GpuDeviceFunction]`) that compares corresponding elements of two batched vectors in parallel.
+
+```csharp
+[GpuDeviceFunction]
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void DeviceVectorCompareVectorParallel(
+    [GpuReadOnly] uint[] a,
+    [GpuReadOnly] uint[] b,
+    uint[] result,
+    int numWords,
+    int opType);
+```
 
 ## GetBitLengthKernel(uint[], uint[], int)
 
@@ -101,36 +86,106 @@ A GPU kernel (`[GpuKernel]`) that calculates the bit length of a large integer.
 public static void GetBitLengthKernel(uint[] dA, uint[] dResult, int numWords);
 ```
 
-#### Parameters
+## IsOneKernel(uint[], uint[], int)
 
-`dA` _uint[]_<br>
-The large integer operand buffer.
+A GPU kernel (`[GpuKernel]`) that checks if a large integer is equal to one.
 
-`dResult` _uint[]_<br>
-The output buffer storing the maximum calculated bit length.
+```csharp
+[GpuKernel]
+public static void IsOneKernel(uint[] dA, uint[] dResult, int numWords);
+```
 
-`numWords` _int_<br>
-The total number of words.
+## IsZeroKernel(uint[], uint[], int)
+
+A GPU kernel (`[GpuKernel]`) that checks if a large integer is zero.
+
+```csharp
+[GpuKernel]
+public static void IsZeroKernel(uint[] dA, uint[] dResult, int numWords);
+```
+
+## VectorAllTrueKernel(uint[], uint[], int)
+
+A GPU kernel (`[GpuKernel]`) that checks whether all elements in a boolean mask array are non-zero.
+
+```csharp
+[GpuKernel]
+public static void VectorAllTrueKernel(uint[] dA, uint[] dResult, int length);
+```
+
+## VectorAndKernel(uint[], uint[], uint[], int)
+
+A GPU kernel (`[GpuKernel]`) that computes the element-wise logical AND of two boolean mask arrays.
+
+```csharp
+[GpuKernel]
+public static void VectorAndKernel(uint[] dA, uint[] dB, uint[] dResult, int length);
+```
+
+## VectorAnyTrueKernel(uint[], uint[], int)
+
+A GPU kernel (`[GpuKernel]`) that checks whether any element in a boolean mask array is non-zero.
+
+```csharp
+[GpuKernel]
+public static void VectorAnyTrueKernel(uint[] dA, uint[] dResult, int length);
+```
+
+## VectorCompareScalarKernel(uint[], uint[], uint[], int, int)
+
+A GPU kernel (`[GpuKernel]`) that compares a batched vector of big integers against a scalar big integer.
+
+```csharp
+[GpuKernel]
+public static void VectorCompareScalarKernel(uint[] dA, uint[] s, uint[] dResult, int numWords, int opType);
+```
+
+## VectorCompareVectorKernel(uint[], uint[], uint[], int, int)
+
+A GPU kernel (`[GpuKernel]`) that compares two batched vectors of big integers element-wise.
+
+```csharp
+[GpuKernel]
+public static void VectorCompareVectorKernel(uint[] dA, uint[] dB, uint[] dResult, int numWords, int opType);
+```
+
+## VectorNotKernel(uint[], uint[], int)
+
+A GPU kernel (`[GpuKernel]`) that computes the element-wise logical NOT of a boolean mask array.
+
+```csharp
+[GpuKernel]
+public static void VectorNotKernel(uint[] dA, uint[] dResult, int length);
+```
+
+## VectorOrKernel(uint[], uint[], uint[], int)
+
+A GPU kernel (`[GpuKernel]`) that computes the element-wise logical OR of two boolean mask arrays.
+
+```csharp
+[GpuKernel]
+public static void VectorOrKernel(uint[] dA, uint[] dB, uint[] dResult, int length);
+```
 
 ## Examples
 
 ### Internal Kernel Usage
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Core, Kassyi.GSharp.Runtime, Kassyi.GSharp.Stdlib.GpuMath
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 // Execution Context: G# Kernel (GPU)
-// This is an internal Kernel class and its methods are launched via the G# execution pipeline.
-Console.WriteLine("GpuBigIntCmpKernels contains static kernel endpoints for comparison ops.");
+// This is a GPU kernel class and its methods are launched via the G# execution pipeline.
+Console.WriteLine($"Kernel container: {typeof(GpuBigIntCmpKernels).Name}");
 ```
 
 ## Remarks
 
-This class contains `[GpuKernel]` attributed methods. These methods cannot be executed directly on the CPU (Host). They are transpiled to CUDA PTX/SASS by the G# Roslyn Source Generator and launched via the `GpuWorkspace`.
+This class contains `[GpuKernel]` and `[GpuDeviceFunction]` attributed methods. These methods are transpiled to CUDA PTX/SASS by the G# Roslyn Source Generator and launched via the `GpuWorkspace`.
 
 ## See also
 
@@ -139,14 +194,3 @@ This class contains `[GpuKernel]` attributed methods. These methods cannot be ex
 - [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
 - [GpuWorkspace](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
-
-### BCL API > GPU Class
-
-- [Gpu Class](../../../../03_bcl_api/gpu_class/00_index.md)
-- [InlinePtx](../../../../03_bcl_api/gpu_class/InlinePtx.md)
-
-### Guides
-
-- [4. Practical Guides and Best Practices](../../../../04_guides/00_index.md)
-- [Advanced: Extending GpuBigInt with Custom Algorithms](../../../../04_guides/08_advanced_custom_math_kernels.md)
-- [7. Stdlib Math and Lazy Evaluation](../../../../04_guides/07_stdlib_math_and_lazy_evaluation.md)

@@ -18,14 +18,14 @@ This allows developers to write mathematically intensive kernels using standard 
 
 These methods are mapped directly to PTX (Parallel Thread Execution) instructions, ensuring single-cycle or near-single-cycle execution throughput.
 
-| .NET Method                  | Supported Types          | CUDA/PTX Mapping       | Description                                                  |
-| :--------------------------- | :----------------------- | :--------------------- | :----------------------------------------------------------- |
-| `PopCount(value)`            | `uint`, `ulong`, `nuint` | `__popc`, `__popcll`   | Counts the number of set bits (1s) in the integer.           |
-| `LeadingZeroCount(value)`    | `uint`, `ulong`, `nuint` | `__clz`, `__clzll`     | Counts the number of leading zero bits.                      |
-| `TrailingZeroCount(value)`   | `uint`, `ulong`, `nuint` | (Emulated via `__clz`) | Counts the number of trailing zero bits.                     |
-| `Log2(value)`                | `uint`, `ulong`, `nuint` | (Emulated via `__clz`) | Returns the integer base-2 logarithm of the specified value. |
-| `RotateLeft(value, offset)`  | `uint`, `ulong`, `nuint` | (Emulated PTX macro)   | Rotates the bits of the integer left.                        |
-| `RotateRight(value, offset)` | `uint`, `ulong`, `nuint` | (Emulated PTX macro)   | Rotates the bits of the integer right.                       |
+| .NET Method | Supported Types | CUDA/PTX Mapping | Description |
+| :--- | :--- | :--- | :--- |
+| `PopCount(value)` | `uint`, `ulong`, `nuint` | `__popc`, `__popcll` | Counts the number of set bits (1s) in the integer. |
+| `LeadingZeroCount(value)` | `uint`, `ulong`, `nuint` | `__clz`, `__clzll` | Counts the number of leading zero bits. |
+| `TrailingZeroCount(value)` | `uint`, `ulong`, `nuint` | (Emulated via `__clz`) | Counts the number of trailing zero bits. |
+| `Log2(value)` | `uint`, `ulong`, `nuint` | (Emulated via `__clz`) | Returns the integer base-2 logarithm of the specified value. |
+| `RotateLeft(value, offset)` | `uint`, `ulong`, `nuint` | (Emulated PTX macro) | Rotates the bits of the integer left. |
+| `RotateRight(value, offset)` | `uint`, `ulong`, `nuint` | (Emulated PTX macro) | Rotates the bits of the integer right. |
 
 #### Example
 
@@ -47,10 +47,10 @@ public static void CalculatePopCount(uint[] data, int[] results)
 
 Standard .NET Interlocked operations are safely mapped to CUDA atomic instructions, allowing threads to perform synchronized memory operations without locks.
 
-| .NET Method                                       | Supported Types                | CUDA/PTX Mapping               |
-| :------------------------------------------------ | :----------------------------- | :----------------------------- |
-| `Add(ref location, value)`                        | `int`, `long`                  | `atomicAdd`                    |
-| `Exchange(ref location, value)`                   | `int`, `uint`, `long`, `ulong` | `atomicExch`                   |
+| .NET Method | Supported Types | CUDA/PTX Mapping |
+| :--- | :--- | :--- |
+| `Add(ref location, value)` | `int`, `long` | `atomicAdd` |
+| `Exchange(ref location, value)` | `int`, `uint`, `long`, `ulong` | `atomicExch` |
 | `CompareExchange(ref location, value, comparand)` | `int`, `uint`, `long`, `ulong` | `atomicCAS` (Compare And Swap) |
 
 > [!NOTE]
@@ -71,21 +71,21 @@ Standard .NET Interlocked operations are safely mapped to CUDA atomic instructio
 A wide variety of standard mathematical operations are mapped to the CUDA `math_functions.h` standard library.
 _(Note: These functions adhere to IEEE-754 precision. For raw, uncompromised speed at the cost of slight precision loss, use `Kassyi.GSharp.Core.FastMath` instead)._
 
-| .NET Method                      | CUDA Mapping (MathF - Single Float) | CUDA Mapping (Math - Double) |
-| :------------------------------- | :---------------------------------- | :--------------------------- |
-| `Math.Abs` / `MathF.Abs`         | `fabsf`                             | `fabs`                       |
-| `Math.Min` / `MathF.Min`         | `fminf`                             | `fmin`                       |
-| `Math.Max` / `MathF.Max`         | `fmaxf`                             | `fmax`                       |
-| `Math.Sqrt` / `MathF.Sqrt`       | `sqrtf`                             | `sqrt`                       |
-| `Math.Exp` / `MathF.Exp`         | `expf`                              | `exp`                        |
-| `Math.Log` / `MathF.Log`         | `logf`                              | `log`                        |
-| `Math.Sin` / `MathF.Sin`         | `sinf`                              | `sin`                        |
-| `Math.Cos` / `MathF.Cos`         | `cosf`                              | `cos`                        |
-| `Math.Tan` / `MathF.Tan`         | `tanf`                              | `tan`                        |
-| `Math.Round` / `MathF.Round`     | `roundf`                            | `round`                      |
-| `Math.Ceiling` / `MathF.Ceiling` | `ceilf`                             | `ceil`                       |
-| `Math.Floor` / `MathF.Floor`     | `floorf`                            | `floor`                      |
-| `Math.Pow` / `MathF.Pow`         | `powf`                              | `pow`                        |
+| .NET Method | CUDA Mapping (MathF - Single Float) | CUDA Mapping (Math - Double) |
+| :--- | :--- | :--- |
+| `Math.Abs` / `MathF.Abs` | `fabsf` | `fabs` |
+| `Math.Min` / `MathF.Min` | `fminf` | `fmin` |
+| `Math.Max` / `MathF.Max` | `fmaxf` | `fmax` |
+| `Math.Sqrt` / `MathF.Sqrt` | `sqrtf` | `sqrt` |
+| `Math.Exp` / `MathF.Exp` | `expf` | `exp` |
+| `Math.Log` / `MathF.Log` | `logf` | `log` |
+| `Math.Sin` / `MathF.Sin` | `sinf` | `sin` |
+| `Math.Cos` / `MathF.Cos` | `cosf` | `cos` |
+| `Math.Tan` / `MathF.Tan` | `tanf` | `tan` |
+| `Math.Round` / `MathF.Round` | `roundf` | `round` |
+| `Math.Ceiling` / `MathF.Ceiling` | `ceilf` | `ceil` |
+| `Math.Floor` / `MathF.Floor` | `floorf` | `floor` |
+| `Math.Pow` / `MathF.Pow` | `powf` | `pow` |
 
 ## See also
 

@@ -94,11 +94,11 @@ If a bit is set to `1`, that thread is expected to arrive at the synchronization
 
 ### Common Mask Constants
 
-| Hex Literal         | Binary Representation                | Practical Use Case                                |
-| :------------------ | :----------------------------------- | :------------------------------------------------ |
-| **`0xFFFFFFFF`**    | `1111...1111` (All 32 bits = `1`)    | Entire warp participates unconditionally.         |
-| **`0x55555555`**    | `0101...0101` (Even bits = `1`)      | Only even lane IDs participate.                   |
-| **`0xAAAAAAAA`**    | `1010...1010` (Odd bits = `1`)       | Only odd lane IDs participate.                    |
+| Hex Literal | Binary Representation | Practical Use Case |
+| :--- | :--- | :--- |
+| **`0xFFFFFFFF`** | `1111...1111` (All 32 bits = `1`) | Entire warp participates unconditionally. |
+| **`0x55555555`** | `0101...0101` (Even bits = `1`) | Only even lane IDs participate. |
+| **`0xAAAAAAAA`** | `1010...1010` (Odd bits = `1`) | Only odd lane IDs participate. |
 | **`(1u << K) - 1`** | `0000...1111` (First $K$ bits = `1`) | Partial warp handling (first $K$ threads active). |
 
 ---
@@ -221,12 +221,12 @@ public static void SafeActiveMaskExample(int val)
 
 ## 6. Warp Shuffle Operation Summary
 
-| Method                                    | Conceptual Action                            | Key Use Cases                                         |
-| :---------------------------------------- | :------------------------------------------- | :---------------------------------------------------- |
-| **`ShuffleSync(mask, var, srcLane)`**     | Broadcasts from a specific `srcLane`         | Pivot distribution, broadcasting warp leader's value. |
-| **`ShuffleDownSync(mask, var, delta)`**   | Reads from higher lane (`LaneId + delta`)    | Parallel tree reductions (Sum, Max, Min).             |
-| **`ShuffleUpSync(mask, var, delta)`**     | Reads from lower lane (`LaneId - delta`)     | Prefix sums (scans), 1D/2D stencil neighbor reads.    |
-| **`ShuffleXorSync(mask, var, laneMask)`** | Swaps with paired lane (`LaneId ^ laneMask`) | Butterfly reductions, Bitonic sort, FFT.              |
+| Method | Conceptual Action | Key Use Cases |
+| :--- | :--- | :--- |
+| **`ShuffleSync(mask, var, srcLane)`** | Broadcasts from a specific `srcLane` | Pivot distribution, broadcasting warp leader's value. |
+| **`ShuffleDownSync(mask, var, delta)`** | Reads from higher lane (`LaneId + delta`) | Parallel tree reductions (Sum, Max, Min). |
+| **`ShuffleUpSync(mask, var, delta)`** | Reads from lower lane (`LaneId - delta`) | Prefix sums (scans), 1D/2D stencil neighbor reads. |
+| **`ShuffleXorSync(mask, var, laneMask)`** | Swaps with paired lane (`LaneId ^ laneMask`) | Butterfly reductions, Bitonic sort, FFT. |
 
 ---
 

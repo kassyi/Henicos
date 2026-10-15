@@ -1,201 +1,277 @@
 ---
-title: "GpuBigFloat<TSize> Struct (G#)"
+title: "GpuBigFloat Struct (G#)"
 site: "G# Documentation"
-published: "2026-09-23T00:00:00.000Z"
+published: "2026-10-16T00:00:00.000Z"
 language: "en"
-description: "Reference for arbitrary-precision floating-point numbers on the GPU."
+description: "Represents an arbitrary-precision signed floating-point number on the GPU using an unsigned floating-point magnitude and a sign flag."
 ---
 
-## GpuBigFloat<TSize> Struct
+## GpuBigFloat Struct
 
 ## Definition
 
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Represents an arbitrary-precision signed floating-point number on the GPU.
-It operates entirely on the GPU and is composed of an underlying unsigned magnitude ([`GpuBigUFloat<TSize>`](GpuBigUFloat.md)) and a sign bit.
+Represents an arbitrary-precision signed floating-point number on the GPU using a dynamically sized unsigned floating-point magnitude ([`GpuBigUFloat`](GpuBigUFloat.md)) and a sign flag:
+
+$$(-1)^{\text{IsNegative}} \times \text{UFloat.Significand} \times 2^{\text{UFloat.Exponent}}$$
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
-public struct GpuBigFloat<TSize> : IEquatable<GpuBigFloat<TSize>>, IComparable<GpuBigFloat<TSize>>
-    where TSize : unmanaged
+public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBigFloat>, IDisposable
 ```
 
-### Type Parameters
-
-`TSize` _unmanaged_<br>
-The unmanaged struct type representing the significand storage size (e.g., `Vector8`).
+Implements: `IEquatable<GpuBigFloat>`, `IComparable<GpuBigFloat>`, `IDisposable`
 
 ## Constructors
 
-| Name                                               | Description                                                                         |
-| -------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `GpuBigFloat(GpuBigUFloat<TSize>, bool)`           | Initializes a new floating point wrapper around an unsigned float.                  |
-| `GpuBigFloat(GpuBigUInt<TSize>, int, bool)` | Initializes a new floating point wrapper from significand, exponent, and sign flag. |
+| Name | Description |
+| --- | --- |
+| [GpuBigFloat(GpuBigUFloat, Boolean)](#gpubigfloatgpubigufloat-boolean) | Initializes a new instance of the `GpuBigFloat` struct from an unsigned float magnitude and a sign flag. |
+| [GpuBigFloat(GpuBigUInt, Int32, Boolean)](#gpubigfloatgpubiguint-int32-boolean) | Initializes a new instance of the `GpuBigFloat` struct from a significand, binary base-2 exponent, and sign flag. |
 
-## Properties / Fields
+## GpuBigFloat(GpuBigUFloat, Boolean)
 
-| Name         | Description                                                                   |
-| ------------ | ----------------------------------------------------------------------------- |
-| `UFloat`     | The underlying unsigned floating-point value payload (`GpuBigUFloat<TSize>`). |
-| `IsNegative` | `true` if the floating-point number is strictly negative.                     |
+Initializes a new instance of the `GpuBigFloat` struct from an unsigned float magnitude and a sign flag.
+
+```csharp
+public GpuBigFloat([TakesOwnership] GpuBigUFloat uFloat, bool isNegative);
+```
+
+#### Parameters
+
+`uFloat` _[GpuBigUFloat](GpuBigUFloat.md)_<br>
+The unsigned float component. Takes ownership of the underlying buffer.
+
+`isNegative` _Boolean_<br>
+`true` if the value is negative; otherwise, `false`.
+
+## GpuBigFloat(GpuBigUInt, Int32, Boolean)
+
+Initializes a new instance of the `GpuBigFloat` struct from significand, binary exponent, and sign flag.
+
+```csharp
+public GpuBigFloat([TakesOwnership] GpuBigUInt significand, int exponent, bool isNegative);
+```
+
+#### Parameters
+
+`significand` _[GpuBigUInt](../gpu_big_int_and_uint/GpuBigUInt.md)_<br>
+The significand payload. Takes ownership of the buffer.
+
+`exponent` _Int32_<br>
+The binary base-2 exponent.
+
+`isNegative` _Boolean_<br>
+`true` if the value is negative; otherwise, `false`.
+
+## Properties
+
+| Name | Description |
+| --- | --- |
+| [IsNegative](#isnegative) | Gets a value indicating whether the floating-point number is negative. |
+| [UFloat](#ufloat) | Gets the underlying unsigned floating-point magnitude payload (`GpuBigUFloat`). |
+
+## IsNegative
+
+Gets a value indicating whether the floating-point number is negative.
+
+```csharp
+public bool IsNegative { get; }
+```
+
+## UFloat
+
+Gets the underlying unsigned floating-point magnitude payload.
+
+```csharp
+public GpuBigUFloat UFloat { get; }
+```
 
 ## Methods
 
-| Name                                                                                             | Description                                                                                                                            |
-| ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| [AlignRadixPoint(GpuBigFloat<TSize>)](#alignradixpointgpubigfloattsize)                          | Aligns the radix point between this instance and another floating point number, returning aligned values and rounding bits as a Tuple. |
-| [Normalize(int, bool)](#normalizeint-bool)                                                       | Normalizes the floating-point significand and adjusts the exponent.                                                                    |
-| [Round(GpuBigFloatRoundingMode, bool, bool, bool)](#roundgpubigfloatroundingmode-bool-bool-bool) | Applies IEEE 754 compliant rounding.                                                                                                   |
-| [Add(GpuBigFloat<TSize>)](#addgpubigfloattsize)                                                  | Adds two GpuBigFloat<TSize> values.                                                                                                    |
-| [Subtract(GpuBigFloat<TSize>)](#subtractgpubigfloattsize)                                        | Subtracts another GpuBigFloat<TSize> from this value.                                                                                  |
+| Name | Description |
+| --- | --- |
+| [Add(GpuBigFloat)](#addgpubigfloat) | Adds another `GpuBigFloat` to this instance. |
+| [AlignRadixPoint(GpuBigFloat)](#alignradixpointgpubigfloat) | Aligns the radix points (exponents) of this instance and another floating-point number, extracting IEEE 754 rounding bits. |
+| [CompareTo(GpuBigFloat)](#comparetogpubigfloat) | Compares this instance to another `GpuBigFloat` and returns an integer indicating their relative order. |
+| [Dispose()](#dispose) | Releases the GPU global device memory resources allocated for the underlying significand. |
+| [DivideByUInt32(UInt32)](#dividebyuint32uint32) | Divides the floating-point number by a 32-bit unsigned integer scalar, returning the quotient and 32-bit remainder. |
+| [Equals(GpuBigFloat)](#equalsgpubigfloat) | Indicates whether the current instance is equal to another `GpuBigFloat` instance. |
+| [Equals(Object?)](#equalsobject) | Determines whether the specified object is equal to the current instance. |
+| [GetHashCode()](#gethashcode) | Returns the hash code for this instance. |
+| [Normalize(Int32, Boolean)](#normalizeint32-boolean) | Normalizes the floating-point value such that the most significant bit of the significand is aligned. |
+| [Round(GpuBigFloatRoundingMode, Boolean, Boolean, Boolean)](#roundgpubigfloatroundingmode-boolean-boolean-boolean) | Rounds the floating-point value to the target significand precision using the specified rounding mode and discarded bit flags. |
+| [Subtract(GpuBigFloat)](#subtractgpubigfloat) | Subtracts another `GpuBigFloat` from this instance. |
 
 ## Methods Detail
 
-### AlignRadixPoint(GpuBigFloat\<TSize\>)
+### Add(GpuBigFloat)
 
-Aligns the radix point between this instance and another floating point number, returning aligned values and rounding bits.
+Adds another `GpuBigFloat` to this instance.
 
 ```csharp
-public (GpuBigFloat<TSize> AlignedThis, GpuBigFloat<TSize> AlignedOther, bool Guard, bool Round, bool StickyThis, bool StickyOther) AlignRadixPoint(GpuBigFloat<TSize> other);
+public GpuBigFloat Add(GpuBigFloat other);
+```
+
+### AlignRadixPoint(GpuBigFloat)
+
+Aligns the radix points (exponents) of this instance and another floating-point number, extracting IEEE 754 rounding bits.
+
+```csharp
+public (GpuBigFloat AlignedThis, GpuBigFloat AlignedOther, bool Guard, bool Round, bool StickyThis, bool StickyOther) AlignRadixPoint(GpuBigFloat other);
+```
+
+### CompareTo(GpuBigFloat)
+
+Compares this instance to another `GpuBigFloat` and returns an integer indicating their relative order.
+
+```csharp
+public int CompareTo(GpuBigFloat other);
+```
+
+### Dispose()
+
+Releases the GPU global device memory resources allocated for the underlying significand.
+
+```csharp
+public void Dispose();
+```
+
+### DivideByUInt32(UInt32)
+
+Divides the floating-point number by a 32-bit unsigned integer scalar.
+
+```csharp
+public (GpuBigFloat Quotient, uint Remainder) DivideByUInt32(uint divisor);
 ```
 
 #### Parameters
 
-`other` _GpuBigFloat\<TSize\>_<br>
-The other floating point number to align against.
+`divisor` _UInt32_<br>
+The 32-bit unsigned integer divisor.
 
 #### Returns
 
-A tuple containing the aligned `this` operand, aligned `other` operand, and the preserved guard, round, and sticky bits.
+_(`GpuBigFloat` Quotient, `UInt32` Remainder)_<br>
+A tuple containing the quotient `GpuBigFloat` and the 32-bit integer remainder.
 
-### Normalize(int, bool)
+### Equals(GpuBigFloat)
 
-Normalizes the floating-point significand and adjusts the exponent.
+Indicates whether the current instance is equal to another `GpuBigFloat` instance.
 
 ```csharp
-public GpuBigFloat<TSize> Normalize(int leadingZeros = 0, bool carryOut = false);
+public bool Equals(GpuBigFloat other);
+```
+
+### Equals(Object?)
+
+Determines whether the specified object is equal to the current instance.
+
+```csharp
+public override bool Equals(object? obj);
+```
+
+### GetHashCode()
+
+Returns the hash code for this instance.
+
+```csharp
+public override int GetHashCode();
+```
+
+### Normalize(Int32, Boolean)
+
+Normalizes the floating-point value such that the most significant bit of the significand is aligned.
+
+```csharp
+public GpuBigFloat Normalize(int leadingZeros = 0, bool carryOut = false);
 ```
 
 #### Parameters
 
-`leadingZeros` _int_<br>
-The number of leading zeros in the significand.
+`leadingZeros` _Int32_<br>
+The number of leading zero bits in the significand.
 
-`carryOut` _bool_<br>
-A value indicating whether a carry-out occurred in the previous operation.
+`carryOut` _Boolean_<br>
+`true` if an arithmetic carry out occurred during addition; otherwise, `false`.
 
 #### Returns
 
-A normalized `GpuBigFloat<TSize>`.
+_[GpuBigFloat](GpuBigFloat.md)_<br>
+The normalized `GpuBigFloat` instance.
 
-### Round(GpuBigFloatRoundingMode, bool, bool, bool)
+### Round(GpuBigFloatRoundingMode, Boolean, Boolean, Boolean)
 
-Applies IEEE 754 compliant rounding.
+Rounds the floating-point value to the target significand precision using the specified rounding mode and discarded bit flags.
 
 ```csharp
-public GpuBigFloat<TSize> Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit);
+public GpuBigFloat Round(GpuBigFloatRoundingMode mode, bool guardBit, bool roundBit, bool stickyBit);
 ```
 
-#### Parameters
+### Subtract(GpuBigFloat)
 
-`mode` _GpuBigFloatRoundingMode_<br>
-The IEEE 754 rounding mode to apply.
-
-`guardBit` _bool_<br>
-The guard bit.
-
-`roundBit` _bool_<br>
-The round bit.
-
-`stickyBit` _bool_<br>
-The sticky bit.
-
-#### Returns
-
-The rounded `GpuBigFloat<TSize>`.
-
-### Add(GpuBigFloat\<TSize\>)
-
-Adds two `GpuBigFloat<TSize>` values.
+Subtracts another `GpuBigFloat` from this instance.
 
 ```csharp
-public GpuBigFloat<TSize> Add(GpuBigFloat<TSize> other);
+public GpuBigFloat Subtract(GpuBigFloat other);
 ```
 
-#### Parameters
+## Operators
 
-`other` _GpuBigFloat\<TSize\>_<br>
-The value to add.
-
-#### Returns
-
-The sum as a new `GpuBigFloat<TSize>`.
-
-### Subtract(GpuBigFloat\<TSize\>)
-
-Subtracts another `GpuBigFloat<TSize>` value.
-
-```csharp
-public GpuBigFloat<TSize> Subtract(GpuBigFloat<TSize> other);
-```
-
-#### Parameters
-
-`other` _GpuBigFloat\<TSize\>_<br>
-The value to subtract.
-
-#### Returns
-
-The difference as a new `GpuBigFloat<TSize>`.
+| Name | Description |
+| --- | --- |
+| `operator +(GpuBigFloat, GpuBigFloat)` | Creates a deferred `BinaryExpr<GpuBigFloat, AddOp>` representing the addition of two floating-point values. |
+| `operator -(GpuBigFloat, GpuBigFloat)` | Creates a deferred `BinaryExpr<GpuBigFloat, SubOp>` representing the subtraction of two floating-point values. |
+| `operator *(GpuBigFloat, GpuBigFloat)` | Creates a deferred `BinaryExpr<GpuBigFloat, MulOp>` representing the multiplication of two floating-point values. |
+| `implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, AddOp>)` | Implicitly evaluates a binary addition expression via `GpuBigFloatExpressionVisitor`. |
+| `implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, SubOp>)` | Implicitly evaluates a binary subtraction expression via `GpuBigFloatExpressionVisitor`. |
+| `implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, MulOp>)` | Implicitly evaluates a binary multiplication expression via `GpuBigFloatExpressionVisitor`. |
+| `operator ==(GpuBigFloat, GpuBigFloat)` | Determines whether two specified `GpuBigFloat` instances are equal. |
+| `operator !=(GpuBigFloat, GpuBigFloat)` | Determines whether two specified `GpuBigFloat` instances are not equal. |
+| `operator <(GpuBigFloat, GpuBigFloat)` | Determines whether one specified `GpuBigFloat` is less than another. |
+| `operator >(GpuBigFloat, GpuBigFloat)` | Determines whether one specified `GpuBigFloat` is greater than another. |
+| `operator <=(GpuBigFloat, GpuBigFloat)` | Determines whether one specified `GpuBigFloat` is less than or equal to another. |
+| `operator >=(GpuBigFloat, GpuBigFloat)` | Determines whether one specified `GpuBigFloat` is greater than or equal to another. |
 
 ## Examples
 
-### Constructing a GpuBigFloat
+### Arbitrary-Precision Floating-Point Arithmetic on GPU
 
 > [!NOTE]
-> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath, Kassyi.GSharp.Core
+> Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
 
 ```csharp
-
-
-using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
-
+#nullable enable
 // Execution Context: Host (CPU)
-Example.ComputeFloat();
+using System;
+using Kassyi.GSharp.Stdlib.GpuMath;
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
-public class Example
-{
-    // Execution Context: G# Kernel (GPU)
-    [GpuKernel]
-    public static void ComputeFloat()
-    {
-        // Initialize significand representing the value '3' (zero allocation)
-        var buffer = new LimbBuffer8();
-        buffer[0] = 3;
-        var significand = new GpuBigUInt<LimbBuffer8>(buffer);
+using var workspace = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
 
-        // Create the signed big float (e.g., 3 * 2^-1 = 1.5)
-        var floatVal = new GpuBigFloat<LimbBuffer8>(significand, exponent: -1, isNegative: false);
+// Create 3.0 (3 * 2^0) and 1.5 (3 * 2^-1)
+using var sigA = new GpuBigUInt(workspace, new uint[] { 3, 0 });
+using var sigB = new GpuBigUInt(workspace, new uint[] { 3, 0 });
 
-        // Evaluate if negative and compute absolute value
-        if (floatVal.IsNegative)
-        {
-            floatVal = new GpuBigFloat<LimbBuffer8>(floatVal.UFloat, isNegative: false);
-        }
+var floatA = new GpuBigFloat(sigA, exponent: 0, isNegative: false);
+var floatB = new GpuBigFloat(sigB, exponent: -1, isNegative: false);
 
-        Console.WriteLine($"Computed Float: Significand[0]={floatVal.UFloat.Significand.Limbs[0]}, Exponent={floatVal.UFloat.Exponent}, IsNegative={floatVal.IsNegative}");
-    }
-}
+// Addition via deferred BinaryExpr<GpuBigFloat, AddOp> and implicit evaluation
+using GpuBigFloat sum = floatA + floatB;
+
+// Scalar division by UInt32
+var (quotient, remainder) = floatA.DivideByUInt32(2);
+using var q = quotient;
+
+Console.WriteLine($"Sum: Significand={sum.UFloat.Significand.ToBigInteger(false)}, Exp={sum.UFloat.Exponent}, Neg={sum.IsNegative}");
+Console.WriteLine($"Quotient: Significand={q.UFloat.Significand.ToBigInteger(false)}, Exp={q.UFloat.Exponent}, Rem={remainder}");
 ```
 
 ## Remarks
 
-Unlike earlier versions that required Host orchestration, `GpuBigFloat<TSize>` is a purely unmanaged structure that executes entirely on the GPU.
-Because it relies on C# 12 `[InlineArray]` (such as `LimbBuffer8`), its instantiation operates strictly on the stack or registers, fully adhering to the Zero-Allocation rule. For details, see [Memory Management and Zero-Allocation](../00_index.md#memory-management-and-zero-allocation).
+`GpuBigFloat` is backed by dynamically sized device memory allocations in [`GpuBigUInt`](../gpu_big_int_and_uint/GpuBigUInt.md) with zero managed heap overhead on the host. Arithmetic operators (`+`, `-`, `*`) construct stack-allocated [`BinaryExpr<GpuBigFloat, TOp>`](../gpu_big_int_and_uint/expressions/FloatExpressions.md) nodes that are evaluated through [`GpuBigFloatExpressionVisitor`](../gpu_big_int_and_uint/expressions/FloatExpressions.md).
 
 For more information on the separation of Signed and Unsigned components to prevent Warp Divergence, see [The Architecture: Signed vs. Unsigned Separation](../../../04_guides/07_stdlib_math_and_lazy_evaluation.md#3-the-architecture-signed-vs-unsigned-separation).
 
@@ -204,6 +280,7 @@ For more information on the separation of Signed and Unsigned components to prev
 ### BCL API > Math Bignum
 
 - [Standard Math Library (Stdlib.Math)](../00_index.md)
-- [GpuBigUFloat<TSize> Struct (G#)](GpuBigUFloat.md)
+- [GpuBigUFloat Struct (G#)](GpuBigUFloat.md)
 - [GpuBigFloatRoundingMode Enum (G#)](GpuBigFloatRoundingMode.md)
+- [FloatExpressions (BinaryExpr & GpuBigFloatExpressionVisitor)](../gpu_big_int_and_uint/expressions/FloatExpressions.md)
 - [GpuBigFloat Operators (G#)](Operators.md)

@@ -23,77 +23,76 @@ public static class GpuRadixConverter
 
 | Name | Description |
 | --- | --- |
-| [ConvertAndWrite(GpuWorkspace, GpuBigUInt, int, TextWriter, bool)](#convertandwritegpuworkspace-gpuuintbiginteger-int-textwriter-bool) | Converts a `GpuBigUInt` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`. |
+| [ConvertAndWrite(GpuWorkspace, GpuBigUInt, int, TextWriter, bool)](#convertandwritegpuworkspace-gpubiguint-int-textwriter-bool) | Converts a `GpuBigUInt` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`. |
 
 ## ConvertAndWrite(GpuWorkspace, GpuBigUInt, int, TextWriter, bool)
 
 Converts a `GpuBigUInt` to decimal digits using GPU-accelerated divide-and-conquer division, streaming the output directly to a `TextWriter`.
 
 ```csharp
-public static void ConvertAndWrite(GpuWorkspace workspace, GpuBigUInt value, int targetDigits, TextWriter writer, bool isMostSignificant = false);
+public static void ConvertAndWrite(
+    GpuWorkspace workspace,
+    GpuBigUInt value,
+    int targetDigits,
+    TextWriter writer,
+    bool isMostSignificant = false);
 ```
 
 #### Parameters
 
 `workspace` _GpuWorkspace_<br>
-The GPU computation workspace.
+The GPU computation workspace managing memory and kernel dispatches.
 
-`value` _GpuUIntBigInteger_<br>
-The integer to convert.
+`value` _GpuBigUInt_<br>
+The unsigned large integer to convert.
 
 `targetDigits` _int_<br>
-The number of digits to generate.
+The expected or target number of decimal digits to generate.
 
 `writer` _TextWriter_<br>
-The output stream writer.
+The output stream writer receiving the formatted decimal text.
 
 `isMostSignificant` _bool_<br>
-True if formatting the integer part with a decimal point (e.g. "3.1415...").
+`true` if formatting the integer part with a decimal point (e.g. `"3.1415..."`); otherwise, `false`.
 
 #### Exceptions
 
 `ArgumentNullException`<br>
-Thrown when `workspace`, `value`, or `writer` is `null`.
+Thrown when `workspace` or `writer` is `null`.
 
 `ArgumentOutOfRangeException`<br>
 Thrown when `targetDigits` is negative or zero.
 
 ## Examples
 
+### Streaming Base-10 Digits from GPU to TextWriter
+
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
-
-### Printing a 10,000 Digit Number
 
 ```csharp
 // Execution Context: Host (CPU)
 using System;
 using System.IO;
+using System.Numerics;
 using Kassyi.GSharp.Stdlib.GpuMath;
-using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 using var workspace = new GpuWorkspace(2048, GpuExecutionEngine.GSharpAot);
 
 // Assume we just finished calculating a massive factorial or Pi
-GpuBigUInt resultGpu = GpuBigUInt.FromBigInteger(workspace, System.Numerics.BigInteger.Parse("12345678901234567890"), minWords: 2);
+using var resultGpu = GpuBigUInt.FromBigInteger(workspace, BigInteger.Parse("12345678901234567890"), minWords: 2);
 
-Console.WriteLine("Starting base-10 conversion...");
+// Stream the converted base-10 digits directly to a TextWriter
+using var writer = new StringWriter();
+GpuRadixConverter.ConvertAndWrite(workspace, resultGpu, targetDigits: 20, writer);
 
-// The converter orchestrates thousands of recursive division kernels on the GPU
-// and streams the result directly to a file without allocating a massive string.
-using (var writer = new StreamWriter("result.txt"))
-{
-    GpuRadixConverter.ConvertAndWrite(workspace, resultGpu, targetDigits: 20, writer);
-}
-
-string output = File.ReadAllText("result.txt");
-Console.WriteLine($"Conversion complete. Output: {output}");
+Console.WriteLine($"Conversion complete. Output: {writer}");
 ```
 
 ## Remarks
 
-Because the conversion involves hundreds of recursive Division and Remainder (`DivRem`) operations, it requires a significant amount of temporary memory. The converter automatically utilizes the `GpuWorkspace` memory pool.
+Because the conversion involves recursive Division and Remainder (`DivRem`) operations for large numbers ($> 10,000$ digits), it requires temporary memory. The converter automatically utilizes the `GpuWorkspace` memory pool and caches $10^k$ radix divisors on the GPU.
 
 ## See also
 
