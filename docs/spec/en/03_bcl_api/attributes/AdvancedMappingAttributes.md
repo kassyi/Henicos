@@ -44,9 +44,21 @@ The `{0}` token represents the lowercase name of the invoked member.
 
 ### `[BclIntrinsicMap]`
 
-An assembly-level attribute used by the transpiler to map specific BCL method signatures directly to GPU hardware intrinsics.
+An assembly-level attribute used by the transpiler to map specific BCL method signatures directly to GPU hardware intrinsics without runtime reflection.
 
-- _Example_: Maps `System.Numerics.BitOperations.PopCount` to `__popc`.
+```csharp
+public BclIntrinsicMapAttribute(
+    string bclTypeFullName,
+    string methodName,
+    string[] parameterTypeFullNames,
+    string cudaIntrinsicName);
+```
+
+- **`BclTypeFullName`** (_string_): Gets the fully qualified name of the target BCL type (e.g., `System.Numerics.BitOperations`).
+- **`MethodName`** (_string_): Gets the name of the method within the target BCL type.
+- **`ParameterTypeFullNames`** (_IReadOnlyList\<string\>_): Gets the list of fully qualified parameter type names used to resolve the specific method overload.
+- **`CastFirstArgumentTo`** (_string?_): Gets or sets an optional C++ type cast applied to the first argument before calling the intrinsic (e.g., `unsigned int`).
+- **`CudaIntrinsicName`** (_string_): Gets the CUDA C++ or PTX intrinsic function name to emit (e.g., `__popc`).
 
 ### `[GpuOperatorMacro]`
 
@@ -90,7 +102,7 @@ public class KernelExample
     {
         int tx = CustomThreadIndex.X;
         int popc = NativeFunctions.PopCount(42);
-        
+
         Console.WriteLine($"CustomThreadIndex.X = {tx}");
         Console.WriteLine($"NativeFunctions.PopCount(42) = {popc}");
     }

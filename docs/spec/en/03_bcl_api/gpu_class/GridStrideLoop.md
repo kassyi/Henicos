@@ -17,26 +17,60 @@ Executes a standard CUDA grid-stride loop.
 
 ## Overloads
 
-| Name                                                                | Description                                |
-| ------------------------------------------------------------------- | ------------------------------------------ |
-| [GridStrideLoop(int, Action<int>)](#gridstrideloop-int-action-int-) | Executes a standard CUDA grid-stride loop. |
+| Name | Description |
+| --- | --- |
+| [GridStrideLoop(int, Action\<int\>)](#gridstrideloopint-actionint) | Generates a standard CUDA Grid-Stride Loop over the specified bound. |
+| [GridStrideLoop\<TContext\>(ref TContext, int, Gpu.GridStrideAction\<TContext\>)](#gridstridelooptcontextref-tcontext-int-gpugridstrideactiontcontext) | Generates a standard CUDA Grid-Stride Loop with context state propagation. |
 
-## GridStrideLoop(int, Action<int>)
+## GridStrideLoop(int, Action\<int\>)
 
-Executes a standard CUDA grid-stride loop.
+Generates a standard CUDA Grid-Stride Loop over the specified bound across all threads and blocks.
 
 ```csharp
-[GpuKernel]
-public static void GridStrideLoop(int count, Action<int> body);
+public static void GridStrideLoop(int maxBounds, Action<int> body);
 ```
 
 #### Parameters
 
-`count` <i>int</i><br>
-The total number of elements to process.
+`maxBounds` _int_<br>
+The total element count to process.
 
-`body` <i>Action&lt;int&gt;</i><br>
-A delegate or lambda expressing the loop body. The integer parameter represents the global index.
+`body` _Action\<int\>_<br>
+The loop body delegate receiving the current thread stride index.
+
+#### Exceptions
+
+[GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
+Thrown when evaluated on the host CPU.
+
+## GridStrideLoop\<TContext\>(ref TContext, int, Gpu.GridStrideAction\<TContext\>)
+
+Generates a standard CUDA Grid-Stride Loop with context state propagation.
+
+```csharp
+public delegate void GridStrideAction<TContext>(ref TContext ctx, int index);
+
+public static void GridStrideLoop<TContext>(
+    ref TContext ctx,
+    int maxBounds,
+    Gpu.GridStrideAction<TContext> body);
+```
+
+#### Type Parameters
+
+`TContext`<br>
+The state structure type passed by reference across thread loop strides.
+
+#### Parameters
+
+`ctx` _TContext_<br>
+The execution context passed by reference.
+
+`maxBounds` _int_<br>
+The total element count to process.
+
+`body` _Gpu.GridStrideAction\<TContext\>_<br>
+The loop body delegate receiving the context and current stride index.
 
 #### Exceptions
 
@@ -47,11 +81,14 @@ Thrown when evaluated on the host CPU.
 
 ### Grid Stride Loop
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
 ```csharp
-// Execution Context: G# Kernel (GPU)
 using System;
 using Kassyi.GSharp.Core;
 
+// Execution Context: G# Kernel (GPU)
 try {
     int totalElements = 1024;
     // Automates standard CUDA Grid-Stride Loop

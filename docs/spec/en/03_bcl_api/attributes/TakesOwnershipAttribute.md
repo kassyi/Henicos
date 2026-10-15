@@ -6,15 +6,18 @@ language: "en"
 description: "Marks a dependency-injected GPU or native resource parameter as being strictly owned by the receiving class or struct."
 ---
 
-# TakesOwnershipAttribute
+## TakesOwnershipAttribute Class
+
+## Definition
+
+**Namespace:** `Kassyi.GSharp.Core`  
+**Assembly:** `Kassyi.GSharp.Core.dll`
 
 The **`TakesOwnershipAttribute`** marks a constructor parameter as transferring full resource ownership and lifecycle management responsibility to the receiving class or struct. It interacts directly with the compile-time Zero-Leak Analyzer (`DisposableOwnershipAnalyzer`) to ensure deterministic disposal without runtime overhead.
 
 ```csharp
-namespace Kassyi.GSharp.Core;
-
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class TakesOwnershipAttribute : Attribute;
+public sealed class TakesOwnershipAttribute : Attribute
 ```
 
 ## Syntax
@@ -44,18 +47,23 @@ GSharp (Henicos) operates on two strict GPU computing pillars: **Static Determin
 Applying `[TakesOwnership]` enforces the following strict compile-time constraints:
 
 ### 1. Constructor Parameters Only
+
 The `[TakesOwnership]` attribute is permitted **only** on parameters of instance constructors (including standard constructors and C# 12 Primary Constructors). Applying it to regular member methods, static methods, local functions, lambda expressions, delegates, or property/indexer parameters is prohibited (**GSH0052**). Dynamic mid-stream ownership relays violate static determinism.
 
 ### 2. Target Type Must Implement `IDisposable`
+
 The parameter type decorated with `[TakesOwnership]` must implement `System.IDisposable` (**GSH0051**). Transferring ownership of non-disposable types (e.g., primitives like `int` or plain data structs) is a semantic contradiction and produces a compile error.
 
 ### 3. No Pass-by-Reference Modifiers (`ref`, `in`, `out`)
+
 A parameter marked with `[TakesOwnership]` cannot declare `ref`, `in`, or `out` modifiers (**GSH0053**). Pass-by-reference binds the parameter to the caller's storage location, conflicting with the move semantics of ownership transfer.
 
 ### 4. Receiving Type Must Implement `IDisposable`
+
 Any class or struct whose constructor accepts an owned resource via `[TakesOwnership]` must implement `System.IDisposable` (**GSH0020**).
 
 ### 5. Deterministic Disposal in `Dispose()`
+
 The receiving type must explicitly invoke `.Dispose()` on the owned resource inside its `Dispose()` method (**GSH0022**). For C# 12 Primary Constructors, the compiler-synthesized backing fields representing the owned parameters must be disposed.
 
 ---
@@ -78,47 +86,35 @@ The Roslyn Zero-Leak Analyzer (`DisposableOwnershipAnalyzer`) verifies `[TakesOw
 
 ## Examples
 
-### 1. Standard Constructor Ownership Transfer
+### 1. Constructor Ownership Transfer
+
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
 
 ```csharp
 using System;
+using System.IO;
 using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Stdlib.GpuMath;
 
 // Execution Context: Host (CPU)
-public class ComputePipeline : IDisposable
+
+using var pipeline = new ComputePipeline(new MemoryStream());
+Console.WriteLine("ComputePipeline initialized and will dispose owned resource.");
+
+public sealed class ComputePipeline : IDisposable
 {
-    private readonly GpuWorkspace _workspace;
+    private readonly IDisposable _ownedResource;
 
     // ✅ Correct: Takes ownership via constructor parameter
-    public ComputePipeline([TakesOwnership] GpuWorkspace workspace)
+    public ComputePipeline([TakesOwnership] IDisposable ownedResource)
     {
-        _workspace = workspace;
+        _ownedResource = ownedResource;
     }
 
     public void Dispose()
     {
-        // ✅ Enforced by GSH0022: Owned workspace must be disposed
-        _workspace.Dispose();
-    }
-}
-```
-
-### 2. C# 12 Primary Constructor Ownership Transfer
-
-```csharp
-using System;
-using Kassyi.GSharp.Core;
-using Kassyi.GSharp.Runtime;
-
-// Execution Context: Host (CPU)
-// ✅ Correct: Struct wrapper takes ownership via primary constructor
-public struct StreamScope([TakesOwnership] CudaStream stream) : IDisposable
-{
-    public void Dispose()
-    {
-        // ✅ Primary constructor backing field disposed
-        stream.Dispose();
+        // ✅ Enforced by GSH0022: Owned resource must be disposed
+        _ownedResource.Dispose();
     }
 }
 ```
@@ -156,6 +152,7 @@ public class LeakingWrapper([TakesOwnership] CudaStream stream)
 ## See Also
 
 ### Diagnostics
+
 - [GSH0020: Missing IDisposable implementation](../diagnostics/GSH0020.md)
 - [GSH0022: Unsafe field overwrite / Undisposed owned resource](../diagnostics/GSH0022.md)
 - [GSH0027: Disposing borrowed resource](../diagnostics/GSH0027.md)
@@ -164,8 +161,10 @@ public class LeakingWrapper([TakesOwnership] CudaStream stream)
 - [GSH0053: Cannot take ownership of a reference parameter](../diagnostics/GSH0053.md)
 
 ### BCL API > Attributes
+
 - [Attributes Index](00_index.md)
 
 ### Guides
+
 - [11. Strict Memory Management and Ownership Patterns (Zero-Leak Analyzer)](../../04_guides/02_memory_safety_patterns.md)
 - [The CPU to GPU Paradigm Shift: Anti-Patterns & Best Practices](../../04_guides/06_antipatterns_and_best_practices.md)

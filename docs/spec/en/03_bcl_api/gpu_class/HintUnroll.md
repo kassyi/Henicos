@@ -26,13 +26,12 @@ Hints the compiler to unroll the immediately following loop.
 Hints the compiler to unroll the immediately following loop by a specific factor.
 
 ```csharp
-[GpuKernel]
 public static void Unroll(int factor = 0);
 ```
 
 #### Parameters
 
-`factor` <i>int</i><br>
+`factor` _int_<br>
 The unroll factor. If `0`, the loop is completely unrolled.
 
 #### Exceptions
@@ -43,10 +42,14 @@ None. This method acts as a compile-time compiler hint marker and performs no op
 
 ### Loop Unrolling
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
 ```csharp
-// Execution Context: G# Kernel (GPU)
 using System;
 using Kassyi.GSharp.Core;
+
+// Execution Context: G# Kernel (GPU)
 
 // Instructs NVCC to unroll the following loop (no-op when running CPU tests)
 Gpu.Hint.Unroll();

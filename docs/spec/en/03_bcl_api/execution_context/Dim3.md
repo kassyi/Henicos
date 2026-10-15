@@ -21,11 +21,11 @@ public struct Dim3
 
 ## Properties
 
-| Name | Description                            |
-| ---- | -------------------------------------- |
-| [X](#x)  | Gets the X component of the 3D vector. |
-| [Y](#y)  | Gets the Y component of the 3D vector. |
-| [Z](#z)  | Gets the Z component of the 3D vector. |
+| Name | Description |
+| --- | --- |
+| [X](#x) | Gets the X component of the 3D vector. |
+| [Y](#y) | Gets the Y component of the 3D vector. |
+| [Z](#z) | Gets the Z component of the 3D vector. |
 
 ## X
 

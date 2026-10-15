@@ -18,10 +18,9 @@ Structs and properties for determining grid and block dimensions and indices.
 - [BlockDimension](BlockDimension.md): Gets the dimensions of the thread block.
 - [BlockIndex](BlockIndex.md): Gets the block index within the grid.
 - [ThreadIndex](ThreadIndex.md): Gets the thread index within the block.
+- [ManagedGpuContext](ManagedGpuContext.md): Provides a managed execution context for evaluating GPU kernels on the host CPU.
 
 ## See also
-
-
 
 ### Language Specification
 
@@ -36,4 +35,3 @@ Structs and properties for determining grid and block dimensions and indices.
 
 - [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
 - [Warp Primitives and Thread Masking Guide](../../04_guides/01_warp_programming_guide.md)
-

@@ -17,8 +17,8 @@ Injects raw PTX assembly directly into the generated kernel.
 
 ## Overloads
 
-| Name                                   | Description                                                  |
-| -------------------------------------- | ------------------------------------------------------------ |
+| Name | Description |
+| --- | --- |
 | [InlinePtx(string)](#inlineptx-string) | Injects raw PTX assembly directly into the generated kernel. |
 
 ## InlinePtx(string)
@@ -26,14 +26,13 @@ Injects raw PTX assembly directly into the generated kernel.
 Injects raw PTX assembly directly into the generated kernel.
 
 ```csharp
-[GpuKernel]
-public static void InlinePtx(string ptxCode);
+public static void InlinePtx(string ptx);
 ```
 
 #### Parameters
 
-`ptxCode` <i>string</i><br>
-The PTX instruction string to embed.
+`ptx` _string_<br>
+The raw PTX or C++ string to inject.
 
 #### Exceptions
 
@@ -44,10 +43,14 @@ Thrown when evaluated on the host CPU.
 
 ### Custom PTX Instructions
 
+> [!NOTE]
+> Requires assemblies: Kassyi.GSharp.Core
+
 ```csharp
-// Execution Context: G# Kernel (GPU)
 using System;
 using Kassyi.GSharp.Core;
+
+// Execution Context: G# Kernel (GPU)
 
 try {
     // Injects raw PTX assembly directly into the transpiled C++ output

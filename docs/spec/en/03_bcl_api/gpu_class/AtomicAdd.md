@@ -17,11 +17,11 @@ Performs an atomic read-modify-write addition to a memory address.
 
 ## Overloads
 
-| Name                                                      | Description                                                                                |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| [AtomicAdd(ref int, int)](#atomicadd-ref-int-int)         | Performs an atomic read-modify-write addition on a 32-bit signed integer.                  |
-| [AtomicAdd(ref uint, uint)](#atomicadd-ref-uint-uint)     | Performs an atomic read-modify-write addition on a 32-bit unsigned integer.                |
-| [AtomicAdd(ref ulong, ulong)](#atomicadd-ref-ulong-ulong) | Performs an atomic read-modify-write addition on a 64-bit unsigned integer.                |
+| Name | Description |
+| --- | --- |
+| [AtomicAdd(ref int, int)](#atomicadd-ref-int-int) | Performs an atomic read-modify-write addition on a 32-bit signed integer. |
+| [AtomicAdd(ref uint, uint)](#atomicadd-ref-uint-uint) | Performs an atomic read-modify-write addition on a 32-bit unsigned integer. |
+| [AtomicAdd(ref ulong, ulong)](#atomicadd-ref-ulong-ulong) | Performs an atomic read-modify-write addition on a 64-bit unsigned integer. |
 | [AtomicAdd(ref float, float)](#atomicadd-ref-float-float) | Performs an atomic read-modify-write addition on a single-precision floating-point number. |
 
 ## AtomicAdd(ref int, int)
