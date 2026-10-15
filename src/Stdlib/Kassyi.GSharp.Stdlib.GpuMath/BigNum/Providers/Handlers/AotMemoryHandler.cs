@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>[WHY]:</b> Bridges low-level CUDA Driver API memory operations (<c>cuMemAlloc_v2</c>, <c>cuMemFree_v2</c>, <c>cuMemcpyHtoDAsync_v2</c>)
+/// <b>[WHY]:</b> Bridges low-level CUDA Driver API memory operations (<c>cuMemAlloc_v2</c>, <c>cuMemFree_v2</c> / <c>cuMemFreeAsync</c>, <c>cuMemcpyHtoDAsync_v2</c>)
 /// into the <see cref="IGpuMemoryProvider"/> contract for GSharp execution pipelines.
 /// </para>
 /// </remarks>
@@ -46,12 +46,18 @@ public sealed class AotMemoryHandler : IGpuMemoryProvider
     }
 
     /// <inheritdoc/>
-    public void FreeMemory(IntPtr devicePointer)
+    public void FreeMemory(IntPtr devicePointer, IntPtr stream = 0)
     {
-        if (devicePointer != IntPtr.Zero)
+        if (devicePointer == IntPtr.Zero)
         {
-            InvokeCuda(() => CudaDriverApi.cuMemFree_v2(devicePointer));
+            return;
         }
+
+        // cuMemFree_v2 waits for every stream of the device; cuMemFreeAsync only orders the release on 'stream'.
+        // Allocations from cuMemAlloc_v2 may be released either way.
+        InvokeCuda(stream == IntPtr.Zero
+            ? () => CudaDriverApi.cuMemFree_v2(devicePointer)
+            : () => CudaDriverApi.cuMemFreeAsync(devicePointer, stream));
     }
 
     /// <inheritdoc/>

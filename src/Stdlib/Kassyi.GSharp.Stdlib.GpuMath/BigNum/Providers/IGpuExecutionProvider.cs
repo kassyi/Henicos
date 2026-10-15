@@ -21,7 +21,21 @@ public interface IGpuMemoryProvider
     /// Releases previously allocated device global memory.
     /// </summary>
     /// <param name="devicePointer">The unmanaged pointer to the device memory segment to free.</param>
-    void FreeMemory(IntPtr devicePointer);
+    /// <param name="stream">
+    /// The stream that orders the release, or <see cref="IntPtr.Zero"/> for an immediate release.
+    /// <list type="bullet">
+    ///   <item><description>
+    ///   <see cref="IntPtr.Zero"/>: freed immediately. On CUDA this waits for all work on every stream of the device,
+    ///   so it is safe even when the memory was used on streams the caller does not know.
+    ///   </description></item>
+    ///   <item><description>
+    ///   A stream: freed once <paramref name="stream"/> reaches this point, without blocking the calling thread.
+    ///   The caller guarantees that all work using the memory is ordered on <paramref name="stream"/>,
+    ///   and that the stream is not being captured into a CUDA Graph.
+    ///   </description></item>
+    /// </list>
+    /// </param>
+    void FreeMemory(IntPtr devicePointer, IntPtr stream = 0);
 
     /// <summary>
     /// Asynchronously clears the specified device memory region to zero on the given CUDA stream.

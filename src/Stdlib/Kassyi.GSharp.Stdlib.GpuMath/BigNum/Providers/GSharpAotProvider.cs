@@ -51,7 +51,7 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     public IntPtr AllocateMemory(int numWords) => MemoryProvider.AllocateMemory(numWords);
 
     /// <inheritdoc />
-    public void FreeMemory(IntPtr devicePointer) => MemoryProvider.FreeMemory(devicePointer);
+    public void FreeMemory(IntPtr devicePointer, IntPtr stream = 0) => MemoryProvider.FreeMemory(devicePointer, stream);
 
     /// <inheritdoc />
     public void ClearMemoryAsync(IntPtr devicePointer, int numWords, IntPtr stream) =>

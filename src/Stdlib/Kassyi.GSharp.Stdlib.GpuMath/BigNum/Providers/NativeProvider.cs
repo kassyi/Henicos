@@ -47,7 +47,8 @@ public class NativeProvider : IGpuExecutionProvider
     public IntPtr AllocateMemory(int numWords) => NativeMethods.GpuBigInt_Alloc(numWords);
 
     /// <inheritdoc/>
-    public void FreeMemory(IntPtr devicePointer)
+    /// <remarks>The legacy native library frees synchronously; <paramref name="stream"/> is ignored.</remarks>
+    public void FreeMemory(IntPtr devicePointer, IntPtr stream = 0)
     {
         if (devicePointer != IntPtr.Zero)
         {

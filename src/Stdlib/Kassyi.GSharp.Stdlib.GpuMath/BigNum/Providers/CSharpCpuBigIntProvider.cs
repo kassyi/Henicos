@@ -73,7 +73,8 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
     public IntPtr AllocateMemory(int numWords) => Marshal.AllocHGlobal(numWords * 4);
 
     /// <inheritdoc/>
-    public void FreeMemory(IntPtr devicePointer)
+    /// <remarks>Host memory is freed immediately; <paramref name="stream"/> is ignored.</remarks>
+    public void FreeMemory(IntPtr devicePointer, IntPtr stream = 0)
     {
         if (devicePointer != IntPtr.Zero)
         {

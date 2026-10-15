@@ -79,7 +79,8 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
         if (Volatile.Read(ref _disposed) == 1)
         {
-            // Already disposed, actually free it
+            // Already disposed, actually free it. The workspace stream may already be destroyed,
+            // so the release cannot be stream-ordered and falls back to the immediate, device-wide free.
             if (handle.Buffer.Pointer == IntPtr.Zero)
             {
                 return;
@@ -104,6 +105,11 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
     /// <summary>
     /// Releases all pooled device buffers and unmanaged resources.
     /// </summary>
+    /// <remarks>
+    /// Buffers are released in stream order on the workspace stream, which every buffer of this manager is used on.
+    /// The calling thread therefore neither waits for that stream nor for unrelated streams of the device.
+    /// The stream must not be capturing a CUDA Graph at this point.
+    /// </remarks>
     [ExcludeFromCodeCoverage] public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 1)
@@ -129,7 +135,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
                 try
                 {
-                    provider.FreeMemory(handle.Buffer.Pointer);
+                    provider.FreeMemory(handle.Buffer.Pointer, stream);
                     handle.Buffer.Dispose();
                 }
                 catch (Exception ex)
@@ -150,7 +156,7 @@ internal sealed class DefaultGpuMemoryManager(IGpuExecutionProvider provider, In
 
             try
             {
-                provider.FreeMemory(ptr);
+                provider.FreeMemory(ptr, stream);
             }
             catch (Exception ex)
             {
