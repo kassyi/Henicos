@@ -27,7 +27,7 @@ public class StreamOrderedFreeTests
     [Scenario(TestScenario.HappyPath)]
     public void FreeMemory_WithStream_DoesNotWaitForOtherStreams()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -46,7 +46,7 @@ public class StreamOrderedFreeTests
     [Scenario(TestScenario.Boundary)]
     public void FreeMemory_WithoutStream_KeepsImmediateDeviceWideSemantics()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -66,7 +66,7 @@ public class StreamOrderedFreeTests
     [Scenario(TestScenario.HappyPath)]
     public void GpuWorkspace_Dispose_DoesNotWaitForOtherStreams()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var busy = new CudaStream();
@@ -88,7 +88,7 @@ public class StreamOrderedFreeTests
     [Scenario(TestScenario.SadPath)]
     public void GpuWorkspace_Dispose_WithAbandonedCapture_ReleasesMemoryWithoutError()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         var workspace = new GpuWorkspace(NumWords);
         var pooled = new GpuBigUInt(workspace, NumWords);

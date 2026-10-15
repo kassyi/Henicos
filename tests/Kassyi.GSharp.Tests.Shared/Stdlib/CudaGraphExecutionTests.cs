@@ -31,7 +31,7 @@ public class CudaGraphExecutionTests
     [Scenario(TestScenario.HappyPath)]
     public async Task ExecuteAsync_Add_ProducesSum()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -47,7 +47,7 @@ public class CudaGraphExecutionTests
     [Scenario(TestScenario.HappyPath)]
     public async Task ExecuteAsync_ReturnsBeforeGraphCompletes()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -67,7 +67,7 @@ public class CudaGraphExecutionTests
     [Scenario(TestScenario.SadPath)]
     public async Task ExecuteAsync_PreCanceledToken_ReturnsCanceled()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -85,7 +85,7 @@ public class CudaGraphExecutionTests
     [Scenario(TestScenario.SadPath)]
     public async Task ExecuteAsync_CanceledInFlight_GraphStillCompletes_AndStreamStaysUsable()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -109,7 +109,7 @@ public class CudaGraphExecutionTests
     [Scenario(TestScenario.SadPath)]
     public async Task Dispose_WhileInFlight_LetsGraphFinish()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -129,7 +129,7 @@ public class CudaGraphExecutionTests
     [Scenario(TestScenario.SadPath)]
     public void DisposedGraph_RejectsExecution_AndDisposeIsIdempotent()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -149,7 +149,7 @@ public class CudaGraphExecutionTests
     [Scenario(TestScenario.Boundary)]
     public void ExecuteAsync_RepeatedLaunch_DoesNotAllocateInSteadyState()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -184,7 +184,7 @@ public class CudaGraphExecutionTests
     [Scenario(TestScenario.HappyPath)]
     public async Task EvaluateWithCudaGraphAsync_Add_MatchesSynchronousEvaluation()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);
@@ -200,7 +200,7 @@ public class CudaGraphExecutionTests
     [Scenario(TestScenario.SadPath)]
     public async Task EvaluateWithCudaGraphAsync_PreCanceledToken_Throws()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var operands = Operands.Create(workspace);

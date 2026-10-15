@@ -27,7 +27,7 @@ public class AsyncMemoryProviderTests
     [Scenario(TestScenario.HappyPath)]
     public async Task CopyDeviceToHostAsync_MatchesSynchronousCopy()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
@@ -45,7 +45,7 @@ public class AsyncMemoryProviderTests
     [Scenario(TestScenario.HappyPath)]
     public async Task CopyDeviceToHostAsync_IsolatedContextWorkspace_ReturnsData()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot, useIsolatedContext: true);
         GpuBigUInt number;
@@ -80,7 +80,7 @@ public class AsyncMemoryProviderTests
     [Scenario(TestScenario.HappyPath)]
     public async Task SynchronizeStreamAsync_CompletesOnlyAfterQueuedWork()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(workspace.Stream, GateHoldTime));
@@ -158,7 +158,7 @@ public class AsyncMemoryProviderTests
     [Scenario(TestScenario.Boundary)]
     public unsafe void CopyDeviceToHost_PageLockedDestination_StillReturnsCompletedData()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);

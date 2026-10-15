@@ -30,7 +30,7 @@ public class HostSyncReductionTests
     [Scenario(TestScenario.HappyPath)]
     public void ReciprocalMega_DoesNotWaitForQueuedWorkOnOwnStream()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(1024);
@@ -61,7 +61,7 @@ public class HostSyncReductionTests
     [Scenario(TestScenario.Boundary)]
     public void ReciprocalMega_ConstantUploadIsOrderedBeforeKernel_ResultStaysCorrectAcrossRepeats()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(1024);

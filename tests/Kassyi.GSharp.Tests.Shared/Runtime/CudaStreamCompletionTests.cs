@@ -36,7 +36,7 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.HappyPath)]
     public async Task WaitAsync_GatedStream_CompletesOnlyAfterGateRelease()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
         try
@@ -60,7 +60,7 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.HappyPath)]
     public async Task WaitAsync_StreamOfAnotherContext_WaitsForThatStream_AndRestoresCurrentContext()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var isolated = IsolatedContext.Create();
         var stream = isolated.Run(static () => new CudaStream());
@@ -94,7 +94,7 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.HappyPath)]
     public async Task CudaStream_SynchronizeAsync_CompletesAfterGateRelease()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
         try
@@ -140,7 +140,7 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.HappyPath)]
     public async Task WaitAsync_ManyConcurrentAwaits_OnIndependentStreams_AllComplete()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         // Exceeds the completion-source pool size so that rent, overflow allocation and eviction are all exercised.
         const int StreamCount = 24;
@@ -183,7 +183,7 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.Boundary)]
     public void WaitAsync_RepeatedSequentialAwaits_DoNotAllocateInSteadyState()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();
@@ -266,7 +266,7 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.SadPath)]
     public async Task WaitAsync_CanceledInFlight_ThrowsAndStreamRemainsUsable()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
         try
@@ -298,7 +298,7 @@ public class CudaStreamCompletionTests
     [Scenario(TestScenario.SadPath)]
     public void WaitAsync_OnCapturingStream_ThrowsInvalidOperation()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var stream = new CudaStream();

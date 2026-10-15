@@ -26,7 +26,7 @@ public class AsyncReadbackTests
     [Scenario(TestScenario.HappyPath)]
     public async Task ToHostArrayAsync_MatchesToHostArray()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
@@ -43,7 +43,7 @@ public class AsyncReadbackTests
     [InlineData(true)]
     public async Task ToBigIntegerAsync_MatchesToBigInteger(bool isNegative)
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
@@ -58,7 +58,7 @@ public class AsyncReadbackTests
     [Scenario(TestScenario.HappyPath)]
     public async Task ToBigIntegerAsync_ReturnsBeforeQueuedWorkCompletes()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
@@ -77,7 +77,7 @@ public class AsyncReadbackTests
     [Scenario(TestScenario.SadPath)]
     public async Task ToBigIntegerAsync_CanceledInFlight_Throws_AndStreamStaysUsable()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
@@ -97,7 +97,7 @@ public class AsyncReadbackTests
     [Scenario(TestScenario.SadPath)]
     public async Task ToHostArrayAsync_PreCanceledToken_Throws()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var workspace = new GpuWorkspace(64);
         using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
@@ -135,7 +135,7 @@ public class AsyncReadbackTests
     [Scenario(TestScenario.HappyPath)]
     public async Task Fermat_RunFermatPrpAsync_MatchesRunFermatPrp()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var syncRunner = new FermatAlgorithm(FermatExponent);
         using var asyncRunner = new FermatAlgorithm(FermatExponent);
@@ -151,7 +151,7 @@ public class AsyncReadbackTests
     [Scenario(TestScenario.HappyPath)]
     public async Task Fermat_RunBenchmarkChunkAsync_ThenGetStateAsync_MatchesSynchronousCounterparts()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var syncRunner = new FermatAlgorithm(FermatExponent);
         using var asyncRunner = new FermatAlgorithm(FermatExponent);
@@ -172,7 +172,7 @@ public class AsyncReadbackTests
     [Scenario(TestScenario.SadPath)]
     public async Task Fermat_PreCanceledToken_ThrowsWithoutRunning()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var runner = new FermatAlgorithm(FermatExponent);
         var initial = await runner.GetStateAsync();
