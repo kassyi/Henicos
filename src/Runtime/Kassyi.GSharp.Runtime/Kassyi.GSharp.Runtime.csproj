@@ -24,6 +24,11 @@
 
   <ItemGroup>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\..\trusted_keys.txt" Link="trusted_keys.txt" />
+    <!-- Showcase: cuBLAS / cuRAND bindings produced by the YAML native API plugin path (NativeApiGenerator). -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\NativeApi\cublas_api.yml" Link="NativeApi\cublas_api.yml" GSharpApi="true" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\NativeApi\curand_api.yml" Link="NativeApi\curand_api.yml" GSharpApi="true" />
+    <!-- Mirrors build\Kassyi.GSharp.Compiler.targets, which ProjectReference consumers do not import. -->
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="GSharpApi" />
   </ItemGroup>
 
   <ItemGroup>

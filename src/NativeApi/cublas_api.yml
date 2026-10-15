@@ -1,0 +1,198 @@
+# cuBLAS host API bindings (showcase for the YAML native API plugin architecture).
+# Consumed by Kassyi.GSharp.Runtime via <AdditionalFiles GSharpApi="true" />.
+# Matrices are column-major; scalar arguments (alpha / beta / results) use host pointer mode.
+namespace: Kassyi.GSharp.Runtime.Interop
+className: CuBlasApi
+libraryName: cublas
+libraryNames:
+  windows:
+    - cublas64_13.dll
+    - cublas64_12.dll
+    - "%CUDA_PATH%/bin/x64/cublas64_13.dll"
+    - "%CUDA_PATH%/bin/cublas64_12.dll"
+  linux:
+    - libcublas.so.13
+    - libcublas.so.12
+    - libcublas.so
+
+methods:
+  # ---------------------------------
+  # 1. Handle & Stream Management
+  # ---------------------------------
+  - name: cublasCreate_v2
+    returnType: CuBlasStatus
+    summary: Initializes the cuBLAS library and creates a handle to an opaque structure holding the library context.
+    returnDescription: CuBlasStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: handle
+        type: out IntPtr
+        description: Receives the created cuBLAS handle.
+
+  - name: cublasDestroy_v2
+    returnType: CuBlasStatus
+    summary: Releases the resources used by the cuBLAS library context.
+    returnDescription: CuBlasStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: handle
+        type: IntPtr
+        description: The cuBLAS handle to destroy.
+
+  - name: cublasGetVersion_v2
+    returnType: CuBlasStatus
+    summary: Returns the version number of the cuBLAS library.
+    returnDescription: CuBlasStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: handle
+        type: IntPtr
+        description: The cuBLAS handle.
+      - name: version
+        type: out int
+        description: Receives the version number (major * 10000 + minor * 100 + patch).
+
+  - name: cublasSetStream_v2
+    returnType: CuBlasStatus
+    summary: Sets the CUDA stream used by subsequent cuBLAS calls on the handle.
+    returnDescription: CuBlasStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: handle
+        type: IntPtr
+        description: The cuBLAS handle.
+      - name: streamId
+        type: IntPtr
+        description: The CUDA stream, or IntPtr.Zero for the default stream.
+
+  - name: cublasGetStream_v2
+    returnType: CuBlasStatus
+    summary: Gets the CUDA stream used by the handle.
+    returnDescription: CuBlasStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: handle
+        type: IntPtr
+        description: The cuBLAS handle.
+      - name: streamId
+        type: out IntPtr
+        description: Receives the CUDA stream.
+
+  # ---------------------------------
+  # 2. Level-1 BLAS
+  # ---------------------------------
+  - name: cublasSaxpy_v2
+    returnType: CuBlasStatus
+    summary: Computes y = alpha * x + y for single-precision vectors.
+    returnDescription: CuBlasStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: handle
+        type: IntPtr
+        description: The cuBLAS handle.
+      - name: n
+        type: int
+        description: Number of elements in the vectors.
+      - name: alpha
+        type: in float
+        description: Scalar multiplier (host memory).
+      - name: x
+        type: IntPtr
+        description: Device pointer to vector x.
+      - name: incx
+        type: int
+        description: Stride between consecutive elements of x.
+      - name: y
+        type: IntPtr
+        description: Device pointer to vector y, overwritten with the result.
+      - name: incy
+        type: int
+        description: Stride between consecutive elements of y.
+
+  - name: cublasSdot_v2
+    returnType: CuBlasStatus
+    summary: Computes the dot product of two single-precision vectors.
+    returnDescription: CuBlasStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: handle
+        type: IntPtr
+        description: The cuBLAS handle.
+      - name: n
+        type: int
+        description: Number of elements in the vectors.
+      - name: x
+        type: IntPtr
+        description: Device pointer to vector x.
+      - name: incx
+        type: int
+        description: Stride between consecutive elements of x.
+      - name: y
+        type: IntPtr
+        description: Device pointer to vector y.
+      - name: incy
+        type: int
+        description: Stride between consecutive elements of y.
+      - name: result
+        type: out float
+        description: Receives the dot product (host memory).
+
+  # ---------------------------------
+  # 3. Level-3 BLAS (GEMM)
+  # ---------------------------------
+  - name: cublasSgemm_v2
+    returnType: CuBlasStatus
+    summary: Computes C = alpha * op(A) * op(B) + beta * C for single-precision column-major matrices.
+    returnDescription: CuBlasStatus.Success on success; otherwise, an error code.
+    parameters:
+      - { name: handle, type: IntPtr, description: The cuBLAS handle. }
+      - { name: transa, type: CuBlasOperation, description: Operation op(A) applied to A. }
+      - { name: transb, type: CuBlasOperation, description: Operation op(B) applied to B. }
+      - { name: m, type: int, description: Number of rows of op(A) and C. }
+      - { name: n, type: int, description: Number of columns of op(B) and C. }
+      - { name: k, type: int, description: Number of columns of op(A) and rows of op(B). }
+      - { name: alpha, type: in float, description: Scalar multiplier for op(A) * op(B) (host memory). }
+      - { name: a, type: IntPtr, description: Device pointer to matrix A. }
+      - { name: lda, type: int, description: Leading dimension of A. }
+      - { name: b, type: IntPtr, description: Device pointer to matrix B. }
+      - { name: ldb, type: int, description: Leading dimension of B. }
+      - { name: beta, type: in float, description: Scalar multiplier for C (host memory). }
+      - { name: c, type: IntPtr, description: "Device pointer to matrix C, overwritten with the result." }
+      - { name: ldc, type: int, description: Leading dimension of C. }
+
+  - name: cublasDgemm_v2
+    returnType: CuBlasStatus
+    summary: Computes C = alpha * op(A) * op(B) + beta * C for double-precision column-major matrices.
+    returnDescription: CuBlasStatus.Success on success; otherwise, an error code.
+    parameters:
+      - { name: handle, type: IntPtr, description: The cuBLAS handle. }
+      - { name: transa, type: CuBlasOperation, description: Operation op(A) applied to A. }
+      - { name: transb, type: CuBlasOperation, description: Operation op(B) applied to B. }
+      - { name: m, type: int, description: Number of rows of op(A) and C. }
+      - { name: n, type: int, description: Number of columns of op(B) and C. }
+      - { name: k, type: int, description: Number of columns of op(A) and rows of op(B). }
+      - { name: alpha, type: in double, description: Scalar multiplier for op(A) * op(B) (host memory). }
+      - { name: a, type: IntPtr, description: Device pointer to matrix A. }
+      - { name: lda, type: int, description: Leading dimension of A. }
+      - { name: b, type: IntPtr, description: Device pointer to matrix B. }
+      - { name: ldb, type: int, description: Leading dimension of B. }
+      - { name: beta, type: in double, description: Scalar multiplier for C (host memory). }
+      - { name: c, type: IntPtr, description: "Device pointer to matrix C, overwritten with the result." }
+      - { name: ldc, type: int, description: Leading dimension of C. }
+
+  - name: cublasSgemmStridedBatched
+    returnType: CuBlasStatus
+    summary: Computes a batch of single-precision GEMMs whose matrices are laid out at fixed strides.
+    returnDescription: CuBlasStatus.Success on success; otherwise, an error code.
+    parameters:
+      - { name: handle, type: IntPtr, description: The cuBLAS handle. }
+      - { name: transa, type: CuBlasOperation, description: Operation op(A) applied to each A. }
+      - { name: transb, type: CuBlasOperation, description: Operation op(B) applied to each B. }
+      - { name: m, type: int, description: Number of rows of op(A) and C. }
+      - { name: n, type: int, description: Number of columns of op(B) and C. }
+      - { name: k, type: int, description: Number of columns of op(A) and rows of op(B). }
+      - { name: alpha, type: in float, description: Scalar multiplier (host memory). }
+      - { name: a, type: IntPtr, description: Device pointer to the first A matrix. }
+      - { name: lda, type: int, description: Leading dimension of each A. }
+      - { name: strideA, type: long, description: Element stride between consecutive A matrices. }
+      - { name: b, type: IntPtr, description: Device pointer to the first B matrix. }
+      - { name: ldb, type: int, description: Leading dimension of each B. }
+      - { name: strideB, type: long, description: Element stride between consecutive B matrices. }
+      - { name: beta, type: in float, description: Scalar multiplier for C (host memory). }
+      - { name: c, type: IntPtr, description: Device pointer to the first C matrix. }
+      - { name: ldc, type: int, description: Leading dimension of each C. }
+      - { name: strideC, type: long, description: Element stride between consecutive C matrices. }
+      - { name: batchCount, type: int, description: Number of GEMMs in the batch. }

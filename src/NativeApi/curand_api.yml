@@ -1,0 +1,136 @@
+# cuRAND host API bindings (showcase for the YAML native API plugin architecture).
+# Consumed by Kassyi.GSharp.Runtime via <AdditionalFiles GSharpApi="true" />.
+# Generators write into device memory (IntPtr outputPtr), e.g. GpuBuffer<T>.DevicePointer.
+namespace: Kassyi.GSharp.Runtime.Interop
+className: CuRandApi
+libraryName: curand
+libraryNames:
+  windows:
+    - curand64_10.dll
+    - "%CUDA_PATH%/bin/x64/curand64_10.dll"
+    - "%CUDA_PATH%/bin/curand64_10.dll"
+  linux:
+    - libcurand.so.10
+    - libcurand.so
+
+methods:
+  # ---------------------------------
+  # 1. Generator Management
+  # ---------------------------------
+  - name: curandCreateGenerator
+    returnType: CuRandStatus
+    summary: Creates a new random number generator of the specified type.
+    returnDescription: CuRandStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: generator
+        type: out IntPtr
+        description: Receives the generator handle.
+      - name: rngType
+        type: CuRandRngType
+        description: The type of generator to create.
+
+  - name: curandDestroyGenerator
+    returnType: CuRandStatus
+    summary: Destroys an existing generator and frees its memory.
+    returnDescription: CuRandStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: generator
+        type: IntPtr
+        description: The generator handle.
+
+  - name: curandGetVersion
+    returnType: CuRandStatus
+    summary: Returns the version number of the cuRAND library.
+    returnDescription: CuRandStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: version
+        type: out int
+        description: Receives the library version.
+
+  - name: curandSetStream
+    returnType: CuRandStatus
+    summary: Sets the CUDA stream used to launch generation kernels.
+    returnDescription: CuRandStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: generator
+        type: IntPtr
+        description: The generator handle.
+      - name: stream
+        type: IntPtr
+        description: The CUDA stream, or IntPtr.Zero for the default stream.
+
+  - name: curandSetPseudoRandomGeneratorSeed
+    returnType: CuRandStatus
+    summary: Sets the seed of a pseudo-random number generator.
+    returnDescription: CuRandStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: generator
+        type: IntPtr
+        description: The generator handle.
+      - name: seed
+        type: ulong
+        description: The seed value.
+
+  - name: curandSetGeneratorOffset
+    returnType: CuRandStatus
+    summary: Sets the absolute offset of a pseudo- or quasi-random number sequence.
+    returnDescription: CuRandStatus.Success on success; otherwise, an error code.
+    parameters:
+      - name: generator
+        type: IntPtr
+        description: The generator handle.
+      - name: offset
+        type: ulong
+        description: The absolute offset position.
+
+  # ---------------------------------
+  # 2. Generation
+  # ---------------------------------
+  - name: curandGenerate
+    returnType: CuRandStatus
+    summary: Generates 32-bit pseudo- or quasi-random unsigned integers.
+    returnDescription: CuRandStatus.Success on success; otherwise, an error code.
+    parameters:
+      - { name: generator, type: IntPtr, description: The generator handle. }
+      - { name: outputPtr, type: IntPtr, description: Device pointer receiving uint values. }
+      - { name: num, type: nuint, description: Number of values to generate. }
+
+  - name: curandGenerateUniform
+    returnType: CuRandStatus
+    summary: Generates uniformly distributed single-precision values in the range (0, 1].
+    returnDescription: CuRandStatus.Success on success; otherwise, an error code.
+    parameters:
+      - { name: generator, type: IntPtr, description: The generator handle. }
+      - { name: outputPtr, type: IntPtr, description: Device pointer receiving float values. }
+      - { name: num, type: nuint, description: Number of values to generate. }
+
+  - name: curandGenerateUniformDouble
+    returnType: CuRandStatus
+    summary: Generates uniformly distributed double-precision values in the range (0, 1].
+    returnDescription: CuRandStatus.Success on success; otherwise, an error code.
+    parameters:
+      - { name: generator, type: IntPtr, description: The generator handle. }
+      - { name: outputPtr, type: IntPtr, description: Device pointer receiving double values. }
+      - { name: num, type: nuint, description: Number of values to generate. }
+
+  - name: curandGenerateNormal
+    returnType: CuRandStatus
+    summary: Generates normally distributed single-precision values.
+    returnDescription: CuRandStatus.Success on success; CuRandStatus.LengthNotMultiple when n is odd for pseudo-random generators.
+    parameters:
+      - { name: generator, type: IntPtr, description: The generator handle. }
+      - { name: outputPtr, type: IntPtr, description: Device pointer receiving float values. }
+      - { name: n, type: nuint, description: Number of values to generate. }
+      - { name: mean, type: float, description: Mean of the distribution. }
+      - { name: stddev, type: float, description: Standard deviation of the distribution. }
+
+  - name: curandGenerateNormalDouble
+    returnType: CuRandStatus
+    summary: Generates normally distributed double-precision values.
+    returnDescription: CuRandStatus.Success on success; CuRandStatus.LengthNotMultiple when n is odd for pseudo-random generators.
+    parameters:
+      - { name: generator, type: IntPtr, description: The generator handle. }
+      - { name: outputPtr, type: IntPtr, description: Device pointer receiving double values. }
+      - { name: n, type: nuint, description: Number of values to generate. }
+      - { name: mean, type: double, description: Mean of the distribution. }
+      - { name: stddev, type: double, description: Standard deviation of the distribution. }
