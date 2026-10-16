@@ -551,5 +551,78 @@ public class CompileTasksTests
         Assert.Single(task.OutputFatbins);
         Assert.DoesNotContain(ctx.Runner.Invocations, i => i.Arguments.Contains("--fatbin"));
     }
+
+    [Theory]
+    [InlineData(false, "kernel.cu", null)]
+    [InlineData(false, "kernel.cu", "combined_fatbin")]
+    [InlineData(true, "kernel.cpp", null)]
+    public void Test_CompileTask_PropagatesCancellationToken_ToProcessRunner(bool isCpp, string sourceName, string? combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
+        ctx.CreateDummySource(sourceName, "// source");
+
+        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: combinedName);
+        if (task is CompileCudaToFatbinTask cudaTask)
+        {
+            cudaTask.TargetArchitectures = "sm_86";
+        }
+
+        Assert.True(task.Execute());
+        Assert.NotEmpty(ctx.Runner.ObservedTokens);
+        Assert.All(ctx.Runner.ObservedTokens, token => Assert.True(token.CanBeCanceled));
+    }
+
+    [Theory]
+    [InlineData(false, "kernel.cu", null)]
+    [InlineData(false, "kernel.cu", "combined_fatbin")]
+    [InlineData(true, "kernel.cpp", null)]
+    public void Test_CompileTask_CancelBeforeExecute_ReturnsFalseAndLogsWarning(bool isCpp, string sourceName, string? combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
+        ctx.CreateDummySource(sourceName, "// source");
+
+        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: combinedName);
+        if (task is CompileCudaToFatbinTask cudaTask)
+        {
+            cudaTask.TargetArchitectures = "sm_86";
+        }
+
+        task.Cancel();
+
+        Assert.False(task.Execute());
+        Assert.Empty(ctx.BuildEngine.LoggedErrors);
+        Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("canceled", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [InlineData(false, "kernel.cu", null)]
+    [InlineData(false, "kernel.cu", "combined_fatbin")]
+    [InlineData(true, "kernel.cpp", null)]
+    public void Test_CompileTask_CancelDuringProcessRun_ReturnsFalseAndLogsWarning(bool isCpp, string sourceName, string? combinedName)
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.SetEnv("GSHARP_TEST_NO_CUDA", null);
+        ctx.CreateDummySource(sourceName, "// source");
+
+        var task = ctx.CreateTask(isCpp, [sourceName], combinedFatbinName: combinedName);
+        if (task is CompileCudaToFatbinTask cudaTask)
+        {
+            cudaTask.TargetArchitectures = "sm_86";
+        }
+
+        ctx.Runner.OnRun = (startInfo, token) =>
+        {
+            if (startInfo.FileName.Contains("nvcc") || startInfo.FileName.Contains("cl.exe"))
+            {
+                task.Cancel();
+            }
+        };
+
+        Assert.False(task.Execute());
+        Assert.Empty(ctx.BuildEngine.LoggedErrors);
+        Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("canceled", StringComparison.OrdinalIgnoreCase));
+    }
 }
 
