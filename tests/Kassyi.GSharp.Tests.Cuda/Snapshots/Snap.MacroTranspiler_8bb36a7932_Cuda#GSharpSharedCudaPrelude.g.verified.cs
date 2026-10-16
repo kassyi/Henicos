@@ -55,7 +55,7 @@ __device__ __forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned
         ""add.cc.u32 %0, %2, -1;\n\t""
         ""addc.cc.u32 %0, %3, %4;\n\t""
         ""addc.u32 %1, 0, 0;""
-        : ""=&r""(res), ""=r""(c_out)
+        : ""=r""(res), ""=r""(c_out)
         : ""r""(c_in), ""r""(a), ""r""(b)
     );
     *carry = c_out;
@@ -78,7 +78,7 @@ __device__ __forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned
         ""sub.cc.u32 %1, 0, %3;\n\t""
         ""subc.cc.u32 %0, %4, %5;\n\t""
         ""subc.u32 %2, 0, 0;""
-        : ""=&r""(res), ""=&r""(dummy), ""=r""(b_out)
+        : ""=r""(res), ""=r""(dummy), ""=r""(b_out)
         : ""r""(b_in), ""r""(a), ""r""(b)
     );
     *borrow = b_out & 1;

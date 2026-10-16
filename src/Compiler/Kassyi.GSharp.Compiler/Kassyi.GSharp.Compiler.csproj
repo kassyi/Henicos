@@ -33,7 +33,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
+    <ProjectReference Include="..\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" ExcludeAssets="all" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
     <ProjectReference Include="..\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
@@ -43,7 +43,7 @@
     <None Include="build\**" Pack="true" PackagePath="build\" />
 
     <!-- Pack Custom MSBuild Tasks -->
-    <None Include="..\Kassyi.GSharp.Compiler.Tasks\bin\$(Configuration)\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll" Pack="true" PackagePath="tasks\netstandard2.0\" Visible="false" />
+    <None Include="..\Kassyi.GSharp.Compiler.Tasks\$(BaseOutputPath)$(Configuration)\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll" Pack="true" PackagePath="tasks\netstandard2.0\" Visible="false" />
 
     <!-- Analyzer Output -->
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers\dotnet\cs" Visible="false" />
@@ -66,23 +66,26 @@
     <Compile Remove="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
     <Compile Remove="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
     <Compile Remove="$(IntermediateOutputPath)GeneratedNativeApi\**\*.g.cs" />
+    <Compile Remove="**\GeneratedDialects\**\*.g.cs" />
+    <Compile Remove="**\GeneratedDiagnostics\**\*.g.cs" />
+    <Compile Remove="**\GeneratedNativeApi\**\*.g.cs" />
   </ItemGroup>
 
   <Target Name="GenerateYamlDialects" BeforeTargets="CoreCompile" Inputs="@(DialectYamlFiles)" Outputs="$(IntermediateOutputPath)GeneratedDialects.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedDialects" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; dialects &quot;$(MSBuildThisFileDirectory)Dialects&quot; &quot;$(IntermediateOutputPath)GeneratedDialects&quot;" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; dialects &quot;$(MSBuildThisFileDirectory)Dialects&quot; &quot;$(IntermediateOutputPath)GeneratedDialects&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedDialects.stamp" AlwaysCreate="true" />
   </Target>
 
-  <Target Name="GenerateDiagnostics" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)Diagnostics\diagnostics.json;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\bin\$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedDiagnostics.stamp">
+  <Target Name="GenerateDiagnostics" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)Diagnostics\diagnostics.json;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedDiagnostics.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedDiagnostics" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; diagnostics &quot;$(MSBuildThisFileDirectory)Diagnostics/diagnostics.json&quot; &quot;$(IntermediateOutputPath)GeneratedDiagnostics&quot;" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; diagnostics &quot;$(MSBuildThisFileDirectory)Diagnostics/diagnostics.json&quot; &quot;$(IntermediateOutputPath)GeneratedDiagnostics&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" AlwaysCreate="true" />
   </Target>
 
   <Target Name="GenerateNativeApi" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)..\..\NativeApi\**\*.yml" Outputs="$(IntermediateOutputPath)GeneratedNativeApi.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedNativeApi" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)../../NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)../../NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedNativeApi.stamp" AlwaysCreate="true" />
   </Target>
 

@@ -14,20 +14,18 @@ internal static partial class NativeMethods
     static NativeMethods()
     {
         var binPath = CudaEnvironment.GetCudaBinPath();
-        if (string.IsNullOrEmpty(binPath))
+        if (!string.IsNullOrEmpty(binPath))
         {
-            return;
-        }
+            var pathEnv = Environment.GetEnvironmentVariable("PATH");
+            if (pathEnv != null && !pathEnv.Contains(binPath))
+            {
+                Environment.SetEnvironmentVariable("PATH", binPath + Path.PathSeparator + pathEnv);
+            }
 
-        var pathEnv = Environment.GetEnvironmentVariable("PATH");
-        if (pathEnv != null && !pathEnv.Contains(binPath))
-        {
-            Environment.SetEnvironmentVariable("PATH", binPath + Path.PathSeparator + pathEnv);
-        }
-
-        if (!SetDllDirectory(binPath))
-        {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to SetDllDirectory for CUDA bin path.");
+            if (OperatingSystem.IsWindows() && !SetDllDirectory(binPath))
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Failed to SetDllDirectory for CUDA bin path.");
+            }
         }
 
         NativeLibrary.SetDllImportResolver(typeof(NativeMethods).Assembly,
@@ -36,15 +34,16 @@ internal static partial class NativeMethods
 
     private static IntPtr DlImportResolover(string libraryName, Assembly assembly)
     {
-        if (libraryName != DllName && libraryName != DllName + ".dll")
+        if (libraryName != DllName && libraryName != DllName + ".dll" && libraryName != "lib" + DllName + ".so")
         {
             return IntPtr.Zero;
         }
 
+        var fileName = OperatingSystem.IsWindows() ? DllName + ".dll" : "lib" + DllName + ".so";
         string[] possiblePaths =
         [
-            Path.Combine(AppContext.BaseDirectory, DllName + ".dll"),
-            Path.Combine(Path.GetDirectoryName(assembly.Location) ?? string.Empty, DllName + ".dll")
+            Path.Combine(AppContext.BaseDirectory, fileName),
+            Path.Combine(Path.GetDirectoryName(assembly.Location) ?? string.Empty, fileName)
         ];
 
         var triedPaths = new List<string>();

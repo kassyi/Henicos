@@ -78,12 +78,14 @@ public class CudaEnvironmentExtendedTests : IDisposable
     public void Windows_BinPath_WithoutX64_ReturnsBin()
     {
         var mock = new MockResolver { MockIsWindows = true };
-        mock.EnvVars["CUDA_PATH"] = @"C:\Cuda";
-        mock.ExistingDirs.Add(@"C:\Cuda");
-        mock.ExistingDirs.Add(@"C:\Cuda\bin"); // Note: no x64
+        var cudaRoot = @"C:\Cuda";
+        var expectedBin = Path.Combine(cudaRoot, "bin");
+        mock.EnvVars["CUDA_PATH"] = cudaRoot;
+        mock.ExistingDirs.Add(cudaRoot);
+        mock.ExistingDirs.Add(expectedBin); // Note: no x64
 
         CudaEnvironment.Resolver = mock;
-        Assert.Equal(@"C:\Cuda\bin", CudaEnvironment.GetCudaBinPath());
+        Assert.Equal(expectedBin, CudaEnvironment.GetCudaBinPath());
     }
 
     [Fact]

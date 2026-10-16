@@ -1,5 +1,15 @@
 <Project>
   <PropertyGroup>
+    <GSharpHostOs Condition="$([MSBuild]::IsOSPlatform('Windows'))">win</GSharpHostOs>
+    <GSharpHostOs Condition="'$(GSharpHostOs)' == '' and $([MSBuild]::IsOSPlatform('Linux'))">linux</GSharpHostOs>
+    <GSharpHostOs Condition="'$(GSharpHostOs)' == '' and $([MSBuild]::IsOSPlatform('OSX'))">osx</GSharpHostOs>
+    <GSharpHostOs Condition="'$(GSharpHostOs)' == ''">unix</GSharpHostOs>
+
+    <!-- Windows と Linux 等でビルド出力先・中間ディレクトリを完全に分離 -->
+    <BaseOutputPath>bin\$(GSharpHostOs)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>obj\$(GSharpHostOs)\</BaseIntermediateOutputPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);bin\**;obj\**</DefaultItemExcludes>
+
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <!-- 自動生成コード(Source Generator)等の未使用プライベートフィールド警告を抑制 -->

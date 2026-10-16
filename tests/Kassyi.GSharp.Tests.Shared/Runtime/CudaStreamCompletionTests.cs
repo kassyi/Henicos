@@ -20,6 +20,7 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// synchronous sections (<see cref="CudaTestEnvironment.InContext{T}"/>) and never across an <c>await</c>.
 /// </para>
 /// </remarks>
+[Collection(TestCollections.DeviceExclusive)]
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class CudaStreamCompletionTests
 {

@@ -1,11 +1,13 @@
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
-/// <summary>Base MSBuild task providing parallel compilation, Visual Studio environment resolution, and artifact dispatching for kernel sources.</summary>
+/// <summary>Base MSBuild task providing parallel compilation, native toolchain resolution, and artifact dispatching for kernel sources.</summary>
 public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task, ICancelableTask
 {
     private readonly CancellationTokenSource _cancellation = new();
+    private INativeToolchain? _toolchain;
 
     /// <summary>Gets the cancellation token for the current task execution.</summary>
     protected CancellationToken CancellationToken => _cancellation.Token;
@@ -25,6 +27,21 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task, IC
 
     /// <summary>Gets or sets the process runner to use for executing external tools.</summary>
     public IProcessRunner ProcessRunner { get; set; } = Helpers.ProcessRunner.Default;
+
+    /// <summary>
+    /// Gets or sets the native C++ toolchain used for environment discovery and host compilation.
+    /// Defaults to <see cref="MsvcToolchain"/> on Windows and <see cref="GccClangToolchain"/> on non-Windows platforms.
+    /// </summary>
+    public INativeToolchain Toolchain
+    {
+        get => _toolchain ??= CreateDefaultToolchain();
+        set => _toolchain = value;
+    }
+
+    private INativeToolchain CreateDefaultToolchain() =>
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? new MsvcToolchain(ProcessRunner, DisableVcvarsCache)
+            : new GccClangToolchain(ProcessRunner);
 
     /// <summary>Retrieves source items to be processed by this compilation task.</summary>
     protected abstract ITaskItem[] GetSources();
@@ -129,101 +146,21 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task, IC
 
     protected virtual bool OnBeforeExecute() => true;
 
-    private static readonly ConcurrentDictionary<string, Lazy<Dictionary<string, string>?>> s_vcvarsCache =
-        new(StringComparer.OrdinalIgnoreCase);
-
     public bool DisableVcvarsCache { get; set; } = false;
 
     protected Dictionary<string, string>? GetVcvarsEnvironment(string vcvarsArch)
     {
-        if (DisableVcvarsCache)
+        if (Toolchain is MsvcToolchain msvc)
         {
-            return ResolveVcvarsEnvironment(vcvarsArch);
+            return msvc.GetVcvarsEnvironment(vcvarsArch, CancellationToken);
         }
 
-        return s_vcvarsCache.GetOrAdd(vcvarsArch,
-            arch => new Lazy<Dictionary<string, string>?>(() => ResolveVcvarsEnvironment(arch))).Value;
+        return Toolchain.GetEnvironmentVariables(vcvarsArch);
     }
 
-    private Dictionary<string, string>? ResolveVcvarsEnvironment(string vcvarsArch)
-    {
-        var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-        var vswhere = Path.Combine(programFiles, "Microsoft Visual Studio", "Installer", "vswhere.exe");
+    protected void SafeDeleteFiles(params string[] paths) => CleanupFiles(paths);
 
-        if (!File.Exists(vswhere))
-        {
-            return null;
-        }
-
-        var vswhereStartInfo = new ProcessStartInfo
-        {
-            FileName = vswhere,
-            Arguments =
-                "-latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true,
-            EnvironmentVariables =
-            {
-                ["VSCMD_SKIP_SENDTELEMETRY"] = "1"
-            }
-        };
-
-        var vswhereResult = this.ProcessRunner.Run(vswhereStartInfo, CancellationToken);
-        if (vswhereResult.ExitCode != 0)
-        {
-            return null;
-        }
-
-        var output = vswhereResult.StandardOutput.AsSpan().Trim().ToString();
-
-        if (string.IsNullOrEmpty(output))
-        {
-            return null;
-        }
-
-        var vcvarsPath = Path.Combine(output, "VC", "Auxiliary", "Build", "vcvarsall.bat");
-        if (!File.Exists(vcvarsPath))
-        {
-            return null;
-        }
-
-        var envStartInfo = new ProcessStartInfo
-        {
-            FileName = "cmd.exe",
-            Arguments = $"/c \"set VSCMD_SKIP_SENDTELEMETRY=1 && call \"{vcvarsPath}\" {vcvarsArch} >nul && set\"",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            CreateNoWindow = true,
-            EnvironmentVariables =
-            {
-                ["VSCMD_SKIP_SENDTELEMETRY"] = "1"
-            }
-        };
-
-        var envResult = this.ProcessRunner.Run(envStartInfo, CancellationToken);
-        if (envResult.ExitCode != 0)
-        {
-            return null;
-        }
-
-        var envOutput = envResult.StandardOutput;
-
-        var envVars = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        using var reader = new StringReader(envOutput);
-        while (reader.ReadLine() is { } line)
-        {
-            var eqIndex = line.IndexOf('=');
-            if (eqIndex > 0)
-            {
-                envVars[line[..eqIndex]] = line[(eqIndex + 1)..];
-            }
-        }
-
-        return envVars;
-    }
-
-    protected void SafeDeleteFiles(params string[] paths)
+    internal static void CleanupFiles(params string[] paths)
     {
         foreach (var path in paths)
         {

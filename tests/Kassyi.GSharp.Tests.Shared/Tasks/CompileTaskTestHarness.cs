@@ -3,6 +3,7 @@ using System.Collections;
 using System.Diagnostics;
 using Kassyi.GSharp.Compiler.Tasks;
 using Kassyi.GSharp.Compiler.Tasks.Helpers;
+using Kassyi.GSharp.Compiler.Tasks.Toolchains;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 using Task = System.Threading.Tasks.Task;
@@ -48,6 +49,7 @@ internal class MockBuildEngine : IBuildEngine
 internal sealed class CompileTaskTestContext : IDisposable
 {
     public string TempDir { get; }
+    public string FakeVswherePath { get; }
     public MockBuildEngine BuildEngine { get; }
     public MockProcessRunner Runner { get; }
     private readonly Dictionary<string, string?> _envOverrides = new();
@@ -56,6 +58,8 @@ internal sealed class CompileTaskTestContext : IDisposable
     {
         TempDir = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
         Directory.CreateDirectory(TempDir);
+        FakeVswherePath = Path.Combine(TempDir, "vswhere.exe");
+        File.WriteAllText(FakeVswherePath, "");
         BuildEngine = new MockBuildEngine();
         Runner = new MockProcessRunner(TempDir) { NextExitCode = 0, NextStandardOutput = "Success" };
         SetEnv("GSHARP_TEST_NO_CUDA", null);
@@ -89,7 +93,16 @@ internal sealed class CompileTaskTestContext : IDisposable
         return items;
     }
 
-    public CompileCudaToFatbinTask CreateCudaTask(string[] sourceFiles, string? combinedName = "combined_fatbin")
+    public MsvcToolchain CreateMsvcToolchain(bool disableCache = true) =>
+        new(Runner, disableCache, FakeVswherePath);
+
+    public GccClangToolchain CreateGccClangToolchain(string? compilerExecutable = "g++") =>
+        new(Runner, compilerExecutable);
+
+    public CompileCudaToFatbinTask CreateCudaTask(
+        string[] sourceFiles,
+        string? combinedName = "combined_fatbin",
+        INativeToolchain? toolchain = null)
     {
         return new CompileCudaToFatbinTask
         {
@@ -97,13 +110,16 @@ internal sealed class CompileTaskTestContext : IDisposable
             CudaSources = CreateTaskItems(sourceFiles),
             OutputDirectory = TempDir,
             ProcessRunner = Runner,
+            Toolchain = toolchain ?? CreateMsvcToolchain(disableCache: true),
             CombinedFatbinName = combinedName,
             MockCompilation = false,
             DisableVcvarsCache = true
         };
     }
 
-    public CompileCppToNativeTask CreateCppTask(string[] sourceFiles)
+    public CompileCppToNativeTask CreateCppTask(
+        string[] sourceFiles,
+        INativeToolchain? toolchain = null)
     {
         return new CompileCppToNativeTask
         {
@@ -111,16 +127,21 @@ internal sealed class CompileTaskTestContext : IDisposable
             CppSources = CreateTaskItems(sourceFiles),
             OutputDirectory = TempDir,
             ProcessRunner = Runner,
+            Toolchain = toolchain ?? CreateMsvcToolchain(disableCache: true),
             MockCompilation = false,
             DisableVcvarsCache = true,
             GSharpMultiTarget = false
         };
     }
 
-    public CompileKernelTaskBase CreateTask(bool isCpp, string[] sourceFiles, string? combinedFatbinName = null)
+    public CompileKernelTaskBase CreateTask(
+        bool isCpp,
+        string[] sourceFiles,
+        string? combinedFatbinName = null,
+        INativeToolchain? toolchain = null)
     {
-        if (isCpp) return CreateCppTask(sourceFiles);
-        return CreateCudaTask(sourceFiles, combinedFatbinName);
+        if (isCpp) return CreateCppTask(sourceFiles, toolchain);
+        return CreateCudaTask(sourceFiles, combinedFatbinName, toolchain);
     }
 
     public void Dispose()
@@ -159,6 +180,7 @@ internal sealed class MockProcessRunner : IProcessRunner
     public string? VswhereOutput { get; set; }
     public int CmdExitCode { get; set; } = 0;
     public string CmdStandardOutput { get; set; } = "INCLUDE=C:\\dummy\r\nLIB=C:\\dummy";
+    public int VersionCheckExitCode { get; set; } = 0;
 
     public ProcessResult Run(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
     {
@@ -180,7 +202,10 @@ internal sealed class MockProcessRunner : IProcessRunner
 
         if (startInfo.Arguments.Contains("--version"))
         {
-            return new ProcessResult(0, "nvcc: NVIDIA (R) Cuda compiler driver", "");
+            return new ProcessResult(
+                VersionCheckExitCode,
+                VersionCheckExitCode == 0 ? "compiler version check ok" : "",
+                VersionCheckExitCode != 0 ? "compiler not found" : "");
         }
 
         if (NextException != null)
@@ -189,7 +214,11 @@ internal sealed class MockProcessRunner : IProcessRunner
         }
 
         if (SimulateCompilationOutput &&
-            (startInfo.FileName.Contains("nvcc") || startInfo.FileName.Contains("cl.exe")))
+            (startInfo.FileName.Contains("nvcc") ||
+             startInfo.FileName.Contains("cl.exe") ||
+             startInfo.FileName.Contains("g++") ||
+             startInfo.FileName.Contains("clang++") ||
+             startInfo.FileName.Contains("c++")))
         {
             var argsStr = startInfo.Arguments;
             var outFile = "";

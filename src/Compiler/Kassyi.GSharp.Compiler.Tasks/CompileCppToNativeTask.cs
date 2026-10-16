@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
 
-/// <summary>MSBuild task that compiles C++ host shadow implementations into native platform dynamic-link libraries (.dll) via MSVC.</summary>
+/// <summary>MSBuild task that compiles C++ host shadow implementations into native platform dynamic-link libraries (.dll) via the configured <see cref="INativeToolchain"/>.</summary>
 public class CompileCppToNativeTask : CompileKernelTaskBase
 {
     /// <summary>Gets or sets the C++ source files to compile.</summary>
@@ -21,7 +21,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
     public ITaskItem[] OutputDlls { get; set; } = [];
 
     private string[] _architectures = [];
-    private readonly Dictionary<string, Dictionary<string, string>> _vcvarsEnvs = [];
+    private bool _skipCompilation;
 
     /// <inheritdoc />
     protected override ITaskItem[] GetSources() => CppSources;
@@ -39,31 +39,23 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             return true;
         }
 
-        foreach (var arch in _architectures)
+        var prepResult = Toolchain.PrepareEnvironment(_architectures, Log, CancellationToken);
+        if (prepResult == ToolchainPreparationResult.SkipCompilation)
         {
-            var vcvarsArch = arch switch
-            {
-                "x64" => "x64",
-                "arm64" => "x64_arm64",
-                _ => "x64"
-            };
-            var env = GetVcvarsEnvironment(vcvarsArch);
-
-            if (env == null)
-            {
-                Log.LogError(
-                    $"Could not locate vcvarsall.bat via vswhere.exe for architecture {vcvarsArch}. Please ensure MSVC C++ Build Tools are installed.");
-                return false;
-            }
-
-            _vcvarsEnvs[vcvarsArch] = env;
+            _skipCompilation = true;
+            return true;
         }
 
-        return true;
+        return prepResult == ToolchainPreparationResult.Ready;
     }
 
     protected override ITaskItem[]? ProcessSourceItem(ITaskItem sourceItem)
     {
+        if (_skipCompilation)
+        {
+            return [];
+        }
+
         var sourcePath = sourceItem.GetMetadata("FullPath");
         var fileName = ArtifactHelper.GetCleanKernelFileName(sourcePath);
         var items = new ConcurrentBag<ITaskItem>();
@@ -82,16 +74,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 return;
             }
 
-            // cl.exe architecture argument
-            var vcvarsArch = arch switch
-            {
-                "x64" => "x64",
-                "arm64" => "x64_arm64",
-                _ => "x64"
-            };
-
             var outputDllPath = Path.Combine(OutputDirectory, $"{fileName}_{arch}.dll");
-
 
             if (MockCompilation)
             {
@@ -103,7 +86,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
                 return;
             }
 
-            if (!CompileWithMsvc(sourcePath, outputDllPath, vcvarsArch) ||
+            if (!Toolchain.CompileCppToSharedLibrary(sourcePath, outputDllPath, arch, Log, CancellationToken) ||
                 !ArtifactHelper.ProcessArtifact(outputDllPath, Log))
             {
                 Interlocked.Exchange(ref hasErrorsBox[0], 1);
@@ -128,109 +111,5 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
         // Determine current host architecture
         var arch = RuntimeInformation.ProcessArchitecture;
         return arch == Architecture.Arm64 ? ["arm64"] : ["x64"];
-    }
-
-    private bool CompileWithMsvc(string sourcePath, string outputDllPath, string vcvarsArch)
-    {
-        // /O2 = Optimize for speed
-        // /LD = Create DLL
-        // /Fe = Output file name
-        // /nologo = Suppress copyright message
-        // /Zc:preprocessor = Fix CUDA 13.3+ fatal error C1189 with MSVC
-        // /std:c++17 = Fix CUDA 13.3+ libcu++ requirement
-        // /openmp = Enable OpenMP for BSP CPU scheduler parallelism
-
-        var clArgs = $"/O2 /LD /nologo /std:c++17 /openmp /Zc:preprocessor \"{sourcePath}\" /Fe:\"{outputDllPath}\"";
-
-        Log.LogMessage(MessageImportance.Normal, $"Compiling C++ source for {vcvarsArch}: {sourcePath}");
-
-        var clExePath = "cl.exe";
-        if (_vcvarsEnvs.TryGetValue(vcvarsArch, out var env))
-        {
-            if (env.TryGetValue("PATH", out var pathEnv))
-            {
-                var span = pathEnv.AsSpan();
-                while (span.Length > 0)
-                {
-                    var sepIdx = span.IndexOf(Path.PathSeparator);
-                    var segment = sepIdx >= 0 ? span.Slice(0, sepIdx) : span;
-                    var fullPath = Path.Combine(segment.ToString(), "cl.exe");
-                    if (File.Exists(fullPath))
-                    {
-                        clExePath = fullPath;
-                        break;
-                    }
-
-                    if (sepIdx < 0)
-                    {
-                        break;
-                    }
-
-                    span = span.Slice(sepIdx + 1);
-                }
-            }
-        }
-
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = clExePath,
-            Arguments = clArgs
-        };
-
-        if (env != null)
-        {
-            foreach (var kvp in env)
-            {
-                startInfo.EnvironmentVariables[kvp.Key] = kvp.Value;
-            }
-        }
-
-        try
-        {
-            var result = this.ProcessRunner.Run(startInfo, CancellationToken);
-
-            if (result.ExitCode == 0 && File.Exists(outputDllPath))
-            {
-                // MSVC produces .obj, .lib, .exp. Clean them up to avoid clutter.
-                var baseDir = Path.GetDirectoryName(outputDllPath) ?? "";
-                var baseName = Path.GetFileNameWithoutExtension(outputDllPath);
-                var objPath = Path.Combine(baseDir, baseName + ".obj");
-                var libPath = Path.Combine(baseDir, baseName + ".lib");
-                var expPath = Path.Combine(baseDir, baseName + ".exp");
-
-                // Also the source .obj (if cl.exe drops it in the source folder, but typically it drops in cwd or output dir)
-                var srcDir = Path.GetDirectoryName(sourcePath) ?? "";
-                var srcObjPath = Path.Combine(srcDir,
-                    Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
-                var cwdObjPath = Path.Combine(Environment.CurrentDirectory,
-                    Path.GetFileNameWithoutExtension(sourcePath) + ".obj");
-
-                SafeDeleteFiles(objPath, libPath, expPath, srcObjPath, cwdObjPath);
-
-                return true;
-            }
-
-            Log.LogError($"MSVC compilation failed with exit code {result.ExitCode}.");
-            if (!string.IsNullOrWhiteSpace(result.StandardOutput))
-            {
-                Log.LogMessage(MessageImportance.High, result.StandardOutput);
-            }
-
-            if (!string.IsNullOrWhiteSpace(result.StandardError))
-            {
-                Log.LogError(result.StandardError);
-            }
-
-            return false;
-        }
-        catch (OperationCanceledException)
-        {
-            throw;
-        }
-        catch (Exception ex)
-        {
-            Log.LogError($"Failed to start cl.exe. Ensure MSVC is installed. Details: {ex.Message}");
-            return false;
-        }
     }
 }

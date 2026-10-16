@@ -369,8 +369,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
         }
 
-        WriteUnityAotArtifact(safeAssemblyName, config, preludeSource, commonDeviceSource, allKernelsSource.ToString(),
-            dialect, context, requiredIncludes);
+        if (!IsDesignTimeCompilation(compilation))
+        {
+            WriteUnityAotArtifact(safeAssemblyName, config, preludeSource, commonDeviceSource,
+                allKernelsSource.ToString(), dialect, context, requiredIncludes);
+        }
 
         if (!isCuda)
         {
@@ -451,6 +454,39 @@ public class GpuKernelGenerator : IIncrementalGenerator
             SourceText.From(wrapperSource, Encoding.UTF8));
     }
 
+
+    private static bool IsDesignTimeCompilation(Compilation compilation)
+    {
+        var domainName = AppDomain.CurrentDomain.FriendlyName;
+        if (domainName != null &&
+            (domainName.IndexOf("Roslyn.Worker", StringComparison.OrdinalIgnoreCase) >= 0 ||
+             domainName.IndexOf("JetBrains", StringComparison.OrdinalIgnoreCase) >= 0 ||
+             domainName.IndexOf("ServiceHub", StringComparison.OrdinalIgnoreCase) >= 0 ||
+             domainName.IndexOf("LanguageServer", StringComparison.OrdinalIgnoreCase) >= 0 ||
+             domainName.IndexOf("OmniSharp", StringComparison.OrdinalIgnoreCase) >= 0))
+        {
+            return true;
+        }
+
+        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        if (baseDir != null &&
+            (baseDir.IndexOf("resharper", StringComparison.OrdinalIgnoreCase) >= 0 ||
+             baseDir.IndexOf("jetbrains", StringComparison.OrdinalIgnoreCase) >= 0 ||
+             baseDir.IndexOf("ServiceHub", StringComparison.OrdinalIgnoreCase) >= 0))
+        {
+            return true;
+        }
+
+        foreach (var reference in compilation.References)
+        {
+            if (reference is CompilationReference)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private static void WriteUnityAotArtifact(string safeAssemblyName, GeneratorConfig config,
         string preludeSource, string commonDeviceSource, string allKernelsSource, ITranspilerDialect dialect,

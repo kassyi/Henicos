@@ -12,7 +12,7 @@ public abstract class AnalyzerTestBase
         string testName, string assemblyName = "TestAssembly")
     {
         var basePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "../../../../../tests/Kassyi.GSharp.Tests.Shared/TestCases/Analyzers"));
+            "../../../../../../tests/Kassyi.GSharp.Tests.Shared/TestCases/Analyzers"));
         var sourcePath = Path.Combine(basePath, relativeFilePath);
         var source = await File.ReadAllTextAsync(sourcePath);
 

@@ -7,5 +7,6 @@ global using System.Net.Http;
 global using System.Threading;
 global using System.Threading.Tasks;
 global using Kassyi.GSharp.Compiler.Tasks.Helpers;
+global using Kassyi.GSharp.Compiler.Tasks.Toolchains;
 global using Microsoft.Build.Framework;
 global using Microsoft.Build.Utilities;

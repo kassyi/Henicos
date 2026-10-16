@@ -42,7 +42,19 @@ public sealed class GpuKernelLoader
     /// <summary>
     /// Gets a value indicating whether the runtime is operating in CPU host fallback mode.
     /// </summary>
-    public static bool IsCpuFallbackMode => ForceCpuFallback || s_isCpuFallbackMode;
+    public static bool IsCpuFallbackMode
+    {
+        get
+        {
+            if (ForceCpuFallback)
+            {
+                return true;
+            }
+
+            EnsureInitialized();
+            return s_isCpuFallbackMode;
+        }
+    }
 
     /// <summary>
     /// Scoped RAII structure that activates a CUDA context on the current thread and restores the previous context upon disposal.

@@ -23,6 +23,7 @@ public class GpuKernelLoaderStressTests
     [Scenario(TestScenario.HappyPath)]
     public void Test_HighThroughputKernelLoading_ParallelStress()
     {
+        CudaCapability.EnsureGpuAvailable();
 
         // Stress parallel concurrent calls to LoadAotKernel to ensure allocation locks and loader caches operate thread-safely
         Parallel.For(0, 50, i =>
@@ -39,6 +40,7 @@ public class GpuKernelLoaderStressTests
     [Scenario(TestScenario.SadPath)]
     public void Test_CorruptedPtxBinary_ThrowsArgumentException()
     {
+        CudaCapability.EnsureGpuAvailable();
 
         // Create a signature-appended but syntactically invalid PTX fixture so it reaches module loading
         var invalidPtxBase = Encoding.UTF8.GetBytes("INVALID_PTX_HEADER_AND_BODY\0");
@@ -76,6 +78,7 @@ public class GpuKernelLoaderStressTests
     [Scenario(TestScenario.SadPath)]
     public void Test_NonExistentKernelName_ThrowsArgumentException()
     {
+        CudaCapability.EnsureGpuAvailable();
 
         // Valid PTX module but non-existent entry point function name
         var ex = Assert.Throws<CudaException>(() =>
