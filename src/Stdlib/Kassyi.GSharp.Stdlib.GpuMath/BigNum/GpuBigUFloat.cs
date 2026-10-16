@@ -66,6 +66,24 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
         new(left, right);
 
     /// <summary>
+    /// Creates a deferred expression representing the multiplication of two unsigned floating-point values.
+    /// </summary>
+    /// <param name="left">The multiplicand operand.</param>
+    /// <param name="right">The multiplier operand.</param>
+    /// <returns>A binary expression node representing the multiplication.</returns>
+    public static BinaryExpr<GpuBigUFloat, MulOp> operator *(GpuBigUFloat left, GpuBigUFloat right) =>
+        new(left, right);
+
+    /// <summary>
+    /// Creates a deferred expression representing the division of two unsigned floating-point values.
+    /// </summary>
+    /// <param name="left">The dividend operand.</param>
+    /// <param name="right">The divisor operand.</param>
+    /// <returns>A binary expression node representing the division.</returns>
+    public static BinaryExpr<GpuBigUFloat, DivOp> operator /(GpuBigUFloat left, GpuBigUFloat right) =>
+        new(left, right);
+
+    /// <summary>
     /// Aligns the radix points (exponents) of this instance and another unsigned floating-point number, extracting IEEE 754 rounding bits.
     /// </summary>
     /// <param name="other">The other unsigned floating-point instance to align with.</param>
@@ -247,6 +265,28 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
     /// <param name="expr">The binary subtraction expression.</param>
     /// <returns>The evaluated <see cref="GpuBigUFloat"/> result.</returns>
     public static implicit operator GpuBigUFloat(BinaryExpr<GpuBigUFloat, SubOp> expr)
+    {
+        var visitor = new GpuBigFloatExpressionVisitor(expr.Left.Significand.Workspace);
+        return expr.Evaluate(ref visitor);
+    }
+
+    /// <summary>
+    /// Implicitly evaluates and converts a multiplication expression to an evaluated <see cref="GpuBigUFloat"/> instance.
+    /// </summary>
+    /// <param name="expr">The binary multiplication expression.</param>
+    /// <returns>The evaluated <see cref="GpuBigUFloat"/> result.</returns>
+    public static implicit operator GpuBigUFloat(BinaryExpr<GpuBigUFloat, MulOp> expr)
+    {
+        var visitor = new GpuBigFloatExpressionVisitor(expr.Left.Significand.Workspace);
+        return expr.Evaluate(ref visitor);
+    }
+
+    /// <summary>
+    /// Implicitly evaluates and converts a division expression to an evaluated <see cref="GpuBigUFloat"/> instance.
+    /// </summary>
+    /// <param name="expr">The binary division expression.</param>
+    /// <returns>The evaluated <see cref="GpuBigUFloat"/> result.</returns>
+    public static implicit operator GpuBigUFloat(BinaryExpr<GpuBigUFloat, DivOp> expr)
     {
         var visitor = new GpuBigFloatExpressionVisitor(expr.Left.Significand.Workspace);
         return expr.Evaluate(ref visitor);
