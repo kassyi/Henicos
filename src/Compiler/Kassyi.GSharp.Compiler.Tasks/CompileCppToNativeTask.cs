@@ -70,7 +70,12 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
 
         var hasErrorsBox = new[] { 0 };
 
-        Parallel.ForEach(_architectures, arch =>
+        var options = new ParallelOptions
+        {
+            CancellationToken = CancellationToken
+        };
+
+        Parallel.ForEach(_architectures, options, arch =>
         {
             if (Volatile.Read(ref hasErrorsBox[0]) != 0)
             {
@@ -182,7 +187,7 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
 
         try
         {
-            var result = this.ProcessRunner.Run(startInfo);
+            var result = this.ProcessRunner.Run(startInfo, CancellationToken);
 
             if (result.ExitCode == 0 && File.Exists(outputDllPath))
             {
@@ -217,6 +222,10 @@ public class CompileCppToNativeTask : CompileKernelTaskBase
             }
 
             return false;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

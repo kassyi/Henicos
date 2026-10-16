@@ -3,8 +3,16 @@ using System.Collections.Concurrent;
 namespace Kassyi.GSharp.Compiler.Tasks;
 
 /// <summary>Base MSBuild task providing parallel compilation, Visual Studio environment resolution, and artifact dispatching for kernel sources.</summary>
-public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
+public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task, ICancelableTask
 {
+    private readonly CancellationTokenSource _cancellation = new();
+
+    /// <summary>Gets the cancellation token for the current task execution.</summary>
+    protected CancellationToken CancellationToken => _cancellation.Token;
+
+    /// <inheritdoc />
+    public void Cancel() => _cancellation.Cancel();
+
     /// <summary>Gets or sets the target directory where compiled artifacts are placed.</summary>
     [Required]
     public string OutputDirectory { get; set; } = string.Empty;
@@ -30,6 +38,41 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
     /// <inheritdoc />
     public override bool Execute()
     {
+        try
+        {
+            return ExecuteCore();
+        }
+        catch (OperationCanceledException)
+        {
+            Log.LogWarning("Task execution was canceled.");
+            return false;
+        }
+        catch (AggregateException ex) when (IsCanceled(ex))
+        {
+            Log.LogWarning("Task execution was canceled.");
+            return false;
+        }
+    }
+
+    private static bool IsCanceled(AggregateException ex)
+    {
+        var flattened = ex.Flatten();
+        for (var i = 0; i < flattened.InnerExceptions.Count; i++)
+        {
+            if (flattened.InnerExceptions[i] is OperationCanceledException)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Executes the task compilation logic.</summary>
+    protected virtual bool ExecuteCore()
+    {
+        CancellationToken.ThrowIfCancellationRequested();
+
         var sources = GetSources();
         if (sources.Length == 0)
         {
@@ -50,7 +93,11 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
 
         var hasErrors = false;
 
-        var options = new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2) };
+        var options = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount / 2),
+            CancellationToken = CancellationToken
+        };
         Parallel.ForEach(sources, options, sourceItem =>
         {
             if (hasErrors)
@@ -122,7 +169,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             }
         };
 
-        var vswhereResult = this.ProcessRunner.Run(vswhereStartInfo);
+        var vswhereResult = this.ProcessRunner.Run(vswhereStartInfo, CancellationToken);
         if (vswhereResult.ExitCode != 0)
         {
             return null;
@@ -154,7 +201,7 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task
             }
         };
 
-        var envResult = this.ProcessRunner.Run(envStartInfo);
+        var envResult = this.ProcessRunner.Run(envStartInfo, CancellationToken);
         if (envResult.ExitCode != 0)
         {
             return null;

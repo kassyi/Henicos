@@ -41,8 +41,8 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
     protected override void SetOutputItems(ITaskItem[] outputItems) => OutputFatbins = outputItems;
 
     /// <inheritdoc />
-    public override bool Execute() =>
-        string.IsNullOrWhiteSpace(CombinedFatbinName) ? base.Execute() : ExecuteCombinedCompilation();
+    protected override bool ExecuteCore() =>
+        string.IsNullOrWhiteSpace(CombinedFatbinName) ? base.ExecuteCore() : ExecuteCombinedCompilation();
 
     private bool ExecuteCombinedCompilation()
     {
@@ -210,8 +210,12 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                 FileName = NvccPath,
                 Arguments = "--version"
             };
-            var result = this.ProcessRunner.Run(checkInfo);
+            var result = this.ProcessRunner.Run(checkInfo, CancellationToken);
             return result.ExitCode == 0;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -358,7 +362,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
 
         try
         {
-            var result = this.ProcessRunner.Run(startInfo);
+            var result = this.ProcessRunner.Run(startInfo, CancellationToken);
             var output = result.StandardOutput;
             var error = result.StandardError;
 
@@ -424,6 +428,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
             }
 
             return false;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
