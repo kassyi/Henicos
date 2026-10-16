@@ -499,17 +499,8 @@ public static class GpuBigFloatStackLinqExtensions
     /// <returns>The number of elements in the sequence.</returns>
     public static int Count<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigFloat> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        var count = 0;
-        while (enumerator.TryGetNext(out _))
-        {
-            count++;
-        }
-
-        return count;
-    }
+        where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct =>
+        StackLinqReductionCore.CountElements<TEnumerator, GpuBigFloat>(source.Enumerator);
 
     /// <summary>
     /// Computes the sum of a sequence of <see cref="GpuBigFloat"/> values.

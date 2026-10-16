@@ -89,52 +89,9 @@ public static class GpuBigIntStackLinqExtensions
     /// <returns>A deferred expression tree representing the parallel sum.</returns>
     public static GpuBigIntExpr Sum<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigInt> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        if (!enumerator.TryGetNext(out var second))
-        {
-            return first;
-        }
-
-        // Use ArrayPool to avoid large heap allocations during tree building
-        var pool = ArrayPool<GpuBigIntExpr>.Shared;
-        var capacity = 16;
-        var buffer = pool.Rent(capacity);
-        var count = 0;
-
-        try
-        {
-            buffer[count++] = first;
-            buffer[count++] = second;
-
-            while (enumerator.TryGetNext(out var value))
-            {
-                if (count == capacity)
-                {
-                    var newCapacity = capacity * 2;
-                    var newBuffer = pool.Rent(newCapacity);
-                    Array.Copy(buffer, newBuffer, count);
-                    pool.Return(buffer, clearArray: true);
-                    buffer = newBuffer;
-                    capacity = newCapacity;
-                }
-
-                buffer[count++] = value;
-            }
-
-            return BuildBalancedTreeSum(buffer.AsSpan(0, count));
-        }
-        finally
-        {
-            pool.Return(buffer, clearArray: true);
-        }
-    }
+        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct =>
+        StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigInt, GpuBigIntExpr>(
+            source.Enumerator, static x => x, static (a, b) => a + b);
 
     /// <summary>
     /// Computes the sum of a parallel sequence of <see cref="GpuBigIntExpr"/>
@@ -145,51 +102,9 @@ public static class GpuBigIntStackLinqExtensions
     /// <returns>A deferred expression tree representing the parallel sum.</returns>
     public static GpuBigIntExpr Sum<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigIntExpr> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        if (!enumerator.TryGetNext(out var second))
-        {
-            return first;
-        }
-
-        var pool = ArrayPool<GpuBigIntExpr>.Shared;
-        var capacity = 16;
-        var buffer = pool.Rent(capacity);
-        var count = 0;
-
-        try
-        {
-            buffer[count++] = first;
-            buffer[count++] = second;
-
-            while (enumerator.TryGetNext(out var value))
-            {
-                if (count == capacity)
-                {
-                    var newCapacity = capacity * 2;
-                    var newBuffer = pool.Rent(newCapacity);
-                    Array.Copy(buffer, newBuffer, count);
-                    pool.Return(buffer, clearArray: true);
-                    buffer = newBuffer;
-                    capacity = newCapacity;
-                }
-
-                buffer[count++] = value;
-            }
-
-            return BuildBalancedTreeSum(buffer.AsSpan(0, count));
-        }
-        finally
-        {
-            pool.Return(buffer, clearArray: true);
-        }
-    }
+        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct =>
+        StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigIntExpr, GpuBigIntExpr>(
+            source.Enumerator, static x => x, static (a, b) => a + b);
 
     /// <summary>
     /// Computes the maximum of a parallel sequence of <see cref="GpuBigInt"/> values by constructing a balanced binary evaluation tree.
@@ -199,51 +114,9 @@ public static class GpuBigIntStackLinqExtensions
     /// <returns>A deferred expression tree representing the parallel max.</returns>
     public static GpuBigIntExpr Max<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigInt> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        if (!enumerator.TryGetNext(out var second))
-        {
-            return first;
-        }
-
-        var pool = ArrayPool<GpuBigIntExpr>.Shared;
-        var capacity = 16;
-        var buffer = pool.Rent(capacity);
-        var count = 0;
-
-        try
-        {
-            buffer[count++] = first;
-            buffer[count++] = second;
-
-            while (enumerator.TryGetNext(out var value))
-            {
-                if (count == capacity)
-                {
-                    var newCapacity = capacity * 2;
-                    var newBuffer = pool.Rent(newCapacity);
-                    Array.Copy(buffer, newBuffer, count);
-                    pool.Return(buffer, clearArray: true);
-                    buffer = newBuffer;
-                    capacity = newCapacity;
-                }
-
-                buffer[count++] = value;
-            }
-
-            return BuildBalancedTreeMax(buffer.AsSpan(0, count));
-        }
-        finally
-        {
-            pool.Return(buffer, clearArray: true);
-        }
-    }
+        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct =>
+        StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigInt, GpuBigIntExpr>(
+            source.Enumerator, static x => x, static (a, b) => GpuBigIntExpr.Max(a, b));
 
     /// <summary>
     /// Computes the maximum of a parallel sequence of <see cref="GpuBigIntExpr"/>
@@ -254,51 +127,9 @@ public static class GpuBigIntStackLinqExtensions
     /// <returns>A deferred expression tree representing the parallel max.</returns>
     public static GpuBigIntExpr Max<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigIntExpr> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        if (!enumerator.TryGetNext(out var second))
-        {
-            return first;
-        }
-
-        var pool = ArrayPool<GpuBigIntExpr>.Shared;
-        var capacity = 16;
-        var buffer = pool.Rent(capacity);
-        var count = 0;
-
-        try
-        {
-            buffer[count++] = first;
-            buffer[count++] = second;
-
-            while (enumerator.TryGetNext(out var value))
-            {
-                if (count == capacity)
-                {
-                    var newCapacity = capacity * 2;
-                    var newBuffer = pool.Rent(newCapacity);
-                    Array.Copy(buffer, newBuffer, count);
-                    pool.Return(buffer, clearArray: true);
-                    buffer = newBuffer;
-                    capacity = newCapacity;
-                }
-
-                buffer[count++] = value;
-            }
-
-            return BuildBalancedTreeMax(buffer.AsSpan(0, count));
-        }
-        finally
-        {
-            pool.Return(buffer, clearArray: true);
-        }
-    }
+        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct =>
+        StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigIntExpr, GpuBigIntExpr>(
+            source.Enumerator, static x => x, static (a, b) => GpuBigIntExpr.Max(a, b));
 
     /// <summary>
     /// Computes the minimum of a parallel sequence of <see cref="GpuBigInt"/> values by constructing a balanced binary evaluation tree.
@@ -308,51 +139,9 @@ public static class GpuBigIntStackLinqExtensions
     /// <returns>A deferred expression tree representing the parallel min.</returns>
     public static GpuBigIntExpr Min<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigInt> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        if (!enumerator.TryGetNext(out var second))
-        {
-            return first;
-        }
-
-        var pool = ArrayPool<GpuBigIntExpr>.Shared;
-        var capacity = 16;
-        var buffer = pool.Rent(capacity);
-        var count = 0;
-
-        try
-        {
-            buffer[count++] = first;
-            buffer[count++] = second;
-
-            while (enumerator.TryGetNext(out var value))
-            {
-                if (count == capacity)
-                {
-                    var newCapacity = capacity * 2;
-                    var newBuffer = pool.Rent(newCapacity);
-                    Array.Copy(buffer, newBuffer, count);
-                    pool.Return(buffer, clearArray: true);
-                    buffer = newBuffer;
-                    capacity = newCapacity;
-                }
-
-                buffer[count++] = value;
-            }
-
-            return BuildBalancedTreeMin(buffer.AsSpan(0, count));
-        }
-        finally
-        {
-            pool.Return(buffer, clearArray: true);
-        }
-    }
+        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct =>
+        StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigInt, GpuBigIntExpr>(
+            source.Enumerator, static x => x, static (a, b) => GpuBigIntExpr.Min(a, b));
 
     /// <summary>
     /// Computes the minimum of a parallel sequence of <see cref="GpuBigIntExpr"/>
@@ -363,101 +152,9 @@ public static class GpuBigIntStackLinqExtensions
     /// <returns>A deferred expression tree representing the parallel min.</returns>
     public static GpuBigIntExpr Min<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigIntExpr> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        if (!enumerator.TryGetNext(out var second))
-        {
-            return first;
-        }
-
-        var pool = ArrayPool<GpuBigIntExpr>.Shared;
-        var capacity = 16;
-        var buffer = pool.Rent(capacity);
-        var count = 0;
-
-        try
-        {
-            buffer[count++] = first;
-            buffer[count++] = second;
-
-            while (enumerator.TryGetNext(out var value))
-            {
-                if (count == capacity)
-                {
-                    var newCapacity = capacity * 2;
-                    var newBuffer = pool.Rent(newCapacity);
-                    Array.Copy(buffer, newBuffer, count);
-                    pool.Return(buffer, clearArray: true);
-                    buffer = newBuffer;
-                    capacity = newCapacity;
-                }
-
-                buffer[count++] = value;
-            }
-
-            return BuildBalancedTreeMin(buffer.AsSpan(0, count));
-        }
-        finally
-        {
-            pool.Return(buffer, clearArray: true);
-        }
-    }
-
-    private static GpuBigIntExpr BuildBalancedTreeSum(ReadOnlySpan<GpuBigIntExpr> span)
-    {
-        switch (span.Length)
-        {
-            case 1:
-                return span[0];
-            case 2:
-                return span[0] + span[1];
-        }
-
-        var mid = span.Length / 2;
-        var left = BuildBalancedTreeSum(span.Slice(0, mid));
-        var right = BuildBalancedTreeSum(span.Slice(mid));
-        return left + right;
-    }
-
-    private static GpuBigIntExpr BuildBalancedTreeMax(ReadOnlySpan<GpuBigIntExpr> span)
-    {
-        switch (span.Length)
-        {
-            case 1:
-                return span[0];
-            case 2:
-                return GpuBigIntExpr.Max(span[0], span[1]);
-
-        }
-
-        var mid = span.Length / 2;
-        var left = BuildBalancedTreeMax(span.Slice(0, mid));
-        var right = BuildBalancedTreeMax(span.Slice(mid));
-        return GpuBigIntExpr.Max(left, right);
-    }
-
-    private static GpuBigIntExpr BuildBalancedTreeMin(ReadOnlySpan<GpuBigIntExpr> span)
-    {
-        switch (span.Length)
-        {
-            case 1:
-                return span[0];
-            case 2:
-                return GpuBigIntExpr.Min(span[0], span[1]);
-
-        }
-
-        var mid = span.Length / 2;
-        var left = BuildBalancedTreeMin(span.Slice(0, mid));
-        var right = BuildBalancedTreeMin(span.Slice(mid));
-        return GpuBigIntExpr.Min(left, right);
-    }
+        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct =>
+        StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigIntExpr, GpuBigIntExpr>(
+            source.Enumerator, static x => x, static (a, b) => GpuBigIntExpr.Min(a, b));
 
     /// <summary>
     /// Applies an accumulator function over a parallel sequence of <see cref="GpuBigInt"/> values by constructing a balanced binary evaluation tree.
@@ -472,49 +169,8 @@ public static class GpuBigIntStackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
     {
         ArgumentNullException.ThrowIfNull(func);
-
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        if (!enumerator.TryGetNext(out var second))
-        {
-            return first;
-        }
-
-        var pool = ArrayPool<GpuBigIntExpr>.Shared;
-        var capacity = 16;
-        var buffer = pool.Rent(capacity);
-        var count = 0;
-
-        try
-        {
-            buffer[count++] = first;
-            buffer[count++] = second;
-
-            while (enumerator.TryGetNext(out var value))
-            {
-                if (count == capacity)
-                {
-                    var newCapacity = capacity * 2;
-                    var newBuffer = pool.Rent(newCapacity);
-                    Array.Copy(buffer, newBuffer, count);
-                    pool.Return(buffer, clearArray: true);
-                    buffer = newBuffer;
-                    capacity = newCapacity;
-                }
-
-                buffer[count++] = value;
-            }
-
-            return BuildBalancedTreeAggregate(buffer.AsSpan(0, count), func);
-        }
-        finally
-        {
-            pool.Return(buffer, clearArray: true);
-        }
+        return StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigInt, GpuBigIntExpr>(
+            source.Enumerator, static x => x, func);
     }
 
     /// <summary>
@@ -530,65 +186,8 @@ public static class GpuBigIntStackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct
     {
         ArgumentNullException.ThrowIfNull(func);
-
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        if (!enumerator.TryGetNext(out var second))
-        {
-            return first;
-        }
-
-        var pool = ArrayPool<GpuBigIntExpr>.Shared;
-        var capacity = 16;
-        var buffer = pool.Rent(capacity);
-        var count = 0;
-
-        try
-        {
-            buffer[count++] = first;
-            buffer[count++] = second;
-
-            while (enumerator.TryGetNext(out var value))
-            {
-                if (count == capacity)
-                {
-                    var newCapacity = capacity * 2;
-                    var newBuffer = pool.Rent(newCapacity);
-                    Array.Copy(buffer, newBuffer, count);
-                    pool.Return(buffer, clearArray: true);
-                    buffer = newBuffer;
-                    capacity = newCapacity;
-                }
-
-                buffer[count++] = value;
-            }
-
-            return BuildBalancedTreeAggregate(buffer.AsSpan(0, count), func);
-        }
-        finally
-        {
-            pool.Return(buffer, clearArray: true);
-        }
-    }
-
-    private static GpuBigIntExpr BuildBalancedTreeAggregate(ReadOnlySpan<GpuBigIntExpr> span, Func<GpuBigIntExpr, GpuBigIntExpr, GpuBigIntExpr> func)
-    {
-        switch (span.Length)
-        {
-            case 1:
-                return span[0];
-            case 2:
-                return func(span[0], span[1]);
-        }
-
-        var mid = span.Length / 2;
-        var left = BuildBalancedTreeAggregate(span.Slice(0, mid), func);
-        var right = BuildBalancedTreeAggregate(span.Slice(mid), func);
-        return func(left, right);
+        return StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigIntExpr, GpuBigIntExpr>(
+            source.Enumerator, static x => x, func);
     }
 
     /// <summary>
@@ -629,7 +228,7 @@ public static class GpuBigIntStackLinqExtensions
                 buffer[count++] = value;
             }
 
-            var sumTree = BuildBalancedTreeAggregate(buffer.AsSpan(0, count), (a, b) => a + b);
+            var sumTree = StackLinqReductionCore.BuildBalancedTree(buffer.AsSpan(0, count), static (a, b) => a + b);
             
             var workspace = first.Value.Workspace;
             var numWords = first.Value.NumWords;
@@ -654,16 +253,8 @@ public static class GpuBigIntStackLinqExtensions
     /// <returns>The number of elements in the sequence.</returns>
     public static int Count<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigInt> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        var count = 0;
-        while (enumerator.TryGetNext(out _))
-        {
-            count++;
-        }
-        return count;
-    }
+        where TEnumerator : struct, IStackEnumerator<GpuBigInt>, allows ref struct =>
+        StackLinqReductionCore.CountElements<TEnumerator, GpuBigInt>(source.Enumerator);
 
     /// <summary>
     /// Computes the number of elements in a parallel sequence.
@@ -673,16 +264,8 @@ public static class GpuBigIntStackLinqExtensions
     /// <returns>The number of elements in the sequence.</returns>
     public static int Count<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigIntExpr> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        var count = 0;
-        while (enumerator.TryGetNext(out _))
-        {
-            count++;
-        }
-        return count;
-    }
+        where TEnumerator : struct, IStackEnumerator<GpuBigIntExpr>, allows ref struct =>
+        StackLinqReductionCore.CountElements<TEnumerator, GpuBigIntExpr>(source.Enumerator);
 
     /// <summary>
     /// Divides each element of a parallel sequence by a scalar.
