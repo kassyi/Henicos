@@ -39,6 +39,44 @@ public class AsyncReadbackTests
     [SkippableTheory]
     [Category(TestCategory.Stdlib)]
     [Scenario(TestScenario.HappyPath)]
+    [InlineData(1)]
+    [InlineData(4)]
+    [InlineData(Words)]
+    [InlineData(Words + 10)]
+    public async Task GetTopWordsAsync_MatchesGetTopWords(int wordCount)
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        using var workspace = new GpuWorkspace(64);
+        using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
+
+        var actual = await number.GetTopWordsAsync(wordCount).AsTask().WaitAsync(CompletionTimeout);
+
+        Assert.Equal(number.GetTopWords(wordCount), actual);
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task GetTopWordsAsync_ReturnsBeforeQueuedWorkCompletes()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        using var workspace = new GpuWorkspace(64);
+        using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
+        var expected = number.GetTopWords(4);
+        using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(workspace.Stream, GateHoldTime));
+
+        var pending = number.GetTopWordsAsync(4).AsTask();
+        Assert.False(pending.IsCompleted, "The readback must not block while the stream is busy.");
+
+        Assert.Equal(expected, await pending.WaitAsync(CompletionTimeout));
+        Assert.True(gate.IsReleased);
+    }
+
+    [SkippableTheory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
     [InlineData(false)]
     [InlineData(true)]
     public async Task ToBigIntegerAsync_MatchesToBigInteger(bool isNegative)
@@ -105,6 +143,64 @@ public class AsyncReadbackTests
         await cts.CancelAsync();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await number.ToHostArrayAsync(cts.Token));
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task GetTopWordsAsync_PreCanceledToken_Throws()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        using var workspace = new GpuWorkspace(64);
+        using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await number.GetTopWordsAsync(4, cts.Token));
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task GetTopWordsAsync_CanceledInFlight_Throws_AndStreamStaysUsable()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        using var workspace = new GpuWorkspace(64);
+        using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
+        var expected = number.GetTopWords(4);
+        using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(workspace.Stream, GateHoldTime));
+        using var cts = new CancellationTokenSource();
+
+        var pending = number.GetTopWordsAsync(4, cancellationToken: cts.Token).AsTask();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending.WaitAsync(CompletionTimeout));
+        Assert.Equal(expected, await number.GetTopWordsAsync(4).AsTask().WaitAsync(CompletionTimeout));
+    }
+
+    [Fact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task CpuFallback_GetTopWordsAsync_CompletesSynchronously()
+    {
+        // ForceCpuFallback is AsyncLocal, so the override cannot leak into other tests.
+        GpuKernelLoader.ForceCpuFallback = true;
+        try
+        {
+            using var workspace = new GpuWorkspace(64);
+            using var number = GpuBigUInt.FromBigInteger(workspace, CreateValue(), Words);
+
+            var pending = number.GetTopWordsAsync(4);
+
+            Assert.True(pending.IsCompletedSuccessfully);
+            Assert.Equal(number.GetTopWords(4), await pending);
+        }
+        finally
+        {
+            GpuKernelLoader.ForceCpuFallback = false;
+        }
     }
 
     [Fact]
