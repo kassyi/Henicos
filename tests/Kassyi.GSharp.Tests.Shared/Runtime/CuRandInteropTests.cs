@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
@@ -66,7 +67,7 @@ public class CuRandInteropTests
     [Scenario(TestScenario.HappyPath)]
     public void Test_CurandGenerateNormal_MatchesRequestedMoments()
     {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         Skip.IfNot(TryCreateGenerator(out var generator), "cuRAND library is not available.");
@@ -107,7 +108,7 @@ public class CuRandInteropTests
     [Scenario(TestScenario.SadPath)]
     public void Test_CurandGenerateNormal_OddCount_ReturnsLengthNotMultiple()
     {
-        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
+        CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         Skip.IfNot(TryCreateGenerator(out var generator), "cuRAND library is not available.");
