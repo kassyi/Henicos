@@ -242,6 +242,29 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     }
 
     /// <summary>
+    /// Asynchronously copies the most significant limb words from GPU device memory to a host array, without blocking
+    /// the calling thread while work queued on the workspace stream completes.
+    /// </summary>
+    /// <param name="wordCount">The number of top words to copy.</param>
+    /// <param name="cancellationToken">A token that stops waiting; queued device work is not canceled.</param>
+    /// <returns>A host array containing the most significant limb words.</returns>
+    /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
+    public async ValueTask<uint[]> GetTopWordsAsync(int wordCount, CancellationToken cancellationToken = default)
+    {
+        if (wordCount > NumWords)
+        {
+            wordCount = NumWords;
+        }
+
+        var hostData = new uint[wordCount];
+        var srcPtr = IntPtr.Add(DevicePointer, (NumWords - wordCount) * 4);
+        await Workspace.Provider
+            .CopyDeviceToHostAsync(hostData, srcPtr, wordCount, Workspace.Stream, cancellationToken)
+            .ConfigureAwait(false);
+        return hostData;
+    }
+
+    /// <summary>
     /// Compares this instance to another <see cref="GpuBigUInt"/> and returns an integer indicating their relative magnitude.
     /// </summary>
     /// <param name="other">The <see cref="GpuBigUInt"/> to compare with this instance.</param>
