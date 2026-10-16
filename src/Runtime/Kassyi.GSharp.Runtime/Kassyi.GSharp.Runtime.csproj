@@ -24,7 +24,8 @@
 
   <ItemGroup>
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\..\trusted_keys.txt" Link="trusted_keys.txt" />
-    <!-- Showcase: cuBLAS / cuRAND bindings produced by the YAML native API plugin path (NativeApiGenerator). -->
+    <!-- Native API bindings produced by the YAML native API plugin path (NativeApiGenerator). -->
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\NativeApi\cuda_driver_api.yml" Link="NativeApi\cuda_driver_api.yml" GSharpApi="true" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\NativeApi\cublas_api.yml" Link="NativeApi\cublas_api.yml" GSharpApi="true" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)..\..\NativeApi\curand_api.yml" Link="NativeApi\curand_api.yml" GSharpApi="true" />
     <!-- Mirrors build\Kassyi.GSharp.Compiler.targets, which ProjectReference consumers do not import. -->
@@ -39,24 +40,5 @@
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cpu" />
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Cuda" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Compile Remove="$(IntermediateOutputPath)GeneratedNativeApi\**\*.g.cs" />
-    <Compile Remove="**\GeneratedNativeApi\**\*.g.cs" />
-  </ItemGroup>
-
-  <Target Name="GenerateNativeApi" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)..\..\NativeApi\**\*.yml" Outputs="$(IntermediateOutputPath)GeneratedNativeApi.stamp">
-    <MakeDir Directories="$(IntermediateOutputPath)GeneratedNativeApi" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../../Compiler/Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)../../NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
-    <Touch Files="$(IntermediateOutputPath)GeneratedNativeApi.stamp" AlwaysCreate="true" />
-  </Target>
-
-  <Target Name="IncludeNativeApi" BeforeTargets="CoreCompile" DependsOnTargets="GenerateNativeApi">
-    <ItemGroup>
-      <Compile Include="$(IntermediateOutputPath)GeneratedNativeApi\CudaDriverApi.g.cs" />
-      <FileWrites Include="$(IntermediateOutputPath)GeneratedNativeApi\CudaDriverApi.g.cs" />
-      <FileWrites Include="$(IntermediateOutputPath)GeneratedNativeApi.stamp" />
-    </ItemGroup>
-  </Target>
 
 </Project>
