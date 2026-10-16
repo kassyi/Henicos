@@ -1,6 +1,8 @@
-using System;
+#nullable enable
+using System.Collections;
 using System.IO;
 using Kassyi.GSharp.Compiler.Tasks;
+using Kassyi.GSharp.Cryptography;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Locator;
 using Microsoft.Build.Utilities;
@@ -26,25 +28,9 @@ public class ArtifactHelperTests
         }
     }
 
-    private class MockBuildEngine : IBuildEngine
-    {
-        public bool ContinueOnError => false;
-        public int LineNumberOfTaskNode => 0;
-        public int ColumnNumberOfTaskNode => 0;
-        public string ProjectFileOfTaskNode => "";
-        public System.Collections.Generic.List<string> LoggedWarnings { get; } = new();
-
-        public bool BuildProjectFile(string projectFileName, string[] targetNames, System.Collections.IDictionary globalProperties, System.Collections.IDictionary targetOutputs) => true;
-        public void LogCustomEvent(CustomBuildEventArgs e) { }
-        public void LogErrorEvent(BuildErrorEventArgs e) { }
-        public void LogMessageEvent(BuildMessageEventArgs e) { }
-        public void LogWarningEvent(BuildWarningEventArgs e)
-        {
-            LoggedWarnings.Add(e.Message);
-        }
-    }
-
     [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_GetCleanKernelFileName()
     {
         Assert.Equal("kernel", ArtifactHelper.GetCleanKernelFileName("kernel.cu"));
@@ -52,111 +38,127 @@ public class ArtifactHelperTests
         Assert.Equal("kernel", ArtifactHelper.GetCleanKernelFileName("C:/some/path/kernel.g.cu"));
     }
 
-    [Fact]
-    public void Test_ProcessArtifact_WithDefaultKey()
+    [Theory]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Test_ProcessArtifact_WithDefaultKey_EmitsWarning(string? envValue)
     {
-        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_SIGNING_KEY");
-        var tempFile = Path.GetTempFileName();
-        try
-        {
-            Environment.SetEnvironmentVariable("GSHARP_SIGNING_KEY", null);
-            File.WriteAllBytes(tempFile, new byte[] { 1, 2, 3 });
+        using var ctx = new ArtifactTestContext(envValue);
 
-            var engine = new MockBuildEngine();
-            var log = new TaskLoggingHelper(engine, "MockTask");
+        Assert.True(ctx.ProcessArtifact());
 
-            Assert.True(ArtifactHelper.ProcessArtifact(tempFile, log));
-
-            var resultData = File.ReadAllBytes(tempFile);
-            Assert.Equal(3 + 64, resultData.Length); // 3 bytes original + 64 bytes signature
-            Assert.Empty(engine.LoggedWarnings);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("GSHARP_SIGNING_KEY", prevEnv);
-            if (File.Exists(tempFile)) File.Delete(tempFile);
-        }
+        var resultData = ctx.ReadResult();
+        Assert.Equal(3 + Ed25519.SignatureSize, resultData.Length);
+        Assert.Single(ctx.BuildEngine.LoggedWarnings);
+        Assert.Contains("default G# development key", ctx.BuildEngine.LoggedWarnings[0]);
+        Assert.Contains(ArtifactHelper.DefaultSigningKeyWarningCode, ctx.BuildEngine.LoggedWarningCodes);
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_ProcessArtifact_WithHexKey()
     {
-        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_SIGNING_KEY");
-        var tempFile = Path.GetTempFileName();
-        try
-        {
-            // 32-byte hex key = 64 characters
-            var hexKey = new string('A', 64);
-            Environment.SetEnvironmentVariable("GSHARP_SIGNING_KEY", hexKey);
-            File.WriteAllBytes(tempFile, new byte[] { 1, 2, 3 });
+        // 32-byte hex key = 64 characters
+        var hexKey = new string('A', 64);
+        using var ctx = new ArtifactTestContext(hexKey);
 
-            var engine = new MockBuildEngine();
-            var log = new TaskLoggingHelper(engine, "MockTask");
+        Assert.True(ctx.ProcessArtifact());
 
-            Assert.True(ArtifactHelper.ProcessArtifact(tempFile, log));
-
-            var resultData = File.ReadAllBytes(tempFile);
-            Assert.Equal(3 + 64, resultData.Length);
-            Assert.Empty(engine.LoggedWarnings);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("GSHARP_SIGNING_KEY", prevEnv);
-            if (File.Exists(tempFile)) File.Delete(tempFile);
-        }
+        var resultData = ctx.ReadResult();
+        Assert.Equal(3 + Ed25519.SignatureSize, resultData.Length);
+        Assert.Empty(ctx.BuildEngine.LoggedWarnings);
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_ProcessArtifact_WithBase64Key()
     {
-        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_SIGNING_KEY");
-        var tempFile = Path.GetTempFileName();
-        try
-        {
-            // 32-byte base64 key
-            var base64Key = Convert.ToBase64String(new byte[32]);
-            Environment.SetEnvironmentVariable("GSHARP_SIGNING_KEY", base64Key);
-            File.WriteAllBytes(tempFile, new byte[] { 1, 2, 3 });
+        // 32-byte base64 key
+        var base64Key = Convert.ToBase64String(new byte[32]);
+        using var ctx = new ArtifactTestContext(base64Key);
 
-            var engine = new MockBuildEngine();
-            var log = new TaskLoggingHelper(engine, "MockTask");
+        Assert.True(ctx.ProcessArtifact());
 
-            Assert.True(ArtifactHelper.ProcessArtifact(tempFile, log));
-
-            var resultData = File.ReadAllBytes(tempFile);
-            Assert.Equal(3 + 64, resultData.Length);
-            Assert.Empty(engine.LoggedWarnings);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("GSHARP_SIGNING_KEY", prevEnv);
-            if (File.Exists(tempFile)) File.Delete(tempFile);
-        }
+        var resultData = ctx.ReadResult();
+        Assert.Equal(3 + Ed25519.SignatureSize, resultData.Length);
+        Assert.Empty(ctx.BuildEngine.LoggedWarnings);
     }
 
     [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
     public void Test_ProcessArtifact_WithInvalidKey_FallsBackToDefault()
     {
-        var prevEnv = Environment.GetEnvironmentVariable("GSHARP_SIGNING_KEY");
-        var tempFile = Path.GetTempFileName();
-        try
+        using var ctx = new ArtifactTestContext("invalid_length_key");
+
+        Assert.True(ctx.ProcessArtifact());
+
+        var resultData = ctx.ReadResult();
+        Assert.Equal(3 + Ed25519.SignatureSize, resultData.Length);
+        Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("Failed to parse") || w.Contains("invalid"));
+        Assert.Contains(ArtifactHelper.DefaultSigningKeyWarningCode, ctx.BuildEngine.LoggedWarningCodes);
+    }
+
+    private sealed class ArtifactTestContext : IDisposable
+    {
+        private readonly string? _prevEnv;
+
+        public string TempFile { get; }
+        public MockBuildEngine BuildEngine { get; } = new();
+        public TaskLoggingHelper Log { get; }
+
+        public ArtifactTestContext(string? signingKeyEnv, byte[]? initialContent = null)
         {
-            Environment.SetEnvironmentVariable("GSHARP_SIGNING_KEY", "invalid_length_key");
-            File.WriteAllBytes(tempFile, new byte[] { 1, 2, 3 });
-
-            var engine = new MockBuildEngine();
-            var log = new TaskLoggingHelper(engine, "MockTask");
-
-            Assert.True(ArtifactHelper.ProcessArtifact(tempFile, log));
-
-            var resultData = File.ReadAllBytes(tempFile);
-            Assert.Equal(3 + 64, resultData.Length);
-            Assert.Contains(engine.LoggedWarnings, w => w.Contains("Failed to parse") || w.Contains("invalid"));
+            _prevEnv = Environment.GetEnvironmentVariable("GSHARP_SIGNING_KEY");
+            Environment.SetEnvironmentVariable("GSHARP_SIGNING_KEY", signingKeyEnv);
+            TempFile = Path.GetTempFileName();
+            File.WriteAllBytes(TempFile, initialContent ?? [1, 2, 3]);
+            Log = new TaskLoggingHelper(BuildEngine, "MockTask");
         }
-        finally
+
+        public bool ProcessArtifact() => ArtifactHelper.ProcessArtifact(TempFile, Log);
+
+        public byte[] ReadResult() => File.ReadAllBytes(TempFile);
+
+        public void Dispose()
         {
-            Environment.SetEnvironmentVariable("GSHARP_SIGNING_KEY", prevEnv);
-            if (File.Exists(tempFile)) File.Delete(tempFile);
+            Environment.SetEnvironmentVariable("GSHARP_SIGNING_KEY", _prevEnv);
+            if (File.Exists(TempFile))
+            {
+                File.Delete(TempFile);
+            }
+        }
+    }
+
+    private sealed class MockBuildEngine : IBuildEngine
+    {
+        public bool ContinueOnError => false;
+        public int LineNumberOfTaskNode => 0;
+        public int ColumnNumberOfTaskNode => 0;
+        public string ProjectFileOfTaskNode => string.Empty;
+        public List<string> LoggedWarnings { get; } = [];
+        public List<string> LoggedWarningCodes { get; } = [];
+
+        public bool BuildProjectFile(string projectFileName, string[] targetNames, IDictionary globalProperties, IDictionary targetOutputs) => true;
+        public void LogCustomEvent(CustomBuildEventArgs e) { }
+        public void LogErrorEvent(BuildErrorEventArgs e) { }
+        public void LogMessageEvent(BuildMessageEventArgs e) { }
+        public void LogWarningEvent(BuildWarningEventArgs e)
+        {
+            if (e.Message != null)
+            {
+                LoggedWarnings.Add(e.Message);
+            }
+
+            if (e.Code != null)
+            {
+                LoggedWarningCodes.Add(e.Code);
+            }
         }
     }
 }
