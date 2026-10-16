@@ -295,13 +295,15 @@ __global__ void ApplySubBorrowKernel(unsigned int* d_result, long long* carryBuf
 // Bitwise and Shift Kernels
 // -------------------------------------------------------------------------
 
-__global__ void ShiftLeftKernel(const unsigned int* d_a, int wordShift, int bitShift, unsigned int* d_result, int numWords) {
+__global__ void ShiftLeftKernel(const unsigned int* d_a, int wordShift, int bitShift, unsigned int* d_result, int numWords, int srcWords = -1) {
+    // srcWords: valid length of d_a (defaults to numWords when input and output are the same length).
+    if (srcWords < 0) srcWords = numWords;
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < numWords) {
         int srcIdx0 = i - wordShift;
         int srcIdx1 = srcIdx0 - 1;
-        unsigned int w0 = (srcIdx0 >= 0 && srcIdx0 < numWords) ? d_a[srcIdx0] : 0;
-        unsigned int w1 = (srcIdx1 >= 0 && srcIdx1 < numWords) ? d_a[srcIdx1] : 0;
+        unsigned int w0 = (srcIdx0 >= 0 && srcIdx0 < srcWords) ? d_a[srcIdx0] : 0;
+        unsigned int w1 = (srcIdx1 >= 0 && srcIdx1 < srcWords) ? d_a[srcIdx1] : 0;
         if (bitShift == 0) d_result[i] = w0;
         else d_result[i] = (w0 << bitShift) | (w1 >> (32 - bitShift));
     }

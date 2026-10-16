@@ -728,7 +728,7 @@ extern "C" {
         int blockSize = 256;
         int gridShift = (shiftedWords + blockSize - 1) / blockSize;
         if (gridShift == 0) gridShift = 1;
-        ShiftLeftKernel<<<gridShift, blockSize, 0, stream>>>(d_largerSig, expDiff / 32, expDiff % 32, d_shiftedBuffer, shiftedWords);
+        ShiftLeftKernel<<<gridShift, blockSize, 0, stream>>>(d_largerSig, expDiff / 32, expDiff % 32, d_shiftedBuffer, shiftedWords, largerNumWords);
 
         // Stage the smaller operand zero-padded in d_tempResult; the chunk kernels then run in place
         // (each index reads its operand word before writing the result word at the same index).
