@@ -1,0 +1,55 @@
+// --- Runtime Error Channel (CPU Dialect) ---
+enum class GSharpErrorCode : int32_t {
+    None = 0,
+    NotSupported = 1,
+    InvalidOperation = 2,
+    IndexOutOfRange = 3
+};
+
+struct GSharpErrorSlot {
+    std::atomic<int32_t> code{0};
+    const char* message{nullptr};
+
+    inline void Reset() noexcept {
+        message = nullptr;
+        code.store(0, std::memory_order_release);
+    }
+
+    inline bool HasError() const noexcept {
+        return code.load(std::memory_order_acquire) != 0;
+    }
+
+    inline void Report(GSharpErrorCode errCode, const char* msg) noexcept {
+        int32_t expected = 0;
+        if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
+                                         std::memory_order_acq_rel,
+                                         std::memory_order_relaxed)) {
+            message = msg;
+        }
+    }
+};
+
+inline thread_local GSharpErrorSlot __gsharp_host_last_error;
+inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
+
+extern "C" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
+    int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
+    if (c != 0) {
+        if (outMessage != nullptr) {
+            *outMessage = __gsharp_host_last_error.message;
+        }
+        __gsharp_host_last_error.Reset();
+    }
+    return c;
+}
+
+// Records a runtime failure for constructs the CPU dialect cannot execute (e.g. Gpu.InlinePtx).
+// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+inline void __gsharp_unsupported(const char* message)
+{
+    if (__gsharp_active_error_slot != nullptr) {
+        __gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
+    } else {
+        __gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
+    }
+}

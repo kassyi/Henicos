@@ -111,6 +111,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Arra
 fixed (global::System.Single[]* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 return __gsharp_auto_result;
 }
@@ -206,6 +207,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Stri
 fixed (global::System.String* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 return __gsharp_auto_result;
 }
@@ -217,10 +219,13 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_TestKernelReturnTypesSadPath_PointerKernel2(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, float** __restrict__ __gsharp_auto_result)
 {
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot _gsharp_launch_error;
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
 int32_t bx = _b_idx % gridDimX;
 int32_t by = (_b_idx / gridDimX) % gridDimY;
 int32_t bz = _b_idx / (gridDimX * gridDimY);
@@ -229,12 +234,17 @@ int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
 for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &_gsharp_launch_error;
 int32_t tx = _t_idx % blockDimX;
 int32_t ty = (_t_idx / blockDimX) % blockDimY;
 int32_t tz = _t_idx / (blockDimX * blockDimY);
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
 TestKernelReturnTypesSadPath_PointerKernel2(__gsharp_auto_result);
 }
+}
+if (_gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
 }
 }
 ";
@@ -328,6 +338,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Poin
 fixed (global::System.Single** p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 return __gsharp_auto_result;
 }
@@ -423,6 +434,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Mana
 fixed (global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 return __gsharp_auto_result;
 }
@@ -518,6 +530,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Span
 fixed (global::System.ReadOnlySpan<global::System.Single>* p___gsharp_auto_result = __gsharp_auto_result)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p___gsharp_auto_result);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 return __gsharp_auto_result;
 }

@@ -6,7 +6,7 @@ public class Tier1_IntegrationTests : TranspilerTestBase
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_Tier1_AllInOneKernel_Execution()
     {
-        EnsureCapability(DialectCapabilities.AllGpuFeatures);
+        EnsureCapability(DialectCapabilities.SharedMemory | DialectCapabilities.HardwareAtomics);
 
         const int count = 256;
         int[] intInput = new int[count];

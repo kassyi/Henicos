@@ -778,6 +778,7 @@ internal static class WrapperEmitter
         }
 
         writer.AppendLine(";");
+        writer.AppendLine("global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);");
     }
 
     private static void WriteAutoResultAllocation(SourceWriter writer, IMethodSymbol method)

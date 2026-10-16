@@ -59,6 +59,7 @@
     <EmbeddedResource Include="Resources\Prelude.cu" />
     <EmbeddedResource Include="Resources\StackLinq.cuh" />
     <EmbeddedResource Include="Resources\Prelude.cpp" />
+    <EmbeddedResource Include="Resources\Prelude\*.hpp" />
   </ItemGroup>
 
   <ItemGroup>

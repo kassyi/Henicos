@@ -308,8 +308,6 @@ finalVal-=0.5f;
 loopCounter++;
 }
 while(loopCounter<3);
-// test inline ptx
-;
 results[tid]=finalVal;
 }
 }

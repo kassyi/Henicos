@@ -312,6 +312,8 @@ _ctx->mag+=1.5f;
 }
 }
 __gsharp_unsupported(""Gpu.InlinePtx is not supported by the StandardCppDialect dialect"");
+_state = -1;
+return;
 ;
 if(_ctx->ty>0)
 {
@@ -331,10 +333,13 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ComprehensiveSpecKernel_ProcessPhysics(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<DebugReduc_PhysicsVector> particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor)
 {
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot _gsharp_launch_error;
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
 int32_t bx = _b_idx % gridDimX;
 int32_t by = (_b_idx / gridDimX) % gridDimY;
 int32_t bz = _b_idx / (gridDimX * gridDimY);
@@ -351,13 +356,15 @@ ctx.dynamicCache.data = _smem_buffer_dynamicCache.data();
 ctx.targetTypedCache.data = _smem_buffer_targetTypedCache.data();
 }
 std::atomic<bool> anyActive{true};
-while (anyActive)
+while (anyActive && !_gsharp_launch_error.HasError())
 {
 anyActive = false;
 int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
 for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &_gsharp_launch_error;
 int32_t tx = _t_idx % blockDimX;
 int32_t ty = (_t_idx / blockDimX) % blockDimY;
 int32_t tz = _t_idx / (blockDimX * blockDimY);
@@ -370,6 +377,9 @@ ComprehensiveSpecKernel_ProcessPhysics(particles, totalMagnitude, successFlag, l
 }
 }
 }
+}
+if (_gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
 }
 }
 ";
@@ -530,7 +540,7 @@ public static unsafe void __gsharp_statemachine_ComprehensiveSpecKernel_ProcessP
             }
 
             // 11.5 Inline PTX
-            Gpu.InlinePtx("/* test ptx inline */");
+            throw new global::System.NotSupportedException("Gpu.InlinePtx is not supported by the StandardCppDialect dialect");
             // 12. Early return
             if (_ctx.ty > 0)
             {
@@ -643,6 +653,7 @@ fixed (global::System.Single* p_totalMagnitude = &totalMagnitude)
 fixed (global::System.Boolean* p_successFlag = &successFlag)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_particles, Length = particles.Length }, p_totalMagnitude, p_successFlag, largeStructVal, particleCount);
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
 #pragma warning restore CS8500
@@ -679,10 +690,13 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ComprehensiveSpecKernel_CooperativePhysicsProcess(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data)
 {
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot _gsharp_launch_error;
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
 int32_t bx = _b_idx % gridDimX;
 int32_t by = (_b_idx / gridDimX) % gridDimY;
 int32_t bz = _b_idx / (gridDimX * gridDimY);
@@ -693,13 +707,15 @@ ctx._state = 0;
 ctx._all_contexts = _gsharp_contexts.data();
 }
 std::atomic<bool> anyActive{true};
-while (anyActive)
+while (anyActive && !_gsharp_launch_error.HasError())
 {
 anyActive = false;
 int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
 for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &_gsharp_launch_error;
 int32_t tx = _t_idx % blockDimX;
 int32_t ty = (_t_idx / blockDimX) % blockDimY;
 int32_t tz = _t_idx / (blockDimX * blockDimY);
@@ -712,6 +728,9 @@ ComprehensiveSpecKernel_CooperativePhysicsProcess(data, &_gsharp_contexts[_ctxti
 }
 }
 }
+}
+if (_gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
 }
 }
 ";
@@ -832,6 +851,7 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Coop
 fixed (global::System.Int32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
 #pragma warning restore CS8500
