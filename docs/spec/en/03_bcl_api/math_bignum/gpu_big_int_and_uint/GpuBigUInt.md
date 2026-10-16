@@ -155,6 +155,7 @@ public GpuWorkspace Workspace { get; }
 | [GetIsEven()](#getiseven) | Determines whether the value is an even integer. |
 | [GetIsNegative()](#getisnegative) | Determines whether the most significant bit in the highest word is set (used for two's complement sign tracking). |
 | [GetTopWords(int)](#gettopwordsint) | Copies the most significant limb words from GPU device memory to a host array. |
+| [GetTopWordsAsync(int, CancellationToken)](#gettopwordsasyncint-cancellationtoken) | Asynchronously copies the most significant limb words from GPU device memory to a host array, without blocking the calling thread. |
 | [IsOne()](#isone) | Determines whether the value of this instance is 1 (one). |
 | [IsZero()](#iszero) | Determines whether the value of this instance is 0 (zero). |
 | [ModInverse(GpuBigUInt)](#modinversegpubiguint) | Computes the modular multiplicative inverse of this instance modulo `modulus`. |
@@ -429,6 +430,32 @@ The number of top words to copy.
 
 _uint[]_<br>
 A host array containing the most significant limb words.
+
+## GetTopWordsAsync(int, CancellationToken)
+
+Asynchronously copies the most significant limb words from GPU device memory to a host array, without blocking the calling thread while work queued on the workspace stream completes.
+
+```csharp
+public async ValueTask<uint[]> GetTopWordsAsync(int wordCount, CancellationToken cancellationToken = default);
+```
+
+#### Parameters
+
+`wordCount` _int_<br>
+The number of top words to copy.
+
+`cancellationToken` _CancellationToken_<br>
+A token that stops waiting; queued device work is not canceled.
+
+#### Returns
+
+_ValueTask&lt;uint[]&gt;_<br>
+A host array containing the most significant limb words.
+
+#### Exceptions
+
+`OperationCanceledException`<br>
+`cancellationToken` was canceled.
 
 ## IsOne()
 
