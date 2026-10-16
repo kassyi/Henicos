@@ -3,13 +3,13 @@ using Kassyi.GSharp.Runtime.Aot;
 namespace Kassyi.GSharp.Runtime.Interop;
 
 /// <summary>
-/// A page-locked host buffer of <see cref="Size"/> bytes that serves as the DMA target of non-blocking
-/// device-to-host copies.
+/// A page-locked host buffer of <see cref="Size"/> bytes that serves as the DMA staging area for host-to-device and
+/// non-blocking device-to-host copies.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>Reference counting:</b> the caller that rented the buffer holds one reference for the whole transfer, and every
-/// enqueued copy into the buffer adds one device reference that the stream releases through
+/// enqueued asynchronous copy into the buffer adds one device reference that the stream releases through
 /// <see cref="IStreamCompletionHook.OnStreamCompleted"/> once the copy has finished. The buffer returns to
 /// <see cref="PinnedStagingPool"/> only when both sides have released it, so a caller that stops waiting (cancellation)
 /// can never hand the buffer to another transfer while the device may still write to it.
@@ -49,8 +49,8 @@ internal sealed unsafe class PinnedStagingBuffer : IStreamCompletionHook, IDispo
 
     /// <summary>Gets the first <paramref name="length"/> bytes of the buffer.</summary>
     /// <param name="length">The number of bytes; at most <see cref="Size"/>.</param>
-    /// <returns>A read-only view of the staged bytes.</returns>
-    public ReadOnlySpan<byte> GetSpan(int length) => new((void*)Pointer, length);
+    /// <returns>A view of the staged bytes.</returns>
+    public Span<byte> GetSpan(int length) => new((void*)Pointer, length);
 
     /// <summary>Takes the caller's reference; called by the pool when the buffer is rented.</summary>
     public void AcquireForCaller() => Volatile.Write(ref _references, 1);

@@ -11,7 +11,10 @@ namespace Kassyi.GSharp.Runtime;
 // ReSharper disable UnusedMember.Global
 public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
 {
+    private const uint NonBlockingStreamFlag = 1;
+
     private IntPtr _devicePointer;
+    private IntPtr _transferStream;
     private readonly nint _byteSize;
     private readonly IntPtr _owningContext;
     private readonly bool _isCpuFallback;
@@ -97,6 +100,15 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     /// <summary>
     /// Synchronously copies data from host memory to this device buffer.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>[WHY]:</b> <c>cuMemcpyHtoD_v2</c> from pageable host memory returns once the driver has copied the source
+    /// into its internal staging buffer, before the DMA to device memory finishes, and runs on the legacy null stream,
+    /// which streams created with <c>CU_STREAM_NON_BLOCKING</c> are not ordered against. This method therefore stages
+    /// the transfer through a pooled page-locked buffer on a non-blocking stream and waits for that stream, so the
+    /// uploaded data is resident in device memory and visible to any subsequent work on the context when the call returns.
+    /// </para>
+    /// </remarks>
     /// <param name="source">The host memory span to copy from.</param>
     public unsafe void CopyToDevice(ReadOnlySpan<T> source)
     {
@@ -111,18 +123,58 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
             return;
         }
 
-        var copySize = checked((ulong)(source.Length * sizeof(T)));
-        fixed (T* ptr = source)
+        if (_isCpuFallback)
         {
-            if (_isCpuFallback)
+            var copySize = checked((ulong)(source.Length * sizeof(T)));
+            fixed (T* ptr = source)
             {
                 Buffer.MemoryCopy(ptr, (void*)_devicePointer, (ulong)_byteSize, copySize);
-                return;
             }
 
-            using var scope = new ContextScope(_owningContext);
-            CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoD_v2(_devicePointer, (IntPtr)ptr, (nint)copySize));
+            return;
         }
+
+        using var scope = new ContextScope(_owningContext);
+        var stream = GetOrCreateTransferStream();
+        var remaining = MemoryMarshal.AsBytes(source);
+        var staging = PinnedStagingPool.Rent();
+        try
+        {
+            var destination = _devicePointer;
+            while (!remaining.IsEmpty)
+            {
+                var chunkBytes = Math.Min(PinnedStagingBuffer.Size, remaining.Length);
+                remaining[..chunkBytes].CopyTo(staging.GetSpan(chunkBytes));
+                CudaException.ThrowIfError(
+                    CudaDriverApi.cuMemcpyHtoDAsync_v2(destination, staging.Pointer, chunkBytes, stream));
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));
+                destination += chunkBytes;
+                remaining = remaining[chunkBytes..];
+            }
+        }
+        finally
+        {
+            staging.Release();
+        }
+    }
+
+    private IntPtr GetOrCreateTransferStream()
+    {
+        var existing = Volatile.Read(ref _transferStream);
+        if (existing != IntPtr.Zero)
+        {
+            return existing;
+        }
+
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out var created, NonBlockingStreamFlag));
+        var prior = Interlocked.CompareExchange(ref _transferStream, created, IntPtr.Zero);
+        if (prior == IntPtr.Zero)
+        {
+            return created;
+        }
+
+        CudaDriverApi.cuStreamDestroy(created);
+        return prior;
     }
 
     /// <summary>
@@ -170,15 +222,26 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
             return CUresult.CudaSuccess;
         }
 
+        var stream = Interlocked.Exchange(ref _transferStream, IntPtr.Zero);
         CUresult res;
         if (_owningContext != IntPtr.Zero)
         {
             CudaDriverApi.cuCtxPushCurrent_v2(_owningContext);
+            if (stream != IntPtr.Zero)
+            {
+                CudaDriverApi.cuStreamDestroy(stream);
+            }
+
             res = CudaDriverApi.cuMemFree_v2(_devicePointer);
             CudaDriverApi.cuCtxPopCurrent_v2(out _);
         }
         else
         {
+            if (stream != IntPtr.Zero)
+            {
+                CudaDriverApi.cuStreamDestroy(stream);
+            }
+
             res = CudaDriverApi.cuMemFree_v2(_devicePointer);
         }
 

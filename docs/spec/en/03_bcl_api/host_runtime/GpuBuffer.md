@@ -121,7 +121,10 @@ The buffer has been disposed.
 `source.Length` is greater than `Length`.
 
 `CudaException`<br>
-The synchronous host-to-device memory transfer (`cuMemcpyHtoD_v2`) failed.
+The host-to-device memory transfer or stream synchronization failed.
+
+> [!IMPORTANT]
+> **Ordering guarantee:** `CopyToDevice` stages pageable host memory through a page-locked buffer on a non-blocking stream and synchronizes that stream before returning. Once `CopyToDevice` returns, the uploaded data is guaranteed to be resident in device memory and visible to any subsequent work on the same CUDA context, including kernels and transfers enqueued on non-blocking streams (`CU_STREAM_NON_BLOCKING`).
 
 ## CopyToHost(Span\<T\>)
 
