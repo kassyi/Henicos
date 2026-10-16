@@ -170,31 +170,196 @@ public static partial class GpuBigIntVectorKernels
         bool isScalar,
         bool syncThreads = true)
     {
+        DeviceVectorAddSubAlignedCore(
+            a, s, result,
+            signA, signB, signResult,
+            numWordsA, numWordsS, numWordsResult,
+            opSign, scalarSign, isScalar,
+            0, 0, syncThreads);
+    }
+
+    [GpuKernel]
+    public static void VectorMulScalarKernel(uint[] dA, uint[] s, uint[] dResult, uint[] signA, uint scalarSign, uint[] signResult, int numWordsA, int numWordsS, int numWordsResult)
+    {
+        if (ThreadIndex.X == 0) signResult[BlockIndex.X] = signA[BlockIndex.X] ^ scalarSign;
+        DeviceVectorMulVectorParallel(dA, s, dResult, numWordsA, numWordsS, numWordsResult, true, true);
+    }
+
+    [GpuKernel]
+    public static void VectorZipMulKernel(uint[] dA, uint[] dB, uint[] dResult, uint[] signA, uint[] signB, uint[] signResult, int numWordsA, int numWordsB, int numWordsResult)
+    {
+        if (ThreadIndex.X == 0) signResult[BlockIndex.X] = signA[BlockIndex.X] ^ signB[BlockIndex.X];
+        DeviceVectorMulVectorParallel(dA, dB, dResult, numWordsA, numWordsB, numWordsResult, false, true);
+    }
+
+    [GpuKernel]
+    public static void VectorFloatMulScalarKernel(
+        uint[] dA, uint[] s, uint[] dResult,
+        uint[] expA, int scalarExp, uint[] expResult,
+        uint[] signA, uint scalarSign, uint[] signResult,
+        int numWordsA, int numWordsS, int numWordsResult)
+    {
+        int bIdx = BlockIndex.X;
+        if (ThreadIndex.X == 0)
+        {
+            signResult[bIdx] = signA[bIdx] ^ scalarSign;
+            expResult[bIdx] = (uint)((int)expA[bIdx] + scalarExp);
+        }
+        DeviceVectorMulVectorParallel(dA, s, dResult, numWordsA, numWordsS, numWordsResult, true, true);
+    }
+
+    [GpuKernel]
+    public static void VectorFloatZipMulKernel(
+        uint[] dA, uint[] dB, uint[] dResult,
+        uint[] expA, uint[] expB, uint[] expResult,
+        uint[] signA, uint[] signB, uint[] signResult,
+        int numWordsA, int numWordsB, int numWordsResult)
+    {
+        int bIdx = BlockIndex.X;
+        if (ThreadIndex.X == 0)
+        {
+            signResult[bIdx] = signA[bIdx] ^ signB[bIdx];
+            expResult[bIdx] = (uint)((int)expA[bIdx] + (int)expB[bIdx]);
+        }
+        DeviceVectorMulVectorParallel(dA, dB, dResult, numWordsA, numWordsB, numWordsResult, false, true);
+    }
+
+    [GpuKernel]
+    public static void VectorDivScalarKernel(uint[] dA, uint[] s, uint[] dResult, uint[] signA, uint scalarSign, uint[] signResult, int numWordsA, int numWordsS, int numWordsResult)
+    {
+        DeviceVectorDivModParallel(dA, s, dResult, signA, signA, signResult, numWordsA, numWordsS, numWordsResult, scalarSign, true, false, 0);
+    }
+
+    [GpuKernel]
+    public static void VectorModScalarKernel(uint[] dA, uint[] s, uint[] dResult, uint[] signA, uint scalarSign, uint[] signResult, int numWordsA, int numWordsS, int numWordsResult)
+    {
+        DeviceVectorDivModParallel(dA, s, dResult, signA, signA, signResult, numWordsA, numWordsS, numWordsResult, scalarSign, true, true, 0);
+    }
+
+    [GpuKernel]
+    public static void VectorZipDivKernel(uint[] dA, uint[] dB, uint[] dResult, uint[] signA, uint[] signB, uint[] signResult, int numWordsA, int numWordsB, int numWordsResult)
+    {
+        DeviceVectorDivModParallel(dA, dB, dResult, signA, signB, signResult, numWordsA, numWordsB, numWordsResult, 0u, false, false, 0);
+    }
+
+    [GpuKernel]
+    public static void VectorZipModKernel(uint[] dA, uint[] dB, uint[] dResult, uint[] signA, uint[] signB, uint[] signResult, int numWordsA, int numWordsB, int numWordsResult)
+    {
+        DeviceVectorDivModParallel(dA, dB, dResult, signA, signB, signResult, numWordsA, numWordsB, numWordsResult, 0u, false, true, 0);
+    }
+
+    [GpuKernel]
+    public static void VectorFloatDivScalarKernel(
+        uint[] dA, uint[] s, uint[] dResult,
+        uint[] expA, int scalarExp, uint[] expResult,
+        uint[] signA, uint scalarSign, uint[] signResult,
+        int numWordsA, int numWordsS, int numWordsResult,
+        int preShiftBits)
+    {
+        DeviceVectorDivModParallel(dA, s, dResult, signA, signA, signResult, numWordsA, numWordsS, numWordsResult, scalarSign, true, false, preShiftBits);
+        if (ThreadIndex.X == 0)
+        {
+            int bIdx = BlockIndex.X;
+            expResult[bIdx] = (uint)((int)expA[bIdx] - scalarExp - preShiftBits);
+        }
+    }
+
+    [GpuKernel]
+    public static void VectorFloatZipDivKernel(
+        uint[] dA, uint[] dB, uint[] dResult,
+        uint[] expA, uint[] expB, uint[] expResult,
+        uint[] signA, uint[] signB, uint[] signResult,
+        int numWordsA, int numWordsB, int numWordsResult,
+        int preShiftBits)
+    {
+        DeviceVectorDivModParallel(dA, dB, dResult, signA, signB, signResult, numWordsA, numWordsB, numWordsResult, 0u, false, false, preShiftBits);
+        if (ThreadIndex.X == 0)
+        {
+            int bIdx = BlockIndex.X;
+            expResult[bIdx] = (uint)((int)expA[bIdx] - (int)expB[bIdx] - preShiftBits);
+        }
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint GetVectorShiftedWord(
+        [GpuReadOnly] uint[] data,
+        int baseOffset,
+        int numWords,
+        int destIdx,
+        int bitOffset)
+    {
+        if (bitOffset == 0)
+        {
+            return (destIdx >= 0 && destIdx < numWords) ? data[baseOffset + destIdx] : 0u;
+        }
+
+        if (bitOffset > 0)
+        {
+            int wordShift = bitOffset >> 5;
+            int bitShift = bitOffset & 31;
+            int s0 = destIdx - wordShift;
+            int s1 = s0 - 1;
+            uint w0 = (s0 >= 0 && s0 < numWords) ? data[baseOffset + s0] : 0u;
+            uint w1 = (s1 >= 0 && s1 < numWords) ? data[baseOffset + s1] : 0u;
+            return bitShift == 0 ? w0 : ((w0 << bitShift) | (w1 >> (32 - bitShift)));
+        }
+        else
+        {
+            int rightBits = -bitOffset;
+            int wordShift = rightBits >> 5;
+            int bitShift = rightBits & 31;
+            int s0 = destIdx + wordShift;
+            int s1 = s0 + 1;
+            uint w0 = (s0 >= 0 && s0 < numWords) ? data[baseOffset + s0] : 0u;
+            uint w1 = (s1 >= 0 && s1 < numWords) ? data[baseOffset + s1] : 0u;
+            return bitShift == 0 ? w0 : ((w0 >> bitShift) | (w1 << (32 - bitShift)));
+        }
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceVectorAddSubAlignedCore(
+        [GpuReadOnly] uint[] a,
+        [GpuReadOnly] uint[] s,
+        uint[] result,
+        [GpuReadOnly] uint[] signA,
+        [GpuReadOnly] uint[] signB,
+        uint[] signResult,
+        int numWordsA,
+        int numWordsS,
+        int numWordsResult,
+        uint opSign,
+        uint scalarSign,
+        bool isScalar,
+        int bitOffsetA,
+        int bitOffsetB,
+        bool syncThreads = true)
+    {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
         int batchIdx = BlockIndex.X;
         int laneId = tid % 32;
         int warpId = tid / 32;
-        
+
         uint s_sign = isScalar ? scalarSign : signB[batchIdx];
         uint effSignB = s_sign ^ opSign;
         bool differentSigns = (signA[batchIdx] != effSignB);
 
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
         uint blockCarryIn = differentSigns ? 1u : 0u;
+        int baseA = batchIdx * numWordsA;
+        int baseB = (isScalar ? 0 : batchIdx) * numWordsS;
 
         for (int offset = 0; offset < numWordsResult; offset += bDim)
         {
             int idx = offset + tid;
-            bool validA = idx < numWordsA;
-            bool validS = idx < numWordsS;
-
-            uint valA = validA ? a[batchIdx * numWordsA + idx] : 0u;
-            uint valB = validS ? s[(isScalar ? 0 : batchIdx) * numWordsS + idx] : 0u;
+            uint valA = idx < numWordsResult ? GetVectorShiftedWord(a, baseA, numWordsA, idx, bitOffsetA) : 0u;
+            uint valB = idx < numWordsResult ? GetVectorShiftedWord(s, baseB, numWordsS, idx, bitOffsetB) : 0u;
 
             if (differentSigns)
             {
-                valB = validS ? ~valB : 0xFFFFFFFFu;
+                valB = ~valB;
             }
 
             ulong sum = (ulong)valA + valB;
@@ -258,8 +423,7 @@ public static partial class GpuBigIntVectorKernels
             {
                 int idx = offset + tid;
                 uint valA = (idx < numWordsResult) ? ~result[batchIdx * numWordsResult + idx] : 0u;
-                
-                ulong sum = (ulong)valA;
+
                 uint g = 0u;
                 uint p = valA == 0xFFFFFFFFu ? 1u : 0u;
 
@@ -302,42 +466,121 @@ public static partial class GpuBigIntVectorKernels
         }
     }
 
-    [GpuKernel]
-    public static void VectorMulScalarKernel(uint[] dA, uint[] s, uint[] dResult, uint[] signA, uint scalarSign, uint[] signResult, int numWordsA, int numWordsS, int numWordsResult)
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceVectorFloatAddSubParallel(
+        [GpuReadOnly] uint[] a,
+        [GpuReadOnly] uint[] s,
+        uint[] result,
+        [GpuReadOnly] uint[] expA,
+        [GpuReadOnly] uint[] expB,
+        uint[] expResult,
+        [GpuReadOnly] uint[] signA,
+        [GpuReadOnly] uint[] signB,
+        uint[] signResult,
+        int numWordsA,
+        int numWordsS,
+        int numWordsResult,
+        uint opSign,
+        int scalarExp,
+        uint scalarSign,
+        bool isScalar,
+        bool syncThreads = true)
     {
-        if (ThreadIndex.X == 0) signResult[BlockIndex.X] = signA[BlockIndex.X] ^ scalarSign;
-        DeviceVectorMulVectorParallel(dA, s, dResult, numWordsA, numWordsS, numWordsResult, true, true);
+        int tid = ThreadIndex.X;
+        int batchIdx = BlockIndex.X;
+
+        int eA = (int)expA[batchIdx];
+        int eB = isScalar ? scalarExp : (int)expB[batchIdx];
+
+        int bitOffsetA = 0;
+        int bitOffsetB = 0;
+        int outExp = eA;
+
+        if (eA > eB)
+        {
+            int diff = eA - eB;
+            int headroomA = (numWordsResult - numWordsA) * 32;
+            if (headroomA < 0) headroomA = 0;
+            if (diff <= headroomA)
+            {
+                bitOffsetA = diff;
+                outExp = eB;
+            }
+            else
+            {
+                bitOffsetB = -diff;
+                outExp = eA;
+            }
+        }
+        else if (eB > eA)
+        {
+            int diff = eB - eA;
+            int headroomB = (numWordsResult - numWordsS) * 32;
+            if (headroomB < 0) headroomB = 0;
+            if (diff <= headroomB)
+            {
+                bitOffsetB = diff;
+                outExp = eA;
+            }
+            else
+            {
+                bitOffsetA = -diff;
+                outExp = eB;
+            }
+        }
+
+        if (tid == 0)
+        {
+            expResult[batchIdx] = (uint)outExp;
+        }
+
+        DeviceVectorAddSubAlignedCore(
+            a, s, result,
+            signA, signB, signResult,
+            numWordsA, numWordsS, numWordsResult,
+            opSign, scalarSign, isScalar,
+            bitOffsetA, bitOffsetB, syncThreads);
     }
 
     [GpuKernel]
-    public static void VectorZipMulKernel(uint[] dA, uint[] dB, uint[] dResult, uint[] signA, uint[] signB, uint[] signResult, int numWordsA, int numWordsB, int numWordsResult)
+    public static void VectorFloatAddScalarKernel(
+        uint[] dA, uint[] s, uint[] dResult,
+        uint[] expA, int scalarExp, uint[] expResult,
+        uint[] signA, uint scalarSign, uint[] signResult,
+        int numWordsA, int numWordsS, int numWordsResult)
     {
-        if (ThreadIndex.X == 0) signResult[BlockIndex.X] = signA[BlockIndex.X] ^ signB[BlockIndex.X];
-        DeviceVectorMulVectorParallel(dA, dB, dResult, numWordsA, numWordsB, numWordsResult, false, true);
+        DeviceVectorFloatAddSubParallel(dA, s, dResult, expA, expA, expResult, signA, signA, signResult, numWordsA, numWordsS, numWordsResult, 0u, scalarExp, scalarSign, true, true);
     }
 
     [GpuKernel]
-    public static void VectorDivScalarKernel(uint[] dA, uint[] s, uint[] dResult, uint[] signA, uint scalarSign, uint[] signResult, int numWordsA, int numWordsS, int numWordsResult)
+    public static void VectorFloatSubScalarKernel(
+        uint[] dA, uint[] s, uint[] dResult,
+        uint[] expA, int scalarExp, uint[] expResult,
+        uint[] signA, uint scalarSign, uint[] signResult,
+        int numWordsA, int numWordsS, int numWordsResult)
     {
-        DeviceVectorDivModParallel(dA, s, dResult, signA, signA, signResult, numWordsA, numWordsS, numWordsResult, scalarSign, true, false);
+        DeviceVectorFloatAddSubParallel(dA, s, dResult, expA, expA, expResult, signA, signA, signResult, numWordsA, numWordsS, numWordsResult, 1u, scalarExp, scalarSign, true, true);
     }
 
     [GpuKernel]
-    public static void VectorModScalarKernel(uint[] dA, uint[] s, uint[] dResult, uint[] signA, uint scalarSign, uint[] signResult, int numWordsA, int numWordsS, int numWordsResult)
+    public static void VectorFloatZipAddKernel(
+        uint[] dA, uint[] dB, uint[] dResult,
+        uint[] expA, uint[] expB, uint[] expResult,
+        uint[] signA, uint[] signB, uint[] signResult,
+        int numWordsA, int numWordsB, int numWordsResult)
     {
-        DeviceVectorDivModParallel(dA, s, dResult, signA, signA, signResult, numWordsA, numWordsS, numWordsResult, scalarSign, true, true);
+        DeviceVectorFloatAddSubParallel(dA, dB, dResult, expA, expB, expResult, signA, signB, signResult, numWordsA, numWordsB, numWordsResult, 0u, 0, 0u, false, true);
     }
 
     [GpuKernel]
-    public static void VectorZipDivKernel(uint[] dA, uint[] dB, uint[] dResult, uint[] signA, uint[] signB, uint[] signResult, int numWordsA, int numWordsB, int numWordsResult)
+    public static void VectorFloatZipSubKernel(
+        uint[] dA, uint[] dB, uint[] dResult,
+        uint[] expA, uint[] expB, uint[] expResult,
+        uint[] signA, uint[] signB, uint[] signResult,
+        int numWordsA, int numWordsB, int numWordsResult)
     {
-        DeviceVectorDivModParallel(dA, dB, dResult, signA, signB, signResult, numWordsA, numWordsB, numWordsResult, 0u, false, false);
-    }
-
-    [GpuKernel]
-    public static void VectorZipModKernel(uint[] dA, uint[] dB, uint[] dResult, uint[] signA, uint[] signB, uint[] signResult, int numWordsA, int numWordsB, int numWordsResult)
-    {
-        DeviceVectorDivModParallel(dA, dB, dResult, signA, signB, signResult, numWordsA, numWordsB, numWordsResult, 0u, false, true);
+        DeviceVectorFloatAddSubParallel(dA, dB, dResult, expA, expB, expResult, signA, signB, signResult, numWordsA, numWordsB, numWordsResult, 1u, 0, 0u, false, true);
     }
 
     [GpuDeviceFunction]
@@ -354,7 +597,8 @@ public static partial class GpuBigIntVectorKernels
         int numWordsResult,
         uint scalarSign,
         bool isScalar,
-        bool isModulo)
+        bool isModulo,
+        int preShiftBits = 0)
     {
         int tid = ThreadIndex.X;
         int batchIdx = BlockIndex.X;
@@ -372,7 +616,8 @@ public static partial class GpuBigIntVectorKernels
         int offsetB = isScalar ? 0 : batchIdx * numWordsB;
         int offsetResult = batchIdx * numWordsResult;
 
-        int evalWords = numWordsA > numWordsB ? numWordsA : numWordsB;
+        int maxInputWords = numWordsA > numWordsB ? numWordsA : numWordsB;
+        int evalWords = numWordsResult > maxInputWords ? numWordsResult : maxInputWords;
         if (evalWords > 128)
         {
             evalWords = 128;
@@ -451,11 +696,16 @@ public static partial class GpuBigIntVectorKernels
             return;
         }
 
-        for (int bit = (maxNonZeroWordA + 1) * 32 - 1; bit >= 0; bit--)
+        for (int bit = (maxNonZeroWordA + 1) * 32 + preShiftBits - 1; bit >= 0; bit--)
         {
-            int aWordIdx = bit >> 5;
-            int aBitIdx = bit & 31;
-            uint aBit = (a[offsetA + aWordIdx] >> aBitIdx) & 1u;
+            int qWordIdx = bit >> 5;
+            int qBitIdx = bit & 31;
+            uint aBit = 0u;
+            if (bit >= preShiftBits)
+            {
+                int srcBit = bit - preShiftBits;
+                aBit = (a[offsetA + (srcBit >> 5)] >> (srcBit & 31)) & 1u;
+            }
 
             uint chunkShiftIn = aBit;
             for (int offset = 0; offset < evalWords; offset += 32)
@@ -534,9 +784,9 @@ public static partial class GpuBigIntVectorKernels
                     subCarryIn = Warp.ShuffleSync(0xFFFFFFFFu, laneCarryOut, 31);
                 }
 
-                if (laneId == 0 && aWordIdx < evalWords)
+                if (laneId == 0 && qWordIdx < evalWords)
                 {
-                    sharedQuot[aWordIdx] |= 1u << aBitIdx;
+                    sharedQuot[qWordIdx] |= 1u << qBitIdx;
                 }
             }
         }
