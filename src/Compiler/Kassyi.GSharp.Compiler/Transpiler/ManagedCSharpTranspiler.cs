@@ -244,6 +244,14 @@ internal static class ManagedCSharpTranspiler
 
         public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
         {
+            if (node.Expression is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax inlinePtxAccess } &&
+                inlinePtxAccess.Name.Identifier.Text == "InlinePtx")
+            {
+                return SyntaxFactory.ParseStatement(
+                    "throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\");")
+                    .WithTriviaFrom(node);
+            }
+
             if (node.Expression is not InvocationExpressionSyntax invocation ||
                 invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
                 memberAccess.Name.Identifier.Text != "GridStrideLoop" ||

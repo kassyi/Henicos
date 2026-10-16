@@ -45,12 +45,15 @@ internal static class HostLauncherTranspiler
 
         using (context.Emitter.Writer.Scope())
         {
+            context.Emitter.Writer.AppendLine("__gsharp_host_last_error.Reset();");
+            context.Emitter.Writer.AppendLine("GSharpErrorSlot _gsharp_launch_error;");
             context.Emitter.Writer.AppendLine(
                 "int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);");
             context.Emitter.Writer.AppendLine("#pragma omp parallel for schedule(dynamic)");
             context.Emitter.Writer.AppendLine("for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)");
             using (context.Emitter.Writer.Scope())
             {
+                context.Emitter.Writer.AppendLine("if (_gsharp_launch_error.HasError()) continue;");
                 context.Emitter.Writer.AppendLine("int32_t bx = _b_idx % gridDimX;");
                 context.Emitter.Writer.AppendLine("int32_t by = (_b_idx / gridDimX) % gridDimY;");
                 context.Emitter.Writer.AppendLine("int32_t bz = _b_idx / (gridDimX * gridDimY);");
@@ -76,7 +79,7 @@ internal static class HostLauncherTranspiler
 
                     context.Emitter.Writer.AppendLine("}");
                     context.Emitter.Writer.AppendLine("std::atomic<bool> anyActive{true};");
-                    context.Emitter.Writer.AppendLine("while (anyActive)");
+                    context.Emitter.Writer.AppendLine("while (anyActive && !_gsharp_launch_error.HasError())");
                     using (context.Emitter.Writer.Scope())
                     {
                         context.Emitter.Writer.AppendLine("anyActive = false;");
@@ -88,6 +91,11 @@ internal static class HostLauncherTranspiler
                     WriteBlockLoop(method, methodSymbol, methodName, hasContext, ref context);
                 }
             }
+
+            context.Emitter.Writer.AppendLine("if (_gsharp_launch_error.HasError()) {");
+            context.Emitter.Writer.AppendLine(
+                "__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);");
+            context.Emitter.Writer.AppendLine("}");
         }
     }
 
@@ -148,6 +156,8 @@ internal static class HostLauncherTranspiler
         context.Emitter.Writer.AppendLine("for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)");
         using (context.Emitter.Writer.Scope())
         {
+            context.Emitter.Writer.AppendLine("if (_gsharp_launch_error.HasError()) continue;");
+            context.Emitter.Writer.AppendLine("__gsharp_active_error_slot = &_gsharp_launch_error;");
             context.Emitter.Writer.AppendLine("int32_t tx = _t_idx % blockDimX;");
             context.Emitter.Writer.AppendLine("int32_t ty = (_t_idx / blockDimX) % blockDimY;");
             context.Emitter.Writer.AppendLine("int32_t tz = _t_idx / (blockDimX * blockDimY);");

@@ -569,36 +569,108 @@ public class GpuKernelGenerator : IIncrementalGenerator
         using var reader = new StreamReader(stream);
         var content = reader.ReadToEnd() + "\n";
 
-        if (dialect.IsCuda && content.Contains("#include \"StackLinq.cuh\""))
+        return ResolveEmbeddedIncludes(assembly, content, dialect.IsCuda);
+    }
+
+    private static string ResolveEmbeddedIncludes(System.Reflection.Assembly assembly, string content, bool isCuda)
+    {
+        const string IncludePrefix = "#include \"";
+        var manifestNames = assembly.GetManifestResourceNames();
+        var searchStart = 0;
+
+        while (true)
         {
-            string? slResourceName = null;
-            foreach (var n in assembly.GetManifestResourceNames())
+            var includeIndex = content.IndexOf(IncludePrefix, searchStart, StringComparison.Ordinal);
+            if (includeIndex < 0)
             {
-                if (n.EndsWith("StackLinq.cuh", StringComparison.Ordinal))
+                break;
+            }
+
+            var pathStart = includeIndex + IncludePrefix.Length;
+            var pathEnd = content.IndexOf('"', pathStart);
+            if (pathEnd < 0)
+            {
+                break;
+            }
+
+            var includePath = content.AsSpan(pathStart, pathEnd - pathStart);
+            string? matchedResource = null;
+            foreach (var name in manifestNames)
+            {
+                if (EndsWithResourcePath(name, includePath))
                 {
-                    slResourceName = n;
+                    matchedResource = name;
                     break;
                 }
             }
-            if (slResourceName != null)
+
+            if (matchedResource == null)
             {
-                using var slStream = assembly.GetManifestResourceStream(slResourceName);
-                if (slStream != null)
-                {
-                    using var slReader = new StreamReader(slStream);
-                    var slContent = slReader.ReadToEnd();
-                    var includeIndex = content.IndexOf("#include \"StackLinq.cuh\"", StringComparison.Ordinal);
-                    if (includeIndex >= 0)
-                    {
-                        var before = content[..includeIndex];
-                        var after = content[(includeIndex + 24)..];
-                        content = before + slContent + after;
-                    }
-                }
+                searchStart = pathEnd + 1;
+                continue;
             }
+
+            using var includeStream = assembly.GetManifestResourceStream(matchedResource);
+            if (includeStream == null)
+            {
+                searchStart = pathEnd + 1;
+                continue;
+            }
+
+            using var includeReader = new StreamReader(includeStream);
+            var includedContent = includeReader.ReadToEnd();
+            var before = content[..includeIndex];
+            var after = content[(pathEnd + 1)..];
+            if (!isCuda && after.AsSpan().Trim().IsEmpty)
+            {
+                includedContent = TrimOneTrailingNewline(includedContent);
+            }
+
+            content = before + includedContent + after;
+            searchStart = includeIndex;
         }
 
         return content;
+    }
+
+    private static bool EndsWithResourcePath(string manifestName, ReadOnlySpan<char> includePath)
+    {
+        if (manifestName.Length <= includePath.Length)
+        {
+            return false;
+        }
+
+        var offset = manifestName.Length - includePath.Length;
+        if (manifestName[offset - 1] != '.')
+        {
+            return false;
+        }
+
+        for (var i = 0; i < includePath.Length; i++)
+        {
+            var expected = includePath[i] is '/' or '\\' ? '.' : includePath[i];
+            if (manifestName[offset + i] != expected)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static string TrimOneTrailingNewline(string text)
+    {
+        if (text.EndsWith("\r\n", StringComparison.Ordinal))
+        {
+            return text[..^2];
+        }
+
+        if (text.EndsWith("\n", StringComparison.Ordinal))
+        {
+            return text[..^1];
+        }
+
+        return text;
     }
 
     private static ImmutableArray<string> CombineIncludes(HashSet<string> a, HashSet<string> b)

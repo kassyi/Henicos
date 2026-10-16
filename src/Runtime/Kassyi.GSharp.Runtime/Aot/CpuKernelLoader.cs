@@ -123,7 +123,36 @@ public sealed class CpuKernelLoader
         return hfunc;
     }
 
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int GetLastErrorDelegate(out IntPtr outMessage);
+
     private static TDelegate LoadKernelFunction<TDelegate>(string dllPath, string kernelName)
         where TDelegate : Delegate =>
         Marshal.GetDelegateForFunctionPointer<TDelegate>(LoadKernelFunctionPtr(dllPath, kernelName));
+
+    /// <summary>
+    /// Checks the native runtime error slot in the specified CPU AOT library and throws the corresponding managed exception if an error occurred.
+    /// </summary>
+    /// <param name="dllPath">The file path to the native dynamic library.</param>
+    public static void ThrowIfNativeError(string dllPath)
+    {
+        var consumeLastError = LoadAotKernel<GetLastErrorDelegate>("__gsharp_consume_last_error", dllPath);
+        var errorCode = consumeLastError(out var msgPtr);
+        if (errorCode == 0)
+        {
+            return;
+        }
+
+        var message = msgPtr != IntPtr.Zero
+            ? Marshal.PtrToStringAnsi(msgPtr) ?? "Unknown G# CPU runtime error."
+            : "Unknown G# CPU runtime error.";
+
+        throw errorCode switch
+        {
+            1 => new NotSupportedException(message),
+            2 => new InvalidOperationException(message),
+            3 => new IndexOutOfRangeException(message),
+            _ => new InvalidOperationException(message)
+        };
+    }
 }

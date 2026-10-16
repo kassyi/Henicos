@@ -38,6 +38,13 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
             context.Reporter.Report(GSharpDiagnostics.InlinePtxNotSupportedByDialect, node, dialectName);
             context.Emitter.Writer.Append($"__gsharp_unsupported(\"Gpu.InlinePtx is not supported by the {dialectName} dialect\");");
             context.Emitter.Writer.AppendLine();
+            if (context.Emitter.Dialect.IsCuda || !context.Emitter.IsGpuKernelEntry)
+            {
+                return;
+            }
+
+            context.Emitter.Writer.AppendLine("_state = -1;");
+            context.Emitter.Writer.AppendLine("return;");
             return;
         }
 
