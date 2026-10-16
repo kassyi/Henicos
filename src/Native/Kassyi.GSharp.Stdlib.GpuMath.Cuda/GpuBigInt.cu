@@ -719,15 +719,22 @@ extern "C" {
         int shiftWords = expDiff / 32 + 1;
         int shiftedWords = largerNumWords + shiftWords;
 
-        cudaMemsetAsync(d_shiftedBuffer, 0, shiftedWords * sizeof(unsigned int), stream);
-        
+        int tempWords = (shiftedWords > smallerNumWords ? shiftedWords : smallerNumWords) + 1;
+
+        // The chunk add/sub/compare kernels read both operands over the full tempWords range,
+        // so both must be zero-padded to tempWords to avoid reading uninitialized/out-of-bounds words.
+        cudaMemsetAsync(d_shiftedBuffer, 0, tempWords * sizeof(unsigned int), stream);
+
         int blockSize = 256;
         int gridShift = (shiftedWords + blockSize - 1) / blockSize;
         if (gridShift == 0) gridShift = 1;
         ShiftLeftKernel<<<gridShift, blockSize, 0, stream>>>(d_largerSig, expDiff / 32, expDiff % 32, d_shiftedBuffer, shiftedWords);
 
-        int tempWords = (shiftedWords > smallerNumWords ? shiftedWords : smallerNumWords) + 1;
+        // Stage the smaller operand zero-padded in d_tempResult; the chunk kernels then run in place
+        // (each index reads its operand word before writing the result word at the same index).
         cudaMemsetAsync(d_tempResult, 0, tempWords * sizeof(unsigned int), stream);
+        cudaMemcpyAsync(d_tempResult, d_smallerSig, smallerNumWords * sizeof(unsigned int), cudaMemcpyDeviceToDevice, stream);
+        const unsigned int* d_paddedSmaller = d_tempResult;
 
         int chunkSize = 256;
         int numChunks = (tempWords + chunkSize - 1) / chunkSize;
@@ -738,23 +745,23 @@ extern "C" {
 
         if (largerSign == smallerSign) {
             cudaMemsetAsync(ws->d_genericCarryBuffer, 0, sizeof(long long) * (numChunks + 1), stream);
-            ChunkAddKernel<<<gridChunks, blockSize, 0, stream>>>(d_shiftedBuffer, d_smallerSig, d_tempResult, ws->d_genericCarryBuffer, tempWords, chunkSize);
+            ChunkAddKernel<<<gridChunks, blockSize, 0, stream>>>(d_shiftedBuffer, d_paddedSmaller, d_tempResult, ws->d_genericCarryBuffer, tempWords, chunkSize);
             ApplyAddCarryKernel<<<1, 1, 0, stream>>>(d_tempResult, ws->d_genericCarryBuffer, numChunks, tempWords, chunkSize);
             resultSign = largerSign;
         } else {
             int h_cmp = 0;
             int* d_cmp = (int*)ws->d_genericCarryBuffer; 
-            CompareToKernel<<<1, 1, 0, stream>>>(d_shiftedBuffer, d_smallerSig, d_cmp, tempWords);
+            CompareToKernel<<<1, 1, 0, stream>>>(d_shiftedBuffer, d_paddedSmaller, d_cmp, tempWords);
             cudaMemcpyAsync(&h_cmp, d_cmp, sizeof(int), cudaMemcpyDeviceToHost, stream);
             cudaStreamSynchronize(stream);
 
             cudaMemsetAsync(ws->d_genericCarryBuffer, 0, sizeof(long long) * (numChunks + 1), stream);
             if (h_cmp >= 0) {
-                ChunkSubKernel<<<gridChunks, blockSize, 0, stream>>>(d_shiftedBuffer, d_smallerSig, d_tempResult, ws->d_genericCarryBuffer, tempWords, chunkSize);
+                ChunkSubKernel<<<gridChunks, blockSize, 0, stream>>>(d_shiftedBuffer, d_paddedSmaller, d_tempResult, ws->d_genericCarryBuffer, tempWords, chunkSize);
                 ApplySubBorrowKernel<<<1, 1, 0, stream>>>(d_tempResult, ws->d_genericCarryBuffer, numChunks, tempWords, chunkSize);
                 resultSign = largerSign;
             } else {
-                ChunkSubKernel<<<gridChunks, blockSize, 0, stream>>>(d_smallerSig, d_shiftedBuffer, d_tempResult, ws->d_genericCarryBuffer, tempWords, chunkSize);
+                ChunkSubKernel<<<gridChunks, blockSize, 0, stream>>>(d_paddedSmaller, d_shiftedBuffer, d_tempResult, ws->d_genericCarryBuffer, tempWords, chunkSize);
                 ApplySubBorrowKernel<<<1, 1, 0, stream>>>(d_tempResult, ws->d_genericCarryBuffer, numChunks, tempWords, chunkSize);
                 resultSign = smallerSign;
             }
