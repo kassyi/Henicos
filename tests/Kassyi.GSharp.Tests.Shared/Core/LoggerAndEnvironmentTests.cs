@@ -327,15 +327,17 @@ public class LoggerAndEnvironmentTests
     public void Test_CudaEnvironment_Windows_BinPath()
     {
         var mock = new MockCudaPathResolver { MockIsWindows = true };
-        mock.EnvVars["CUDA_PATH"] = @"C:\Cuda";
-        mock.ExistingDirs.Add(@"C:\Cuda");
-        mock.ExistingDirs.Add(@"C:\Cuda\bin\x64");
+        var cudaRoot = @"C:\Cuda";
+        var expectedBinX64 = Path.Combine(cudaRoot, "bin", "x64");
+        mock.EnvVars["CUDA_PATH"] = cudaRoot;
+        mock.ExistingDirs.Add(cudaRoot);
+        mock.ExistingDirs.Add(expectedBinX64);
 
         CudaEnvironment.Resolver = mock;
         try
         {
             var binPath = CudaEnvironment.GetCudaBinPath();
-            Assert.Equal(@"C:\Cuda\bin\x64", binPath);
+            Assert.Equal(expectedBinX64, binPath);
         }
         finally
         {

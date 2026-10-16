@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CompilerGeneratedFilesOutputPath>obj/generated</CompilerGeneratedFilesOutputPath>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,7 +18,7 @@
     <ProjectReference Include="..\..\Core\Kassyi.GSharp.Core\Kassyi.GSharp.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
+    <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" ExcludeAssets="all" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
     <ProjectReference Include="..\..\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
@@ -42,11 +42,12 @@
 
   <ItemGroup>
     <Compile Remove="$(IntermediateOutputPath)GeneratedNativeApi\**\*.g.cs" />
+    <Compile Remove="**\GeneratedNativeApi\**\*.g.cs" />
   </ItemGroup>
 
   <Target Name="GenerateNativeApi" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)..\..\NativeApi\**\*.yml" Outputs="$(IntermediateOutputPath)GeneratedNativeApi.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedNativeApi" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../../Compiler/Kassyi.GSharp.Compiler.Generators/bin/$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)../../NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../../Compiler/Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)../../NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedNativeApi.stamp" AlwaysCreate="true" />
   </Target>
 

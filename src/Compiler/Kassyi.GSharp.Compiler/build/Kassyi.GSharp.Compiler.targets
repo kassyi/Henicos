@@ -2,6 +2,7 @@
   <!-- Locate the task assembly -->
   <PropertyGroup>
     <GSharpCompilerTaskAssembly Condition="Exists('$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll')">$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>
+    <GSharpCompilerTaskAssembly Condition="'$(GSharpCompilerTaskAssembly)' == '' and '$(BaseOutputPath)' != ''">$(MSBuildThisFileDirectory)..\..\Kassyi.GSharp.Compiler.Tasks\$(BaseOutputPath)$(Configuration)\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>
     <GSharpCompilerTaskAssembly Condition="'$(GSharpCompilerTaskAssembly)' == ''">$(MSBuildThisFileDirectory)..\..\Kassyi.GSharp.Compiler.Tasks\bin\$(Configuration)\netstandard2.0\Kassyi.GSharp.Compiler.Tasks.dll</GSharpCompilerTaskAssembly>
   </PropertyGroup>
 

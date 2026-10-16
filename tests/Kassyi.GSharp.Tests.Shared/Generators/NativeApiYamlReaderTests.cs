@@ -166,7 +166,7 @@ public class NativeApiYamlReaderTests
     public void Test_TryRead_BuiltInDefinitions_ParseWithoutErrors(string fileName)
     {
         var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "../../../../../src/NativeApi", fileName));
+            "../../../../../../src/NativeApi", fileName));
         var yaml = File.ReadAllText(path);
 
         var success = NativeApiYamlReader.TryRead(yaml, out var definition, out var error);
