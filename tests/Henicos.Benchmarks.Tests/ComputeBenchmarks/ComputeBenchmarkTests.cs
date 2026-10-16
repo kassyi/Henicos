@@ -1,8 +1,4 @@
-using Henicos.Benchmarks.ComputeBenchmarks;
-using Kassyi.GSharp.Tests.Shared.Helpers;
-using Xunit;
-
-namespace Kassyi.GSharp.Tests.Shared.Runtime;
+namespace Henicos.Benchmarks.Tests.ComputeBenchmarks;
 
 [Category(TestCategory.Benchmark)]
 [Collection(TestCollections.GlobalStateSequential)]
@@ -12,6 +8,7 @@ public class ComputeBenchmarkTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void SgemmBenchmark_ExecutionAndVerification_Succeeds()
     {
+        CudaCapability.EnsureGpuAvailable();
         var bench = new SgemmBenchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
@@ -24,6 +21,7 @@ public class ComputeBenchmarkTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Sha256Benchmark_ExecutionAndVerification_Succeeds()
     {
+        CudaCapability.EnsureGpuAvailable();
         var bench = new Sha256Benchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
@@ -36,6 +34,7 @@ public class ComputeBenchmarkTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void BlackScholesBenchmark_ExecutionAndVerification_Succeeds()
     {
+        CudaCapability.EnsureGpuAvailable();
         var bench = new BlackScholesBenchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
@@ -48,6 +47,7 @@ public class ComputeBenchmarkTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void ReductionBenchmark_ExecutionAndVerification_Succeeds()
     {
+        CudaCapability.EnsureGpuAvailable();
         var bench = new ReductionBenchmark();
         bench.Initialize();
         bench.RunReferenceCpu();
@@ -60,6 +60,7 @@ public class ComputeBenchmarkTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void ComputeBenchmarkRunner_RunSuite_All_ReturnsTrue()
     {
+        CudaCapability.EnsureGpuAvailable();
         var result = ComputeBenchmarkRunner.RunSuite("all", iterations: 2);
         Assert.True(result);
     }
@@ -71,4 +72,3 @@ public class ComputeBenchmarkTests
         Assert.False(result);
     }
 }
-
