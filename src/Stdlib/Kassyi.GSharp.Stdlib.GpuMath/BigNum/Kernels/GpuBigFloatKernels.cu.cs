@@ -1,6 +1,5 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
-using System.Runtime.CompilerServices;
 using Core;
 
 // Reference/Inspiration: stillwater-sc/universal (Mathematical concepts)

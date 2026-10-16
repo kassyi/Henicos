@@ -22,10 +22,7 @@ public static class GpuBigFloatVectorLinqExtensions
     public static IGpuBigFloatVectorExpression SelectAdd(
         this IGpuBigFloatVectorExpression source,
         GpuBigFloat scalar) =>
-        new FloatVectorBinaryScalarExpression<AddOp>(
-            source,
-            scalar,
-            Math.Max(source.WordsPerElement, scalar.UFloat.Significand.NumWords) + 1);
+        new FloatVectorAddScalarExpression(source, scalar);
 
     /// <summary>
     /// Subtracts a scalar <see cref="GpuBigFloat"/> from each element of a vectorized expression.
@@ -36,10 +33,7 @@ public static class GpuBigFloatVectorLinqExtensions
     public static IGpuBigFloatVectorExpression SelectSubtract(
         this IGpuBigFloatVectorExpression source,
         GpuBigFloat scalar) =>
-        new FloatVectorBinaryScalarExpression<SubOp>(
-            source,
-            scalar,
-            Math.Max(source.WordsPerElement, scalar.UFloat.Significand.NumWords) + 1);
+        new FloatVectorSubScalarExpression(source, scalar);
 
     /// <summary>
     /// Multiplies each element of a vectorized expression by a scalar <see cref="GpuBigFloat"/>.
@@ -50,10 +44,7 @@ public static class GpuBigFloatVectorLinqExtensions
     public static IGpuBigFloatVectorExpression SelectMultiply(
         this IGpuBigFloatVectorExpression source,
         GpuBigFloat scalar) =>
-        new FloatVectorBinaryScalarExpression<MulOp>(
-            source,
-            scalar,
-            source.WordsPerElement + scalar.UFloat.Significand.NumWords);
+        new FloatVectorMulScalarExpression(source, scalar);
 
     /// <summary>
     /// Divides each element of a vectorized expression by a scalar <see cref="GpuBigFloat"/>.
@@ -64,10 +55,7 @@ public static class GpuBigFloatVectorLinqExtensions
     public static IGpuBigFloatVectorExpression SelectDivide(
         this IGpuBigFloatVectorExpression source,
         GpuBigFloat scalar) =>
-        new FloatVectorBinaryScalarExpression<DivOp>(
-            source,
-            scalar,
-            Math.Max(source.WordsPerElement, scalar.UFloat.Significand.NumWords));
+        new FloatVectorDivScalarExpression(source, scalar);
 
     /// <summary>
     /// Adds two vectorized floating-point expressions element-wise.
@@ -78,10 +66,7 @@ public static class GpuBigFloatVectorLinqExtensions
     public static IGpuBigFloatVectorExpression ZipAdd(
         this IGpuBigFloatVectorExpression left,
         IGpuBigFloatVectorExpression right) =>
-        new FloatVectorBinaryVectorExpression<AddOp>(
-            left,
-            right,
-            Math.Max(left.WordsPerElement, right.WordsPerElement) + 1);
+        new FloatVectorAddVectorExpression(left, right);
 
     /// <summary>
     /// Subtracts the second vectorized floating-point expression from the first element-wise.
@@ -92,10 +77,7 @@ public static class GpuBigFloatVectorLinqExtensions
     public static IGpuBigFloatVectorExpression ZipSubtract(
         this IGpuBigFloatVectorExpression left,
         IGpuBigFloatVectorExpression right) =>
-        new FloatVectorBinaryVectorExpression<SubOp>(
-            left,
-            right,
-            Math.Max(left.WordsPerElement, right.WordsPerElement) + 1);
+        new FloatVectorSubVectorExpression(left, right);
 
     /// <summary>
     /// Multiplies the first vectorized floating-point expression by the second element-wise.
@@ -106,10 +88,7 @@ public static class GpuBigFloatVectorLinqExtensions
     public static IGpuBigFloatVectorExpression ZipMultiply(
         this IGpuBigFloatVectorExpression left,
         IGpuBigFloatVectorExpression right) =>
-        new FloatVectorBinaryVectorExpression<MulOp>(
-            left,
-            right,
-            left.WordsPerElement + right.WordsPerElement);
+        new FloatVectorMulVectorExpression(left, right);
 
     /// <summary>
     /// Divides the first vectorized floating-point expression by the second element-wise.
@@ -120,10 +99,7 @@ public static class GpuBigFloatVectorLinqExtensions
     public static IGpuBigFloatVectorExpression ZipDivide(
         this IGpuBigFloatVectorExpression left,
         IGpuBigFloatVectorExpression right) =>
-        new FloatVectorBinaryVectorExpression<DivOp>(
-            left,
-            right,
-            Math.Max(left.WordsPerElement, right.WordsPerElement));
+        new FloatVectorDivVectorExpression(left, right);
 
     /// <summary>
     /// Bypasses a specified number of elements in a vectorized sequence and then returns the remaining elements.

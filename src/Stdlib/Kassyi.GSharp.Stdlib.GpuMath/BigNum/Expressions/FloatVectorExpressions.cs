@@ -66,17 +66,20 @@ internal sealed class GpuBigFloatVectorLeafExpression(GpuBigFloatArray array) : 
     }
 }
 
-internal sealed class FloatVectorBinaryScalarExpression<TOp>(
+internal abstract class FloatVectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
     GpuBigFloat scalar,
     int wordsPerElement) : IGpuBigFloatVectorExpression
-    where TOp : struct, IFloatOperator<GpuBigFloat>
 {
+    protected const int DefaultDivShiftBits = 32;
+
     public int Length => vector.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
     private GpuBigFloatArray _result;
     private bool _allocated;
+
+    protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
     public GpuBigFloatArray Evaluate(
         GpuWorkspace workspace,
@@ -103,16 +106,43 @@ internal sealed class FloatVectorBinaryScalarExpression<TOp>(
             destination = _result;
         }
 
-        var visitor = new GpuBigFloatExpressionVisitor(workspace);
-        for (var i = 0; i < evalCount; i++)
-        {
-            var elem = vecResult.GetElement(i);
-            using var res = TOp.Execute(elem, scalar, ref visitor);
-            destination.SetElement(i, res);
-        }
-
+        DispatchKernel(workspace, vecResult, scalar, destination, (uint)evalCount);
         return destination;
     }
+
+    protected static TContext CreateScalarContext<TContext>(
+        GpuBigFloatArray vecResult,
+        GpuBigFloat scalarValue,
+        GpuBigFloatArray destination)
+        where TContext : struct, GpuBigIntVectorKernels.AotContexts.IVectorFloatBinaryAotContext
+    {
+        var scalarSig = scalarValue.UFloat.Significand;
+        var ctx = default(TContext);
+        ctx.InitializeFloatBinary(
+            vecResult.Significands.DevicePointer,
+            scalarSig.DevicePointer,
+            destination.Significands.DevicePointer,
+            vecResult.Exponents.DevicePointer,
+            vecResult.Exponents.DevicePointer,
+            destination.Exponents.DevicePointer,
+            vecResult.Signs.DevicePointer,
+            vecResult.Signs.DevicePointer,
+            destination.Signs.DevicePointer,
+            vecResult.WordsPerElement,
+            scalarSig.NumWords,
+            destination.WordsPerElement,
+            scalarValue.UFloat.Exponent,
+            scalarValue.IsNegative ? 1u : 0u,
+            isScalar: true);
+        return ctx;
+    }
+
+    protected abstract void DispatchKernel(
+        GpuWorkspace workspace,
+        GpuBigFloatArray vecResult,
+        GpuBigFloat scalarValue,
+        GpuBigFloatArray destination,
+        uint gridDimX);
 
     public void Dispose()
     {
@@ -126,17 +156,111 @@ internal sealed class FloatVectorBinaryScalarExpression<TOp>(
     }
 }
 
-internal sealed class FloatVectorBinaryVectorExpression<TOp>(
+internal sealed class FloatVectorAddScalarExpression(
+    [TakesOwnership] IGpuBigFloatVectorExpression vector,
+    GpuBigFloat scalar)
+    : FloatVectorBinaryScalarExpressionBase(
+        vector,
+        scalar,
+        Math.Max(vector.WordsPerElement, scalar.UFloat.Significand.NumWords) + 1)
+{
+    protected override void DispatchKernel(
+        GpuWorkspace workspace,
+        GpuBigFloatArray vecResult,
+        GpuBigFloat scalarValue,
+        GpuBigFloatArray destination,
+        uint gridDimX)
+    {
+        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub>(
+            vecResult, scalarValue, destination);
+        ctx.OpSign = 0u;
+        GpuBigIntVectorKernels.LaunchVectorFloatAddScalarKernelPtr(
+            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
+    }
+}
+
+internal sealed class FloatVectorSubScalarExpression(
+    [TakesOwnership] IGpuBigFloatVectorExpression vector,
+    GpuBigFloat scalar)
+    : FloatVectorBinaryScalarExpressionBase(
+        vector,
+        scalar,
+        Math.Max(vector.WordsPerElement, scalar.UFloat.Significand.NumWords) + 1)
+{
+    protected override void DispatchKernel(
+        GpuWorkspace workspace,
+        GpuBigFloatArray vecResult,
+        GpuBigFloat scalarValue,
+        GpuBigFloatArray destination,
+        uint gridDimX)
+    {
+        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub>(
+            vecResult, scalarValue, destination);
+        ctx.OpSign = 1u;
+        GpuBigIntVectorKernels.LaunchVectorFloatSubScalarKernelPtr(
+            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
+    }
+}
+
+internal sealed class FloatVectorMulScalarExpression(
+    [TakesOwnership] IGpuBigFloatVectorExpression vector,
+    GpuBigFloat scalar)
+    : FloatVectorBinaryScalarExpressionBase(
+        vector,
+        scalar,
+        vector.WordsPerElement + scalar.UFloat.Significand.NumWords)
+{
+    protected override void DispatchKernel(
+        GpuWorkspace workspace,
+        GpuBigFloatArray vecResult,
+        GpuBigFloat scalarValue,
+        GpuBigFloatArray destination,
+        uint gridDimX)
+    {
+        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorFloatMul>(
+            vecResult, scalarValue, destination);
+        GpuBigIntVectorKernels.LaunchVectorFloatMulScalarKernelPtr(
+            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
+    }
+}
+
+internal sealed class FloatVectorDivScalarExpression(
+    [TakesOwnership] IGpuBigFloatVectorExpression vector,
+    GpuBigFloat scalar)
+    : FloatVectorBinaryScalarExpressionBase(
+        vector,
+        scalar,
+        Math.Max(vector.WordsPerElement, scalar.UFloat.Significand.NumWords) + 1)
+{
+    protected override void DispatchKernel(
+        GpuWorkspace workspace,
+        GpuBigFloatArray vecResult,
+        GpuBigFloat scalarValue,
+        GpuBigFloatArray destination,
+        uint gridDimX)
+    {
+        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorFloatDiv>(
+            vecResult, scalarValue, destination);
+        ctx.PreShiftBits = DefaultDivShiftBits;
+        GpuBigIntVectorKernels.LaunchVectorFloatDivScalarKernelPtr(
+            ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
+    }
+}
+
+internal abstract class FloatVectorBinaryVectorExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression left,
     [TakesOwnership] IGpuBigFloatVectorExpression right,
     int wordsPerElement) : IGpuBigFloatVectorExpression
-    where TOp : struct, IFloatOperator<GpuBigFloat>
 {
+    protected const int DefaultDivShiftBits = 32;
+
     public int Length => left.Length;
     public int WordsPerElement { get; } = wordsPerElement;
 
     private GpuBigFloatArray _result;
     private bool _allocated;
+
+    protected uint BlockDimX => (uint)Math.Min(1024, WordsPerElement);
 
     public GpuBigFloatArray Evaluate(
         GpuWorkspace workspace,
@@ -144,6 +268,11 @@ internal sealed class FloatVectorBinaryVectorExpression<TOp>(
         int? elementCount = null,
         GpuBigFloatArray? targetResult = null)
     {
+        if (left.Length != right.Length)
+        {
+            throw new ArgumentException("Vector lengths must match for Zip operations.");
+        }
+
         var evalCount = elementCount ?? (Length - elementOffset);
         var leftResult = left.Evaluate(workspace, elementOffset, evalCount);
         var rightResult = right.Evaluate(workspace, elementOffset, evalCount);
@@ -169,17 +298,42 @@ internal sealed class FloatVectorBinaryVectorExpression<TOp>(
             destination = _result;
         }
 
-        var visitor = new GpuBigFloatExpressionVisitor(workspace);
-        for (var i = 0; i < evalCount; i++)
-        {
-            var lElem = leftResult.GetElement(i);
-            var rElem = rightResult.GetElement(i);
-            using var res = TOp.Execute(lElem, rElem, ref visitor);
-            destination.SetElement(i, res);
-        }
-
+        DispatchKernel(workspace, leftResult, rightResult, destination, (uint)evalCount);
         return destination;
     }
+
+    protected static TContext CreateZipContext<TContext>(
+        GpuBigFloatArray leftResult,
+        GpuBigFloatArray rightResult,
+        GpuBigFloatArray destination)
+        where TContext : struct, GpuBigIntVectorKernels.AotContexts.IVectorFloatBinaryAotContext
+    {
+        var ctx = default(TContext);
+        ctx.InitializeFloatBinary(
+            leftResult.Significands.DevicePointer,
+            rightResult.Significands.DevicePointer,
+            destination.Significands.DevicePointer,
+            leftResult.Exponents.DevicePointer,
+            rightResult.Exponents.DevicePointer,
+            destination.Exponents.DevicePointer,
+            leftResult.Signs.DevicePointer,
+            rightResult.Signs.DevicePointer,
+            destination.Signs.DevicePointer,
+            leftResult.WordsPerElement,
+            rightResult.WordsPerElement,
+            destination.WordsPerElement,
+            scalarExp: 0,
+            scalarSign: 0u,
+            isScalar: false);
+        return ctx;
+    }
+
+    protected abstract void DispatchKernel(
+        GpuWorkspace workspace,
+        GpuBigFloatArray leftResult,
+        GpuBigFloatArray rightResult,
+        GpuBigFloatArray destination,
+        uint gridDimX);
 
     public void Dispose()
     {
@@ -191,6 +345,97 @@ internal sealed class FloatVectorBinaryVectorExpression<TOp>(
 
         left.Dispose();
         right.Dispose();
+    }
+}
+
+internal sealed class FloatVectorAddVectorExpression(
+    [TakesOwnership] IGpuBigFloatVectorExpression left,
+    [TakesOwnership] IGpuBigFloatVectorExpression right)
+    : FloatVectorBinaryVectorExpressionBase(
+        left,
+        right,
+        Math.Max(left.WordsPerElement, right.WordsPerElement) + 1)
+{
+    protected override void DispatchKernel(
+        GpuWorkspace workspace,
+        GpuBigFloatArray leftResult,
+        GpuBigFloatArray rightResult,
+        GpuBigFloatArray destination,
+        uint gridDimX)
+    {
+        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub>(
+            leftResult, rightResult, destination);
+        ctx.OpSign = 0u;
+        GpuBigIntVectorKernels.LaunchVectorFloatZipAddKernelPtr(
+            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
+    }
+}
+
+internal sealed class FloatVectorSubVectorExpression(
+    [TakesOwnership] IGpuBigFloatVectorExpression left,
+    [TakesOwnership] IGpuBigFloatVectorExpression right)
+    : FloatVectorBinaryVectorExpressionBase(
+        left,
+        right,
+        Math.Max(left.WordsPerElement, right.WordsPerElement) + 1)
+{
+    protected override void DispatchKernel(
+        GpuWorkspace workspace,
+        GpuBigFloatArray leftResult,
+        GpuBigFloatArray rightResult,
+        GpuBigFloatArray destination,
+        uint gridDimX)
+    {
+        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub>(
+            leftResult, rightResult, destination);
+        ctx.OpSign = 1u;
+        GpuBigIntVectorKernels.LaunchVectorFloatZipSubKernelPtr(
+            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
+    }
+}
+
+internal sealed class FloatVectorMulVectorExpression(
+    [TakesOwnership] IGpuBigFloatVectorExpression left,
+    [TakesOwnership] IGpuBigFloatVectorExpression right)
+    : FloatVectorBinaryVectorExpressionBase(
+        left,
+        right,
+        left.WordsPerElement + right.WordsPerElement)
+{
+    protected override void DispatchKernel(
+        GpuWorkspace workspace,
+        GpuBigFloatArray leftResult,
+        GpuBigFloatArray rightResult,
+        GpuBigFloatArray destination,
+        uint gridDimX)
+    {
+        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorFloatMul>(
+            leftResult, rightResult, destination);
+        GpuBigIntVectorKernels.LaunchVectorFloatZipMulKernelPtr(
+            ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
+    }
+}
+
+internal sealed class FloatVectorDivVectorExpression(
+    [TakesOwnership] IGpuBigFloatVectorExpression left,
+    [TakesOwnership] IGpuBigFloatVectorExpression right)
+    : FloatVectorBinaryVectorExpressionBase(
+        left,
+        right,
+        Math.Max(left.WordsPerElement, right.WordsPerElement) + 1)
+{
+    protected override void DispatchKernel(
+        GpuWorkspace workspace,
+        GpuBigFloatArray leftResult,
+        GpuBigFloatArray rightResult,
+        GpuBigFloatArray destination,
+        uint gridDimX)
+    {
+        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorFloatDiv>(
+            leftResult, rightResult, destination);
+        ctx.PreShiftBits = DefaultDivShiftBits;
+        GpuBigIntVectorKernels.LaunchVectorFloatZipDivKernelPtr(
+            ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
 }
 
