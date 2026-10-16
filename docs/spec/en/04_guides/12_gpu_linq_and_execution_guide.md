@@ -66,13 +66,13 @@ GpuBigInt result = parallelSumExpr.Evaluate();
 ```
 
 ### 3.3 Vectorized Batch Operations (`AsVectorizedEnumerable`)
-* **Capabilities**: Enforces coalesced memory streaming for high-throughput batch operations, outputting a new device array.
-* **Constraints**: Arbitrary branching (`Where`) is prohibited because skipping elements breaks memory coalescing. Currently supports dedicated batch operations like `SelectMultiply(scalar)` and full-vector `Sum()`.
+* **Capabilities**: Enforces coalesced memory streaming for high-throughput batch operations on both `GpuBigIntArray` (`IGpuBigIntVectorExpression`) and `GpuBigFloatArray` (`IGpuBigFloatVectorExpression`), outputting a new device array. Supports scalar batch projections (`SelectAdd`, `SelectSubtract`, `SelectMultiply`, `SelectDivide`, and `SelectModulo` on `GpuBigIntArray`), element-wise zip operations (`ZipAdd`, `ZipSubtract`, `ZipMultiply`, `ZipDivide`, and `ZipModulo` on `GpuBigIntArray`), slicing (`Skip`, `Take`), stream compaction (`Where` on `GpuBigIntArray`), and full-vector reductions (`Sum`, `Max`, `Min`, `Average`, `Count`).
 
 ```csharp
-// Supported: Multiplies each element by a scalar value in parallel (SIMD)
+// Supported: Multiplies or divides each element by a scalar value in parallel (SIMD)
 IGpuBigIntVectorExpression vecExpr = array.AsVectorizedEnumerable()
-                                          .SelectMultiply(scalar);
+                                          .SelectMultiply(scalar)
+                                          .SelectModulo(modulus);
 
 // Evaluates to a new GpuBigIntArray
 GpuBigIntArray resultArray = vecExpr.Evaluate(workspace);
@@ -80,14 +80,11 @@ GpuBigIntArray resultArray = vecExpr.Evaluate(workspace);
 // Supported: Performs a high-throughput multi-pass tree sum over the vector expression
 GpuBigIntExpr vectorSumExpr = vecExpr.Sum();
 GpuBigInt total = vectorSumExpr.Evaluate();
-
-// Prohibited / Unsupported:
-// array.AsVectorizedEnumerable().Where(x => x > 0); // Compilation Error: Filtering breaks coalesced streaming
 ```
 
 ### 3.4 Vectorized Boolean Evaluation and Logical Aggregation
 * **Capabilities**: Vectorized comparison methods (`IsGreaterThan`, `IsEqualTo`, etc.) generate `IGpuBoolVectorExpression` without branching. These boolean vectors can then be combined using logical operators (`.And()`, `.Or()`, `.Not()`) and reduced via `.Any()` or `.All()` into a single `GpuBoolExpr`.
-* **Constraints**: Because `Where` (filtering) is fundamentally incompatible with coalesced SIMT streaming (as it dynamically changes vector sizes and lane mappings), developers should instead use these boolean expressions to generate bitmasks, logical aggregations, or use them as predicates for `StackLinq`.
+* **Constraints**: While `Where` on `IGpuBigIntVectorExpression` performs multi-pass stream compaction using `IGpuBoolVectorExpression` masks, arbitrary C# lambda predicates are reserved for `AsStackEnumerable()`.
 
 ```csharp
 // Evaluate comparisons across a vector to produce a boolean vector mask
@@ -139,13 +136,11 @@ When writing GPU LINQ queries in G#, follow this decision workflow:
 
 ---
 
-## 6. Known Missing Features (Kernel Implementations)
+## 6. Vectorized Division, Modulo, and Warp-Cooperative Arithmetic
 
-The design philosophy of G# GPU LINQ guarantees that "Anything `AsStackEnumerable` can do, `AsVectorizedEnumerable` or `AsParallel` can do, unless physically constrained by hardware limits (like `Where` breaking memory coalescing)."
+The design philosophy of G# GPU LINQ guarantees that "Anything `AsStackEnumerable` can do, `AsVectorizedEnumerable` or `AsParallel` can do, unless physically constrained by hardware limits."
 
-However, due to the extreme algorithmic complexity of Big Integer mathematics on SIMT architectures, the following operations are **currently unimplemented** and awaiting underlying kernel mega-features.
-
-### Vectorized Division and Modulo
-Operations like `SelectDivide`, `SelectModulo`, `ZipDivide`, and `ZipModulo` for `AsVectorizedEnumerable()` (as well as their counterparts in `AsStackEnumerable`) are currently deferred. 
-- **Reason**: G#'s `GpuBigInt` division relies on *Newton-Raphson + NTT (Number Theoretic Transform)*. This requires highly synchronized, cooperative MegaKernels utilizing the entire Thread Block's Shared Memory. Executing this massive algorithm in a vectorized `Zip` or `Select` (where each thread/warp independently runs a division) requires either a new "Batched NTT" kernel or "Warp-Cooperative Reduction" kernels to avoid block divergence and resource starvation.
-- **Tracked By**: [Issue #293 (Scalable NTT Multiplication)](https://github.com/kassyi/Henicos/issues/293) and [Issue #294 (Cooperative Warp-Level Montgomery Reduction)](https://github.com/kassyi/Henicos/issues/294). Once these epics are finalized, the LINQ API surface will be updated to achieve full parity.
+### Vectorized Division and Modulo (`SelectDivide`, `SelectModulo`, `ZipDivide`, `ZipModulo`)
+Operations `SelectDivide`, `SelectModulo`, `ZipDivide`, and `ZipModulo` are supported across `AsVectorizedEnumerable()`, `AsStackEnumerable()`, and `AsStackEnumerable().AsParallel()`:
+- **Warp-Cooperative Division Kernel**: In `AsVectorizedEnumerable()`, each vector element is assigned to a dedicated warp (`blockDimX = 32`), executing binary long division with warp-level parallel prefix borrow/carry propagation (`WarpScanGp`) and warp-wide comparison ballots (`Warp.AnySync`) without shared memory contention.
+- **Warp-Cooperative Montgomery Reduction (`CooperativeMath`)**: For modular multiplication and exponentiation over odd moduli, `CooperativeMath.MontgomeryReduceWarpSync` and `CooperativeMath.MontgomeryMultiplyWarpSync` perform Coarsely Integrated Operand Scanning (CIOS) entirely in warp registers using `Warp.ShuffleSync`, `Warp.ShuffleDownSync`, `Gpu.MultiplyWide`, and `WarpScanGp`.
