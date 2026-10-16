@@ -4,6 +4,11 @@ namespace Kassyi.GSharp.Compiler.Tasks;
 
 public static class ArtifactHelper
 {
+    /// <summary>
+    /// Diagnostic warning code emitted when an artifact is signed using the default development signing key.
+    /// </summary>
+    public const string DefaultSigningKeyWarningCode = "GS0002";
+
     public static bool ProcessArtifact(string outputFilePath, TaskLoggingHelper log)
     {
         var fileData = File.ReadAllBytes(outputFilePath);
@@ -22,6 +27,16 @@ public static class ArtifactHelper
         var envKey = Environment.GetEnvironmentVariable("GSHARP_SIGNING_KEY");
         if (string.IsNullOrWhiteSpace(envKey))
         {
+            log.LogWarning(
+                subcategory: null,
+                warningCode: DefaultSigningKeyWarningCode,
+                helpKeyword: null,
+                file: null,
+                lineNumber: 0,
+                columnNumber: 0,
+                endLineNumber: 0,
+                endColumnNumber: 0,
+                message: "FATBIN artifact signed using the default G# development key. Do NOT use this binary in production environments; specify 'GSHARP_SIGNING_KEY' to sign with a private key.");
             return Ed25519.DefaultDevKeySeed;
         }
 
@@ -45,11 +60,29 @@ public static class ArtifactHelper
                 return base64Key;
             }
 
-            log.LogWarning("GSHARP_SIGNING_KEY environment variable is invalid (must be 32 bytes hex or base64). Falling back to default development signing key.");
+            log.LogWarning(
+                subcategory: null,
+                warningCode: DefaultSigningKeyWarningCode,
+                helpKeyword: null,
+                file: null,
+                lineNumber: 0,
+                columnNumber: 0,
+                endLineNumber: 0,
+                endColumnNumber: 0,
+                message: "GSHARP_SIGNING_KEY environment variable is invalid (must be 32 bytes hex or base64). Falling back to default development signing key.");
         }
         catch (Exception ex)
         {
-            log.LogWarning($"Failed to parse GSHARP_SIGNING_KEY: {ex.Message}. Falling back to default development signing key.");
+            log.LogWarning(
+                subcategory: null,
+                warningCode: DefaultSigningKeyWarningCode,
+                helpKeyword: null,
+                file: null,
+                lineNumber: 0,
+                columnNumber: 0,
+                endLineNumber: 0,
+                endColumnNumber: 0,
+                message: $"Failed to parse GSHARP_SIGNING_KEY: {ex.Message}. Falling back to default development signing key.");
         }
 
         return Ed25519.DefaultDevKeySeed;
