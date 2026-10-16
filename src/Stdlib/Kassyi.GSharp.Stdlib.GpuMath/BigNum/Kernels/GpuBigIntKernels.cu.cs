@@ -70,11 +70,38 @@ public static partial class GpuBigIntKernels
 
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void DeviceAddSubParallel(
-        [GpuReadOnly] uint[] a,
-        [GpuReadOnly] uint[] b,
+    public static uint GetShiftedRightWord(
+        [GpuReadOnly] uint[] data,
+        int numWords,
+        int destIdx,
+        int wordShift,
+        int bitShift)
+    {
+        var s0 = destIdx + wordShift;
+        var s1 = s0 + 1;
+
+        var w0 = (s0 >= 0 && s0 < numWords) ? data[s0] : 0u;
+        var w1 = (s1 >= 0 && s1 < numWords) ? data[s1] : 0u;
+
+        if (bitShift == 0)
+        {
+            return w0;
+        }
+
+        return (w0 >> bitShift) | (w1 << (32 - bitShift));
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceAddSubAlignedParallel(
+        [GpuReadOnly] uint[] larger,
+        int largerWords,
+        [GpuReadOnly] uint[] smaller,
+        int smallerWords,
         uint[] result,
         int numWords,
+        int wordShift,
+        int bitShift,
         int sign = 1,
         bool syncThreads = true)
     {
@@ -101,8 +128,10 @@ public static partial class GpuBigIntKernels
             var idx = offset + tid;
             var valid = idx < numWords;
 
-            var valA = valid ? a[idx] : 0u;
-            var valB = valid ? b[idx] : 0u;
+            var valA = (valid && idx < largerWords) ? larger[idx] : 0u;
+            var valB = valid
+                ? GetShiftedRightWord(smaller, smallerWords, idx, wordShift, bitShift)
+                : 0u;
 
             if (sign == -1)
             {
@@ -166,6 +195,19 @@ public static partial class GpuBigIntKernels
         {
             Gpu.SyncThreads();
         }
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceAddSubParallel(
+        [GpuReadOnly] uint[] a,
+        [GpuReadOnly] uint[] b,
+        uint[] result,
+        int numWords,
+        int sign = 1,
+        bool syncThreads = true)
+    {
+        DeviceAddSubAlignedParallel(a, numWords, b, numWords, result, numWords, 0, 0, sign, syncThreads);
     }
 
     [GpuKernel]
