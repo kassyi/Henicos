@@ -280,4 +280,106 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
 
         Assert.Equal(expectedSum, ToBigInt(result));
     }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void ParallelStackEnumerable_SelectDivideAndModulo_CalculatesCorrectSum()
+    {
+        const int numElements = 8;
+        var array = new GpuBigInt[numElements];
+        var divisor = Create(7);
+        BigInteger expectedDivSum = 0;
+        BigInteger expectedModSum = 0;
+
+        for (int i = 0; i < numElements; i++)
+        {
+            BigInteger val = (i % 2 == 0 ? 1 : -1) * ((i + 1) * 23);
+            array[i] = Create(val);
+            expectedDivSum += val / 7;
+            expectedModSum += val % 7;
+        }
+
+        var divSumExpr = array.AsStackEnumerable()
+            .AsParallel()
+            .SelectDivide(divisor)
+            .Sum();
+        using var divResult = divSumExpr.Evaluate(_context);
+        Assert.Equal(expectedDivSum, ToBigInt(divResult));
+
+        var modSumExpr = array.AsStackEnumerable()
+            .AsParallel()
+            .SelectModulo(divisor)
+            .Sum();
+        using var modResult = modSumExpr.Evaluate(_context);
+        Assert.Equal(expectedModSum, ToBigInt(modResult));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void StackEnumerable_SequentialSelectDivideAndModulo_CalculatesCorrectSum()
+    {
+        const int numElements = 8;
+        var array = new GpuBigInt[numElements];
+        var divisor = Create(5);
+        BigInteger expectedDivSum = 0;
+        BigInteger expectedModSum = 0;
+
+        for (int i = 0; i < numElements; i++)
+        {
+            BigInteger val = (i + 1) * 19;
+            array[i] = Create(val);
+            expectedDivSum += val / 5;
+            expectedModSum += val % 5;
+        }
+
+        var divSumExpr = array.AsStackEnumerable()
+            .SelectDivide(divisor)
+            .Sum();
+        using var divResult = divSumExpr.Evaluate(_context);
+        Assert.Equal(expectedDivSum, ToBigInt(divResult));
+
+        var modSumExpr = array.AsStackEnumerable()
+            .SelectModulo(divisor)
+            .Sum();
+        using var modResult = modSumExpr.Evaluate(_context);
+        Assert.Equal(expectedModSum, ToBigInt(modResult));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void StackEnumerable_ZipDivideAndModulo_CalculatesCorrectSum()
+    {
+        const int numElements = 8;
+        var left = new GpuBigInt[numElements];
+        var right = new GpuBigInt[numElements];
+        BigInteger expectedDivSum = 0;
+        BigInteger expectedModSum = 0;
+
+        for (int i = 0; i < numElements; i++)
+        {
+            BigInteger a = (i + 2) * 31;
+            BigInteger b = (i + 1) * 4 + 1;
+            left[i] = Create(a);
+            right[i] = Create(b);
+            expectedDivSum += a / b;
+            expectedModSum += a % b;
+        }
+
+        var zipDivSumExpr = left.AsStackEnumerable()
+            .AsParallel()
+            .ZipDivide(right.AsStackEnumerable().AsParallel())
+            .Sum();
+        using var divResult = zipDivSumExpr.Evaluate(_context);
+        Assert.Equal(expectedDivSum, ToBigInt(divResult));
+
+        var zipModSumExpr = left.AsStackEnumerable()
+            .AsParallel()
+            .ZipModulo(right.AsStackEnumerable().AsParallel())
+            .Sum();
+        using var modResult = zipModSumExpr.Evaluate(_context);
+        Assert.Equal(expectedModSum, ToBigInt(modResult));
+    }
 }
