@@ -77,19 +77,16 @@ public class GpuBigFloatTests
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
 
+        using var valSig = new GpuBigUInt(context, new uint[] { 42, 0, 0, 0 });
         using var zeroSig = new GpuBigUInt(context, new uint[] { 0, 0, 0, 0 });
+        var floatVal = new GpuBigFloat(valSig, 0, isNegative: false);
         var floatZero = new GpuBigFloat(zeroSig, 0, isNegative: false);
 
         Assert.True(floatZero.UFloat.Significand.IsZero());
 
-        // When production division is implemented, this should assert that floatA / floatZero throws DivideByZeroException.
-        // For now, we assert the guard check logic.
         Assert.Throws<DivideByZeroException>(() =>
         {
-            if (floatZero.UFloat.Significand.IsZero())
-            {
-                throw new DivideByZeroException("Division by zero significand in GpuBigFloat.");
-            }
+            using GpuBigFloat _ = floatVal / floatZero;
         });
     }
 }
