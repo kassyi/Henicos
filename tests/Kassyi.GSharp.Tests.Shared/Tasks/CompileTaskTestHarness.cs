@@ -147,6 +147,8 @@ internal sealed class MockProcessRunner : IProcessRunner
     }
 
     public List<ProcessStartInfo> Invocations { get; } = new();
+    public List<CancellationToken> ObservedTokens { get; } = new();
+    public Action<ProcessStartInfo, CancellationToken>? OnRun { get; set; }
     public int NextExitCode { get; set; } = 0;
     public string NextStandardOutput { get; set; } = "";
     public string NextStandardError { get; set; } = "";
@@ -161,6 +163,9 @@ internal sealed class MockProcessRunner : IProcessRunner
     public ProcessResult Run(ProcessStartInfo startInfo, CancellationToken cancellationToken = default)
     {
         Invocations.Add(startInfo);
+        ObservedTokens.Add(cancellationToken);
+        OnRun?.Invoke(startInfo, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         if (startInfo.FileName.EndsWith("vswhere.exe", StringComparison.OrdinalIgnoreCase))
         {
             if (OverrideVswhere) return new ProcessResult(1, "", "Not found");
