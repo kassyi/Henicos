@@ -9,6 +9,7 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// Validates device-side stream gating (<see cref="CudaStreamGate"/>) and inter-stream event dependencies
 /// (<see cref="CudaStreamExtensions.WaitFor"/>).
 /// </summary>
+[Collection(TestCollections.DeviceExclusive)]
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class CudaStreamGateTests
 {
