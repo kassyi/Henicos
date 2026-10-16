@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Aot;
 using Kassyi.GSharp.Runtime.Interop;
@@ -6,8 +7,12 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
+[Collection(TestCollections.DeviceExclusive)]
 public class GpuBufferTests : TranspilerTestBase
 {
+    private const int WordsPerChunk = PinnedStagingBuffer.Size / sizeof(uint);
+    private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(10);
+
     public GpuBufferTests()
     {
     }
@@ -43,6 +48,121 @@ public class GpuBufferTests : TranspilerTestBase
         buffer.CopyToHost(destData);
 
         Assert.Equal(sourceData, destData);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task CopyToDevice_IsOrderedBeforeSubsequentNonBlockingStreamWork()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int count = 64 * 1024;
+        var initial = new uint[count];
+        var updated = new uint[count];
+        var readBack = new uint[count];
+        Array.Fill(initial, 0x11111111u);
+
+        using var buffer = CudaTestEnvironment.InContext(static () => new GpuBuffer<uint>(count));
+        var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
+        try
+        {
+            for (var iteration = 0; iteration < 32; iteration++)
+            {
+                var expected = 0xABCD0000u | (uint)iteration;
+                Array.Fill(updated, expected);
+                Array.Clear(readBack);
+
+                buffer.CopyToDevice(initial);
+                buffer.CopyToDevice(updated);
+
+                await CudaHostTransfer.CopyToHostAsync(buffer.DevicePointer, readBack.AsMemory(), stream.Handle)
+                    .AsTask().WaitAsync(CompletionTimeout);
+
+                for (var i = 0; i < readBack.Length; i++)
+                {
+                    if (readBack[i] != expected)
+                    {
+                        Assert.Fail(
+                            $"Iteration {iteration}, word {i} was 0x{readBack[i]:X8}, expected 0x{expected:X8}.");
+                    }
+                }
+            }
+        }
+        finally
+        {
+            CudaTestEnvironment.InContext(stream.Dispose);
+        }
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(1)]
+    [InlineData(WordsPerChunk - 1)]
+    [InlineData(WordsPerChunk)]
+    [InlineData(WordsPerChunk + 1)]
+    [InlineData((2 * WordsPerChunk) + 7)]
+    public async Task CopyToDevice_AcrossStagingChunkBoundaries_RoundTripsOnNonBlockingStream(int count)
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        var source = new uint[count];
+        for (var i = 0; i < source.Length; i++)
+        {
+            source[i] = Pattern(i);
+        }
+
+        using var buffer = CudaTestEnvironment.InContext(() => new GpuBuffer<uint>(count));
+        var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
+        try
+        {
+            buffer.CopyToDevice(source);
+
+            var destination = new uint[count];
+            await CudaHostTransfer.CopyToHostAsync(buffer.DevicePointer, destination.AsMemory(), stream.Handle)
+                .AsTask().WaitAsync(CompletionTimeout);
+
+            for (var i = 0; i < destination.Length; i++)
+            {
+                if (destination[i] != source[i])
+                {
+                    Assert.Fail($"Word {i} was 0x{destination[i]:X8}, expected 0x{source[i]:X8}.");
+                }
+            }
+        }
+        finally
+        {
+            CudaTestEnvironment.InContext(stream.Dispose);
+        }
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void CopyToDevice_SequentialUploads_ReuseStagingBuffers()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        var source = new uint[4096];
+        for (var i = 0; i < source.Length; i++)
+        {
+            source[i] = Pattern(i);
+        }
+
+        using var buffer = CudaTestEnvironment.InContext(static () => new GpuBuffer<uint>(4096));
+        buffer.CopyToDevice(source);
+        var allocatedBefore = PinnedStagingPool.AllocatedCount;
+
+        for (var i = 0; i < 64; i++)
+        {
+            buffer.CopyToDevice(source);
+        }
+
+        Assert.Equal(allocatedBefore, PinnedStagingPool.AllocatedCount);
     }
 
     [SkippableFact]
@@ -91,5 +211,7 @@ public class GpuBufferTests : TranspilerTestBase
         var exception = Record.Exception(() => buffer.Dispose());
         Assert.Null(exception);
     }
+
+    private static uint Pattern(int index) => unchecked(((uint)index * 2654435761u) + 17u);
 }
 
