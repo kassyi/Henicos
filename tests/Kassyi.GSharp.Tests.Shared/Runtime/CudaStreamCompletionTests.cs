@@ -11,13 +11,9 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A host-function gate is enqueued on the stream to hold it in a deterministic "not completed" state.
+/// A device-side gate (<see cref="CudaStreamGate"/> via <see cref="StreamGate"/>) is enqueued on the stream to hold it
+/// in a deterministic "not completed" state without stalling the CUDA driver's host-function callback thread.
 /// Busy-loop kernels are avoided because the device compiler may fold the loop away.
-/// </para>
-/// <para>
-/// The class runs in <see cref="TestCollections.DeviceExclusive"/>: while a gate is closed, the driver delays every host
-/// function of the context, and tests running in parallel would block inside device-wide synchronizing calls while
-/// holding driver locks that <see cref="CudaStreamCompletion.WaitAsync"/> also needs.
 /// </para>
 /// <para>
 /// <see cref="GpuKernelLoader.CudaContextScope"/> binds the context to the calling OS thread, so it is only held in
@@ -25,7 +21,6 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 /// </para>
 /// </remarks>
 [TestTarget(ExecutionTarget.GpuExecution)]
-[Collection(TestCollections.DeviceExclusive)]
 public class CudaStreamCompletionTests
 {
     private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(10);
