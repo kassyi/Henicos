@@ -38,7 +38,7 @@ public abstract class EnumTraitDiscoverer<TEnum>(string primaryKey, bool emitCat
             _ => null
         };
 
-        if (string.IsNullOrEmpty(valueStr))
+        if (valueStr is null || valueStr.Length == 0)
         {
             yield break;
         }
