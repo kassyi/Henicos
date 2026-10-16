@@ -35,6 +35,8 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_unsupported(""Gpu.InlinePtx is not supported by the StandardCppDialect dialect"");
+_state = -1;
+return;
 ;
 _state=-1;
 return;
@@ -45,10 +47,13 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_ContractsAndPtxKernels_InlinePtxKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<unsigned int> data)
 {
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot _gsharp_launch_error;
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
 int32_t bx = _b_idx % gridDimX;
 int32_t by = (_b_idx / gridDimX) % gridDimY;
 int32_t bz = _b_idx / (gridDimX * gridDimY);
@@ -59,13 +64,15 @@ ctx._state = 0;
 ctx._all_contexts = _gsharp_contexts.data();
 }
 std::atomic<bool> anyActive{true};
-while (anyActive)
+while (anyActive && !_gsharp_launch_error.HasError())
 {
 anyActive = false;
 int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
 for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &_gsharp_launch_error;
 int32_t tx = _t_idx % blockDimX;
 int32_t ty = (_t_idx / blockDimX) % blockDimY;
 int32_t tz = _t_idx / (blockDimX * blockDimY);
@@ -78,6 +85,9 @@ ContractsAndPtxKernels_InlinePtxKernel(data, &_gsharp_contexts[_ctxtid]);
 }
 }
 }
+}
+if (_gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
 }
 }
 ";
@@ -93,7 +103,7 @@ public static unsafe void __gsharp_statemachine_ContractsAndPtxKernels_InlinePtx
     {
         case 0:
         {
-            Gpu.InlinePtx("data[0] = 999;");
+            throw new global::System.NotSupportedException("Gpu.InlinePtx is not supported by the StandardCppDialect dialect");
             _ctx._state = -1;
             return;
         }
@@ -189,6 +199,192 @@ var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<Inli
 fixed (global::System.UInt32* p_data = data)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
+}
+}
+#pragma warning restore CS8500
+public const string InlinePtxFollowedByWriteKernel_Source = @"struct __gsharp_context_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel {
+int _state = 0;
+__gsharp_context_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel* _all_contexts = nullptr;
+uint64_t _warpExchange = 0;
+bool _yieldedForGridSync = false;
+};
+extern ""C"" __declspec(dllexport) void ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel(GSharpArray<unsigned int> data, __gsharp_context_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel* _ctx){
+#define _state _ctx->_state
+#define _yieldedForGridSync _ctx->_yieldedForGridSync
+switch(_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_unsupported(""Gpu.InlinePtx is not supported by the StandardCppDialect dialect"");
+_state = -1;
+return;
+;
+data[0]=777;
+_state=-1;
+return;
+}
+}
+#undef _state
+#undef _yieldedForGridSync
+}
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<unsigned int> data)
+{
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot _gsharp_launch_error;
+int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+#pragma omp parallel for schedule(dynamic)
+for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+if (_gsharp_launch_error.HasError()) continue;
+int32_t bx = _b_idx % gridDimX;
+int32_t by = (_b_idx / gridDimX) % gridDimY;
+int32_t bz = _b_idx / (gridDimX * gridDimY);
+__gsharp_reset_smem();
+std::vector<__gsharp_context_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+for (auto& ctx : _gsharp_contexts) {
+ctx._state = 0;
+ctx._all_contexts = _gsharp_contexts.data();
+}
+std::atomic<bool> anyActive{true};
+while (anyActive && !_gsharp_launch_error.HasError())
+{
+anyActive = false;
+int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+#pragma omp parallel for schedule(static)
+for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
+{
+if (_gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &_gsharp_launch_error;
+int32_t tx = _t_idx % blockDimX;
+int32_t ty = (_t_idx / blockDimX) % blockDimY;
+int32_t tz = _t_idx / (blockDimX * blockDimY);
+uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (_gsharp_contexts[_ctxtid]._state != -1)
+{
+anyActive = true;
+__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
+ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel(data, &_gsharp_contexts[_ctxtid]);
+}
+}
+}
+}
+if (_gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
+}
+}
+";
+public static readonly string InlinePtxFollowedByWriteKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +InlinePtxFollowedByWriteKernel_Source;
+public class __gsharp_context_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel {
+public int _state;
+public uint _warpExchange;
+public bool _yieldedForGridSync;
+}
+public static unsafe void __gsharp_statemachine_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel(uint[] data, __gsharp_context_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel _ctx) {
+{
+    switch (_ctx._state)
+    {
+        case 0:
+        {
+            throw new global::System.NotSupportedException("Gpu.InlinePtx is not supported by the StandardCppDialect dialect");
+            data[0] = 777;
+            _ctx._state = -1;
+            return;
+        }
+    }
+}
+}
+
+[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
+private unsafe delegate void InlinePtxFollowedByWriteKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy data);
+#pragma warning disable CS8500
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchInlinePtxFollowedByWriteKernel(global::System.UInt32[] data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (data.Length == 0){
+return;
+}
+var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
+var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
+var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
+if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
+{
+int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var _gsharp_contexts = new __gsharp_context_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
+for (int i = 0; i < _gsharp_contexts.Length; i++) {
+  _gsharp_contexts[i] = new __gsharp_context_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel();
+}
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+bool anyGridActive = true;
+while (anyGridActive)
+{
+anyGridActive = false;
+for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+{
+int bx = _b_idx % (int)gridDimX;
+int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
+int bz = _b_idx / (int)(gridDimX * gridDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
+try
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
+global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+bool anyBlockActive = true;
+while (anyBlockActive)
+{
+anyBlockActive = false;
+bool gridSyncRequested = false;
+for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
+{
+int tx = _t_idx % (int)blockDimX;
+int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
+int tz = _t_idx / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
+if (_gsharp_contexts[linear_tid]._state != -1)
+{
+anyGridActive = true;
+anyBlockActive = true;
+_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
+__gsharp_statemachine_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel(data, _gsharp_contexts[linear_tid]);
+if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+{
+gridSyncRequested = true;
+}
+}
+}
+if (gridSyncRequested)
+{
+break;
+}
+}
+}
+finally
+{
+global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = false;
+}
+}
+}
+return;
+}
+var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<InlinePtxFollowedByWriteKernel_Delegate>("__gsharp_launch_ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel", dllPath);
+fixed (global::System.UInt32* p_data = data)
+{
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_data, Length = data.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
 #pragma warning restore CS8500

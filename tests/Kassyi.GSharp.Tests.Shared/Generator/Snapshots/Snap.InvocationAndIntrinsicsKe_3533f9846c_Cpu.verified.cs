@@ -73,10 +73,13 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InvocationAndIntrinsicsKernels_InterlockedKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> intBuf, GSharpArray<unsigned int> uintBuf, GSharpArray<long long> longBuf, GSharpArray<unsigned long long> ulongBuf)
 {
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot _gsharp_launch_error;
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
 int32_t bx = _b_idx % gridDimX;
 int32_t by = (_b_idx / gridDimX) % gridDimY;
 int32_t bz = _b_idx / (gridDimX * gridDimY);
@@ -87,13 +90,15 @@ ctx._state = 0;
 ctx._all_contexts = _gsharp_contexts.data();
 }
 std::atomic<bool> anyActive{true};
-while (anyActive)
+while (anyActive && !_gsharp_launch_error.HasError())
 {
 anyActive = false;
 int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
 for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &_gsharp_launch_error;
 int32_t tx = _t_idx % blockDimX;
 int32_t ty = (_t_idx / blockDimX) % blockDimY;
 int32_t tz = _t_idx / (blockDimX * blockDimY);
@@ -106,6 +111,9 @@ InvocationAndIntrinsicsKernels_InterlockedKernel(intBuf, uintBuf, longBuf, ulong
 }
 }
 }
+}
+if (_gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
 }
 }
 ";
@@ -241,6 +249,7 @@ fixed (global::System.Int64* p_longBuf = longBuf)
 fixed (global::System.UInt64* p_ulongBuf = ulongBuf)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_intBuf, Length = intBuf.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_uintBuf, Length = uintBuf.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_longBuf, Length = longBuf.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_ulongBuf, Length = ulongBuf.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
 #pragma warning restore CS8500
@@ -282,10 +291,13 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> array, GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct> structArray)
 {
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot _gsharp_launch_error;
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
 int32_t bx = _b_idx % gridDimX;
 int32_t by = (_b_idx / gridDimX) % gridDimY;
 int32_t bz = _b_idx / (gridDimX * gridDimY);
@@ -296,13 +308,15 @@ ctx._state = 0;
 ctx._all_contexts = _gsharp_contexts.data();
 }
 std::atomic<bool> anyActive{true};
-while (anyActive)
+while (anyActive && !_gsharp_launch_error.HasError())
 {
 anyActive = false;
 int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
 for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &_gsharp_launch_error;
 int32_t tx = _t_idx % blockDimX;
 int32_t ty = (_t_idx / blockDimX) % blockDimY;
 int32_t tz = _t_idx / (blockDimX * blockDimY);
@@ -315,6 +329,9 @@ InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(array, structArray, &_
 }
 }
 }
+}
+if (_gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
 }
 }
 ";
@@ -433,6 +450,7 @@ fixed (global::System.Int32* p_array = array)
 fixed (global::Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct* p_structArray = structArray)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_array, Length = array.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_structArray, Length = structArray.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
 #pragma warning restore CS8500
@@ -480,10 +498,13 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InvocationAndIntrinsicsKernels_MathKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<double> doubleInputs, GSharpArray<double> doubleOutputs, GSharpArray<float> floatInputs, GSharpArray<float> floatOutputs)
 {
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot _gsharp_launch_error;
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
 int32_t bx = _b_idx % gridDimX;
 int32_t by = (_b_idx / gridDimX) % gridDimY;
 int32_t bz = _b_idx / (gridDimX * gridDimY);
@@ -494,13 +515,15 @@ ctx._state = 0;
 ctx._all_contexts = _gsharp_contexts.data();
 }
 std::atomic<bool> anyActive{true};
-while (anyActive)
+while (anyActive && !_gsharp_launch_error.HasError())
 {
 anyActive = false;
 int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
 for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &_gsharp_launch_error;
 int32_t tx = _t_idx % blockDimX;
 int32_t ty = (_t_idx / blockDimX) % blockDimY;
 int32_t tz = _t_idx / (blockDimX * blockDimY);
@@ -513,6 +536,9 @@ InvocationAndIntrinsicsKernels_MathKernel(doubleInputs, doubleOutputs, floatInpu
 }
 }
 }
+}
+if (_gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
 }
 }
 ";
@@ -649,6 +675,7 @@ fixed (global::System.Single* p_floatInputs = floatInputs)
 fixed (global::System.Single* p_floatOutputs = floatOutputs)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_doubleInputs, Length = doubleInputs.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_doubleOutputs, Length = doubleOutputs.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_floatInputs, Length = floatInputs.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_floatOutputs, Length = floatOutputs.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
 #pragma warning restore CS8500
@@ -690,10 +717,13 @@ return;
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<float> floatSpecialInputs, GSharpArray<float> floatSpecialResults, GSharpArray<double> doubleSpecialInputs, GSharpArray<double> doubleSpecialResults)
 {
+__gsharp_host_last_error.Reset();
+GSharpErrorSlot _gsharp_launch_error;
 int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
 int32_t bx = _b_idx % gridDimX;
 int32_t by = (_b_idx / gridDimX) % gridDimY;
 int32_t bz = _b_idx / (gridDimX * gridDimY);
@@ -704,13 +734,15 @@ ctx._state = 0;
 ctx._all_contexts = _gsharp_contexts.data();
 }
 std::atomic<bool> anyActive{true};
-while (anyActive)
+while (anyActive && !_gsharp_launch_error.HasError())
 {
 anyActive = false;
 int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
 for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
 {
+if (_gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &_gsharp_launch_error;
 int32_t tx = _t_idx % blockDimX;
 int32_t ty = (_t_idx / blockDimX) % blockDimY;
 int32_t tz = _t_idx / (blockDimX * blockDimY);
@@ -723,6 +755,9 @@ InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(floatSpecialInputs, floatSpec
 }
 }
 }
+}
+if (_gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
 }
 }
 ";
@@ -853,6 +888,7 @@ fixed (global::System.Double* p_doubleSpecialInputs = doubleSpecialInputs)
 fixed (global::System.Double* p_doubleSpecialResults = doubleSpecialResults)
 {
 hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_floatSpecialInputs, Length = floatSpecialInputs.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_floatSpecialResults, Length = floatSpecialResults.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_doubleSpecialInputs, Length = doubleSpecialInputs.Length }, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_doubleSpecialResults, Length = doubleSpecialResults.Length });
+global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
 #pragma warning restore CS8500

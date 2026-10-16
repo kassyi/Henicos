@@ -6,13 +6,74 @@ public class ContractsAndPtxTests : TranspilerTestBase
 {
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
     public void TestInlinePtxKernel()
     {
-        SkipIfCpuDialect("Inline PTX is only executable on CUDA devices");
-
         uint[] data = [0];
-        ContractsAndPtxKernels.LaunchInlinePtxKernel(data);
-        Assert.Equal(999u, data[0]);
+        if (CurrentDialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly))
+        {
+            ContractsAndPtxKernels.LaunchInlinePtxKernel(data);
+            Assert.Equal(999u, data[0]);
+        }
+        else
+        {
+            var ex = Assert.Throws<NotSupportedException>(
+                () => ContractsAndPtxKernels.LaunchInlinePtxKernel(data));
+            Assert.Contains("Gpu.InlinePtx", ex.Message);
+        }
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void TestInlinePtxFollowedByWriteKernel_HaltsBeforeSubsequentStatements()
+    {
+        Skip.If(IsCudaDialect, "This test verifies CPU-dialect halts before subsequent statements after Gpu.InlinePtx.");
+
+        uint[] data = [42u];
+        var ex = Assert.Throws<NotSupportedException>(
+            () => ContractsAndPtxKernels.LaunchInlinePtxFollowedByWriteKernel(data));
+        Assert.Contains("Gpu.InlinePtx", ex.Message);
+        Assert.Equal(42u, data[0]);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void TestInlinePtxKernel_MultiThreadCpu_PropagatesSingleNotSupportedException()
+    {
+        Skip.If(IsCudaDialect, "This test verifies CPU-dialect OpenMP parallel error propagation.");
+
+        uint[] data = new uint[256];
+        var ex = Assert.Throws<NotSupportedException>(
+            () => ContractsAndPtxKernels.LaunchInlinePtxKernel(data, gridDimX: 4, blockDimX: 64));
+        Assert.Contains("Gpu.InlinePtx", ex.Message);
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void TestInlinePtxKernel_ManagedFallback_PropagatesNotSupportedException()
+    {
+        Skip.If(IsCudaDialect, "This test verifies CPU-dialect managed fallback error propagation.");
+
+        var previous = Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ForceManagedExecution;
+        Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ForceManagedExecution = true;
+        try
+        {
+            uint[] data = [0];
+            var ex = Assert.Throws<NotSupportedException>(
+                () => ContractsAndPtxKernels.LaunchInlinePtxKernel(data));
+            Assert.Contains("Gpu.InlinePtx", ex.Message);
+        }
+        finally
+        {
+            Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ForceManagedExecution = previous;
+        }
     }
 
     [Fact]
