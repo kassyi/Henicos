@@ -155,12 +155,12 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
         modeDesc="$maxCount iterations"; \
     else \
         isTimeMode=true; \
-        h=$(printf '%s' "$targetInput" | sed -nE 's/.*([0-9]+)h.*/\1/p'); \
-        m=$(printf '%s' "$targetInput" | sed -nE 's/.*([0-9]+)m.*/\1/p'); \
-        s=$(printf '%s' "$targetInput" | sed -nE 's/.*([0-9]+)s.*/\1/p'); \
-        [ -n "$h" ] && timeLimitSec=$((timeLimitSec + h * 3600)); \
-        [ -n "$m" ] && timeLimitSec=$((timeLimitSec + m * 60)); \
-        [ -n "$s" ] && timeLimitSec=$((timeLimitSec + s)); \
+        h=$(printf '%s' "$targetInput" | sed -nE 's/^([0-9]+)h.*/\1/p; s/.*[^0-9]([0-9]+)h.*/\1/p'); \
+        m=$(printf '%s' "$targetInput" | sed -nE 's/^([0-9]+)m.*/\1/p; s/.*[^0-9]([0-9]+)m.*/\1/p'); \
+        s=$(printf '%s' "$targetInput" | sed -nE 's/^([0-9]+)s.*/\1/p; s/.*[^0-9]([0-9]+)s.*/\1/p'); \
+        if [ -n "$h" ]; then timeLimitSec=$((timeLimitSec + h * 3600)); fi; \
+        if [ -n "$m" ]; then timeLimitSec=$((timeLimitSec + m * 60)); fi; \
+        if [ -n "$s" ]; then timeLimitSec=$((timeLimitSec + s)); fi; \
         if [ "$timeLimitSec" -le 0 ]; then \
             printf '\033[31mInvalid count/duration format: '\''%s'\''. Use numbers (e.g. 100) or duration (e.g. 5h30m, 1h, 45s).\033[0m\n' "$targetInput"; \
             exit 1; \
