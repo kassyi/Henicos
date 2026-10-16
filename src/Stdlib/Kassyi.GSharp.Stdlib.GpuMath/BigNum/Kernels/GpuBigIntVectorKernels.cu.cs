@@ -316,6 +316,261 @@ public static partial class GpuBigIntVectorKernels
         DeviceVectorMulVectorParallel(dA, dB, dResult, numWordsA, numWordsB, numWordsResult, false, true);
     }
 
+    [GpuKernel]
+    public static void VectorDivScalarKernel(uint[] dA, uint[] s, uint[] dResult, uint[] signA, uint scalarSign, uint[] signResult, int numWordsA, int numWordsS, int numWordsResult)
+    {
+        DeviceVectorDivModParallel(dA, s, dResult, signA, signA, signResult, numWordsA, numWordsS, numWordsResult, scalarSign, true, false);
+    }
+
+    [GpuKernel]
+    public static void VectorModScalarKernel(uint[] dA, uint[] s, uint[] dResult, uint[] signA, uint scalarSign, uint[] signResult, int numWordsA, int numWordsS, int numWordsResult)
+    {
+        DeviceVectorDivModParallel(dA, s, dResult, signA, signA, signResult, numWordsA, numWordsS, numWordsResult, scalarSign, true, true);
+    }
+
+    [GpuKernel]
+    public static void VectorZipDivKernel(uint[] dA, uint[] dB, uint[] dResult, uint[] signA, uint[] signB, uint[] signResult, int numWordsA, int numWordsB, int numWordsResult)
+    {
+        DeviceVectorDivModParallel(dA, dB, dResult, signA, signB, signResult, numWordsA, numWordsB, numWordsResult, 0u, false, false);
+    }
+
+    [GpuKernel]
+    public static void VectorZipModKernel(uint[] dA, uint[] dB, uint[] dResult, uint[] signA, uint[] signB, uint[] signResult, int numWordsA, int numWordsB, int numWordsResult)
+    {
+        DeviceVectorDivModParallel(dA, dB, dResult, signA, signB, signResult, numWordsA, numWordsB, numWordsResult, 0u, false, true);
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceVectorDivModParallel(
+        [GpuReadOnly] uint[] a,
+        [GpuReadOnly] uint[] b,
+        uint[] result,
+        [GpuReadOnly] uint[] signA,
+        [GpuReadOnly] uint[] signB,
+        uint[] signResult,
+        int numWordsA,
+        int numWordsB,
+        int numWordsResult,
+        uint scalarSign,
+        bool isScalar,
+        bool isModulo)
+    {
+        int tid = ThreadIndex.X;
+        int batchIdx = BlockIndex.X;
+        int laneId = tid & 31;
+
+        var sharedRem = new SharedMemory<uint>(128);
+        var sharedQuot = new SharedMemory<uint>(128);
+
+        if (tid >= 32)
+        {
+            return;
+        }
+
+        int offsetA = batchIdx * numWordsA;
+        int offsetB = isScalar ? 0 : batchIdx * numWordsB;
+        int offsetResult = batchIdx * numWordsResult;
+
+        int evalWords = numWordsA > numWordsB ? numWordsA : numWordsB;
+        if (evalWords > 128)
+        {
+            evalWords = 128;
+        }
+
+        for (int offset = 0; offset < evalWords; offset += 32)
+        {
+            int idx = offset + laneId;
+            if (idx < evalWords)
+            {
+                sharedRem[idx] = 0u;
+                sharedQuot[idx] = 0u;
+            }
+        }
+
+        for (int offset = 0; offset < numWordsResult; offset += 32)
+        {
+            int idx = offset + laneId;
+            if (idx < numWordsResult)
+            {
+                result[offsetResult + idx] = 0u;
+            }
+        }
+
+        uint bAny = 0u;
+        for (int offset = 0; offset < numWordsB; offset += 32)
+        {
+            int idx = offset + laneId;
+            uint bVal = idx < numWordsB ? b[offsetB + idx] : 0u;
+            bAny |= bVal;
+        }
+
+        for (uint delta = 16; delta > 0; delta >>= 1)
+        {
+            bAny |= Warp.ShuffleDownSync(0xFFFFFFFFu, bAny, delta);
+        }
+
+        bAny = Warp.ShuffleSync(0xFFFFFFFFu, bAny, 0);
+        if (bAny == 0u)
+        {
+            if (laneId == 0)
+            {
+                signResult[batchIdx] = 0u;
+            }
+
+            return;
+        }
+
+        int maxNonZeroWordA = -1;
+        for (int offset = 0; offset < numWordsA; offset += 32)
+        {
+            int idx = offset + laneId;
+            if (idx < numWordsA && a[offsetA + idx] != 0u)
+            {
+                maxNonZeroWordA = idx;
+            }
+        }
+
+        for (uint delta = 16; delta > 0; delta >>= 1)
+        {
+            int other = Warp.ShuffleDownSync(0xFFFFFFFFu, maxNonZeroWordA, delta);
+            if (other > maxNonZeroWordA)
+            {
+                maxNonZeroWordA = other;
+            }
+        }
+
+        maxNonZeroWordA = Warp.ShuffleSync(0xFFFFFFFFu, maxNonZeroWordA, 0);
+        if (maxNonZeroWordA < 0)
+        {
+            if (laneId == 0)
+            {
+                signResult[batchIdx] = 0u;
+            }
+
+            return;
+        }
+
+        for (int bit = (maxNonZeroWordA + 1) * 32 - 1; bit >= 0; bit--)
+        {
+            int aWordIdx = bit >> 5;
+            int aBitIdx = bit & 31;
+            uint aBit = (a[offsetA + aWordIdx] >> aBitIdx) & 1u;
+
+            uint chunkShiftIn = aBit;
+            for (int offset = 0; offset < evalWords; offset += 32)
+            {
+                int idx = offset + laneId;
+                bool valid = idx < evalWords;
+
+                uint rVal = valid ? sharedRem[idx] : 0u;
+                uint topBit = rVal >> 31;
+                uint prevTopBit = Warp.ShuffleUpSync(0xFFFFFFFFu, topBit, 1u);
+                if (laneId == 0)
+                {
+                    prevTopBit = chunkShiftIn;
+                }
+
+                if (valid)
+                {
+                    sharedRem[idx] = (rVal << 1) | prevTopBit;
+                }
+
+                int lastLaneInChunk = (offset + 32 <= evalWords) ? 31 : ((evalWords - 1) & 31);
+                chunkShiftIn = Warp.ShuffleSync(0xFFFFFFFFu, topBit, lastLaneInChunk);
+            }
+
+            uint remOverflow = chunkShiftIn;
+
+            uint warpCarryIn = 1u;
+            for (int offset = 0; offset < evalWords; offset += 32)
+            {
+                int idx = offset + laneId;
+                bool valid = idx < evalWords;
+
+                uint rVal = valid ? sharedRem[idx] : 0u;
+                uint bVal = (valid && idx < numWordsB) ? ~b[offsetB + idx] : 0xFFFFFFFFu;
+
+                ulong sum = (ulong)rVal + bVal;
+                uint g = valid ? (uint)(sum >> 32) : 0u;
+                uint p = valid ? ((uint)sum == 0xFFFFFFFFu ? 1u : 0u) : 1u;
+
+                var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
+                uint laneCarryOut = GpuBigIntKernels.ApplyCarry(warpScan, warpCarryIn);
+                warpCarryIn = Warp.ShuffleSync(0xFFFFFFFFu, laneCarryOut, 31);
+            }
+
+            if (remOverflow != 0u || warpCarryIn != 0u)
+            {
+                uint subCarryIn = 1u;
+                for (int offset = 0; offset < evalWords; offset += 32)
+                {
+                    int idx = offset + laneId;
+                    bool valid = idx < evalWords;
+
+                    uint rVal = valid ? sharedRem[idx] : 0u;
+                    uint bVal = (valid && idx < numWordsB) ? ~b[offsetB + idx] : 0xFFFFFFFFu;
+
+                    ulong sum = (ulong)rVal + bVal;
+                    uint g = valid ? (uint)(sum >> 32) : 0u;
+                    uint p = valid ? ((uint)sum == 0xFFFFFFFFu ? 1u : 0u) : 1u;
+
+                    var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
+                    uint prevG = Warp.ShuffleUpSync(0xFFFFFFFFu, warpScan.Generate, 1u);
+                    uint prevP = Warp.ShuffleUpSync(0xFFFFFFFFu, warpScan.Propagate, 1u);
+
+                    uint carryIn = subCarryIn;
+                    if (laneId > 0)
+                    {
+                        carryIn = prevG | (prevP & carryIn);
+                    }
+
+                    if (valid)
+                    {
+                        sharedRem[idx] = (uint)sum + carryIn;
+                    }
+
+                    uint laneCarryOut = GpuBigIntKernels.ApplyCarry(warpScan, subCarryIn);
+                    subCarryIn = Warp.ShuffleSync(0xFFFFFFFFu, laneCarryOut, 31);
+                }
+
+                if (laneId == 0 && aWordIdx < evalWords)
+                {
+                    sharedQuot[aWordIdx] |= 1u << aBitIdx;
+                }
+            }
+        }
+
+        // Ensure sharedQuot writes from lane 0 are visible across the warp
+        uint syncDummy = Warp.ShuffleSync(0xFFFFFFFFu, sharedQuot[0], 0);
+        uint outAny = syncDummy & 0u;
+
+        for (int offset = 0; offset < numWordsResult; offset += 32)
+        {
+            int idx = offset + laneId;
+            if (idx < numWordsResult)
+            {
+                uint val = idx < evalWords ? (isModulo ? sharedRem[idx] : sharedQuot[idx]) : 0u;
+                result[offsetResult + idx] = val;
+                outAny |= val;
+            }
+        }
+
+        for (uint delta = 16; delta > 0; delta >>= 1)
+        {
+            outAny |= Warp.ShuffleDownSync(0xFFFFFFFFu, outAny, delta);
+        }
+
+        outAny = Warp.ShuffleSync(0xFFFFFFFFu, outAny, 0);
+        if (laneId == 0)
+        {
+            uint sA = signA[batchIdx];
+            uint sB = isScalar ? scalarSign : signB[batchIdx];
+            uint rawSign = isModulo ? sA : (sA ^ sB);
+            signResult[batchIdx] = outAny != 0u ? rawSign : 0u;
+        }
+    }
+
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceVectorMulVectorParallel(

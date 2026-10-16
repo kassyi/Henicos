@@ -58,6 +58,28 @@ public static class GpuBigIntVectorLinqExtensions
         new VectorSubScalarExpression(source, new GpuBigIntLeafExpression(scalar));
 
     /// <summary>
+    /// Divides each element of a vectorized expression by a scalar.
+    /// </summary>
+    /// <param name="source">The input vectorized expression (dividend).</param>
+    /// <param name="scalar">The scalar divisor value.</param>
+    /// <returns>A new vectorized expression representing the scalar division.</returns>
+    public static IGpuBigIntVectorExpression SelectDivide(
+        this IGpuBigIntVectorExpression source,
+        GpuBigInt scalar) =>
+        new VectorDivScalarExpression(source, new GpuBigIntLeafExpression(scalar));
+
+    /// <summary>
+    /// Computes the remainder (modulo) of each element of a vectorized expression divided by a scalar.
+    /// </summary>
+    /// <param name="source">The input vectorized expression (dividend).</param>
+    /// <param name="scalar">The scalar divisor value.</param>
+    /// <returns>A new vectorized expression representing the scalar modulo operation.</returns>
+    public static IGpuBigIntVectorExpression SelectModulo(
+        this IGpuBigIntVectorExpression source,
+        GpuBigInt scalar) =>
+        new VectorModScalarExpression(source, new GpuBigIntLeafExpression(scalar));
+
+    /// <summary>
     /// Adds two vectorized expressions element-wise.
     /// </summary>
     /// <param name="left">The first vectorized expression.</param>
@@ -89,6 +111,28 @@ public static class GpuBigIntVectorLinqExtensions
         this IGpuBigIntVectorExpression left,
         IGpuBigIntVectorExpression right) =>
         new VectorMulVectorExpression(left, right);
+
+    /// <summary>
+    /// Divides the first vectorized expression by the second element-wise.
+    /// </summary>
+    /// <param name="left">The dividend vectorized expression.</param>
+    /// <param name="right">The divisor vectorized expression.</param>
+    /// <returns>A new vectorized expression representing the element-wise division.</returns>
+    public static IGpuBigIntVectorExpression ZipDivide(
+        this IGpuBigIntVectorExpression left,
+        IGpuBigIntVectorExpression right) =>
+        new VectorDivVectorExpression(left, right);
+
+    /// <summary>
+    /// Computes the remainder (modulo) of the first vectorized expression divided by the second element-wise.
+    /// </summary>
+    /// <param name="left">The dividend vectorized expression.</param>
+    /// <param name="right">The divisor vectorized expression.</param>
+    /// <returns>A new vectorized expression representing the element-wise modulo operation.</returns>
+    public static IGpuBigIntVectorExpression ZipModulo(
+        this IGpuBigIntVectorExpression left,
+        IGpuBigIntVectorExpression right) =>
+        new VectorModVectorExpression(left, right);
 
     /// <summary>
     /// Computes the sum of a vectorized expression.

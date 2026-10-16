@@ -50,6 +50,15 @@ public readonly struct GpuBigIntExpr
         => new(new SignedDivExpression(left.Node, right.Node));
 
     /// <summary>
+    /// Constructs a lazy remainder (modulo) expression between two signed big integer expressions.
+    /// </summary>
+    /// <param name="left">The dividend signed expression operand.</param>
+    /// <param name="right">The divisor signed expression operand.</param>
+    /// <returns>A new <see cref="GpuBigIntExpr"/> representing the modulo AST node.</returns>
+    public static GpuBigIntExpr operator %(GpuBigIntExpr left, GpuBigIntExpr right)
+        => new(new SignedModExpression(left.Node, right.Node));
+
+    /// <summary>
     /// Constructs a lazy addition expression with deferred sign resolution between two signed big integer expressions.
     /// </summary>
     /// <param name="left">The left signed expression operand.</param>
