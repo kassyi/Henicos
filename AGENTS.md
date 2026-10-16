@@ -9,7 +9,7 @@ G# (GSharp) is a transpilation engine and runtime that compiles C# directly to C
 ### The 3 Core Tenets
 1. **AST-Driven**: All code analysis, transpilation, and safety enforcement are performed strictly via Roslyn Syntax Nodes and Semantic Models at compile-time (**NEVER use Reflection**).
 2. **Zero-Allocation**: GPU device execution fundamentally enforces zero reference-type heap allocations. Use value types (`struct`) and stack/register memory only.
-3. **Static Determinism**: All kernel logic and types must be fully resolved at compile-time with zero runtime overhead—**NO Reflection, NO LINQ, and NO Dynamic Dispatch**.
+3. **Static Determinism**: All kernel logic and types must be fully resolved at compile-time with zero runtime overhead—**NO Reflection, NO `System.Linq` (in-house zero-allocation `StackLinq` / `Kassyi.ZeroAlloc.Linq` is permitted and encouraged), and NO Dynamic Dispatch**.
 
 ---
 
@@ -30,6 +30,9 @@ You **MUST** follow the dedicated rule files for code implementation:
 - [Coding Style & Memory Guidelines](.agents/rules/coding-style.md): C# naming conventions, zero-allocation patterns, `StackLinq` policy (`RS0030`), null-forgiving (`!`) ban, and empty catch ban.
 - [GPU / C# Boundary Naming Conventions](.agents/rules/gsharp-naming-conventions.md): Kernel and host naming standards.
 - [Test Architecture & TDD Methodology](.agents/rules/test-architecture.md): 2-Tier test hierarchy, snapshot testing (`.verified.cs`), and Test-Driven AI Vibe Coding workflow.
+- [Test Execution (`just`)](.agents/rules/test-execution.md): `just` test categories and DiffEngine hang prevention.
+- [Transpiler Emission Rules](.agents/rules/transpiler-emission.md): NO Reflection, `SourceWriter` scoped brackets, dense left-aligned output.
+- [Generator Pipeline Invariants](.agents/rules/generator-invariants.md): `[Constant]` exclusion, diagnostics, struct guards, ref/out, `var` suffix, design-time I/O guard, MSBuild wildcard.
 
 ---
 
