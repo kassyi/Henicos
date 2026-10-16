@@ -41,6 +41,7 @@ public enum CUresult
     CudaErrorLaunchOutOfResources = 701,
     CudaErrorLaunchTimeout = 702,
     CudaErrorLaunchIncompatibleTexturing = 703,
+    CudaErrorNotSupported = 801,
     CudaErrorStreamCaptureUnsupported = 900,
     CudaErrorStreamCaptureInvalidated = 901,
     CudaErrorStreamCaptureMerge = 902,
@@ -101,7 +102,9 @@ public static partial class CudaDriverApi
     {
         MultiprocessorCount = 16,
         ComputeCapabilityMajor = 75,
-        ComputeCapabilityMinor = 76
+        ComputeCapabilityMinor = 76,
+        CanUse64BitStreamMemOps = 122,
+        CanUseStreamWaitValueNor = 123
     }
 }
 

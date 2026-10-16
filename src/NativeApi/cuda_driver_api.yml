@@ -521,6 +521,57 @@ methods:
         type: IntPtr
         description: User data passed to the host function.
 
+  - name: cuStreamWaitEvent
+    returnType: CUresult
+    summary: Makes a compute stream wait on an event.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: hStream
+        type: IntPtr
+        description: Stream to wait.
+      - name: hEvent
+        type: IntPtr
+        description: Event to wait on (may not be null).
+      - name: flags
+        type: uint
+        description: Parameters for the operation (must be 0 or CU_EVENT_WAIT_EXTERNAL).
+
+  - name: cuStreamWaitValue32_v2
+    returnType: CUresult
+    summary: Enqueues a synchronization of the stream on a 32-bit memory location until the specified condition is met.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: stream
+        type: IntPtr
+        description: The stream to synchronize on the memory location.
+      - name: addr
+        type: IntPtr
+        description: The device or mapped host memory location to wait on.
+      - name: value
+        type: uint
+        description: The 32-bit value to compare with the memory location.
+      - name: flags
+        type: uint
+        description: Wait condition flags (CUstreamWaitValue_flags).
+
+  - name: cuStreamWriteValue32_v2
+    returnType: CUresult
+    summary: Enqueues a write of a 32-bit value to a device or mapped host memory location on a stream.
+    returnDescription: CudaSuccess on success; otherwise, an error code.
+    parameters:
+      - name: stream
+        type: IntPtr
+        description: The stream to perform the write in.
+      - name: addr
+        type: IntPtr
+        description: The device address to write to.
+      - name: value
+        type: uint
+        description: The 32-bit value to write.
+      - name: flags
+        type: uint
+        description: Write operation flags (CUstreamWriteValue_flags).
+
   - name: cuMemAllocAsync
     returnType: CUresult
     summary: Allocates device memory asynchronously.
@@ -895,6 +946,7 @@ methods:
         description: Host pointer to unregister.
 
   - name: cuMemHostGetDevicePointer
+    entryPoint: cuMemHostGetDevicePointer_v2
     returnType: CUresult
     summary: Passes back the device pointer mapped to host pinned memory.
     returnDescription: CudaSuccess on success; otherwise, an error code.
