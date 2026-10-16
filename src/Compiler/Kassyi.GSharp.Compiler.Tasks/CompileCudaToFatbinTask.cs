@@ -190,6 +190,11 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         }
 
         _architectures = SplitSemicolon(TargetArchitectures);
+        if (!Toolchain.IsWindows)
+        {
+            return true;
+        }
+
         _vcvarsEnv = GetVcvarsEnvironment("x64");
         if (_vcvarsEnv != null)
         {
@@ -318,8 +323,12 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         var args = new StringBuilder();
         args.Append("--fatbin ");
         args.Append("-std=c++17 ");
-        args.Append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING ");
-        args.Append("-Xcompiler \"/wd4819\" ");
+        if (Toolchain.IsWindows)
+        {
+            args.Append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING ");
+            args.Append("-Xcompiler \"/wd4819\" ");
+        }
+
         args.Append("--ptxas-options=-v,--warn-on-spills ");
         foreach (var arch in architectures)
         {

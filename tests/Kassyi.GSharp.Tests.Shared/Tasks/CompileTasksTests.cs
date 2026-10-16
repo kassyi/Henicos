@@ -233,7 +233,7 @@ public class CompileTasksTests
         Directory.CreateDirectory(dummyClDir);
         File.WriteAllText(Path.Combine(dummyClDir, "cl.exe"), "");
 
-        ctx.Runner.CmdStandardOutput = $"INCLUDE=C:\\dummy\r\nLIB=C:\\dummy\r\nPATH={dummyClDir};C:\\Windows\\System32";
+        ctx.Runner.CmdStandardOutput = $"INCLUDE=C:\\dummy\r\nLIB=C:\\dummy\r\nPATH={dummyClDir}{Path.PathSeparator}C:\\Windows\\System32";
 
         var task = ctx.CreateCppTask(["kernel.cpp"]);
         task.MockCompilation = false;
@@ -400,8 +400,8 @@ public class CompileTasksTests
     {
         var runner = new ProcessRunner();
 
-        // An actual executable process (e.g. ping) is required to test the post-start kill callback.
-        var startInfo = new ProcessStartInfo("ping", "127.0.0.1 -n 10");
+        // An actual executable process is required to test the post-start kill callback across OSes.
+        var startInfo = Kassyi.GSharp.Tests.Shared.Helpers.ShellCommand.Sleep(10);
         using var cts = new CancellationTokenSource();
 
         var task = runner.RunAsync(startInfo, cts.Token);
@@ -439,11 +439,13 @@ public class CompileTasksTests
     [Fact]
     public void Test_CompileKernelTaskBase_VcvarsCache_And_MissingVswhere()
     {
-        var runner = new MockProcessRunner("C:\\dummy") { OverrideVswhere = true };
+        using var ctx = new CompileTaskTestContext();
+        ctx.Runner.OverrideVswhere = true;
 
         var task = new TestCompileKernelTask
         {
-            ProcessRunner = runner,
+            ProcessRunner = ctx.Runner,
+            Toolchain = ctx.CreateMsvcToolchain(disableCache: false),
             DisableVcvarsCache = false
         };
 
@@ -455,7 +457,7 @@ public class CompileTasksTests
         Assert.Null(env2);
 
         // Assert that runner was only called once because the result (even null) is cached
-        Assert.Single(runner.Invocations);
+        Assert.Single(ctx.Runner.Invocations);
     }
 
     [Theory]
@@ -476,7 +478,12 @@ public class CompileTasksTests
 
         ctx.Runner.CmdExitCode = cmdExitCode;
 
-        var task = new TestCompileKernelTask { ProcessRunner = ctx.Runner, DisableVcvarsCache = true };
+        var task = new TestCompileKernelTask
+        {
+            ProcessRunner = ctx.Runner,
+            Toolchain = ctx.CreateMsvcToolchain(disableCache: true),
+            DisableVcvarsCache = true
+        };
         Assert.Null(task.GetVcvarsEnvironment("x64_fail_test"));
     }
 
@@ -516,7 +523,7 @@ public class CompileTasksTests
         using var ctx = new CompileTaskTestContext();
         ctx.CreateDummySource("kernel.cu");
 
-        // Create a directory with the exact name of the bundle file, so File.WriteAllText throws UnauthorizedAccessException
+        // Create a directory with the exact name of the bundle file, so File.WriteAllText throws an IOException / UnauthorizedAccessException
         Directory.CreateDirectory(Path.Combine(ctx.TempDir, "combined_fatbin_bundle.cu"));
 
         var task = ctx.CreateCudaTask(["kernel.cu"]);
@@ -624,5 +631,92 @@ public class CompileTasksTests
         Assert.Empty(ctx.BuildEngine.LoggedErrors);
         Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("canceled", StringComparison.OrdinalIgnoreCase));
     }
+
+    // --- GCC / Clang (POSIX / Linux) Toolchain Tests ---
+
+    [Theory]
+    [InlineData("g++")]
+    [InlineData("clang++")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CompileCppToNativeTask_GccClangToolchain_CompilesSharedLibrary(string compiler)
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+
+        var toolchain = ctx.CreateGccClangToolchain(compiler);
+        var task = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+
+        Assert.True(task.Execute());
+        Assert.Single(task.OutputDlls);
+        Assert.DoesNotContain(ctx.Runner.Invocations,
+            i => i.FileName.EndsWith("vswhere.exe", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(ctx.Runner.Invocations,
+            i => i.FileName == compiler &&
+                 i.Arguments.Contains("-shared") &&
+                 i.Arguments.Contains("-fPIC") &&
+                 i.Arguments.Contains("-fopenmp"));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_CompileCppToNativeTask_GccClangToolchain_WhenCompilerMissing_SkipsWithWarningAndSucceeds()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+        ctx.Runner.VersionCheckExitCode = 1;
+
+        var toolchain = ctx.CreateGccClangToolchain("missing_g++");
+        var task = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+
+        Assert.True(task.Execute());
+        Assert.Empty(task.OutputDlls);
+        Assert.Empty(ctx.BuildEngine.LoggedErrors);
+        Assert.Contains(ctx.BuildEngine.LoggedWarnings,
+            w => w.Contains("C++ compiler was not found") && w.Contains("Skipping native CPU kernel compilation"));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_CompileCppToNativeTask_GccClangToolchain_CompilationFails_LogsErrorAndReturnsFalse()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cpp", "// source");
+        ctx.Runner.NextExitCode = 1;
+        ctx.Runner.NextStandardError = "g++: error: unrecognized command-line option";
+
+        var toolchain = ctx.CreateGccClangToolchain("g++");
+        var task = ctx.CreateCppTask(["kernel.cpp"], toolchain);
+
+        Assert.False(task.Execute());
+        Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("g++ compilation failed with exit code 1"));
+        Assert.Contains(ctx.BuildEngine.LoggedErrors, e => e.Contains("unrecognized command-line option"));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CompileCudaToFatbinTask_GccClangToolchain_SkipsVcvarsAndMsvcFlags()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cu", "// cuda source");
+        ctx.Runner.OverrideVswhere = true; // Even if vswhere fails, Linux toolchain must not call it
+
+        var toolchain = ctx.CreateGccClangToolchain("g++");
+        var task = ctx.CreateCudaTask(["kernel.cu"], combinedName: null, toolchain: toolchain);
+        task.TargetArchitectures = "compute_86,sm_86";
+
+        Assert.True(task.Execute());
+        Assert.Single(task.OutputFatbins);
+        Assert.DoesNotContain(ctx.Runner.Invocations,
+            i => i.FileName.EndsWith("vswhere.exe", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(ctx.Runner.Invocations,
+            i => i.FileName.Contains("nvcc") &&
+                 i.Arguments.Contains("--fatbin") &&
+                 !i.Arguments.Contains("/wd4819"));
+    }
 }
+
 
