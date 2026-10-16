@@ -547,18 +547,113 @@ public class StackLinqTests
         Assert.Equal(expectedDouble, doubleData.AsStackEnumerable().Sum());
         Assert.Equal(expectedDouble, doubleSpan.AsStackEnumerable().Sum());
         Assert.Equal(expectedDouble, doubleData.AsStackEnumerable().Where(_ => true).Sum());
+
+        // Non-multiple lengths (67, 7, 0) to verify SIMD vector loop + scalar remainder tail loop
+        foreach (int length in new[] { 67, 7, 0 })
+        {
+            int[] intTail = Enumerable.Range(1, length).ToArray();
+            Span<int> intTailSpan = intTail;
+            Assert.Equal(intTail.Sum(), intTail.AsStackEnumerable().Sum());
+            Assert.Equal(intTail.Sum(), intTailSpan.AsStackEnumerable().Sum());
+
+            float[] floatTail = Enumerable.Range(1, length).Select(i => (float)i).ToArray();
+            Span<float> floatTailSpan = floatTail;
+            Assert.Equal(floatTail.Sum(), floatTail.AsStackEnumerable().Sum());
+            Assert.Equal(floatTail.Sum(), floatTailSpan.AsStackEnumerable().Sum());
+
+            double[] doubleTail = Enumerable.Range(1, length).Select(i => (double)i).ToArray();
+            Span<double> doubleTailSpan = doubleTail;
+            Assert.Equal(doubleTail.Sum(), doubleTail.AsStackEnumerable().Sum(), precision: 5);
+            Assert.Equal(doubleTail.Sum(), doubleTailSpan.AsStackEnumerable().Sum(), precision: 5);
+        }
+    }
+
+    [Fact]
+    public void Max_Min_AllNegativeSequence_ShouldReturnCorrectResult()
+    {
+        int[] negInts = { -10, -5, -20 };
+        Assert.Equal(-5, negInts.AsStackEnumerable().Max());
+        Assert.Equal(-20, negInts.AsStackEnumerable().Min());
+
+        float[] negFloats = { -10.5f, -5.25f, -20.75f };
+        Assert.Equal(-5.25f, negFloats.AsStackEnumerable().Max());
+        Assert.Equal(-20.75f, negFloats.AsStackEnumerable().Min());
+
+        double[] negDoubles = { -10.5, -5.25, -20.75 };
+        Assert.Equal(-5.25, negDoubles.AsStackEnumerable().Max());
+        Assert.Equal(-20.75, negDoubles.AsStackEnumerable().Min());
+    }
+
+    [Fact]
+    public void CopyTo_Boundary_ExactAndSmallerDestination()
+    {
+        int[] data = { 10, 20, 30, 40 };
+
+        // Exact size destination
+        Span<int> exactDest = stackalloc int[4];
+        int exactWritten = data.AsStackEnumerable().CopyTo(exactDest);
+        Assert.Equal(4, exactWritten);
+        Assert.Equal(data, exactDest.ToArray());
+
+        // Smaller destination (stops cleanly when destination is full)
+        Span<int> smallDest = stackalloc int[2];
+        int smallWritten = data.AsStackEnumerable().CopyTo(smallDest);
+        Assert.Equal(2, smallWritten);
+        Assert.Equal(new[] { 10, 20 }, smallDest.ToArray());
+
+        // Empty destination
+        int emptyWritten = data.AsStackEnumerable().CopyTo(Span<int>.Empty);
+        Assert.Equal(0, emptyWritten);
+    }
+
+    [Fact]
+    public void NegativeIndexAndCount_Boundaries_ShouldMatchStandardLinq()
+    {
+        int[] data = { 10, 20, 30, 40, 50 };
+        Span<int> span = data;
+
+        // ElementAt(-1) throws ArgumentOutOfRangeException on Array, Span, and Chained enumerators
+        Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().ElementAt(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => data.AsStackEnumerable().Where(x => x > 10).ElementAt(-1));
+
+        bool spanElementAtThrew = false;
+        try
+        {
+            span.AsStackEnumerable().ElementAt(-1);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            spanElementAtThrew = true;
+        }
+        Assert.True(spanElementAtThrew);
+
+        // ElementAtOrDefault(-1) returns default (0)
+        Assert.Equal(0, data.AsStackEnumerable().ElementAtOrDefault(-1));
+        Assert.Equal(0, span.AsStackEnumerable().ElementAtOrDefault(-1));
+        Assert.Equal(0, data.AsStackEnumerable().Where(x => x > 10).ElementAtOrDefault(-1));
+
+        // TakeLast(-1) returns empty
+        Assert.Empty(data.AsStackEnumerable().TakeLast(-1).ToArray());
+        Assert.Empty(span.AsStackEnumerable().TakeLast(-1).ToArray());
+
+        // SkipLast(-1) returns full sequence
+        Assert.Equal(data, data.AsStackEnumerable().SkipLast(-1).ToArray());
+        Assert.Equal(data, span.AsStackEnumerable().SkipLast(-1).ToArray());
     }
 
     [Fact]
     public void ArgumentNullExceptions_ShouldThrowOnNullInputs()
     {
+        // [WHY] Intentionally pass null to verify ArgumentNullException guard on source collections and delegates.
         int[] nullArray = null!;
+        // [WHY] Intentionally pass null to verify ArgumentNullException guard on List<T> overload.
         List<int> nullList = null!;
         int[] data = { 1, 2, 3 };
 
         Assert.Throws<ArgumentNullException>(() => nullArray.AsStackEnumerable());
         Assert.Throws<ArgumentNullException>(() => nullList.AsStackEnumerable());
 
+        // [WHY] Intentionally pass null delegates to verify ArgumentNullException guards across all LINQ operators.
         AssertThrowsArgNull(() => data.AsStackEnumerable().Where((Func<int, bool>)null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().Where((Func<int, int, bool>)null!));
         AssertThrowsArgNull(() => data.AsStackEnumerable().Select((Func<int, int>)null!));

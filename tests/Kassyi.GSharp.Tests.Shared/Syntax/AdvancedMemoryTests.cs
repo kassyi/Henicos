@@ -1,32 +1,9 @@
+using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
-public class AdvancedMemoryTests
-:  TranspilerTestBase{
-    [Fact()]
-    [Category(TestCategory.Syntax)]
-    public void Test_UnsafeAsPointer_Transpilation()
-    {
-    }
-
-    [Fact()]
-    [Category(TestCategory.Syntax)]
-    public void Test_MemoryMarshalCast_Transpilation()
-    {
-    }
-
-    [Fact()]
-    [Category(TestCategory.Syntax)]
-    public void Test_RefFields_Transpilation()
-    {
-    }
-
-    [Fact()]
-    [Category(TestCategory.Syntax)]
-    public void Test_SimdVector128_Transpilation()
-    {
-    }
-
+public class AdvancedMemoryTests : TranspilerTestBase
+{
     [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_PointerIncrementKernel()
@@ -73,15 +50,124 @@ public class AdvancedMemoryTests
         Assert.Equal(expectedDest[2], dest[2]);
     }
 
-    [Fact()]
+    [Fact]
+    [Category(TestCategory.Syntax)]
+    public void Test_UnsafeAsPointer_Transpilation()
+    {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+            nameof(AdvancedMemoryTarget.UnsafeAsPointer), dialect: CurrentDialect);
+
+        Assert.Empty(diagnostics);
+        Assert.Contains("int* ptr = (int*)AsPointer(&data[0]);", cudaSource);
+        Assert.Contains("*ptr=777;", cudaSource);
+    }
+
+    [Fact]
+    [Category(TestCategory.Syntax)]
+    public void Test_MemoryMarshalCast_Transpilation()
+    {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+            nameof(AdvancedMemoryTarget.MemoryMarshalCast), dialect: CurrentDialect);
+
+        Assert.Empty(diagnostics);
+        Assert.Contains("GSharpArray<int> ints = Cast(bytes.AsSpan());", cudaSource);
+    }
+
+    [Fact]
+    [Category(TestCategory.Syntax)]
+    public void Test_RefFields_Transpilation()
+    {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+            nameof(AdvancedMemoryTarget.RefFieldsUpdate), isDevice: true, dialect: CurrentDialect);
+
+        Assert.Empty(diagnostics);
+        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Syntax_RefWrapper", cudaSource);
+        Assert.Contains("wrapper.Value=123;", cudaSource);
+    }
+
+    [Fact]
+    [Category(TestCategory.Syntax)]
+    public void Test_SimdVector128_Transpilation()
+    {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+            nameof(AdvancedMemoryTarget.SimdVector128), dialect: CurrentDialect);
+
+        Assert.Empty(diagnostics);
+        if (IsCudaDialect)
+        {
+            Assert.Contains("float4 v = vectors[0];", cudaSource);
+        }
+        else
+        {
+            Assert.Contains("Kassyi_GSharp_Core_Float4 v = vectors[0];", cudaSource);
+        }
+    }
+
+    [Fact]
     [Category(TestCategory.Syntax)]
     public void Test_UnsafePointerArithmetic_Transpilation()
     {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
+            typeof(AdvancedMemoryKernels), nameof(AdvancedMemoryKernels.PointerIncrementKernel), isDevice: false, dialect: CurrentDialect);
+
+        Assert.Empty(diagnostics);
+        Assert.Contains("ptrS = pSrc;", cudaSource);
+        Assert.Contains("*ptrD++=*ptrS++;", cudaSource);
     }
 
-    [Fact()]
+    [Fact]
     [Category(TestCategory.Syntax)]
     public void Test_FixedSizeBuffers_Transpilation()
     {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<AdvancedMemoryTarget>(
+            nameof(AdvancedMemoryTarget.FixedSizeBuffers), isDevice: false, dialect: CurrentDialect);
+
+        Assert.Empty(diagnostics);
+        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Syntax_FixedBufferStruct_AdvMem", cudaSource);
+        Assert.Contains("Data[16];", cudaSource);
     }
 }
+
+public ref struct RefWrapper
+{
+    public ref int Value;
+}
+
+public unsafe struct FixedBufferStruct_AdvMem
+{
+    public fixed int Data[16];
+}
+
+public class AdvancedMemoryTarget
+{
+    public static unsafe void UnsafeAsPointer(int[] data)
+    {
+        int* ptr = (int*)System.Runtime.CompilerServices.Unsafe.AsPointer(ref data[0]);
+        *ptr = 777;
+    }
+
+    public static void MemoryMarshalCast(byte[] bytes, int[] output)
+    {
+        Span<int> ints = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, int>(bytes.AsSpan());
+        output[0] = ints[0];
+    }
+
+    public static void RefFieldsUpdate(RefWrapper wrapper)
+    {
+        wrapper.Value = 123;
+    }
+
+    public static void SimdVector128(Float4[] vectors, float[] output)
+    {
+        Float4 v = vectors[0];
+        output[0] = v.X + v.Y + v.Z + v.W;
+    }
+
+    public static unsafe void FixedSizeBuffers(FixedBufferStruct_AdvMem[] items, int[] output)
+    {
+        FixedBufferStruct_AdvMem item = items[0];
+        output[0] = item.Data[0];
+    }
+}
+
+

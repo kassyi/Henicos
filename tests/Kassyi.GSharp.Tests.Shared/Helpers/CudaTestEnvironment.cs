@@ -1,23 +1,10 @@
 namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
 /// <summary>
-/// Device availability checks and context scoping shared by tests that drive the CUDA driver directly.
+/// Context scoping shared by tests that drive the CUDA driver directly.
 /// </summary>
 internal static class CudaTestEnvironment
 {
-    /// <summary>
-    /// Skips the current test when no CUDA device is available.
-    /// </summary>
-    /// <remarks>
-    /// <see cref="GpuKernelLoader.IsCpuFallbackMode"/> is only populated by driver initialization, so initialization
-    /// runs first. Without it, a host without a device would report <see langword="false"/> and not skip.
-    /// </remarks>
-    public static void SkipIfNoDevice()
-    {
-        GpuKernelLoader.EnsureInitialized();
-        Skip.If(GpuKernelLoader.IsCpuFallbackMode, "Requires a CUDA device.");
-    }
-
     /// <summary>
     /// Runs <paramref name="action"/> with the CUDA context current on the calling thread and returns its result.
     /// </summary>

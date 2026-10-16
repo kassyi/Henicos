@@ -57,20 +57,43 @@ public class LoggerAndEnvironmentTests
     public void Test_Logger_PerformanceTrackingAndScopes_WorkCorrectly()
     {
         // Happy Path: Performance timer and measure scope
-        TestLoggerConsumer.ClearAccumulated();
-        TestLoggerConsumer.InvokeAddInterval("KernelA", 42);
-        TestLoggerConsumer.InvokeAddInterval("KernelA", 18);
-        TestLoggerConsumer.InvokePrintAccumulated("PERF", "Summary");
-        TestLoggerConsumer.ClearAccumulated();
-
-        var timer = new Logger.PerformanceTimer();
-        Thread.Sleep(5);
-        var elapsed = timer.Lap("TimedOp");
-        Assert.True(elapsed >= 0);
-
-        using (var scope = new Logger.MeasureScope("PERF", "ScopedOperation", GSharpLogLevel.Debug))
+        var prevLevel = Logger.ActiveLogLevel;
+        var prevConsole = Logger.WriteToConsole;
+        var prevOut = Console.Out;
+        using var sw = new StringWriter();
+        try
         {
+            Logger.ActiveLogLevel = GSharpLogLevel.Trace;
+            Logger.WriteToConsole = true;
+            Console.SetOut(sw);
+
+            TestLoggerConsumer.ClearAccumulated();
+            TestLoggerConsumer.InvokeAddInterval("KernelA", 42);
+            TestLoggerConsumer.InvokeAddInterval("KernelA", 18);
+            TestLoggerConsumer.InvokePrintAccumulated("PERF", "Summary");
+            TestLoggerConsumer.ClearAccumulated();
+
+            var timer = new Logger.PerformanceTimer();
             Thread.Sleep(5);
+            var elapsed = timer.Lap("TimedOp");
+            Assert.True(elapsed >= 0);
+
+            using (var scope = new Logger.MeasureScope("PERF", "ScopedOperation", GSharpLogLevel.Debug))
+            {
+                Thread.Sleep(5);
+            }
+
+            var output = sw.ToString();
+            Assert.Contains("Summary [KernelA: 60 ms]", output);
+            Assert.Contains("[Start Scope] ScopedOperation", output);
+            Assert.Contains("[End Scope] ScopedOperation", output);
+        }
+        finally
+        {
+            Console.SetOut(prevOut);
+            Logger.ActiveLogLevel = prevLevel;
+            Logger.WriteToConsole = prevConsole;
+            TestLoggerConsumer.ClearAccumulated();
         }
     }
 

@@ -13,6 +13,8 @@ public const string Source = @"#include <cmath>
 #include <functional>
 #include <atomic>
 #include <cstring>
+#include <cstdio>
+#include <cstdlib>
 
 #define __device__
 #define __global__
@@ -440,6 +442,15 @@ inline void __syncwarp(unsigned int mask = 0xFFFFFFFFU) {}
 // --- Compiler Hints ---
 namespace Hint {
     inline void Unroll() {}
+}
+
+// Fail-fast for constructs the CPU dialect cannot execute (e.g. Gpu.InlinePtx).
+// An exception cannot cross the extern ""C"" / OpenMP boundary, so the process is terminated with a message.
+[[noreturn]] inline void __gsharp_unsupported(const char* message)
+{
+    std::fprintf(stderr, ""G# runtime error: %s\n"", message);
+    std::fflush(stderr);
+    std::abort();
 }
 
 ";

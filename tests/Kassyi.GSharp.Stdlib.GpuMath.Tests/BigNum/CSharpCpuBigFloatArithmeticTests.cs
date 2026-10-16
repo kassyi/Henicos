@@ -24,6 +24,12 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         return new GpuBigIntExecutionContext(_context, _context.MemoryManager, new LegacyProviderArithmeticAdapter(), _context.Stream);
     }
 
+    private static double ToDouble(GpuBigUInt sig, int exp, bool sign)
+    {
+        var val = (double)sig.ToBigInteger() * Math.Pow(2.0, exp);
+        return sign ? -val : val;
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_Arithmetic_Add_Multiply_Divide()
@@ -39,17 +45,20 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         var bHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(bSig.DevicePointer, 1), 0, 1);
         var resHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resSig.DevicePointer, 4), 0, 4);
 
-        // Add
+        // Add: 4 + 2 = 6
         arith.Add(ref execContext, aHandle, 0, false, bHandle, 0, false, resHandle, out int resExp, out bool resSign);
         Assert.False(resSign);
+        Assert.Equal(6.0, ToDouble(resSig, resExp, resSign), precision: 10);
 
-        // Multiply
+        // Multiply: 4 * 2 = 8
         arith.Multiply(ref execContext, aHandle, 0, false, bHandle, 0, false, resHandle, out resExp, out resSign);
         Assert.False(resSign);
+        Assert.Equal(8.0, ToDouble(resSig, resExp, resSign), precision: 10);
 
-        // Divide
+        // Divide: 4 / 2 = 2
         arith.Divide(ref execContext, aHandle, 0, false, bHandle, 0, false, resHandle, out resExp, out resSign);
         Assert.False(resSign);
+        Assert.Equal(2.0, ToDouble(resSig, resExp, resSign), precision: 10);
     }
 
     [SkippableFact]
@@ -64,14 +73,20 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         var aHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(aSig.DevicePointer, 1), 0, 1);
         var resHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resSig.DevicePointer, 4), 0, 4);
 
-        // Reciprocal
+        // Reciprocal: 1 / 4 = 0.25
         arith.Reciprocal(ref execContext, aHandle, 0, false, resHandle, out int resExp, out bool resSign);
+        Assert.False(resSign);
+        Assert.Equal(0.25, ToDouble(resSig, resExp, resSign), precision: 10);
 
-        // Sqrt
+        // Sqrt: sqrt(4) = 2.0
         arith.Sqrt(ref execContext, aHandle, 0, false, resHandle, out resExp, out resSign);
+        Assert.False(resSign);
+        Assert.Equal(2.0, ToDouble(resSig, resExp, resSign), precision: 10);
 
-        // Rsqrt
+        // Rsqrt: 1 / sqrt(4) = 0.5
         arith.Rsqrt(ref execContext, aHandle, 0, false, resHandle, out resExp, out resSign);
+        Assert.False(resSign);
+        Assert.Equal(0.5, ToDouble(resSig, resExp, resSign), precision: 10);
     }
 
     [SkippableFact]
@@ -88,14 +103,20 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         var bHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(bSig.DevicePointer, 1), 0, 1);
         var resHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resSig.DevicePointer, 4), 0, 4);
 
-        // Exp
+        // Exp: exp(2)
         arith.Exp(ref execContext, aHandle, 0, false, resHandle, out int resExp, out bool resSign);
+        Assert.False(resSign);
+        Assert.Equal(Math.Exp(2.0), ToDouble(resSig, resExp, resSign), precision: 8);
 
-        // Log
+        // Log: ln(2)
         arith.Log(ref execContext, aHandle, 0, false, resHandle, out resExp, out resSign);
+        Assert.False(resSign);
+        Assert.Equal(Math.Log(2.0), ToDouble(resSig, resExp, resSign), precision: 8);
 
-        // Pow
+        // Pow: 2^3 = 8
         arith.Pow(ref execContext, aHandle, 0, false, bHandle, 0, false, resHandle, out resExp, out resSign);
+        Assert.False(resSign);
+        Assert.Equal(8.0, ToDouble(resSig, resExp, resSign), precision: 6);
     }
 
     [SkippableFact]
@@ -111,7 +132,13 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         var resHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resSig.DevicePointer, 4), 0, 4);
 
         arith.Normalize(ref execContext, aHandle, 0, false, resHandle, out int resExp, out bool resSign);
-        
-        arith.DivideByUInt32(ref execContext, aHandle, 0, false, 2, resHandle, out resExp, out resSign, out uint rem);
+        Assert.False(resSign);
+        Assert.Equal(10.0, ToDouble(resSig, resExp, resSign), precision: 10);
+
+        arith.DivideByUInt32(ref execContext, aHandle, 0, false, 3, resHandle, out resExp, out resSign, out uint rem);
+        Assert.False(resSign);
+        Assert.Equal(0, resExp);
+        Assert.Equal(3UL, (ulong)resSig.ToBigInteger());
+        Assert.Equal(1u, rem);
     }
 }

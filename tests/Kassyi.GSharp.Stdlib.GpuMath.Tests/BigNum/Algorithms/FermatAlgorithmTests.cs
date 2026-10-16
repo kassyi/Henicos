@@ -5,16 +5,18 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class FermatAlgorithmTests
 {
-    [Theory]
+    [SkippableTheory]
     [InlineData(4)]
     [InlineData(5)]
     [InlineData(6)]
     public void FermatAlgorithm_RunFermatPrp_MatchesCpuBigInteger_SmallE(int e)
     {
+        CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var runner = new FermatAlgorithm(e);
 
-        var (resultArray, _) = runner.RunFermatPrp();
+        var (resultArray, elapsedMs) = runner.RunFermatPrp();
+        Assert.True(elapsedMs >= 0);
 
         var actual = GetBigIntegerFromResult(resultArray, e);
 
@@ -26,14 +28,16 @@ public class FermatAlgorithmTests
         Assert.Equal(expected, actual);
     }
 
-    [Fact]
+    [SkippableFact]
     public void FermatAlgorithm_RunFermatPrp_MatchesCpuBigInteger_E10()
     {
+        CudaCapability.EnsureGpuAvailable();
         int e = 10;
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var runner = new FermatAlgorithm(e);
 
-        var (resultArray, _) = runner.RunFermatPrp();
+        var (resultArray, elapsedMs) = runner.RunFermatPrp();
+        Assert.True(elapsedMs >= 0);
 
         // Convert resultArray to BigInteger
         var actual = GetBigIntegerFromResult(resultArray, e);
@@ -45,6 +49,17 @@ public class FermatAlgorithmTests
             .Aggregate(new BigInteger(2), (cur, _) => (cur * cur) % n);
 
         Assert.Equal(expected, actual);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
+    public void FermatAlgorithm_LoadState_InvalidBufferSize_ThrowsArgumentException()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var runner = new FermatAlgorithm(4);
+
+        Assert.Throws<ArgumentException>(() => runner.LoadState(new uint[1]));
     }
 
 

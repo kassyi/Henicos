@@ -522,8 +522,9 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             }
 
             var tempExpFixed = -shiftBits;
+            var sumWords = Math.Max(1, (int)((sum.GetBitLength() + 31) / 32));
 
-            using var tempResult = context.GpuWorkspace.RentTemp(resultSig.NumWords + 2);
+            using var tempResult = context.GpuWorkspace.RentTemp(sumWords);
             var tempHandle =
                 new GpuBigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempResult.NumWords);
             var tempWordsArr = ArrayPool<uint>.Shared.Rent(tempResult.NumWords);
@@ -618,8 +619,9 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             }
 
             var tempExpFixed = -shiftBits;
+            var sumWords = Math.Max(1, (int)((sum.GetBitLength() + 31) / 32));
 
-            using var tempResult = context.GpuWorkspace.RentTemp(resultSig.NumWords + 2);
+            using var tempResult = context.GpuWorkspace.RentTemp(sumWords);
             var tempHandle =
                 new GpuBigIntMemoryHandle(tempResult.Handle.Buffer, tempResult.Handle.WordOffset, tempResult.NumWords);
             var tempWordsArr = ArrayPool<uint>.Shared.Rent(tempResult.NumWords);

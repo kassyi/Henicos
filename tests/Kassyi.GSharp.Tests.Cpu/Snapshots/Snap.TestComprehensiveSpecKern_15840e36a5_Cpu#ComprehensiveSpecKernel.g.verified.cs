@@ -311,7 +311,7 @@ if(condition1||!condition2)
 _ctx->mag+=1.5f;
 }
 }
-/* test ptx inline */
+__gsharp_unsupported(""Gpu.InlinePtx is not supported by the StandardCppDialect dialect"");
 ;
 if(_ctx->ty>0)
 {

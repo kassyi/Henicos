@@ -32,7 +32,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.HappyPath)]
     public void WriteWord_ThenReadWord_OnSameStream_RoundTripsAtOffset()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -60,7 +60,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.HappyPath)]
     public void ReadWord_WithStream_ObservesEarlierWorkOnThatStream()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -88,7 +88,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.HappyPath)]
     public void ReadWord_WithStream_DoesNotWaitForOtherBlockingStreams()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -115,7 +115,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.HappyPath)]
     public void WriteWord_WithStream_DoesNotWaitForOtherBlockingStreams()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -142,7 +142,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.Boundary)]
     public void WordAccess_WithoutStream_KeepsLegacyNullStreamSemantics()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
         var handler = new AotMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
@@ -169,7 +169,7 @@ public class StreamOrderedWordAccessTests
     [Scenario(TestScenario.HappyPath)]
     public void GpuBigUIntSignAndParityQueries_DoNotWaitForAnotherWorkspaceStream()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var holder = new GpuWorkspace(NumWords);

@@ -45,6 +45,14 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return;
         }
 
+        if (typeSymbol is IFunctionPointerTypeSymbol)
+        {
+            // [WHY] Function pointers have no type-then-name C++ spelling and host pointers are invalid on the device.
+            // Declaration sites report GSH0003; this placeholder only keeps the emitted signature well-formed.
+            context.Emitter.Writer.Append("void*");
+            return;
+        }
+
         if (typeSymbol is IPointerTypeSymbol pointer)
         {
             AppendType(ref context, pointer.PointedAtType);

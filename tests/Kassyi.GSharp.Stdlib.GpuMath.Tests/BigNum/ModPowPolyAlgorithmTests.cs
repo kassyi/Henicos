@@ -12,7 +12,7 @@ public class ModPowPolyAlgorithmTests : IDisposable
     {
         CudaCapability.EnsureGpuAvailable();
         _scope = new GpuKernelLoader.CudaContextScope();
-        _context = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot) { PolyAlgorithmThreshold = 8192 };
+        _context = new GpuWorkspace(4096, GpuExecutionEngine.GSharpAot);
     }
 
     public void Dispose()
@@ -42,16 +42,19 @@ public class ModPowPolyAlgorithmTests : IDisposable
     [Scenario(TestScenario.HappyPath)]
     [InlineData(256)]
     [InlineData(512)]
-    [InlineData(1024)] // Un-disabled to test extreme PCIe sync overhead resolution
-    [InlineData(2048)]
-    [InlineData(4096)] // Un-disabled to test extreme PCIe sync overhead resolution
+    [InlineData(1024)] // Boundary of PolyAlgorithmThreshold (uses ModPowNttHostController MegaKernel)
+    [InlineData(2048)] // Crosses over to ModPowZeroSyncController
+    [InlineData(4096)] // Crosses over to ModPowZeroSyncController
     public void Test_ModPow_CrossOver_Verification(int bitLength)
     {
         CudaCapability.EnsureGpuAvailable();
-        
-        // Arrange: Generate random BigIntegers
+
+        // Arrange: Generate random BigIntegers.
+        // For >1024-bit host-loop crossover cases, use a 64-bit (2-word) exponent to verify full-width
+        // 2048/4096-bit multiplications and Barrett reductions across word boundaries without thousands of host-loop iterations.
+        int expBitLength = bitLength <= _context.PolyAlgorithmThreshold ? bitLength / 2 : 64;
         var baseValue = GenerateRandomBigInteger(bitLength);
-        var expValue = GenerateRandomBigInteger(bitLength / 2); // Exponent is often smaller, but this is fine
+        var expValue = GenerateRandomBigInteger(expBitLength);
         var modValue = GenerateRandomBigInteger(bitLength);
 
         // Ensure mod is odd for Montgomery reduction (as a general strictness check, though ModPow should handle it)

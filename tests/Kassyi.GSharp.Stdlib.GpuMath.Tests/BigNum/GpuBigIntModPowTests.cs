@@ -29,24 +29,31 @@ public class GpuBigIntModPowTests
     public void Test_ModPow_LargeValues()
     {
         CudaCapability.EnsureGpuAvailable();
-        using var ctx = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
-        
-        var aArr = new uint[512];
-        var eArr = new uint[512];
-        var mArr = new uint[512];
+        const int NumWords = 64; // 2048 bits (> 1024 PolyAlgorithmThreshold -> ModPowZeroSyncController)
+        using var ctx = new GpuWorkspace(256, GpuExecutionEngine.GSharpAot);
+
+        var aArr = new uint[NumWords];
+        var eArr = new uint[NumWords];
+        var mArr = new uint[NumWords];
         Array.Fill(aArr, 0x11111111u);
-        Array.Fill(eArr, 0x22222222u);
         Array.Fill(mArr, 0x7FFFFFFFu);
         mArr[0] |= 1; // odd modulus
-        
+
+        // Multi-word exponent with an intermediate zero word and trailing zero words
+        // to cover both word-skip continuation and early-exit branches in ModPowZeroSyncController.
+        eArr[0] = 0x00000015u;
+        eArr[1] = 0u;
+        eArr[2] = 0x00000003u;
+
         using var a = new GpuBigUInt(ctx, aArr);
         using var e = new GpuBigUInt(ctx, eArr);
         using var m = new GpuBigUInt(ctx, mArr);
-        
-        using var result = new GpuBigUInt(ctx, 512);
-        
+        using var result = new GpuBigUInt(ctx, NumWords);
+
+        var expected = BigInteger.ModPow(a.ToBigInteger(), e.ToBigInteger(), m.ToBigInteger());
+
         GpuBigIntDivRem.ModPow(a, e, m, result);
-        
-        Assert.True(result.NumWords > 0);
+
+        Assert.Equal(expected, result.ToBigInteger());
     }
 }

@@ -439,6 +439,12 @@ internal static class StructTranspiler
             context.Emitter.Writer.Append("const ");
         }
 
+        // C# 'volatile' forbids caching/reordering of the field access; C++ 'volatile' gives the same guarantee to nvcc/cl.
+        if (memberSymbol is IFieldSymbol { IsVolatile: true })
+        {
+            context.Emitter.Writer.Append("volatile ");
+        }
+
         if (isArray)
         {
             context.Emitter.Writer.Append("GSharpArray<");

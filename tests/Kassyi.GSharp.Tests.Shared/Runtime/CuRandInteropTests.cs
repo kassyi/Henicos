@@ -1,5 +1,6 @@
 using Kassyi.GSharp.Runtime;
 using Kassyi.GSharp.Runtime.Interop;
+using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
@@ -11,14 +12,12 @@ public class CuRandInteropTests
 {
     private const int SampleCount = 1 << 16;
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CurandGenerateUniform_ProducesValuesInHalfOpenUnitInterval()
     {
-        if (!TryGenerateUniform(seed: 1234UL, out var samples))
-        {
-            return;
-        }
+        CudaCapability.EnsureGpuAvailable();
+        var samples = Samples();
 
         var sum = 0.0;
         foreach (var value in samples)
@@ -31,44 +30,48 @@ public class CuRandInteropTests
         Assert.InRange(sum / samples.Length, 0.49, 0.51);
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CurandGenerateUniform_SameSeed_IsDeterministic()
     {
-        if (!TryGenerateUniform(seed: 42UL, out var first) || !TryGenerateUniform(seed: 42UL, out var second))
-        {
-            return;
-        }
+        CudaCapability.EnsureGpuAvailable();
+        var first = Samples(42UL);
+        var second = Samples(42UL);
 
         Assert.Equal(first, second);
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void Test_CurandGenerateUniform_DifferentSeeds_Diverge()
     {
-        if (!TryGenerateUniform(seed: 1UL, out var first) || !TryGenerateUniform(seed: 2UL, out var second))
-        {
-            return;
-        }
+        CudaCapability.EnsureGpuAvailable();
+        var first = Samples(1UL);
+        var second = Samples(2UL);
 
         Assert.NotEqual(first, second);
+
+        var divergedCount = 0;
+        for (var i = 0; i < first.Length; i++)
+        {
+            if (first[i] != second[i])
+            {
+                divergedCount++;
+            }
+        }
+
+        Assert.True(divergedCount > first.Length * 99 / 100,
+            $"Expected >99% element-wise divergence between different seeds, got {divergedCount}/{first.Length}.");
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CurandGenerateNormal_MatchesRequestedMoments()
     {
-        if (!GpuKernelLoader.IsDriverAvailable)
-        {
-            return;
-        }
+        CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        if (!TryCreateGenerator(out var generator))
-        {
-            return;
-        }
+        var generator = CreateGenerator();
 
         var samples = new float[SampleCount];
         try
@@ -102,20 +105,14 @@ public class CuRandInteropTests
         Assert.InRange(Math.Sqrt(variance), 0.48, 0.52);
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Test_CurandGenerateNormal_OddCount_ReturnsLengthNotMultiple()
     {
-        if (!GpuKernelLoader.IsDriverAvailable)
-        {
-            return;
-        }
+        CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        if (!TryCreateGenerator(out var generator))
-        {
-            return;
-        }
+        var generator = CreateGenerator();
 
         try
         {
@@ -128,6 +125,18 @@ public class CuRandInteropTests
         {
             AssertSuccess(CuRandApi.curandDestroyGenerator(generator));
         }
+    }
+
+    private static float[] Samples(ulong seed = 1234UL)
+    {
+        Skip.IfNot(TryGenerateUniform(seed, out var samples), "cuRAND library is not available.");
+        return samples;
+    }
+
+    private static IntPtr CreateGenerator()
+    {
+        Skip.IfNot(TryCreateGenerator(out var generator), "cuRAND library is not available.");
+        return generator;
     }
 
     private static bool TryGenerateUniform(ulong seed, out float[] samples)

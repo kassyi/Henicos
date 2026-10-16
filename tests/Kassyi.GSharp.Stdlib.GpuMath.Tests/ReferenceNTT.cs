@@ -1,6 +1,6 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests;
 
-public class ReferenceNTT
+public static class ReferenceNTT
 {
     public const ulong P1 = 4253024257;
     public const ulong P2 = 4293918721;
@@ -67,42 +67,17 @@ public class ReferenceNTT
     public static uint[] NTT(uint[] input, uint[] twiddle, ulong p)
     {
         int n = input.Length;
-        int log2N = (int)Math.Log(n, 2);
+        int log2N = ComputeLog2(n);
         var output = new uint[n];
 
-        // Bit-reverse copy
         for (int i = 0; i < n; i++)
         {
-            int rev = 0;
-            for (int j = 0; j < log2N; j++)
-            {
-                rev = (rev << 1) | ((i >> j) & 1);
-            }
-
-            output[rev] = input[i];
+            output[ReverseBits(i, log2N)] = input[i];
         }
 
-        // Butterfly
         for (int s = 0; s < log2N; s++)
         {
-            int len = 2 << s;
-            int halfLen = len / 2;
-            for (int block = 0; block < n / len; block++)
-            {
-                for (int idx = 0; idx < halfLen; idx++)
-                {
-                    int pos = block * len + idx;
-                    int twiddleIdx = idx * (n / len);
-                    ulong w = twiddle[twiddleIdx];
-
-                    ulong u = output[pos];
-                    ulong vSrc = output[pos + halfLen];
-                    ulong v = (vSrc * w) % p;
-
-                    output[pos] = (uint)((u + v) % p);
-                    output[pos + halfLen] = (uint)((u + p - v) % p);
-                }
-            }
+            ApplyButterflyStageInPlace(output, twiddle, p, n, 2 << s);
         }
 
         return output;
@@ -110,73 +85,40 @@ public class ReferenceNTT
 
     public static uint[] GpuNTTEmulator(uint[] input, uint[] twiddle, ulong p)
     {
-        int n = input.Length; // 64
-        int l = n;
-        var s_row = new uint[n];
+        int n = input.Length;
+        int log2L = ComputeLog2(n);
+        var row = new uint[n];
 
-        // Bit-reverse copy equivalent to GPU
-        for (int tid = 0; tid < l / 2; tid++)
+        for (int tid = 0; tid < n / 2; tid++)
         {
-            int log2L = 0;
-            while ((1 << log2L) < l) log2L++;
-
-            int revTid1 = 0;
-            int revTid2 = 0;
-            for (int i = 0; i < log2L; i++)
-            {
-                revTid1 = (revTid1 << 1) | ((tid >> i) & 1);
-                revTid2 = (revTid2 << 1) | (((tid + l / 2) >> i) & 1);
-            }
-
-            s_row[revTid1] = input[tid];
-            s_row[revTid2] = input[tid + l / 2];
+            row[ReverseBits(tid, log2L)] = input[tid];
+            row[ReverseBits(tid + n / 2, log2L)] = input[tid + n / 2];
         }
 
-        // Butterfly
-        int maxLog2L = 0;
-        while ((1 << maxLog2L) < l) maxLog2L++;
-
-        for (int s = 0; s < maxLog2L; s++)
+        for (int s = 0; s < log2L; s++)
         {
-            // To simulate SyncThreads, we read from old state and write to new state
-            var next_row = (uint[])s_row.Clone();
+            var nextRow = (uint[])row.Clone();
+            int len = 2 << s;
+            int halfLen = len / 2;
 
-            for (int tid = 0; tid < l / 2; tid++)
+            for (int tid = 0; tid < n / 2; tid++)
             {
-                int len = 2 << s;
-                int halfLen = len / 2;
                 int blockIdx = tid / halfLen;
                 int idx = tid % halfLen;
                 int pos = blockIdx * len + idx;
 
-                int twiddleIdx = idx * (n / len);
-                ulong w = twiddle[twiddleIdx];
+                ulong w = twiddle[idx * (n / len)];
+                uint u = row[pos];
+                ulong v = (row[pos + halfLen] * w) % p;
 
-                uint u = s_row[pos];
-                uint vSrc = s_row[pos + halfLen];
-
-                // ModMulBarrett equivalent
-                ulong v = (vSrc * w) % p;
-
-                // ModAdd / ModSub
-                uint addRes = (uint)((u + v) % p);
-                uint subRes = (uint)((u + p - (v % p)) % p);
-
-                next_row[pos] = addRes;
-                next_row[pos + halfLen] = subRes;
+                nextRow[pos] = (uint)((u + v) % p);
+                nextRow[pos + halfLen] = (uint)((u + p - (v % p)) % p);
             }
 
-            s_row = next_row;
+            row = nextRow;
         }
 
-        var output = new uint[n];
-        for (int tid = 0; tid < l / 2; tid++)
-        {
-            output[tid] = s_row[tid];
-            output[tid + l / 2] = s_row[tid + l / 2];
-        }
-
-        return output;
+        return (uint[])row.Clone();
     }
 
     public static uint[] Pointwise(uint[] a, uint[] b, ulong p)
@@ -210,29 +152,77 @@ public class ReferenceNTT
 
             if (val > 0)
             {
-                int wordIdx = k / 2;
-                int bitOffset = (k % 2) * 16;
-
-                uint low32, mid32, high32 = 0;
-                if (bitOffset == 0)
-                {
-                    low32 = (uint)(val & 0xFFFFFFFF);
-                    mid32 = (uint)(val >> 32);
-                }
-                else
-                {
-                    low32 = (uint)((val << 16) & 0xFFFFFFFF);
-                    mid32 = (uint)((val >> 16) & 0xFFFFFFFF);
-                    high32 = (uint)(val >> 48);
-                }
-
-                if (low32 != 0) AtomicAddWithCarry(output, wordIdx, low32, outNumWords);
-                if (mid32 != 0) AtomicAddWithCarry(output, wordIdx + 1, mid32, outNumWords);
-                if (high32 != 0) AtomicAddWithCarry(output, wordIdx + 2, high32, outNumWords);
+                AccumulateCrtTerm(output, k, val, outNumWords);
             }
         }
 
         return output;
+    }
+
+    private static int ComputeLog2(int length)
+    {
+        int log2 = 0;
+        while ((1 << log2) < length)
+        {
+            log2++;
+        }
+
+        return log2;
+    }
+
+    private static int ReverseBits(int value, int bitCount)
+    {
+        int reversed = 0;
+        for (int i = 0; i < bitCount; i++)
+        {
+            reversed = (reversed << 1) | ((value >> i) & 1);
+        }
+
+        return reversed;
+    }
+
+    private static void ApplyButterflyStageInPlace(uint[] data, uint[] twiddle, ulong p, int n, int len)
+    {
+        int halfLen = len / 2;
+        int stride = n / len;
+        for (int block = 0; block < stride; block++)
+        {
+            for (int idx = 0; idx < halfLen; idx++)
+            {
+                int pos = block * len + idx;
+                ulong w = twiddle[idx * stride];
+                ulong u = data[pos];
+                ulong v = (data[pos + halfLen] * w) % p;
+
+                data[pos] = (uint)((u + v) % p);
+                data[pos + halfLen] = (uint)((u + p - v) % p);
+            }
+        }
+    }
+
+    private static void AccumulateCrtTerm(uint[] output, int k, ulong val, int outNumWords)
+    {
+        int wordIdx = k / 2;
+        int bitOffset = (k % 2) * 16;
+
+        uint low32;
+        uint mid32;
+        uint high32 = 0;
+        if (bitOffset == 0)
+        {
+            low32 = (uint)(val & 0xFFFFFFFF);
+            mid32 = (uint)(val >> 32);
+        }
+        else
+        {
+            low32 = (uint)((val << 16) & 0xFFFFFFFF);
+            mid32 = (uint)((val >> 16) & 0xFFFFFFFF);
+            high32 = (uint)(val >> 48);
+        }
+
+        if (low32 != 0) AtomicAddWithCarry(output, wordIdx, low32, outNumWords);
+        if (mid32 != 0) AtomicAddWithCarry(output, wordIdx + 1, mid32, outNumWords);
+        if (high32 != 0) AtomicAddWithCarry(output, wordIdx + 2, high32, outNumWords);
     }
 
     private static void AtomicAddWithCarry(uint[] address, int wordIdx, uint val, int maxWords)

@@ -56,6 +56,8 @@ namespace Kassyi.GSharp.Tests.Integration
             }
         }
 
+        private static readonly string[] ValidDocIdPrefixes = ["T:", "M:", "P:", "F:", "E:", "N:"];
+
         private Dictionary<string, string> ParseBannedSymbols(string filePath)
         {
             var lines = File.ReadAllLines(filePath);
@@ -64,11 +66,25 @@ namespace Kassyi.GSharp.Tests.Integration
             for (int i = 0; i < lines.Length; i++)
             {
                 var line = lines[i].Trim();
-                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
+                if (string.IsNullOrEmpty(line) || line.StartsWith('#'))
                     continue;
 
                 var parts = line.Split(new[] { ';' }, 2);
                 var symbol = parts[0].Trim();
+
+                bool hasValidPrefix = false;
+                foreach (var prefix in ValidDocIdPrefixes)
+                {
+                    if (symbol.StartsWith(prefix, StringComparison.Ordinal))
+                    {
+                        hasValidPrefix = true;
+                        break;
+                    }
+                }
+
+                Assert.True(hasValidPrefix,
+                    $"Invalid Roslyn Documentation Comment ID prefix for symbol '{symbol}' in {filePath} at line {i + 1}. " +
+                    $"Expected one of: {string.Join(", ", ValidDocIdPrefixes)}");
 
                 Assert.True(!dict.ContainsKey(symbol), 
                     $"Duplicate symbol '{symbol}' found within the same file {filePath} at line {i + 1}. " +

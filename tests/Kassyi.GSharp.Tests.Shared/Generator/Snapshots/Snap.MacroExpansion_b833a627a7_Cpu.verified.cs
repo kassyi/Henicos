@@ -62,7 +62,7 @@ if(threadIdx.x == 0 && blockIdx.x == 0)
 {
 data[0]=999;
 }
-/* inline ptx here */
+__gsharp_unsupported(""Gpu.InlinePtx is not supported by the StandardCppDialect dialect"");
 ;
 _state=-1;
 return;

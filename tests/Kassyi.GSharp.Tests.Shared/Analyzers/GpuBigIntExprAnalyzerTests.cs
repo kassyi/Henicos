@@ -9,7 +9,7 @@ public class GpuBigIntExprAnalyzerTests
     public async Task LocalDeclaration_OfGpuBigIntExpr_ReportsDiagnostic()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/LocalDeclaration.cs", s_analyzer)
-                               .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
+                               .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment);
     }
 
     [Fact]
@@ -25,20 +25,20 @@ public class GpuBigIntExprAnalyzerTests
     public async Task MalformedSyntax_ShouldNotCrash_SadPath()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/MalformedSyntax.cs", s_analyzer)
-                               .ReportsErrorsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
+                               .ReportsErrorsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment);
     }
 
     [Fact]
     public async Task Assignment_ToGpuBigIntExpr_ReportsDiagnostic()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/Assignment.cs", s_analyzer)
-                               .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
+                               .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment);
     }
 
     [Fact]
     public async Task LegacyNamespace_Declaration_ReportsDiagnostic()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/GpuBigIntExpr/LegacyNamespace.cs", s_analyzer)
-                               .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment.Id);
+                               .ReportsDiagnosticsAsync(GSharpDiagnostics.GpuBigIntExprDirectAssignment);
     }
 }

@@ -274,7 +274,7 @@ finalVal-=0.5f;
 loopCounter++;
 }
 while(loopCounter<3);
-// test inline ptx
+__gsharp_unsupported(""Gpu.InlinePtx is not supported by the StandardCppDialect dialect"");
 ;
 results[tid]=finalVal;
 }

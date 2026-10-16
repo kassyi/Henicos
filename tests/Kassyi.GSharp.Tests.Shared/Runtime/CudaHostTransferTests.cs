@@ -33,7 +33,7 @@ public class CudaHostTransferTests
     [InlineData((3 * WordsPerChunk) + 5)]
     public async Task CopyToHostAsync_RoundTripsData_AcrossChunkBoundaries(int count)
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var source = DeviceData.Create(count);
         var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
@@ -57,7 +57,7 @@ public class CudaHostTransferTests
     [Scenario(TestScenario.Boundary)]
     public async Task CopyToHostAsync_ElementSizeNotDividingChunk_RoundTripsData()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         // 1 MiB is not a multiple of 12 bytes, so every full chunk ends short of the staging buffer size and the source
         // address must advance by the bytes actually copied.
@@ -96,7 +96,7 @@ public class CudaHostTransferTests
     [Scenario(TestScenario.HappyPath)]
     public async Task CopyToHostAsync_ReturnsBeforeQueuedWorkCompletes()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var source = DeviceData.Create(1024);
         var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
@@ -124,7 +124,7 @@ public class CudaHostTransferTests
     [Scenario(TestScenario.Boundary)]
     public async Task CopyToHostAsync_SequentialCopies_ReuseStagingBuffers()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var source = DeviceData.Create(4096);
         var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
@@ -179,7 +179,7 @@ public class CudaHostTransferTests
     [Scenario(TestScenario.SadPath)]
     public async Task CopyToHostAsync_CanceledInFlight_LeavesDestinationUntouched_AndHoldsStagingUntilDmaCompletes()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var source = DeviceData.Create(1024);
         var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
@@ -220,7 +220,7 @@ public class CudaHostTransferTests
     [Scenario(TestScenario.SadPath)]
     public void CopyToHostAsync_OnCapturingStream_ThrowsWithoutRentingStaging()
     {
-        CudaTestEnvironment.SkipIfNoDevice();
+        CudaCapability.EnsureGpuAvailable();
 
         using var source = DeviceData.Create(16);
         using var scope = new GpuKernelLoader.CudaContextScope();

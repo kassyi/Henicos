@@ -1359,7 +1359,7 @@ public static class StackLinqExtensions
     {
         var enumerator = source.Enumerator;
         var span = enumerator.GetRemainingSpanAndAdvance();
-        int skipCount = Math.Min(count, span.Length);
+        int skipCount = Math.Clamp(count, 0, span.Length);
         if (span.Length - skipCount <= 0)
         {
             return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(ReadOnlySpan<TSource>.Empty));
@@ -1379,7 +1379,7 @@ public static class StackLinqExtensions
     {
         var enumerator = source.Enumerator;
         var span = enumerator.GetRemainingSpanAndAdvance();
-        int skipCount = Math.Min(count, span.Length);
+        int skipCount = Math.Clamp(count, 0, span.Length);
         if (span.Length - skipCount <= 0)
         {
             return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(ReadOnlySpan<TSource>.Empty));

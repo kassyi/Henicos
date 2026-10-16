@@ -18,8 +18,10 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
+    <Using Include="Kassyi.GSharp.Tests.Shared.Helpers" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Kassyi.GSharp.Tests.Shared\Helpers\CudaCapability.cs" Link="Helpers\CudaCapability.cs" />
     <Compile Include="..\Kassyi.GSharp.Tests.Shared\Helpers\HashHelper.cs" Link="Helpers\HashHelper.cs" />
     <Compile Include="..\Kassyi.GSharp.Tests.Shared\Helpers\SnapshotNamingHelper.cs" Link="Helpers\SnapshotNamingHelper.cs" />
   </ItemGroup>

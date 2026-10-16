@@ -17,7 +17,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_11_3_1_MissingIDisposableOnClass_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
-            .ReportsErrorsAsync("GSH0020");
+            .ReportsErrorsAsync(GSharpDiagnostics.MissingIDisposable);
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_11_3_1_UndisposedFieldInDispose_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
-            .ReportsErrorsAsync("GSH0022");
+            .ReportsErrorsAsync(GSharpDiagnostics.UndisposedGpuScope);
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_11_3_2_PropertyGetterSideEffects_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_sideEffectAnalyzer)
-            .ReportsErrorsAsync("GSH0023");
+            .ReportsErrorsAsync(GSharpDiagnostics.PropertyGetterSideEffect);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_11_3_2_ImplicitCastOperators_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_sideEffectAnalyzer)
-            .ReportsErrorsAsync("GSH0024");
+            .ReportsErrorsAsync(GSharpDiagnostics.CastOperatorSideEffect);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_11_3_3_UnguardedMultiAllocation_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_allocationAnalyzer)
-            .ReportsErrorsAsync("GSH0025");
+            .ReportsErrorsAsync(GSharpDiagnostics.UnguardedMultiAllocation);
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_11_3_3_StaticLifecycle_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_allocationAnalyzer)
-            .ReportsErrorsAsync("GSH0026");
+            .ReportsErrorsAsync(GSharpDiagnostics.StaticDisposableAllocation);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_11_3_4_StandardInjectionBorrowing_HazardDetected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
-            .ReportsErrorsAsync("GSH0027");
+            .ReportsErrorsAsync(GSharpDiagnostics.DisposingBorrowedResource);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class ObjectLifecycleSadPathTests : TranspilerTestBase
     public async Task Test_11_3_5_DefaultInterfaceMethods_Detected()
     {
         await RoslynTestUtility.TestAnalyzer(TestCasePath, s_ownershipAnalyzer)
-            .ReportsErrorsAsync("GSH0028");
+            .ReportsErrorsAsync(GSharpDiagnostics.DisposableInDim);
     }
 }
 

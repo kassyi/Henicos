@@ -7,20 +7,25 @@ public class MegaCompilationCacheTests
 {
     [Fact]
     [Category(TestCategory.Stress)]
-    public void GetDynamicCompilation_ConcurrentAccess_IsThreadSafe()
+    public void GetSourceContext_ConcurrentAccess_ReturnsSameInstances()
     {
+        var thisFilePath = GetThisFilePath();
+        var testCasePath = GetTestCasePath("MacroExpansion.cu.cs");
+        var (expectedComp, expectedTree) = MegaCompilationCache.GetSourceContext(thisFilePath);
+        var (expectedCaseComp, expectedCaseTree) = MegaCompilationCache.GetSourceContext(testCasePath);
         var exceptions = new ConcurrentBag<Exception>();
 
-        Parallel.For(0, 200, new ParallelOptions { MaxDegreeOfParallelism = 16 }, _ =>
+        Parallel.For(0, 300, new ParallelOptions { MaxDegreeOfParallelism = 16 }, _ =>
         {
             try
             {
-                var compilation = MegaCompilationCache.GetDynamicCompilation();
-                Assert.NotNull(compilation);
+                var (comp, tree) = MegaCompilationCache.GetSourceContext(thisFilePath);
+                Assert.Same(expectedComp, comp);
+                Assert.Same(expectedTree, tree);
 
-                // Call with callerFilePath
-                var dynamicComp = MegaCompilationCache.GetDynamicCompilation();
-                Assert.NotNull(dynamicComp);
+                var (caseComp, caseTree) = MegaCompilationCache.GetSourceContext(testCasePath);
+                Assert.Same(expectedCaseComp, caseComp);
+                Assert.Same(expectedCaseTree, caseTree);
             }
             catch (Exception ex)
             {
@@ -32,31 +37,44 @@ public class MegaCompilationCacheTests
     }
 
     [Fact]
-    [Category(TestCategory.Stress)]
-    public void GetDynamicCompilation_ConcurrentAccess_WithExplicitCallerPaths_IsDeterministicAndThreadSafe()
+    [Category(TestCategory.Unit)]
+    public void GetSourceContext_SharedSource_UsesSingleCompilation()
     {
-        var exceptions = new ConcurrentBag<Exception>();
-        var thisFilePath = GetThisFilePath();
+        var (comp, tree) = MegaCompilationCache.GetSourceContext(GetThisFilePath());
 
-        Parallel.For(0, 300, new ParallelOptions { MaxDegreeOfParallelism = 16 }, _ =>
-        {
-            try
-            {
-                var compWithExplicitPath = MegaCompilationCache.GetDynamicCompilation(thisFilePath);
-                Assert.NotNull(compWithExplicitPath);
+        Assert.Same(MegaCompilationCache.Compilation, comp);
+        Assert.Contains(tree, comp.SyntaxTrees);
+    }
 
-                var compWithEmptyPath = MegaCompilationCache.GetDynamicCompilation("");
-                Assert.NotNull(compWithEmptyPath);
+    [Fact]
+    [Category(TestCategory.Unit)]
+    public void GetSourceContext_TestCase_IsIsolatedPerFile()
+    {
+        var (compA, treeA) = MegaCompilationCache.GetSourceContext(GetTestCasePath("MacroExpansion.cu.cs"));
+        var (compB, treeB) = MegaCompilationCache.GetSourceContext(GetTestCasePath("AddKernel.cu.cs"));
 
-                Assert.NotEmpty(compWithExplicitPath.SyntaxTrees);
-            }
-            catch (Exception ex)
-            {
-                exceptions.Add(ex);
-            }
-        });
+        Assert.NotSame(compA, compB);
+        Assert.NotSame(MegaCompilationCache.Compilation, compA);
 
-        Assert.Empty(exceptions);
+        // Global usings tree + the test case itself, nothing else leaks in.
+        Assert.Equal(2, compA.SyntaxTrees.Count());
+        Assert.Contains(treeA, compA.SyntaxTrees);
+        Assert.DoesNotContain(treeB, compA.SyntaxTrees);
+        Assert.DoesNotContain(treeA, MegaCompilationCache.Compilation.SyntaxTrees);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    public void Compilation_HasNoDuplicateDefinitions()
+    {
+        // Guards the isolated-file rules against drift from Kassyi.GSharp.Tests.Shared.projitems:
+        // a test-case input leaking into the shared compilation shows up as a duplicate definition.
+        var duplicates = MegaCompilationCache.Compilation.GetDeclarationDiagnostics()
+            .Where(d => d.Id is "CS0101" or "CS0102")
+            .Select(d => d.ToString())
+            .ToArray();
+
+        Assert.Empty(duplicates);
     }
 
     [Fact]
@@ -67,5 +85,8 @@ public class MegaCompilationCacheTests
         Assert.True(baseComp.Options.AllowUnsafe);
     }
 
-    private static string GetThisFilePath([System.Runtime.CompilerServices.CallerFilePath] string path = "") => path;
+    private static string GetThisFilePath([CallerFilePath] string path = "") => path;
+
+    private static string GetTestCasePath(string fileName, [CallerFilePath] string path = "") =>
+        Path.Combine(RoslynTestUtility.GetTestCasesDirectory(path), fileName);
 }

@@ -34,7 +34,7 @@ switch(_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-data[0] = 999;
+__gsharp_unsupported(""Gpu.InlinePtx is not supported by the StandardCppDialect dialect"");
 ;
 _state=-1;
 return;

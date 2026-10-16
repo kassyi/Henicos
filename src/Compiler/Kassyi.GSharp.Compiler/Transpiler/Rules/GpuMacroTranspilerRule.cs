@@ -32,6 +32,15 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
             return;
         }
 
+        if (!context.Emitter.Dialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly))
+        {
+            var dialectName = context.Emitter.Dialect.GetType().Name;
+            context.Reporter.Report(GSharpDiagnostics.InlinePtxNotSupportedByDialect, node, dialectName);
+            context.Emitter.Writer.Append($"__gsharp_unsupported(\"Gpu.InlinePtx is not supported by the {dialectName} dialect\");");
+            context.Emitter.Writer.AppendLine();
+            return;
+        }
+
         var argExpr = node.ArgumentList.Arguments[0].Expression;
 
         var constantValue = context.Query.SemanticModel.GetSafeConstantValue(argExpr);

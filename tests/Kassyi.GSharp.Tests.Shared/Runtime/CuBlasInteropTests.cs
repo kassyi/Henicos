@@ -9,27 +9,23 @@ namespace Kassyi.GSharp.Tests.Shared.Runtime;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class CuBlasInteropTests
 {
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CublasSgemm_MatchesCpuReference()
     {
-        if (!GpuKernelLoader.IsDriverAvailable)
-        {
-            return;
-        }
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
         const int M = 64;
         const int N = 48;
         const int K = 32;
+        const float Beta = 0.5f;
         var a = CreateMatrix(M * K, seed: 1);
         var b = CreateMatrix(K * N, seed: 2);
-        var c = new float[M * N];
+        var cInit = CreateMatrix(M * N, seed: 5);
+        var c = (float[])cInit.Clone();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        if (!TryCreateHandle(out var handle))
-        {
-            return;
-        }
+        Skip.IfNot(TryCreateHandle(out var handle), "cuBLAS library is not available.");
 
         try
         {
@@ -38,10 +34,11 @@ public class CuBlasInteropTests
             using var dC = new GpuBuffer<float>(c.Length);
             dA.CopyToDevice(a);
             dB.CopyToDevice(b);
+            dC.CopyToDevice(c);
 
-            // Column-major: C(MxN) = A(MxK) * B(KxN)
+            // Column-major: C(MxN) = 1.0 * A(MxK) * B(KxN) + Beta * C(MxN)
             AssertSuccess(CuBlasApi.cublasSgemm_v2(handle, CuBlasOperation.None, CuBlasOperation.None,
-                M, N, K, 1.0f, dA.DevicePointer, M, dB.DevicePointer, K, 0.0f, dC.DevicePointer, M));
+                M, N, K, 1.0f, dA.DevicePointer, M, dB.DevicePointer, K, Beta, dC.DevicePointer, M));
             GpuKernelLoader.SynchronizeDevice();
             dC.CopyToHost(c);
         }
@@ -50,17 +47,14 @@ public class CuBlasInteropTests
             AssertSuccess(CuBlasApi.cublasDestroy_v2(handle));
         }
 
-        AssertGemmMatchesProjection(a, b, c, M, N, K);
+        AssertGemmMatchesProjection(a, b, cInit, c, Beta, M, N, K);
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CublasDgemm_TransposedA_MatchesCpuReference()
     {
-        if (!GpuKernelLoader.IsDriverAvailable)
-        {
-            return;
-        }
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
         const int M = 16;
         const int N = 8;
@@ -70,10 +64,7 @@ public class CuBlasInteropTests
         var c = new double[M * N];
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        if (!TryCreateHandle(out var handle))
-        {
-            return;
-        }
+        Skip.IfNot(TryCreateHandle(out var handle), "cuBLAS library is not available.");
 
         try
         {
@@ -129,20 +120,14 @@ public class CuBlasInteropTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.Boundary)]
     public void Test_CublasGetVersion_ReportsSupportedMajorVersion()
     {
-        if (!GpuKernelLoader.IsDriverAvailable)
-        {
-            return;
-        }
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        if (!TryCreateHandle(out var handle))
-        {
-            return;
-        }
+        Skip.IfNot(TryCreateHandle(out var handle), "cuBLAS library is not available.");
 
         try
         {
@@ -155,20 +140,14 @@ public class CuBlasInteropTests
         }
     }
 
-    [Fact]
+    [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Test_CublasSgemm_InvalidLeadingDimension_ReturnsInvalidValue()
     {
-        if (!GpuKernelLoader.IsDriverAvailable)
-        {
-            return;
-        }
+        Skip.IfNot(GpuKernelLoader.IsDriverAvailable, "CUDA driver is not available.");
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        if (!TryCreateHandle(out var handle))
-        {
-            return;
-        }
+        Skip.IfNot(TryCreateHandle(out var handle), "cuBLAS library is not available.");
 
         try
         {
@@ -226,10 +205,10 @@ public class CuBlasInteropTests
     }
 
     /// <summary>
-    /// Freivalds-style check of column-major C(m x n) == A(m x k) * B(k x n) using a probe vector.
+    /// Freivalds-style check of column-major C(m x n) == A(m x k) * B(k x n) + beta * C0(m x n) using a probe vector.
     /// Cost is O(mk + kn + mn) instead of the O(mnk) full reference product.
     /// </summary>
-    private static void AssertGemmMatchesProjection(float[] a, float[] b, float[] c, int m, int n, int k)
+    private static void AssertGemmMatchesProjection(float[] a, float[] b, float[] cInit, float[] c, float beta, int m, int n, int k)
     {
         var x = new double[n];
         for (var col = 0; col < n; col++)
@@ -254,6 +233,11 @@ public class CuBlasInteropTests
                 expected += a[i * m + row] * bx[i];
             }
 
+            for (var col = 0; col < n; col++)
+            {
+                expected += beta * cInit[col * m + row] * x[col];
+            }
+
             var actual = 0.0;
             for (var col = 0; col < n; col++)
             {
@@ -264,3 +248,4 @@ public class CuBlasInteropTests
         }
     }
 }
+

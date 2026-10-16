@@ -1,7 +1,9 @@
+using Kassyi.GSharp.Core;
+
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
-public class ControlFlowTests
-:  TranspilerTestBase{
+public class ControlFlowTests : TranspilerTestBase
+{
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [InlineData(1, 10)]
@@ -39,13 +41,6 @@ public class ControlFlowTests
         Assert.Equal(100, b[0]); // b[0] unchanged
         Assert.Equal(888, b[1]); // b[1] updated
     }
-
-    [Fact]
-    [Category(TestCategory.Syntax)]
-    public void Test_PatternMatching_Transpilation()
-    {
-    }
-
 
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
@@ -121,14 +116,84 @@ public class ControlFlowTests
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_RefConditionalExpression_Transpilation()
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_PatternMatching_Transpilation()
     {
-    }
+        // Runtime semantics of this kernel are covered by Test_SwitchExpression_Transpilation (kernel launch),
+        // since ThreadIndex is unavailable outside a GPU context.
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod(
+            typeof(ControlFlowKernels), nameof(ControlFlowKernels.SwitchExpressionKernel), isDevice: false, dialect: CurrentDialect);
 
+        Assert.Empty(diagnostics);
+        await Verify(Report(cudaSource, diagnostics));
+    }
 
     [Fact]
     [Category(TestCategory.Syntax)]
-    public void Test_DefaultLiteral_Transpilation()
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_RefConditionalExpression_Transpilation()
     {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ControlFlowTarget>(
+            nameof(ControlFlowTarget.RefConditionalExpression), dialect: CurrentDialect);
+
+        Assert.Empty(diagnostics);
+        await Verify(Report(cudaSource, diagnostics));
+
+        int[] a = [1];
+        int[] b = [2];
+        ControlFlowTarget.RefConditionalExpression(a, b, useFirst: true);
+        Assert.Equal(2, a[0]);
+        Assert.Equal(2, b[0]);
+
+        ControlFlowTarget.RefConditionalExpression(a, b, useFirst: false);
+        Assert.Equal(2, a[0]);
+        Assert.Equal(3, b[0]);
+    }
+
+    [Fact]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_DefaultLiteral_Transpilation()
+    {
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ControlFlowTarget>(
+            nameof(ControlFlowTarget.DefaultLiteral), dialect: CurrentDialect);
+
+        Assert.Empty(diagnostics);
+        await Verify(Report(cudaSource, diagnostics));
+
+        SampleData[] items = [new() { X = 5, Y = 1.5f }];
+        int[] counts = [7];
+        ControlFlowTarget.DefaultLiteral(items, counts);
+        Assert.Equal(default, items[0]);
+        Assert.Equal(0, counts[0]);
     }
 }
+
+public struct SampleData
+{
+    public int X;
+    public float Y;
+}
+
+public class ControlFlowTarget
+{
+    [GpuDeviceFunction]
+    public static void IncrementRef(ref int target)
+    {
+        target += 1;
+    }
+
+    public static void RefConditionalExpression(int[] a, int[] b, bool useFirst)
+    {
+        IncrementRef(ref (useFirst ? ref a[0] : ref b[0]));
+    }
+
+    public static void DefaultLiteral(SampleData[] items, int[] counts)
+    {
+        SampleData s = default;
+        int c = default(int);
+        items[0] = s;
+        counts[0] = c;
+    }
+}
+
