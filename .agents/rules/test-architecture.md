@@ -137,6 +137,7 @@ public abstract class StateMachineTestBase
 - **Rule**: Never use magic strings for collection names. Always use the strongly-typed constant from `TestCollections` defined in `Kassyi.GSharp.Tests.Common`.
     - **[NG]**: `[Collection("GlobalStateSequential")]` (Prone to AI hallucinations like "Global" or "NonParallel")
     - **[OK]**: `[Collection(TestCollections.GlobalStateSequential)]`
+    - **GPU Stream / Gate Contention**: Any test that exercises `CudaStreamGate`, `CudaStreamCompletion`, or concurrent GPU kernel launches MUST be decorated with `[Collection(TestCollections.DeviceExclusive)]` so that randomized test execution (`just test-stability`) does not cause thread-pool or CUDA context starvation.
 
 ### 3.4. Snapshot Format & Fast-Hash Naming (`.verified.cs`)
 
@@ -146,6 +147,17 @@ public abstract class StateMachineTestBase
     Snap.{Prefix}_{Hash10}[_{Dialect}].g.verified.cs
     ```
 - **Infrastructure**: Never clone or copy-paste `HashHelper` or snapshot naming methods into individual test assemblies. Use the centralized test foundation in `Kassyi.GSharp.Tests.Shared.Helpers`.
+
+### 3.5. OS-Separated Build Outputs (`bin/<os>/`, `obj/<os>/`) & Repository Root Discovery
+
+- Build outputs and intermediate files are strictly isolated by host OS (`bin/win/`, `obj/win/` vs `bin/linux/`, `obj/linux/`) via `Directory.Build.props` so Windows and WSL builds/tests can coexist without file locking or artifact pollution.
+- **Rule**: In tests that locate repository files (`src/`, `Henicos.slnx`, YAML definitions) starting from `AppContext.BaseDirectory`, **NEVER** hardcode relative parent depth (e.g., `../../../../`). Always walk up `DirectoryInfo.Parent` until a repository root marker (`Henicos.slnx`, `Directory.Build.props`, or the target `src/` path) is found.
+
+### 3.6. Cross-Platform `justfile` Recipes
+
+- When adding or modifying `justfile` recipes for both `[windows]` and `[unix]`:
+    - **No Inline `exec`/`eval` Wrappers**: Do **NOT** use `python3 -c 'exec("...")'` to wrap multi-line scripts in `justfile`. Write clean, native POSIX shell (`sh` / `bash`) for `[unix]` and PowerShell for `[windows]`.
+    - **WSL Non-Interactive Login Shell `PATH`**: When invoking WSL from Windows via `wsl -- bash -lc "..."`, note that Ubuntu's default `~/.bashrc` exits early for non-interactive shells (`case $- in *i*) ;; *) return;; esac`). User-scoped tool paths (`~/.dotnet`, `~/.cargo/bin`) must be configured in `~/.profile` or explicitly exported.
 
 ---
 

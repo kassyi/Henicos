@@ -77,11 +77,11 @@ While .NET Framework Design Guidelines (FDG) generally avoid abbreviations, spec
 /// </remarks>
 ```
 
-### 2.4. Zero-Allocation & LINQ Policy (RS0030)
+### 2.4. Zero-Allocation & LINQ Policy (`RS0030` — `System.Linq` Banned / `StackLinq` Permitted)
 
-- **Banned `System.Linq`**: Standard LINQ is strictly prohibited across the codebase due to heap allocations and hidden boxing (`RS0030`).
-- **Dogfooding `Kassyi.ZeroAlloc.Linq` (StackLinq)**:
-  - For data mapping, filtering, or assertions in tests, harnesses, and utilities, prefer `StackLinq` for zero-allocation fluent chains.
+- **Banned `System.Linq`**: Standard `System.Linq` is strictly prohibited across the codebase due to heap allocations, enumerator boxing, and closure captures (`RS0030`).
+- **Permitted & Encouraged `Kassyi.ZeroAlloc.Linq` (`StackLinq`)**:
+  - Our in-house `StackLinq` (`using Kassyi.ZeroAlloc.Linq;`) is a `ref struct` / value-type zero-allocation LINQ engine. It is **explicitly allowed** across host code, compiler/runtime utilities, tests, and GPU kernels (where supported by `StackLinqTranspilerRule` / `StackLinqFusionRule`).
   - **Quick Example**:
     ```csharp
     using Kassyi.ZeroAlloc.Linq;
