@@ -16,7 +16,8 @@ public class CuRandInteropTests
     [Scenario(TestScenario.HappyPath)]
     public void Test_CurandGenerateUniform_ProducesValuesInHalfOpenUnitInterval()
     {
-        Skip.IfNot(TryGenerateUniform(seed: 1234UL, out var samples), "CUDA driver or cuRAND library is not available.");
+        CudaCapability.EnsureGpuAvailable();
+        var samples = Samples();
 
         var sum = 0.0;
         foreach (var value in samples)
@@ -33,9 +34,9 @@ public class CuRandInteropTests
     [Scenario(TestScenario.HappyPath)]
     public void Test_CurandGenerateUniform_SameSeed_IsDeterministic()
     {
-        float[] second = [];
-        Skip.IfNot(TryGenerateUniform(seed: 42UL, out var first) && TryGenerateUniform(seed: 42UL, out second),
-            "CUDA driver or cuRAND library is not available.");
+        CudaCapability.EnsureGpuAvailable();
+        var first = Samples(42UL);
+        var second = Samples(42UL);
 
         Assert.Equal(first, second);
     }
@@ -44,9 +45,9 @@ public class CuRandInteropTests
     [Scenario(TestScenario.Boundary)]
     public void Test_CurandGenerateUniform_DifferentSeeds_Diverge()
     {
-        float[] second = [];
-        Skip.IfNot(TryGenerateUniform(seed: 1UL, out var first) && TryGenerateUniform(seed: 2UL, out second),
-            "CUDA driver or cuRAND library is not available.");
+        CudaCapability.EnsureGpuAvailable();
+        var first = Samples(1UL);
+        var second = Samples(2UL);
 
         Assert.NotEqual(first, second);
 
@@ -70,7 +71,7 @@ public class CuRandInteropTests
         CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        Skip.IfNot(TryCreateGenerator(out var generator), "cuRAND library is not available.");
+        var generator = CreateGenerator();
 
         var samples = new float[SampleCount];
         try
@@ -111,7 +112,7 @@ public class CuRandInteropTests
         CudaCapability.EnsureGpuAvailable();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        Skip.IfNot(TryCreateGenerator(out var generator), "cuRAND library is not available.");
+        var generator = CreateGenerator();
 
         try
         {
@@ -124,6 +125,18 @@ public class CuRandInteropTests
         {
             AssertSuccess(CuRandApi.curandDestroyGenerator(generator));
         }
+    }
+
+    private static float[] Samples(ulong seed = 1234UL)
+    {
+        Skip.IfNot(TryGenerateUniform(seed, out var samples), "cuRAND library is not available.");
+        return samples;
+    }
+
+    private static IntPtr CreateGenerator()
+    {
+        Skip.IfNot(TryCreateGenerator(out var generator), "cuRAND library is not available.");
+        return generator;
     }
 
     private static bool TryGenerateUniform(ulong seed, out float[] samples)
