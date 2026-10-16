@@ -1,6 +1,8 @@
 #ifndef KASSYI_MATH_GPUBIGINT_CU_H
 #define KASSYI_MATH_GPUBIGINT_CU_H
 
+#include <cstdint>
+
 #ifdef _WIN32
 #define EXPORT_API __declspec(dllexport)
 #else
