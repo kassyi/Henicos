@@ -25,6 +25,16 @@ internal static class StackLinqReductionCore
         Func<TExpr, TExpr, TExpr> combiner)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
         where TSource : struct
+        where TExpr : struct =>
+        ReduceBalancedTree(enumerator, converter, combiner, out _);
+
+    public static TExpr ReduceBalancedTree<TEnumerator, TSource, TExpr>(
+        TEnumerator enumerator,
+        Func<TSource, TExpr> converter,
+        Func<TExpr, TExpr, TExpr> combiner,
+        out int count)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+        where TSource : struct
         where TExpr : struct
     {
         if (!enumerator.TryGetNext(out var first))
@@ -34,13 +44,14 @@ internal static class StackLinqReductionCore
 
         if (!enumerator.TryGetNext(out var second))
         {
+            count = 1;
             return converter(first);
         }
 
         var pool = ArrayPool<TExpr>.Shared;
         var capacity = 16;
         var buffer = pool.Rent(capacity);
-        var count = 0;
+        count = 0;
 
         try
         {
