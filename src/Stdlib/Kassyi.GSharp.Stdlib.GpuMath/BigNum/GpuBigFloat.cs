@@ -302,6 +302,20 @@ public readonly struct GpuBigFloat : IGpuBigNumber<GpuBigFloat>
     /// <param name="right">The second value to compare.</param>
     /// <returns><see langword="true"/> if <paramref name="left"/> is greater than or equal to <paramref name="right"/>; otherwise, <see langword="false"/>.</returns>
     public static bool operator >=(GpuBigFloat left, GpuBigFloat right) => left.CompareTo(right) >= 0;
+
+    /// <inheritdoc/>
+    static GpuBigFloat IGpuBigNumber<GpuBigFloat>.operator +(GpuBigFloat left, GpuBigFloat right) =>
+        left + right;
+
+    /// <inheritdoc/>
+    static GpuBigFloat IGpuBigNumber<GpuBigFloat>.operator -(GpuBigFloat left, GpuBigFloat right) =>
+        left - right;
+
+    /// <inheritdoc/>
+    static GpuBigFloat IGpuBigNumber<GpuBigFloat>.operator *(GpuBigFloat left, GpuBigFloat right) =>
+        left * right;
+
+    /// <inheritdoc/>
+    static GpuBigFloat IGpuBigNumber<GpuBigFloat>.operator /(GpuBigFloat left, GpuBigFloat right) =>
+        left / right;
 }
-
-

@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 internal sealed class FloatVectorCompareScalarExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuBigFloat scalar,
+    GpuFloatOperand scalar,
     VectorCompareOperator opType) : IGpuBoolVectorExpression
 {
     public int Length => vector.Length;
@@ -24,7 +24,7 @@ internal sealed class FloatVectorCompareScalarExpression(
             return _finalValues;
         }
 
-        var scalarSig = scalar.UFloat.Significand;
+        var scalarSig = scalar.Significand;
         var maxWords = Math.Max(vecResult.WordsPerElement, scalarSig.NumWords);
         var blockDimX = (uint)Math.Clamp(maxWords, 32, 1024);
 
@@ -39,7 +39,7 @@ internal sealed class FloatVectorCompareScalarExpression(
             SignB = vecResult.Signs.DevicePointer,
             NumWordsA = vecResult.WordsPerElement,
             NumWordsB = scalarSig.NumWords,
-            ScalarExp = scalar.UFloat.Exponent,
+            ScalarExp = scalar.Exponent,
             ScalarSign = scalar.IsNegative ? 1u : 0u,
             IsScalar = true,
             OpType = (int)opType
@@ -62,6 +62,7 @@ internal sealed class FloatVectorCompareScalarExpression(
         vector.Dispose();
     }
 }
+
 
 internal sealed class FloatVectorCompareVectorExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression left,

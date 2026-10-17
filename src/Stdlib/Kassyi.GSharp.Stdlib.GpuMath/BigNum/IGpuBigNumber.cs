@@ -36,4 +36,36 @@ public interface IGpuBigNumber<TSelf> : IGpuNumber<TSelf>, IDisposable
     /// <param name="isNegative">The sign flag (must be <see langword="false"/> for unsigned types unless magnitude is zero).</param>
     /// <returns>A new <typeparamref name="TSelf"/> instance.</returns>
     static abstract TSelf Create(GpuBigUInt magnitude, int exponent, bool isNegative);
+
+    /// <summary>
+    /// Adds two <typeparamref name="TSelf"/> instances and returns the evaluated result in GPU memory.
+    /// </summary>
+    /// <param name="left">The left operand.</param>
+    /// <param name="right">The right operand.</param>
+    /// <returns>A newly allocated <typeparamref name="TSelf"/> representing the sum.</returns>
+    static abstract TSelf operator +(TSelf left, TSelf right);
+
+    /// <summary>
+    /// Subtracts one <typeparamref name="TSelf"/> instance from another and returns the evaluated result in GPU memory.
+    /// </summary>
+    /// <param name="left">The minuend.</param>
+    /// <param name="right">The subtrahend.</param>
+    /// <returns>A newly allocated <typeparamref name="TSelf"/> representing the difference.</returns>
+    static abstract TSelf operator -(TSelf left, TSelf right);
+
+    /// <summary>
+    /// Multiplies two <typeparamref name="TSelf"/> instances and returns the evaluated result in GPU memory.
+    /// </summary>
+    /// <param name="left">The left factor.</param>
+    /// <param name="right">The right factor.</param>
+    /// <returns>A newly allocated <typeparamref name="TSelf"/> representing the product.</returns>
+    static abstract TSelf operator *(TSelf left, TSelf right);
+
+    /// <summary>
+    /// Divides one <typeparamref name="TSelf"/> instance by another and returns the evaluated result in GPU memory.
+    /// </summary>
+    /// <param name="left">The dividend.</param>
+    /// <param name="right">The divisor.</param>
+    /// <returns>A newly allocated <typeparamref name="TSelf"/> representing the quotient.</returns>
+    static abstract TSelf operator /(TSelf left, TSelf right);
 }

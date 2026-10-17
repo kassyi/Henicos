@@ -80,6 +80,26 @@ public static class GpuBigIntVectorLinqExtensions
         new VectorModScalarExpression(source, new GpuBigIntLeafExpression(scalar));
 
     /// <summary>
+    /// Computes the floor integer square root (<c>isqrt(x)</c>) of each element in a vectorized expression.
+    /// </summary>
+    /// <param name="source">The input vectorized expression of non-negative big integers.</param>
+    /// <returns>A new vectorized expression representing the element-wise integer square root.</returns>
+    public static IGpuBigIntVectorExpression SelectSqrt(
+        this IGpuBigIntVectorExpression source) =>
+        new VectorSqrtExpression(source);
+
+    /// <summary>
+    /// Divides each element of a vectorized expression by a 32-bit unsigned integer scalar.
+    /// </summary>
+    /// <param name="source">The input vectorized expression (dividend).</param>
+    /// <param name="divisor">The 32-bit unsigned integer divisor.</param>
+    /// <returns>A new vectorized expression representing the element-wise 32-bit scalar division.</returns>
+    public static IGpuBigIntVectorExpression SelectDivideByUInt32(
+        this IGpuBigIntVectorExpression source,
+        uint divisor) =>
+        new VectorDivByUInt32Expression(source, divisor);
+
+    /// <summary>
     /// Adds two vectorized expressions element-wise.
     /// </summary>
     /// <param name="left">The first vectorized expression.</param>

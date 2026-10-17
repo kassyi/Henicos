@@ -260,4 +260,53 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var modExpr = array1.AsVectorizedEnumerable().ZipModulo(array2.AsVectorizedEnumerable());
         Assert.Throws<ArgumentException>(() => modExpr.Evaluate(_context));
     }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void SelectSqrt_And_SelectDivideByUInt32_EvaluateCorrectly()
+    {
+        var largeRoot = BigInteger.Parse("12345678901234567890");
+        var largeSquare = largeRoot * largeRoot + 12345;
+        BigInteger[] sqrtInputs = [0, 1, 15, 16, 10000, largeSquare];
+        BigInteger[] expectedSqrts = [0, 1, 3, 4, 100, largeRoot];
+
+        using var sqrtArray = CreateArray(sqrtInputs);
+        using var sqrtExpr = sqrtArray.AsVectorizedEnumerable().SelectSqrt();
+        using var sqrtResult = sqrtExpr.Evaluate(_context);
+        var hostSqrts = ToHostArray(sqrtResult);
+
+        for (var i = 0; i < sqrtInputs.Length; i++)
+        {
+            Assert.Equal(expectedSqrts[i], hostSqrts[i]);
+        }
+
+        BigInteger[] divInputs = [100, -47, 0, -5, largeSquare, -largeSquare];
+        const uint divisor = 7u;
+        using var divArray = CreateArray(divInputs);
+        using var divExpr = divArray.AsVectorizedEnumerable().SelectDivideByUInt32(divisor);
+        using var divResult = divExpr.Evaluate(_context);
+        var hostDivs = ToHostArray(divResult);
+
+        for (var i = 0; i < divInputs.Length; i++)
+        {
+            Assert.Equal(divInputs[i] / divisor, hostDivs[i]);
+        }
+
+        // Verify -5 / 7 == 0 has sign normalized to 0 (non-negative)
+        Assert.False(divResult.GetElement(3).IsNegative);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void SelectSqrt_Negative_And_SelectDivideByUInt32_Zero_ThrowExpectedExceptions()
+    {
+        using var negArray = CreateArray([16, -9, 25]);
+        using var sqrtExpr = negArray.AsVectorizedEnumerable().SelectSqrt();
+        Assert.Throws<InvalidOperationException>(() => sqrtExpr.Evaluate(_context));
+
+        using var divZeroExpr = negArray.AsVectorizedEnumerable().SelectDivideByUInt32(0u);
+        Assert.Throws<DivideByZeroException>(() => divZeroExpr.Evaluate(_context));
+    }
 }
