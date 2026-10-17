@@ -13,12 +13,11 @@ description: "Represents a GPU execution workspace managing memory allocation po
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Represents a GPU execution workspace managing memory allocation pools, device workspaces, composite resource tracking, and backend providers for large integer computations. This file also defines the `GpuExecutionEngine` enumeration (`LegacyNative`, `GSharpAot`).
+Represents a GPU execution workspace managing memory allocation pools, device workspaces, composite resource tracking, and backend providers for large integer computations.
 
 ```csharp
 public enum GpuExecutionEngine
 {
-    LegacyNative,
     GSharpAot
 }
 
@@ -48,7 +47,7 @@ public GpuWorkspace(
 The maximum word count for BigInteger operations.
 
 `engine` _GpuExecutionEngine_<br>
-The GPU execution backend engine to utilize (`GSharpAot` or `LegacyNative`).
+The GPU execution backend engine to utilize (`GSharpAot`).
 
 `useIsolatedContext` _Boolean_<br>
 Whether to create and use an isolated CUDA context (`cuCtxCreate_v2`) instead of the shared global context.
@@ -56,7 +55,7 @@ Whether to create and use an isolated CUDA context (`cuCtxCreate_v2`) instead of
 #### Exceptions
 
 `InvalidOperationException`<br>
-Thrown when CUDA context or native workspace allocation fails.
+Thrown when CUDA context or workspace initialization fails.
 
 ## Properties
 
@@ -113,7 +112,7 @@ public int PolyAlgorithmThreshold { get; set; }
 
 ## Provider
 
-Gets the active GPU arithmetic execution provider implementation (`GSharpKernelProvider.Instance` when `Engine == GpuExecutionEngine.GSharpAot`, otherwise `NativeProvider.Instance`).
+Gets the active GPU arithmetic execution provider implementation (`GSharpKernelProvider.Instance`).
 
 ```csharp
 public IGpuExecutionProvider Provider { get; }
@@ -129,9 +128,10 @@ public IntPtr Stream { get; }
 
 ## WorkspacePointer
 
-Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend).
+Gets the legacy native device pointer (deprecated and returns `IntPtr.Zero`).
 
 ```csharp
+[Obsolete("Legacy native workspace pointers are deprecated and always IntPtr.Zero.")]
 public IntPtr WorkspacePointer { get; }
 ```
 

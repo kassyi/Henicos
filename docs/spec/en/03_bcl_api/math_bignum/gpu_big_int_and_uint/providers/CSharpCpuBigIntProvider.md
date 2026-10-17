@@ -940,4 +940,3 @@ finally
 - [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
 - [IGpuExecutionProvider](IGpuExecutionProvider.md)
 - [GSharpKernelProvider](GSharpKernelProvider.md)
-- [NativeProvider](NativeProvider.md)

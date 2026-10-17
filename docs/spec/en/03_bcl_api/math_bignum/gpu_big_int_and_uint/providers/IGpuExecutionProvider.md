@@ -954,7 +954,6 @@ Console.WriteLine($"100 | 50 = {hostResult[0]}");
 - [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
 - [GSharpKernelProvider Class](GSharpKernelProvider.md)
-- [NativeProvider Class](NativeProvider.md)
 - [CSharpCpuBigIntProvider Class](CSharpCpuBigIntProvider.md)
 - [GpuWorkspace Class](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
 
