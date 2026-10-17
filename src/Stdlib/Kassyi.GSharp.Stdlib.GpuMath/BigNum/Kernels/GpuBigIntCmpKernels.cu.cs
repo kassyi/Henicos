@@ -62,7 +62,7 @@ public static partial class GpuBigIntCmpKernels
             if (wa != wb)
             {
                 // Pack index into upper 32 bits, and comparison result (2 if >, 1 if <) into lower 32 bits
-                long diff = (long)wa - (long)wb;
+                long diff = wa - (long)wb;
                 var signMask = (ulong)(diff >> 63);
                 var resultBits = 2ul - (signMask & 1ul);
                 val = ((ulong)i << 32) | resultBits;
@@ -154,7 +154,7 @@ public static partial class GpuBigIntCmpKernels
 
             if (valid && wa != ws)
             {
-                long diff = (long)wa - (long)ws;
+                long diff = wa - (long)ws;
                 ulong signMask = (ulong)(diff >> 63);
                 ulong resultBits = 2ul - (signMask & 1ul);
                 myVal = ((ulong)idx << 32) | resultBits;
@@ -265,7 +265,7 @@ public static partial class GpuBigIntCmpKernels
 
             if (valid && wa != wb)
             {
-                long diff = (long)wa - (long)wb;
+                long diff = wa - (long)wb;
                 ulong signMask = (ulong)(diff >> 63);
                 ulong resultBits = 2ul - (signMask & 1ul);
                 myVal = ((ulong)idx << 32) | resultBits;

@@ -195,7 +195,7 @@ public static partial class GpuBigIntVectorKernels
 
             if (valid && ws != wd)
             {
-                long diff = (long)ws - (long)wd;
+                long diff = ws - (long)wd;
                 ulong signMask = (ulong)(diff >> 63);
                 ulong resultBits = 2ul - (signMask & 1ul);
                 myVal = ((ulong)idx << 32) | resultBits;

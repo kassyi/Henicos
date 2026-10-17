@@ -64,7 +64,7 @@ public static class GpuBigFloatStackLinqExtensions
             this ParallelStackEnumerable<TEnumerator, GpuBigFloat> source,
             GpuBigFloat scalar)
         where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct =>
-        source.Select(x => (GpuBigFloat)(x + scalar));
+        source.Select(x => x + scalar);
 
     /// <summary>
     /// Subtracts a scalar <see cref="GpuBigFloat"/> from each element of a parallel sequence.
@@ -78,7 +78,7 @@ public static class GpuBigFloatStackLinqExtensions
             this ParallelStackEnumerable<TEnumerator, GpuBigFloat> source,
             GpuBigFloat scalar)
         where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct =>
-        source.Select(x => (GpuBigFloat)(x - scalar));
+        source.Select(x => x - scalar);
 
     /// <summary>
     /// Multiplies each element of a parallel sequence by a scalar <see cref="GpuBigFloat"/>.
@@ -92,7 +92,7 @@ public static class GpuBigFloatStackLinqExtensions
             this ParallelStackEnumerable<TEnumerator, GpuBigFloat> source,
             GpuBigFloat scalar)
         where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct =>
-        source.Select(x => (GpuBigFloat)(x * scalar));
+        source.Select(x => x * scalar);
 
     /// <summary>
     /// Divides each element of a parallel sequence by a scalar <see cref="GpuBigFloat"/>.
@@ -106,7 +106,7 @@ public static class GpuBigFloatStackLinqExtensions
             this ParallelStackEnumerable<TEnumerator, GpuBigFloat> source,
             GpuBigFloat scalar)
         where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct =>
-        source.Select(x => (GpuBigFloat)(x / scalar));
+        source.Select(x => x / scalar);
 
     /// <summary>
     /// Adds two parallel sequences of <see cref="GpuBigFloat"/> values element-wise.
