@@ -164,47 +164,56 @@ public static class GpuBigNumberAlgorithms
         }
 
         // Same effective scale: compare significands aligned at their most significant bit
-        var magCmp = CompareAlignedMagnitudes(left.Magnitude, leftBits, right.Magnitude, rightBits);
+        var magCmp = CompareAlignedMagnitudes(
+            new BitSizedMagnitude(left.Magnitude, leftBits),
+            new BitSizedMagnitude(right.Magnitude, rightBits));
         return left.IsNegative ? -magCmp : magCmp;
     }
 
     /// <summary>
+    /// Pairs an unsigned <see cref="GpuBigUInt"/> magnitude with its precomputed exact bit length.
+    /// </summary>
+    /// <param name="Magnitude">The unsigned magnitude buffer.</param>
+    /// <param name="BitLength">The exact bit length of <paramref name="Magnitude"/>.</param>
+    public readonly record struct BitSizedMagnitude(GpuBigUInt Magnitude, int BitLength);
+
+    /// <summary>
     /// Compares two non-zero <see cref="GpuBigUInt"/> magnitudes with their most significant bits virtually aligned.
     /// </summary>
-    /// <param name="left">The left magnitude operand.</param>
-    /// <param name="leftBits">The exact bit length of <paramref name="left"/>.</param>
-    /// <param name="right">The right magnitude operand.</param>
-    /// <param name="rightBits">The exact bit length of <paramref name="right"/>.</param>
+    /// <param name="left">The left magnitude and its exact bit length.</param>
+    /// <param name="right">The right magnitude and its exact bit length.</param>
     /// <returns>A signed integer indicating the relative order of the virtually aligned magnitudes.</returns>
-    public static int CompareAlignedMagnitudes(GpuBigUInt left, int leftBits, GpuBigUInt right, int rightBits)
+    public static int CompareAlignedMagnitudes(BitSizedMagnitude left, BitSizedMagnitude right)
     {
-        if (leftBits == rightBits)
+        if (left.BitLength == right.BitLength)
         {
-            return left.CompareTo(right);
+            return left.Magnitude.CompareTo(right.Magnitude);
         }
 
-        var maxBits = Math.Max(leftBits, rightBits);
-        var leftShift = maxBits - leftBits;
-        var rightShift = maxBits - rightBits;
+        var maxBits = Math.Max(left.BitLength, right.BitLength);
+        var leftShift = maxBits - left.BitLength;
+        var rightShift = maxBits - right.BitLength;
 
-        var leftActiveWords = (leftBits + 31) / 32;
-        var rightActiveWords = (rightBits + 31) / 32;
+        var leftActiveWords = (left.BitLength + 31) / 32;
+        var rightActiveWords = (right.BitLength + 31) / 32;
         var maxVirtualWords = (maxBits + 31) / 32;
 
         var leftHost = ArrayPool<uint>.Shared.Rent(leftActiveWords);
         var rightHost = ArrayPool<uint>.Shared.Rent(rightActiveWords);
         try
         {
-            left.Workspace.Provider.CopyDeviceToHost(leftHost, left.DevicePointer, leftActiveWords, left.Workspace.Stream);
-            right.Workspace.Provider.CopyDeviceToHost(rightHost, right.DevicePointer, rightActiveWords, right.Workspace.Stream);
+            left.Magnitude.Workspace.Provider.CopyDeviceToHost(
+                leftHost, left.Magnitude.DevicePointer, leftActiveWords, left.Magnitude.Workspace.Stream);
+            right.Magnitude.Workspace.Provider.CopyDeviceToHost(
+                rightHost, right.Magnitude.DevicePointer, rightActiveWords, right.Magnitude.Workspace.Stream);
 
-            var leftSpan = leftHost.AsSpan(0, leftActiveWords);
-            var rightSpan = rightHost.AsSpan(0, rightActiveWords);
+            var leftReader = new VirtualShiftedLimbReader(leftHost.AsSpan(0, leftActiveWords), leftShift);
+            var rightReader = new VirtualShiftedLimbReader(rightHost.AsSpan(0, rightActiveWords), rightShift);
 
             for (var i = maxVirtualWords - 1; i >= 0; i--)
             {
-                var wordA = GetVirtuallyShiftedWord(leftSpan, leftShift, i);
-                var wordB = GetVirtuallyShiftedWord(rightSpan, rightShift, i);
+                var wordA = leftReader.GetWord(i);
+                var wordB = rightReader.GetWord(i);
                 if (wordA != wordB)
                 {
                     return wordA > wordB ? 1 : -1;
@@ -220,21 +229,25 @@ public static class GpuBigNumberAlgorithms
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static uint GetVirtuallyShiftedWord(ReadOnlySpan<uint> words, int shiftBits, int virtualWordIndex)
+    private readonly ref struct VirtualShiftedLimbReader(ReadOnlySpan<uint> words, int shiftBits)
     {
-        var wordShift = shiftBits / 32;
-        var bitShift = shiftBits % 32;
-        var srcIdx = virtualWordIndex - wordShift;
+        private readonly ReadOnlySpan<uint> _words = words;
+        private readonly int _wordShift = shiftBits / 32;
+        private readonly int _bitShift = shiftBits % 32;
 
-        var high = (uint)srcIdx < (uint)words.Length ? words[srcIdx] : 0u;
-        if (bitShift == 0)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public uint GetWord(int virtualWordIndex)
         {
-            return high;
-        }
+            var srcIdx = virtualWordIndex - _wordShift;
+            var high = (uint)srcIdx < (uint)_words.Length ? _words[srcIdx] : 0u;
+            if (_bitShift == 0)
+            {
+                return high;
+            }
 
-        var lowIdx = srcIdx - 1;
-        var low = (uint)lowIdx < (uint)words.Length ? words[lowIdx] : 0u;
-        return (high << bitShift) | (low >> (32 - bitShift));
+            var lowIdx = srcIdx - 1;
+            var low = (uint)lowIdx < (uint)_words.Length ? _words[lowIdx] : 0u;
+            return (high << _bitShift) | (low >> (32 - _bitShift));
+        }
     }
 }

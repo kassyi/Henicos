@@ -41,24 +41,7 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     /// <returns>A new <typeparamref name="T"/> containing the sum.</returns>
     public T VisitAdd<T>(T left, T right)
         where T : struct, IGpuBigNumber<T>
-    {
-        var maxWords = Math.Max(left.Magnitude.NumWords, right.Magnitude.NumWords) + 1;
-        var resultSig = new GpuBigUInt(left.Workspace, maxWords);
-
-        var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
-            new LegacyProviderArithmeticAdapter(), Workspace.Stream);
-        Arithmetic.Add(ref execContext,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(left.Magnitude.DevicePointer, left.Magnitude.NumWords), 0,
-                left.Magnitude.NumWords), left.Exponent, left.IsNegative,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(right.Magnitude.DevicePointer, right.Magnitude.NumWords), 0,
-                right.Magnitude.NumWords), right.Exponent, right.IsNegative,
-            new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                resultSig.NumWords), out var resultExp, out var resultSign);
-
-        return T.Create(resultSig, resultExp, left.CanBeNegative && resultSign);
-    }
+        => ExecuteAddSub(left, right, negateRight: false);
 
     /// <summary>
     /// Evaluates the subtraction of two arbitrary-precision floating-point numbers on the GPU.
@@ -69,23 +52,22 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
     /// <returns>A new <typeparamref name="T"/> containing the difference.</returns>
     public T VisitSub<T>(T left, T right)
         where T : struct, IGpuBigNumber<T>
+        => ExecuteAddSub(left, right, negateRight: true);
+
+    private T ExecuteAddSub<T>(T left, T right, bool negateRight)
+        where T : struct, IGpuBigNumber<T>
     {
         var maxWords = Math.Max(left.Magnitude.NumWords, right.Magnitude.NumWords) + 1;
         var resultSig = new GpuBigUInt(left.Workspace, maxWords);
 
         var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
             new LegacyProviderArithmeticAdapter(), Workspace.Stream);
+        var rightSign = negateRight ? !right.IsNegative : right.IsNegative;
 
-        // Subtraction is simply addition with the right sign flipped
         Arithmetic.Add(ref execContext,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(left.Magnitude.DevicePointer, left.Magnitude.NumWords), 0,
-                left.Magnitude.NumWords), left.Exponent, left.IsNegative,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(right.Magnitude.DevicePointer, right.Magnitude.NumWords), 0,
-                right.Magnitude.NumWords), right.Exponent, !right.IsNegative,
-            new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                resultSig.NumWords), out var resultExp, out var resultSign);
+            left.Magnitude.Handle, left.Exponent, left.IsNegative,
+            right.Magnitude.Handle, right.Exponent, rightSign,
+            resultSig.Handle, out var resultExp, out var resultSign);
 
         return T.Create(resultSig, resultExp, left.CanBeNegative && resultSign);
     }
@@ -128,14 +110,9 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
             var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
                 new LegacyProviderArithmeticAdapter(), Workspace.Stream);
             Arithmetic.Divide(ref execContext,
-                new GpuBigIntMemoryHandle(
-                    new GpuBigIntDeviceBuffer(left.Magnitude.DevicePointer, left.Magnitude.NumWords), 0,
-                    left.Magnitude.NumWords), left.Exponent, left.IsNegative,
-                new GpuBigIntMemoryHandle(
-                    new GpuBigIntDeviceBuffer(right.Magnitude.DevicePointer, right.Magnitude.NumWords), 0,
-                    right.Magnitude.NumWords), right.Exponent, right.IsNegative,
-                new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                    resultSig.NumWords), out var resultExp, out var resultSign);
+                left.Magnitude.Handle, left.Exponent, left.IsNegative,
+                right.Magnitude.Handle, right.Exponent, right.IsNegative,
+                resultSig.Handle, out var resultExp, out var resultSign);
 
             return T.Create(resultSig, resultExp, left.CanBeNegative && resultSign);
         }

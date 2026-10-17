@@ -169,10 +169,11 @@ public static partial class GpuBigIntDivRem
         {
             using var bPaddedExtended = new GpuBigUInt(rightOperand.Workspace, evalWords);
             bPaddedExtended.Clear();
-            bPaddedExtended.Clear(); // intentional double clear from original code just in case
             bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(n, evalWords));
 
-            CorrectUnderflow(rightOperand.Workspace, evalWords, quotientBuffer, remainderExtended, bPaddedExtended);
+            var correctionCtx = new BarrettCorrectionContext(
+                rightOperand.Workspace, evalWords, quotientBuffer, remainderExtended, bPaddedExtended);
+            CorrectUnderflow(in correctionCtx);
         }
         else
         {
@@ -180,7 +181,9 @@ public static partial class GpuBigIntDivRem
             bPaddedExtended.Clear();
             bPaddedExtended.CopyFrom(rightOperand, numWords: Math.Min(rightOperand.NumWords, evalWords));
 
-            CorrectRemainder(rightOperand.Workspace, evalWords, quotientBuffer, remainderExtended, bPaddedExtended);
+            var correctionCtx = new BarrettCorrectionContext(
+                rightOperand.Workspace, evalWords, quotientBuffer, remainderExtended, bPaddedExtended);
+            CorrectRemainder(in correctionCtx);
         }
 
         remainderBuffer.Clear();
@@ -241,15 +244,20 @@ public static partial class GpuBigIntDivRem
         remainderBuffer.CopyFrom(remainderExtended, numWords: Math.Min(remainderBuffer.NumWords, evalWords));
     }
 
+    private readonly record struct BarrettCorrectionContext(
+        GpuWorkspace Workspace,
+        int EvalWords,
+        GpuBigUInt QuotientBuffer,
+        GpuBigUInt RemainderExtended,
+        GpuBigUInt BPaddedExtended);
 
     [ExcludeFromCodeCoverage]
-    private static void CorrectUnderflow(GpuWorkspace workspace, int evalWords, GpuBigUInt quotientBuffer,
-        GpuBigUInt remainderExtended, GpuBigUInt bPaddedExtended)
+    private static void CorrectUnderflow(in BarrettCorrectionContext ctx)
     {
         var loopCount = 0;
-        using var one = GpuBigUInt.CreatePowerOfTwo(workspace, quotientBuffer.NumWords, 0);
-        using var tempQuot = new GpuBigUInt(workspace, quotientBuffer.NumWords);
-        using var tempRem = new GpuBigUInt(workspace, evalWords);
+        using var one = GpuBigUInt.CreatePowerOfTwo(ctx.Workspace, ctx.QuotientBuffer.NumWords, 0);
+        using var tempQuot = new GpuBigUInt(ctx.Workspace, ctx.QuotientBuffer.NumWords);
+        using var tempRem = new GpuBigUInt(ctx.Workspace, ctx.EvalWords);
 
         var underflow = true;
         while (underflow)
@@ -257,33 +265,32 @@ public static partial class GpuBigIntDivRem
             loopCount++;
             if (loopCount > 10000)
             {
-                var r = string.Join(",", remainderExtended.ToHostArray());
-                var b = string.Join(",", bPaddedExtended.ToHostArray());
-                throw new Exception($"DivRem underflow correction failed to converge. evalWords: {evalWords}, RemExtended: {r}, BPadded: {b}");
+                var r = string.Join(",", ctx.RemainderExtended.ToHostArray());
+                var b = string.Join(",", ctx.BPaddedExtended.ToHostArray());
+                throw new Exception($"DivRem underflow correction failed to converge. evalWords: {ctx.EvalWords}, RemExtended: {r}, BPadded: {b}");
             }
 
-            GpuBigIntMath.Sub(quotientBuffer, one, tempQuot);
-            quotientBuffer.CopyFrom(tempQuot, numWords: quotientBuffer.NumWords);
+            GpuBigIntMath.Sub(ctx.QuotientBuffer, one, tempQuot);
+            ctx.QuotientBuffer.CopyFrom(tempQuot, numWords: ctx.QuotientBuffer.NumWords);
 
-            GpuBigIntMath.Add(remainderExtended, bPaddedExtended, tempRem);
-            remainderExtended.CopyFrom(tempRem, numWords: evalWords);
+            GpuBigIntMath.Add(ctx.RemainderExtended, ctx.BPaddedExtended, tempRem);
+            ctx.RemainderExtended.CopyFrom(tempRem, numWords: ctx.EvalWords);
 
-            var topWord = remainderExtended.GetTopWords(1)[0];
+            var topWord = ctx.RemainderExtended.GetTopWords(1)[0];
             underflow = (topWord & 0x80000000u) != 0;
         }
     }
 
     [ExcludeFromCodeCoverage]
-    private static void CorrectRemainder(GpuWorkspace workspace, int evalWords, GpuBigUInt quotientBuffer,
-        GpuBigUInt remainderExtended, GpuBigUInt bPaddedExtended)
+    private static void CorrectRemainder(in BarrettCorrectionContext ctx)
     {
         var loopCount = 0;
-        using var tempQuot = new GpuBigUInt(workspace, quotientBuffer.NumWords);
-        using var tempRem = new GpuBigUInt(workspace, evalWords);
-        using var shiftedB = new GpuBigUInt(workspace, evalWords);
-        using var oneFallback = GpuBigUInt.CreatePowerOfTwo(workspace, quotientBuffer.NumWords, 0);
+        using var tempQuot = new GpuBigUInt(ctx.Workspace, ctx.QuotientBuffer.NumWords);
+        using var tempRem = new GpuBigUInt(ctx.Workspace, ctx.EvalWords);
+        using var shiftedB = new GpuBigUInt(ctx.Workspace, ctx.EvalWords);
+        using var oneFallback = GpuBigUInt.CreatePowerOfTwo(ctx.Workspace, ctx.QuotientBuffer.NumWords, 0);
 
-        while (!GpuBigIntMath.IsLessThan(remainderExtended, bPaddedExtended))
+        while (!GpuBigIntMath.IsLessThan(ctx.RemainderExtended, ctx.BPaddedExtended))
         {
             loopCount++;
             if (loopCount > 10000)
@@ -291,35 +298,35 @@ public static partial class GpuBigIntDivRem
                 throw new Exception("DivRem remainder correction failed to converge.");
             }
 
-            var rBits = GetActualBits(remainderExtended);
-            var bBits = GetActualBits(bPaddedExtended);
+            var rBits = GetActualBits(ctx.RemainderExtended);
+            var bBits = GetActualBits(ctx.BPaddedExtended);
 
             if (rBits > bBits + 1)
             {
                 var shift = rBits - bBits - 1;
-                GpuBigIntMath.ShiftLeft(bPaddedExtended, shift, shiftedB);
+                GpuBigIntMath.ShiftLeft(ctx.BPaddedExtended, shift, shiftedB);
 
-                if (GpuBigIntMath.IsLessThan(remainderExtended, shiftedB))
+                if (GpuBigIntMath.IsLessThan(ctx.RemainderExtended, shiftedB))
                 {
                     shift--;
-                    GpuBigIntMath.ShiftLeft(bPaddedExtended, shift, shiftedB);
+                    GpuBigIntMath.ShiftLeft(ctx.BPaddedExtended, shift, shiftedB);
                 }
 
-                GpuBigIntMath.Sub(remainderExtended, shiftedB, tempRem);
-                remainderExtended.CopyFrom(tempRem, numWords: evalWords);
+                GpuBigIntMath.Sub(ctx.RemainderExtended, shiftedB, tempRem);
+                ctx.RemainderExtended.CopyFrom(tempRem, numWords: ctx.EvalWords);
 
-                using var correction = GpuBigUInt.CreatePowerOfTwo(workspace, quotientBuffer.NumWords, shift);
-                GpuBigIntMath.Add(quotientBuffer, correction, tempQuot);
-                quotientBuffer.CopyFrom(tempQuot, numWords: quotientBuffer.NumWords);
+                using var correction = GpuBigUInt.CreatePowerOfTwo(ctx.Workspace, ctx.QuotientBuffer.NumWords, shift);
+                GpuBigIntMath.Add(ctx.QuotientBuffer, correction, tempQuot);
+                ctx.QuotientBuffer.CopyFrom(tempQuot, numWords: ctx.QuotientBuffer.NumWords);
 
                 continue;
             }
 
-            GpuBigIntMath.Sub(remainderExtended, bPaddedExtended, tempRem);
-            remainderExtended.CopyFrom(tempRem, numWords: evalWords);
+            GpuBigIntMath.Sub(ctx.RemainderExtended, ctx.BPaddedExtended, tempRem);
+            ctx.RemainderExtended.CopyFrom(tempRem, numWords: ctx.EvalWords);
 
-            GpuBigIntMath.Add(quotientBuffer, oneFallback, tempQuot);
-            quotientBuffer.CopyFrom(tempQuot, numWords: quotientBuffer.NumWords);
+            GpuBigIntMath.Add(ctx.QuotientBuffer, oneFallback, tempQuot);
+            ctx.QuotientBuffer.CopyFrom(tempQuot, numWords: ctx.QuotientBuffer.NumWords);
         }
     }
 

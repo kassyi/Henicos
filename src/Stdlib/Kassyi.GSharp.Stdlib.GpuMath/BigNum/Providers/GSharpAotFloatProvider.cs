@@ -295,24 +295,20 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             return;
         }
 
-        ComputeNormalizedInverseSqrt(context.GpuWorkspace, valueOperand, valueExp, actualBits, resultSig.NumWords,
-            out var aNorm, out var rsqrtRaw, out var rsqrtSliced, out var adjustedExp, out var effectiveScaleBits);
+        using var invSqrt = ComputeNormalizedInverseSqrt(new InverseSqrtRequest(
+            context.GpuWorkspace, valueOperand, valueExp, actualBits, resultSig.NumWords));
 
-        using (aNorm)
-        using (rsqrtRaw)
-        {
-            var prodWords = aNorm.NumWords + rsqrtSliced.NumWords;
-            using var prodResult = context.GpuWorkspace.RentTemp(prodWords);
-            context.GpuWorkspace.Provider.ClearMemoryAsync(prodResult.DevicePointer, prodWords, stream);
+        var prodWords = invSqrt.NormalizedOperand.NumWords + invSqrt.SlicedInverseSqrt.NumWords;
+        using var prodResult = context.GpuWorkspace.RentTemp(prodWords);
+        context.GpuWorkspace.Provider.ClearMemoryAsync(prodResult.DevicePointer, prodWords, stream);
 
-            GpuBigIntMath.Mul(aNorm, rsqrtSliced, prodResult);
+        GpuBigIntMath.Mul(invSqrt.NormalizedOperand, invSqrt.SlicedInverseSqrt, prodResult);
 
-            var tempHandle = new GpuBigIntMemoryHandle(prodResult.Handle.Buffer, prodResult.Handle.WordOffset, prodWords);
-            var tempExp = (adjustedExp / 2) - effectiveScaleBits;
-            resultSign = false;
+        var tempHandle = new GpuBigIntMemoryHandle(prodResult.Handle.Buffer, prodResult.Handle.WordOffset, prodWords);
+        var tempExp = (invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
+        resultSign = false;
 
-            Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
-        }
+        Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
     }
 
     /// <inheritdoc/>
@@ -343,67 +339,99 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             throw new DivideByZeroException("Cannot compute inverse square root of zero.");
         }
 
-        ComputeNormalizedInverseSqrt(context.GpuWorkspace, valueOperand, valueExp, actualBits, resultSig.NumWords,
-            out var aNorm, out var rsqrtRaw, out var rsqrtSliced, out var adjustedExp, out var effectiveScaleBits);
+        using var invSqrt = ComputeNormalizedInverseSqrt(new InverseSqrtRequest(
+            context.GpuWorkspace, valueOperand, valueExp, actualBits, resultSig.NumWords));
 
-        using (aNorm)
-        using (rsqrtRaw)
+        var tempExp = -(invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
+        resultSign = false;
+
+        Normalize(ref context, invSqrt.SlicedInverseSqrt.Handle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
+    }
+
+    private readonly record struct InverseSqrtRequest(
+        GpuWorkspace Workspace,
+        GpuBigUInt ValueOperand,
+        int ValueExp,
+        int ActualBits,
+        int TargetResultWords);
+
+    private readonly struct NormalizedInverseSqrtScope(
+        [TakesOwnership] GpuBigUInt normalizedOperand,
+        [TakesOwnership] GpuBigUInt rawInverseSqrt,
+        GpuBigUInt slicedInverseSqrt,
+        int adjustedExponent,
+        int effectiveScaleBits) : IDisposable
+    {
+        public GpuBigUInt NormalizedOperand { get; } = normalizedOperand;
+        public GpuBigUInt RawInverseSqrt { get; } = rawInverseSqrt;
+        public GpuBigUInt SlicedInverseSqrt { get; } = slicedInverseSqrt;
+        public int AdjustedExponent { get; } = adjustedExponent;
+        public int EffectiveScaleBits { get; } = effectiveScaleBits;
+
+        public void Dispose()
         {
-            var tempExp = -(adjustedExp / 2) - effectiveScaleBits;
-            resultSign = false;
-
-            Normalize(ref context, rsqrtSliced.Handle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
+            NormalizedOperand.Dispose();
+            RawInverseSqrt.Dispose();
         }
     }
 
-    private static void ComputeNormalizedInverseSqrt(
-        GpuWorkspace workspace,
-        GpuBigUInt valueOperand,
-        int valueExp,
-        int actualBits,
-        int targetResultWords,
-        out GpuBigUInt aNorm,
-        out GpuBigUInt rsqrtRaw,
-        out GpuBigUInt rsqrtSliced,
-        out int adjustedExp,
-        out int effectiveScaleBits)
+    private static NormalizedInverseSqrtScope ComputeNormalizedInverseSqrt(in InverseSqrtRequest request)
     {
+        var workspace = request.Workspace;
         var stream = workspace.Stream;
-        var workWords = Math.Max(valueOperand.NumWords, targetResultWords);
-        var lz = workWords * 32 - actualBits;
-        adjustedExp = valueExp - lz;
+        var workWords = Math.Max(request.ValueOperand.NumWords, request.TargetResultWords);
+        var lz = workWords * 32 - request.ActualBits;
+        var adjustedExp = request.ValueExp - lz;
         if (adjustedExp % 2 != 0)
         {
             lz--;
-            adjustedExp = valueExp - lz;
+            adjustedExp = request.ValueExp - lz;
         }
 
         using var paddedOperand = workspace.RentTemp(workWords);
         workspace.Provider.ClearMemoryAsync(paddedOperand.DevicePointer, workWords, stream);
-        workspace.Provider.CopyDeviceToDevice(paddedOperand.DevicePointer, valueOperand.DevicePointer,
-            valueOperand.NumWords, stream);
+        workspace.Provider.CopyDeviceToDevice(paddedOperand.DevicePointer, request.ValueOperand.DevicePointer,
+            request.ValueOperand.NumWords, stream);
 
-        aNorm = workspace.RentTemp(workWords);
-        workspace.Provider.ClearMemoryAsync(aNorm.DevicePointer, workWords, stream);
-        workspace.Provider.ShiftLeft(workspace, paddedOperand, lz, aNorm);
+        var aNorm = workspace.RentTemp(workWords);
+        try
+        {
+            workspace.Provider.ClearMemoryAsync(aNorm.DevicePointer, workWords, stream);
+            workspace.Provider.ShiftLeft(workspace, paddedOperand, lz, aNorm);
 
-        const int MarginWords = 4;
-        const int DiscardGuardWords = 2;
-        var rsqrtWords = workWords + MarginWords;
-        rsqrtRaw = workspace.RentTemp(rsqrtWords);
-        workspace.Provider.ClearMemoryAsync(rsqrtRaw.DevicePointer, rsqrtWords, stream);
+            const int MarginWords = 4;
+            const int DiscardGuardWords = 2;
+            var rsqrtWords = workWords + MarginWords;
+            var rsqrtRaw = workspace.RentTemp(rsqrtWords);
+            try
+            {
+                workspace.Provider.ClearMemoryAsync(rsqrtRaw.DevicePointer, rsqrtWords, stream);
 
-        GpuBigIntDivRem.InverseSqrt(aNorm, rsqrtRaw, MarginWords);
+                GpuBigIntDivRem.InverseSqrt(aNorm, rsqrtRaw, MarginWords);
 
-        // Add guard-word rounding offset to absorb Newton-Raphson right-shift truncation before slicing off the lowest 2 guard words
-        GpuBigIntMath.Add(rsqrtRaw, 4u, rsqrtRaw);
+                // Add guard-word rounding offset to absorb Newton-Raphson right-shift truncation before slicing off the lowest 2 guard words
+                GpuBigIntMath.Add(rsqrtRaw, 4u, rsqrtRaw);
 
-        var slicedHandle = new GpuBigIntMemoryHandle(
-            rsqrtRaw.Handle.Buffer,
-            rsqrtRaw.Handle.WordOffset + DiscardGuardWords,
-            rsqrtWords - DiscardGuardWords);
-        rsqrtSliced = new GpuBigUInt(workspace, slicedHandle, isTemp: true);
-        effectiveScaleBits = (rsqrtWords - DiscardGuardWords) * 32;
+                var slicedHandle = new GpuBigIntMemoryHandle(
+                    rsqrtRaw.Handle.Buffer,
+                    rsqrtRaw.Handle.WordOffset + DiscardGuardWords,
+                    rsqrtWords - DiscardGuardWords);
+                var rsqrtSliced = new GpuBigUInt(workspace, slicedHandle, isTemp: true);
+                var effectiveScaleBits = (rsqrtWords - DiscardGuardWords) * 32;
+
+                return new NormalizedInverseSqrtScope(aNorm, rsqrtRaw, rsqrtSliced, adjustedExp, effectiveScaleBits);
+            }
+            catch
+            {
+                rsqrtRaw.Dispose();
+                throw;
+            }
+        }
+        catch
+        {
+            aNorm.Dispose();
+            throw;
+        }
     }
 
     /// <inheritdoc/>
