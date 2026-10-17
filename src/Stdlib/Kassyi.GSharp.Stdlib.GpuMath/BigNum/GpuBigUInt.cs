@@ -601,4 +601,20 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     /// <returns>A <see cref="ScopedBigIntMemory"/> wrapping the evaluated memory handle.</returns>
     public ScopedBigIntMemory Accept(scoped ref BigIntExpressionVisitor visitor) =>
         visitor.VisitGpuUIntBigInteger(this);
+
+    /// <inheritdoc/>
+    static GpuBigUInt IGpuBigNumber<GpuBigUInt>.operator +(GpuBigUInt left, GpuBigUInt right) =>
+        (left + right).Node.Evaluate(left.Workspace);
+
+    /// <inheritdoc/>
+    static GpuBigUInt IGpuBigNumber<GpuBigUInt>.operator -(GpuBigUInt left, GpuBigUInt right) =>
+        (left - right).Node.Evaluate(left.Workspace);
+
+    /// <inheritdoc/>
+    static GpuBigUInt IGpuBigNumber<GpuBigUInt>.operator *(GpuBigUInt left, GpuBigUInt right) =>
+        (left * right).Node.Evaluate(left.Workspace);
+
+    /// <inheritdoc/>
+    static GpuBigUInt IGpuBigNumber<GpuBigUInt>.operator /(GpuBigUInt left, GpuBigUInt right) =>
+        (left / right).Node.Evaluate(left.Workspace);
 }

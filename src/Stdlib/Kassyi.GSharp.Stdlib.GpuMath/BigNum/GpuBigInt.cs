@@ -186,4 +186,20 @@ public readonly struct GpuBigInt([TakesOwnership] GpuBigUInt value, bool isNegat
     /// <returns>A <see cref="GpuBigIntExpr"/> AST node capturing the modulo operation.</returns>
     public static GpuBigIntExpr operator %(GpuBigInt left, GpuBigInt right) =>
         left % (GpuBigIntExpr)right;
+
+    /// <inheritdoc/>
+    static GpuBigInt IGpuBigNumber<GpuBigInt>.operator +(GpuBigInt left, GpuBigInt right) =>
+        (left + right).Evaluate(left.Workspace);
+
+    /// <inheritdoc/>
+    static GpuBigInt IGpuBigNumber<GpuBigInt>.operator -(GpuBigInt left, GpuBigInt right) =>
+        (left - right).Evaluate(left.Workspace);
+
+    /// <inheritdoc/>
+    static GpuBigInt IGpuBigNumber<GpuBigInt>.operator *(GpuBigInt left, GpuBigInt right) =>
+        (left * right).Evaluate(left.Workspace);
+
+    /// <inheritdoc/>
+    static GpuBigInt IGpuBigNumber<GpuBigInt>.operator /(GpuBigInt left, GpuBigInt right) =>
+        (left / right).Evaluate(left.Workspace);
 }
