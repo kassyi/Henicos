@@ -16,7 +16,7 @@ public static partial class GpuBigIntDivRem
             throw new DivideByZeroException();
         }
 
-        var targetBits = actualBits + marginWords * 32;
+        var targetBits = (n + marginWords) * 32;
         var currentBits = 31; // X_top has 31 bits
 
         ComputeInitialGuess(targetOperand, resultBuffer, targetBits, isSquareRoot: true);
@@ -33,31 +33,6 @@ public static partial class GpuBigIntDivRem
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static BigInteger IntegerSqrt(BigInteger value)
-    {
-        if (value <= 0)
-        {
-            return 0;
-        }
-
-        var guess = value >> (int)(value.GetBitLength() / 2);
-        if (guess == 0)
-        {
-            guess = 1;
-        }
-
-        while (true)
-        {
-            var nextGuess = (guess + value / guess) >> 1;
-            if (nextGuess >= guess)
-            {
-                return guess;
-            }
-
-            guess = nextGuess;
-        }
-    }
 
 
     /// <summary>
@@ -136,19 +111,23 @@ public static partial class GpuBigIntDivRem
         var marginBits = marginWords * 32;
         var totalShift = bBits + marginBits + (lz / 2);
 
-        using var shiftedRNorm = new GpuBigUInt(leftOperand.Workspace, 2 * n + marginWords);
-        shiftedRNorm.Clear();
-        GpuBigIntMath.ShiftRight(rNorm, totalShift, shiftedRNorm);
-
         var currentRoot = new GpuBigUInt(leftOperand.Workspace, n);
-        currentRoot.CopyFrom(shiftedRNorm, destOffsetWords: 0, srcOffsetWords: 0, numWords: n);
-
-        if (GetActualBits(currentRoot) == 0)
+        try
         {
-            currentRoot.Workspace.Provider.CopyHostToDevice(currentRoot.DevicePointer, [1u], 1, currentRoot.Workspace.Stream);
-        }
+            GpuBigIntMath.ShiftAndResize(rNorm, -totalShift, currentRoot);
 
-        return currentRoot;
+            if (GetActualBits(currentRoot) == 0)
+            {
+                currentRoot.Workspace.Provider.CopyHostToDevice(currentRoot.DevicePointer, [1u], 1, currentRoot.Workspace.Stream);
+            }
+
+            return currentRoot;
+        }
+        catch
+        {
+            currentRoot.Dispose();
+            throw;
+        }
     }
 
     private static void RefineSqrtWithHeronMethod(GpuBigUInt leftOperand, GpuBigUInt currentRoot, GpuBigUInt resultBuffer)

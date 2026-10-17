@@ -105,6 +105,35 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
+    public void StackEnumerable_BalancedTree_OddAndLargeSequences_CalculateCorrectResults()
+    {
+        // Odd count: 5 elements [5, 15, -10, 25, 30]
+        using var o0 = CreateFloat(5);
+        using var o1 = CreateFloat(15);
+        using var o2 = CreateFloat(-10);
+        using var o3 = CreateFloat(25);
+        using var o4 = CreateFloat(30);
+
+        var oddArray = new[] { o0, o1, o2, o3, o4 };
+
+        using var oddSum = oddArray.AsStackEnumerable().Sum();
+        using var oddMax = oddArray.AsStackEnumerable().Max();
+        using var oddMin = oddArray.AsStackEnumerable().Min();
+        using var oddAvg = oddArray.AsStackEnumerable().Average();
+
+        Assert.Equal(65.0, ToDouble(oddSum), precision: 8);
+        Assert.Equal(30.0, ToDouble(oddMax), precision: 8);
+        Assert.Equal(-10.0, ToDouble(oddMin), precision: 8);
+        Assert.Equal(13.0, ToDouble(oddAvg), precision: 8);
+
+        // Aggregate with custom binary func: pairwise sum
+        using var aggSum = oddArray.AsStackEnumerable().Aggregate(static (a, b) => a + b);
+        Assert.Equal(65.0, ToDouble(aggSum), precision: 8);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
     public void StackEnumerable_ZipArithmetic_CalculatesCorrectResults()
     {
         using var l0 = CreateFloat(100);
@@ -186,5 +215,115 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         slicedExpr.EvaluateTo(_context, destArray);
         Assert.Equal(-72.0, ToDouble(destArray.GetElement(0)), precision: 8);
         Assert.Equal(108.0, ToDouble(destArray.GetElement(1)), precision: 8);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void GpuBigFloatArray_VectorLinq_Comparisons_And_Where_WorkCorrectly()
+    {
+        const int length = 5;
+        const int words = 4;
+
+        using var vec = new GpuBigFloatArray(_context, length, words);
+        using var otherVec = new GpuBigFloatArray(_context, length, words);
+
+        // Values: [10.0, -5.0, 20.0 (5 * 2^2), 0.0, 50.0]
+        using var v0 = CreateFloat(10, exponent: 0);
+        using var v1 = CreateFloat(-5, exponent: 0);
+        using var v2 = CreateFloat(5, exponent: 2); // 20.0
+        using var v3 = CreateFloat(0, exponent: 0);
+        using var v4 = CreateFloat(50, exponent: 0);
+
+        vec.SetElement(0, v0);
+        vec.SetElement(1, v1);
+        vec.SetElement(2, v2);
+        vec.SetElement(3, v3);
+        vec.SetElement(4, v4);
+
+        // Other values: [10.0 (5 * 2^1), -2.0, 15.0, 0.0, 100.0]
+        using var o0 = CreateFloat(5, exponent: 1); // 10.0
+        using var o1 = CreateFloat(-2, exponent: 0);
+        using var o2 = CreateFloat(15, exponent: 0);
+        using var o3 = CreateFloat(0, exponent: -10);
+        using var o4 = CreateFloat(100, exponent: 0);
+
+        otherVec.SetElement(0, o0);
+        otherVec.SetElement(1, o1);
+        otherVec.SetElement(2, o2);
+        otherVec.SetElement(3, o3);
+        otherVec.SetElement(4, o4);
+
+        using var scalar20 = CreateFloat(20, exponent: 0);
+        using var scalarZero = CreateFloat(0, exponent: 0);
+
+        // Scalar comparisons (note v2 = 5 * 2^2 == 20 * 2^0)
+        using var eqExpr = vec.AsVectorizedEnumerable().IsEqualTo(scalar20);
+        var eqHost = new uint[length];
+        using (var eqDev = eqExpr.Evaluate(_context))
+        {
+            _context.Provider.CopyDeviceToHost(eqHost, eqDev.DevicePointer, length);
+        }
+
+        Assert.Equal([0u, 0u, 1u, 0u, 0u], eqHost);
+
+        // Vector-to-vector comparisons: vec >= otherVec -> [10==10(1), -5>=-2(0), 20>=15(1), 0==0(1), 50>=100(0)]
+        using var gteVecExpr = vec.AsVectorizedEnumerable().IsGreaterThanOrEqualTo(otherVec.AsVectorizedEnumerable());
+        var gteHost = new uint[length];
+        using (var gteDev = gteVecExpr.Evaluate(_context))
+        {
+            _context.Provider.CopyDeviceToHost(gteHost, gteDev.DevicePointer, length);
+        }
+
+        Assert.Equal([1u, 0u, 1u, 1u, 0u], gteHost);
+
+        // Where (> 0) -> [10.0, 20.0, 50.0, 0.0 (padded), 0.0 (padded)], Sum = 80.0
+        using var filteredSum = vec.AsVectorizedEnumerable()
+            .Where(vec.AsVectorizedEnumerable().IsGreaterThan(scalarZero))
+            .Sum(_context);
+        Assert.Equal(80.0, ToDouble(filteredSum), precision: 8);
+
+        // Where (> 0) + Take(2) -> [10.0, 20.0]
+        using var filteredTakeExpr = vec.AsVectorizedEnumerable()
+            .Where(vec.AsVectorizedEnumerable().IsGreaterThan(scalarZero))
+            .Take(2);
+        var filteredTakeRes = filteredTakeExpr.Evaluate(_context);
+        Assert.Equal(10.0, ToDouble(filteredTakeRes.GetElement(0)), precision: 8);
+        Assert.Equal(20.0, ToDouble(filteredTakeRes.GetElement(1)), precision: 8);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void GpuBigFloatArray_MultiChunk_SumMaxMin_ReduceCorrectlyOnGpu()
+    {
+        const int length = 300; // Crosses 256-element chunk boundary (2 passes)
+        const int words = 4;
+
+        using var vec = new GpuBigFloatArray(_context, length, words);
+        double expectedSum = 0;
+        double expectedMax = double.MinValue;
+        double expectedMin = double.MaxValue;
+
+        for (var i = 0; i < length; i++)
+        {
+            long sig = (i % 3 == 0) ? -(i + 1) : (i + 1);
+            int exp = (i % 2 == 0) ? 0 : 1;
+            double val = sig * Math.Pow(2.0, exp);
+            expectedSum += val;
+            if (val > expectedMax) expectedMax = val;
+            if (val < expectedMin) expectedMin = val;
+
+            using var elem = CreateFloat(sig, exp, words);
+            vec.SetElement(i, elem);
+        }
+
+        using var gpuSum = vec.AsVectorizedEnumerable().Sum(_context);
+        using var gpuMax = vec.AsVectorizedEnumerable().Max(_context);
+        using var gpuMin = vec.AsVectorizedEnumerable().Min(_context);
+
+        Assert.Equal(expectedSum, ToDouble(gpuSum), precision: 8);
+        Assert.Equal(expectedMax, ToDouble(gpuMax), precision: 8);
+        Assert.Equal(expectedMin, ToDouble(gpuMin), precision: 8);
     }
 }

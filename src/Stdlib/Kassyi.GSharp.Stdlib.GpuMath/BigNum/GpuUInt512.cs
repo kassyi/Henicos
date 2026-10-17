@@ -11,12 +11,24 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 [CollectionBuilder(typeof(GpuUInt512), nameof(Create))]
 [GenerateGpuNumberOperators]
 [ExcludeFromCodeCoverage]
-public partial struct GpuUInt512(GpuBigUInt<LimbBuffer16> value) : IEquatable<GpuUInt512>, IComparable<GpuUInt512>
+public partial struct GpuUInt512(GpuBigUInt<LimbBuffer16> value) : IGpuNumber<GpuUInt512>
 {
     /// <summary>
     /// The underlying 512-bit fixed-size unsigned big integer storage.
     /// </summary>
     public GpuBigUInt<LimbBuffer16> Value = value;
+
+    /// <inheritdoc/>
+    public readonly bool IsNegative => false;
+
+    /// <inheritdoc/>
+    public readonly bool CanBeNegative => false;
+
+    /// <inheritdoc/>
+    public readonly bool IsZero() => Value.IsZero();
+
+    /// <inheritdoc/>
+    public readonly int GetBitLength() => Value.GetBitLength();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuUInt512"/> struct initialized with a 32-bit unsigned integer value.

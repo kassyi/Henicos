@@ -137,6 +137,10 @@ public static partial class GpuBigIntKernels
             {
                 valB = ~valB;
             }
+            else if (sign == -2)
+            {
+                valA = ~valA;
+            }
 
             var sum = (ulong)valA + valB;
             var g = (uint)(sum >> 32);

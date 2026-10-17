@@ -137,6 +137,21 @@ public static class GpuBigIntMath
         leftOperand.Workspace.Provider.Mul(leftOperand.Workspace, leftOperand, rightOperand, resultBuffer);
 
     /// <summary>
+    /// Divides an unsigned big integer by a 32-bit unsigned scalar on the GPU (<c>quotientBuffer = dividend / divisor</c>) and returns the 32-bit remainder.
+    /// </summary>
+    /// <param name="dividend">The dividend operand.</param>
+    /// <param name="divisor">The 32-bit unsigned scalar divisor.</param>
+    /// <param name="quotientBuffer">The destination buffer in GPU device memory receiving the quotient.</param>
+    /// <returns>The 32-bit unsigned remainder (<c>dividend % divisor</c>).</returns>
+    /// <exception cref="ArgumentException">Thrown when buffer word lengths do not match.</exception>
+    /// <exception cref="DivideByZeroException">Thrown when <paramref name="divisor"/> is zero.</exception>
+    public static uint DivideByUInt32(GpuBigUInt dividend, uint divisor, GpuBigUInt quotientBuffer)
+    {
+        ThrowIfSizeMismatch(dividend, quotientBuffer);
+        return dividend.Workspace.Provider.DivideByUInt32(dividend.Workspace, dividend, divisor, quotientBuffer);
+    }
+
+    /// <summary>
     /// Computes the Greatest Common Divisor (GCD) of two big integers on the GPU using Lehmer's / Euclidean algorithm.
     /// </summary>
     /// <param name="leftOperand">The first big integer.</param>
@@ -188,6 +203,89 @@ public static class GpuBigIntMath
     {
         ThrowIfSizeMismatch(leftOperand, resultBuffer);
         leftOperand.Workspace.Provider.ShiftRight(leftOperand.Workspace, leftOperand, shiftBits, resultBuffer);
+    }
+
+    /// <summary>
+    /// Shifts <paramref name="source"/> by a signed bit offset (left if positive, right if negative) and writes the resized result into <paramref name="resultBuffer"/>.
+    /// </summary>
+    /// <param name="source">The source unsigned integer buffer of arbitrary word length.</param>
+    /// <param name="signedBitShift">The signed bit shift (positive for left shift, negative for right shift).</param>
+    /// <param name="resultBuffer">The destination buffer of arbitrary word length.</param>
+    public static void ShiftAndResize(GpuBigUInt source, int signedBitShift, GpuBigUInt resultBuffer)
+    {
+        var workspace = source.Workspace;
+        if (workspace.Provider is GSharpAotProvider && !GpuKernelLoader.IsCpuFallbackMode)
+        {
+            var wordShift = signedBitShift / 32;
+            var bitShift = signedBitShift % 32;
+            if (bitShift < 0)
+            {
+                wordShift--;
+                bitShift += 32;
+            }
+
+            var blockDim = (uint)Math.Min(1024, Math.Max(32, (resultBuffer.NumWords + 31) / 32 * 32));
+            if (source.DevicePointer == resultBuffer.DevicePointer)
+            {
+                using var tempCopy = workspace.RentTemp(source.NumWords);
+                workspace.Provider.CopyDeviceToDevice(tempCopy.DevicePointer, source.DevicePointer, source.NumWords, workspace.Stream);
+                GpuBigFloatKernels.LaunchFloatNormalizeKernelPtr(
+                    tempCopy.DevicePointer, source.NumWords,
+                    resultBuffer.DevicePointer, resultBuffer.NumWords,
+                    wordShift, bitShift,
+                    gridDimX: 1, blockDimX: blockDim, hStream: workspace.Stream);
+            }
+            else
+            {
+                GpuBigFloatKernels.LaunchFloatNormalizeKernelPtr(
+                    source.DevicePointer, source.NumWords,
+                    resultBuffer.DevicePointer, resultBuffer.NumWords,
+                    wordShift, bitShift,
+                    gridDimX: 1, blockDimX: blockDim, hStream: workspace.Stream);
+            }
+
+            return;
+        }
+
+        var srcWords = ArrayPool<uint>.Shared.Rent(source.NumWords);
+        var dstWords = ArrayPool<uint>.Shared.Rent(resultBuffer.NumWords);
+        try
+        {
+            workspace.Provider.CopyDeviceToHost(srcWords, source.DevicePointer, source.NumWords, workspace.Stream);
+            var val = BigIntExtensions.ToBigInteger(srcWords.AsSpan(0, source.NumWords));
+            var shifted = signedBitShift >= 0 ? (val << signedBitShift) : (val >> -signedBitShift);
+            shifted.WriteLimbs(dstWords.AsSpan(0, resultBuffer.NumWords));
+            workspace.Provider.CopyHostToDevice(resultBuffer.DevicePointer, dstWords, resultBuffer.NumWords, workspace.Stream);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(srcWords);
+            ArrayPool<uint>.Shared.Return(dstWords);
+        }
+    }
+
+    /// <summary>
+    /// Normalizes <paramref name="source"/> so that its most significant non-zero bit is aligned to the MSB of <paramref name="resultBuffer"/>,
+    /// returning the signed bit shift applied (<c>resultBuffer.NumWords * 32 - actualBits</c>).
+    /// </summary>
+    /// <param name="source">The source unsigned integer buffer.</param>
+    /// <param name="resultBuffer">The destination buffer receiving the MSB-aligned limbs.</param>
+    /// <param name="actualBits">When this method returns, contains the bit length of <paramref name="source"/> prior to normalization.</param>
+    /// <returns>The signed bit shift applied (or <c>0</c> if <paramref name="source"/> is zero).</returns>
+    public static int NormalizeToMsb(GpuBigUInt source, GpuBigUInt resultBuffer, out int actualBits)
+    {
+        var workspace = source.Workspace;
+        actualBits = source.GetBitLength();
+        if (actualBits == 0)
+        {
+            workspace.Provider.ClearMemoryAsync(resultBuffer.DevicePointer, resultBuffer.NumWords, workspace.Stream);
+            return 0;
+        }
+
+        var targetBits = resultBuffer.NumWords * 32;
+        var shift = targetBits - actualBits;
+        ShiftAndResize(source, shift, resultBuffer);
+        return shift;
     }
 
     /// <summary>

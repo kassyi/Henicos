@@ -33,199 +33,86 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
 
 
     /// <summary>
-    /// Evaluates the addition of two signed arbitrary-precision floating-point numbers on the GPU.
+    /// Evaluates the addition of two arbitrary-precision floating-point numbers on the GPU.
     /// </summary>
+    /// <typeparam name="T">The concrete GPU big number type (<see cref="GpuBigFloat"/> or <see cref="GpuBigUFloat"/>).</typeparam>
     /// <param name="left">The left operand.</param>
     /// <param name="right">The right operand.</param>
-    /// <returns>A new <see cref="GpuBigFloat"/> containing the sum.</returns>
-    public GpuBigFloat VisitAdd(GpuBigFloat left, GpuBigFloat right)
-    {
-        var maxWords = Math.Max(left.UFloat.Significand.NumWords, right.UFloat.Significand.NumWords) + 1;
-        var resultSig = new GpuBigUInt(left.UFloat.Significand.Workspace, maxWords);
-
-        var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
-            new LegacyProviderArithmeticAdapter(), Workspace.Stream);
-        Arithmetic.Add(ref execContext,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(left.UFloat.Significand.DevicePointer, left.UFloat.Significand.NumWords), 0,
-                left.UFloat.Significand.NumWords), left.UFloat.Exponent, left.IsNegative,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(right.UFloat.Significand.DevicePointer, right.UFloat.Significand.NumWords), 0,
-                right.UFloat.Significand.NumWords), right.UFloat.Exponent, right.IsNegative,
-            new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                resultSig.NumWords), out var resultExp, out var resultSign);
-
-        return new GpuBigFloat(new GpuBigUFloat(resultSig, resultExp), resultSign);
-    }
+    /// <returns>A new <typeparamref name="T"/> containing the sum.</returns>
+    public T VisitAdd<T>(T left, T right)
+        where T : struct, IGpuBigNumber<T>
+        => ExecuteAddSub(left, right, negateRight: false);
 
     /// <summary>
-    /// Evaluates the subtraction of two signed arbitrary-precision floating-point numbers on the GPU.
+    /// Evaluates the subtraction of two arbitrary-precision floating-point numbers on the GPU.
     /// </summary>
+    /// <typeparam name="T">The concrete GPU big number type (<see cref="GpuBigFloat"/> or <see cref="GpuBigUFloat"/>).</typeparam>
     /// <param name="left">The left minuend operand.</param>
     /// <param name="right">The right subtrahend operand.</param>
-    /// <returns>A new <see cref="GpuBigFloat"/> containing the difference.</returns>
-    public GpuBigFloat VisitSub(GpuBigFloat left, GpuBigFloat right)
+    /// <returns>A new <typeparamref name="T"/> containing the difference.</returns>
+    public T VisitSub<T>(T left, T right)
+        where T : struct, IGpuBigNumber<T>
+        => ExecuteAddSub(left, right, negateRight: true);
+
+    private T ExecuteAddSub<T>(T left, T right, bool negateRight)
+        where T : struct, IGpuBigNumber<T>
     {
-        var maxWords = Math.Max(left.UFloat.Significand.NumWords, right.UFloat.Significand.NumWords) + 1;
-        var resultSig = new GpuBigUInt(left.UFloat.Significand.Workspace, maxWords);
+        var maxWords = Math.Max(left.Magnitude.NumWords, right.Magnitude.NumWords) + 1;
+        var resultSig = new GpuBigUInt(left.Workspace, maxWords);
 
         var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
             new LegacyProviderArithmeticAdapter(), Workspace.Stream);
+        var leftOp = GpuFloatOperand.From(left);
+        var rightOp = GpuFloatOperand.From(right, negate: negateRight);
 
-        // Subtraction is simply addition with the right sign flipped
-        Arithmetic.Add(ref execContext,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(left.UFloat.Significand.DevicePointer, left.UFloat.Significand.NumWords), 0,
-                left.UFloat.Significand.NumWords), left.UFloat.Exponent, left.IsNegative,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(right.UFloat.Significand.DevicePointer, right.UFloat.Significand.NumWords), 0,
-                right.UFloat.Significand.NumWords), right.UFloat.Exponent, !right.IsNegative,
-            new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                resultSig.NumWords), out var resultExp, out var resultSign);
+        var res = Arithmetic.Add(ref execContext, in leftOp, in rightOp, resultSig.Handle);
 
-        return new GpuBigFloat(new GpuBigUFloat(resultSig, resultExp), resultSign);
+        return T.Create(resultSig, res.Exponent, left.CanBeNegative && res.IsNegative);
     }
 
     /// <summary>
-    /// Evaluates the multiplication of two signed arbitrary-precision floating-point numbers on the GPU.
+    /// Evaluates the multiplication of two arbitrary-precision floating-point numbers on the GPU.
     /// </summary>
+    /// <typeparam name="T">The concrete GPU big number type (<see cref="GpuBigFloat"/> or <see cref="GpuBigUFloat"/>).</typeparam>
     /// <param name="left">The left multiplicand operand.</param>
     /// <param name="right">The right multiplier operand.</param>
-    /// <returns>A new <see cref="GpuBigFloat"/> containing the product.</returns>
-    public GpuBigFloat VisitMul(GpuBigFloat left, GpuBigFloat right)
+    /// <returns>A new <typeparamref name="T"/> containing the product.</returns>
+    public T VisitMul<T>(T left, T right)
+        where T : struct, IGpuBigNumber<T>
     {
-        // For multiplication, we can directly reuse GpuBigUInt AST for significands!
-        var sigExpr = left.UFloat.Significand * right.UFloat.Significand;
+        // Directly reuse GpuBigUInt AST for significands
+        var sigExpr = left.Magnitude * right.Magnitude;
         var resultSig = sigExpr.Node.Evaluate(Workspace);
 
-        var resultExp = left.UFloat.Exponent + right.UFloat.Exponent;
-        var resultSign = !resultSig.IsZero() && (left.IsNegative != right.IsNegative);
-
-        return new GpuBigFloat(new GpuBigUFloat(resultSig, resultExp), resultSign);
-    }
-
-    /// <summary>
-    /// Evaluates the division of two signed arbitrary-precision floating-point numbers on the GPU.
-    /// </summary>
-    /// <param name="left">The left dividend operand.</param>
-    /// <param name="right">The right divisor operand.</param>
-    /// <returns>A new <see cref="GpuBigFloat"/> containing the quotient.</returns>
-    public GpuBigFloat VisitDiv(GpuBigFloat left, GpuBigFloat right)
-    {
-        var maxWords = Math.Max(left.UFloat.Significand.NumWords, right.UFloat.Significand.NumWords);
-        var resultSig = new GpuBigUInt(left.UFloat.Significand.Workspace, maxWords);
-
-        try
-        {
-            var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
-                new LegacyProviderArithmeticAdapter(), Workspace.Stream);
-            Arithmetic.Divide(ref execContext,
-                new GpuBigIntMemoryHandle(
-                    new GpuBigIntDeviceBuffer(left.UFloat.Significand.DevicePointer, left.UFloat.Significand.NumWords), 0,
-                    left.UFloat.Significand.NumWords), left.UFloat.Exponent, left.IsNegative,
-                new GpuBigIntMemoryHandle(
-                    new GpuBigIntDeviceBuffer(right.UFloat.Significand.DevicePointer, right.UFloat.Significand.NumWords), 0,
-                    right.UFloat.Significand.NumWords), right.UFloat.Exponent, right.IsNegative,
-                new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                    resultSig.NumWords), out var resultExp, out var resultSign);
-
-            return new GpuBigFloat(new GpuBigUFloat(resultSig, resultExp), resultSign);
-        }
-        catch
-        {
-            resultSig.Dispose();
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Evaluates the addition of two unsigned arbitrary-precision floating-point numbers on the GPU.
-    /// </summary>
-    /// <param name="left">The left operand.</param>
-    /// <param name="right">The right operand.</param>
-    /// <returns>A new <see cref="GpuBigUFloat"/> containing the sum.</returns>
-    public GpuBigUFloat VisitAdd(GpuBigUFloat left, GpuBigUFloat right)
-    {
-        var maxWords = Math.Max(left.Significand.NumWords, right.Significand.NumWords) + 1;
-        var resultSig = new GpuBigUInt(left.Significand.Workspace, maxWords);
-        var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
-            new LegacyProviderArithmeticAdapter(), Workspace.Stream);
-        Arithmetic.Add(ref execContext,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(left.Significand.DevicePointer, left.Significand.NumWords),
-                0, left.Significand.NumWords), left.Exponent, false,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(right.Significand.DevicePointer, right.Significand.NumWords), 0,
-                right.Significand.NumWords), right.Exponent, false,
-            new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                resultSig.NumWords), out var resultExp, out var _);
-        return new GpuBigUFloat(resultSig, resultExp);
-    }
-
-    /// <summary>
-    /// Evaluates the subtraction of two unsigned arbitrary-precision floating-point numbers on the GPU.
-    /// </summary>
-    /// <param name="left">The left minuend operand.</param>
-    /// <param name="right">The right subtrahend operand.</param>
-    /// <returns>A new <see cref="GpuBigUFloat"/> containing the difference.</returns>
-    public GpuBigUFloat VisitSub(GpuBigUFloat left, GpuBigUFloat right)
-    {
-        var maxWords = Math.Max(left.Significand.NumWords, right.Significand.NumWords) + 1;
-        var resultSig = new GpuBigUInt(left.Significand.Workspace, maxWords);
-        var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
-            new LegacyProviderArithmeticAdapter(), Workspace.Stream);
-        Arithmetic.Add(ref execContext,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(left.Significand.DevicePointer, left.Significand.NumWords),
-                0, left.Significand.NumWords), left.Exponent, false,
-            new GpuBigIntMemoryHandle(
-                new GpuBigIntDeviceBuffer(right.Significand.DevicePointer, right.Significand.NumWords), 0,
-                right.Significand.NumWords), right.Exponent, true,
-            new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                resultSig.NumWords), out var resultExp, out var _);
-        return new GpuBigUFloat(resultSig, resultExp);
-    }
-
-    /// <summary>
-    /// Evaluates the multiplication of two unsigned arbitrary-precision floating-point numbers on the GPU.
-    /// </summary>
-    /// <param name="left">The left multiplicand operand.</param>
-    /// <param name="right">The right multiplier operand.</param>
-    /// <returns>A new <see cref="GpuBigUFloat"/> containing the product.</returns>
-    public GpuBigUFloat VisitMul(GpuBigUFloat left, GpuBigUFloat right)
-    {
-        var sigExpr = left.Significand * right.Significand;
-        var resultSig = sigExpr.Node.Evaluate(Workspace);
         var resultExp = left.Exponent + right.Exponent;
-        return new GpuBigUFloat(resultSig, resultExp);
+        var resultSign = left.CanBeNegative && !resultSig.IsZero() && (left.IsNegative != right.IsNegative);
+
+        return T.Create(resultSig, resultExp, resultSign);
     }
 
     /// <summary>
-    /// Evaluates the division of two unsigned arbitrary-precision floating-point numbers on the GPU.
+    /// Evaluates the division of two arbitrary-precision floating-point numbers on the GPU.
     /// </summary>
+    /// <typeparam name="T">The concrete GPU big number type (<see cref="GpuBigFloat"/> or <see cref="GpuBigUFloat"/>).</typeparam>
     /// <param name="left">The left dividend operand.</param>
     /// <param name="right">The right divisor operand.</param>
-    /// <returns>A new <see cref="GpuBigUFloat"/> containing the quotient.</returns>
-    public GpuBigUFloat VisitDiv(GpuBigUFloat left, GpuBigUFloat right)
+    /// <returns>A new <typeparamref name="T"/> containing the quotient.</returns>
+    public T VisitDiv<T>(T left, T right)
+        where T : struct, IGpuBigNumber<T>
     {
-        var maxWords = Math.Max(left.Significand.NumWords, right.Significand.NumWords);
-        var resultSig = new GpuBigUInt(left.Significand.Workspace, maxWords);
+        var maxWords = Math.Max(left.Magnitude.NumWords, right.Magnitude.NumWords);
+        var resultSig = new GpuBigUInt(left.Workspace, maxWords);
 
         try
         {
             var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
                 new LegacyProviderArithmeticAdapter(), Workspace.Stream);
-            Arithmetic.Divide(ref execContext,
-                new GpuBigIntMemoryHandle(
-                    new GpuBigIntDeviceBuffer(left.Significand.DevicePointer, left.Significand.NumWords),
-                    0, left.Significand.NumWords), left.Exponent, false,
-                new GpuBigIntMemoryHandle(
-                    new GpuBigIntDeviceBuffer(right.Significand.DevicePointer, right.Significand.NumWords), 0,
-                    right.Significand.NumWords), right.Exponent, false,
-                new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                    resultSig.NumWords), out var resultExp, out var _);
+            var leftOp = GpuFloatOperand.From(left);
+            var rightOp = GpuFloatOperand.From(right);
 
-            return new GpuBigUFloat(resultSig, resultExp);
+            var res = Arithmetic.Divide(ref execContext, in leftOp, in rightOp, resultSig.Handle);
+
+            return T.Create(resultSig, res.Exponent, left.CanBeNegative && res.IsNegative);
         }
         catch
         {

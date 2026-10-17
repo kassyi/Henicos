@@ -63,6 +63,23 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
             gridDimX: 1, blockDimX: (uint)blockDim, hStream: workspace.Stream);
     }
 
+    /// <inheritdoc/>
+    public uint DivideByUInt32(GpuWorkspace workspace, GpuBigUInt dividend, uint divisor,
+        GpuBigUInt quotientBuffer)
+    {
+        if (divisor == 0)
+        {
+            throw new DivideByZeroException();
+        }
+
+        return EvaluateKernelResult<uint>(workspace, 1, remPtr =>
+        {
+            GpuBigIntScalarKernels.LaunchScalarDivByUInt32KernelPtr(
+                dividend.DevicePointer, divisor, quotientBuffer.DevicePointer, remPtr, dividend.NumWords,
+                gridDimX: 1, blockDimX: 32, hStream: workspace.Stream);
+        });
+    }
+
 
     /// <inheritdoc/>
     public void BitwiseOr(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,

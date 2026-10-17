@@ -41,16 +41,16 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
         foreach (var m in namedType.GetMembers())
         {
-            var type = m switch
+            var (memberSymbol, type) = m switch
             {
-                IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } f => f.Type,
-                IPropertySymbol { IsStatic: false } p => p.Type,
-                _ => null
+                IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } f => ((ISymbol)f, f.Type),
+                IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: true, AssociatedSymbol: IPropertySymbol { IsStatic: false } p } => (p, p.Type),
+                _ => (null, null)
             };
 
-            if (type != null && DisposableAnalyzerHelper.IsDisposable(type))
+            if (memberSymbol != null && type != null && DisposableAnalyzerHelper.IsDisposable(type))
             {
-                disposableMembers.Add(m);
+                disposableMembers.Add(memberSymbol);
             }
         }
 
@@ -69,15 +69,22 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         borrowedFields.Clear();
         CollectBorrowedFieldNames(namedType, borrowedParamNames, borrowedFields);
 
-        ValidateMissingIDisposable(context, namedType, disposableMembers, borrowedFields, implementsIDisposable);
+        var validationCtx = new OwnershipValidationContext(context, namedType, disposableMembers, borrowedFields);
+        ValidateMissingIDisposable(in validationCtx, implementsIDisposable);
 
         if (implementsIDisposable)
         {
             var disposedMemberNames = s_tDisposedMemberNames ??= new HashSet<string>(StringComparer.Ordinal);
             disposedMemberNames.Clear();
-            ValidateDisposeImplementation(context, namedType, disposableMembers, borrowedFields, disposedMemberNames);
+            ValidateDisposeImplementation(in validationCtx, disposedMemberNames);
         }
     }
+
+    private readonly record struct OwnershipValidationContext(
+        SymbolAnalysisContext AnalysisContext,
+        INamedTypeSymbol NamedType,
+        IReadOnlyList<ISymbol> DisposableMembers,
+        HashSet<string> BorrowedFields);
 
     private static void CollectBorrowedParameterNames(INamedTypeSymbol namedType, HashSet<string> borrowedParamNames)
     {
@@ -159,10 +166,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     }
 
     private static void ValidateMissingIDisposable(
-        SymbolAnalysisContext context,
-        INamedTypeSymbol namedType,
-        IReadOnlyList<ISymbol> disposableMembers,
-        HashSet<string> borrowedFields,
+        in OwnershipValidationContext ctx,
         bool implementsIDisposable)
     {
         if (implementsIDisposable)
@@ -171,17 +175,17 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         }
 
         var hasOwnedDisposableField = false;
-        foreach (var member in disposableMembers)
+        foreach (var member in ctx.DisposableMembers)
         {
-            if (!borrowedFields.Contains(member.Name))
+            if (!ctx.BorrowedFields.Contains(member.Name))
             {
                 hasOwnedDisposableField = true;
                 break;
             }
         }
 
-        bool hasTakesOwnership = false;
-        foreach (var ctor in namedType.Constructors)
+        var hasTakesOwnership = false;
+        foreach (var ctor in ctx.NamedType.Constructors)
         {
             foreach (var p in ctor.Parameters)
             {
@@ -202,34 +206,31 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var location = namedType.Locations.Length > 0 ? namedType.Locations[0] : null;
-        context.Report(GSharpDiagnostics.MissingIDisposable, location);
+        var location = ctx.NamedType.Locations.Length > 0 ? ctx.NamedType.Locations[0] : null;
+        ctx.AnalysisContext.Report(GSharpDiagnostics.MissingIDisposable, location);
     }
 
     private static void ValidateDisposeImplementation(
-        SymbolAnalysisContext context,
-        INamedTypeSymbol namedType,
-        IReadOnlyList<ISymbol> disposableMembers,
-        HashSet<string> borrowedFields,
+        in OwnershipValidationContext ctx,
         HashSet<string> disposedMemberNames)
     {
-        InspectDisposeMethod(namedType, disposedMemberNames, out var parameterlessDispose);
+        InspectDisposeMethod(ctx.NamedType, disposedMemberNames, out var parameterlessDispose);
 
         var locationForDispose = parameterlessDispose?.Identifier.GetLocation() ??
-                                 (namedType.Locations.Length > 0 ? namedType.Locations[0] : null);
+                                 (ctx.NamedType.Locations.Length > 0 ? ctx.NamedType.Locations[0] : null);
 
-        foreach (var member in disposableMembers)
+        foreach (var member in ctx.DisposableMembers)
         {
-            var isBorrowed = borrowedFields.Contains(member.Name);
+            var isBorrowed = ctx.BorrowedFields.Contains(member.Name);
             var isDisposed = disposedMemberNames.Contains(member.Name);
 
             if (isBorrowed && isDisposed)
             {
-                context.Report(GSharpDiagnostics.DisposingBorrowedResource, locationForDispose);
+                ctx.AnalysisContext.Report(GSharpDiagnostics.DisposingBorrowedResource, locationForDispose);
             }
             else if (!isBorrowed && !isDisposed && parameterlessDispose != null)
             {
-                context.Report(GSharpDiagnostics.UndisposedGpuScope, locationForDispose, member.Name);
+                ctx.AnalysisContext.Report(GSharpDiagnostics.UndisposedGpuScope, locationForDispose, member.Name);
             }
         }
     }

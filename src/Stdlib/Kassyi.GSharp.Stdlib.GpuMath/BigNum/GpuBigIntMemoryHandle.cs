@@ -55,5 +55,17 @@ public readonly record struct GpuBigIntMemoryHandle
     /// Gets a value indicating whether this handle represents an uninitialized or default instance.
     /// </summary>
     public bool IsDefault => Buffer == null;
+
+    /// <summary>
+    /// Gets the raw 64-bit device memory pointer to the first limb word of this slice.
+    /// </summary>
+    internal IntPtr DevicePointer => IsDefault ? IntPtr.Zero : IntPtr.Add(Buffer.Pointer, WordOffset * 4);
+
+    /// <summary>
+    /// Wraps this memory handle as a non-owning temporary <see cref="GpuBigUInt"/> view without copying or allocating device memory.
+    /// </summary>
+    /// <param name="workspace">The execution workspace.</param>
+    /// <returns>A non-owning <see cref="GpuBigUInt"/> view over this memory handle.</returns>
+    internal GpuBigUInt AsBorrowedBigUInt(GpuWorkspace workspace) => new(workspace, this, isTemp: true);
 }
 

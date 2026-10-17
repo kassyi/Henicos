@@ -286,6 +286,21 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
             .CompareTo(Read(rightOperand.DevicePointer, rightOperand.NumWords));
     }
 
+    /// <inheritdoc/>
+    public uint DivideByUInt32(GpuWorkspace workspace, GpuBigUInt dividend, uint divisor,
+        GpuBigUInt quotientBuffer)
+    {
+        if (divisor == 0)
+        {
+            throw new DivideByZeroException();
+        }
+
+        var val = Read(dividend.DevicePointer, dividend.NumWords);
+        var quot = BigInteger.DivRem(val, divisor, out var rem);
+        Write(quot, quotientBuffer.DevicePointer, quotientBuffer.NumWords);
+        return (uint)rem;
+    }
+
     // --- IGpuAdvancedMathProvider ---
 
     /// <inheritdoc/>
@@ -317,7 +332,7 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
 
         var b = (targetOperand.NumWords + marginWords) * 32;
         var ySquared = (BigInteger.One << (2 * b)) / x;
-        var result = Sqrt(ySquared);
+        var result = ySquared.Sqrt();
         Write(result, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
@@ -336,35 +351,6 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
         Write(result, resultBuffer.DevicePointer, resultBuffer.NumWords);
     }
 
-    private static BigInteger Sqrt(BigInteger n)
-    {
-        if (n.IsZero)
-        {
-            return BigInteger.Zero;
-        }
-
-        var bitLength = (int)n.GetBitLength();
-        var root = BigInteger.One << (bitLength / 2);
-
-        var lastRoot = root;
-        while (true)
-        {
-            root = (root + n / root) >> 1;
-            if (root >= lastRoot)
-            {
-                if (root - lastRoot <= 1 && (root * root) > n)
-                {
-                    return lastRoot;
-                }
-
-                if (root == lastRoot)
-                {
-                    return root;
-                }
-            }
-            lastRoot = root;
-        }
-    }
 
     /// <inheritdoc/>
     public void Gcd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,

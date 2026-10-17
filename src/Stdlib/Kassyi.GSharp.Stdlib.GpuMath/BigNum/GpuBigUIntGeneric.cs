@@ -10,12 +10,18 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Thread Safety:</b> Value-type semantics; concurrent reads of distinct instances are thread-safe.</para>
 /// </remarks>
 [StructLayout(LayoutKind.Sequential)]
-public struct GpuBigUInt<TSize> : IEquatable<GpuBigUInt<TSize>>, IComparable<GpuBigUInt<TSize>> where TSize : unmanaged
+public struct GpuBigUInt<TSize> : IGpuNumber<GpuBigUInt<TSize>> where TSize : unmanaged
 {
     /// <summary>
     /// The fixed-size limb storage backing this big integer instance.
     /// </summary>
     public TSize Limbs;
+
+    /// <inheritdoc/>
+    public readonly bool IsNegative => false;
+
+    /// <inheritdoc/>
+    public readonly bool CanBeNegative => false;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GpuBigUInt{TSize}"/> struct with the specified limb storage.
@@ -339,6 +345,9 @@ public struct GpuBigUInt<TSize> : IEquatable<GpuBigUInt<TSize>>, IComparable<Gpu
 
         return count;
     }
+
+    /// <inheritdoc/>
+    public readonly int GetBitLength() => (Unsafe.SizeOf<TSize>() * 8) - CountLeadingZeros();
 
     /// <summary>
     /// Determines whether all limbs in this instance are zero.

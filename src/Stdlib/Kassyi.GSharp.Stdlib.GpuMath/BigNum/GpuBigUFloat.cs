@@ -12,8 +12,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Thread Safety:</b> Value-type semantics; distinct instances are safe for concurrent read operations.</para>
 /// </remarks>
 [StructLayout(LayoutKind.Sequential)]
-[ExcludeFromCodeCoverage]
-public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuBigUFloat>, IDisposable
+public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
 {
     /// <summary>
     /// Gets the significand (mantissa) stored as a dynamic-size unsigned big integer in GPU device memory.
@@ -29,6 +28,38 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
     public int Exponent
     {
         get;
+    }
+
+    /// <inheritdoc/>
+    public GpuWorkspace Workspace => Significand.Workspace;
+
+    /// <inheritdoc/>
+    public GpuBigUInt Magnitude => Significand;
+
+    /// <inheritdoc/>
+    public bool IsNegative => false;
+
+    /// <inheritdoc/>
+    public bool CanBeNegative => false;
+
+    /// <inheritdoc/>
+    public long EffectiveScale => (long)Exponent + Significand.GetBitLength();
+
+    /// <inheritdoc/>
+    public bool IsZero() => Significand.IsZero();
+
+    /// <inheritdoc/>
+    public int GetBitLength() => Significand.GetBitLength();
+
+    /// <inheritdoc/>
+    public static GpuBigUFloat Create(GpuBigUInt magnitude, int exponent, bool isNegative)
+    {
+        if (isNegative && !magnitude.IsZero())
+        {
+            throw new ArgumentOutOfRangeException(nameof(isNegative), "Unsigned number cannot be negative.");
+        }
+
+        return new GpuBigUFloat(magnitude, exponent);
     }
 
     /// <summary>
@@ -136,27 +167,8 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
     /// <returns>A tuple containing the quotient <see cref="GpuBigUFloat"/> and the 32-bit integer remainder.</returns>
     public (GpuBigUFloat Quotient, uint Remainder) DivideByUInt32(uint divisor)
     {
-        var resultSig = new GpuBigUInt(Significand.Workspace, Significand.NumWords);
-        var execContext = new GpuBigIntExecutionContext(
-            Significand.Workspace,
-            Significand.Workspace.MemoryManager,
-            new LegacyProviderArithmeticAdapter(),
-            Significand.Workspace.Stream);
-
-        IGpuBigFloatArithmetic arithmetic = Significand.Workspace.Engine == GpuExecutionEngine.GSharpAot
-            ? (Significand.Workspace.Provider is NativeProvider
-                ? GSharpAotFloatProvider.CreateNativeCuda()
-                : GSharpAotFloatProvider.CreateGSharpKernel())
-            : CSharpCpuBigFloatArithmetic.Instance;
-
-        arithmetic.DivideByUInt32(ref execContext,
-            new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(Significand.DevicePointer, Significand.NumWords), 0,
-                Significand.NumWords), Exponent, false,
-            divisor,
-            new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                resultSig.NumWords), out var resultExp, out var _, out var remainder);
-
-        return (new GpuBigUFloat(resultSig, resultExp), remainder);
+        var (quotSig, remainder) = Significand.DivideByUInt32(divisor);
+        return (new GpuBigUFloat(quotSig, Exponent), remainder);
     }
 
     /// <summary>
@@ -175,14 +187,28 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
     /// </summary>
     /// <param name="other">The value to add.</param>
     /// <returns>The sum of this instance and <paramref name="other"/>.</returns>
-    public GpuBigUFloat Add(GpuBigUFloat other) => throw new NotImplementedException();
+    public GpuBigUFloat Add(GpuBigUFloat other) => this + other;
 
     /// <summary>
     /// Subtracts another <see cref="GpuBigUFloat"/> from this instance.
     /// </summary>
     /// <param name="other">The value to subtract.</param>
     /// <returns>The difference of this instance minus <paramref name="other"/>.</returns>
-    public GpuBigUFloat Subtract(GpuBigUFloat other) => throw new NotImplementedException();
+    public GpuBigUFloat Subtract(GpuBigUFloat other) => this - other;
+
+    /// <summary>
+    /// Multiplies this instance by another <see cref="GpuBigUFloat"/>.
+    /// </summary>
+    /// <param name="other">The multiplier value.</param>
+    /// <returns>The product of this instance and <paramref name="other"/>.</returns>
+    public GpuBigUFloat Multiply(GpuBigUFloat other) => this * other;
+
+    /// <summary>
+    /// Divides this instance by another <see cref="GpuBigUFloat"/>.
+    /// </summary>
+    /// <param name="other">The divisor value.</param>
+    /// <returns>The quotient of this instance divided by <paramref name="other"/>.</returns>
+    public GpuBigUFloat Divide(GpuBigUFloat other) => this / other;
 
     /// <summary>
     /// Compares this instance to another <see cref="GpuBigUFloat"/> and returns an integer indicating their relative order.
@@ -194,14 +220,14 @@ public readonly struct GpuBigUFloat : IEquatable<GpuBigUFloat>, IComparable<GpuB
     /// Zero if this instance equals <paramref name="other"/>,
     /// Greater than zero if this instance is greater than <paramref name="other"/>.
     /// </returns>
-    public int CompareTo(GpuBigUFloat other) => throw new NotImplementedException();
+    public int CompareTo(GpuBigUFloat other) => GpuBigNumberAlgorithms.Compare(this, other);
 
     /// <summary>
     /// Indicates whether the current instance is equal to another <see cref="GpuBigUFloat"/> instance.
     /// </summary>
     /// <param name="other">A <see cref="GpuBigUFloat"/> to compare with this instance.</param>
     /// <returns><see langword="true"/> if the current instance is equal to the <paramref name="other"/> parameter; otherwise, <see langword="false"/>.</returns>
-    public bool Equals(GpuBigUFloat other) => throw new NotImplementedException();
+    public bool Equals(GpuBigUFloat other) => CompareTo(other) == 0;
 
     /// <summary>
     /// Determines whether the specified object is equal to the current instance.

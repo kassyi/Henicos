@@ -10,8 +10,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Thread Safety:</b> Value type semantics; distinct instances are safe for concurrent read operations.</para>
 /// </remarks>
 [StructLayout(LayoutKind.Sequential)]
-[ExcludeFromCodeCoverage]
-public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBigFloat>, IDisposable
+public readonly struct GpuBigFloat : IGpuBigNumber<GpuBigFloat>
 {
     /// <summary>
     /// Gets the underlying unsigned floating-point magnitude payload.
@@ -28,6 +27,31 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
     {
         get;
     }
+
+    /// <inheritdoc/>
+    public bool CanBeNegative => true;
+
+    /// <inheritdoc/>
+    public GpuWorkspace Workspace => UFloat.Workspace;
+
+    /// <inheritdoc/>
+    public GpuBigUInt Magnitude => UFloat.Significand;
+
+    /// <inheritdoc/>
+    public int Exponent => UFloat.Exponent;
+
+    /// <inheritdoc/>
+    public long EffectiveScale => UFloat.EffectiveScale;
+
+    /// <inheritdoc/>
+    public bool IsZero() => UFloat.IsZero();
+
+    /// <inheritdoc/>
+    public int GetBitLength() => UFloat.GetBitLength();
+
+    /// <inheritdoc/>
+    public static GpuBigFloat Create(GpuBigUInt magnitude, int exponent, bool isNegative) =>
+        new(magnitude, exponent, isNegative && !magnitude.IsZero());
 
     /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying significand.
@@ -165,39 +189,7 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
     /// Zero if this instance equals <paramref name="other"/>,
     /// Greater than zero if this instance is greater than <paramref name="other"/>.
     /// </returns>
-    public int CompareTo(GpuBigFloat other)
-    {
-        var thisZero = UFloat.Significand.IsZero();
-        var otherZero = other.UFloat.Significand.IsZero();
-
-        if (thisZero && otherZero)
-        {
-            return 0;
-        }
-
-        if (thisZero)
-        {
-            return other.IsNegative ? 1 : -1;
-        }
-
-        if (otherZero)
-        {
-            return IsNegative ? -1 : 1;
-        }
-
-        if (IsNegative != other.IsNegative)
-        {
-            return IsNegative ? -1 : 1;
-        }
-
-        using GpuBigFloat diff = this - other;
-        if (diff.UFloat.Significand.IsZero())
-        {
-            return 0;
-        }
-
-        return diff.IsNegative ? -1 : 1;
-    }
+    public int CompareTo(GpuBigFloat other) => GpuBigNumberAlgorithms.Compare(this, other);
 
     /// <summary>
     /// Indicates whether the current instance is equal to another <see cref="GpuBigFloat"/> instance.
