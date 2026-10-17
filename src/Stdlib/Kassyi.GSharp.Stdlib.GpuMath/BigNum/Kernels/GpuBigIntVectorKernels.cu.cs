@@ -2,6 +2,7 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
+[SkipSnapshotConsistency("Tested in separate suites")]
 [ExcludeFromCodeCoverage]
 public static partial class GpuBigIntVectorKernels
 {
