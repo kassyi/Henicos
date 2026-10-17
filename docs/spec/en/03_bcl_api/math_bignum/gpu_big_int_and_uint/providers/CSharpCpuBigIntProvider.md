@@ -939,5 +939,4 @@ finally
 
 - [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
 - [IGpuExecutionProvider](IGpuExecutionProvider.md)
-- [GSharpAotProvider](GSharpAotProvider.md)
-- [NativeProvider](NativeProvider.md)
+- [GSharpKernelProvider](GSharpKernelProvider.md)

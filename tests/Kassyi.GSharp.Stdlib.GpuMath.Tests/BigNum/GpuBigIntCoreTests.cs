@@ -149,7 +149,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [InlineData(GpuExecutionEngine.LegacyNative)]
     public void Test_Add_Correctness(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -165,7 +164,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [InlineData(GpuExecutionEngine.LegacyNative)]
     public void Test_Add_CarryPropagation_AllOnes(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -195,7 +193,6 @@ public class GpuBigIntCoreTests
 
     [SkippableTheory]
     [InlineData(GpuExecutionEngine.GSharpAot)]
-    [InlineData(GpuExecutionEngine.LegacyNative)]
     public void Test_Sub_Correctness(GpuExecutionEngine engine)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -450,8 +447,6 @@ public class GpuBigIntCoreTests
     [InlineData(GpuExecutionEngine.GSharpAot, 8200)] // Edge case: shift > total bits
     [InlineData(GpuExecutionEngine.GSharpAot, 31)] // Edge case: intra-word boundary
     [InlineData(GpuExecutionEngine.GSharpAot, 32)] // Edge case: exact word boundary
-    [InlineData(GpuExecutionEngine.LegacyNative, 143)]
-    [InlineData(GpuExecutionEngine.LegacyNative, 0)]
     public void Test_ShiftLeft_Correctness(GpuExecutionEngine engine, int shiftBits)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -477,8 +472,6 @@ public class GpuBigIntCoreTests
     [InlineData(GpuExecutionEngine.GSharpAot, 8200)] // Edge case: shift > total bits
     [InlineData(GpuExecutionEngine.GSharpAot, 31)] // Edge case: intra-word boundary
     [InlineData(GpuExecutionEngine.GSharpAot, 32)] // Edge case: exact word boundary
-    [InlineData(GpuExecutionEngine.LegacyNative, 143)]
-    [InlineData(GpuExecutionEngine.LegacyNative, 0)]
     public void Test_ShiftRight_Correctness(GpuExecutionEngine engine, int shiftBits)
     {
         CudaCapability.EnsureGpuAvailable();

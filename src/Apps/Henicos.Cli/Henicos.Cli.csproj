@@ -19,8 +19,5 @@
     <ProjectReference Include="..\..\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\..\Native\Kassyi.GSharp.Stdlib.GpuMath.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll" Condition="Exists('..\..\Native\Kassyi.GSharp.Stdlib.GpuMath.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll')" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
 
 </Project>

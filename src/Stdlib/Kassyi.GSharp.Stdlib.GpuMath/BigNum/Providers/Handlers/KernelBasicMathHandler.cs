@@ -7,13 +7,13 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// <remarks>
 /// <para>
 /// <b>[WHY]:</b> Separates basic arithmetic kernel launches (add, sub, scalar, bitwise) from memory management and graph sequencing
-/// as part of the <see cref="GSharpAotProvider"/> facade decomposition.
+/// as part of the <see cref="GSharpKernelProvider"/> facade decomposition.
 /// </para>
 /// <para>
 /// <b>Zero-Allocation:</b> Directly invokes CUDA kernel launchers without managed allocation.
 /// </para>
 /// </remarks>
-public sealed class AotBasicMathHandler : IGpuBasicMathProvider
+public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
 {
     private unsafe T EvaluateKernelResult<T>(GpuWorkspace workspace, int resultWords, Action<IntPtr> launchKernel)
         where T : unmanaged
@@ -85,7 +85,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     public void BitwiseOr(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
+        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchBitwiseOrKernelPtr(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
@@ -97,7 +97,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     public void BitwiseXor(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
+        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchBitwiseXorKernelPtr(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
@@ -108,7 +108,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     /// <inheritdoc/>
     public void BitwiseNot(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt resultBuffer)
     {
-        var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
+        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchBitwiseNotKernelPtr(
             leftOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
@@ -119,7 +119,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     /// <inheritdoc/>
     public bool IsZero(GpuWorkspace workspace, GpuBigUInt leftOperand)
     {
-        var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
+        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
         var res = EvaluateKernelResult<uint>(workspace, 1, resultPtr =>
         {
             GpuBigIntCmpKernels.LaunchIsZeroKernelPtr(
@@ -133,7 +133,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     /// <inheritdoc/>
     public bool IsOne(GpuWorkspace workspace, GpuBigUInt leftOperand)
     {
-        var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
+        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
         var res = EvaluateKernelResult<uint>(workspace, 1, resultPtr =>
         {
             GpuBigIntCmpKernels.LaunchIsOneKernelPtr(
@@ -148,7 +148,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     public int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand)
     {
         var numWords = Math.Max(leftOperand.NumWords, rightOperand.NumWords);
-        var dims = AotGraphHandler.CalculateGridDim(numWords);
+        var dims = KernelGraphHandler.CalculateGridDim(numWords);
 
         GpuBigUInt? leftPad = null;
         GpuBigUInt? rightPad = null;
@@ -193,7 +193,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     /// <inheritdoc/>
     public int GetBitLength(GpuWorkspace workspace, GpuBigUInt leftOperand)
     {
-        var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
+        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
         var res = EvaluateKernelResult<uint>(workspace, 1, resultPtr =>
         {
             GpuBigIntCmpKernels.LaunchGetBitLengthKernelPtr(
@@ -240,7 +240,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     public void BitwiseAnd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
-        var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
+        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchBitwiseAndKernelPtr(
             leftOperand.DevicePointer, rightOperand.DevicePointer, resultBuffer.DevicePointer, leftOperand.NumWords,
@@ -254,7 +254,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     {
         var wordShift = shiftBits / 32;
         var bitShift = shiftBits % 32;
-        var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
+        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchShiftLeftKernelPtr(
             leftOperand.DevicePointer, wordShift, bitShift, resultBuffer.DevicePointer, leftOperand.NumWords,
@@ -268,7 +268,7 @@ public sealed class AotBasicMathHandler : IGpuBasicMathProvider
     {
         var wordShift = shiftBits / 32;
         var bitShift = shiftBits % 32;
-        var dims = AotGraphHandler.CalculateGridDim(leftOperand.NumWords);
+        var dims = KernelGraphHandler.CalculateGridDim(leftOperand.NumWords);
 
         GpuBigIntKernels.LaunchShiftRightKernelPtr(
             leftOperand.DevicePointer, wordShift, bitShift, resultBuffer.DevicePointer, leftOperand.NumWords,

@@ -28,7 +28,7 @@ public class StreamOrderedFreeTests
     public void FreeMemory_WithStream_DoesNotWaitForOtherStreams()
     {
         CudaCapability.EnsureGpuAvailable();
-        var handler = new AotMemoryHandler();
+        var handler = new KernelMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var busy = new CudaStream();
@@ -47,7 +47,7 @@ public class StreamOrderedFreeTests
     public void FreeMemory_WithoutStream_KeepsImmediateDeviceWideSemantics()
     {
         CudaCapability.EnsureGpuAvailable();
-        var handler = new AotMemoryHandler();
+        var handler = new KernelMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var busy = new CudaStream();

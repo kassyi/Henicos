@@ -204,7 +204,7 @@ Console.WriteLine($"Provider={provider.GetType().Name}, Exp={prod.UFloat.Exponen
 
 ## Remarks
 
-`CSharpCpuBigFloatArithmetic` serves as the reference implementation for Tier-1 deterministic unit tests and as the fallback strategy inside [`GSharpAotFloatProvider`](GSharpAotFloatProvider.md) when running on hosts without CUDA GPUs or for transcendental functions (`Exp`, `Log`, `Pow`).
+`CSharpCpuBigFloatArithmetic` serves as the reference implementation for Tier-1 deterministic unit tests and as the fallback strategy inside [`GSharpKernelFloatProvider`](GSharpKernelFloatProvider.md) when running on hosts without CUDA GPUs or for transcendental functions (`Exp`, `Log`, `Pow`).
 
 ## See also
 
@@ -212,4 +212,4 @@ Console.WriteLine($"Provider={provider.GetType().Name}, Exp={prod.UFloat.Exponen
 
 - [Arbitrary-Precision Floats (GpuBigFloat)](00_index.md)
 - [IGpuBigFloatArithmetic](IGpuBigFloatArithmetic.md)
-- [GSharpAotFloatProvider](GSharpAotFloatProvider.md)
+- [GSharpKernelFloatProvider](GSharpKernelFloatProvider.md)

@@ -3,7 +3,7 @@ using Kassyi.GSharp.Runtime.Fatbin;
 namespace Kassyi.GSharp.Runtime.Aot;
 
 /// <summary>
-/// Runtime JIT/AOT compilation engine that manages thread contexts and loads executable GPU modules.
+/// Manages CUDA thread contexts, module loading, and function pointer caches for compiled GPU kernels.
 /// </summary>
 // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
 [ExcludeFromCodeCoverage]

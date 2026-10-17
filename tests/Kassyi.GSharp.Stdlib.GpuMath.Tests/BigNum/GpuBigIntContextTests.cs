@@ -52,7 +52,7 @@ public class GpuBigIntContextTests
         CudaCapability.EnsureGpuAvailable();
         // Arrange
         using var context = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
-        var provider = GSharpAotProvider.Instance;
+        var provider = GSharpKernelProvider.Instance;
         
         // Populate cache by performing an NTT multiplication
         using var a = new GpuBigUInt(context, new uint[] { 1, 2, 3 });
@@ -60,7 +60,7 @@ public class GpuBigIntContextTests
         using var c = new GpuBigUInt(context, new uint[6]);
         provider.Mul(context, a, b, c);
 
-        var advancedMathField = typeof(GSharpAotProvider).GetField(
+        var advancedMathField = typeof(GSharpKernelProvider).GetField(
             "_advancedMath", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.NotNull(advancedMathField);
         var advancedMath = advancedMathField.GetValue(provider);

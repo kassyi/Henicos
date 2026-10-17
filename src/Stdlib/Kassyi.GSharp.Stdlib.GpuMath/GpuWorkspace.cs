@@ -6,10 +6,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath;
 /// </summary>
 public enum GpuExecutionEngine
 {
-    /// <summary>Executes kernels via the legacy pre-compiled native CUDA C++ dynamic library.</summary>
-    LegacyNative,
-
-    /// <summary>Executes kernels via the GSharp JIT transpilation and NVRTC runtime compiler.</summary>
+    /// <summary>Executes pre-compiled GSharp device kernels via Ahead-Of-Time (AOT) loaded modules.</summary>
     GSharpAot
 }
 
@@ -31,12 +28,10 @@ public class GpuWorkspace : IGpuResourceScope
     }
 
     /// <summary>
-    /// Gets the raw native device pointer to the allocated workspace scratchpad memory (used by legacy native backend).
+    /// Gets the raw native device pointer to the allocated workspace scratchpad memory.
     /// </summary>
-    public IntPtr WorkspacePointer
-    {
-        get;
-    }
+    [Obsolete("Legacy native workspace pointers are deprecated and always IntPtr.Zero.")]
+    public IntPtr WorkspacePointer => IntPtr.Zero;
 
     /// <summary>
     /// Gets the active GPU execution engine type.
@@ -49,9 +44,7 @@ public class GpuWorkspace : IGpuResourceScope
     /// <summary>
     /// Gets the active GPU arithmetic execution provider implementation.
     /// </summary>
-    public IGpuExecutionProvider Provider => Engine == GpuExecutionEngine.GSharpAot
-        ? GSharpAotProvider.Instance
-        : NativeProvider.Instance;
+    public IGpuExecutionProvider Provider => GSharpKernelProvider.Instance;
 
     /// <summary>
     /// Gets the dedicated CUDA Stream for this context, used for operations and CUDA Graph capture.
@@ -124,48 +117,27 @@ public class GpuWorkspace : IGpuResourceScope
         Engine = engine;
 
         GpuKernelLoader.CudaContextScope? scope = null;
-        if (Engine == GpuExecutionEngine.GSharpAot)
+        if (GpuKernelLoader.IsCpuFallbackMode)
         {
-            if (GpuKernelLoader.IsCpuFallbackMode)
-            {
-                DeviceSmCount = 1;
-            }
-            else
-            {
-                if (useIsolatedContext)
-                {
-                    CudaDriverApi.cuInit(0);
-                    CudaDriverApi.cuDeviceGet(out var dev, 0);
-                    CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out _isolatedContext, 0, dev));
-                }
-
-                scope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
-                CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
-                Stream = stream;
-
-                CudaDriverApi.cuCtxGetDevice(out var device);
-                CudaDriverApi.cuDeviceGetAttribute(out var smCount, CudaDriverApi.CuDeviceAttribute.MultiprocessorCount,
-                    device);
-                DeviceSmCount = smCount > 0 ? smCount : 16; // fallback if query fails
-            }
+            DeviceSmCount = 1;
         }
         else
         {
-            try
+            if (useIsolatedContext)
             {
-                WorkspacePointer = NativeMethods.GpuBigInt_Init(maxWords);
-                if (WorkspacePointer == IntPtr.Zero)
-                {
-                    throw new InvalidOperationException("Failed to initialize GPU context.");
-                }
+                CudaDriverApi.cuInit(0);
+                CudaDriverApi.cuDeviceGet(out var dev, 0);
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out _isolatedContext, 0, dev));
             }
-            catch (DllNotFoundException ex)
-            {
-                throw new InvalidOperationException(
-                    "The native CUDA DLL 'Kassyi.GSharp.GpuBigInt.Cuda' or one of its dependencies could not be loaded. " +
-                    "Please ensure that the native project is built (run 'build.bat' in 'src/Native/Kassyi.GSharp.Stdlib.GpuMath.Cuda') " +
-                    "and that the CUDA Toolkit bin directory is accessible via PATH.", ex);
-            }
+
+            scope = new GpuKernelLoader.CudaContextScope(_isolatedContext);
+            CudaDriverApi.cuStreamCreate(out var stream, 0); // CU_STREAM_DEFAULT
+            Stream = stream;
+
+            CudaDriverApi.cuCtxGetDevice(out var device);
+            CudaDriverApi.cuDeviceGetAttribute(out var smCount, CudaDriverApi.CuDeviceAttribute.MultiprocessorCount,
+                device);
+            DeviceSmCount = smCount > 0 ? smCount : 16; // fallback if query fails
         }
 
         try
@@ -314,42 +286,23 @@ public class GpuWorkspace : IGpuResourceScope
 
     private void DisposeEngineResources(List<Exception>? exceptions)
     {
-        if (Engine == GpuExecutionEngine.GSharpAot)
+        if (Stream == IntPtr.Zero)
         {
-            if (Stream == IntPtr.Zero)
-            {
-                return;
-            }
+            return;
+        }
 
-            try
-            {
-                CudaDriverApi.cuStreamDestroy(Stream);
+        try
+        {
+            CudaDriverApi.cuStreamDestroy(Stream);
 
-                if (_isolatedContext != IntPtr.Zero)
-                {
-                    CudaDriverApi.cuCtxDestroy_v2(_isolatedContext);
-                }
-            }
-            catch (Exception ex)
+            if (_isolatedContext != IntPtr.Zero)
             {
-                exceptions?.Add(ex);
+                CudaDriverApi.cuCtxDestroy_v2(_isolatedContext);
             }
         }
-        else
+        catch (Exception ex)
         {
-            if (WorkspacePointer == IntPtr.Zero)
-            {
-                return;
-            }
-
-            try
-            {
-                NativeMethods.GpuBigInt_Cleanup(WorkspacePointer);
-            }
-            catch (Exception ex)
-            {
-                exceptions?.Add(ex);
-            }
+            exceptions?.Add(ex);
         }
     }
 

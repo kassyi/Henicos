@@ -34,7 +34,7 @@ public class HostSyncReductionTests
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(1024);
-        var advancedMath = new AotAdvancedMathHandler();
+        var advancedMath = new KernelAdvancedMathHandler();
         var divisor = CreateDivisor();
 
         // Warm-up builds the per-length twiddle cache, whose one-time upload is allowed to synchronize.
@@ -65,7 +65,7 @@ public class HostSyncReductionTests
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         using var workspace = new GpuWorkspace(1024);
-        var advancedMath = new AotAdvancedMathHandler();
+        var advancedMath = new KernelAdvancedMathHandler();
         var divisor = CreateDivisor();
 
         // Back-to-back calls reuse pooled host buffers and device temporaries without any host-side drain between them.
@@ -85,7 +85,7 @@ public class HostSyncReductionTests
         return new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
     }
 
-    private static BigInteger RunReciprocal(GpuWorkspace workspace, AotAdvancedMathHandler advancedMath,
+    private static BigInteger RunReciprocal(GpuWorkspace workspace, KernelAdvancedMathHandler advancedMath,
         BigInteger divisor)
     {
         using var target = GpuBigUInt.FromBigInteger(workspace, divisor, KWords);
@@ -94,7 +94,7 @@ public class HostSyncReductionTests
         return result.ToBigInteger();
     }
 
-    private static void Reciprocal(GpuWorkspace workspace, AotAdvancedMathHandler advancedMath, GpuBigUInt target,
+    private static void Reciprocal(GpuWorkspace workspace, KernelAdvancedMathHandler advancedMath, GpuBigUInt target,
         GpuBigUInt result) =>
         advancedMath.ReciprocalMega(workspace, target, result, marginWords: 2, numBits: KBits, marginBits: 0,
             iterations: Iterations, targetBits: 2 * KBits);

@@ -52,13 +52,13 @@ public class FermatBenchmark
     public BigInteger StandardBigInteger() => BigInteger.ModPow(_baseA, _exponentValue, _modulusN);
 
     [Benchmark]
-    public uint[] GpuBigIntJit()
+    public uint[] GSharpKernelPrp()
     {
         var (result, _) = Runner.RunFermatPrp();
         return result;
     }
 
     [Benchmark]
-    public void GSharpAotChunk100() => Runner.RunBenchmarkChunk();
+    public void GSharpKernelChunk100() => Runner.RunBenchmarkChunk();
 }
 

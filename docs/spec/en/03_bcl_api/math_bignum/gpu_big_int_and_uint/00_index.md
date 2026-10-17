@@ -45,11 +45,10 @@ This separation ensures that GPU kernels remain purely mathematical and branchle
 ### Execution Providers & Handlers
 
 - **[IGpuExecutionProvider.md](providers/IGpuExecutionProvider.md)**: Aggregated contract (`IGpuMemoryProvider`, `IGpuBasicMathProvider`, `IGpuAdvancedMathProvider`, `IGpuGraphProvider`) for GPU execution backends.
-- **[GSharpAotProvider.md](providers/GSharpAotProvider.md)**: Primary execution provider using AOT-compiled PTX kernels and CPU fallback orchestration.
+- **[GSharpKernelProvider.md](providers/GSharpKernelProvider.md)**: Primary execution provider using AOT-compiled PTX kernels and CPU fallback orchestration.
 - **[CSharpCpuBigIntProvider.md](providers/CSharpCpuBigIntProvider.md)**: Pure C# CPU execution provider for hardware-free fallback and diagnostic verification.
-- **[NativeProvider.md](providers/NativeProvider.md)**: Legacy native CUDA C++ dynamic library execution provider.
 - **[ScopedGpuMemory.md](providers/ScopedGpuMemory.md)**: Disposable stack-only `ref struct` for scoped raw device memory pointers.
-- **[AotMemoryHandler.md](providers/AotMemoryHandler.md)** / **[AotBasicMathHandler.md](providers/AotBasicMathHandler.md)** / **[AotAdvancedMathHandler.md](providers/AotAdvancedMathHandler.md)** / **[AotGraphHandler.md](providers/AotGraphHandler.md)**: Specialized modular handlers backing `GSharpAotProvider`.
+- **[KernelMemoryHandler.md](providers/KernelMemoryHandler.md)** / **[KernelBasicMathHandler.md](providers/KernelBasicMathHandler.md)** / **[KernelAdvancedMathHandler.md](providers/KernelAdvancedMathHandler.md)** / **[KernelGraphHandler.md](providers/KernelGraphHandler.md)**: Specialized modular handlers backing `GSharpKernelProvider`.
 - **[StreamCompactionOrchestrator.md](providers/StreamCompactionOrchestrator.md)**: Multi-block recursive Blelloch exclusive prefix sum orchestrator.
 
 ### Lazy Expressions, CUDA Graphs & Vector LINQ

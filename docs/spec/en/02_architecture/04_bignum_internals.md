@@ -205,15 +205,13 @@ The module utilizes a highly decoupled **Multi-Engine Execution Model** (`GpuExe
 ```mermaid
 flowchart LR
     Host["C# GpuBigInt (Host Wrapper)"] --> Context["GpuWorkspace"]
-    Context -->|Provider| Native["LegacyNative (C++ Backend)"]
-    Context -->|Provider| AOT["GSharpAot (Pure C# JIT)"]
-    Context -->|Provider| CPU["CpuFallback (Native CPU)"]
+    Context -->|Provider| AOT["GSharpKernelProvider (AOT Fatbin)"]
+    Context -->|Fallback| CPU["CSharpCpuBigIntProvider (Native CPU)"]
 ```
 
 1.  **C# GpuBigInt (Host Wrapper)**: A `IDisposable` C# class that manages the `IntPtr` to the GPU device memory. It provides the high-level API for the host application to allocate, copy, and invoke operations.
-2.  **Native C++ Backend (`GpuExecutionEngine.LegacyNative`)**: Handled via `Providers/NativeProvider.cs` and `Interop/NativeMethods.cs`, this exposes the legacy hand-written CUDA C++ library for memory management (`cudaMalloc`) and executing NTT/FFT kernels.
-3.  **G# Kernels (`GpuExecutionEngine.GSharpAot`)**: Handled via `Providers/GSharpAotProvider.cs`, this is a pure C# JIT backend where the mathematical operations are natively written in C# using `[GpuKernel]` inside the `Kernels/` directory.
-4.  **CPU Fallback Backend (`GpuExecutionEngine.CpuFallback`)**: A purely native CPU-side fallback for executing the identical C# kernel implementations locally for debugging and validation.
+2.  **G# Kernels (`GpuExecutionEngine.GSharpAot`)**: Handled via `Providers/GSharpKernelProvider.cs`, this dispatches to compiled G# device kernels natively written in C# using `[GpuKernel]` and compiled Ahead-Of-Time into GPU FATBIN modules.
+3.  **CPU Fallback Backend**: A purely CPU-side fallback (`CSharpCpuBigIntProvider`) for executing identical arithmetic logic deterministically on the host CPU for non-GPU testing and debugging.
 
 ### Execution Strategy & Memory Management
 
@@ -223,16 +221,13 @@ When `.Evaluate()` is called, the expression tree is executed using an optimized
 flowchart TD
     Eval[".Evaluate()"] --> Ctx["GpuWorkspace"]
     Ctx --> Pool["Buffer Pooling (RentTemp)\nZero cudaMalloc overhead"]
-    Ctx --> Workspace["WorkspacePointer (IntPtr)\nThread-safe, no global state"]
-    Pool --> Engine["GpuExecutionEngine"]
-    Workspace --> Engine
+    Pool --> Engine["GSharpKernelProvider"]
 ```
 
 The context routes execution to the specified engine and performs the following roles:
-- **Thread-Safe Workspace**: Manages a `WorkspacePointer` (`IntPtr`), entirely eliminating GPU global state. This makes parallel processing completely thread-safe across multiple CUDA contexts.
-- **Buffer Pooling**: Pre-allocates working buffers within the workspace to avoid `cudaMalloc` overhead during computation.
+- **Buffer Pooling**: Pre-allocates working buffers within the workspace memory manager to avoid `cudaMalloc` overhead during computation.
 - **RentTemp Object Pool**: Handles intermediate values (`GpuBigIntExpr`) dynamically without creating garbage.
-- **Kernel Fusion (Future)**: The execution engine may dynamically generate and JIT-compile fused CUDA kernels to minimize global memory bandwidth.
+- **Kernel Fusion**: Dispatches fused MegaKernels to minimize global memory bandwidth.
 
 ### GPU Debugging Best Practices (CPU-First / TDD Workflow)
 

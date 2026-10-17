@@ -214,7 +214,7 @@ public static class GpuBigIntMath
     public static void ShiftAndResize(GpuBigUInt source, int signedBitShift, GpuBigUInt resultBuffer)
     {
         var workspace = source.Workspace;
-        if (workspace.Provider is GSharpAotProvider && !GpuKernelLoader.IsCpuFallbackMode)
+        if (workspace.Provider is GSharpKernelProvider && !GpuKernelLoader.IsCpuFallbackMode)
         {
             var wordShift = signedBitShift / 32;
             var bitShift = signedBitShift % 32;

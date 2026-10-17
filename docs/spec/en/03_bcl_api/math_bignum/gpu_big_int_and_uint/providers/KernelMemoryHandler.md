@@ -1,12 +1,12 @@
 ---
-title: "AotMemoryHandler Class (G#)"
+title: "KernelMemoryHandler Class (G#)"
 site: "G# Documentation"
 published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Manages unmanaged CUDA device memory allocations, clearing, stream synchronization, and host-device/device-device copies."
 ---
 
-## AotMemoryHandler Class
+## KernelMemoryHandler Class
 
 ## Definition
 
@@ -16,7 +16,7 @@ description: "Manages unmanaged CUDA device memory allocations, clearing, stream
 Implements [`IGpuMemoryProvider`](IGpuExecutionProvider.md) by bridging low-level CUDA Driver API memory operations (`cuMemAlloc_v2`, `cuMemFree_v2`, `cuMemFreeAsync`, `cuMemsetD8Async`, `cuMemsetD32Async`, `cuMemcpyHtoDAsync_v2`, `cuMemcpyDtoHAsync_v2`, `cuMemcpyDtoDAsync_v2`) and non-blocking async transfers (`CudaHostTransfer`, `CudaStreamCompletion`) into the G# execution pipeline.
 
 ```csharp
-public sealed class AotMemoryHandler : IGpuMemoryProvider
+public sealed class KernelMemoryHandler : IGpuMemoryProvider
 ```
 
 ## Methods
@@ -335,11 +335,11 @@ Thrown when registering the CUDA host callback or querying stream status fails.
 
 ## Remarks
 
-When a non-zero `stream` handle is supplied to `WriteWord`, `AotMemoryHandler` uses `cuMemsetD32Async` so the 32-bit payload travels inline in the CUDA command buffer without requiring a pinned host buffer or host synchronization.
+When a non-zero `stream` handle is supplied to `WriteWord`, `KernelMemoryHandler` uses `cuMemsetD32Async` so the 32-bit payload travels inline in the CUDA command buffer without requiring a pinned host buffer or host synchronization.
 
 ## Examples
 
-### Instantiating AotMemoryHandler
+### Instantiating KernelMemoryHandler
 
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
@@ -350,7 +350,7 @@ using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
-IGpuMemoryProvider memoryHandler = new AotMemoryHandler();
+IGpuMemoryProvider memoryHandler = new KernelMemoryHandler();
 Console.WriteLine($"Initialized memory handler: {memoryHandler.GetType().Name}");
 ```
 
@@ -359,5 +359,5 @@ Console.WriteLine($"Initialized memory handler: {memoryHandler.GetType().Name}")
 ### BCL API > Math (BigNum)
 
 - [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
-- [GSharpAotProvider](GSharpAotProvider.md)
+- [GSharpKernelProvider](GSharpKernelProvider.md)
 - [IGpuExecutionProvider](IGpuExecutionProvider.md)

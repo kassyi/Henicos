@@ -87,5 +87,5 @@ Console.WriteLine($"Exclusive scan: [{string.Join(", ", scanned)}]");
 ### BCL API > Math (BigNum)
 
 - [GpuStreamCompactionKernels Class](../kernels/GpuStreamCompactionKernels.md)
-- [AotBasicMathHandler Class](AotBasicMathHandler.md)
-- [GSharpAotProvider Class](GSharpAotProvider.md)
+- [KernelBasicMathHandler Class](KernelBasicMathHandler.md)
+- [GSharpKernelProvider Class](GSharpKernelProvider.md)
