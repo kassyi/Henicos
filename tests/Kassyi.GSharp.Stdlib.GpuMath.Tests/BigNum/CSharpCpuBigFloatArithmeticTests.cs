@@ -24,10 +24,10 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         return new GpuBigIntExecutionContext(_context, _context.MemoryManager, new LegacyProviderArithmeticAdapter(), _context.Stream);
     }
 
-    private static double ToDouble(GpuBigUInt sig, int exp, bool sign)
+    private static double ToDouble(GpuBigUInt sig, GpuFloatResult res)
     {
-        var val = (double)sig.ToBigInteger() * Math.Pow(2.0, exp);
-        return sign ? -val : val;
+        var val = (double)sig.ToBigInteger() * Math.Pow(2.0, res.Exponent);
+        return res.IsNegative ? -val : val;
     }
 
     [SkippableFact]
@@ -41,24 +41,24 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         using var bSig = new GpuBigUInt(_context, new uint[] { 2 });
         using var resSig = new GpuBigUInt(_context, 4);
 
-        var aHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(aSig.DevicePointer, 1), 0, 1);
-        var bHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(bSig.DevicePointer, 1), 0, 1);
-        var resHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resSig.DevicePointer, 4), 0, 4);
+        var aOp = new GpuFloatOperand(aSig.Handle, 0, false);
+        var bOp = new GpuFloatOperand(bSig.Handle, 0, false);
+        var resHandle = resSig.Handle;
 
         // Add: 4 + 2 = 6
-        arith.Add(ref execContext, aHandle, 0, false, bHandle, 0, false, resHandle, out int resExp, out bool resSign);
-        Assert.False(resSign);
-        Assert.Equal(6.0, ToDouble(resSig, resExp, resSign), precision: 10);
+        var res = arith.Add(ref execContext, in aOp, in bOp, resHandle);
+        Assert.False(res.IsNegative);
+        Assert.Equal(6.0, ToDouble(resSig, res), precision: 10);
 
         // Multiply: 4 * 2 = 8
-        arith.Multiply(ref execContext, aHandle, 0, false, bHandle, 0, false, resHandle, out resExp, out resSign);
-        Assert.False(resSign);
-        Assert.Equal(8.0, ToDouble(resSig, resExp, resSign), precision: 10);
+        res = arith.Multiply(ref execContext, in aOp, in bOp, resHandle);
+        Assert.False(res.IsNegative);
+        Assert.Equal(8.0, ToDouble(resSig, res), precision: 10);
 
         // Divide: 4 / 2 = 2
-        arith.Divide(ref execContext, aHandle, 0, false, bHandle, 0, false, resHandle, out resExp, out resSign);
-        Assert.False(resSign);
-        Assert.Equal(2.0, ToDouble(resSig, resExp, resSign), precision: 10);
+        res = arith.Divide(ref execContext, in aOp, in bOp, resHandle);
+        Assert.False(res.IsNegative);
+        Assert.Equal(2.0, ToDouble(resSig, res), precision: 10);
     }
 
     [SkippableFact]
@@ -70,23 +70,23 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         using var aSig = new GpuBigUInt(_context, new uint[] { 4 });
         using var resSig = new GpuBigUInt(_context, 4);
 
-        var aHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(aSig.DevicePointer, 1), 0, 1);
-        var resHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resSig.DevicePointer, 4), 0, 4);
+        var aOp = new GpuFloatOperand(aSig.Handle, 0, false);
+        var resHandle = resSig.Handle;
 
         // Reciprocal: 1 / 4 = 0.25
-        arith.Reciprocal(ref execContext, aHandle, 0, false, resHandle, out int resExp, out bool resSign);
-        Assert.False(resSign);
-        Assert.Equal(0.25, ToDouble(resSig, resExp, resSign), precision: 10);
+        var res = arith.Reciprocal(ref execContext, in aOp, resHandle);
+        Assert.False(res.IsNegative);
+        Assert.Equal(0.25, ToDouble(resSig, res), precision: 10);
 
         // Sqrt: sqrt(4) = 2.0
-        arith.Sqrt(ref execContext, aHandle, 0, false, resHandle, out resExp, out resSign);
-        Assert.False(resSign);
-        Assert.Equal(2.0, ToDouble(resSig, resExp, resSign), precision: 10);
+        res = arith.Sqrt(ref execContext, in aOp, resHandle);
+        Assert.False(res.IsNegative);
+        Assert.Equal(2.0, ToDouble(resSig, res), precision: 10);
 
         // Rsqrt: 1 / sqrt(4) = 0.5
-        arith.Rsqrt(ref execContext, aHandle, 0, false, resHandle, out resExp, out resSign);
-        Assert.False(resSign);
-        Assert.Equal(0.5, ToDouble(resSig, resExp, resSign), precision: 10);
+        res = arith.Rsqrt(ref execContext, in aOp, resHandle);
+        Assert.False(res.IsNegative);
+        Assert.Equal(0.5, ToDouble(resSig, res), precision: 10);
     }
 
     [SkippableFact]
@@ -99,24 +99,24 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         using var bSig = new GpuBigUInt(_context, new uint[] { 3 });
         using var resSig = new GpuBigUInt(_context, 4);
 
-        var aHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(aSig.DevicePointer, 1), 0, 1);
-        var bHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(bSig.DevicePointer, 1), 0, 1);
-        var resHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resSig.DevicePointer, 4), 0, 4);
+        var aOp = new GpuFloatOperand(aSig.Handle, 0, false);
+        var bOp = new GpuFloatOperand(bSig.Handle, 0, false);
+        var resHandle = resSig.Handle;
 
         // Exp: exp(2)
-        arith.Exp(ref execContext, aHandle, 0, false, resHandle, out int resExp, out bool resSign);
-        Assert.False(resSign);
-        Assert.Equal(Math.Exp(2.0), ToDouble(resSig, resExp, resSign), precision: 8);
+        var res = arith.Exp(ref execContext, in aOp, resHandle);
+        Assert.False(res.IsNegative);
+        Assert.Equal(Math.Exp(2.0), ToDouble(resSig, res), precision: 8);
 
         // Log: ln(2)
-        arith.Log(ref execContext, aHandle, 0, false, resHandle, out resExp, out resSign);
-        Assert.False(resSign);
-        Assert.Equal(Math.Log(2.0), ToDouble(resSig, resExp, resSign), precision: 8);
+        res = arith.Log(ref execContext, in aOp, resHandle);
+        Assert.False(res.IsNegative);
+        Assert.Equal(Math.Log(2.0), ToDouble(resSig, res), precision: 8);
 
         // Pow: 2^3 = 8
-        arith.Pow(ref execContext, aHandle, 0, false, bHandle, 0, false, resHandle, out resExp, out resSign);
-        Assert.False(resSign);
-        Assert.Equal(8.0, ToDouble(resSig, resExp, resSign), precision: 6);
+        res = arith.Pow(ref execContext, in aOp, in bOp, resHandle);
+        Assert.False(res.IsNegative);
+        Assert.Equal(8.0, ToDouble(resSig, res), precision: 6);
     }
 
     [SkippableFact]
@@ -128,17 +128,17 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
         using var aSig = new GpuBigUInt(_context, new uint[] { 10 });
         using var resSig = new GpuBigUInt(_context, 4);
 
-        var aHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(aSig.DevicePointer, 1), 0, 1);
-        var resHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resSig.DevicePointer, 4), 0, 4);
+        var aOp = new GpuFloatOperand(aSig.Handle, 0, false);
+        var resHandle = resSig.Handle;
 
-        arith.Normalize(ref execContext, aHandle, 0, false, resHandle, out int resExp, out bool resSign);
-        Assert.False(resSign);
-        Assert.Equal(10.0, ToDouble(resSig, resExp, resSign), precision: 10);
+        var res = arith.Normalize(ref execContext, in aOp, resHandle);
+        Assert.False(res.IsNegative);
+        Assert.Equal(10.0, ToDouble(resSig, res), precision: 10);
 
-        arith.DivideByUInt32(ref execContext, aHandle, 0, false, 3, resHandle, out resExp, out resSign, out uint rem);
-        Assert.False(resSign);
-        Assert.Equal(0, resExp);
+        var divRes = arith.DivideByUInt32(ref execContext, in aOp, 3, resHandle);
+        Assert.False(divRes.IsNegative);
+        Assert.Equal(0, divRes.Exponent);
         Assert.Equal(3UL, (ulong)resSig.ToBigInteger());
-        Assert.Equal(1u, rem);
+        Assert.Equal(1u, divRes.Remainder);
     }
 }

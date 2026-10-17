@@ -167,27 +167,8 @@ public readonly struct GpuBigUFloat : IGpuBigNumber<GpuBigUFloat>
     /// <returns>A tuple containing the quotient <see cref="GpuBigUFloat"/> and the 32-bit integer remainder.</returns>
     public (GpuBigUFloat Quotient, uint Remainder) DivideByUInt32(uint divisor)
     {
-        var resultSig = new GpuBigUInt(Significand.Workspace, Significand.NumWords);
-        var execContext = new GpuBigIntExecutionContext(
-            Significand.Workspace,
-            Significand.Workspace.MemoryManager,
-            new LegacyProviderArithmeticAdapter(),
-            Significand.Workspace.Stream);
-
-        IGpuBigFloatArithmetic arithmetic = Significand.Workspace.Engine == GpuExecutionEngine.GSharpAot
-            ? (Significand.Workspace.Provider is NativeProvider
-                ? GSharpAotFloatProvider.CreateNativeCuda()
-                : GSharpAotFloatProvider.CreateGSharpKernel())
-            : CSharpCpuBigFloatArithmetic.Instance;
-
-        arithmetic.DivideByUInt32(ref execContext,
-            new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(Significand.DevicePointer, Significand.NumWords), 0,
-                Significand.NumWords), Exponent, false,
-            divisor,
-            new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
-                resultSig.NumWords), out var resultExp, out var _, out var remainder);
-
-        return (new GpuBigUFloat(resultSig, resultExp), remainder);
+        var (quotSig, remainder) = Significand.DivideByUInt32(divisor);
+        return (new GpuBigUFloat(quotSig, Exponent), remainder);
     }
 
     /// <summary>

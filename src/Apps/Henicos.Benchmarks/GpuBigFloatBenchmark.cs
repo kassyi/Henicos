@@ -41,32 +41,35 @@ public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
     protected override void ExecuteBatchMultiply()
     {
         var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
+        var provider = GSharpAotFloatProvider.CreateGSharpKernel();
         for (var i = 0; i < BatchSize; i++)
         {
-            GSharpAotFloatProvider.CreateGSharpKernel().Multiply(ref execCtx, _leftSigs[i].Handle, 1000, false,
-                _rightSigs[i].Handle, 1000, false, _resultSigs[i].Handle, out _, out _);
+            var leftOp = new GpuFloatOperand(_leftSigs[i].Handle, 1000);
+            var rightOp = new GpuFloatOperand(_rightSigs[i].Handle, 1000);
+            provider.Multiply(ref execCtx, in leftOp, in rightOp, _resultSigs[i].Handle);
         }
     }
 
     protected override void ExecuteBatchDivide()
     {
         var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
+        var provider = GSharpAotFloatProvider.CreateGSharpKernel();
         for (var i = 0; i < BatchSize; i++)
         {
-            GSharpAotFloatProvider.CreateGSharpKernel().Divide(ref execCtx, _leftSigs[i].Handle, 1000, false,
-                _rightSigs[i].Handle,
-                1000, false, _resultSigs[i].Handle, out _, out _);
+            var leftOp = new GpuFloatOperand(_leftSigs[i].Handle, 1000);
+            var rightOp = new GpuFloatOperand(_rightSigs[i].Handle, 1000);
+            provider.Divide(ref execCtx, in leftOp, in rightOp, _resultSigs[i].Handle);
         }
     }
 
     protected override void ExecuteBatchSqrt()
     {
         var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
+        var provider = GSharpAotFloatProvider.CreateGSharpKernel();
         for (var i = 0; i < BatchSize; i++)
         {
-            GSharpAotFloatProvider.CreateGSharpKernel().Sqrt(ref execCtx, _leftSigs[i].Handle, 1000, false,
-                _resultSigs[i].Handle,
-                out _, out _);
+            var leftOp = new GpuFloatOperand(_leftSigs[i].Handle, 1000);
+            provider.Sqrt(ref execCtx, in leftOp, _resultSigs[i].Handle);
         }
     }
 }

@@ -62,14 +62,12 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
 
         var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
             new LegacyProviderArithmeticAdapter(), Workspace.Stream);
-        var rightSign = negateRight ? !right.IsNegative : right.IsNegative;
+        var leftOp = GpuFloatOperand.From(left);
+        var rightOp = GpuFloatOperand.From(right, negate: negateRight);
 
-        Arithmetic.Add(ref execContext,
-            left.Magnitude.Handle, left.Exponent, left.IsNegative,
-            right.Magnitude.Handle, right.Exponent, rightSign,
-            resultSig.Handle, out var resultExp, out var resultSign);
+        var res = Arithmetic.Add(ref execContext, in leftOp, in rightOp, resultSig.Handle);
 
-        return T.Create(resultSig, resultExp, left.CanBeNegative && resultSign);
+        return T.Create(resultSig, res.Exponent, left.CanBeNegative && res.IsNegative);
     }
 
     /// <summary>
@@ -109,12 +107,12 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
         {
             var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
                 new LegacyProviderArithmeticAdapter(), Workspace.Stream);
-            Arithmetic.Divide(ref execContext,
-                left.Magnitude.Handle, left.Exponent, left.IsNegative,
-                right.Magnitude.Handle, right.Exponent, right.IsNegative,
-                resultSig.Handle, out var resultExp, out var resultSign);
+            var leftOp = GpuFloatOperand.From(left);
+            var rightOp = GpuFloatOperand.From(right);
 
-            return T.Create(resultSig, resultExp, left.CanBeNegative && resultSign);
+            var res = Arithmetic.Divide(ref execContext, in leftOp, in rightOp, resultSig.Handle);
+
+            return T.Create(resultSig, res.Exponent, left.CanBeNegative && res.IsNegative);
         }
         catch
         {

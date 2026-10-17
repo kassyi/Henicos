@@ -1,12 +1,55 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 
 /// <summary>
+/// Represents an arbitrary-precision floating-point operand consisting of a device memory significand handle, binary exponent, and sign flag.
+/// </summary>
+/// <param name="Significand">The memory handle referencing the raw significand limb buffer.</param>
+/// <param name="Exponent">The base-2 exponent of the operand.</param>
+/// <param name="IsNegative"><see langword="true"/> if the operand is negative; otherwise, <see langword="false"/>.</param>
+public readonly record struct GpuFloatOperand(
+    GpuBigIntMemoryHandle Significand,
+    int Exponent,
+    bool IsNegative = false)
+{
+    /// <summary>
+    /// Creates a <see cref="GpuFloatOperand"/> from any <see cref="IGpuBigNumber{TSelf}"/> value.
+    /// </summary>
+    /// <typeparam name="T">The GPU big number type.</typeparam>
+    /// <param name="number">The source GPU big number.</param>
+    /// <param name="negate">If <see langword="true"/>, inverts the sign of the operand.</param>
+    /// <returns>A <see cref="GpuFloatOperand"/> representing the number.</returns>
+    public static GpuFloatOperand From<T>(T number, bool negate = false)
+        where T : struct, IGpuBigNumber<T>
+        => new(number.Magnitude.Handle, number.Exponent, negate ? !number.IsNegative : number.IsNegative);
+}
+
+/// <summary>
+/// Represents the resulting binary exponent and sign flag produced by an arbitrary-precision floating-point operation.
+/// </summary>
+/// <param name="Exponent">The resulting base-2 exponent.</param>
+/// <param name="IsNegative"><see langword="true"/> if the resulting value is negative; otherwise, <see langword="false"/>.</param>
+public readonly record struct GpuFloatResult(
+    int Exponent,
+    bool IsNegative);
+
+/// <summary>
+/// Represents the resulting binary exponent, sign flag, and 32-bit scalar remainder produced by a scalar division operation.
+/// </summary>
+/// <param name="Exponent">The resulting base-2 exponent.</param>
+/// <param name="IsNegative"><see langword="true"/> if the resulting quotient is negative; otherwise, <see langword="false"/>.</param>
+/// <param name="Remainder">The 32-bit unsigned scalar remainder.</param>
+public readonly record struct GpuFloatScalarDivResult(
+    int Exponent,
+    bool IsNegative,
+    uint Remainder);
+
+/// <summary>
 /// Defines the contract for arbitrary-precision floating-point arithmetic operations executed across GPU and CPU backends.
 /// </summary>
 /// <remarks>
 /// <para>
 /// This interface abstracts low-level mantissa and exponent transformations for <see cref="BigNum.GpuBigFloat"/> and <see cref="BigNum.GpuBigUFloat"/> representations,
-/// operating directly on raw memory handles (<see cref="GpuBigIntMemoryHandle"/>) via an execution context.
+/// operating directly on structured operands (<see cref="GpuFloatOperand"/>) and raw memory handles (<see cref="GpuBigIntMemoryHandle"/>) via an execution context.
 /// </para>
 /// <para>
 /// <b>Zero-Allocation:</b> Implementations must execute without performing dynamic heap allocations on the managed runtime or GPU driver paths during calculation.
@@ -18,176 +61,145 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 public interface IGpuBigFloatArithmetic
 {
     /// <summary>
-    /// Normalizes an arbitrary-precision floating-point value such that the most significant limb of the significand is non-zero.
+    /// Normalizes an arbitrary-precision floating-point value such that the most significant bit of the significand is aligned to the MSB of <paramref name="resultSig"/>.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="valueSig">The memory handle referencing the raw significand limb buffer to normalize.</param>
-    /// <param name="valueExp">The base-2 or limb exponent of the input value.</param>
-    /// <param name="valueSign"><see langword="true"/> if the value is negative; otherwise, <see langword="false"/>.</param>
+    /// <param name="value">The input floating-point operand to normalize.</param>
     /// <param name="resultSig">The memory handle where the normalized significand limbs will be written.</param>
-    /// <param name="resultExp">When this method returns, contains the updated exponent adjusted for normalization shift.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign flag.</param>
-    void Normalize(ref GpuBigIntExecutionContext context,
-                   GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-                   GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    /// <returns>A <see cref="GpuFloatResult"/> containing the normalized exponent and sign flag.</returns>
+    GpuFloatResult Normalize(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand value,
+        GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
     /// Adds two arbitrary-precision floating-point operands.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="leftSig">The significand handle of the left operand.</param>
-    /// <param name="leftExp">The exponent of the left operand.</param>
-    /// <param name="leftSign">The sign of the left operand.</param>
-    /// <param name="rightSig">The significand handle of the right operand.</param>
-    /// <param name="rightExp">The exponent of the right operand.</param>
-    /// <param name="rightSign">The sign of the right operand.</param>
+    /// <param name="left">The left floating-point operand.</param>
+    /// <param name="right">The right floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the resulting significand will be stored.</param>
-    /// <param name="resultExp">When this method returns, contains the resulting exponent.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign.</param>
-    void Add(ref GpuBigIntExecutionContext context,
-             GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
-             GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
-             GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    GpuFloatResult Add(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand left,
+        in GpuFloatOperand right,
+        GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
     /// Multiplies two arbitrary-precision floating-point operands.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="leftSig">The significand handle of the left operand.</param>
-    /// <param name="leftExp">The exponent of the left operand.</param>
-    /// <param name="leftSign">The sign of the left operand.</param>
-    /// <param name="rightSig">The significand handle of the right operand.</param>
-    /// <param name="rightExp">The exponent of the right operand.</param>
-    /// <param name="rightSign">The sign of the right operand.</param>
+    /// <param name="left">The left floating-point operand.</param>
+    /// <param name="right">The right floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the product significand will be stored.</param>
-    /// <param name="resultExp">When this method returns, contains the resulting exponent.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign.</param>
-    void Multiply(ref GpuBigIntExecutionContext context,
-                  GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
-                  GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
-                  GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    GpuFloatResult Multiply(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand left,
+        in GpuFloatOperand right,
+        GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
     /// Divides one arbitrary-precision floating-point operand by another.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="leftSig">The significand handle of the dividend.</param>
-    /// <param name="leftExp">The exponent of the dividend.</param>
-    /// <param name="leftSign">The sign of the dividend.</param>
-    /// <param name="rightSig">The significand handle of the divisor.</param>
-    /// <param name="rightExp">The exponent of the divisor.</param>
-    /// <param name="rightSign">The sign of the divisor.</param>
+    /// <param name="left">The dividend floating-point operand.</param>
+    /// <param name="right">The divisor floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the quotient significand will be stored.</param>
-    /// <param name="resultExp">When this method returns, contains the resulting exponent.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign.</param>
-    void Divide(ref GpuBigIntExecutionContext context,
-                GpuBigIntMemoryHandle leftSig, int leftExp, bool leftSign,
-                GpuBigIntMemoryHandle rightSig, int rightExp, bool rightSign,
-                GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    GpuFloatResult Divide(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand left,
+        in GpuFloatOperand right,
+        GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
     /// Computes the reciprocal (<c>1 / x</c>) of an arbitrary-precision floating-point value.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="valueSig">The significand handle of the input value.</param>
-    /// <param name="valueExp">The exponent of the input value.</param>
-    /// <param name="valueSign">The sign of the input value.</param>
+    /// <param name="value">The input floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the reciprocal significand will be stored.</param>
-    /// <param name="resultExp">When this method returns, contains the resulting exponent.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign.</param>
-    void Reciprocal(ref GpuBigIntExecutionContext context,
-                    GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-                    GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    GpuFloatResult Reciprocal(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand value,
+        GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
     /// Computes the square root (<c>sqrt(x)</c>) of an arbitrary-precision floating-point value.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="valueSig">The significand handle of the input radicand.</param>
-    /// <param name="valueExp">The exponent of the input radicand.</param>
-    /// <param name="valueSign">The sign of the input radicand.</param>
+    /// <param name="value">The input radicand floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the square root significand will be stored.</param>
-    /// <param name="resultExp">When this method returns, contains the resulting exponent.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign.</param>
-    void Sqrt(ref GpuBigIntExecutionContext context,
-              GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-              GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    GpuFloatResult Sqrt(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand value,
+        GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
     /// Computes the reciprocal square root (<c>1 / sqrt(x)</c>) of an arbitrary-precision floating-point value.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="valueSig">The significand handle of the input value.</param>
-    /// <param name="valueExp">The exponent of the input value.</param>
-    /// <param name="valueSign">The sign of the input value.</param>
+    /// <param name="value">The input floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the reciprocal square root significand will be stored.</param>
-    /// <param name="resultExp">When this method returns, contains the resulting exponent.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign.</param>
-    void Rsqrt(ref GpuBigIntExecutionContext context,
-               GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-               GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    GpuFloatResult Rsqrt(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand value,
+        GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
     /// Computes the natural exponential (<c>e^x</c>) of an arbitrary-precision floating-point value.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="valueSig">The significand handle of the exponent operand.</param>
-    /// <param name="valueExp">The exponent of the exponent operand.</param>
-    /// <param name="valueSign">The sign of the exponent operand.</param>
+    /// <param name="value">The exponent floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the computed result significand will be stored.</param>
-    /// <param name="resultExp">When this method returns, contains the resulting exponent.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign.</param>
-    void Exp(ref GpuBigIntExecutionContext context,
-             GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-             GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    GpuFloatResult Exp(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand value,
+        GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
     /// Computes the natural logarithm (<c>ln(x)</c>) of an arbitrary-precision floating-point value.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="valueSig">The significand handle of the input argument.</param>
-    /// <param name="valueExp">The exponent of the input argument.</param>
-    /// <param name="valueSign">The sign of the input argument.</param>
+    /// <param name="value">The input argument floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the logarithm significand will be stored.</param>
-    /// <param name="resultExp">When this method returns, contains the resulting exponent.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign.</param>
-    void Log(ref GpuBigIntExecutionContext context,
-             GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-             GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    GpuFloatResult Log(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand value,
+        GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
     /// Raises an arbitrary-precision floating-point base to an arbitrary-precision floating-point exponent (<c>base^exp</c>).
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="baseSig">The significand handle of the base.</param>
-    /// <param name="baseExp">The exponent of the base.</param>
-    /// <param name="baseSign">The sign of the base.</param>
-    /// <param name="expSig">The significand handle of the power exponent.</param>
-    /// <param name="exponentExp">The exponent of the power exponent.</param>
-    /// <param name="exponentSign">The sign of the power exponent.</param>
+    /// <param name="baseValue">The base floating-point operand.</param>
+    /// <param name="exponentValue">The power exponent floating-point operand.</param>
     /// <param name="resultSig">The memory handle where the computed power significand will be stored.</param>
-    /// <param name="resultExp">When this method returns, contains the resulting exponent.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign.</param>
-    void Pow(ref GpuBigIntExecutionContext context,
-             GpuBigIntMemoryHandle baseSig, int baseExp, bool baseSign,
-             GpuBigIntMemoryHandle expSig, int exponentExp, bool exponentSign,
-             GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign);
+    /// <returns>A <see cref="GpuFloatResult"/> containing the resulting exponent and sign flag.</returns>
+    GpuFloatResult Pow(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand baseValue,
+        in GpuFloatOperand exponentValue,
+        GpuBigIntMemoryHandle resultSig);
 
     /// <summary>
     /// Divides an arbitrary-precision floating-point value by a 32-bit unsigned integer scalar.
     /// </summary>
     /// <param name="context">The execution context providing memory workspace and CUDA stream dispatch.</param>
-    /// <param name="valueSig">The significand handle of the dividend.</param>
-    /// <param name="valueExp">The exponent of the dividend.</param>
-    /// <param name="valueSign">The sign of the dividend.</param>
+    /// <param name="value">The dividend floating-point operand.</param>
     /// <param name="divisor">The 32-bit unsigned scalar divisor.</param>
     /// <param name="resultSig">The memory handle where the quotient significand will be stored.</param>
-    /// <param name="resultExp">When this method returns, contains the resulting exponent.</param>
-    /// <param name="resultSign">When this method returns, contains the resulting sign.</param>
-    /// <param name="remainder">When this method returns, contains the scalar remainder of the operation.</param>
-    void DivideByUInt32(ref GpuBigIntExecutionContext context,
-                        GpuBigIntMemoryHandle valueSig, int valueExp, bool valueSign,
-                        uint divisor,
-                        GpuBigIntMemoryHandle resultSig, out int resultExp, out bool resultSign, out uint remainder);
+    /// <returns>A <see cref="GpuFloatScalarDivResult"/> containing the resulting exponent, sign flag, and 32-bit remainder.</returns>
+    GpuFloatScalarDivResult DivideByUInt32(
+        ref GpuBigIntExecutionContext context,
+        in GpuFloatOperand value,
+        uint divisor,
+        GpuBigIntMemoryHandle resultSig);
 }
 
