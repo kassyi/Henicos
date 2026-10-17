@@ -24,56 +24,12 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
     {
     }
 
-    private static BigInteger ToBigInteger(ReadOnlySpan<uint> words)
-    {
-        if (words.IsEmpty)
-        {
-            return BigInteger.Zero;
-        }
+    private static BigInteger ToBigInteger(ReadOnlySpan<uint> words) =>
+        BigIntExtensions.ToBigInteger(words);
 
-        var bytes = MemoryMarshal.AsBytes(words);
-        return new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
-    }
+    private static void ToWords(BigInteger value, Span<uint> destination, int maxWords) =>
+        value.WriteLimbs(destination.Slice(0, maxWords));
 
-    private static void ToWords(BigInteger value, Span<uint> destination, int maxWords)
-    {
-        var target = destination.Slice(0, maxWords);
-        target.Clear();
-        if (value.IsZero)
-        {
-            return;
-        }
-
-        var byteSpan = MemoryMarshal.AsBytes(target);
-        if (value.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false))
-        {
-            return;
-        }
-
-        var neededBytes = value.GetByteCount(isUnsigned: true);
-        byte[]? rentedBytes = null;
-        Span<byte> tempBytes = neededBytes <= 512
-            ? stackalloc byte[512]
-            : (rentedBytes = ArrayPool<byte>.Shared.Rent(neededBytes));
-
-        try
-        {
-            if (!value.TryWriteBytes(tempBytes, out var bytesWritten, isUnsigned: true, isBigEndian: false))
-            {
-                return;
-            }
-
-            var bytesToCopy = Math.Min(bytesWritten, maxWords * 4);
-            tempBytes[..bytesToCopy].CopyTo(byteSpan);
-        }
-        finally
-        {
-            if (rentedBytes != null)
-            {
-                ArrayPool<byte>.Shared.Return(rentedBytes);
-            }
-        }
-    }
 
     /// <inheritdoc/>
     public void Normalize(ref GpuBigIntExecutionContext context,
@@ -440,13 +396,49 @@ public sealed class CSharpCpuBigFloatArithmetic : IGpuBigFloatArithmetic
             throw new InvalidOperationException("Cannot compute inverse square root of a negative number.");
         }
 
-        var tempWords = resultSig.NumWords;
-        using var sqrtResult = context.GpuWorkspace.RentTemp(tempWords);
-        var sqrtHandle = new GpuBigIntMemoryHandle(sqrtResult.Handle.Buffer, sqrtResult.Handle.WordOffset, tempWords);
+        var valueWords = ArrayPool<uint>.Shared.Rent(valueSig.NumWords);
+        var resultWords = ArrayPool<uint>.Shared.Rent(resultSig.NumWords);
+        try
+        {
+            context.GpuWorkspace.Provider.CopyDeviceToHost(valueWords,
+                IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, context.Stream);
 
-        Sqrt(ref context, valueSig, valueExp, valueSign, sqrtHandle, out var sqrtExp, out var sqrtSign);
+            var vValue = ToBigInteger(valueWords.AsSpan(0, valueSig.NumWords));
+            if (vValue.IsZero)
+            {
+                throw new DivideByZeroException("GPU BigFloat CPU Fallback: Inverse square root of zero.");
+            }
 
-        Reciprocal(ref context, sqrtHandle, sqrtExp, sqrtSign, resultSig, out resultExp, out resultSign);
+            var e = valueExp;
+            if (e % 2 != 0)
+            {
+                vValue <<= 1;
+                e--;
+            }
+
+            var shiftBits = (valueSig.NumWords + resultSig.NumWords * 2) * 32;
+            var ySquared = (BigInteger.One << (2 * shiftBits)) / vValue;
+            var vRsqrt = ySquared.Sqrt();
+
+            resultExp = -(e / 2) - shiftBits;
+            resultSign = false;
+
+            var targetBitLength = resultSig.NumWords * 32;
+            var currentBitLength = (int)vRsqrt.GetBitLength();
+            var shift = targetBitLength - currentBitLength;
+
+            var vNormalized = shift >= 0 ? (vRsqrt << shift) : (vRsqrt >> -shift);
+            resultExp -= shift;
+
+            ToWords(vNormalized, resultWords.AsSpan(0, resultSig.NumWords), resultSig.NumWords);
+            context.GpuWorkspace.Provider.CopyHostToDevice(IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
+                resultWords, resultSig.NumWords, context.Stream);
+        }
+        finally
+        {
+            ArrayPool<uint>.Shared.Return(valueWords);
+            ArrayPool<uint>.Shared.Return(resultWords);
+        }
     }
 
     /// <inheritdoc/>

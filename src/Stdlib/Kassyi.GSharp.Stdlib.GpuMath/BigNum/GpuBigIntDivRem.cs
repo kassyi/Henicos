@@ -451,9 +451,10 @@ public static partial class GpuBigIntDivRem
 
         if (isSquareRoot)
         {
-            var root = IntegerSqrt(originalBigTop) + 1;
+            var root = originalBigTop.Sqrt() + 1;
             initialApproximation = (BigInteger.One << 62) / root;
-            finalShift = targetBits - actualBits / 2 - 31;
+            var halfTotalShift = (actualBits - truncatedBits + shiftInTruncated) / 2;
+            finalShift = targetBits - halfTotalShift - 62;
         }
         else
         {
@@ -475,9 +476,7 @@ public static partial class GpuBigIntDivRem
         var xData = ArrayPool<uint>.Shared.Rent(numWords);
         try
         {
-            Array.Clear(xData, 0, numWords);
-            var xBytes = shiftedApproximation.ToByteArray(isUnsigned: true, isBigEndian: false);
-            Buffer.BlockCopy(xBytes, 0, xData, 0, Math.Min(xBytes.Length, numWords * 4));
+            shiftedApproximation.WriteLimbs(xData.AsSpan(0, numWords));
 
             // No stream synchronization: a pageable host-to-device copy is staged before the call returns, so the pooled
             // host buffer may be returned immediately, and later work using resultBuffer is ordered on the same stream.

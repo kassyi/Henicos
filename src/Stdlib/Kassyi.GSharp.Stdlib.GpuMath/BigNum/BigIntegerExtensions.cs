@@ -50,5 +50,68 @@ public static class BigIntExtensions
             root = next;
         }
     }
-}
 
+    /// <summary>
+    /// Converts a little-endian span of 32-bit unsigned integer limbs into a .NET <see cref="BigInteger"/> without intermediate heap allocations.
+    /// </summary>
+    /// <param name="words">The read-only span of 32-bit unsigned integer limbs in little-endian order.</param>
+    /// <param name="isNegative"><see langword="true"/> to negate the resulting magnitude; otherwise, <see langword="false"/>.</param>
+    /// <returns>A <see cref="BigInteger"/> representing the value in <paramref name="words"/>.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static BigInteger ToBigInteger(ReadOnlySpan<uint> words, bool isNegative = false)
+    {
+        if (words.IsEmpty)
+        {
+            return BigInteger.Zero;
+        }
+
+        var byteSpan = MemoryMarshal.AsBytes(words);
+        var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);
+        return isNegative ? -big : big;
+    }
+
+    /// <summary>
+    /// Writes the absolute magnitude of a <see cref="BigInteger"/> into a destination span of 32-bit unsigned integer limbs in little-endian order, truncating or zero-padding as needed.
+    /// </summary>
+    /// <param name="value">The <see cref="BigInteger"/> value whose magnitude is written.</param>
+    /// <param name="destination">The target limb span to receive the little-endian 32-bit words.</param>
+    public static void WriteLimbs(this BigInteger value, Span<uint> destination)
+    {
+        destination.Clear();
+        var absValue = BigInteger.Abs(value);
+        if (absValue.IsZero || destination.IsEmpty)
+        {
+            return;
+        }
+
+        var byteSpan = MemoryMarshal.AsBytes(destination);
+        if (absValue.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false))
+        {
+            return;
+        }
+
+        var neededBytes = absValue.GetByteCount(isUnsigned: true);
+        byte[]? rentedBytes = null;
+        var tempBytes = neededBytes <= 512
+            ? stackalloc byte[512]
+            : (rentedBytes = ArrayPool<byte>.Shared.Rent(neededBytes));
+
+        try
+        {
+            if (!absValue.TryWriteBytes(tempBytes, out var bytesWritten, isUnsigned: true, isBigEndian: false))
+            {
+                return;
+            }
+
+            var bytesToCopy = Math.Min(bytesWritten, byteSpan.Length);
+            tempBytes[..bytesToCopy].CopyTo(byteSpan);
+        }
+        finally
+        {
+            if (rentedBytes != null)
+            {
+                ArrayPool<byte>.Shared.Return(rentedBytes);
+            }
+        }
+    }
+}
