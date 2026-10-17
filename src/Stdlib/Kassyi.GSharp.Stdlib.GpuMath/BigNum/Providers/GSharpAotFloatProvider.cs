@@ -64,35 +64,32 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
         var valueSig = value.Significand;
         if (useNativeCuda)
         {
-            if (!NativeMethods.GpuBigFloat_Normalize(
-                    context.GpuWorkspace.WorkspacePointer,
-                    valueSig.DevicePointer, valueSig.NumWords,
-                    resultSig.DevicePointer, resultSig.NumWords,
-                    value.Exponent,
-                    out var outExp,
-                    out var isZero,
-                    context.Stream))
-            {
-                throw new InvalidOperationException("Native GpuBigFloat_Normalize failed.");
-            }
-
-            return new GpuFloatResult(outExp, isZero == 0 && value.IsNegative);
+            return !NativeMethods.GpuBigFloat_Normalize(
+                context.GpuWorkspace.WorkspacePointer,
+                valueSig.DevicePointer, valueSig.NumWords,
+                resultSig.DevicePointer, resultSig.NumWords,
+                value.Exponent,
+                out var outExp,
+                out var isZero,
+                context.Stream)
+                ? throw new InvalidOperationException("Native GpuBigFloat_Normalize failed.")
+                : new GpuFloatResult(outExp, isZero == 0 && value.IsNegative);
         }
 
-        if (context.GpuWorkspace.Provider is GSharpAotProvider)
+        if (context.GpuWorkspace.Provider is not GSharpAotProvider || GpuKernelLoader.IsCpuFallbackMode)
         {
-            var valueView = valueSig.AsBorrowedBigUInt(context.GpuWorkspace);
-            var resultView = resultSig.AsBorrowedBigUInt(context.GpuWorkspace);
-            var shift = GpuBigIntMath.NormalizeToMsb(valueView, resultView, out var actualBits);
-            if (actualBits == 0)
-            {
-                return new GpuFloatResult(0, false);
-            }
-
-            return new GpuFloatResult(value.Exponent - shift, value.IsNegative);
+            return fallbackStrategy.Normalize(ref context, in value, resultSig);
         }
 
-        return fallbackStrategy.Normalize(ref context, in value, resultSig);
+        var valueView = valueSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var resultView = resultSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var shift = GpuBigIntMath.NormalizeToMsb(valueView, resultView, out var actualBits);
+        if (actualBits == 0)
+        {
+            return new GpuFloatResult(0, false);
+        }
+
+        return new GpuFloatResult(value.Exponent - shift, value.IsNegative);
     }
 
     /// <inheritdoc/>
@@ -132,10 +129,10 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             return new GpuFloatResult(outExp, isZero == 0 && outSign != 0);
         }
 
-        if (context.GpuWorkspace.Provider is GSharpAotProvider)
+        if (context.GpuWorkspace.Provider is GSharpAotProvider && !GpuKernelLoader.IsCpuFallbackMode)
         {
             var leftHasLargerExp = left.Exponent > right.Exponent
-                || (left.Exponent == right.Exponent && leftSig.NumWords >= rightSig.NumWords);
+                                   || (left.Exponent == right.Exponent && leftSig.NumWords >= rightSig.NumWords);
             var larger = leftHasLargerExp ? left : right;
             var smaller = leftHasLargerExp ? right : left;
             var largerSig = larger.Significand;
@@ -150,26 +147,27 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             }
             else
             {
-                using var largerUFloat = new GpuBigUFloat(largerSig.AsBorrowedBigUInt(context.GpuWorkspace), larger.Exponent);
-                using var smallerUFloat = new GpuBigUFloat(smallerSig.AsBorrowedBigUInt(context.GpuWorkspace), smaller.Exponent);
+                using var largerUFloat =
+                    new GpuBigUFloat(largerSig.AsBorrowedBigUInt(context.GpuWorkspace), larger.Exponent);
+                using var smallerUFloat =
+                    new GpuBigUFloat(smallerSig.AsBorrowedBigUInt(context.GpuWorkspace), smaller.Exponent);
                 var magCmp = GpuBigNumberAlgorithms.Compare(largerUFloat, smallerUFloat);
-                if (magCmp == 0)
+                switch (magCmp)
                 {
-                    context.GpuWorkspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords, stream);
-                    return new GpuFloatResult(0, false);
-                }
-
-                if (magCmp > 0)
-                {
-                    // (largerSig << expDiff) - smallerSig => valB - valA (sign == -2)
-                    signScale = -2;
-                    resultSign = larger.IsNegative;
-                }
-                else
-                {
-                    // smallerSig - (largerSig << expDiff) => valA - valB (sign == -1)
-                    signScale = -1;
-                    resultSign = smaller.IsNegative;
+                    case 0:
+                        context.GpuWorkspace.Provider.ClearMemoryAsync(resultSig.DevicePointer, resultSig.NumWords,
+                            stream);
+                        return new GpuFloatResult(0, false);
+                    case > 0:
+                        // (largerSig << expDiff) - smallerSig => valB - valA (sign == -2)
+                        signScale = -2;
+                        resultSign = larger.IsNegative;
+                        break;
+                    default:
+                        // smallerSig - (largerSig << expDiff) => valA - valB (sign == -1)
+                        signScale = -1;
+                        resultSign = smaller.IsNegative;
+                        break;
                 }
             }
 
@@ -202,7 +200,8 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             GpuBigFloatKernels.LaunchFloatAddAlignedKernelPtr(
                 kernelCtx, gridDimX: 1, blockDimX: blockThreads, hStream: stream);
 
-            return Normalize(ref context, new GpuFloatOperand(tempResult.Handle, smaller.Exponent, resultSign), resultSig);
+            return Normalize(ref context, new GpuFloatOperand(tempResult.Handle, smaller.Exponent, resultSign),
+                resultSig);
         }
 
         return fallbackStrategy.Add(ref context, in left, in right, resultSig);
@@ -224,35 +223,32 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             var tempExp = left.Exponent + right.Exponent;
             var tempSign = (left.IsNegative != right.IsNegative) ? 1 : 0;
 
-            if (!NativeMethods.GpuBigFloat_Multiply(
-                    context.GpuWorkspace.WorkspacePointer,
-                    leftSig.DevicePointer, leftSig.NumWords,
-                    rightSig.DevicePointer, rightSig.NumWords,
-                    resultSig.DevicePointer, resultSig.NumWords,
-                    tempExp, tempSign,
-                    out var outExp, out var outSign, stream))
-            {
-                throw new InvalidOperationException("Native GpuBigFloat_Multiply failed.");
-            }
-
-            return new GpuFloatResult(outExp, outSign != 0);
+            return !NativeMethods.GpuBigFloat_Multiply(
+                context.GpuWorkspace.WorkspacePointer,
+                leftSig.DevicePointer, leftSig.NumWords,
+                rightSig.DevicePointer, rightSig.NumWords,
+                resultSig.DevicePointer, resultSig.NumWords,
+                tempExp, tempSign,
+                out var outExp, out var outSign, stream)
+                ? throw new InvalidOperationException("Native GpuBigFloat_Multiply failed.")
+                : new GpuFloatResult(outExp, outSign != 0);
         }
 
-        if (context.GpuWorkspace.Provider is GSharpAotProvider)
+        if (context.GpuWorkspace.Provider is not GSharpAotProvider || GpuKernelLoader.IsCpuFallbackMode)
         {
-            var leftView = leftSig.AsBorrowedBigUInt(context.GpuWorkspace);
-            var rightView = rightSig.AsBorrowedBigUInt(context.GpuWorkspace);
-            var prodWords = leftSig.NumWords + rightSig.NumWords;
-            using var prodBuffer = context.GpuWorkspace.RentTemp(prodWords);
-
-            GpuBigIntMath.Mul(leftView, rightView, prodBuffer);
-
-            var tempExp = left.Exponent + right.Exponent;
-            var tempSign = left.IsNegative != right.IsNegative;
-            return Normalize(ref context, new GpuFloatOperand(prodBuffer.Handle, tempExp, tempSign), resultSig);
+            return fallbackStrategy.Multiply(ref context, in left, in right, resultSig);
         }
 
-        return fallbackStrategy.Multiply(ref context, in left, in right, resultSig);
+        var leftView = leftSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var rightView = rightSig.AsBorrowedBigUInt(context.GpuWorkspace);
+        var prodWords = leftSig.NumWords + rightSig.NumWords;
+        using var prodBuffer = context.GpuWorkspace.RentTemp(prodWords);
+
+        GpuBigIntMath.Mul(leftView, rightView, prodBuffer);
+
+        return Normalize(ref context,
+            new GpuFloatOperand(prodBuffer.Handle, left.Exponent + right.Exponent, left.IsNegative != right.IsNegative),
+            resultSig);
     }
 
     /// <inheritdoc/>
@@ -287,7 +283,8 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
                 resultSig);
         }
 
-        if (!useNativeCuda && context.GpuWorkspace.Provider is not GSharpAotProvider)
+        if (!useNativeCuda &&
+            (context.GpuWorkspace.Provider is not GSharpAotProvider || GpuKernelLoader.IsCpuFallbackMode))
         {
             return fallbackStrategy.Divide(ref context, in left, in right, resultSig);
         }
@@ -322,7 +319,8 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
         in GpuFloatOperand value,
         GpuBigIntMemoryHandle resultSig)
     {
-        if (!useNativeCuda && context.GpuWorkspace.Provider is not GSharpAotProvider)
+        if (!useNativeCuda &&
+            (context.GpuWorkspace.Provider is not GSharpAotProvider || GpuKernelLoader.IsCpuFallbackMode))
         {
             return fallbackStrategy.Reciprocal(ref context, in value, resultSig);
         }
@@ -354,7 +352,8 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
         var shiftBits = reciprocalWords * 32;
         var tempExp = -value.Exponent - shiftBits;
 
-        return Normalize(ref context, new GpuFloatOperand(reciprocalResult.Handle, tempExp, value.IsNegative), resultSig);
+        return Normalize(ref context, new GpuFloatOperand(reciprocalResult.Handle, tempExp, value.IsNegative),
+            resultSig);
     }
 
     /// <inheritdoc/>
@@ -368,7 +367,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             throw new InvalidOperationException("Cannot compute square root of a negative number.");
         }
 
-        if (context.GpuWorkspace.Provider is not GSharpAotProvider)
+        if (context.GpuWorkspace.Provider is not GSharpAotProvider || GpuKernelLoader.IsCpuFallbackMode)
         {
             return fallbackStrategy.Sqrt(ref context, in value, resultSig);
         }
@@ -407,7 +406,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             throw new InvalidOperationException("Cannot compute inverse square root of a negative number.");
         }
 
-        if (context.GpuWorkspace.Provider is not GSharpAotProvider)
+        if (context.GpuWorkspace.Provider is not GSharpAotProvider || GpuKernelLoader.IsCpuFallbackMode)
         {
             return fallbackStrategy.Rsqrt(ref context, in value, resultSig);
         }
@@ -486,7 +485,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
         in GpuFloatOperand value,
         GpuBigIntMemoryHandle resultSig)
     {
-        if (context.GpuWorkspace.Provider is not GSharpAotProvider)
+        if (context.GpuWorkspace.Provider is not GSharpAotProvider || GpuKernelLoader.IsCpuFallbackMode)
         {
             return fallbackStrategy.Exp(ref context, in value, resultSig);
         }
@@ -563,7 +562,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             throw new InvalidOperationException("Log of negative number.");
         }
 
-        if (context.GpuWorkspace.Provider is not GSharpAotProvider)
+        if (context.GpuWorkspace.Provider is not GSharpAotProvider || GpuKernelLoader.IsCpuFallbackMode)
         {
             return fallbackStrategy.Log(ref context, in value, resultSig);
         }
@@ -724,7 +723,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             return new GpuFloatScalarDivResult(value.Exponent, value.IsNegative, remainder);
         }
 
-        if (context.GpuWorkspace.Provider is GSharpAotProvider aotProvider)
+        if (context.GpuWorkspace.Provider is GSharpAotProvider aotProvider && !GpuKernelLoader.IsCpuFallbackMode)
         {
             var valueView = valueSig.AsBorrowedBigUInt(context.GpuWorkspace);
             var resultView = resultSig.AsBorrowedBigUInt(context.GpuWorkspace);
