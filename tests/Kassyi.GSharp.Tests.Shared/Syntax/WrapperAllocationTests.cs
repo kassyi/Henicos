@@ -11,7 +11,6 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class WrapperAllocationTests : TranspilerTestBase
 {
-    private static readonly ConstantArgument[] s_constArray = new ConstantArgument[1];
 
     [SkippableFact]
     public void Test_LaunchDevice_ShouldNotAllocateOnHotPath()

@@ -43,15 +43,15 @@ internal static class KernelLaunchEmitter
     /// <summary>Emits argument marshaling, device memory transfers, kernel launch, and result copyback.</summary>
     internal static void WriteMarshalAndLaunchKernel(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
-        var nonJitParamCount = method.Parameters.Length;
+        var kernelParamCount = method.Parameters.Length;
 
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
         {
-            nonJitParamCount++;
+            kernelParamCount++;
         }
 
         writer.Append("void** kernelParams = stackalloc void*[");
-        writer.Append(nonJitParamCount.ToString());
+        writer.Append(kernelParamCount.ToString());
         writer.AppendLine("];");
 
         var paramIndex = 0;

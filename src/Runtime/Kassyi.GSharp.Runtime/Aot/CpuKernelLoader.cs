@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Runtime.Aot;
 
 /// <summary>
-/// Runtime JIT compilation engine that compiles Standard C++ kernel strings into executable native CPU libraries and manages delegate bindings.
+/// Loads compiled native CPU kernel libraries and manages delegate bindings.
 /// </summary>
 [ExcludeFromCodeCoverage]
 public sealed class CpuKernelLoader

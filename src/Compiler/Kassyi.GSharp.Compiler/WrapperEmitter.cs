@@ -3,7 +3,7 @@ using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler;
 
-/// <summary>Generates host-side C# wrapper classes that JIT-compile and invoke GPU kernels.</summary>
+/// <summary>Generates host-side C# wrapper classes that load and invoke GPU kernels.</summary>
 internal static class WrapperEmitter
 {
     private readonly struct InteropParameterInfo(

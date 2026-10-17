@@ -163,9 +163,9 @@ public static partial class Gpu
     public static void SyncGrid(Action body) => GpuOnlyException.Throw();
 
     /// <summary>
-    /// Marker method for JIT Constant Folding. Replaced with the literal macro value during runtime compilation.
+    /// Marker method for compile-time constant macro expansion. Replaced with the literal macro value during transpilation.
     /// </summary>
-    /// <param name="macroName">The name of the JIT macro parameter.</param>
+    /// <param name="macroName">The name of the constant macro parameter.</param>
     /// <returns>A typed placeholder evaluated at GPU compile-time.</returns>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     public static int Constant(string macroName) => GpuOnlyException.Throw<int>();
