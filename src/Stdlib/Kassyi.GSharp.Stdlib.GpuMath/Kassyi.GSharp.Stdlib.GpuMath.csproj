@@ -19,14 +19,6 @@
     <InternalsVisibleTo Include="Kassyi.GSharp.Stdlib.GpuMath.Tests" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="..\..\Native\Kassyi.GSharp.Stdlib.GpuMath.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll" Condition="Exists('..\..\Native\Kassyi.GSharp.Stdlib.GpuMath.Cuda\Kassyi.GSharp.GpuBigInt.Cuda.dll')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\..\Native\Kassyi.GSharp.Stdlib.GpuMath.Cuda\libKassyi.GSharp.GpuBigInt.Cuda.so" Condition="Exists('..\..\Native\Kassyi.GSharp.Stdlib.GpuMath.Cuda\libKassyi.GSharp.GpuBigInt.Cuda.so')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />

@@ -13,15 +13,10 @@ public class GpuBigIntBenchmark : IDisposable
     }
 
     private GpuWorkspace? _contextKernel;
-    private GpuWorkspace? _contextLegacy;
 
     private GpuBigUInt _gpuAKernel;
     private GpuBigUInt _gpuBKernel;
     private GpuBigUInt _gpuResultKernel;
-
-    private GpuBigUInt _gpuALegacy;
-    private GpuBigUInt _gpuBLegacy;
-    private GpuBigUInt _gpuResultLegacy;
 
     private GpuKernelLoader.CudaContextScope _scope;
 
@@ -31,7 +26,6 @@ public class GpuBigIntBenchmark : IDisposable
         _scope = new GpuKernelLoader.CudaContextScope();
 
         _contextKernel = new GpuWorkspace(NumWords * 2);
-        _contextLegacy = new GpuWorkspace(NumWords * 2, GpuExecutionEngine.LegacyNative);
 
         var rnd = new Random(42);
         var hostA = new uint[NumWords];
@@ -49,26 +43,13 @@ public class GpuBigIntBenchmark : IDisposable
         _gpuAKernel = new GpuBigUInt(_contextKernel, hostA);
         _gpuBKernel = new GpuBigUInt(_contextKernel, hostB);
         _gpuResultKernel = new GpuBigUInt(_contextKernel, NumWords);
-
-        _gpuALegacy = new GpuBigUInt(_contextLegacy, hostA);
-        _gpuBLegacy = new GpuBigUInt(_contextLegacy, hostB);
-        _gpuResultLegacy = new GpuBigUInt(_contextLegacy, NumWords);
     }
 
     [GlobalCleanup]
     public void Cleanup()
     {
         _contextKernel?.Dispose();
-        _contextLegacy?.Dispose();
         _scope.Dispose();
-    }
-
-    [Benchmark(Baseline = true)]
-    public void Sub_LegacyNative()
-    {
-        _gpuResultLegacy.Value = _gpuALegacy - _gpuBLegacy;
-        // Synchronize implicitly or explicitly depending on how benchmarking is done.
-        // For accurate GPU benchmarking, we should sync, but NativeMethods currently sync internally via cudaDeviceSynchronize.
     }
 
     [Benchmark]
