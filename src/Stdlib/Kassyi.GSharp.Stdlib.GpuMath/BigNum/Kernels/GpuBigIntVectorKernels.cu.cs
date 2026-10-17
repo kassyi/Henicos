@@ -211,6 +211,55 @@ public static partial class GpuBigIntVectorKernels
         public int PreShiftBits;
     }
 
+    public struct VectorFloatCompareContext
+    {
+        [GpuReadOnly]
+        public uint[] A;
+
+        [GpuReadOnly]
+        public uint[] B;
+
+        public uint[] Result;
+
+        [GpuReadOnly]
+        public uint[] ExpA;
+
+        [GpuReadOnly]
+        public uint[] ExpB;
+
+        [GpuReadOnly]
+        public uint[] SignA;
+
+        [GpuReadOnly]
+        public uint[] SignB;
+
+        public int NumWordsA;
+        public int NumWordsB;
+        public int ScalarExp;
+        public uint ScalarSign;
+        public bool IsScalar;
+        public int OpType;
+    }
+
+    public struct VectorFloatReductionChunkContext
+    {
+        [GpuReadOnly]
+        public uint[] A;
+
+        [GpuReadOnly]
+        public uint[] ExpA;
+
+        [GpuReadOnly]
+        public uint[] SignA;
+
+        public uint[] Result;
+        public uint[] ExpResult;
+        public uint[] SignResult;
+        public int NumWords;
+        public int BatchSize;
+        public int ChunkSize;
+    }
+
     /// <summary>
     /// Performs a two-tier (warp + block) Kogge-Stone carry-lookahead scan across the thread block
     /// and returns the carry-in for the calling thread while outputting the block-wide carry-out.

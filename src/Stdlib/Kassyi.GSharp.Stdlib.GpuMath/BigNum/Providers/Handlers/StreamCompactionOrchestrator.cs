@@ -61,4 +61,49 @@ public static class StreamCompactionOrchestrator
             outputPtr, scannedBlockSumsBuffer.DevicePointer, elementCount,
             gridDimX: (uint)numBlocks, blockDimX: 1024, hStream: workspace.Stream); // AddBlockSums uses 1 thread per element, up to 1024 per block
     }
+
+    /// <summary>
+    /// Encapsulates device pointers and dimensions for a stream compaction scatter operation.
+    /// </summary>
+    /// <param name="OutputPtr">The destination device pointer.</param>
+    /// <param name="InputPtr">The source device pointer.</param>
+    /// <param name="PredicatesPtr">The boolean predicates device pointer.</param>
+    /// <param name="ScanIndicesPtr">The exclusive scan indices device pointer.</param>
+    /// <param name="ElementCount">The number of elements in the source array.</param>
+    /// <param name="WordsPerElement">The number of 32-bit words per element.</param>
+    public readonly record struct StreamCompactionRequest(
+        IntPtr OutputPtr,
+        IntPtr InputPtr,
+        IntPtr PredicatesPtr,
+        IntPtr ScanIndicesPtr,
+        int ElementCount,
+        int WordsPerElement);
+
+    /// <summary>
+    /// Zero-fills a destination buffer and scatters selected elements using precomputed exclusive scan indices.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace memory context.</param>
+    /// <param name="request">The stream compaction buffer and dimension parameters.</param>
+    public static void CompactArray(GpuWorkspace workspace, StreamCompactionRequest request)
+    {
+        if (request.ElementCount <= 0 || request.WordsPerElement <= 0)
+        {
+            return;
+        }
+
+        const int scatterThreadsPerBlock = 256;
+        var scatterGridDim = (request.ElementCount + scatterThreadsPerBlock - 1) / scatterThreadsPerBlock;
+        var totalWords = request.ElementCount * request.WordsPerElement;
+        var memsetGridDim = (totalWords + scatterThreadsPerBlock - 1) / scatterThreadsPerBlock;
+
+        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
+            request.OutputPtr, totalWords,
+            gridDimX: (uint)memsetGridDim, blockDimX: scatterThreadsPerBlock, hStream: workspace.Stream);
+
+        GpuStreamCompactionKernels.LaunchCompactBigUIntArrayPtr(
+            request.OutputPtr, request.InputPtr,
+            request.PredicatesPtr, request.ScanIndicesPtr,
+            request.ElementCount, request.WordsPerElement,
+            gridDimX: (uint)scatterGridDim, blockDimX: scatterThreadsPerBlock, hStream: workspace.Stream);
+    }
 }

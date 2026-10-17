@@ -25,7 +25,8 @@ public interface IGpuBigIntVectorExpression : IDisposable
     /// <param name="elementCount">The number of elements to evaluate. If null, evaluates to the end of the vector length.</param>
     /// <param name="targetResult">An optional destination array for the evaluated values. If provided, it must have a length of elementCount.</param>
     /// <returns>A <see cref="GpuBigIntArray"/> containing the evaluated vector slice results.</returns>
-    GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null);
+    GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
+        GpuBigUIntArray? targetResult = null);
 }
 
 internal class GpuBigIntVectorLeafExpression(GpuBigIntArray array) : IGpuBigIntVectorExpression
@@ -33,7 +34,8 @@ internal class GpuBigIntVectorLeafExpression(GpuBigIntArray array) : IGpuBigIntV
     public int Length => array.Length;
     public int WordsPerElement => array.WordsPerElement;
 
-    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
+    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
+        GpuBigUIntArray? targetResult = null)
     {
         var count = elementCount ?? (Length - elementOffset);
         if (elementOffset == 0 && count == Length)
@@ -49,6 +51,16 @@ internal class GpuBigIntVectorLeafExpression(GpuBigIntArray array) : IGpuBigIntV
         // Does not own the array
     }
 }
+
+internal readonly record struct VectorScalarOperands(
+    GpuBigIntArray Vector,
+    GpuBigInt Scalar,
+    GpuBigIntArray Destination);
+
+internal readonly record struct VectorZipOperands(
+    GpuBigIntArray Left,
+    GpuBigIntArray Right,
+    GpuBigIntArray Destination);
 
 internal abstract class VectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigIntVectorExpression vector,
@@ -85,39 +97,34 @@ internal abstract class VectorBinaryScalarExpressionBase(
             _allocated = true;
         }
 
-        DispatchKernel(workspace, vecResult, scalarResult, _finalValues, _finalSigns, (uint)evalCount);
-        return new GpuBigIntArray(_finalValues, _finalSigns);
+        var destination = new GpuBigIntArray(_finalValues, _finalSigns);
+        var operands = new VectorScalarOperands(vecResult, scalarResult, destination);
+        DispatchKernel(workspace, operands, (uint)evalCount);
+        return destination;
     }
 
-    protected TContext CreateScalarContext<TContext>(
-        GpuBigIntArray vecResult,
-        GpuBigInt scalarResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns)
+    protected TContext CreateScalarContext<TContext>(VectorScalarOperands operands)
         where TContext : struct, GpuBigIntVectorKernels.AotContexts.IVectorBinaryAotContext
     {
         var ctx = default(TContext);
         ctx.InitializeBinary(
-            vecResult.Values.DevicePointer,
-            scalarResult.Value.DevicePointer,
-            finalValues.DevicePointer,
-            vecResult.Signs.DevicePointer,
-            vecResult.Signs.DevicePointer,
-            finalSigns.DevicePointer,
+            operands.Vector.Values.DevicePointer,
+            operands.Scalar.Value.DevicePointer,
+            operands.Destination.Values.DevicePointer,
+            operands.Vector.Signs.DevicePointer,
+            operands.Vector.Signs.DevicePointer,
+            operands.Destination.Signs.DevicePointer,
             vector.WordsPerElement,
-            scalarResult.Value.NumWords,
+            operands.Scalar.Value.NumWords,
             WordsPerElement,
-            scalarResult.IsNegative ? 1u : 0u,
+            operands.Scalar.IsNegative ? 1u : 0u,
             isScalar: true);
         return ctx;
     }
 
     protected abstract void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray vecResult,
-        GpuBigInt scalarResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorScalarOperands operands,
         uint gridDimX);
 
     public void Dispose()
@@ -140,14 +147,10 @@ internal sealed class VectorMulScalarExpression(
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray vecResult,
-        GpuBigInt scalarResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorMul>(
-            vecResult, scalarResult, finalValues, finalSigns);
+        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorMul>(operands);
         GpuBigIntVectorKernels.LaunchVectorMulScalarKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -160,14 +163,10 @@ internal sealed class VectorAddScalarExpression(
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray vecResult,
-        GpuBigInt scalarResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(
-            vecResult, scalarResult, finalValues, finalSigns);
+        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(operands);
         ctx.OpSign = 0u;
         GpuBigIntVectorKernels.LaunchVectorAddScalarKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
@@ -181,14 +180,10 @@ internal sealed class VectorSubScalarExpression(
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray vecResult,
-        GpuBigInt scalarResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(
-            vecResult, scalarResult, finalValues, finalSigns);
+        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(operands);
         ctx.OpSign = 1u;
         GpuBigIntVectorKernels.LaunchVectorSubScalarKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
@@ -202,14 +197,10 @@ internal sealed class VectorDivScalarExpression(
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray vecResult,
-        GpuBigInt scalarResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(
-            vecResult, scalarResult, finalValues, finalSigns);
+        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(operands);
         ctx.IsModulo = false;
         GpuBigIntVectorKernels.LaunchVectorDivScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
@@ -223,14 +214,10 @@ internal sealed class VectorModScalarExpression(
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray vecResult,
-        GpuBigInt scalarResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(
-            vecResult, scalarResult, finalValues, finalSigns);
+        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(operands);
         ctx.IsModulo = true;
         GpuBigIntVectorKernels.LaunchVectorModScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
@@ -283,27 +270,25 @@ internal abstract class VectorBinaryVectorExpressionBase(
             _allocated = true;
         }
 
-        DispatchKernel(workspace, leftResult, rightResult, _finalValues, _finalSigns, (uint)evalCount);
-        return new GpuBigIntArray(_finalValues, _finalSigns);
+        var destination = new GpuBigIntArray(_finalValues, _finalSigns);
+        var operands = new VectorZipOperands(leftResult, rightResult, destination);
+        DispatchKernel(workspace, operands, (uint)evalCount);
+        return destination;
     }
 
-    protected TContext CreateZipContext<TContext>(
-        GpuBigIntArray leftResult,
-        GpuBigIntArray rightResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns)
+    protected TContext CreateZipContext<TContext>(VectorZipOperands operands)
         where TContext : struct, GpuBigIntVectorKernels.AotContexts.IVectorBinaryAotContext
     {
         var ctx = default(TContext);
         ctx.InitializeBinary(
-            leftResult.Values.DevicePointer,
-            rightResult.Values.DevicePointer,
-            finalValues.DevicePointer,
-            leftResult.Signs.DevicePointer,
-            rightResult.Signs.DevicePointer,
-            finalSigns.DevicePointer,
-            leftResult.WordsPerElement,
-            rightResult.WordsPerElement,
+            operands.Left.Values.DevicePointer,
+            operands.Right.Values.DevicePointer,
+            operands.Destination.Values.DevicePointer,
+            operands.Left.Signs.DevicePointer,
+            operands.Right.Signs.DevicePointer,
+            operands.Destination.Signs.DevicePointer,
+            operands.Left.WordsPerElement,
+            operands.Right.WordsPerElement,
             WordsPerElement,
             scalarSign: 0u,
             isScalar: false);
@@ -312,10 +297,7 @@ internal abstract class VectorBinaryVectorExpressionBase(
 
     protected abstract void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray leftResult,
-        GpuBigIntArray rightResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorZipOperands operands,
         uint gridDimX);
 
     public void Dispose()
@@ -339,14 +321,10 @@ internal sealed class VectorAddVectorExpression(
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray leftResult,
-        GpuBigIntArray rightResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(
-            leftResult, rightResult, finalValues, finalSigns);
+        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(operands);
         ctx.OpSign = 0u;
         GpuBigIntVectorKernels.LaunchVectorZipAddKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
@@ -360,14 +338,10 @@ internal sealed class VectorSubVectorExpression(
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray leftResult,
-        GpuBigIntArray rightResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(
-            leftResult, rightResult, finalValues, finalSigns);
+        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(operands);
         ctx.OpSign = 1u;
         GpuBigIntVectorKernels.LaunchVectorZipSubKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
@@ -381,14 +355,10 @@ internal sealed class VectorMulVectorExpression(
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray leftResult,
-        GpuBigIntArray rightResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorMul>(
-            leftResult, rightResult, finalValues, finalSigns);
+        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorMul>(operands);
         GpuBigIntVectorKernels.LaunchVectorZipMulKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -405,14 +375,10 @@ internal sealed class VectorDivVectorExpression(
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray leftResult,
-        GpuBigIntArray rightResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(
-            leftResult, rightResult, finalValues, finalSigns);
+        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(operands);
         ctx.IsModulo = false;
         GpuBigIntVectorKernels.LaunchVectorZipDivKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
@@ -430,14 +396,10 @@ internal sealed class VectorModVectorExpression(
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
-        GpuBigIntArray leftResult,
-        GpuBigIntArray rightResult,
-        GpuBigUIntArray finalValues,
-        GpuBigUIntArray finalSigns,
+        VectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(
-            leftResult, rightResult, finalValues, finalSigns);
+        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(operands);
         ctx.IsModulo = true;
         GpuBigIntVectorKernels.LaunchVectorZipModKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
@@ -674,7 +636,8 @@ internal class VectorCountExpression([TakesOwnership] IGpuBigIntVectorExpression
         {
             var countVal = new uint[targetResult.Value.NumWords];
             countVal[0] = (uint)count;
-            workspace.Provider.CopyHostToDevice(targetResult.Value.DevicePointer, countVal, countVal.Length, workspace.Stream);
+            workspace.Provider.CopyHostToDevice(targetResult.Value.DevicePointer, countVal, countVal.Length,
+                workspace.Stream);
             return new GpuBigInt(targetResult.Value, false);
         }
         else
@@ -687,18 +650,20 @@ internal class VectorCountExpression([TakesOwnership] IGpuBigIntVectorExpression
     public void Dispose() => vector.Dispose();
 }
 
-internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count) : IGpuBigIntVectorExpression
+internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count)
+    : IGpuBigIntVectorExpression
 {
     public int Length => Math.Min(source.Length, count);
     public int WordsPerElement => source.WordsPerElement;
 
-    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
+    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
+        GpuBigUIntArray? targetResult = null)
     {
         var evalCount = elementCount ?? (Length - elementOffset);
-        
+
         // Ensure we do not evaluate beyond the Take boundary
         var effectiveCount = Math.Min(evalCount, Length - elementOffset);
-        
+
         if (effectiveCount <= 0)
         {
             return new GpuBigIntArray(
@@ -712,24 +677,26 @@ internal class VectorTakeExpression([TakesOwnership] IGpuBigIntVectorExpression 
     public void Dispose() => source.Dispose();
 }
 
-internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count) : IGpuBigIntVectorExpression
+internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression source, int count)
+    : IGpuBigIntVectorExpression
 {
     private readonly int _skipCount = Math.Min(count, source.Length);
 
     public int Length => source.Length - _skipCount;
     public int WordsPerElement => source.WordsPerElement;
 
-    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
+    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
+        GpuBigUIntArray? targetResult = null)
     {
         var evalCount = elementCount ?? (Length - elementOffset);
-        
+
         if (evalCount <= 0)
         {
             return new GpuBigIntArray(
                 new GpuBigUIntArray(workspace, 0, WordsPerElement),
                 new GpuBigUIntArray(workspace, 0, 1));
         }
-        
+
         // Pass the requested element slice but shifted by the Skip count
         return source.Evaluate(workspace, elementOffset + _skipCount, evalCount, targetResult);
     }
@@ -737,7 +704,9 @@ internal class VectorSkipExpression([TakesOwnership] IGpuBigIntVectorExpression 
     public void Dispose() => source.Dispose();
 }
 
-internal class VectorWhereExpression([TakesOwnership] IGpuBigIntVectorExpression source, [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigIntVectorExpression, IDisposable
+internal class VectorWhereExpression(
+    [TakesOwnership] IGpuBigIntVectorExpression source,
+    [TakesOwnership] IGpuBoolVectorExpression predicate) : IGpuBigIntVectorExpression
 {
     public int Length => source.Length;
     public int WordsPerElement => source.WordsPerElement;
@@ -747,11 +716,13 @@ internal class VectorWhereExpression([TakesOwnership] IGpuBigIntVectorExpression
     private GpuBigUIntArray _scanResult;
     private bool _allocated;
 
-    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null, GpuBigUIntArray? targetResult = null)
+    public GpuBigIntArray Evaluate(GpuWorkspace workspace, int elementOffset = 0, int? elementCount = null,
+        GpuBigUIntArray? targetResult = null)
     {
         if (targetResult != null)
         {
-            throw new NotSupportedException("Where expression does not support targetResult because its size is dynamic.");
+            throw new NotSupportedException(
+                "Where expression does not support targetResult because its size is dynamic.");
         }
 
         var evaluatedSource = source.Evaluate(workspace);
@@ -777,34 +748,26 @@ internal class VectorWhereExpression([TakesOwnership] IGpuBigIntVectorExpression
         StreamCompactionOrchestrator.ExecuteExclusiveScan(
             workspace, _scanResult.DevicePointer, evaluatedPredicates.DevicePointer, originalCount);
 
-        var scatterThreadsPerBlock = 256;
-        var scatterGridDim = (originalCount + scatterThreadsPerBlock - 1) / scatterThreadsPerBlock;
+        // 2. Scatter (Compact) Data
+        StreamCompactionOrchestrator.CompactArray(
+            workspace,
+            new StreamCompactionOrchestrator.StreamCompactionRequest(
+                _compactedValues.DevicePointer,
+                evaluatedSource.Values.DevicePointer,
+                evaluatedPredicates.DevicePointer,
+                _scanResult.DevicePointer,
+                originalCount,
+                WordsPerElement));
 
-        // Memset to 0 to pad the remainder (acting as identity for subsequent Map/Reduce like Sum)
-        var totalValuesWords = originalCount * WordsPerElement;
-        var memsetValuesGridDim = (totalValuesWords + scatterThreadsPerBlock - 1) / scatterThreadsPerBlock;
-
-        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
-            _compactedValues.DevicePointer, totalValuesWords,
-            gridDimX: (uint)memsetValuesGridDim, blockDimX: (uint)scatterThreadsPerBlock, hStream: workspace.Stream);
-
-        GpuStreamCompactionKernels.LaunchMemsetZeroPtr(
-            _compactedSigns.DevicePointer, originalCount,
-            gridDimX: (uint)scatterGridDim, blockDimX: (uint)scatterThreadsPerBlock, hStream: workspace.Stream);
-
-        // 3. Scatter (Compact) Data
-
-        GpuStreamCompactionKernels.LaunchCompactBigUIntArrayPtr(
-            _compactedValues.DevicePointer, evaluatedSource.Values.DevicePointer,
-            evaluatedPredicates.DevicePointer, _scanResult.DevicePointer,
-            originalCount, WordsPerElement,
-            gridDimX: (uint)scatterGridDim, blockDimX: (uint)scatterThreadsPerBlock, hStream: workspace.Stream);
-
-        GpuStreamCompactionKernels.LaunchCompactBigUIntArrayPtr(
-            _compactedSigns.DevicePointer, evaluatedSource.Signs.DevicePointer,
-            evaluatedPredicates.DevicePointer, _scanResult.DevicePointer,
-            originalCount, 1,
-            gridDimX: (uint)scatterGridDim, blockDimX: (uint)scatterThreadsPerBlock, hStream: workspace.Stream);
+        StreamCompactionOrchestrator.CompactArray(
+            workspace,
+            new StreamCompactionOrchestrator.StreamCompactionRequest(
+                _compactedSigns.DevicePointer,
+                evaluatedSource.Signs.DevicePointer,
+                evaluatedPredicates.DevicePointer,
+                _scanResult.DevicePointer,
+                originalCount,
+                1));
 
         var finalCount = elementCount ?? (originalCount - elementOffset);
         return new GpuBigIntArray(
