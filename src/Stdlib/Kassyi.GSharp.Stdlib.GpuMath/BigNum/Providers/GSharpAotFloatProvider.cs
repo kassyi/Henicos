@@ -273,7 +273,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             throw new InvalidOperationException("Cannot compute square root of a negative number.");
         }
 
-        if (!useNativeCuda && context.GpuWorkspace.Provider is not GSharpAotProvider)
+        if (context.GpuWorkspace.Provider is not GSharpAotProvider)
         {
             fallbackStrategy.Sqrt(ref context, valueSig, valueExp, valueSign, resultSig,
                 out resultExp, out resultSign);
@@ -281,55 +281,38 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
         }
 
         var stream = context.Stream;
-        var e = valueExp;
-
         using var valueOperand = new GpuBigUInt(context.GpuWorkspace, valueSig.NumWords);
         context.GpuWorkspace.Provider.CopyDeviceToDevice(valueOperand.DevicePointer,
             IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, stream);
 
-        var isZero = context.GpuWorkspace.Provider.IsZero(context.GpuWorkspace, valueOperand);
-        if (isZero)
+        var actualBits = valueOperand.GetBitLength();
+        if (actualBits == 0)
         {
             resultExp = 0;
             resultSign = false;
-            var zeros = new uint[resultSig.NumWords];
-            context.GpuWorkspace.Provider.CopyHostToDevice(
-                IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4),
-                zeros, resultSig.NumWords, stream);
+            context.GpuWorkspace.Provider.ClearMemoryAsync(
+                IntPtr.Add(resultSig.Buffer.Pointer, resultSig.WordOffset * 4), resultSig.NumWords, stream);
             return;
         }
 
-        var scaleShift = resultSig.NumWords * 32 * 2;
-        var totalShift = scaleShift;
-        if (e % 2 != 0)
+        ComputeNormalizedInverseSqrt(context.GpuWorkspace, valueOperand, valueExp, actualBits, resultSig.NumWords,
+            out var aNorm, out var rsqrtRaw, out var rsqrtSliced, out var adjustedExp, out var effectiveScaleBits);
+
+        using (aNorm)
+        using (rsqrtRaw)
         {
-            totalShift += 1;
-            e--;
+            var prodWords = aNorm.NumWords + rsqrtSliced.NumWords;
+            using var prodResult = context.GpuWorkspace.RentTemp(prodWords);
+            context.GpuWorkspace.Provider.ClearMemoryAsync(prodResult.DevicePointer, prodWords, stream);
+
+            GpuBigIntMath.Mul(aNorm, rsqrtSliced, prodResult);
+
+            var tempHandle = new GpuBigIntMemoryHandle(prodResult.Handle.Buffer, prodResult.Handle.WordOffset, prodWords);
+            var tempExp = (adjustedExp / 2) - effectiveScaleBits;
+            resultSign = false;
+
+            Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
         }
-
-        var shiftedWords = valueSig.NumWords + (totalShift / 32) + 1;
-        using var largeOperand = context.GpuWorkspace.RentTemp(shiftedWords);
-        context.GpuWorkspace.Provider.ClearMemoryAsync(largeOperand.DevicePointer, shiftedWords, stream);
-        context.GpuWorkspace.Provider.CopyDeviceToDevice(largeOperand.DevicePointer, valueOperand.DevicePointer,
-            valueSig.NumWords, stream);
-
-        using var shiftedOperand = context.GpuWorkspace.RentTemp(shiftedWords);
-        context.GpuWorkspace.Provider.ClearMemoryAsync(shiftedOperand.DevicePointer, shiftedWords, stream);
-
-        context.GpuWorkspace.Provider.ShiftLeft(context.GpuWorkspace, largeOperand, totalShift, shiftedOperand);
-
-        using var sqrtResult = context.GpuWorkspace.RentTemp(shiftedWords);
-        context.GpuWorkspace.Provider.ClearMemoryAsync(sqrtResult.DevicePointer, shiftedWords, stream);
-
-        GpuBigIntDivRem.Sqrt(shiftedOperand, sqrtResult);
-
-        var tempHandle =
-            new GpuBigIntMemoryHandle(sqrtResult.Handle.Buffer, sqrtResult.Handle.WordOffset, shiftedWords);
-
-        var tempExp = e / 2 - (scaleShift / 2);
-        resultSign = false;
-
-        Normalize(ref context, tempHandle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
     }
 
     /// <inheritdoc/>
@@ -342,13 +325,85 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             throw new InvalidOperationException("Cannot compute inverse square root of a negative number.");
         }
 
-        var tempWords = resultSig.NumWords;
-        using var sqrtResult = context.GpuWorkspace.RentTemp(tempWords);
-        var sqrtHandle = new GpuBigIntMemoryHandle(sqrtResult.Handle.Buffer, sqrtResult.Handle.WordOffset, tempWords);
+        if (context.GpuWorkspace.Provider is not GSharpAotProvider)
+        {
+            fallbackStrategy.Rsqrt(ref context, valueSig, valueExp, valueSign, resultSig,
+                out resultExp, out resultSign);
+            return;
+        }
 
-        Sqrt(ref context, valueSig, valueExp, valueSign, sqrtHandle, out var sqrtExp, out var sqrtSign);
+        var stream = context.Stream;
+        using var valueOperand = new GpuBigUInt(context.GpuWorkspace, valueSig.NumWords);
+        context.GpuWorkspace.Provider.CopyDeviceToDevice(valueOperand.DevicePointer,
+            IntPtr.Add(valueSig.Buffer.Pointer, valueSig.WordOffset * 4), valueSig.NumWords, stream);
 
-        Reciprocal(ref context, sqrtHandle, sqrtExp, sqrtSign, resultSig, out resultExp, out resultSign);
+        var actualBits = valueOperand.GetBitLength();
+        if (actualBits == 0)
+        {
+            throw new DivideByZeroException("Cannot compute inverse square root of zero.");
+        }
+
+        ComputeNormalizedInverseSqrt(context.GpuWorkspace, valueOperand, valueExp, actualBits, resultSig.NumWords,
+            out var aNorm, out var rsqrtRaw, out var rsqrtSliced, out var adjustedExp, out var effectiveScaleBits);
+
+        using (aNorm)
+        using (rsqrtRaw)
+        {
+            var tempExp = -(adjustedExp / 2) - effectiveScaleBits;
+            resultSign = false;
+
+            Normalize(ref context, rsqrtSliced.Handle, tempExp, resultSign, resultSig, out resultExp, out resultSign);
+        }
+    }
+
+    private static void ComputeNormalizedInverseSqrt(
+        GpuWorkspace workspace,
+        GpuBigUInt valueOperand,
+        int valueExp,
+        int actualBits,
+        int targetResultWords,
+        out GpuBigUInt aNorm,
+        out GpuBigUInt rsqrtRaw,
+        out GpuBigUInt rsqrtSliced,
+        out int adjustedExp,
+        out int effectiveScaleBits)
+    {
+        var stream = workspace.Stream;
+        var workWords = Math.Max(valueOperand.NumWords, targetResultWords);
+        var lz = workWords * 32 - actualBits;
+        adjustedExp = valueExp - lz;
+        if (adjustedExp % 2 != 0)
+        {
+            lz--;
+            adjustedExp = valueExp - lz;
+        }
+
+        using var paddedOperand = workspace.RentTemp(workWords);
+        workspace.Provider.ClearMemoryAsync(paddedOperand.DevicePointer, workWords, stream);
+        workspace.Provider.CopyDeviceToDevice(paddedOperand.DevicePointer, valueOperand.DevicePointer,
+            valueOperand.NumWords, stream);
+
+        aNorm = workspace.RentTemp(workWords);
+        workspace.Provider.ClearMemoryAsync(aNorm.DevicePointer, workWords, stream);
+        workspace.Provider.ShiftLeft(workspace, paddedOperand, lz, aNorm);
+
+        const int MarginWords = 4;
+        const int DiscardGuardWords = 2;
+        var rsqrtWords = workWords + MarginWords;
+        rsqrtRaw = workspace.RentTemp(rsqrtWords);
+        workspace.Provider.ClearMemoryAsync(rsqrtRaw.DevicePointer, rsqrtWords, stream);
+
+        GpuBigIntDivRem.InverseSqrt(aNorm, rsqrtRaw, MarginWords);
+
+        // Add guard-word rounding offset to absorb Newton-Raphson right-shift truncation before slicing off the lowest 2 guard words
+        GpuBigIntMath.Add(rsqrtRaw, 4u, rsqrtRaw);
+
+        var slicedHandle = new GpuBigIntMemoryHandle(
+            rsqrtRaw.Handle.Buffer,
+            rsqrtRaw.Handle.WordOffset + DiscardGuardWords,
+            rsqrtWords - DiscardGuardWords);
+        rsqrtSliced = new GpuBigUInt(workspace, slicedHandle, isTemp: true);
+        effectiveScaleBits = (rsqrtWords - DiscardGuardWords) * 32;
     }
 
     /// <inheritdoc/>

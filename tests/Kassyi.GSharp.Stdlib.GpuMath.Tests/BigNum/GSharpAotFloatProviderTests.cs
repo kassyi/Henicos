@@ -85,6 +85,37 @@ public class GSharpAotFloatProviderTests : IDisposable
         arith.Rsqrt(ref execContext, aHandle, 0, false, resHandle, out resExp, out resSign);
         Assert.False(resSign);
         Assert.Equal(0.5, ToDouble(resSig, resExp, resSign), precision: 8);
+
+        // Non-power-of-two: a = 9 -> sqrt(9) = 3.0, rsqrt(9) = 1/3
+        using var nineSig = new GpuBigUInt(customCtx, new uint[] { 9 });
+        var nineHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(nineSig.DevicePointer, 1), 0, 1);
+        arith.Sqrt(ref execContext, nineHandle, 0, false, resHandle, out resExp, out resSign);
+        Assert.False(resSign);
+        Assert.Equal(3.0, ToDouble(resSig, resExp, resSign), precision: 7);
+
+        arith.Rsqrt(ref execContext, nineHandle, 0, false, resHandle, out resExp, out resSign);
+        Assert.False(resSign);
+        Assert.Equal(1.0 / 3.0, ToDouble(resSig, resExp, resSign), precision: 7);
+
+        // Sad path: negative Sqrt / Rsqrt and zero Rsqrt
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            var ctx = new GpuBigIntExecutionContext(customCtx, customCtx.MemoryManager, new LegacyProviderArithmeticAdapter(), customCtx.Stream);
+            arith.Sqrt(ref ctx, aHandle, 0, true, resHandle, out _, out _);
+        });
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            var ctx = new GpuBigIntExecutionContext(customCtx, customCtx.MemoryManager, new LegacyProviderArithmeticAdapter(), customCtx.Stream);
+            arith.Rsqrt(ref ctx, aHandle, 0, true, resHandle, out _, out _);
+        });
+
+        using var zeroSig = new GpuBigUInt(customCtx, new uint[] { 0 });
+        var zeroHandle = new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(zeroSig.DevicePointer, 1), 0, 1);
+        Assert.Throws<DivideByZeroException>(() =>
+        {
+            var ctx = new GpuBigIntExecutionContext(customCtx, customCtx.MemoryManager, new LegacyProviderArithmeticAdapter(), customCtx.Stream);
+            arith.Rsqrt(ref ctx, zeroHandle, 0, false, resHandle, out _, out _);
+        });
     }
 
     [SkippableTheory]
