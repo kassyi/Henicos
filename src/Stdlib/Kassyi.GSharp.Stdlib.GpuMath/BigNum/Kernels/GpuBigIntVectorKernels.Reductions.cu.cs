@@ -5,100 +5,6 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 // [SkipSnapshotConsistency("Tested in separate suites")]
 public static partial class GpuBigIntVectorKernels
 {
-    public struct VectorAccumulateContext
-    {
-        [GpuReadOnly]
-        public uint[] Src;
-
-        public int SrcOffset;
-        public uint[] Dest;
-        public int DestOffset;
-        public int NumWords;
-        public ulong TargetCmpBits;
-    }
-
-    public struct BlockBitLengthContext
-    {
-        [GpuReadOnly]
-        public uint[] Data;
-
-        public int BaseOffset;
-        public int NumWords;
-    }
-
-    public struct ElementCompareContext
-    {
-        [GpuReadOnly]
-        public uint[] A;
-
-        public int BaseA;
-        public int NumWordsA;
-        public int ExpA;
-        public uint SignA;
-
-        [GpuReadOnly]
-        public uint[] B;
-
-        public int BaseB;
-        public int NumWordsB;
-        public int ExpB;
-        public uint SignB;
-    }
-
-    public struct ShiftedLimbCompareContext
-    {
-        [GpuReadOnly]
-        public uint[] A;
-
-        public int BaseA;
-        public int NumWordsA;
-        public int ShiftA;
-
-        [GpuReadOnly]
-        public uint[] B;
-
-        public int BaseB;
-        public int NumWordsB;
-        public int ShiftB;
-        public int CompareWords;
-    }
-
-    public struct FloatAlignmentInput
-    {
-        public int ExpA;
-        public int ExpB;
-        public uint BitLenA;
-        public uint BitLenB;
-        public int NumWords;
-        public int BitOffsetA;
-        public int BitOffsetB;
-        public int OutExp;
-    }
-
-    public struct MutableElementSliceContext
-    {
-        public uint[] Buffer;
-        public int BaseOffset;
-        public int NumWords;
-        public int BitOffset;
-    }
-
-    public struct FloatAccumulateStepContext
-    {
-        [GpuReadOnly]
-        public uint[] Src;
-
-        public int SrcOffset;
-        public int SrcExp;
-        public uint SrcSign;
-        public uint[] Dest;
-        public int DestOffset;
-        public uint[] ExpResult;
-        public uint[] SignResult;
-        public int BlockIdx;
-        public int NumWords;
-    }
-
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ulong ReduceWarpMaxUInt64(uint mask, ulong val)
@@ -889,9 +795,9 @@ public static partial class GpuBigIntVectorKernels
             else
             {
                 uint topWord = step.Dest[step.DestOffset + step.NumWords - 1];
-                bool isNegTC = (topWord & 0x80000000u) != 0u;
-                step.SignResult[step.BlockIdx] = isNegTC ? step.SrcSign : signA;
-                needsNegate[0] = isNegTC ? 1u : 0u;
+                bool isNegTc = (topWord & 0x80000000u) != 0u;
+                step.SignResult[step.BlockIdx] = isNegTc ? step.SrcSign : signA;
+                needsNegate[0] = isNegTc ? 1u : 0u;
             }
         }
 

@@ -16,6 +16,33 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArithmetic fallbackStrategy)
     : IGpuBigFloatArithmetic
 {
+    private readonly record struct InverseSqrtRequest(
+        GpuWorkspace Workspace,
+        GpuBigUInt ValueOperand,
+        int ValueExp,
+        int ActualBits,
+        int TargetResultWords);
+
+    private readonly struct NormalizedInverseSqrtScope(
+        [TakesOwnership] GpuBigUInt normalizedOperand,
+        [TakesOwnership] GpuBigUInt rawInverseSqrt,
+        GpuBigUInt slicedInverseSqrt,
+        int adjustedExponent,
+        int effectiveScaleBits) : IDisposable
+    {
+        public GpuBigUInt NormalizedOperand => normalizedOperand;
+        public GpuBigUInt RawInverseSqrt => rawInverseSqrt;
+        public GpuBigUInt SlicedInverseSqrt => slicedInverseSqrt;
+        public int AdjustedExponent => adjustedExponent;
+        public int EffectiveScaleBits => effectiveScaleBits;
+
+        public void Dispose()
+        {
+            normalizedOperand.Dispose();
+            rawInverseSqrt.Dispose();
+        }
+    }
+
     /// <summary>
     /// Creates an interop provider that uses native CUDA kernels for high-precision floating-point operations.
     /// </summary>
@@ -398,33 +425,6 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
 
         var tempExp = -(invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
         return Normalize(ref context, new GpuFloatOperand(invSqrt.SlicedInverseSqrt.Handle, tempExp, false), resultSig);
-    }
-
-    private readonly record struct InverseSqrtRequest(
-        GpuWorkspace Workspace,
-        GpuBigUInt ValueOperand,
-        int ValueExp,
-        int ActualBits,
-        int TargetResultWords);
-
-    private readonly struct NormalizedInverseSqrtScope(
-        [TakesOwnership] GpuBigUInt normalizedOperand,
-        [TakesOwnership] GpuBigUInt rawInverseSqrt,
-        GpuBigUInt slicedInverseSqrt,
-        int adjustedExponent,
-        int effectiveScaleBits) : IDisposable
-    {
-        public GpuBigUInt NormalizedOperand { get; } = normalizedOperand;
-        public GpuBigUInt RawInverseSqrt { get; } = rawInverseSqrt;
-        public GpuBigUInt SlicedInverseSqrt { get; } = slicedInverseSqrt;
-        public int AdjustedExponent { get; } = adjustedExponent;
-        public int EffectiveScaleBits { get; } = effectiveScaleBits;
-
-        public void Dispose()
-        {
-            NormalizedOperand.Dispose();
-            RawInverseSqrt.Dispose();
-        }
     }
 
     private static NormalizedInverseSqrtScope ComputeNormalizedInverseSqrt(in InverseSqrtRequest request)

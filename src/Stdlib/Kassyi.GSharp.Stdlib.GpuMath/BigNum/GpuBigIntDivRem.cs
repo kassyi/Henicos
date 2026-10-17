@@ -10,6 +10,13 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// </remarks>
 public static partial class GpuBigIntDivRem
 {
+    private readonly record struct BarrettCorrectionContext(
+        GpuWorkspace Workspace,
+        int EvalWords,
+        GpuBigUInt QuotientBuffer,
+        GpuBigUInt RemainderExtended,
+        GpuBigUInt BPaddedExtended);
+
     // [WHY] Validates buffer lengths at the host boundary before GPU kernel dispatch to avoid silent CUDA out-of-bounds writes.
     [ExcludeFromCodeCoverage]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -243,13 +250,6 @@ public static partial class GpuBigIntDivRem
         remainderBuffer.Clear();
         remainderBuffer.CopyFrom(remainderExtended, numWords: Math.Min(remainderBuffer.NumWords, evalWords));
     }
-
-    private readonly record struct BarrettCorrectionContext(
-        GpuWorkspace Workspace,
-        int EvalWords,
-        GpuBigUInt QuotientBuffer,
-        GpuBigUInt RemainderExtended,
-        GpuBigUInt BPaddedExtended);
 
     [ExcludeFromCodeCoverage]
     private static void CorrectUnderflow(in BarrettCorrectionContext ctx)
