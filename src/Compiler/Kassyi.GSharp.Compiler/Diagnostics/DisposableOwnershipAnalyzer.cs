@@ -41,16 +41,16 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
         foreach (var m in namedType.GetMembers())
         {
-            var type = m switch
+            var (memberSymbol, type) = m switch
             {
-                IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } f => f.Type,
-                IPropertySymbol { IsStatic: false } p => p.Type,
-                _ => null
+                IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } f => ((ISymbol)f, f.Type),
+                IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: true, AssociatedSymbol: IPropertySymbol { IsStatic: false } p } => (p, p.Type),
+                _ => (null, null)
             };
 
-            if (type != null && DisposableAnalyzerHelper.IsDisposable(type))
+            if (memberSymbol != null && type != null && DisposableAnalyzerHelper.IsDisposable(type))
             {
-                disposableMembers.Add(m);
+                disposableMembers.Add(memberSymbol);
             }
         }
 
