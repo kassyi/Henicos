@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// </remarks>
 [StructLayout(LayoutKind.Sequential)]
 [GenerateGpuNumberOperators]
-public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, IGpuNumber<GpuBigUInt>
+public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber<GpuBigUInt>
 {
     /// <summary>
     /// Gets the <see cref="GpuWorkspace"/> associated with this GPU integer instance.
@@ -24,6 +24,37 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
     /// Gets the underlying GPU memory handle tracking device buffer allocation and lifetime.
     /// </summary>
     public GpuBigIntMemoryHandle Handle { get; }
+
+    /// <inheritdoc/>
+    public GpuBigUInt Magnitude => this;
+
+    /// <inheritdoc/>
+    public int Exponent => 0;
+
+    /// <inheritdoc/>
+    public bool IsNegative => false;
+
+    /// <inheritdoc/>
+    public bool CanBeNegative => false;
+
+    /// <inheritdoc/>
+    public long EffectiveScale => GetBitLength();
+
+    /// <inheritdoc/>
+    public static GpuBigUInt Create(GpuBigUInt magnitude, int exponent, bool isNegative)
+    {
+        if (exponent != 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(exponent), "Integer exponent must be zero.");
+        }
+
+        if (isNegative && !magnitude.IsZero())
+        {
+            throw new ArgumentOutOfRangeException(nameof(isNegative), "Unsigned number cannot be negative.");
+        }
+
+        return magnitude;
+    }
 
     /// <summary>
     /// Gets the raw 64-bit device memory pointer to the first limb word in GPU global address space.
@@ -474,9 +505,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
         var hostData = ArrayPool<uint>.Shared.Rent(allocWords);
         try
         {
-            hostData.AsSpan(0, allocWords).Clear();
-            var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan());
-            val.TryWriteBytes(byteSpan, out _, isUnsigned: true, isBigEndian: false);
+            val.WriteLimbs(hostData.AsSpan(0, allocWords));
             var result = new GpuBigUInt(workspace, allocWords);
             workspace.Provider.CopyHostToDevice(result.DevicePointer, hostData, allocWords, workspace.Stream);
             return result;
@@ -498,9 +527,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
         try
         {
             Workspace.Provider.CopyDeviceToHost(hostData, DevicePointer, NumWords, Workspace.Stream);
-            var byteSpan = MemoryMarshal.AsBytes(hostData.AsSpan(0, NumWords));
-            var big = new BigInteger(byteSpan, isUnsigned: true, isBigEndian: false);
-            return isNegative ? -big : big;
+            return BigIntExtensions.ToBigInteger(hostData.AsSpan(0, NumWords), isNegative);
         }
         finally
         {
@@ -525,9 +552,7 @@ public readonly partial struct GpuBigUInt : IDisposable, IGpuBigUIntExpression, 
             await Workspace.Provider
                 .CopyDeviceToHostAsync(hostData, DevicePointer, NumWords, Workspace.Stream, cancellationToken)
                 .ConfigureAwait(false);
-            var big = new BigInteger(MemoryMarshal.AsBytes(hostData.AsSpan(0, NumWords)), isUnsigned: true,
-                isBigEndian: false);
-            return isNegative ? -big : big;
+            return BigIntExtensions.ToBigInteger(hostData.AsSpan(0, NumWords), isNegative);
         }
         finally
         {

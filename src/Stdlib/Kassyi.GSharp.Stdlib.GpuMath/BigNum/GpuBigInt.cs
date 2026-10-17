@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 /// <para><b>Thread Safety:</b> Value-type semantics; instance members are not thread-safe for concurrent mutating operations on the underlying GPU memory.</para>
 /// </remarks>
 public readonly struct GpuBigInt([TakesOwnership] GpuBigUInt value, bool isNegative)
-    : IEquatable<GpuBigInt>, IComparable<GpuBigInt>, IDisposable
+    : IGpuBigNumber<GpuBigInt>
 {
     /// <summary>
     /// Gets the underlying absolute value buffer stored in GPU device memory.
@@ -24,6 +24,38 @@ public readonly struct GpuBigInt([TakesOwnership] GpuBigUInt value, bool isNegat
     /// Gets a value indicating whether the signed integer is strictly negative.
     /// </summary>
     public bool IsNegative { get; } = isNegative;
+
+    /// <inheritdoc/>
+    public bool CanBeNegative => true;
+
+    /// <inheritdoc/>
+    public GpuWorkspace Workspace => Value.Workspace;
+
+    /// <inheritdoc/>
+    public GpuBigUInt Magnitude => Value;
+
+    /// <inheritdoc/>
+    public int Exponent => 0;
+
+    /// <inheritdoc/>
+    public long EffectiveScale => Value.GetBitLength();
+
+    /// <inheritdoc/>
+    public bool IsZero() => Value.IsZero();
+
+    /// <inheritdoc/>
+    public int GetBitLength() => Value.GetBitLength();
+
+    /// <inheritdoc/>
+    public static GpuBigInt Create(GpuBigUInt magnitude, int exponent, bool isNegative)
+    {
+        if (exponent != 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(exponent), "Integer exponent must be zero.");
+        }
+
+        return new GpuBigInt(magnitude, isNegative && !magnitude.IsZero());
+    }
 
     /// <summary>
     /// Releases the GPU global device memory resources allocated for the underlying <see cref="Value"/>.
@@ -40,24 +72,7 @@ public readonly struct GpuBigInt([TakesOwnership] GpuBigUInt value, bool isNegat
     /// Zero if this instance equals <paramref name="other"/>,
     /// Greater than zero if this instance is greater than <paramref name="other"/>.
     /// </returns>
-    public int CompareTo(GpuBigInt other)
-    {
-        var thisZero = Value.IsZero();
-        var otherZero = other.Value.IsZero();
-
-        var absCmp = Value.CompareTo(other.Value);
-
-        var sameSignCmp = IsNegative ? -absCmp : absCmp;
-        var diffSignCmp = IsNegative ? -1 : 1;
-        var normalCmp = (IsNegative != other.IsNegative) ? diffSignCmp : sameSignCmp;
-
-        var thisZeroCmp = other.IsNegative ? 1 : -1;
-        var otherZeroCmp = IsNegative ? -1 : 1;
-
-        var zeroCmp = thisZero ? thisZeroCmp : (otherZero ? otherZeroCmp : normalCmp);
-
-        return (thisZero && otherZero) ? 0 : zeroCmp;
-    }
+    public int CompareTo(GpuBigInt other) => GpuBigNumberAlgorithms.Compare(this, other);
 
     /// <summary>
     /// Indicates whether the current instance is equal to another <see cref="GpuBigInt"/> instance.

@@ -64,6 +64,46 @@ public class GpuBigUFloatTests : IDisposable
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_DirectArithmetic_And_Comparison()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        using var aSig = new GpuBigUInt(_context, new uint[] { 12 });
+        using var bSig = new GpuBigUInt(_context, new uint[] { 3 });
+        using var cSig = new GpuBigUInt(_context, new uint[] { 3 });
+        using var a = new GpuBigUFloat(aSig, 0);
+        using var b = new GpuBigUFloat(bSig, 0);
+        using var c = new GpuBigUFloat(cSig, 2); // 3 * 2^2 = 12
+
+        using var sum = a.Add(b);
+        using var diff = a.Subtract(b);
+        using var prod = a.Multiply(b);
+        using var quot = a.Divide(b);
+
+        double ToDouble(GpuBigUFloat v) => (double)v.Significand.ToBigInteger() * Math.Pow(2.0, v.Exponent);
+
+        Assert.Equal(15.0, ToDouble(sum), precision: 8);
+        Assert.Equal(9.0, ToDouble(diff), precision: 8);
+        Assert.Equal(36.0, ToDouble(prod), precision: 8);
+        Assert.Equal(4.0, ToDouble(quot), precision: 8);
+
+        // Zero-allocation CompareTo across different exponents (12 * 2^0 == 3 * 2^2)
+        Assert.Equal(0, a.CompareTo(c));
+        Assert.True(a.Equals(c));
+        Assert.True(a.Equals((object)c));
+        Assert.True(a == c);
+        Assert.False(a != c);
+        Assert.True(a <= c);
+        Assert.True(a >= c);
+
+        Assert.True(a > b);
+        Assert.True(b < a);
+        Assert.False(a.Equals(b));
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.SadPath)]
     public void Test_NotImplementedMethods()
     {
         CudaCapability.EnsureGpuAvailable();
@@ -73,20 +113,5 @@ public class GpuBigUFloatTests : IDisposable
 
         Assert.Throws<NotImplementedException>(() => a.AlignRadixPoint(a));
         Assert.Throws<NotImplementedException>(() => a.Round(GpuBigFloatRoundingMode.RoundToNearestEven, false, false, false));
-        Assert.Throws<NotImplementedException>(() => a.Add(a));
-        Assert.Throws<NotImplementedException>(() => a.Subtract(a));
-        Assert.Throws<NotImplementedException>(() => a.CompareTo(a));
-        Assert.Throws<NotImplementedException>(() => a.Equals(a));
-        Assert.Throws<NotImplementedException>(() => a.Equals((object)a));
-        
-        // This will call CompareTo and throw
-#pragma warning disable CS1718
-        Assert.Throws<NotImplementedException>(() => a < a);
-        Assert.Throws<NotImplementedException>(() => a > a);
-        Assert.Throws<NotImplementedException>(() => a <= a);
-        Assert.Throws<NotImplementedException>(() => a >= a);
-        Assert.Throws<NotImplementedException>(() => a == a);
-        Assert.Throws<NotImplementedException>(() => a != a);
-#pragma warning restore CS1718
     }
 }
