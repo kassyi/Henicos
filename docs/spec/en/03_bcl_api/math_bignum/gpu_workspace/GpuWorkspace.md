@@ -113,7 +113,7 @@ public int PolyAlgorithmThreshold { get; set; }
 
 ## Provider
 
-Gets the active GPU arithmetic execution provider implementation (`GSharpAotProvider.Instance` when `Engine == GpuExecutionEngine.GSharpAot`, otherwise `NativeProvider.Instance`).
+Gets the active GPU arithmetic execution provider implementation (`GSharpKernelProvider.Instance` when `Engine == GpuExecutionEngine.GSharpAot`, otherwise `NativeProvider.Instance`).
 
 ```csharp
 public IGpuExecutionProvider Provider { get; }

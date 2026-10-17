@@ -1019,7 +1019,7 @@ Always thrown. Not supported on the native backend.
 ## Remarks
 
 - **Synchronous Execution:** Every operation in the legacy native library (`Kassyi.GSharp.GpuBigInt.Cuda`) completes synchronously before returning. Stream parameters are ignored, and `SynchronizeStreamAsync` / `CopyDeviceToHostAsync` return already-completed `ValueTask` instances.
-- **Out-of-Core Architecture Rationale:** Attempting to execute monolithic multi-million-limb multiplication entirely inside a single legacy native call hits physical VRAM limits. G# is architected to handle arbitrary precision by orchestrating expression visitors, NTT block transformations, and chunking via [`GSharpAotProvider`](GSharpAotProvider.md). For full feature coverage (NTT multiplication, scalar operations, bitwise OR/XOR/NOT, Lehmer GCD, modular inverse, and CUDA Graphs), use [`GSharpAotProvider`](GSharpAotProvider.md).
+- **Out-of-Core Architecture Rationale:** Attempting to execute monolithic multi-million-limb multiplication entirely inside a single legacy native call hits physical VRAM limits. G# is architected to handle arbitrary precision by orchestrating expression visitors, NTT block transformations, and chunking via [`GSharpKernelProvider`](GSharpKernelProvider.md). For full feature coverage (NTT multiplication, scalar operations, bitwise OR/XOR/NOT, Lehmer GCD, modular inverse, and CUDA Graphs), use [`GSharpKernelProvider`](GSharpKernelProvider.md).
 
 ## Examples
 
@@ -1045,5 +1045,5 @@ Console.WriteLine($"Singleton provider: {provider.GetType().Name}");
 - [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
 - [IGpuExecutionProvider Interface](IGpuExecutionProvider.md)
-- [GSharpAotProvider Class](GSharpAotProvider.md)
+- [GSharpKernelProvider Class](GSharpKernelProvider.md)
 - [GpuWorkspace Class](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)

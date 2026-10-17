@@ -1,12 +1,12 @@
 ---
-title: "AotBasicMathHandler Class (G#)"
+title: "KernelBasicMathHandler Class (G#)"
 site: "G# Documentation"
 published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Dispatches elementary GPU BigInteger arithmetic, bitwise logic, and comparison operations to compiled GSharp device kernels."
 ---
 
-## AotBasicMathHandler Class
+## KernelBasicMathHandler Class
 
 ## Definition
 
@@ -16,7 +16,7 @@ description: "Dispatches elementary GPU BigInteger arithmetic, bitwise logic, an
 Implements [`IGpuBasicMathProvider`](IGpuExecutionProvider.md) by dispatching elementary multi-precision addition, subtraction, scalar addition/subtraction, bit-shifts, bitwise logic, and comparison kernels to compiled G# CUDA kernels.
 
 ```csharp
-public sealed class AotBasicMathHandler : IGpuBasicMathProvider
+public sealed class KernelBasicMathHandler : IGpuBasicMathProvider
 ```
 
 ## Methods
@@ -149,7 +149,7 @@ Thrown when the kernel launch fails.
 
 ## BitwiseAnd(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
-Launches `GpuBigIntKernels.BitwiseAndKernel` across a 1D grid computed via `AotGraphHandler.CalculateGridDim`.
+Launches `GpuBigIntKernels.BitwiseAndKernel` across a 1D grid computed via `KernelGraphHandler.CalculateGridDim`.
 
 ```csharp
 public void BitwiseAnd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
@@ -176,7 +176,7 @@ Thrown when the kernel launch fails.
 
 ## BitwiseOr(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
-Launches `GpuBigIntKernels.BitwiseOrKernel` across a 1D grid computed via `AotGraphHandler.CalculateGridDim`.
+Launches `GpuBigIntKernels.BitwiseOrKernel` across a 1D grid computed via `KernelGraphHandler.CalculateGridDim`.
 
 ```csharp
 public void BitwiseOr(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
@@ -203,7 +203,7 @@ Thrown when the kernel launch fails.
 
 ## BitwiseXor(GpuWorkspace, GpuBigUInt, GpuBigUInt, GpuBigUInt)
 
-Launches `GpuBigIntKernels.BitwiseXorKernel` across a 1D grid computed via `AotGraphHandler.CalculateGridDim`.
+Launches `GpuBigIntKernels.BitwiseXorKernel` across a 1D grid computed via `KernelGraphHandler.CalculateGridDim`.
 
 ```csharp
 public void BitwiseXor(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer);
@@ -230,7 +230,7 @@ Thrown when the kernel launch fails.
 
 ## BitwiseNot(GpuWorkspace, GpuBigUInt, GpuBigUInt)
 
-Launches `GpuBigIntKernels.BitwiseNotKernel` across a 1D grid computed via `AotGraphHandler.CalculateGridDim`.
+Launches `GpuBigIntKernels.BitwiseNotKernel` across a 1D grid computed via `KernelGraphHandler.CalculateGridDim`.
 
 ```csharp
 public void BitwiseNot(GpuWorkspace workspace, GpuBigUInt targetOperand, GpuBigUInt resultBuffer);
@@ -439,11 +439,11 @@ Thrown when the kernel launch or device scalar readback fails.
 
 ## Remarks
 
-`AotBasicMathHandler` is used internally by [`GSharpAotProvider`](GSharpAotProvider.md) to separate elementary arithmetic kernel launches from memory management and CUDA Graph orchestration.
+`KernelBasicMathHandler` is used internally by [`GSharpKernelProvider`](GSharpKernelProvider.md) to separate elementary arithmetic kernel launches from memory management and CUDA Graph orchestration.
 
 ## Examples
 
-### Instantiating AotBasicMathHandler
+### Instantiating KernelBasicMathHandler
 
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
@@ -454,7 +454,7 @@ using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
-IGpuBasicMathProvider handler = new AotBasicMathHandler();
+IGpuBasicMathProvider handler = new KernelBasicMathHandler();
 Console.WriteLine($"Initialized handler: {handler.GetType().Name}");
 ```
 
@@ -463,5 +463,5 @@ Console.WriteLine($"Initialized handler: {handler.GetType().Name}");
 ### BCL API > Math (BigNum)
 
 - [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
-- [GSharpAotProvider](GSharpAotProvider.md)
+- [GSharpKernelProvider](GSharpKernelProvider.md)
 - [IGpuExecutionProvider](IGpuExecutionProvider.md)

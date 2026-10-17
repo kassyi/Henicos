@@ -1,12 +1,12 @@
 ---
-title: "AotAdvancedMathHandler Class (G#)"
+title: "KernelAdvancedMathHandler Class (G#)"
 site: "G# Documentation"
 published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Dispatches advanced arbitrary-precision arithmetic operations (NTT multiplication, Lehmer GCD, ModInverse, and Newton-Raphson mega-kernels) to GPU device kernels."
 ---
 
-## AotAdvancedMathHandler Class
+## KernelAdvancedMathHandler Class
 
 ## Definition
 
@@ -16,7 +16,7 @@ description: "Dispatches advanced arbitrary-precision arithmetic operations (NTT
 Implements [`IGpuAdvancedMathProvider`](IGpuExecutionProvider.md) by dispatching high-complexity multi-precision arithmetic operations—including four-step NTT convolution, Lehmer GCD macro-kernels, Extended Binary GCD modular inversion, and cooperative Newton-Raphson reciprocal/inverse-square-root mega-kernels—to compiled G# CUDA kernels.
 
 ```csharp
-public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
+public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 ```
 
 ## Methods
@@ -288,11 +288,11 @@ Thrown when cooperative kernel execution or stream synchronization fails.
 
 ## Remarks
 
-`AotAdvancedMathHandler` caches precomputed forward and inverse NTT twiddle factor tables in device memory per transform length $m$ (`ConcurrentDictionary<int, Lazy<TwiddleCache>>`) to avoid redundant host-side root-of-unity generation across repeated multiplications.
+`KernelAdvancedMathHandler` caches precomputed forward and inverse NTT twiddle factor tables in device memory per transform length $m$ (`ConcurrentDictionary<int, Lazy<TwiddleCache>>`) to avoid redundant host-side root-of-unity generation across repeated multiplications.
 
 ## Examples
 
-### Instantiating AotAdvancedMathHandler
+### Instantiating KernelAdvancedMathHandler
 
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
@@ -303,7 +303,7 @@ using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
-IGpuAdvancedMathProvider handler = new AotAdvancedMathHandler();
+IGpuAdvancedMathProvider handler = new KernelAdvancedMathHandler();
 Console.WriteLine($"Initialized handler: {handler.GetType().Name}");
 ```
 
@@ -312,5 +312,5 @@ Console.WriteLine($"Initialized handler: {handler.GetType().Name}");
 ### BCL API > Math (BigNum)
 
 - [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
-- [GSharpAotProvider](GSharpAotProvider.md)
+- [GSharpKernelProvider](GSharpKernelProvider.md)
 - [IGpuExecutionProvider](IGpuExecutionProvider.md)

@@ -1,12 +1,12 @@
 ---
-title: "AotGraphHandler Class (G#)"
+title: "KernelGraphHandler Class (G#)"
 site: "G# Documentation"
 published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Provides CUDA Graph capture, instantiation, launch, and 1D grid dimension calculation for GSharp BigNum kernel pipelines."
 ---
 
-## AotGraphHandler Class
+## KernelGraphHandler Class
 
 ## Definition
 
@@ -16,7 +16,7 @@ description: "Provides CUDA Graph capture, instantiation, launch, and 1D grid di
 Implements [`IGpuGraphProvider`](IGpuExecutionProvider.md) by wrapping CUDA Driver API stream capture and graph execution primitives (`cuStreamBeginCapture`, `cuStreamEndCapture`, `cuGraphInstantiate`, `cuGraphLaunch`, `cuGraphExecDestroy`, `cuGraphDestroy`).
 
 ```csharp
-public sealed class AotGraphHandler : IGpuGraphProvider
+public sealed class KernelGraphHandler : IGpuGraphProvider
 ```
 
 ## Methods
@@ -159,7 +159,7 @@ A tuple containing the computed grid size (at least `1`) and block size.
 
 ## Remarks
 
-`AotGraphHandler` powers [`GpuBigIntExecutableGraph`](../expressions/GpuBigIntExecutableGraph.md) to eliminate CPU kernel launch overhead when replaying repetitive expression trees on the GPU.
+`KernelGraphHandler` powers [`GpuBigIntExecutableGraph`](../expressions/GpuBigIntExecutableGraph.md) to eliminate CPU kernel launch overhead when replaying repetitive expression trees on the GPU.
 
 ## Examples
 
@@ -173,7 +173,7 @@ A tuple containing the computed grid size (at least `1`) and block size.
 using System;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
-var (gridSize, blockSize) = AotGraphHandler.CalculateGridDim(elements: 1000, blockSize: 256);
+var (gridSize, blockSize) = KernelGraphHandler.CalculateGridDim(elements: 1000, blockSize: 256);
 Console.WriteLine($"GridSize={gridSize}, BlockSize={blockSize}");
 ```
 
@@ -182,5 +182,5 @@ Console.WriteLine($"GridSize={gridSize}, BlockSize={blockSize}");
 ### BCL API > Math (BigNum)
 
 - [Arbitrary-Precision Integers (GpuBigInt)](../00_index.md)
-- [GSharpAotProvider](GSharpAotProvider.md)
+- [GSharpKernelProvider](GSharpKernelProvider.md)
 - [GpuBigIntExecutableGraph](../expressions/GpuBigIntExecutableGraph.md)

@@ -6149,7 +6149,7 @@
   },
   {
     "id": "GBI-01",
-    "title": "Implementation of GSharpAotProvider memory pool",
+    "title": "Implementation of GSharpKernelProvider memory pool",
     "domain": "GBI",
     "category": "Memory Management",
     "status": "implemented",
@@ -6289,7 +6289,7 @@
       "score": 28
     },
     "details": {
-      "current_behavior": "Currently GSharpAotProvider.Square is substituting it by calling the generic Mul(A, A, Result). The dedicated squaring routine (Device_NTT_PointwiseSquare) existing on the Native side is bypassed on the JIT side.",
+      "current_behavior": "Currently GSharpKernelProvider.Square is substituting it by calling the generic Mul(A, A, Result). The dedicated squaring routine (Device_NTT_PointwiseSquare) existing on the Native side is bypassed on the JIT side.",
       "strategy": "On the JIT side, directly dispatches a Pointwise kernel dedicated for squaring, cutting the number of NTT transforms and multiplication complexity in half.",
       "csharp_example": "using var context = new GpuWorkspace();\nvar a = new GpuBigInt(context, \"999999999999\");\n\n// Dispatches a dedicated squaring NTT kernel instead of general Mul(A, A)\nvar squared = GpuBigInt.Square(a);",
       "cpp_example": "/* Dispatches Device_NTT_PointwiseSquare kernel cutting the number of transforms in half */\n// Launch -> __global__ void Device_NTT_PointwiseSquare(...)"
@@ -8549,13 +8549,13 @@
       "score": 27
     },
     "details": {
-      "current_behavior": "Uses the NTT (Number Theoretic Transform) algorithm for large integer multiplication (Mul), caching and transferring Twiddle Factors of primitive roots precomputed on the CPU side within the GSharpAotProvider.",
+      "current_behavior": "Uses the NTT (Number Theoretic Transform) algorithm for large integer multiplication (Mul), caching and transferring Twiddle Factors of primitive roots precomputed on the CPU side within the GSharpKernelProvider.",
       "strategy": "Implemented and verified native G# Fermat PRP kernels. Evaluated performance directly on the GPU without intermediate CPU host logic.",
-      "csharp_example": "public sealed class GSharpAotProvider : IGpuExecutionProvider\n{"
+      "csharp_example": "public sealed class GSharpKernelProvider : IGpuExecutionProvider\n{"
     },
     "score": 27,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/Providers/GSharpAotProvider.cs"
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/Providers/GSharpKernelProvider.cs"
     ],
     "pr": [
       108
@@ -8577,11 +8577,11 @@
     "details": {
       "current_behavior": "During Add/Sub, data is split and processed in chunks (ChunkKernel, e.g., 256), and any generated Carry/Borrow is written to a temporary buffer and reapplied later by the ApplyKernel.",
       "strategy": "Implemented a two-pass pipeline (grid-stride strategy) for parallel chunk-split carry/borrow propagation in addition and subtraction kernels.",
-      "csharp_example": "public sealed class GSharpAotProvider : IGpuExecutionProvider\n{"
+      "csharp_example": "public sealed class GSharpKernelProvider : IGpuExecutionProvider\n{"
     },
     "score": 26,
     "files": [
-      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/Providers/GSharpAotProvider.cs",
+      "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/Providers/GSharpKernelProvider.cs",
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigIntMath.cs"
     ],
     "depends_on": [

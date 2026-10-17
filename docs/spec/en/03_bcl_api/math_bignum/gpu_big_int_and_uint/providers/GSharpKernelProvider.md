@@ -1,36 +1,36 @@
 ---
-title: "GSharpAotProvider Class (G#)"
+title: "GSharpKernelProvider Class (G#)"
 site: "G# Documentation"
 published: "2026-10-16T00:00:00.000Z"
 language: "en"
 description: "Execution provider implementing arbitrary-precision BigInteger arithmetic via GSharp AOT/JIT transpiled GPU kernels."
 ---
 
-## GSharpAotProvider Class
+## GSharpKernelProvider Class
 
 ## Definition
 
 **Namespace:** `Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers`  
 **Assembly:** `Kassyi.GSharp.Stdlib.GpuMath.dll`
 
-Execution provider implementing [`IGpuExecutionProvider`](IGpuExecutionProvider.md) for arbitrary-precision BigInteger arithmetic via GSharp AOT/JIT transpiled GPU kernels. Acts as a unified facade delegating to [`AotMemoryHandler`](AotMemoryHandler.md), [`AotBasicMathHandler`](AotBasicMathHandler.md), [`AotAdvancedMathHandler`](AotAdvancedMathHandler.md), and [`AotGraphHandler`](AotGraphHandler.md), while automatically routing to [`CSharpCpuBigIntProvider`](CSharpCpuBigIntProvider.md) when `GpuKernelLoader.IsCpuFallbackMode` is active.
+Execution provider implementing [`IGpuExecutionProvider`](IGpuExecutionProvider.md) for arbitrary-precision BigInteger arithmetic via GSharp AOT/JIT transpiled GPU kernels. Acts as a unified facade delegating to [`KernelMemoryHandler`](KernelMemoryHandler.md), [`KernelBasicMathHandler`](KernelBasicMathHandler.md), [`KernelAdvancedMathHandler`](KernelAdvancedMathHandler.md), and [`KernelGraphHandler`](KernelGraphHandler.md), while automatically routing to [`CSharpCpuBigIntProvider`](CSharpCpuBigIntProvider.md) when `GpuKernelLoader.IsCpuFallbackMode` is active.
 
 ```csharp
-public sealed class GSharpAotProvider : IGpuExecutionProvider
+public sealed class GSharpKernelProvider : IGpuExecutionProvider
 ```
 
 ## Fields
 
 | Name | Description |
 | --- | --- |
-| [Instance](#instance) | Gets the singleton instance of `GSharpAotProvider`. |
+| [Instance](#instance) | Gets the singleton instance of `GSharpKernelProvider`. |
 
 ## Instance
 
-Gets the singleton instance of the `GSharpAotProvider`.
+Gets the singleton instance of the `GSharpKernelProvider`.
 
 ```csharp
-public static readonly GSharpAotProvider Instance;
+public static readonly GSharpKernelProvider Instance;
 ```
 
 ## Methods
@@ -979,7 +979,7 @@ The `CUgraphExec` handle to destroy.
 
 ## Examples
 
-### Executing Bitwise Operations on GSharpAotProvider
+### Executing Bitwise Operations on GSharpKernelProvider
 
 > [!NOTE]
 > Requires assemblies: Kassyi.GSharp.Stdlib.GpuMath
@@ -992,7 +992,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum;
 using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 using var workspace = new GpuWorkspace(maxWords: 1024, engine: GpuExecutionEngine.GSharpAot);
-IGpuExecutionProvider provider = GSharpAotProvider.Instance;
+IGpuExecutionProvider provider = GSharpKernelProvider.Instance;
 
 using var a = new GpuBigUInt(workspace, new uint[] { 100 });
 using var b = new GpuBigUInt(workspace, new uint[] { 50 });
@@ -1014,8 +1014,8 @@ Console.WriteLine($"100 | 50 = {hostResult[0]}");
 - [Standard Math Library (Stdlib.Math)](../../../../03_bcl_api/math_bignum/00_index.md)
 - [Arbitrary-Precision Integers (GpuBigInt)](../../../../03_bcl_api/math_bignum/gpu_big_int_and_uint/00_index.md)
 - [IGpuExecutionProvider](IGpuExecutionProvider.md)
-- [AotMemoryHandler](AotMemoryHandler.md)
-- [AotBasicMathHandler](AotBasicMathHandler.md)
-- [AotAdvancedMathHandler](AotAdvancedMathHandler.md)
-- [AotGraphHandler](AotGraphHandler.md)
+- [KernelMemoryHandler](KernelMemoryHandler.md)
+- [KernelBasicMathHandler](KernelBasicMathHandler.md)
+- [KernelAdvancedMathHandler](KernelAdvancedMathHandler.md)
+- [KernelGraphHandler](KernelGraphHandler.md)
 - [GpuWorkspace](../../../../03_bcl_api/math_bignum/gpu_workspace/GpuWorkspace.md)
