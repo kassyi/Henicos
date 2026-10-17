@@ -42,7 +42,7 @@ public static partial class GpuBigIntVectorKernels
                 bool isScalar);
         }
 
-        public unsafe partial struct VectorAddSub : IVectorBinaryAotContext
+        public partial struct VectorAddSub : IVectorBinaryAotContext
         {
             public void InitializeBinary(
                 IntPtr a,
@@ -73,7 +73,7 @@ public static partial class GpuBigIntVectorKernels
             }
         }
 
-        public unsafe partial struct VectorMul : IVectorBinaryAotContext
+        public partial struct VectorMul : IVectorBinaryAotContext
         {
             public void InitializeBinary(
                 IntPtr a,
@@ -102,7 +102,7 @@ public static partial class GpuBigIntVectorKernels
             }
         }
 
-        public unsafe partial struct VectorDivMod : IVectorBinaryAotContext
+        public partial struct VectorDivMod : IVectorBinaryAotContext
         {
             public void InitializeBinary(
                 IntPtr a,
@@ -132,7 +132,7 @@ public static partial class GpuBigIntVectorKernels
             }
         }
 
-        public unsafe partial struct VectorFloatAddSub : IVectorFloatBinaryAotContext
+        public partial struct VectorFloatAddSub : IVectorFloatBinaryAotContext
         {
             public void InitializeBinary(
                 IntPtr a,
@@ -184,7 +184,7 @@ public static partial class GpuBigIntVectorKernels
             }
         }
 
-        public unsafe partial struct VectorFloatMul : IVectorFloatBinaryAotContext
+        public partial struct VectorFloatMul : IVectorFloatBinaryAotContext
         {
             public void InitializeBinary(
                 IntPtr a,
@@ -236,7 +236,7 @@ public static partial class GpuBigIntVectorKernels
             }
         }
 
-        public unsafe partial struct VectorFloatDiv : IVectorFloatBinaryAotContext
+        public partial struct VectorFloatDiv : IVectorFloatBinaryAotContext
         {
             public void InitializeBinary(
                 IntPtr a,

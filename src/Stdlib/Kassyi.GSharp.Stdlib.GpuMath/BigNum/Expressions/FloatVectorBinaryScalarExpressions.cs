@@ -2,12 +2,12 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
 internal readonly record struct FloatVectorScalarOperands(
     GpuBigFloatArray Vector,
-    GpuBigFloat Scalar,
+    GpuFloatOperand Scalar,
     GpuBigFloatArray Destination);
 
 internal abstract class FloatVectorBinaryScalarExpressionBase(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuBigFloat scalar,
+    GpuFloatOperand scalar,
     int wordsPerElement) : IGpuBigFloatVectorExpression
 {
     protected const int DefaultDivShiftBits = 32;
@@ -53,7 +53,7 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
     protected static TContext CreateScalarContext<TContext>(FloatVectorScalarOperands operands)
         where TContext : struct, GpuBigIntVectorKernels.AotContexts.IVectorFloatBinaryAotContext
     {
-        var scalarSig = operands.Scalar.UFloat.Significand;
+        var scalarSig = operands.Scalar.Significand;
         var ctx = default(TContext);
         ctx.InitializeFloatBinary(
             operands.Vector.Significands.DevicePointer,
@@ -68,7 +68,7 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
             operands.Vector.WordsPerElement,
             scalarSig.NumWords,
             operands.Destination.WordsPerElement,
-            operands.Scalar.UFloat.Exponent,
+            operands.Scalar.Exponent,
             operands.Scalar.IsNegative ? 1u : 0u,
             isScalar: true);
         return ctx;
@@ -93,11 +93,11 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
 
 internal sealed class FloatVectorAddScalarExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuBigFloat scalar)
+    GpuFloatOperand scalar)
     : FloatVectorBinaryScalarExpressionBase(
         vector,
         scalar,
-        Math.Max(vector.WordsPerElement, scalar.UFloat.Significand.NumWords) + 1)
+        Math.Max(vector.WordsPerElement, scalar.Significand.NumWords) + 1)
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -113,11 +113,11 @@ internal sealed class FloatVectorAddScalarExpression(
 
 internal sealed class FloatVectorSubScalarExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuBigFloat scalar)
+    GpuFloatOperand scalar)
     : FloatVectorBinaryScalarExpressionBase(
         vector,
         scalar,
-        Math.Max(vector.WordsPerElement, scalar.UFloat.Significand.NumWords) + 1)
+        Math.Max(vector.WordsPerElement, scalar.Significand.NumWords) + 1)
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -133,11 +133,11 @@ internal sealed class FloatVectorSubScalarExpression(
 
 internal sealed class FloatVectorMulScalarExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuBigFloat scalar)
+    GpuFloatOperand scalar)
     : FloatVectorBinaryScalarExpressionBase(
         vector,
         scalar,
-        vector.WordsPerElement + scalar.UFloat.Significand.NumWords)
+        vector.WordsPerElement + scalar.Significand.NumWords)
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -152,11 +152,11 @@ internal sealed class FloatVectorMulScalarExpression(
 
 internal sealed class FloatVectorDivScalarExpression(
     [TakesOwnership] IGpuBigFloatVectorExpression vector,
-    GpuBigFloat scalar)
+    GpuFloatOperand scalar)
     : FloatVectorBinaryScalarExpressionBase(
         vector,
         scalar,
-        Math.Max(vector.WordsPerElement, scalar.UFloat.Significand.NumWords) + 1)
+        Math.Max(vector.WordsPerElement, scalar.Significand.NumWords) + 1)
 {
     protected override void DispatchKernel(
         GpuWorkspace workspace,
@@ -167,5 +167,29 @@ internal sealed class FloatVectorDivScalarExpression(
         ctx.PreShiftBits = DefaultDivShiftBits;
         GpuBigIntVectorKernels.LaunchVectorFloatDivScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
+    }
+}
+
+internal sealed class FloatVectorPowScalarExpression(
+    [TakesOwnership] IGpuBigFloatVectorExpression vector,
+    GpuFloatOperand exponentScalar)
+    : FloatVectorBinaryScalarExpressionBase(
+        vector,
+        exponentScalar,
+        Math.Max(vector.WordsPerElement, exponentScalar.Significand.NumWords))
+{
+    protected override void DispatchKernel(
+        GpuWorkspace workspace,
+        FloatVectorScalarOperands operands,
+        uint gridDimX)
+    {
+        var expOperand = operands.Scalar;
+        FloatVectorElementwiseHelper.ExecuteUnary(
+            workspace,
+            operands.Vector,
+            operands.Destination,
+            (int)gridDimX,
+            (ref GpuBigIntExecutionContext ctx, IGpuBigFloatArithmetic arith, in GpuFloatOperand src, GpuBigIntMemoryHandle dst) =>
+                arith.Pow(ref ctx, in src, in expOperand, dst));
     }
 }
