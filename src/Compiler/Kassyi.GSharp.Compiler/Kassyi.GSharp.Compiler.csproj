@@ -56,19 +56,21 @@
   <ItemGroup>
     <DialectYamlFiles Include="Dialects\**\*.yml" />
     <DialectYamlFiles Include="Dialects\**\*.yaml" />
-    <EmbeddedResource Include="Resources\Prelude.cu" />
-    <EmbeddedResource Include="Resources\StackLinq.cuh" />
-    <EmbeddedResource Include="Resources\Prelude.cpp" />
-    <EmbeddedResource Include="Resources\Prelude\*.hpp" />
+    <PreludeResourceFiles Include="Resources\Prelude.cu" />
+    <PreludeResourceFiles Include="Resources\StackLinq.cuh" />
+    <PreludeResourceFiles Include="Resources\Prelude.cpp" />
+    <PreludeResourceFiles Include="Resources\Prelude\*.hpp" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
     <Compile Remove="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
     <Compile Remove="$(IntermediateOutputPath)GeneratedNativeApi\**\*.g.cs" />
+    <Compile Remove="$(IntermediateOutputPath)GeneratedPrelude\**\*.g.cs" />
     <Compile Remove="**\GeneratedDialects\**\*.g.cs" />
     <Compile Remove="**\GeneratedDiagnostics\**\*.g.cs" />
     <Compile Remove="**\GeneratedNativeApi\**\*.g.cs" />
+    <Compile Remove="**\GeneratedPrelude\**\*.g.cs" />
   </ItemGroup>
 
   <Target Name="GenerateYamlDialects" BeforeTargets="CoreCompile" Inputs="@(DialectYamlFiles)" Outputs="$(IntermediateOutputPath)GeneratedDialects.stamp">
@@ -89,17 +91,26 @@
     <Touch Files="$(IntermediateOutputPath)GeneratedNativeApi.stamp" AlwaysCreate="true" />
   </Target>
 
-  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects;GenerateDiagnostics;GenerateNativeApi">
+  <Target Name="GeneratePrelude" BeforeTargets="CoreCompile" Inputs="@(PreludeResourceFiles);$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedPrelude.stamp">
+    <MakeDir Directories="$(IntermediateOutputPath)GeneratedPrelude" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; prelude &quot;$(MSBuildThisFileDirectory)Resources&quot; &quot;$(IntermediateOutputPath)GeneratedPrelude&quot;" />
+    <Touch Files="$(IntermediateOutputPath)GeneratedPrelude.stamp" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects;GenerateDiagnostics;GenerateNativeApi;GeneratePrelude">
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
       <Compile Include="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
       <Compile Include="$(IntermediateOutputPath)GeneratedNativeApi\NativeApiMapper.g.cs" />
+      <Compile Include="$(IntermediateOutputPath)GeneratedPrelude\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedNativeApi\NativeApiMapper.g.cs" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedPrelude\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects.stamp" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedNativeApi.stamp" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedPrelude.stamp" />
     </ItemGroup>
   </Target>
 
