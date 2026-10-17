@@ -1,4 +1,3 @@
-using System.Numerics;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 
