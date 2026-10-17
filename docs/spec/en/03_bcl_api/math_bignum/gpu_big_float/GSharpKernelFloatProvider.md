@@ -43,9 +43,6 @@ public sealed class GSharpKernelFloatProvider(IGpuBigFloatArithmetic fallbackStr
 | `Pow(...)` | Computes $x^y$ via the fallback strategy. |
 | `DivideByUInt32(...)` | Divides the significand by a 32-bit unsigned integer scalar and outputs the remainder. |
 
-> [!NOTE]
-> Legacy native CUDA P/Invoke routines have been decoupled into the internal `NativeFloatProvider` (marked `[Obsolete]`). Pure G# device kernels are now exclusively dispatched by `GSharpKernelFloatProvider`.
-
 ## CreateGSharpKernel()
 
 Creates an AOT-compiled provider that uses G# kernels for high-precision floating-point operations.
