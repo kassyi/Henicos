@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 
 namespace Kassyi.GSharp.Compiler.Tasks;
@@ -7,7 +6,6 @@ namespace Kassyi.GSharp.Compiler.Tasks;
 public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task, ICancelableTask
 {
     private readonly CancellationTokenSource _cancellation = new();
-    private INativeToolchain? _toolchain;
 
     /// <summary>Gets the cancellation token for the current task execution.</summary>
     protected CancellationToken CancellationToken => _cancellation.Token;
@@ -34,8 +32,8 @@ public abstract class CompileKernelTaskBase : Microsoft.Build.Utilities.Task, IC
     /// </summary>
     public INativeToolchain Toolchain
     {
-        get => _toolchain ??= CreateDefaultToolchain();
-        set => _toolchain = value;
+        get => field ??= CreateDefaultToolchain();
+        set;
     }
 
     private INativeToolchain CreateDefaultToolchain() =>

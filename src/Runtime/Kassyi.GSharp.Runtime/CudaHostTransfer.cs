@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using Kassyi.GSharp.Runtime.Aot;
 
 namespace Kassyi.GSharp.Runtime;
 
