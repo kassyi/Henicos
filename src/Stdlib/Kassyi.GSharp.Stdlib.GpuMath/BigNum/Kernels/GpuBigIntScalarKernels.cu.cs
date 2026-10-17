@@ -226,5 +226,27 @@ public static partial class GpuBigIntScalarKernels
             Gpu.SyncThreads();
         }
     }
+
+    [GpuKernel]
+    public static void ScalarDivByUInt32Kernel(
+        [GpuReadOnly] uint[] dA,
+        uint divisor,
+        uint[] dResult,
+        uint[] dRemainder,
+        int numWords)
+    {
+        if (ThreadIndex.X == 0 && BlockIndex.X == 0)
+        {
+            ulong currentRem = 0;
+            for (int i = numWords - 1; i >= 0; i--)
+            {
+                currentRem = (currentRem << 32) | dA[i];
+                dResult[i] = (uint)(currentRem / divisor);
+                currentRem = currentRem % divisor;
+            }
+
+            dRemainder[0] = (uint)currentRem;
+        }
+    }
 }
 

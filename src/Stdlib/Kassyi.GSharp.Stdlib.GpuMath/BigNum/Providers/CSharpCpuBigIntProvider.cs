@@ -286,6 +286,21 @@ public sealed class CSharpCpuBigIntProvider : IGpuExecutionProvider
             .CompareTo(Read(rightOperand.DevicePointer, rightOperand.NumWords));
     }
 
+    /// <inheritdoc/>
+    public uint DivideByUInt32(GpuWorkspace workspace, GpuBigUInt dividend, uint divisor,
+        GpuBigUInt quotientBuffer)
+    {
+        if (divisor == 0)
+        {
+            throw new DivideByZeroException();
+        }
+
+        var val = Read(dividend.DevicePointer, dividend.NumWords);
+        var quot = BigInteger.DivRem(val, divisor, out var rem);
+        Write(quot, quotientBuffer.DevicePointer, quotientBuffer.NumWords);
+        return (uint)rem;
+    }
+
     // --- IGpuAdvancedMathProvider ---
 
     /// <inheritdoc/>

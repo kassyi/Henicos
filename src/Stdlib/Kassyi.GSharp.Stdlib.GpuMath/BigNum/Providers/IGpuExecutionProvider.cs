@@ -284,6 +284,16 @@ public interface IGpuBasicMathProvider
     /// <param name="rightOperand">The right operand.</param>
     /// <returns>A signed integer indicating the relative order (<c>-1</c> if left &lt; right, <c>0</c> if equal, <c>1</c> if left &gt; right).</returns>
     int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand);
+
+    /// <summary>
+    /// Divides an arbitrary-precision unsigned integer by a 32-bit unsigned scalar on the GPU and returns the remainder.
+    /// </summary>
+    /// <param name="workspace">The GPU workspace.</param>
+    /// <param name="dividend">The dividend big integer operand.</param>
+    /// <param name="divisor">The 32-bit unsigned scalar divisor.</param>
+    /// <param name="quotientBuffer">The destination buffer where the quotient will be written.</param>
+    /// <returns>The 32-bit unsigned scalar remainder (<c>dividend % divisor</c>).</returns>
+    uint DivideByUInt32(GpuWorkspace workspace, GpuBigUInt dividend, uint divisor, GpuBigUInt quotientBuffer);
 }
 
 /// <summary>

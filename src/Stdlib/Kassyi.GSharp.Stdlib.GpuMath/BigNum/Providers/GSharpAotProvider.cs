@@ -158,6 +158,11 @@ public sealed class GSharpAotProvider : IGpuExecutionProvider
     public int CompareTo(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand) =>
         BasicMathProvider.CompareTo(workspace, leftOperand, rightOperand);
 
+    /// <inheritdoc />
+    public uint DivideByUInt32(GpuWorkspace workspace, GpuBigUInt dividend, uint divisor,
+        GpuBigUInt quotientBuffer) =>
+        BasicMathProvider.DivideByUInt32(workspace, dividend, divisor, quotientBuffer);
+
     #endregion
 
     #region IGpuAdvancedMathProvider

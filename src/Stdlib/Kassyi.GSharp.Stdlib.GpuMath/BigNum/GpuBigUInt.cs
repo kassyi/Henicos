@@ -574,6 +574,27 @@ public readonly partial struct GpuBigUInt : IGpuBigUIntExpression, IGpuBigNumber
     }
 
     /// <summary>
+    /// Divides this unsigned big integer by a 32-bit unsigned integer scalar on the GPU.
+    /// </summary>
+    /// <param name="divisor">The 32-bit unsigned scalar divisor.</param>
+    /// <returns>A tuple containing the newly allocated quotient <see cref="GpuBigUInt"/> and the 32-bit remainder.</returns>
+    /// <exception cref="DivideByZeroException">Thrown when <paramref name="divisor"/> is zero.</exception>
+    public (GpuBigUInt Quotient, uint Remainder) DivideByUInt32(uint divisor)
+    {
+        var quotient = new GpuBigUInt(Workspace, NumWords);
+        try
+        {
+            var remainder = GpuBigIntMath.DivideByUInt32(this, divisor, quotient);
+            return (quotient, remainder);
+        }
+        catch
+        {
+            quotient.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Dispatches the visitor to evaluate or process this <see cref="GpuBigUInt"/> node in an expression tree.
     /// </summary>
     /// <param name="visitor">The expression visitor instance.</param>

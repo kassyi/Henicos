@@ -285,6 +285,30 @@ public class NativeProvider : IGpuExecutionProvider
         throw new NotImplementedException(ErrorNotImplemented);
 
     /// <inheritdoc />
+    public uint DivideByUInt32(GpuWorkspace workspace, GpuBigUInt dividend, uint divisor,
+        GpuBigUInt quotientBuffer)
+    {
+        if (divisor == 0)
+        {
+            throw new DivideByZeroException();
+        }
+
+        if (!NativeMethods.GpuBigFloat_DivideByUInt32(
+                workspace.WorkspacePointer,
+                dividend.DevicePointer,
+                quotientBuffer.DevicePointer,
+                dividend.NumWords,
+                divisor,
+                out var remainder,
+                workspace.Stream))
+        {
+            throw new InvalidOperationException("Native DivideByUInt32 failed.");
+        }
+
+        return remainder;
+    }
+
+    /// <inheritdoc />
     /// <exception cref="NotImplementedException">Not supported on the native backend.</exception>
     public void Gcd(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer) => throw new NotImplementedException(ErrorNotImplemented);

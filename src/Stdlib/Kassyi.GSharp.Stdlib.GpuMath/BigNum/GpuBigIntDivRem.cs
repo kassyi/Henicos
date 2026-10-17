@@ -336,37 +336,7 @@ public static partial class GpuBigIntDivRem
     /// <param name="gpuBigInt">The big integer to inspect.</param>
     /// <returns>The bit length of the big integer, or 0 if the value is zero.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int GetActualBits(GpuBigUInt gpuBigInt)
-    {
-        var n = gpuBigInt.NumWords;
-        var hostData = ArrayPool<uint>.Shared.Rent(n);
-        try
-        {
-            gpuBigInt.Workspace.Provider.CopyDeviceToHost(hostData, gpuBigInt.DevicePointer, n, gpuBigInt.Workspace.Stream);
-            for (var i = n - 1; i >= 0; i--)
-            {
-                if (hostData[i] == 0)
-                {
-                    continue;
-                }
-
-                var w = hostData[i];
-                var b = 31;
-                while ((w & (1u << b)) == 0)
-                {
-                    b--;
-                }
-
-                return i * 32 + b + 1;
-            }
-
-            return 0;
-        }
-        finally
-        {
-            ArrayPool<uint>.Shared.Return(hostData);
-        }
-    }
+    public static int GetActualBits(GpuBigUInt gpuBigInt) => gpuBigInt.GetBitLength();
 
     /// <summary>
     /// Computes the arbitrary-precision integer quotient of two numbers on the GPU (<c>resultBuffer = leftOperand / rightOperand</c>).
@@ -400,27 +370,28 @@ public static partial class GpuBigIntDivRem
         DivRem(leftOperand, rightOperand, tempQ, resultBuffer);
     }
 
-    /// <summary>Computes modular exponentiation (<c>baseVal^exp mod mod</c>) on the GPU.</summary>
+    /// <summary>Extracts the most significant words (up to 4 limbs) as a <see cref="BigInteger"/> for initial Newton-Raphson seed estimation.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static BigInteger ExtractTopBitsAsBigInteger(GpuBigUInt operand, out int actualBits)
     {
-        actualBits = GetActualBits(operand);
+        actualBits = operand.GetBitLength();
         if (actualBits == 0)
         {
             throw new DivideByZeroException();
         }
 
-        var n = operand.NumWords;
-        var hostData = ArrayPool<uint>.Shared.Rent(n);
+        var topIndex = (actualBits - 1) / 32;
+        var wordsToExtract = Math.Min(4, topIndex + 1);
+        var startWord = topIndex - wordsToExtract + 1;
+        var hostData = ArrayPool<uint>.Shared.Rent(wordsToExtract);
         try
         {
-            operand.Workspace.Provider.CopyDeviceToHost(hostData, operand.DevicePointer, n, operand.Workspace.Stream);
-            var topIndex = (actualBits - 1) / 32;
-
-            var wordsToExtract = Math.Min(4, topIndex + 1);
-            var extractBytes = new byte[wordsToExtract * 4 + 1];
-            Buffer.BlockCopy(hostData, (topIndex - wordsToExtract + 1) * 4, extractBytes, 0, wordsToExtract * 4);
-            return new BigInteger(extractBytes);
+            operand.Workspace.Provider.CopyDeviceToHost(
+                hostData,
+                IntPtr.Add(operand.DevicePointer, startWord * 4),
+                wordsToExtract,
+                operand.Workspace.Stream);
+            return BigIntExtensions.ToBigInteger(hostData.AsSpan(0, wordsToExtract));
         }
         finally
         {
