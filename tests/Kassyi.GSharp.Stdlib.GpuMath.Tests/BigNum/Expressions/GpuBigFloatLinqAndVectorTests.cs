@@ -326,4 +326,232 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
         Assert.Equal(expectedMax, ToDouble(gpuMax), precision: 8);
         Assert.Equal(expectedMin, ToDouble(gpuMin), precision: 8);
     }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void StackEnumerable_GenericUnification_GpuBigUInt_And_GpuBigUFloat_CalculateCorrectResults()
+    {
+        using var u0 = new GpuBigUInt(_context, [10u, 0u, 0u, 0u]);
+        using var u1 = new GpuBigUInt(_context, [20u, 0u, 0u, 0u]);
+        using var u2 = new GpuBigUInt(_context, [30u, 0u, 0u, 0u]);
+        using var u3 = new GpuBigUInt(_context, [40u, 0u, 0u, 0u]);
+        using var uScalar = new GpuBigUInt(_context, [5u, 0u, 0u, 0u]);
+
+        var uintArray = new[] { u0, u1, u2, u3 };
+
+        using var uSum = uintArray.AsStackEnumerable().Sum();
+        using var uMax = uintArray.AsStackEnumerable().Max();
+        using var uMin = uintArray.AsStackEnumerable().Min();
+        using var uAvg = uintArray.AsStackEnumerable().Average();
+        using var uAgg = uintArray.AsStackEnumerable().Aggregate(static (a, b) => (a + b).Node.Evaluate(a.Workspace));
+
+        Assert.Equal(new BigInteger(100), uSum.ToBigInteger());
+        Assert.Equal(new BigInteger(40), uMax.ToBigInteger());
+        Assert.Equal(new BigInteger(10), uMin.ToBigInteger());
+        Assert.Equal(new BigInteger(25), uAvg.ToBigInteger());
+        Assert.Equal(new BigInteger(100), uAgg.ToBigInteger());
+        Assert.Equal(4, uintArray.AsStackEnumerable().AsParallel().Count());
+
+        using var uAddSum = uintArray.AsStackEnumerable().SelectAdd(uScalar).Sum();
+        using var uSubSum = uintArray.AsStackEnumerable().SelectSubtract(uScalar).Sum();
+        using var uMulSum = uintArray.AsStackEnumerable().AsParallel().SelectMultiply(uScalar).Sum();
+        using var uDivSum = uintArray.AsStackEnumerable().SelectDivide(uScalar).Sum();
+
+        Assert.Equal(new BigInteger(120), uAddSum.ToBigInteger());
+        Assert.Equal(new BigInteger(80), uSubSum.ToBigInteger());
+        Assert.Equal(new BigInteger(500), uMulSum.ToBigInteger());
+        Assert.Equal(new BigInteger(20), uDivSum.ToBigInteger());
+
+        // GpuBigUFloat sequences
+        using var uf0 = new GpuBigUFloat(new GpuBigUInt(_context, [12u, 0u, 0u, 0u]), 0);
+        using var uf1 = new GpuBigUFloat(new GpuBigUInt(_context, [24u, 0u, 0u, 0u]), 0);
+        using var uf2 = new GpuBigUFloat(new GpuBigUInt(_context, [36u, 0u, 0u, 0u]), 0);
+        using var ufScalar = new GpuBigUFloat(new GpuBigUInt(_context, [3u, 0u, 0u, 0u]), 0);
+
+        var ufloatArray = new[] { uf0, uf1, uf2 };
+
+        using var ufSum = ufloatArray.AsStackEnumerable().Sum();
+        using var ufMax = ufloatArray.AsStackEnumerable().Max();
+        using var ufMin = ufloatArray.AsStackEnumerable().Min();
+        using var ufAvg = ufloatArray.AsStackEnumerable().Average();
+        using var ufZipAdd = ufloatArray.AsStackEnumerable()
+            .ZipAdd(ufloatArray.AsStackEnumerable())
+            .SelectDivide(ufScalar)
+            .Sum();
+
+        Assert.Equal(new BigInteger(72), ufSum.Significand.ToBigInteger() << ufSum.Exponent);
+        Assert.Equal(new BigInteger(36), ufMax.Significand.ToBigInteger());
+        Assert.Equal(new BigInteger(12), ufMin.Significand.ToBigInteger());
+        var ufAvgDouble = (double)ufAvg.Significand.ToBigInteger() * Math.Pow(2.0, ufAvg.Exponent);
+        Assert.Equal(24.0, ufAvgDouble, precision: 8);
+        var ufZipAddDouble = (double)ufZipAdd.Significand.ToBigInteger() * Math.Pow(2.0, ufZipAdd.Exponent);
+        Assert.Equal(48.0, ufZipAddDouble, precision: 8);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void GpuBigFloatArray_VectorLinq_HeterogeneousScalarTypes_CalculateCorrectResults()
+    {
+        const int length = 3;
+        const int words = 4;
+
+        using var vec = new GpuBigFloatArray(_context, length, words);
+        double[] vals = [10.0, 20.0, 30.0];
+        for (var i = 0; i < length; i++)
+        {
+            using var f = CreateFloat((long)vals[i]);
+            vec.SetElement(i, f);
+        }
+
+        using var uintScalar = new GpuBigUInt(_context, [5u, 0u, 0u, 0u]);
+        using var intScalar = new GpuBigInt(new GpuBigUInt(_context, [4u, 0u, 0u, 0u]), isNegative: true);
+        using var ufloatScalar = new GpuBigUFloat(new GpuBigUInt(_context, [3u, 0u, 0u, 0u]), 1); // 3 * 2^1 = 6.0
+
+        using var addUIntExpr = vec.AsVectorizedEnumerable().SelectAdd(uintScalar);
+        var addUIntRes = addUIntExpr.Evaluate(_context);
+
+        using var mulIntExpr = vec.AsVectorizedEnumerable().SelectMultiply(intScalar);
+        var mulIntRes = mulIntExpr.Evaluate(_context);
+
+        using var subUFloatExpr = vec.AsVectorizedEnumerable().SelectSubtract(ufloatScalar);
+        var subUFloatRes = subUFloatExpr.Evaluate(_context);
+
+        for (var i = 0; i < length; i++)
+        {
+            Assert.Equal(vals[i] + 5.0, ToDouble(addUIntRes.GetElement(i)), precision: 8);
+            Assert.Equal(vals[i] * -4.0, ToDouble(mulIntRes.GetElement(i)), precision: 8);
+            Assert.Equal(vals[i] - 6.0, ToDouble(subUFloatRes.GetElement(i)), precision: 8);
+        }
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void GpuBigFloatArray_VectorLinq_ElementaryAndTranscendental_CalculateCorrectResults()
+    {
+        const int length = 3;
+        const int words = 4;
+
+        using var vec = new GpuBigFloatArray(_context, length, words);
+        using var expVec = new GpuBigFloatArray(_context, length, words);
+
+        double[] vals = [4.0, 9.0, 16.0];
+        double[] exps = [2.0, 0.5, 1.0];
+
+        for (var i = 0; i < length; i++)
+        {
+            using var v = CreateFloat((long)vals[i], 0, words);
+            vec.SetElement(i, v);
+        }
+
+        using var e0 = CreateFloat(2, 0, words); // 2.0
+        using var e1 = CreateFloat(1, -1, words); // 0.5
+        using var e2 = CreateFloat(1, 0, words); // 1.0
+        expVec.SetElement(0, e0);
+        expVec.SetElement(1, e1);
+        expVec.SetElement(2, e2);
+
+        // 1. SelectSqrt
+        using var sqrtExpr = vec.AsVectorizedEnumerable().SelectSqrt();
+        var sqrtRes = sqrtExpr.Evaluate(_context);
+        for (var i = 0; i < length; i++)
+        {
+            Assert.Equal(Math.Sqrt(vals[i]), ToDouble(sqrtRes.GetElement(i)), precision: 6);
+        }
+
+        // 2. SelectRsqrt
+        using var rsqrtExpr = vec.AsVectorizedEnumerable().SelectRsqrt();
+        var rsqrtRes = rsqrtExpr.Evaluate(_context);
+        for (var i = 0; i < length; i++)
+        {
+            Assert.Equal(1.0 / Math.Sqrt(vals[i]), ToDouble(rsqrtRes.GetElement(i)), precision: 6);
+        }
+
+        // 3. SelectReciprocal
+        using var recipExpr = vec.AsVectorizedEnumerable().SelectReciprocal();
+        var recipRes = recipExpr.Evaluate(_context);
+        for (var i = 0; i < length; i++)
+        {
+            Assert.Equal(1.0 / vals[i], ToDouble(recipRes.GetElement(i)), precision: 6);
+        }
+
+        // 4. SelectDivideByUInt32 (divides significand by uint32 while preserving exponent, matching GpuBigFloat.DivideByUInt32)
+        using var divU32Expr = vec.AsVectorizedEnumerable().SelectDivideByUInt32(2u);
+        var divU32Res = divU32Expr.Evaluate(_context);
+        for (var i = 0; i < length; i++)
+        {
+            Assert.Equal(Math.Floor(vals[i] / 2.0), ToDouble(divU32Res.GetElement(i)), precision: 8);
+        }
+
+        // 5. SelectLog & SelectExp
+        using var logExpr = vec.AsVectorizedEnumerable().SelectLog();
+        var logRes = logExpr.Evaluate(_context);
+        for (var i = 0; i < length; i++)
+        {
+            Assert.Equal(Math.Log(vals[i]), ToDouble(logRes.GetElement(i)), precision: 5);
+        }
+
+        using var roundTripExpExpr = vec.AsVectorizedEnumerable().SelectLog().SelectExp();
+        var roundTripExpRes = roundTripExpExpr.Evaluate(_context);
+        for (var i = 0; i < length; i++)
+        {
+            Assert.Equal(vals[i], ToDouble(roundTripExpRes.GetElement(i)), precision: 4);
+        }
+
+        // 6. SelectPow<TScalar> (with GpuBigUInt scalar 2)
+        using var powScalar = new GpuBigUInt(_context, [2u, 0u, 0u, 0u]);
+        using var powScalarExpr = vec.AsVectorizedEnumerable().SelectPow(powScalar);
+        var powScalarRes = powScalarExpr.Evaluate(_context);
+        for (var i = 0; i < length; i++)
+        {
+            Assert.Equal(Math.Pow(vals[i], 2.0), ToDouble(powScalarRes.GetElement(i)), precision: 3);
+        }
+
+        // 7. ZipPow
+        using var zipPowExpr = vec.AsVectorizedEnumerable().ZipPow(expVec.AsVectorizedEnumerable());
+        var zipPowRes = zipPowExpr.Evaluate(_context);
+        for (var i = 0; i < length; i++)
+        {
+            Assert.Equal(Math.Pow(vals[i], exps[i]), ToDouble(zipPowRes.GetElement(i)), precision: 4);
+        }
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void GpuBigFloatArray_VectorLinq_ElementaryAndTranscendental_SadPath_ThrowsExpectedExceptions()
+    {
+        using var zeroVec = new GpuBigFloatArray(_context, 2, 4);
+        using var z0 = CreateFloat(0);
+        using var z1 = CreateFloat(4);
+        zeroVec.SetElement(0, z0);
+        zeroVec.SetElement(1, z1);
+
+        using var divZeroExpr = zeroVec.AsVectorizedEnumerable().SelectDivideByUInt32(0u);
+        Assert.Throws<DivideByZeroException>(() => divZeroExpr.Evaluate(_context));
+
+        using var recipZeroExpr = zeroVec.AsVectorizedEnumerable().SelectReciprocal();
+        Assert.Throws<DivideByZeroException>(() => recipZeroExpr.Evaluate(_context));
+
+        using var rsqrtZeroExpr = zeroVec.AsVectorizedEnumerable().SelectRsqrt();
+        Assert.Throws<DivideByZeroException>(() => rsqrtZeroExpr.Evaluate(_context));
+
+        using var negVec = new GpuBigFloatArray(_context, 2, 4);
+        using var n0 = CreateFloat(-4);
+        negVec.SetElement(0, n0);
+        negVec.SetElement(1, z1);
+
+        using var sqrtNegExpr = negVec.AsVectorizedEnumerable().SelectSqrt();
+        Assert.Throws<InvalidOperationException>(() => sqrtNegExpr.Evaluate(_context));
+
+        using var logNegExpr = negVec.AsVectorizedEnumerable().SelectLog();
+        Assert.Throws<InvalidOperationException>(() => logNegExpr.Evaluate(_context));
+
+        using var shortVec = new GpuBigFloatArray(_context, 1, 4);
+        shortVec.SetElement(0, z1);
+        using var mismatchedZipPow = zeroVec.AsVectorizedEnumerable().ZipPow(shortVec.AsVectorizedEnumerable());
+        Assert.Throws<ArgumentException>(() => mismatchedZipPow.Evaluate(_context));
+    }
 }
