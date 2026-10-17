@@ -105,6 +105,35 @@ public class GpuBigFloatLinqAndVectorTests : IDisposable
     [Fact]
     [Category(TestCategory.Unit)]
     [Scenario(TestScenario.HappyPath)]
+    public void StackEnumerable_BalancedTree_OddAndLargeSequences_CalculateCorrectResults()
+    {
+        // Odd count: 5 elements [5, 15, -10, 25, 30]
+        using var o0 = CreateFloat(5);
+        using var o1 = CreateFloat(15);
+        using var o2 = CreateFloat(-10);
+        using var o3 = CreateFloat(25);
+        using var o4 = CreateFloat(30);
+
+        var oddArray = new[] { o0, o1, o2, o3, o4 };
+
+        using var oddSum = oddArray.AsStackEnumerable().Sum();
+        using var oddMax = oddArray.AsStackEnumerable().Max();
+        using var oddMin = oddArray.AsStackEnumerable().Min();
+        using var oddAvg = oddArray.AsStackEnumerable().Average();
+
+        Assert.Equal(65.0, ToDouble(oddSum), precision: 8);
+        Assert.Equal(30.0, ToDouble(oddMax), precision: 8);
+        Assert.Equal(-10.0, ToDouble(oddMin), precision: 8);
+        Assert.Equal(13.0, ToDouble(oddAvg), precision: 8);
+
+        // Aggregate with custom binary func: pairwise sum
+        using var aggSum = oddArray.AsStackEnumerable().Aggregate(static (a, b) => a + b);
+        Assert.Equal(65.0, ToDouble(aggSum), precision: 8);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
     public void StackEnumerable_ZipArithmetic_CalculatesCorrectResults()
     {
         using var l0 = CreateFloat(100);

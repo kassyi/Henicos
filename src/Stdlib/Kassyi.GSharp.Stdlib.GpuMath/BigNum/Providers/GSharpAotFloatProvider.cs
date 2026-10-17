@@ -393,7 +393,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
         GpuBigIntMath.Mul(invSqrt.NormalizedOperand, invSqrt.SlicedInverseSqrt, prodResult);
 
         var tempExp = (invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
-        return Normalize(ref context, new GpuFloatOperand(prodResult.Handle, tempExp, false), resultSig);
+        return Normalize(ref context, new GpuFloatOperand(prodResult.Handle, tempExp), resultSig);
     }
 
     /// <inheritdoc/>
@@ -424,7 +424,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             context.GpuWorkspace, valueOperand, value.Exponent, actualBits, resultSig.NumWords));
 
         var tempExp = -(invSqrt.AdjustedExponent / 2) - invSqrt.EffectiveScaleBits;
-        return Normalize(ref context, new GpuFloatOperand(invSqrt.SlicedInverseSqrt.Handle, tempExp, false), resultSig);
+        return Normalize(ref context, new GpuFloatOperand(invSqrt.SlicedInverseSqrt.Handle, tempExp), resultSig);
     }
 
     private static NormalizedInverseSqrtScope ComputeNormalizedInverseSqrt(in InverseSqrtRequest request)
@@ -510,7 +510,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             // exp(-|x|) = 1 / exp(|x|), avoiding alternating-sign Taylor cancellation
             using var posExpTemp = workspace.RentTemp(resultSig.NumWords + 2);
             var posRes = Exp(ref context, value with { IsNegative = false }, posExpTemp.Handle);
-            return Reciprocal(ref context, new GpuFloatOperand(posExpTemp.Handle, posRes.Exponent, false), resultSig);
+            return Reciprocal(ref context, new GpuFloatOperand(posExpTemp.Handle, posRes.Exponent), resultSig);
         }
 
         var intBits = Math.Max(0, value.Exponent + actualBits);
@@ -549,7 +549,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
             GpuBigIntMath.Add(sum, term, sum);
         }
 
-        return Normalize(ref context, new GpuFloatOperand(sum.Handle, -shiftBits, false), resultSig);
+        return Normalize(ref context, new GpuFloatOperand(sum.Handle, -shiftBits), resultSig);
     }
 
     /// <inheritdoc/>

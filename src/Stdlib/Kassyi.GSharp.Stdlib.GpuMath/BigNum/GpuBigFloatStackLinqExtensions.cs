@@ -300,105 +300,79 @@ public static class GpuBigFloatStackLinqExtensions
             left.Enumerator, right.Enumerator, static (a, b) => a / b));
 
     /// <summary>
-    /// Computes the sum of a parallel sequence of <see cref="GpuBigFloat"/> values.
+    /// Computes the sum of a parallel sequence of <see cref="GpuBigFloat"/> values by constructing a balanced binary evaluation tree.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A parallel sequence of values to sum.</param>
     /// <returns>A new <see cref="GpuBigFloat"/> containing the sum.</returns>
     public static GpuBigFloat Sum<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigFloat> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        if (!enumerator.TryGetNext(out var second))
-        {
-            return Clone(first);
-        }
-
-        GpuBigFloat acc = first + second;
-        try
-        {
-            while (enumerator.TryGetNext(out var next))
+        where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct =>
+        StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigFloat, GpuBigFloat>(
+            source.Enumerator,
+            static x => Clone(x),
+            static (a, b) =>
             {
-                GpuBigFloat nextAcc = acc + next;
-                acc.Dispose();
-                acc = nextAcc;
-            }
-
-            return acc;
-        }
-        catch
-        {
-            acc.Dispose();
-            throw;
-        }
-    }
+                GpuBigFloat sum = a + b;
+                a.Dispose();
+                b.Dispose();
+                return sum;
+            });
 
     /// <summary>
-    /// Computes the maximum of a parallel sequence of <see cref="GpuBigFloat"/> values.
+    /// Computes the maximum of a parallel sequence of <see cref="GpuBigFloat"/> values by constructing a balanced binary evaluation tree.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A parallel sequence of values to find the maximum of.</param>
     /// <returns>A new <see cref="GpuBigFloat"/> containing the maximum value.</returns>
     public static GpuBigFloat Max<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigFloat> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var best))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        while (enumerator.TryGetNext(out var next))
-        {
-            if (next > best)
+        where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct =>
+        StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigFloat, GpuBigFloat>(
+            source.Enumerator,
+            static x => Clone(x),
+            static (a, b) =>
             {
-                best = next;
-            }
-        }
+                if (a >= b)
+                {
+                    b.Dispose();
+                    return a;
+                }
 
-        return Clone(best);
-    }
+                a.Dispose();
+                return b;
+            });
 
     /// <summary>
-    /// Computes the minimum of a parallel sequence of <see cref="GpuBigFloat"/> values.
+    /// Computes the minimum of a parallel sequence of <see cref="GpuBigFloat"/> values by constructing a balanced binary evaluation tree.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A parallel sequence of values to find the minimum of.</param>
     /// <returns>A new <see cref="GpuBigFloat"/> containing the minimum value.</returns>
     public static GpuBigFloat Min<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigFloat> source)
-        where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct
-    {
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var best))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        while (enumerator.TryGetNext(out var next))
-        {
-            if (next < best)
+        where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct =>
+        StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigFloat, GpuBigFloat>(
+            source.Enumerator,
+            static x => Clone(x),
+            static (a, b) =>
             {
-                best = next;
-            }
-        }
+                if (a <= b)
+                {
+                    b.Dispose();
+                    return a;
+                }
 
-        return Clone(best);
-    }
+                a.Dispose();
+                return b;
+            });
 
     /// <summary>
-    /// Applies an accumulator function over a parallel sequence of <see cref="GpuBigFloat"/> values.
+    /// Applies an accumulator function over a parallel sequence of <see cref="GpuBigFloat"/> values by constructing a balanced binary evaluation tree.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A parallel sequence of values to aggregate.</param>
-    /// <param name="func">An accumulator function to be invoked on each element.</param>
+    /// <param name="func">An accumulator function to be invoked on each pair of values.</param>
     /// <returns>The aggregated <see cref="GpuBigFloat"/> value.</returns>
     public static GpuBigFloat Aggregate<TEnumerator>(
         this ParallelStackEnumerable<TEnumerator, GpuBigFloat> source,
@@ -406,44 +380,28 @@ public static class GpuBigFloatStackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<GpuBigFloat>, allows ref struct
     {
         ArgumentNullException.ThrowIfNull(func);
-
-        var enumerator = source.Enumerator;
-        if (!enumerator.TryGetNext(out var first))
-        {
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-
-        if (!enumerator.TryGetNext(out var second))
-        {
-            return Clone(first);
-        }
-
-        var acc = func(first, second);
-        try
-        {
-            while (enumerator.TryGetNext(out var next))
+        return StackLinqReductionCore.ReduceBalancedTree<TEnumerator, GpuBigFloat, GpuBigFloat>(
+            source.Enumerator,
+            static x => Clone(x),
+            (a, b) =>
             {
-                var prevAcc = acc;
-                acc = func(prevAcc, next);
-                if (prevAcc.UFloat.Significand.DevicePointer != acc.UFloat.Significand.DevicePointer &&
-                    prevAcc.UFloat.Significand.DevicePointer != first.UFloat.Significand.DevicePointer &&
-                    prevAcc.UFloat.Significand.DevicePointer != second.UFloat.Significand.DevicePointer)
+                var res = func(a, b);
+                if (a.UFloat.Significand.DevicePointer != res.UFloat.Significand.DevicePointer)
                 {
-                    prevAcc.Dispose();
+                    a.Dispose();
                 }
-            }
 
-            return acc;
-        }
-        catch
-        {
-            acc.Dispose();
-            throw;
-        }
+                if (b.UFloat.Significand.DevicePointer != res.UFloat.Significand.DevicePointer)
+                {
+                    b.Dispose();
+                }
+
+                return res;
+            });
     }
 
     /// <summary>
-    /// Computes the average of a parallel sequence of <see cref="GpuBigFloat"/> values.
+    /// Computes the average of a parallel sequence of <see cref="GpuBigFloat"/> values by constructing a balanced binary evaluation tree.
     /// </summary>
     /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
     /// <param name="source">A parallel sequence of values to calculate the average of.</param>
@@ -463,30 +421,60 @@ public static class GpuBigFloatStackLinqExtensions
             return Clone(first);
         }
 
-        var count = 2;
-        GpuBigFloat sum = first + second;
+        var pool = ArrayPool<GpuBigFloat>.Shared;
+        var capacity = 16;
+        var buffer = pool.Rent(capacity);
+        var count = 0;
+
         try
         {
-            while (enumerator.TryGetNext(out var next))
+            buffer[count++] = Clone(first);
+            buffer[count++] = Clone(second);
+
+            while (enumerator.TryGetNext(out var value))
             {
-                GpuBigFloat nextSum = sum + next;
-                sum.Dispose();
-                sum = nextSum;
-                count++;
+                if (count == capacity)
+                {
+                    var newCapacity = capacity * 2;
+                    var newBuffer = pool.Rent(newCapacity);
+                    Array.Copy(buffer, newBuffer, count);
+                    pool.Return(buffer, clearArray: true);
+                    buffer = newBuffer;
+                    capacity = newCapacity;
+                }
+
+                buffer[count++] = Clone(value);
             }
 
-            var workspace = first.UFloat.Significand.Workspace;
-            var numWords = first.UFloat.Significand.NumWords;
-            var countWords = new uint[numWords];
-            countWords[0] = (uint)count;
-            using var countSig = new GpuBigUInt(workspace, countWords);
-            var countFloat = new GpuBigFloat(countSig, 0, false);
+            GpuBigFloat sum = StackLinqReductionCore.BuildBalancedTree(
+                buffer.AsSpan(0, count),
+                static (a, b) =>
+                {
+                    GpuBigFloat res = a + b;
+                    a.Dispose();
+                    b.Dispose();
+                    return res;
+                });
 
-            return sum / countFloat;
+            try
+            {
+                var workspace = first.UFloat.Significand.Workspace;
+                var numWords = first.UFloat.Significand.NumWords;
+                var countWords = new uint[numWords];
+                countWords[0] = (uint)count;
+                using var countSig = new GpuBigUInt(workspace, countWords);
+                var countFloat = new GpuBigFloat(countSig, 0, false);
+
+                return sum / countFloat;
+            }
+            finally
+            {
+                sum.Dispose();
+            }
         }
         finally
         {
-            sum.Dispose();
+            pool.Return(buffer, clearArray: true);
         }
     }
 

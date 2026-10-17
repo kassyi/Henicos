@@ -182,7 +182,7 @@ public partial class ChudnovskyAlgorithm
             pow2Data[wordIndex] = 1u << bitIndex;
             using var gpuPow2 = new GpuBigUInt(workspace, pow2Data);
 
-            using var const10005 = GpuBigUInt.FromBigInteger(workspace, 10005, 0);
+            using var const10005 = GpuBigUInt.FromBigInteger(workspace, 10005);
             gpuSqrtBase = new GpuBigUInt(workspace, gpuPow2.NumWords + const10005.NumWords);
             GpuBigIntMath.Mul(gpuPow2, const10005, gpuSqrtBase);
         }
@@ -191,7 +191,7 @@ public partial class ChudnovskyAlgorithm
             // Decimal mode: Shift by 10^(2 * totalDigits)
             Logger.Info("GPU-Pi", $"Computing Sqrt base (10005 * 10^{2 * totalDigits})...");
             using var gpuPow10 = GpuBigIntMath.Pow10(workspace, 2 * totalDigits);
-            using var const10005 = GpuBigUInt.FromBigInteger(workspace, 10005, 0);
+            using var const10005 = GpuBigUInt.FromBigInteger(workspace, 10005);
             gpuSqrtBase = new GpuBigUInt(workspace, gpuPow10.NumWords + const10005.NumWords);
             GpuBigIntMath.Mul(gpuPow10, const10005, gpuSqrtBase);
         }
@@ -212,7 +212,7 @@ public partial class ChudnovskyAlgorithm
         Logger.Info("GPU-Pi", $"Final division (Sqrt) computed in {swSqrt.ElapsedMilliseconds} ms");
 
         var swMul1 = Stopwatch.StartNew();
-        using var gpuConstant = GpuBigUInt.FromBigInteger(workspace, 426880, 0);
+        using var gpuConstant = GpuBigUInt.FromBigInteger(workspace, 426880);
         var mulWords1 = gpuSqrtResult.NumWords + gpuConstant.NumWords;
         using var gpuSqrtWithConstant = new GpuBigUInt(workspace, mulWords1);
         GpuBigIntMath.Mul(gpuSqrtResult, gpuConstant, gpuSqrtWithConstant);
@@ -378,13 +378,13 @@ public partial class ChudnovskyAlgorithm
         var sw = Stopwatch.StartNew();
         var pNeg = cpu.P < 0;
         var absP = BigInteger.Abs(cpu.P);
-        var gpuP = GpuBigUInt.FromBigInteger(workspace, absP, 0);
+        var gpuP = GpuBigUInt.FromBigInteger(workspace, absP);
 
-        var gpuQ = GpuBigUInt.FromBigInteger(workspace, cpu.Q, 0);
+        var gpuQ = GpuBigUInt.FromBigInteger(workspace, cpu.Q);
 
         var tNeg = cpu.T < 0;
         var absT = BigInteger.Abs(cpu.T);
-        var gpuT = GpuBigUInt.FromBigInteger(workspace, absT, 0);
+        var gpuT = GpuBigUInt.FromBigInteger(workspace, absT);
 
         var result = new HypergeometricTerms(
             new GpuBigInt(gpuP, pNeg),
