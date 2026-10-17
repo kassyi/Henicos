@@ -26,7 +26,7 @@ public class NativeProvider : IGpuExecutionProvider
     public static readonly NativeProvider Instance = new();
 
     private const string ErrorNotImplemented =
-        "This operation is not supported by the NativeProvider. Use GSharp JitProvider instead.";
+        "This operation is not supported by the NativeProvider. Use GSharpKernelProvider instead.";
 
     private const string ErrorCopyHostToDeviceFailed = "Failed to copy host data to GPU device pointer 0x{0:X}.";
     private const string ErrorCopyDeviceToHostFailed = "Failed to copy data from GPU device pointer 0x{0:X} to host.";

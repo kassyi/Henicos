@@ -2,11 +2,11 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
 [Collection(TestCollections.GlobalStateSequential)]
-public class GSharpAotFloatProviderTests : IDisposable
+public class GSharpKernelFloatProviderTests : IDisposable
 {
     private readonly GpuKernelLoader.CudaContextScope _scope;
 
-    public GSharpAotFloatProviderTests()
+    public GSharpKernelFloatProviderTests()
     {
         CudaCapability.EnsureGpuAvailable();
         _scope = new GpuKernelLoader.CudaContextScope();
@@ -31,7 +31,7 @@ public class GSharpAotFloatProviderTests : IDisposable
     {
         using var customCtx = new GpuWorkspace(1024, useNative ? GpuExecutionEngine.LegacyNative : GpuExecutionEngine.GSharpAot);
         var execContext = new GpuBigIntExecutionContext(customCtx, customCtx.MemoryManager, new LegacyProviderArithmeticAdapter(), customCtx.Stream);
-        var arith = useNative ? GSharpAotFloatProvider.CreateNativeCuda() : GSharpAotFloatProvider.CreateGSharpKernel();
+        IGpuBigFloatArithmetic arith = useNative ? NativeFloatProvider.Instance : GSharpKernelFloatProvider.Instance;
 
         using var aSig = new GpuBigUInt(customCtx, new uint[] { 4 });
         using var bSig = new GpuBigUInt(customCtx, new uint[] { 2 });
@@ -63,7 +63,7 @@ public class GSharpAotFloatProviderTests : IDisposable
     {
         using var customCtx = new GpuWorkspace(1024, useNative ? GpuExecutionEngine.LegacyNative : GpuExecutionEngine.GSharpAot);
         var execContext = new GpuBigIntExecutionContext(customCtx, customCtx.MemoryManager, new LegacyProviderArithmeticAdapter(), customCtx.Stream);
-        var arith = useNative ? GSharpAotFloatProvider.CreateNativeCuda() : GSharpAotFloatProvider.CreateGSharpKernel();
+        IGpuBigFloatArithmetic arith = useNative ? NativeFloatProvider.Instance : GSharpKernelFloatProvider.Instance;
 
         using var aSig = new GpuBigUInt(customCtx, new uint[] { 4 });
         using var resSig = new GpuBigUInt(customCtx, 4);
@@ -126,7 +126,7 @@ public class GSharpAotFloatProviderTests : IDisposable
     {
         using var customCtx = new GpuWorkspace(1024, useNative ? GpuExecutionEngine.LegacyNative : GpuExecutionEngine.GSharpAot);
         var execContext = new GpuBigIntExecutionContext(customCtx, customCtx.MemoryManager, new LegacyProviderArithmeticAdapter(), customCtx.Stream);
-        var arith = useNative ? GSharpAotFloatProvider.CreateNativeCuda() : GSharpAotFloatProvider.CreateGSharpKernel();
+        IGpuBigFloatArithmetic arith = useNative ? NativeFloatProvider.Instance : GSharpKernelFloatProvider.Instance;
 
         using var aSig = new GpuBigUInt(customCtx, new uint[] { 2 });
         using var bSig = new GpuBigUInt(customCtx, new uint[] { 3 });
@@ -159,7 +159,7 @@ public class GSharpAotFloatProviderTests : IDisposable
     {
         using var customCtx = new GpuWorkspace(1024, useNative ? GpuExecutionEngine.LegacyNative : GpuExecutionEngine.GSharpAot);
         var execContext = new GpuBigIntExecutionContext(customCtx, customCtx.MemoryManager, new LegacyProviderArithmeticAdapter(), customCtx.Stream);
-        var arith = useNative ? GSharpAotFloatProvider.CreateNativeCuda() : GSharpAotFloatProvider.CreateGSharpKernel();
+        IGpuBigFloatArithmetic arith = useNative ? NativeFloatProvider.Instance : GSharpKernelFloatProvider.Instance;
 
         using var aSig = new GpuBigUInt(customCtx, new uint[] { 10 });
         using var resSig = new GpuBigUInt(customCtx, 4);
@@ -186,7 +186,7 @@ public class GSharpAotFloatProviderTests : IDisposable
     {
         using var customCtx = new GpuWorkspace(1024, GpuExecutionEngine.GSharpAot);
         var execContext = new GpuBigIntExecutionContext(customCtx, customCtx.MemoryManager, new LegacyProviderArithmeticAdapter(), customCtx.Stream);
-        var arith = GSharpAotFloatProvider.CreateGSharpKernel();
+        var arith = GSharpKernelFloatProvider.Instance;
 
         using var sig3 = new GpuBigUInt(customCtx, new uint[] { 3 });
         using var sig1 = new GpuBigUInt(customCtx, new uint[] { 1 });

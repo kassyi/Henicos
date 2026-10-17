@@ -9,7 +9,7 @@ public enum GpuExecutionEngine
     /// <summary>Executes kernels via the legacy pre-compiled native CUDA C++ dynamic library.</summary>
     LegacyNative,
 
-    /// <summary>Executes kernels via the GSharp JIT transpilation and NVRTC runtime compiler.</summary>
+    /// <summary>Executes pre-compiled GSharp device kernels via Ahead-Of-Time (AOT) loaded modules.</summary>
     GSharpAot
 }
 
@@ -50,7 +50,7 @@ public class GpuWorkspace : IGpuResourceScope
     /// Gets the active GPU arithmetic execution provider implementation.
     /// </summary>
     public IGpuExecutionProvider Provider => Engine == GpuExecutionEngine.GSharpAot
-        ? GSharpAotProvider.Instance
+        ? GSharpKernelProvider.Instance
         : NativeProvider.Instance;
 
     /// <summary>

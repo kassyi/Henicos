@@ -33,7 +33,7 @@ public class StreamOrderedWordAccessTests
     public void WriteWord_ThenReadWord_OnSameStream_RoundTripsAtOffset()
     {
         CudaCapability.EnsureGpuAvailable();
-        var handler = new AotMemoryHandler();
+        var handler = new KernelMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         var stream = CreateBlockingStream();
@@ -61,7 +61,7 @@ public class StreamOrderedWordAccessTests
     public void ReadWord_WithStream_ObservesEarlierWorkOnThatStream()
     {
         CudaCapability.EnsureGpuAvailable();
-        var handler = new AotMemoryHandler();
+        var handler = new KernelMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         var stream = CreateBlockingStream();
@@ -89,7 +89,7 @@ public class StreamOrderedWordAccessTests
     public void ReadWord_WithStream_DoesNotWaitForOtherBlockingStreams()
     {
         CudaCapability.EnsureGpuAvailable();
-        var handler = new AotMemoryHandler();
+        var handler = new KernelMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         var busy = CreateBlockingStream();
@@ -116,7 +116,7 @@ public class StreamOrderedWordAccessTests
     public void WriteWord_WithStream_DoesNotWaitForOtherBlockingStreams()
     {
         CudaCapability.EnsureGpuAvailable();
-        var handler = new AotMemoryHandler();
+        var handler = new KernelMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         var busy = CreateBlockingStream();
@@ -143,7 +143,7 @@ public class StreamOrderedWordAccessTests
     public void WordAccess_WithoutStream_KeepsLegacyNullStreamSemantics()
     {
         CudaCapability.EnsureGpuAvailable();
-        var handler = new AotMemoryHandler();
+        var handler = new KernelMemoryHandler();
 
         using var scope = new GpuKernelLoader.CudaContextScope();
         var busy = CreateBlockingStream();

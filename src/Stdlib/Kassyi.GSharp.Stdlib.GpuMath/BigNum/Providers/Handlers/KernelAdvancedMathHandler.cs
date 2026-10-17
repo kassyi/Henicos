@@ -13,7 +13,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// <b>Zero-Allocation:</b> Scratch memory for intermediate NTT and division passes is acquired through <see cref="GpuWorkspace"/> buffer pooling.
 /// </para>
 /// </remarks>
-public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
+public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 {
     private readonly ConcurrentDictionary<int, Lazy<TwiddleCache>> _twiddleCache = new();
 
@@ -800,7 +800,7 @@ public sealed class AotAdvancedMathHandler : IGpuAdvancedMathProvider
         public readonly int ChunkSize;
 
         public NttWorkspaceBuffers(GpuWorkspace workspace, int requiredLen, int maxOutWords,
-            AotAdvancedMathHandler handler)
+            KernelAdvancedMathHandler handler)
         {
             var m = 1;
             while (m < requiredLen * 2)

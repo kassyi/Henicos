@@ -2,7 +2,7 @@ using Kassyi.GSharp.Runtime.Aot;
 
 namespace Henicos.Cli;
 
-/// <summary>BenchmarkDotNet performance comparisons between legacy native and GSharp JIT execution providers.</summary>
+/// <summary>BenchmarkDotNet performance comparisons between legacy native and GSharp GPU kernel execution providers.</summary>
 [MarkdownExporterAttribute.GitHub]
 public class GpuBigIntBenchmark : IDisposable
 {
@@ -12,12 +12,12 @@ public class GpuBigIntBenchmark : IDisposable
         get; set;
     }
 
-    private GpuWorkspace? _contextJit;
+    private GpuWorkspace? _contextKernel;
     private GpuWorkspace? _contextLegacy;
 
-    private GpuBigUInt _gpuAJit;
-    private GpuBigUInt _gpuBJit;
-    private GpuBigUInt _gpuResultJit;
+    private GpuBigUInt _gpuAKernel;
+    private GpuBigUInt _gpuBKernel;
+    private GpuBigUInt _gpuResultKernel;
 
     private GpuBigUInt _gpuALegacy;
     private GpuBigUInt _gpuBLegacy;
@@ -30,7 +30,7 @@ public class GpuBigIntBenchmark : IDisposable
     {
         _scope = new GpuKernelLoader.CudaContextScope();
 
-        _contextJit = new GpuWorkspace(NumWords * 2);
+        _contextKernel = new GpuWorkspace(NumWords * 2);
         _contextLegacy = new GpuWorkspace(NumWords * 2, GpuExecutionEngine.LegacyNative);
 
         var rnd = new Random(42);
@@ -46,9 +46,9 @@ public class GpuBigIntBenchmark : IDisposable
         hostA[NumWords - 1] |= 0x40000000;
         hostB[NumWords - 1] &= 0x3FFFFFFF;
 
-        _gpuAJit = new GpuBigUInt(_contextJit, hostA);
-        _gpuBJit = new GpuBigUInt(_contextJit, hostB);
-        _gpuResultJit = new GpuBigUInt(_contextJit, NumWords);
+        _gpuAKernel = new GpuBigUInt(_contextKernel, hostA);
+        _gpuBKernel = new GpuBigUInt(_contextKernel, hostB);
+        _gpuResultKernel = new GpuBigUInt(_contextKernel, NumWords);
 
         _gpuALegacy = new GpuBigUInt(_contextLegacy, hostA);
         _gpuBLegacy = new GpuBigUInt(_contextLegacy, hostB);
@@ -58,7 +58,7 @@ public class GpuBigIntBenchmark : IDisposable
     [GlobalCleanup]
     public void Cleanup()
     {
-        _contextJit?.Dispose();
+        _contextKernel?.Dispose();
         _contextLegacy?.Dispose();
         _scope.Dispose();
     }
@@ -72,7 +72,7 @@ public class GpuBigIntBenchmark : IDisposable
     }
 
     [Benchmark]
-    public void Sub_GSharpAot() => _gpuResultJit.Value = _gpuAJit - _gpuBJit;
+    public void Sub_GSharpKernel() => _gpuResultKernel.Value = _gpuAKernel - _gpuBKernel;
 
     public void Dispose() => Cleanup();
 }

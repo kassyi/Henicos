@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// into the <see cref="IGpuMemoryProvider"/> contract for GSharp execution pipelines.
 /// </para>
 /// </remarks>
-public sealed class AotMemoryHandler : IGpuMemoryProvider
+public sealed class KernelMemoryHandler : IGpuMemoryProvider
 {
     private static void InvokeCuda(Func<CUresult> action)
     {

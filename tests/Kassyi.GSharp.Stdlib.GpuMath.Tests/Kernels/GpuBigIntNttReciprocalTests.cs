@@ -99,7 +99,7 @@ public class GpuBigIntNttReciprocalTests
         
         // This is a complex internal API, ensure we supply correctly
         // (marginWords, numBits, marginBits, iterations, targetBits)
-        var advancedMath = new AotAdvancedMathHandler();
+        var advancedMath = new KernelAdvancedMathHandler();
         advancedMath.ReciprocalMega(
             workspace, targetOperand, resultBuffer,
             marginWords: 2, 

@@ -85,7 +85,7 @@ internal class Program
             $"Profiling GSharp Chunk Benchmark for E={e}, ChunkSize={chunkSize} (Iterations: {iterations})...");
 
         // Output for AI schedule hints
-        var estimatedSeconds = 15 + (iterations * 2); // JIT comp (15s) + fast chunks (2s per iter)
+        var estimatedSeconds = 15 + (iterations * 2); // Module loading + fast chunks (2s per iter)
         Logger<Program>.Info($"Estimated max execution time: {estimatedSeconds} seconds.");
 
         var runner = new FermatAlgorithm(e);
@@ -194,11 +194,11 @@ public class FermatBenchmarks
     }
 
     [Benchmark]
-    public BigInteger GSharpAotPhase12()
+    public BigInteger GSharpKernelPhase12()
     {
         if (E >= 5000)
         {
-            return 0; // Skip to avoid NVRTC Timeout/TDR
+            return 0; // Skip to avoid GPU Timeout/TDR
         }
 
         var (resultArray, _) = GsharpRunner.RunFermatPrp();
@@ -221,11 +221,11 @@ public class FermatBenchmarks
     }
 
     [Benchmark]
-    public void GSharpAotChunk100()
+    public void GSharpKernelChunk100()
     {
         if (E >= 5000)
         {
-            return; // Skip to avoid NVRTC Timeout/TDR
+            return; // Skip to avoid GPU Timeout/TDR
         }
 
         GsharpRunner.RunBenchmarkChunk();

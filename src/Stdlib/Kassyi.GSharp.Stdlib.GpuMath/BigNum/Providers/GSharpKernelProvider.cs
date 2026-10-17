@@ -2,12 +2,12 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 
 /// <summary>
-/// Execution provider implementing arbitrary-precision BigInteger arithmetic via GSharp AOT/JIT transpiled GPU kernels.
+/// Execution provider implementing arbitrary-precision BigInteger arithmetic via pre-compiled GSharp GPU kernels.
 /// </summary>
 /// <remarks>
 /// <para>
 /// <b>[WHY]:</b> Acts as a unified facade for GSharp GPU arithmetic, delegating specialized operations to dedicated sub-handlers
-/// (<see cref="AotMemoryHandler"/>, <see cref="AotBasicMathHandler"/>, <see cref="AotAdvancedMathHandler"/>, <see cref="AotGraphHandler"/>)
+/// (<see cref="KernelMemoryHandler"/>, <see cref="KernelBasicMathHandler"/>, <see cref="KernelAdvancedMathHandler"/>, <see cref="KernelGraphHandler"/>)
 /// while automatically falling back to <see cref="CSharpCpuBigIntProvider"/> when running in CPU fallback or non-GPU testing modes.
 /// </para>
 /// <para>
@@ -17,19 +17,19 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
 /// <b>Thread Safety:</b> Thread-safe across concurrent stream executions and kernel dispatches.
 /// </para>
 /// </remarks>
-public sealed class GSharpAotProvider : IGpuExecutionProvider
+public sealed class GSharpKernelProvider : IGpuExecutionProvider
 {
     /// <summary>
-    /// Gets the singleton instance of the <see cref="GSharpAotProvider"/>.
+    /// Gets the singleton instance of the <see cref="GSharpKernelProvider"/>.
     /// </summary>
-    public static readonly GSharpAotProvider Instance = new();
+    public static readonly GSharpKernelProvider Instance = new();
 
-    private readonly AotMemoryHandler _memory = new();
-    private readonly AotBasicMathHandler _basicMath = new();
-    private readonly AotAdvancedMathHandler _advancedMath = new();
-    private readonly AotGraphHandler _graph = new();
+    private readonly KernelMemoryHandler _memory = new();
+    private readonly KernelBasicMathHandler _basicMath = new();
+    private readonly KernelAdvancedMathHandler _advancedMath = new();
+    private readonly KernelGraphHandler _graph = new();
 
-    internal AotAdvancedMathHandler AotAdvancedMath => _advancedMath;
+    internal KernelAdvancedMathHandler KernelAdvancedMath => _advancedMath;
 
     private IGpuMemoryProvider MemoryProvider =>
         GpuKernelLoader.IsCpuFallbackMode ? CSharpCpuBigIntProvider.Instance : _memory;

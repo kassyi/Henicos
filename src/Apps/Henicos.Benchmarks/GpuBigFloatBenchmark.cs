@@ -41,7 +41,7 @@ public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
     protected override void ExecuteBatchMultiply()
     {
         var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
-        var provider = GSharpAotFloatProvider.CreateGSharpKernel();
+        var provider = GSharpKernelFloatProvider.Instance;
         for (var i = 0; i < BatchSize; i++)
         {
             var leftOp = new GpuFloatOperand(_leftSigs[i].Handle, 1000);
@@ -53,7 +53,7 @@ public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
     protected override void ExecuteBatchDivide()
     {
         var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
-        var provider = GSharpAotFloatProvider.CreateGSharpKernel();
+        var provider = GSharpKernelFloatProvider.Instance;
         for (var i = 0; i < BatchSize; i++)
         {
             var leftOp = new GpuFloatOperand(_leftSigs[i].Handle, 1000);
@@ -65,7 +65,7 @@ public class GpuBigFloatBenchmark : GpuBigMathBenchmarkBase
     protected override void ExecuteBatchSqrt()
     {
         var execCtx = new GpuBigIntExecutionContext(Ctx, Ctx.MemoryManager, Stream);
-        var provider = GSharpAotFloatProvider.CreateGSharpKernel();
+        var provider = GSharpKernelFloatProvider.Instance;
         for (var i = 0; i < BatchSize; i++)
         {
             var leftOp = new GpuFloatOperand(_leftSigs[i].Handle, 1000);

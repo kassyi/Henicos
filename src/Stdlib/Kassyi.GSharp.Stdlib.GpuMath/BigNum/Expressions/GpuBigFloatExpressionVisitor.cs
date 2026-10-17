@@ -27,8 +27,8 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
         get;
     } = arithmetic ?? (workspace.Engine == GpuExecutionEngine.GSharpAot
         ? (workspace.Provider is NativeProvider
-            ? GSharpAotFloatProvider.CreateNativeCuda()
-            : GSharpAotFloatProvider.CreateGSharpKernel())
+            ? NativeFloatProvider.Instance
+            : GSharpKernelFloatProvider.Instance)
         : CSharpCpuBigFloatArithmetic.Instance);
 
 

@@ -38,9 +38,9 @@ internal static class ModPowNttHostController
         GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
 
         // 2. Square and Multiply MegaKernel (Zero-Sync GPU Offloading) - Chunked for TDR avoidance
-        if (workspace.Provider is GSharpAotProvider aot)
+        if (workspace.Provider is GSharpKernelProvider kernelProvider)
         {
-            aot.AotAdvancedMath.ExecuteModPowNttMegaKernel(
+            kernelProvider.KernelAdvancedMath.ExecuteModPowNttMegaKernel(
                 workspace,
                 baseVal, resultBuffer, mod, reciprocalOfB, exp,
                 n, targetBits,
@@ -48,7 +48,7 @@ internal static class ModPowNttHostController
         }
         else
         {
-            throw new NotSupportedException("ModPowNttMegaKernel is only supported on AotAdvancedMathHandler.");
+            throw new NotSupportedException("ModPowNttMegaKernel is only supported on KernelAdvancedMathHandler.");
         }
     }
 }

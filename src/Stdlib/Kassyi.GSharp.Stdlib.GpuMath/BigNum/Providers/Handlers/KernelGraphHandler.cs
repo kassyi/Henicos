@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 /// <b>[WHY]:</b> CUDA Graph capture eliminates CPU launch latency for repetitive arithmetic expressions and iterative solvers (e.g. Newton-Raphson, Chudnovsky).
 /// </para>
 /// </remarks>
-public sealed class AotGraphHandler : IGpuGraphProvider
+public sealed class KernelGraphHandler : IGpuGraphProvider
 {
     /// <inheritdoc/>
     public void BeginCapture(IntPtr stream)

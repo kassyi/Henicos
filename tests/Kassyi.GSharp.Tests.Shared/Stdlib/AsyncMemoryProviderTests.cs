@@ -98,7 +98,7 @@ public class AsyncMemoryProviderTests
     public void SynchronizeStreamAsync_NullStream_CompletesImmediately()
     {
         // Mirrors SynchronizeStream, which treats the null stream as "nothing to wait for".
-        var pending = new AotMemoryHandler().SynchronizeStreamAsync(IntPtr.Zero);
+        var pending = new KernelMemoryHandler().SynchronizeStreamAsync(IntPtr.Zero);
 
         Assert.True(pending.IsCompletedSuccessfully);
     }
@@ -108,7 +108,7 @@ public class AsyncMemoryProviderTests
     [Scenario(TestScenario.SadPath)]
     public void CopyDeviceToHostAsync_NumWordsExceedsDestination_Throws()
     {
-        IGpuMemoryProvider[] providers = [new AotMemoryHandler(), CSharpCpuBigIntProvider.Instance];
+        IGpuMemoryProvider[] providers = [new KernelMemoryHandler(), CSharpCpuBigIntProvider.Instance];
 
         foreach (var provider in providers)
         {
