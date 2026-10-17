@@ -196,7 +196,7 @@ public sealed class GSharpAotFloatProvider(bool useNativeCuda, IGpuBigFloatArith
 
         context.GpuWorkspace.Provider.ShiftLeft(context.GpuWorkspace, paddedLeft, shiftBits, shiftedLeft);
 
-        var quotWords = shiftedWords - rightOperand.NumWords + 1;
+        var quotWords = shiftedWords;
         using var quotientBuffer = context.GpuWorkspace.RentTemp(quotWords);
         using var remainderBuffer = context.GpuWorkspace.RentTemp(rightOperand.NumWords);
 

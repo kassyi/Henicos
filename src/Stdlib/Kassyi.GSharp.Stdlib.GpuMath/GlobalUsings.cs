@@ -19,3 +19,4 @@ global using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 global using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Expressions;
 global using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 global using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers;
+global using Kassyi.ZeroAlloc.Linq;

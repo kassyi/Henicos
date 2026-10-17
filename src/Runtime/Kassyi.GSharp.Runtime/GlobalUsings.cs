@@ -12,4 +12,5 @@ global using System.Threading;
 global using System.Threading.Tasks;
 global using Kassyi.GSharp.Core;
 global using Kassyi.GSharp.Cryptography;
+global using Kassyi.GSharp.Runtime.Aot;
 global using Kassyi.GSharp.Runtime.Interop;

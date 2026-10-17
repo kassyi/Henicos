@@ -272,7 +272,7 @@ internal static class NativeApiYamlReader
                 continue;
             }
 
-            if (!Microsoft.CodeAnalysis.CSharp.SyntaxFacts.IsValidIdentifier(value[start..i]))
+            if (!SyntaxFacts.IsValidIdentifier(value[start..i]))
             {
                 throw Schema(LineOf(mapping, "namespace"), $"'namespace' value '{value}' is not a valid C# namespace.");
             }
@@ -283,7 +283,7 @@ internal static class NativeApiYamlReader
 
     private static void ValidateIdentifier(YamlMapping mapping, string key, string value)
     {
-        if (!Microsoft.CodeAnalysis.CSharp.SyntaxFacts.IsValidIdentifier(value))
+        if (!SyntaxFacts.IsValidIdentifier(value))
         {
             throw Schema(LineOf(mapping, key), $"'{key}' value '{value}' is not a valid C# identifier.");
         }

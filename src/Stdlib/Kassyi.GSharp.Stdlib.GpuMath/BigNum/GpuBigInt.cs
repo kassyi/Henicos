@@ -162,4 +162,13 @@ public readonly struct GpuBigInt([TakesOwnership] GpuBigUInt value, bool isNegat
     /// <returns>A <see cref="GpuBigIntExpr"/> AST node capturing the division.</returns>
     public static GpuBigIntExpr operator /(GpuBigInt left, GpuBigInt right) =>
         left / (GpuBigIntExpr)right;
+
+    /// <summary>
+    /// Creates a deferred expression representing the remainder (modulo) of two signed big integers.
+    /// </summary>
+    /// <param name="left">The left signed operand (dividend).</param>
+    /// <param name="right">The right signed operand (divisor).</param>
+    /// <returns>A <see cref="GpuBigIntExpr"/> AST node capturing the modulo operation.</returns>
+    public static GpuBigIntExpr operator %(GpuBigInt left, GpuBigInt right) =>
+        left % (GpuBigIntExpr)right;
 }

@@ -38,6 +38,7 @@
 
 # 2. Reflection prohibition (Enforces YES AST & YES Static Determinism)
 N:System.Reflection;Direct reflection is strictly prohibited in the compiler (Violates YES AST / Static Determinism). Use Roslyn SemanticModel, ITypeSymbol, and IMethodSymbol instead.
+P:System.Type.Assembly;Reflection via Type.Assembly is strictly prohibited in the compiler (Violates YES AST / Static Determinism).
 M:System.Type.GetType(System.String);Dynamic type resolution via string is strictly prohibited. Use Compilation.GetTypeByMetadataName instead.
 
 # 3. Non-deterministic APIs prohibition (Enforces YES Static Determinism & Incremental Cache)

@@ -72,6 +72,15 @@ public readonly struct GpuBigUIntExpr
         => new(new DivExpression(left.Node, right.Node));
 
     /// <summary>
+    /// Constructs a lazy remainder (modulo) expression between two unsigned big integer expressions.
+    /// </summary>
+    /// <param name="left">The dividend unsigned expression operand.</param>
+    /// <param name="right">The divisor unsigned expression operand.</param>
+    /// <returns>A new <see cref="GpuBigUIntExpr"/> representing the modulo AST node.</returns>
+    public static GpuBigUIntExpr operator %(GpuBigUIntExpr left, GpuBigUIntExpr right)
+        => new(new ModExpression(left.Node, right.Node));
+
+    /// <summary>
     /// Constructs a lazy square root expression for the specified unsigned big integer expression.
     /// </summary>
     /// <param name="expr">The radicand unsigned expression operand.</param>

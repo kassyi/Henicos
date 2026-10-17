@@ -48,13 +48,19 @@ public class GpuBigUFloatTests : IDisposable
 
         var expr1 = a + b;
         var expr2 = a - b;
+        var expr3 = a * b;
+        var expr4 = a / b;
         
         // These rely on implicit operators and Evaluate!
         GpuBigUFloat result1 = expr1;
         GpuBigUFloat result2 = expr2;
+        GpuBigUFloat result3 = expr3;
+        GpuBigUFloat result4 = expr4;
         
         result1.Dispose();
         result2.Dispose();
+        result3.Dispose();
+        result4.Dispose();
     }
 
     [SkippableFact]

@@ -1,7 +1,4 @@
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using Kassyi.GSharp.Runtime.Aot;
-using Kassyi.GSharp.Runtime.Interop;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.Generators;
 

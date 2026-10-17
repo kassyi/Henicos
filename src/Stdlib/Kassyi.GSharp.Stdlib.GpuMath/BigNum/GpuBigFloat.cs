@@ -81,6 +81,14 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
     public static BinaryExpr<GpuBigFloat, MulOp> operator *(GpuBigFloat left, GpuBigFloat right) => new(left, right);
 
     /// <summary>
+    /// Creates a deferred expression representing the division of two floating-point values.
+    /// </summary>
+    /// <param name="left">The dividend operand.</param>
+    /// <param name="right">The divisor operand.</param>
+    /// <returns>A binary expression node representing the division.</returns>
+    public static BinaryExpr<GpuBigFloat, DivOp> operator /(GpuBigFloat left, GpuBigFloat right) => new(left, right);
+
+    /// <summary>
     /// Aligns the radix points (exponents) of this instance and another floating-point number, extracting IEEE 754 rounding bits.
     /// </summary>
     /// <param name="other">The other floating-point instance to align with.</param>
@@ -124,14 +132,28 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
     /// </summary>
     /// <param name="other">The value to add.</param>
     /// <returns>The sum of this instance and <paramref name="other"/>.</returns>
-    public GpuBigFloat Add(GpuBigFloat other) => throw new NotImplementedException();
+    public GpuBigFloat Add(GpuBigFloat other) => this + other;
 
     /// <summary>
     /// Subtracts another <see cref="GpuBigFloat"/> from this instance.
     /// </summary>
     /// <param name="other">The value to subtract.</param>
     /// <returns>The difference of this instance minus <paramref name="other"/>.</returns>
-    public GpuBigFloat Subtract(GpuBigFloat other) => throw new NotImplementedException();
+    public GpuBigFloat Subtract(GpuBigFloat other) => this - other;
+
+    /// <summary>
+    /// Multiplies this instance by another <see cref="GpuBigFloat"/>.
+    /// </summary>
+    /// <param name="other">The multiplier value.</param>
+    /// <returns>The product of this instance and <paramref name="other"/>.</returns>
+    public GpuBigFloat Multiply(GpuBigFloat other) => this * other;
+
+    /// <summary>
+    /// Divides this instance by another <see cref="GpuBigFloat"/>.
+    /// </summary>
+    /// <param name="other">The divisor value.</param>
+    /// <returns>The quotient of this instance divided by <paramref name="other"/>.</returns>
+    public GpuBigFloat Divide(GpuBigFloat other) => this / other;
 
     /// <summary>
     /// Compares this instance to another <see cref="GpuBigFloat"/> and returns an integer indicating their relative order.
@@ -143,14 +165,46 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
     /// Zero if this instance equals <paramref name="other"/>,
     /// Greater than zero if this instance is greater than <paramref name="other"/>.
     /// </returns>
-    public int CompareTo(GpuBigFloat other) => throw new NotImplementedException();
+    public int CompareTo(GpuBigFloat other)
+    {
+        var thisZero = UFloat.Significand.IsZero();
+        var otherZero = other.UFloat.Significand.IsZero();
+
+        if (thisZero && otherZero)
+        {
+            return 0;
+        }
+
+        if (thisZero)
+        {
+            return other.IsNegative ? 1 : -1;
+        }
+
+        if (otherZero)
+        {
+            return IsNegative ? -1 : 1;
+        }
+
+        if (IsNegative != other.IsNegative)
+        {
+            return IsNegative ? -1 : 1;
+        }
+
+        using GpuBigFloat diff = this - other;
+        if (diff.UFloat.Significand.IsZero())
+        {
+            return 0;
+        }
+
+        return diff.IsNegative ? -1 : 1;
+    }
 
     /// <summary>
     /// Indicates whether the current instance is equal to another <see cref="GpuBigFloat"/> instance.
     /// </summary>
     /// <param name="other">A <see cref="GpuBigFloat"/> to compare with this instance.</param>
     /// <returns><see langword="true"/> if the current instance is equal to the <paramref name="other"/> parameter; otherwise, <see langword="false"/>.</returns>
-    public bool Equals(GpuBigFloat other) => throw new NotImplementedException();
+    public bool Equals(GpuBigFloat other) => CompareTo(other) == 0;
 
     /// <summary>
     /// Determines whether the specified object is equal to the current instance.
@@ -225,6 +279,17 @@ public readonly struct GpuBigFloat : IEquatable<GpuBigFloat>, IComparable<GpuBig
     /// <param name="expr">The binary multiplication expression.</param>
     /// <returns>The evaluated <see cref="GpuBigFloat"/> result.</returns>
     public static implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, MulOp> expr)
+    {
+        var visitor = new GpuBigFloatExpressionVisitor(expr.Left.UFloat.Significand.Workspace);
+        return expr.Evaluate(ref visitor);
+    }
+
+    /// <summary>
+    /// Implicitly evaluates and converts a division expression to an evaluated <see cref="GpuBigFloat"/> instance.
+    /// </summary>
+    /// <param name="expr">The binary division expression.</param>
+    /// <returns>The evaluated <see cref="GpuBigFloat"/> result.</returns>
+    public static implicit operator GpuBigFloat(BinaryExpr<GpuBigFloat, DivOp> expr)
     {
         var visitor = new GpuBigFloatExpressionVisitor(expr.Left.UFloat.Significand.Workspace);
         return expr.Evaluate(ref visitor);

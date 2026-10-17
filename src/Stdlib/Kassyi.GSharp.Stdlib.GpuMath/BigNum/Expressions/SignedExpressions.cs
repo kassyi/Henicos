@@ -146,6 +146,16 @@ internal class SignedDivExpression(IGpuBigIntExpression left, IGpuBigIntExpressi
     }
 }
 
+internal class SignedModExpression(IGpuBigIntExpression left, IGpuBigIntExpression right)
+    : SignedBinaryExpression(left, right)
+{
+    protected override GpuBigInt Execute(GpuBigInt a, GpuBigInt b, GpuBigUInt resultBuffer)
+    {
+        GpuBigIntDivRem.Mod(a.Value, b.Value, resultBuffer);
+        return new GpuBigInt(resultBuffer, a.IsNegative && !resultBuffer.IsZero());
+    }
+}
+
 internal class SignedNegateExpression(IGpuBigIntExpression target) : IGpuBigIntExpression
 {
     private IGpuBigIntExpression Target { get; } = target ?? throw new ArgumentNullException(nameof(target));

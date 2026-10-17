@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Runtime.Aot;
 
 namespace Kassyi.GSharp.Runtime.Interop;
 

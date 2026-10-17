@@ -99,9 +99,43 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
         var resultSig = sigExpr.Node.Evaluate(Workspace);
 
         var resultExp = left.UFloat.Exponent + right.UFloat.Exponent;
-        var resultSign = left.IsNegative != right.IsNegative;
+        var resultSign = !resultSig.IsZero() && (left.IsNegative != right.IsNegative);
 
         return new GpuBigFloat(new GpuBigUFloat(resultSig, resultExp), resultSign);
+    }
+
+    /// <summary>
+    /// Evaluates the division of two signed arbitrary-precision floating-point numbers on the GPU.
+    /// </summary>
+    /// <param name="left">The left dividend operand.</param>
+    /// <param name="right">The right divisor operand.</param>
+    /// <returns>A new <see cref="GpuBigFloat"/> containing the quotient.</returns>
+    public GpuBigFloat VisitDiv(GpuBigFloat left, GpuBigFloat right)
+    {
+        var maxWords = Math.Max(left.UFloat.Significand.NumWords, right.UFloat.Significand.NumWords);
+        var resultSig = new GpuBigUInt(left.UFloat.Significand.Workspace, maxWords);
+
+        try
+        {
+            var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
+                new LegacyProviderArithmeticAdapter(), Workspace.Stream);
+            Arithmetic.Divide(ref execContext,
+                new GpuBigIntMemoryHandle(
+                    new GpuBigIntDeviceBuffer(left.UFloat.Significand.DevicePointer, left.UFloat.Significand.NumWords), 0,
+                    left.UFloat.Significand.NumWords), left.UFloat.Exponent, left.IsNegative,
+                new GpuBigIntMemoryHandle(
+                    new GpuBigIntDeviceBuffer(right.UFloat.Significand.DevicePointer, right.UFloat.Significand.NumWords), 0,
+                    right.UFloat.Significand.NumWords), right.UFloat.Exponent, right.IsNegative,
+                new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
+                    resultSig.NumWords), out var resultExp, out var resultSign);
+
+            return new GpuBigFloat(new GpuBigUFloat(resultSig, resultExp), resultSign);
+        }
+        catch
+        {
+            resultSig.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -150,6 +184,54 @@ public ref struct GpuBigFloatExpressionVisitor(GpuWorkspace workspace, IGpuBigFl
             new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
                 resultSig.NumWords), out var resultExp, out var _);
         return new GpuBigUFloat(resultSig, resultExp);
+    }
+
+    /// <summary>
+    /// Evaluates the multiplication of two unsigned arbitrary-precision floating-point numbers on the GPU.
+    /// </summary>
+    /// <param name="left">The left multiplicand operand.</param>
+    /// <param name="right">The right multiplier operand.</param>
+    /// <returns>A new <see cref="GpuBigUFloat"/> containing the product.</returns>
+    public GpuBigUFloat VisitMul(GpuBigUFloat left, GpuBigUFloat right)
+    {
+        var sigExpr = left.Significand * right.Significand;
+        var resultSig = sigExpr.Node.Evaluate(Workspace);
+        var resultExp = left.Exponent + right.Exponent;
+        return new GpuBigUFloat(resultSig, resultExp);
+    }
+
+    /// <summary>
+    /// Evaluates the division of two unsigned arbitrary-precision floating-point numbers on the GPU.
+    /// </summary>
+    /// <param name="left">The left dividend operand.</param>
+    /// <param name="right">The right divisor operand.</param>
+    /// <returns>A new <see cref="GpuBigUFloat"/> containing the quotient.</returns>
+    public GpuBigUFloat VisitDiv(GpuBigUFloat left, GpuBigUFloat right)
+    {
+        var maxWords = Math.Max(left.Significand.NumWords, right.Significand.NumWords);
+        var resultSig = new GpuBigUInt(left.Significand.Workspace, maxWords);
+
+        try
+        {
+            var execContext = new GpuBigIntExecutionContext(Workspace, Workspace.MemoryManager,
+                new LegacyProviderArithmeticAdapter(), Workspace.Stream);
+            Arithmetic.Divide(ref execContext,
+                new GpuBigIntMemoryHandle(
+                    new GpuBigIntDeviceBuffer(left.Significand.DevicePointer, left.Significand.NumWords),
+                    0, left.Significand.NumWords), left.Exponent, false,
+                new GpuBigIntMemoryHandle(
+                    new GpuBigIntDeviceBuffer(right.Significand.DevicePointer, right.Significand.NumWords), 0,
+                    right.Significand.NumWords), right.Exponent, false,
+                new GpuBigIntMemoryHandle(new GpuBigIntDeviceBuffer(resultSig.DevicePointer, resultSig.NumWords), 0,
+                    resultSig.NumWords), out var resultExp, out var _);
+
+            return new GpuBigUFloat(resultSig, resultExp);
+        }
+        catch
+        {
+            resultSig.Dispose();
+            throw;
+        }
     }
 
     /// <summary>

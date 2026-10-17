@@ -169,4 +169,27 @@ public class SignedExpressionsTests : IDisposable
         Assert.Equal((long)targetBits, resAbs);
         Assert.Equal(a < 0, gpuRes.IsNegative);
     }
+
+    [Theory]
+    [InlineData(10, 5)]
+    [InlineData(10, -5)]
+    [InlineData(-10, 5)]
+    [InlineData(-10, -5)]
+    [InlineData(20, 7)]
+    [InlineData(-20, 7)]
+    [InlineData(20, -7)]
+    [InlineData(-20, -7)]
+    [InlineData(3, 10)]
+    [InlineData(-3, 10)]
+    public void Modulo_Tests(long a, long b)
+    {
+        var gpuA = Create(_context, a, 1);
+        var gpuB = Create(_context, b, 1);
+
+        var expr = gpuA % gpuB;
+        using var gpuRes = expr.Evaluate(_context);
+
+        var res = ToBigInt(gpuRes);
+        Assert.Equal(new BigInteger(a % b), res);
+    }
 }
