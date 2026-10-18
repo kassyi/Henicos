@@ -64,13 +64,15 @@ public static partial class GpuBigIntVectorKernels
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
 
+        var leftSlice = ctx.Left.Slice;
+        var rightSlice = ctx.Right.Slice;
         ulong myVal = 0ul;
         for (int offset = 0; offset < ctx.CompareWords; offset += bDim)
         {
             int idx = offset + tid;
             bool valid = idx < ctx.CompareWords;
-            uint wa = valid ? GetVectorShiftedWord(ctx.A, ctx.BaseA, ctx.NumWordsA, idx, ctx.ShiftA) : 0u;
-            uint wb = valid ? GetVectorShiftedWord(ctx.B, ctx.BaseB, ctx.NumWordsB, idx, ctx.ShiftB) : 0u;
+            uint wa = valid ? GetVectorShiftedWord(leftSlice.Data, leftSlice.BaseOffset, leftSlice.NumWords, idx, ctx.Left.Shift) : 0u;
+            uint wb = valid ? GetVectorShiftedWord(rightSlice.Data, rightSlice.BaseOffset, rightSlice.NumWords, idx, ctx.Right.Shift) : 0u;
 
             if (valid && wa != wb)
             {
@@ -91,12 +93,13 @@ public static partial class GpuBigIntVectorKernels
     {
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
-        for (int offset = 0; offset < copyCtx.NumWords; offset += bDim)
+        var src = copyCtx.Source;
+        for (int offset = 0; offset < src.NumWords; offset += bDim)
         {
             int idx = offset + tid;
-            if (idx < copyCtx.NumWords)
+            if (idx < src.NumWords)
             {
-                copyCtx.Dest[copyCtx.DestOffset + idx] = copyCtx.Src[copyCtx.SrcOffset + idx];
+                copyCtx.Dest[copyCtx.DestOffset + idx] = src.Data[src.BaseOffset + idx];
             }
         }
     }
@@ -139,11 +142,14 @@ public static partial class GpuBigIntVectorKernels
             DeviceVectorAddAccumulateParallel(
                 new VectorAccumulateContext
                 {
-                    Src = ctx.A,
-                    SrcOffset = i * ctx.NumWords,
+                    Source = new BlockBitLengthContext
+                    {
+                        Data = ctx.A,
+                        BaseOffset = i * ctx.NumWords,
+                        NumWords = ctx.NumWords
+                    },
                     Dest = ctx.Result,
-                    DestOffset = resultOffset,
-                    NumWords = ctx.NumWords
+                    DestOffset = resultOffset
                 });
         }
     }
@@ -159,13 +165,14 @@ public static partial class GpuBigIntVectorKernels
 
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
         uint blockCarryIn = 0u;
+        var src = acc.Source;
 
-        for (int offset = 0; offset < acc.NumWords; offset += bDim)
+        for (int offset = 0; offset < src.NumWords; offset += bDim)
         {
             int idx = offset + tid;
-            bool valid = idx < acc.NumWords;
+            bool valid = idx < src.NumWords;
 
-            uint valA = valid ? acc.Src[acc.SrcOffset + idx] : 0u;
+            uint valA = valid ? src.Data[src.BaseOffset + idx] : 0u;
             uint valB = valid ? acc.Dest[acc.DestOffset + idx] : 0u;
 
             ulong sum = (ulong)valA + valB;
@@ -241,11 +248,14 @@ public static partial class GpuBigIntVectorKernels
             DeviceVectorCompareAccumulateParallel(
                 new VectorAccumulateContext
                 {
-                    Src = ctx.A,
-                    SrcOffset = i * ctx.NumWords,
+                    Source = new BlockBitLengthContext
+                    {
+                        Data = ctx.A,
+                        BaseOffset = i * ctx.NumWords,
+                        NumWords = ctx.NumWords
+                    },
                     Dest = ctx.Result,
                     DestOffset = resultOffset,
-                    NumWords = ctx.NumWords,
                     TargetCmpBits = targetCmpBits
                 });
         }
@@ -256,19 +266,27 @@ public static partial class GpuBigIntVectorKernels
     public static void DeviceVectorCompareAccumulateParallel(VectorAccumulateContext acc)
     {
         SharedMemory<ulong> warpMax = new SharedMemory<ulong>(32);
+        var src = acc.Source;
 
         uint cmpBits = CompareShiftedLimbsBlockParallel(
             new ShiftedLimbCompareContext
             {
-                A = acc.Src,
-                BaseA = acc.SrcOffset,
-                NumWordsA = acc.NumWords,
-                ShiftA = 0,
-                B = acc.Dest,
-                BaseB = acc.DestOffset,
-                NumWordsB = acc.NumWords,
-                ShiftB = 0,
-                CompareWords = acc.NumWords
+                Left = new ShiftedLimbSliceContext
+                {
+                    Slice = src,
+                    Shift = 0
+                },
+                Right = new ShiftedLimbSliceContext
+                {
+                    Slice = new BlockBitLengthContext
+                    {
+                        Data = acc.Dest,
+                        BaseOffset = acc.DestOffset,
+                        NumWords = src.NumWords
+                    },
+                    Shift = 0
+                },
+                CompareWords = src.NumWords
             },
             warpMax);
 
@@ -320,23 +338,8 @@ public static partial class GpuBigIntVectorKernels
     {
         SharedMemory<ulong> warpMax = new SharedMemory<ulong>(32);
 
-        uint bitLenA = ComputeBlockBitLength(
-            new BlockBitLengthContext
-            {
-                Data = cmp.A,
-                BaseOffset = cmp.BaseA,
-                NumWords = cmp.NumWordsA
-            },
-            warpMax);
-
-        uint bitLenB = ComputeBlockBitLength(
-            new BlockBitLengthContext
-            {
-                Data = cmp.B,
-                BaseOffset = cmp.BaseB,
-                NumWords = cmp.NumWordsB
-            },
-            warpMax);
+        uint bitLenA = ComputeBlockBitLength(cmp.Left.Slice, warpMax);
+        uint bitLenB = ComputeBlockBitLength(cmp.Right.Slice, warpMax);
 
         if (bitLenA == 0u && bitLenB == 0u)
         {
@@ -345,21 +348,21 @@ public static partial class GpuBigIntVectorKernels
 
         if (bitLenA == 0u)
         {
-            return cmp.SignB != 0u ? 2u : 1u;
+            return cmp.Right.Sign != 0u ? 2u : 1u;
         }
 
         if (bitLenB == 0u)
         {
-            return cmp.SignA != 0u ? 1u : 2u;
+            return cmp.Left.Sign != 0u ? 1u : 2u;
         }
 
-        if (cmp.SignA != cmp.SignB)
+        if (cmp.Left.Sign != cmp.Right.Sign)
         {
-            return cmp.SignA != 0u ? 1u : 2u;
+            return cmp.Left.Sign != 0u ? 1u : 2u;
         }
 
-        long scaleA = cmp.ExpA + bitLenA;
-        long scaleB = cmp.ExpB + bitLenB;
+        long scaleA = cmp.Left.Exp + bitLenA;
+        long scaleB = cmp.Right.Exp + bitLenB;
         uint magCmp;
 
         if (scaleA != scaleB)
@@ -372,14 +375,16 @@ public static partial class GpuBigIntVectorKernels
             magCmp = CompareShiftedLimbsBlockParallel(
                 new ShiftedLimbCompareContext
                 {
-                    A = cmp.A,
-                    BaseA = cmp.BaseA,
-                    NumWordsA = cmp.NumWordsA,
-                    ShiftA = maxBits - (int)bitLenA,
-                    B = cmp.B,
-                    BaseB = cmp.BaseB,
-                    NumWordsB = cmp.NumWordsB,
-                    ShiftB = maxBits - (int)bitLenB,
+                    Left = new ShiftedLimbSliceContext
+                    {
+                        Slice = cmp.Left.Slice,
+                        Shift = maxBits - (int)bitLenA
+                    },
+                    Right = new ShiftedLimbSliceContext
+                    {
+                        Slice = cmp.Right.Slice,
+                        Shift = maxBits - (int)bitLenB
+                    },
                     CompareWords = (maxBits + 31) / 32
                 },
                 warpMax);
@@ -390,7 +395,7 @@ public static partial class GpuBigIntVectorKernels
             return 0u;
         }
 
-        return cmp.SignA != 0u ? (3u - magCmp) : magCmp;
+        return cmp.Left.Sign != 0u ? (3u - magCmp) : magCmp;
     }
 
     [GpuDeviceFunction]
@@ -418,16 +423,28 @@ public static partial class GpuBigIntVectorKernels
         uint cmpRes = DeviceVectorFloatCompareElement(
             new ElementCompareContext
             {
-                A = ctx.A,
-                BaseA = batchIdx * ctx.NumWordsA,
-                NumWordsA = ctx.NumWordsA,
-                ExpA = (int)ctx.ExpA[batchIdx],
-                SignA = ctx.SignA[batchIdx],
-                B = ctx.B,
-                BaseB = (ctx.IsScalar ? 0 : batchIdx) * ctx.NumWordsB,
-                NumWordsB = ctx.NumWordsB,
-                ExpB = ctx.IsScalar ? ctx.ScalarExp : (int)ctx.ExpB[batchIdx],
-                SignB = ctx.IsScalar ? ctx.ScalarSign : ctx.SignB[batchIdx]
+                Left = new FloatElementSliceContext
+                {
+                    Slice = new BlockBitLengthContext
+                    {
+                        Data = ctx.Left.Limbs,
+                        BaseOffset = batchIdx * ctx.Left.NumWords,
+                        NumWords = ctx.Left.NumWords
+                    },
+                    Exp = (int)ctx.Left.Exponents[batchIdx],
+                    Sign = ctx.Left.Signs[batchIdx]
+                },
+                Right = new FloatElementSliceContext
+                {
+                    Slice = new BlockBitLengthContext
+                    {
+                        Data = ctx.Right.Limbs,
+                        BaseOffset = (ctx.IsScalar ? 0 : batchIdx) * ctx.Right.NumWords,
+                        NumWords = ctx.Right.NumWords
+                    },
+                    Exp = ctx.IsScalar ? ctx.ScalarExp : (int)ctx.Right.Exponents[batchIdx],
+                    Sign = ctx.IsScalar ? ctx.ScalarSign : ctx.Right.Signs[batchIdx]
+                }
             });
 
         if (tid == 0)
@@ -443,7 +460,8 @@ public static partial class GpuBigIntVectorKernels
         int tid = ThreadIndex.X;
         int bDim = BlockDimension.X;
         int bIdx = BlockIndex.X;
-        int resultOffset = bIdx * ctx.NumWords;
+        int numWords = ctx.Input.NumWords;
+        int resultOffset = bIdx * numWords;
         int startIndex = bIdx * ctx.ChunkSize;
         int endIndex = startIndex + ctx.ChunkSize;
         if (endIndex > ctx.BatchSize)
@@ -452,20 +470,20 @@ public static partial class GpuBigIntVectorKernels
         }
 
         bool hasElements = startIndex < ctx.BatchSize;
-        int firstElemOffset = startIndex * ctx.NumWords;
-        for (int offset = 0; offset < ctx.NumWords; offset += bDim)
+        int firstElemOffset = startIndex * numWords;
+        for (int offset = 0; offset < numWords; offset += bDim)
         {
             int idx = offset + tid;
-            if (idx < ctx.NumWords)
+            if (idx < numWords)
             {
-                ctx.Result[resultOffset + idx] = hasElements ? ctx.A[firstElemOffset + idx] : 0u;
+                ctx.Output.Limbs[resultOffset + idx] = hasElements ? ctx.Input.Limbs[firstElemOffset + idx] : 0u;
             }
         }
 
         if (tid == 0)
         {
-            ctx.ExpResult[bIdx] = hasElements ? ctx.ExpA[startIndex] : 0u;
-            ctx.SignResult[bIdx] = hasElements ? ctx.SignA[startIndex] : 0u;
+            ctx.Output.Exponents[bIdx] = hasElements ? ctx.Input.Exponents[startIndex] : 0u;
+            ctx.Output.Signs[bIdx] = hasElements ? ctx.Input.Signs[startIndex] : 0u;
         }
 
         Gpu.SyncThreads();
@@ -490,29 +508,43 @@ public static partial class GpuBigIntVectorKernels
     {
         int tid = ThreadIndex.X;
         int bIdx = BlockIndex.X;
-        int resultOffset = bIdx * ctx.NumWords;
+        int numWords = ctx.Input.NumWords;
+        int resultOffset = bIdx * numWords;
         int startIndex = bIdx * ctx.ChunkSize;
         int endIndex = InitFloatReductionChunkElement(ctx);
 
         for (int i = startIndex + 1; i < endIndex; i++)
         {
-            int srcOffset = i * ctx.NumWords;
-            int srcExp = (int)ctx.ExpA[i];
-            uint srcSign = ctx.SignA[i];
+            int srcOffset = i * numWords;
+            int srcExp = (int)ctx.Input.Exponents[i];
+            uint srcSign = ctx.Input.Signs[i];
+            var srcSlice = new BlockBitLengthContext
+            {
+                Data = ctx.Input.Limbs,
+                BaseOffset = srcOffset,
+                NumWords = numWords
+            };
 
             uint cmpRes = DeviceVectorFloatCompareElement(
                 new ElementCompareContext
                 {
-                    A = ctx.A,
-                    BaseA = srcOffset,
-                    NumWordsA = ctx.NumWords,
-                    ExpA = srcExp,
-                    SignA = srcSign,
-                    B = ctx.Result,
-                    BaseB = resultOffset,
-                    NumWordsB = ctx.NumWords,
-                    ExpB = (int)ctx.ExpResult[bIdx],
-                    SignB = ctx.SignResult[bIdx]
+                    Left = new FloatElementSliceContext
+                    {
+                        Slice = srcSlice,
+                        Exp = srcExp,
+                        Sign = srcSign
+                    },
+                    Right = new FloatElementSliceContext
+                    {
+                        Slice = new BlockBitLengthContext
+                        {
+                            Data = ctx.Output.Limbs,
+                            BaseOffset = resultOffset,
+                            NumWords = numWords
+                        },
+                        Exp = (int)ctx.Output.Exponents[bIdx],
+                        Sign = ctx.Output.Signs[bIdx]
+                    }
                 });
 
             if (cmpRes == targetCmpBits)
@@ -520,17 +552,15 @@ public static partial class GpuBigIntVectorKernels
                 CopyElementWordsBlockParallel(
                     new VectorAccumulateContext
                     {
-                        Src = ctx.A,
-                        SrcOffset = srcOffset,
-                        Dest = ctx.Result,
-                        DestOffset = resultOffset,
-                        NumWords = ctx.NumWords
+                        Source = srcSlice,
+                        Dest = ctx.Output.Limbs,
+                        DestOffset = resultOffset
                     });
 
                 if (tid == 0)
                 {
-                    ctx.ExpResult[bIdx] = (uint)srcExp;
-                    ctx.SignResult[bIdx] = srcSign;
+                    ctx.Output.Exponents[bIdx] = (uint)srcExp;
+                    ctx.Output.Signs[bIdx] = srcSign;
                 }
             }
 
@@ -689,6 +719,8 @@ public static partial class GpuBigIntVectorKernels
         SharedMemory<ulong> sharedMax = new SharedMemory<ulong>(32);
         SharedMemory<uint> needsNegate = new SharedMemory<uint>(1);
 
+        var srcSlice = step.Source.Slice;
+        int numWords = srcSlice.NumWords;
         int eA = (int)step.ExpResult[step.BlockIdx];
         uint signA = step.SignResult[step.BlockIdx];
 
@@ -697,18 +729,11 @@ public static partial class GpuBigIntVectorKernels
             {
                 Data = step.Dest,
                 BaseOffset = step.DestOffset,
-                NumWords = step.NumWords
+                NumWords = numWords
             },
             sharedMax);
 
-        uint bitLenB = ComputeBlockBitLength(
-            new BlockBitLengthContext
-            {
-                Data = step.Src,
-                BaseOffset = step.SrcOffset,
-                NumWords = step.NumWords
-            },
-            sharedMax);
+        uint bitLenB = ComputeBlockBitLength(srcSlice, sharedMax);
 
         if (bitLenB == 0u)
         {
@@ -720,17 +745,15 @@ public static partial class GpuBigIntVectorKernels
             CopyElementWordsBlockParallel(
                 new VectorAccumulateContext
                 {
-                    Src = step.Src,
-                    SrcOffset = step.SrcOffset,
+                    Source = srcSlice,
                     Dest = step.Dest,
-                    DestOffset = step.DestOffset,
-                    NumWords = step.NumWords
+                    DestOffset = step.DestOffset
                 });
 
             if (tid == 0)
             {
-                step.ExpResult[step.BlockIdx] = (uint)step.SrcExp;
-                step.SignResult[step.BlockIdx] = step.SrcSign;
+                step.ExpResult[step.BlockIdx] = (uint)step.Source.Exp;
+                step.SignResult[step.BlockIdx] = step.Source.Sign;
             }
 
             Gpu.SyncThreads();
@@ -740,10 +763,10 @@ public static partial class GpuBigIntVectorKernels
         var align = new FloatAlignmentInput
         {
             ExpA = eA,
-            ExpB = step.SrcExp,
+            ExpB = step.Source.Exp,
             BitLenA = bitLenA,
             BitLenB = bitLenB,
-            NumWords = step.NumWords
+            NumWords = numWords
         };
         ComputeFloatAlignmentOffsets(ref align);
 
@@ -752,19 +775,19 @@ public static partial class GpuBigIntVectorKernels
             {
                 Buffer = step.Dest,
                 BaseOffset = step.DestOffset,
-                NumWords = step.NumWords,
+                NumWords = numWords,
                 BitOffset = align.BitOffsetA
             });
 
-        bool differentSigns = signA != step.SrcSign;
+        bool differentSigns = signA != step.Source.Sign;
         uint blockCarryIn = differentSigns ? 1u : 0u;
 
-        for (int offset = 0; offset < step.NumWords; offset += bDim)
+        for (int offset = 0; offset < numWords; offset += bDim)
         {
             int idx = offset + tid;
-            bool valid = idx < step.NumWords;
+            bool valid = idx < numWords;
             uint valA = valid ? step.Dest[step.DestOffset + idx] : 0u;
-            uint valB = valid ? GetVectorShiftedWord(step.Src, step.SrcOffset, step.NumWords, idx, align.BitOffsetB) : 0u;
+            uint valB = valid ? GetVectorShiftedWord(srcSlice.Data, srcSlice.BaseOffset, numWords, idx, align.BitOffsetB) : 0u;
 
             if (differentSigns)
             {
@@ -794,9 +817,9 @@ public static partial class GpuBigIntVectorKernels
             }
             else
             {
-                uint topWord = step.Dest[step.DestOffset + step.NumWords - 1];
+                uint topWord = step.Dest[step.DestOffset + numWords - 1];
                 bool isNegTc = (topWord & 0x80000000u) != 0u;
-                step.SignResult[step.BlockIdx] = isNegTc ? step.SrcSign : signA;
+                step.SignResult[step.BlockIdx] = isNegTc ? step.Source.Sign : signA;
                 needsNegate[0] = isNegTc ? 1u : 0u;
             }
         }
@@ -810,7 +833,7 @@ public static partial class GpuBigIntVectorKernels
                 {
                     Buffer = step.Dest,
                     BaseOffset = step.DestOffset,
-                    NumWords = step.NumWords,
+                    NumWords = numWords,
                     BitOffset = 0
                 });
         }
@@ -827,7 +850,8 @@ public static partial class GpuBigIntVectorKernels
     public static void DeviceVectorFloatSumReductionChunk(VectorFloatReductionChunkContext ctx)
     {
         int bIdx = BlockIndex.X;
-        int resultOffset = bIdx * ctx.NumWords;
+        int numWords = ctx.Input.NumWords;
+        int resultOffset = bIdx * numWords;
         int startIndex = bIdx * ctx.ChunkSize;
         int endIndex = InitFloatReductionChunkElement(ctx);
 
@@ -836,16 +860,22 @@ public static partial class GpuBigIntVectorKernels
             AccumulateFloatElementBlockParallel(
                 new FloatAccumulateStepContext
                 {
-                    Src = ctx.A,
-                    SrcOffset = i * ctx.NumWords,
-                    SrcExp = (int)ctx.ExpA[i],
-                    SrcSign = ctx.SignA[i],
-                    Dest = ctx.Result,
+                    Source = new FloatElementSliceContext
+                    {
+                        Slice = new BlockBitLengthContext
+                        {
+                            Data = ctx.Input.Limbs,
+                            BaseOffset = i * numWords,
+                            NumWords = numWords
+                        },
+                        Exp = (int)ctx.Input.Exponents[i],
+                        Sign = ctx.Input.Signs[i]
+                    },
+                    Dest = ctx.Output.Limbs,
                     DestOffset = resultOffset,
-                    ExpResult = ctx.ExpResult,
-                    SignResult = ctx.SignResult,
-                    BlockIdx = bIdx,
-                    NumWords = ctx.NumWords
+                    ExpResult = ctx.Output.Exponents,
+                    SignResult = ctx.Output.Signs,
+                    BlockIdx = bIdx
                 });
         }
     }

@@ -30,15 +30,21 @@ internal sealed class FloatVectorCompareScalarExpression(
 
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatCompare
         {
-            A = vecResult.Significands.DevicePointer,
-            B = scalarSig.DevicePointer,
+            Left = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
+            {
+                Limbs = vecResult.Significands.DevicePointer,
+                Exponents = vecResult.Exponents.DevicePointer,
+                Signs = vecResult.Signs.DevicePointer,
+                NumWords = vecResult.WordsPerElement
+            },
+            Right = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
+            {
+                Limbs = scalarSig.DevicePointer,
+                Exponents = vecResult.Exponents.DevicePointer,
+                Signs = vecResult.Signs.DevicePointer,
+                NumWords = scalarSig.NumWords
+            },
             Result = _finalValues.DevicePointer,
-            ExpA = vecResult.Exponents.DevicePointer,
-            ExpB = vecResult.Exponents.DevicePointer,
-            SignA = vecResult.Signs.DevicePointer,
-            SignB = vecResult.Signs.DevicePointer,
-            NumWordsA = vecResult.WordsPerElement,
-            NumWordsB = scalarSig.NumWords,
             ScalarExp = scalar.Exponent,
             ScalarSign = scalar.IsNegative ? 1u : 0u,
             IsScalar = true,
@@ -99,15 +105,21 @@ internal sealed class FloatVectorCompareVectorExpression(
 
         var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatCompare
         {
-            A = leftResult.Significands.DevicePointer,
-            B = rightResult.Significands.DevicePointer,
+            Left = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
+            {
+                Limbs = leftResult.Significands.DevicePointer,
+                Exponents = leftResult.Exponents.DevicePointer,
+                Signs = leftResult.Signs.DevicePointer,
+                NumWords = leftResult.WordsPerElement
+            },
+            Right = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
+            {
+                Limbs = rightResult.Significands.DevicePointer,
+                Exponents = rightResult.Exponents.DevicePointer,
+                Signs = rightResult.Signs.DevicePointer,
+                NumWords = rightResult.WordsPerElement
+            },
             Result = _finalValues.DevicePointer,
-            ExpA = leftResult.Exponents.DevicePointer,
-            ExpB = rightResult.Exponents.DevicePointer,
-            SignA = leftResult.Signs.DevicePointer,
-            SignB = rightResult.Signs.DevicePointer,
-            NumWordsA = leftResult.WordsPerElement,
-            NumWordsB = rightResult.WordsPerElement,
             ScalarExp = 0,
             ScalarSign = 0u,
             IsScalar = false,

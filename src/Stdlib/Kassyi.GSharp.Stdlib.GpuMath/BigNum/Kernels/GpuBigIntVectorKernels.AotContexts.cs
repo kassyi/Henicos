@@ -42,6 +42,76 @@ public static partial class GpuBigIntVectorKernels
                 bool isScalar);
         }
 
+        public struct VectorBinaryOperation
+        {
+            public void Initialize(
+                IntPtr a,
+                IntPtr b,
+                IntPtr result,
+                IntPtr signA,
+                IntPtr signB,
+                IntPtr signResult,
+                int numWordsA,
+                int numWordsB,
+                int numWordsResult,
+                uint scalarSign,
+                bool isScalar)
+            {
+                Left = new SignedVectorOperandReadOnly
+                {
+                    Limbs = a,
+                    Signs = signA,
+                    NumWords = numWordsA
+                };
+                Right = new SignedVectorOperandReadOnly
+                {
+                    Limbs = b,
+                    Signs = signB,
+                    NumWords = numWordsB
+                };
+                Result = new SignedVectorOutput
+                {
+                    Limbs = result,
+                    Signs = signResult,
+                    NumWords = numWordsResult
+                };
+                ScalarSign = scalarSign;
+                IsScalar = isScalar;
+            }
+        }
+
+        public partial struct VectorFloatBinaryOperation
+        {
+            public void Initialize(
+                IntPtr a,
+                IntPtr b,
+                IntPtr result,
+                IntPtr expA,
+                IntPtr expB,
+                IntPtr expResult,
+                IntPtr signA,
+                IntPtr signB,
+                IntPtr signResult,
+                int numWordsA,
+                int numWordsB,
+                int numWordsResult,
+                int scalarExp,
+                uint scalarSign,
+                bool isScalar)
+            {
+                Core.Initialize(
+                    a, b, result, signA, signB, signResult,
+                    numWordsA, numWordsB, numWordsResult, scalarSign, isScalar);
+                Exponents = new FloatVectorExponents
+                {
+                    ExpA = expA,
+                    ExpB = expB,
+                    ExpResult = expResult,
+                    ScalarExp = scalarExp
+                };
+            }
+        }
+
         public partial struct VectorAddSub : IVectorBinaryAotContext
         {
             public void InitializeBinary(
@@ -57,17 +127,9 @@ public static partial class GpuBigIntVectorKernels
                 uint scalarSign,
                 bool isScalar)
             {
-                A = a;
-                B = b;
-                Result = result;
-                SignA = signA;
-                SignB = signB;
-                SignResult = signResult;
-                NumWordsA = numWordsA;
-                NumWordsB = numWordsB;
-                NumWordsResult = numWordsResult;
-                ScalarSign = scalarSign;
-                IsScalar = isScalar;
+                Op.Initialize(
+                    a, b, result, signA, signB, signResult,
+                    numWordsA, numWordsB, numWordsResult, scalarSign, isScalar);
                 BitOffsetA = 0;
                 BitOffsetB = 0;
             }
@@ -86,20 +148,10 @@ public static partial class GpuBigIntVectorKernels
                 int numWordsB,
                 int numWordsResult,
                 uint scalarSign,
-                bool isScalar)
-            {
-                A = a;
-                B = b;
-                Result = result;
-                SignA = signA;
-                SignB = signB;
-                SignResult = signResult;
-                NumWordsA = numWordsA;
-                NumWordsB = numWordsB;
-                NumWordsResult = numWordsResult;
-                ScalarSign = scalarSign;
-                IsScalar = isScalar;
-            }
+                bool isScalar) =>
+                Op.Initialize(
+                    a, b, result, signA, signB, signResult,
+                    numWordsA, numWordsB, numWordsResult, scalarSign, isScalar);
         }
 
         public partial struct VectorDivMod : IVectorBinaryAotContext
@@ -117,17 +169,9 @@ public static partial class GpuBigIntVectorKernels
                 uint scalarSign,
                 bool isScalar)
             {
-                A = a;
-                B = b;
-                Result = result;
-                SignA = signA;
-                SignB = signB;
-                SignResult = signResult;
-                NumWordsA = numWordsA;
-                NumWordsB = numWordsB;
-                NumWordsResult = numWordsResult;
-                ScalarSign = scalarSign;
-                IsScalar = isScalar;
+                Op.Initialize(
+                    a, b, result, signA, signB, signResult,
+                    numWordsA, numWordsB, numWordsResult, scalarSign, isScalar);
                 PreShiftBits = 0;
             }
         }
@@ -164,24 +208,10 @@ public static partial class GpuBigIntVectorKernels
                 int numWordsResult,
                 int scalarExp,
                 uint scalarSign,
-                bool isScalar)
-            {
-                A = a;
-                B = b;
-                Result = result;
-                ExpA = expA;
-                ExpB = expB;
-                ExpResult = expResult;
-                SignA = signA;
-                SignB = signB;
-                SignResult = signResult;
-                NumWordsA = numWordsA;
-                NumWordsB = numWordsB;
-                NumWordsResult = numWordsResult;
-                ScalarExp = scalarExp;
-                ScalarSign = scalarSign;
-                IsScalar = isScalar;
-            }
+                bool isScalar) =>
+                FloatOp.Initialize(
+                    a, b, result, expA, expB, expResult, signA, signB, signResult,
+                    numWordsA, numWordsB, numWordsResult, scalarExp, scalarSign, isScalar);
         }
 
         public partial struct VectorFloatMul : IVectorFloatBinaryAotContext
@@ -216,24 +246,10 @@ public static partial class GpuBigIntVectorKernels
                 int numWordsResult,
                 int scalarExp,
                 uint scalarSign,
-                bool isScalar)
-            {
-                A = a;
-                B = b;
-                Result = result;
-                ExpA = expA;
-                ExpB = expB;
-                ExpResult = expResult;
-                SignA = signA;
-                SignB = signB;
-                SignResult = signResult;
-                NumWordsA = numWordsA;
-                NumWordsB = numWordsB;
-                NumWordsResult = numWordsResult;
-                ScalarExp = scalarExp;
-                ScalarSign = scalarSign;
-                IsScalar = isScalar;
-            }
+                bool isScalar) =>
+                FloatOp.Initialize(
+                    a, b, result, expA, expB, expResult, signA, signB, signResult,
+                    numWordsA, numWordsB, numWordsResult, scalarExp, scalarSign, isScalar);
         }
 
         public partial struct VectorFloatDiv : IVectorFloatBinaryAotContext
@@ -268,24 +284,10 @@ public static partial class GpuBigIntVectorKernels
                 int numWordsResult,
                 int scalarExp,
                 uint scalarSign,
-                bool isScalar)
-            {
-                A = a;
-                B = b;
-                Result = result;
-                ExpA = expA;
-                ExpB = expB;
-                ExpResult = expResult;
-                SignA = signA;
-                SignB = signB;
-                SignResult = signResult;
-                NumWordsA = numWordsA;
-                NumWordsB = numWordsB;
-                NumWordsResult = numWordsResult;
-                ScalarExp = scalarExp;
-                ScalarSign = scalarSign;
-                IsScalar = isScalar;
-            }
+                bool isScalar) =>
+                FloatOp.Initialize(
+                    a, b, result, expA, expB, expResult, signA, signB, signResult,
+                    numWordsA, numWordsB, numWordsResult, scalarExp, scalarSign, isScalar);
         }
     }
 }
