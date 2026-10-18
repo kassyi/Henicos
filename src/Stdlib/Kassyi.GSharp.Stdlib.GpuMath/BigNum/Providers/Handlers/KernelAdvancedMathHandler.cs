@@ -204,7 +204,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         using var nextXShifted = new GpuBigUInt(workspace, 4 * n + 3 * marginWords);
 
         var maxOutWords = 4 * n + 3 * marginWords;
-        var requiredLen = maxOutWords * 2;
+        var requiredLen = maxOutWords;
 
         using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, maxOutWords, this);
         using var carryBuffer = workspace.RentTemp(2); // long array for carry
@@ -219,9 +219,16 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             gridDim = maxResidentBlocks;
         }
 
-        var currentL = m <= 512 ? m : (m / 32);
-        var sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
-        uint sharedMemBytesTranspose = 4224; // 33 * 32 * 4
+        var n2 = 1;
+        while (n2 * n2 < m)
+        {
+            n2 *= 2;
+        }
+
+        var n1 = m / n2;
+        var maxL = m <= 512 ? m : Math.Max(n1, n2);
+        var sharedMemBytesNtt = (uint)((maxL + (maxL >> 5)) * 4 + 256);
+        uint sharedMemBytesTranspose = 4224 + 256; // 33 * 32 * 4 + static shared memory
         var sharedMemBytes = Math.Max(sharedMemBytesNtt, sharedMemBytesTranspose);
 
         var ctx = BuildSqrtContext(targetOperand, resultBuffer, constant3, n, marginWords, actualBits, marginBits,
@@ -318,7 +325,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         nextIter.Clear();
 
         var maxOutWords = n + 2 * resultWords;
-        var requiredLen = maxOutWords * 2;
+        var requiredLen = maxOutWords;
 
         using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, maxOutWords, this);
         using var carryBuffer = workspace.RentTemp(2);
@@ -333,9 +340,16 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
             gridDim = maxResidentBlocks;
         }
 
-        var currentL = m <= 512 ? m : (m / 32);
-        var sharedMemBytesNtt = (uint)((currentL + (currentL >> 5)) * 4);
-        const uint SharedMemBytesTranspose = 4224; // 33 * 32 * 4
+        var n2 = 1;
+        while (n2 * n2 < m)
+        {
+            n2 *= 2;
+        }
+
+        var n1 = m / n2;
+        var maxL = m <= 512 ? m : Math.Max(n1, n2);
+        var sharedMemBytesNtt = (uint)((maxL + (maxL >> 5)) * 4 + 256);
+        const uint SharedMemBytesTranspose = 4224 + 256; // 33 * 32 * 4 + static shared memory
         var sharedMemBytes = Math.Max(sharedMemBytesNtt, SharedMemBytesTranspose);
 
         var ctx = BuildReciprocalContext(targetOperand, resultBuffer, constant, n, marginWords, targetBits,
@@ -646,9 +660,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         int n, int targetBits, uint gridDim, uint blockDim)
     {
         var aActualWords = 2 * n;
-        var marginBits = 512;
-        var targetBitsForBarrett = aActualWords * 32 + marginBits;
-        var targetWords = (targetBitsForBarrett + 31) / 32;
+        var targetWords = (targetBits + 31) / 32;
 
         var outWords = aActualWords + targetWords;
         var requiredLen = outWords;
@@ -725,7 +737,11 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
         int totalWords = exponent.NumWords;
         int chunkWords = 8;
-        var sharedMemBytes = (uint)((m + (m >> 5)) * 4);
+        var n1 = m / n2;
+        var maxL = m <= 512 ? m : Math.Max(n1, n2);
+        var sharedMemBytesNtt = (uint)((maxL + (maxL >> 5)) * 4 + 256);
+        const uint SharedMemBytesTranspose = 4224 + 256;
+        var sharedMemBytes = Math.Max(sharedMemBytesNtt, SharedMemBytesTranspose);
 
         for (int start = 0; start < totalWords; start += chunkWords)
         {

@@ -18,8 +18,13 @@ public static partial class GpuBigIntSqrtKernels
     {
         var m = ctx.Ntt.TransformLength;
         // Basic parameters for NTT
-        int n1 = 32;
-        var n2 = m / 32;
+        int n2 = 1;
+        while (n2 * n2 < m)
+        {
+            n2 *= 2;
+        }
+
+        int n1 = m / n2;
         if (m <= 512)
         {
             n1 = m;

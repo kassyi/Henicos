@@ -15,8 +15,13 @@ public static partial class GpuBigIntDivRemKernels
         int numWordsA, int numWordsB, int numWordsResult)
     {
         var m = ctx.Ntt.TransformLength;
-        int n1 = 32;
-        int n2 = m / 32;
+        int n2 = 1;
+        while (n2 * n2 < m)
+        {
+            n2 *= 2;
+        }
+
+        int n1 = m / n2;
         if (m <= 512)
         {
             n1 = m;
