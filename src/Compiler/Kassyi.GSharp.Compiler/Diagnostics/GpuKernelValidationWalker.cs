@@ -34,6 +34,46 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
     private static readonly ImmutableArray<ISyntaxValidationRule<ParameterSyntax>> s_parameterRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<ParameterSyntax>>().ToImmutableArray();
 
+    private static readonly ImmutableArray<ISyntaxValidationRule<MethodDeclarationSyntax>> s_methodRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<MethodDeclarationSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<LocalFunctionStatementSyntax>> s_localFunctionRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<LocalFunctionStatementSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<SingleVariableDesignationSyntax>> s_designationRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<SingleVariableDesignationSyntax>>()
+            .ToImmutableArray();
+
+    public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
+    {
+        foreach (var rule in s_methodRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitMethodDeclaration(node);
+    }
+
+    public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
+    {
+        foreach (var rule in s_localFunctionRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitLocalFunctionStatement(node);
+    }
+
+    public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
+    {
+        foreach (var rule in s_designationRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitSingleVariableDesignation(node);
+    }
+
     public override void VisitForEachStatement(ForEachStatementSyntax node)
     {
         foreach (var rule in s_forEachRules)
