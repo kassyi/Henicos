@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Extensions;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 /// <summary>Diagnostic rule that disallows foreach loops in GPU kernels to avoid enumerator allocations.</summary>
@@ -12,28 +14,30 @@ internal sealed class ForEachNotSupportedRule : ISyntaxValidationRule<ForEachSta
 
     public void Analyze(ForEachStatementSyntax node, ref ValidationContext context)
     {
-        ITypeSymbol? type = null;
-        if (node.SyntaxTree == context.SemanticModel.SyntaxTree)
+        var type = context.SemanticModel.GetTypeSymbol(node.Expression);
+        if (type is null or IErrorTypeSymbol)
         {
-            try
-            {
-                type = context.SemanticModel.GetTypeSymbol(node.Expression);
-            }
-            catch
-            {
-                // Best effort if node is not bound
-            }
+            return;
         }
 
-        if (type != null)
+        // Allowed: Array, InlineArray, Span/ReadOnlySpan, List
+        if (type is IArrayTypeSymbol ||
+            type.HasAttribute(KnownAttributes.InlineArray) ||
+            (type.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType &&
+             type.ContainingNamespace.IsSystemNamespace()) ||
+            (type.Name is TypeConstants.ListType &&
+             type.ContainingNamespace is
+             {
+                 Name: "Generic",
+                 ContainingNamespace:
+                 {
+                     Name: "Collections",
+                     ContainingNamespace:
+                     { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+                 }
+             }))
         {
-            // Allowed: Array, InlineArray, Span/ReadOnlySpan, List
-            if (type is IArrayTypeSymbol ||
-                type.HasAttribute(KnownAttributes.InlineArray) ||
-                type.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or TypeConstants.ListType)
-            {
-                return;
-            }
+            return;
         }
 
         context.ReportDiagnostic(
