@@ -531,12 +531,7 @@ internal static class KernelLaunchEmitter
         foreach (var attr in p.GetAttributes())
         {
             var cls = attr.AttributeClass;
-            if (cls?.ContainingNamespace is not
-                {
-                    Name: "InteropServices",
-                    ContainingNamespace:
-                    { Name: "Runtime", ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true } }
-                })
+            if (cls?.ContainingNamespace.IsSystemRuntimeInteropServices() != true)
             {
                 continue;
             }

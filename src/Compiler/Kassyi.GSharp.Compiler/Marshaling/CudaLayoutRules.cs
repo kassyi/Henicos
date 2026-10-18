@@ -53,33 +53,7 @@ internal static class CudaLayoutRules
 
         var size = 0;
         var maxAlign = 1;
-        var pack = 0;
-
-        AttributeData? structLayoutAttr = null;
-        foreach (var a in namedStruct.GetAttributes())
-        {
-            if (!a.IsStructLayoutAttribute())
-            {
-                continue;
-            }
-
-            structLayoutAttr = a;
-            break;
-        }
-
-        if (structLayoutAttr != null)
-        {
-            foreach (var arg in structLayoutAttr.NamedArguments)
-            {
-                if (arg.Key != "Pack" || arg.Value.Value is not int packValue)
-                {
-                    continue;
-                }
-
-                pack = packValue;
-                break;
-            }
-        }
+        var pack = namedStruct.TryGetStructLayoutPack(out var p) ? p : 0;
 
         foreach (var member in namedStruct.GetMembers())
         {

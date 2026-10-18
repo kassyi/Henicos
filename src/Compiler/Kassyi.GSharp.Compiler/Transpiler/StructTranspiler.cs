@@ -125,7 +125,7 @@ internal static class StructTranspiler
     /// </summary>
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
-        var hasPack = TryGetStructPack(structSym, out var packValue);
+        var hasPack = structSym.TryGetStructLayoutPack(out var packValue);
         if (hasPack)
         {
             context.Emitter.Writer.AppendLine($"#pragma pack(push, {packValue})");
@@ -145,31 +145,6 @@ internal static class StructTranspiler
         {
             context.Emitter.Writer.AppendLine("#pragma pack(pop)");
         }
-    }
-
-    private static bool TryGetStructPack(INamedTypeSymbol structSym, out int packValue)
-    {
-        foreach (var attr in structSym.GetAttributes())
-        {
-            if (!attr.IsStructLayoutAttribute())
-            {
-                continue;
-            }
-
-            foreach (var kvp in attr.NamedArguments)
-            {
-                if (kvp is { Key: "Pack", Value: { IsNull: false, Value: int p and > 0 } })
-                {
-                    packValue = p;
-                    return true;
-                }
-            }
-
-            break;
-        }
-
-        packValue = 0;
-        return false;
     }
 
     private static void WriteInlineArrayDefinition(INamedTypeSymbol structSym, AttributeData inlineArrayAttr,

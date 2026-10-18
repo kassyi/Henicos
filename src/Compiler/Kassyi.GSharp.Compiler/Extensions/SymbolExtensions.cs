@@ -31,6 +31,17 @@ internal static class SymbolExtensions
             { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
         };
 
+    public static bool IsSystemRuntimeInteropServices(this INamespaceSymbol? ns) =>
+        ns is
+        {
+            Name: "InteropServices",
+            ContainingNamespace:
+            {
+                Name: "Runtime",
+                ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+            }
+        };
+
     public static bool IsCoreNamespace(this INamespaceSymbol? ns) =>
         ns is
         {
@@ -118,18 +129,34 @@ internal static class SymbolExtensions
     /// </summary>
     public static bool IsStructLayoutAttribute(this AttributeData attr)
     {
-        if (!attr.IsAttribute(KnownAttributes.StructLayout))
+        return attr.IsAttribute(KnownAttributes.StructLayout) &&
+               attr.AttributeClass?.ContainingNamespace.IsSystemRuntimeInteropServices() == true;
+    }
+
+    /// <summary>Gets a positive [StructLayout(Pack = n)] value; returns false when absent or 0.</summary>
+    public static bool TryGetStructLayoutPack(this INamedTypeSymbol type, out int pack)
+    {
+        foreach (var attr in type.GetAttributes())
         {
-            return false;
+            if (!attr.IsStructLayoutAttribute())
+            {
+                continue;
+            }
+
+            foreach (var kvp in attr.NamedArguments)
+            {
+                if (kvp is { Key: "Pack", Value: { IsNull: false, Value: int p and > 0 } })
+                {
+                    pack = p;
+                    return true;
+                }
+            }
+
+            break;
         }
 
-        var ns = attr.AttributeClass?.ContainingNamespace;
-        return ns is
-        {
-            Name: "InteropServices",
-            ContainingNamespace:
-            { Name: "Runtime", ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true } }
-        };
+        pack = 0;
+        return false;
     }
 
     /// <summary>
