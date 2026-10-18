@@ -279,6 +279,34 @@ public class CudaHostTransferTests
         }
     }
 
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public async Task PinnedStagingPool_ExceedingMaxIdleBuffers_ReclaimsExcessBuffers()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        const int TotalRented = PinnedStagingPool.MaxIdleBuffers + 4;
+        var rented = new PinnedStagingBuffer[TotalRented];
+
+        for (var i = 0; i < TotalRented; i++)
+        {
+            rented[i] = PinnedStagingPool.Rent();
+            Assert.Equal(16, rented[i].GetSpan(16).Length);
+        }
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => rented[0].GetSpan(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => rented[0].GetSpan(PinnedStagingBuffer.Size + 1));
+
+        for (var i = 0; i < TotalRented; i++)
+        {
+            rented[i].Release();
+        }
+
+        await WaitUntilAsync(() => PinnedStagingPool.AllocatedCount <= PinnedStagingPool.MaxIdleBuffers);
+        Assert.Equal(PinnedStagingPool.MaxIdleBuffers, PinnedStagingPool.IdleCount);
+    }
+
     private static uint Pattern(int index) => unchecked(((uint)index * 2654435761u) + 17u);
 
     private static void AssertPattern(ReadOnlySpan<uint> destination)

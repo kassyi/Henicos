@@ -46,5 +46,24 @@ public class CudaEventTimerTests : TranspilerTestBase
         var exception = Record.Exception(() => timer.Dispose());
         Assert.Null(exception);
     }
+
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task EventTimer_Throws_InvalidOperationException_When_Called_Out_Of_Order()
+    {
+        using var _ctxScope = new GpuKernelLoader.CudaContextScope();
+        using var timer = new CudaEventTimer();
+
+        Assert.Throws<InvalidOperationException>(() => timer.Stop());
+        Assert.Throws<InvalidOperationException>(() => timer.Synchronize());
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await timer.SynchronizeAsync());
+        Assert.Throws<InvalidOperationException>(() => timer.GetElapsedTimeMilliseconds());
+
+        timer.Start();
+        Assert.Throws<InvalidOperationException>(() => timer.Synchronize());
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await timer.SynchronizeAsync());
+        Assert.Throws<InvalidOperationException>(() => timer.GetElapsedTimeMilliseconds());
+    }
 }
 

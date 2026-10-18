@@ -27,12 +27,13 @@ internal sealed unsafe class PinnedStagingBuffer : IStreamCompletionHook, IDispo
     // CU_MEMHOSTALLOC_PORTABLE: page-locked for every context, not only for the allocating one.
     private const uint PortableFlag = 0x01;
 
+    private IntPtr _pointer;
     private int _references;
 
-    private PinnedStagingBuffer(IntPtr pointer) => Pointer = pointer;
+    private PinnedStagingBuffer(IntPtr pointer) => _pointer = pointer;
 
     /// <summary>Gets the host address of the page-locked memory, or <see cref="IntPtr.Zero"/> once freed.</summary>
-    public IntPtr Pointer { get; private set; }
+    public IntPtr Pointer => Volatile.Read(ref _pointer);
 
     /// <summary>
     /// Allocates a new page-locked buffer. Allocation does not wait for other streams (unlike freeing it).
@@ -49,7 +50,14 @@ internal sealed unsafe class PinnedStagingBuffer : IStreamCompletionHook, IDispo
     /// <summary>Gets the first <paramref name="length"/> bytes of the buffer.</summary>
     /// <param name="length">The number of bytes; at most <see cref="Size"/>.</param>
     /// <returns>A view of the staged bytes.</returns>
-    public Span<byte> GetSpan(int length) => new((void*)Pointer, length);
+    public Span<byte> GetSpan(int length)
+    {
+        var pointer = Volatile.Read(ref _pointer);
+        ObjectDisposedException.ThrowIf(pointer == IntPtr.Zero, this);
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(length, Size);
+        return new Span<byte>((void*)pointer, length);
+    }
 
     /// <summary>Takes the caller's reference; called by the pool when the buffer is rented.</summary>
     public void AcquireForCaller() => Volatile.Write(ref _references, 1);
@@ -82,13 +90,12 @@ internal sealed unsafe class PinnedStagingBuffer : IStreamCompletionHook, IDispo
     /// <exception cref="CudaException">The driver failed to free the memory.</exception>
     public void Dispose()
     {
-        if (Pointer == IntPtr.Zero)
+        var pointer = Interlocked.Exchange(ref _pointer, IntPtr.Zero);
+        if (pointer == IntPtr.Zero)
         {
             return;
         }
 
-        var pointer = Pointer;
-        Pointer = IntPtr.Zero;
         using var scope = new GpuKernelLoader.CudaContextScope(GpuKernelLoader.GlobalContext);
         CudaException.ThrowIfError(CudaDriverApi.cuMemFreeHost(pointer));
     }

@@ -12,6 +12,8 @@ public sealed class CudaEventTimer : IDisposable
     private IntPtr _endStream;
     private long _startTimestamp;
     private long _endTimestamp;
+    private bool _hasStarted;
+    private bool _hasStopped;
     private bool _disposed;
 
 #pragma warning disable IDE0051 // Intended for external kernel consumers
@@ -27,6 +29,8 @@ public sealed class CudaEventTimer : IDisposable
             _isFallback = true;
             return;
         }
+
+        using var scope = new GpuKernelLoader.CudaContextScope();
 
         // CU_EVENT_DEFAULT = 0x0
         CudaException.ThrowIfError(CudaDriverApi.cuEventCreate(out _startEvent, 0));
@@ -52,10 +56,15 @@ public sealed class CudaEventTimer : IDisposable
         if (_isFallback)
         {
             _startTimestamp = Stopwatch.GetTimestamp();
+            _hasStarted = true;
+            _hasStopped = false;
             return;
         }
 
+        using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuEventRecord(_startEvent, hStream));
+        _hasStarted = true;
+        _hasStopped = false;
     }
 
     /// <summary>
@@ -65,14 +74,22 @@ public sealed class CudaEventTimer : IDisposable
     public void Stop(IntPtr hStream = 0)
     {
         ThrowIfDisposed();
+        if (!_hasStarted)
+        {
+            throw new InvalidOperationException("Cannot stop a CudaEventTimer before Start has been called.");
+        }
+
         if (_isFallback)
         {
             _endTimestamp = Stopwatch.GetTimestamp();
+            _hasStopped = true;
             return;
         }
 
+        using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuEventRecord(_endEvent, hStream));
         _endStream = hStream;
+        _hasStopped = true;
     }
 
     /// <summary>
@@ -81,11 +98,13 @@ public sealed class CudaEventTimer : IDisposable
     public void Synchronize()
     {
         ThrowIfDisposed();
+        ThrowIfNotStopped();
         if (_isFallback)
         {
             return;
         }
 
+        using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuEventSynchronize(_endEvent));
     }
 
@@ -99,9 +118,11 @@ public sealed class CudaEventTimer : IDisposable
     /// event is the last recorded item on that stream at the time of <see cref="Stop"/>.
     /// </remarks>
     /// <exception cref="ObjectDisposedException">The timer has been disposed.</exception>
+    /// <exception cref="InvalidOperationException"><see cref="Start"/> and <see cref="Stop"/> have not both been called.</exception>
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
+        ThrowIfNotStopped();
         return _isFallback
             ? ValueTask.CompletedTask
             : CudaStreamCompletion.WaitAsync(_endStream, cancellationToken);
@@ -115,23 +136,25 @@ public sealed class CudaEventTimer : IDisposable
     public float GetElapsedTimeMilliseconds()
     {
         ThrowIfDisposed();
+        ThrowIfNotStopped();
         if (_isFallback)
         {
             return (float)((_endTimestamp - _startTimestamp) * 1000.0 / Stopwatch.Frequency);
         }
 
+        using var scope = new GpuKernelLoader.CudaContextScope();
         CudaException.ThrowIfError(CudaDriverApi.cuEventElapsedTime(out var ms, _startEvent, _endEvent));
         return ms;
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (!_disposed)
-        {
-            return;
-        }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
-        throw new ObjectDisposedException(nameof(CudaEventTimer));
+    private void ThrowIfNotStopped()
+    {
+        if (!_hasStarted || !_hasStopped)
+        {
+            throw new InvalidOperationException("Both Start and Stop must be called before synchronizing or reading elapsed time.");
+        }
     }
 
     /// <inheritdoc/>
@@ -144,6 +167,8 @@ public sealed class CudaEventTimer : IDisposable
 
         if (!_isFallback)
         {
+            using var scope = new GpuKernelLoader.CudaContextScope();
+
             if (_startEvent != IntPtr.Zero)
             {
                 CudaDriverApi.cuEventDestroy_v2(_startEvent);
