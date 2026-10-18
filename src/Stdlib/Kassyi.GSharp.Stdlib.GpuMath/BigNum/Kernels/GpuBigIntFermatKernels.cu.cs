@@ -55,6 +55,39 @@ public static partial class GpuBigIntFermatKernels
 
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceUnpack16Transposed([GpuReadOnly] uint[] dSrc, uint[] dDst1, uint[] dDst2, int n,
+        int numWords, int n1, int n2, bool syncThreads = true)
+    {
+        Gpu.GridStrideLoop(n, i =>
+        {
+            uint val = 0;
+            var wordIdx = i / 2;
+            if (wordIdx < numWords)
+            {
+                var w = dSrc[wordIdx];
+                if (i % 2 == 0)
+                {
+                    val = w & 0xFFFF;
+                }
+                else
+                {
+                    val = w >> 16;
+                }
+            }
+
+            var dstIdx = n > 512 ? (i % n2) * n1 + (i / n2) : i;
+            dDst1[dstIdx] = val;
+            dDst2[dstIdx] = val;
+        });
+
+        if (syncThreads)
+        {
+            Gpu.SyncThreads();
+        }
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceTranspose32X32([GpuReadOnly] uint[] idata, uint[] odata, int width, int height,
         bool syncThreads = true)
     {
@@ -150,6 +183,162 @@ public static partial class GpuBigIntFermatKernels
         }
     }
 
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint GetShiftedLeftWord(
+        [GpuReadOnly] uint[] data,
+        int numWords,
+        int destIdx,
+        int wordShift,
+        int bitShift)
+    {
+        var srcIdx0 = destIdx - wordShift;
+        var srcIdx1 = srcIdx0 - 1;
+
+        var w0 = (srcIdx0 >= 0 && srcIdx0 < numWords) ? data[srcIdx0] : 0u;
+        if (bitShift == 0)
+        {
+            return w0;
+        }
+
+        var w1 = (srcIdx1 >= 0 && srcIdx1 < numWords) ? data[srcIdx1] : 0u;
+        return (w0 << bitShift) | (w1 >> (32 - bitShift));
+    }
+
+    [GpuDeviceFunction]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void DeviceFermatFoldParallel(
+        [GpuReadOnly] uint[] remainder,
+        [GpuReadOnly] uint[] quotient,
+        uint[] result,
+        int numWords,
+        int exponent,
+        bool syncThreads = true)
+    {
+        var tid = ThreadIndex.X;
+        var bDim = BlockDimension.X;
+        var laneId = tid % 32;
+        var warpId = tid / 32;
+        var numWarps = (bDim + 31) / 32;
+
+        var sharedCarry = new SharedMemory<uint>(32);
+        var sharedOverlapH = new SharedMemory<uint>(32);
+
+        if (BlockIndex.X != 0)
+        {
+            if (syncThreads)
+            {
+                Gpu.SyncThreads();
+            }
+
+            return;
+        }
+
+        var wordShiftE = exponent / 32;
+        var bitShiftE = exponent % 32;
+
+        uint runningH = 3u;
+        uint runningCarry = 0u;
+
+        for (int offset = 0; offset < numWords; offset += bDim)
+        {
+            var idx = offset + tid;
+            var valid = idx < numWords;
+
+            ulong localSum = 0UL;
+            if (valid)
+            {
+                uint rVal = remainder[idx];
+                uint qShiftE = GetShiftedLeftWord(quotient, numWords, idx, wordShiftE, bitShiftE);
+                uint qShift3 = GetShiftedLeftWord(quotient, numWords, idx, 0, 3);
+                uint qShift1 = GetShiftedLeftWord(quotient, numWords, idx, 0, 1);
+                uint qVal = quotient[idx];
+
+                localSum = (ulong)rVal
+                           + qShiftE
+                           + (~qShift3)
+                           + (~qShift1)
+                           + (~qVal);
+            }
+
+            uint lowWord = (uint)(localSum & 0xFFFFFFFFUL);
+            uint highWord = (uint)(localSum >> 32);
+
+            uint prevH = Warp.ShuffleUpSync(0xFFFFFFFFu, highWord, 1u);
+            if (laneId == 31)
+            {
+                sharedOverlapH[warpId] = highWord;
+            }
+
+            Gpu.SyncThreads();
+
+            if (laneId == 0)
+            {
+                prevH = warpId == 0 ? runningH : sharedOverlapH[warpId - 1];
+            }
+
+            ulong sum = (ulong)lowWord + prevH;
+            uint g = valid ? (uint)(sum >> 32) : 0u;
+            uint p = valid ? ((uint)sum == 0xFFFFFFFFu ? 1u : 0u) : 1u;
+
+            var warpScan = GpuBigIntKernels.WarpScanGp(new GpuBigIntKernels.CarryState(g, p), laneId);
+            if (laneId == 31)
+            {
+                sharedCarry[warpId] = GpuBigIntKernels.PackCarryState(warpScan);
+            }
+
+            Gpu.SyncThreads();
+
+            if (warpId == 0)
+            {
+                var valState = laneId < numWarps
+                    ? GpuBigIntKernels.UnpackCarryState(sharedCarry[laneId])
+                    : new GpuBigIntKernels.CarryState(0u, 1u);
+                var blockScan = GpuBigIntKernels.WarpScanGp(valState, laneId);
+                if (laneId < numWarps)
+                {
+                    sharedCarry[laneId] = GpuBigIntKernels.PackCarryState(blockScan);
+                }
+            }
+
+            Gpu.SyncThreads();
+
+            uint carryIn = runningCarry;
+            if (warpId > 0)
+            {
+                carryIn = GpuBigIntKernels.ApplyCarry(
+                    GpuBigIntKernels.UnpackCarryState(sharedCarry[warpId - 1]),
+                    runningCarry);
+            }
+
+            uint prevScanG = Warp.ShuffleUpSync(0xFFFFFFFFu, warpScan.Generate, 1u);
+            uint prevScanP = Warp.ShuffleUpSync(0xFFFFFFFFu, warpScan.Propagate, 1u);
+            if (laneId > 0)
+            {
+                carryIn = prevScanG | (prevScanP & carryIn);
+            }
+
+            if (valid)
+            {
+                result[idx] = (uint)sum + carryIn;
+            }
+
+            uint nextRunningH = sharedOverlapH[numWarps - 1];
+            uint nextRunningCarry = GpuBigIntKernels.ApplyCarry(
+                GpuBigIntKernels.UnpackCarryState(sharedCarry[numWarps - 1]),
+                runningCarry);
+
+            Gpu.SyncThreads();
+
+            runningH = nextRunningH;
+            runningCarry = nextRunningCarry;
+        }
+
+        if (syncThreads)
+        {
+            Gpu.SyncThreads();
+        }
+    }
 
     [GpuKernel]
     public static void KernelTestBlockAddSubParallel(
@@ -170,19 +359,22 @@ public static partial class GpuBigIntFermatKernels
 
         Gpu.ForUnroll(0, 3, iter =>
         {
+            var sourceBuffer = iter == 0 ? ctx.MulResult : ctx.Temp;
+            var sourceWords = iter == 0 ? ctx.NumWords * 2 : ctx.OutNumWords;
+
             Gpu.GridStrideLoop(ctx.OutNumWords, i =>
             {
                 var srcIdx0 = i + wordShift;
                 var srcIdx1 = srcIdx0 + 1;
 
-                var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= ctx.NumWords * 2 ? ctx.NumWords * 2 - 1 : srcIdx0);
-                var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= ctx.NumWords * 2 ? ctx.NumWords * 2 - 1 : srcIdx1);
+                var safeIdx0 = srcIdx0 < 0 ? 0 : (srcIdx0 >= sourceWords ? sourceWords - 1 : srcIdx0);
+                var safeIdx1 = srcIdx1 < 0 ? 0 : (srcIdx1 >= sourceWords ? sourceWords - 1 : srcIdx1);
 
-                var w0 = ctx.MulResult[safeIdx0];
-                var w1 = ctx.MulResult[safeIdx1];
+                var w0 = sourceBuffer[safeIdx0];
+                var w1 = sourceBuffer[safeIdx1];
 
-                var mask0 = srcIdx0 >= 0 && srcIdx0 < ctx.NumWords * 2 ? 0xFFFFFFFFu : 0u;
-                var mask1 = srcIdx1 >= 0 && srcIdx1 < ctx.NumWords * 2 ? 0xFFFFFFFFu : 0u;
+                var mask0 = srcIdx0 >= 0 && srcIdx0 < sourceWords ? 0xFFFFFFFFu : 0u;
+                var mask1 = srcIdx1 >= 0 && srcIdx1 < sourceWords ? 0xFFFFFFFFu : 0u;
 
                 w0 &= mask0;
                 w1 &= mask1;
@@ -190,37 +382,17 @@ public static partial class GpuBigIntFermatKernels
                 var shiftMask = bitShift == 0 ? 0u : 0xFFFFFFFFu;
                 ctx.Quotient[i] = (w0 >> bitShift) | ((w1 << (32 - bitShift)) & shiftMask);
 
-                ctx.Remainder[i] = ctx.MulResult[i] & ctx.RemainderMask[i];
+                var remWord = i < sourceWords ? sourceBuffer[i] : 0u;
+                ctx.Remainder[i] = remWord & ctx.RemainderMask[i];
             });
 
             Gpu.SyncThreads();
 
-            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, ctx.Exponent, ctx.OutNumWords);
-            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords);
-
-            // Subtract Q * 8
-            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, 3, ctx.OutNumWords);
-            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords, sign: -1);
-
-            // Subtract Q * 2
-            DeviceShiftLeftParallel(ctx.Quotient, ctx.Temp, 1, ctx.OutNumWords);
-            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Temp, ctx.Remainder, ctx.OutNumWords, sign: -1);
-
-            // Subtract Q * 1
-            GpuBigIntKernels.DeviceAddSubParallel(ctx.Remainder, ctx.Quotient, ctx.Remainder, ctx.OutNumWords, sign: -1);
-
-            if (iter >= 2)
-            {
-                return;
-            }
-
-            Gpu.GridStrideLoop(ctx.OutNumWords, i =>
-            {
-                ctx.MulResult[i] = ctx.Remainder[i];
-            });
-            Gpu.SyncThreads();
+            var destBuffer = iter < 2 ? ctx.Temp : ctx.Remainder;
+            DeviceFermatFoldParallel(ctx.Remainder, ctx.Quotient, destBuffer, ctx.OutNumWords, ctx.Exponent);
         });
     }
 }
+
 
 

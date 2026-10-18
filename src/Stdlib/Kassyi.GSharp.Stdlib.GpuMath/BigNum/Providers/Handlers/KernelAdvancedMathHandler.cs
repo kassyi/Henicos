@@ -417,10 +417,13 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
     public void Mul(GpuWorkspace workspace, GpuBigUInt leftOperand, GpuBigUInt rightOperand,
         GpuBigUInt resultBuffer)
     {
+        var isSquaring = leftOperand.DevicePointer == rightOperand.DevicePointer
+                         && leftOperand.NumWords == rightOperand.NumWords;
         var outWords = leftOperand.NumWords + rightOperand.NumWords;
         var requiredLen = outWords;
 
-        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, outWords, this);
+        using var buffers = new NttWorkspaceBuffers(workspace, requiredLen, outWords, this,
+            allocateOperandB: !isSquaring);
         var m = buffers.TransformLength;
         var twiddle = buffers.Twiddle;
 
@@ -438,40 +441,73 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var gridDim = (uint)((m + blockDim - 1) / blockDim);
 
         // Global NTT (Non-Cooperative) Launch
+        if (isSquaring)
+        {
+            // 1. Unpack single operand (fuses initial 2D transpose when m > 512)
+            GpuBigIntMulKernels.LaunchMultiplyNttUnpackSingleKernelPtr(
+                new GpuBigIntMulKernels.AotContexts.NttUnpackSingle
+                {
+                    OpA = leftOperand.DevicePointer,
+                    NttBuf1A = buffers.Buf1A.DevicePointer,
+                    NttBuf2A = buffers.Buf2A.DevicePointer,
+                    TransformLength = m,
+                    NumWordsA = leftOperand.NumWords,
+                    N1 = n1,
+                    N2 = n2
+                },
+                gridDimX: gridDim, blockDimX: blockDim,
+                hStream: workspace.Stream);
 
-        // 1. Unpack
-        GpuBigIntMulKernels.LaunchMultiplyNttUnpackKernelPtr(
-            new GpuBigIntMulKernels.AotContexts.NttUnpack
-            {
-                OpA = leftOperand.DevicePointer,
-                OpB = rightOperand.DevicePointer,
-                NttBuf1A = buffers.Buf1A.DevicePointer,
-                NttBuf2A = buffers.Buf2A.DevicePointer,
-                NttBuf1B = buffers.Buf1B.DevicePointer,
-                NttBuf2B = buffers.Buf2B.DevicePointer,
-                TransformLength = m,
-                NumWordsA = leftOperand.NumWords,
-                NumWordsB = rightOperand.NumWords
-            },
-            gridDimX: gridDim, blockDimX: blockDim
-            , hStream: workspace.Stream);
+            // 2. Forward NTTs (only 2 passes instead of 4)
+            LaunchNttHost(workspace, buffers.Buf1A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward1, m, n1,
+                n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
+            LaunchNttHost(workspace, buffers.Buf2A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward2, m, n1,
+                n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
 
-        // 2. Forward NTTs
-        LaunchNttHost(workspace, buffers.Buf1A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward1, m, n1, n2,
-            GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
-        LaunchNttHost(workspace, buffers.Buf2A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward2, m, n1, n2,
-            GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
-        LaunchNttHost(workspace, buffers.Buf1B.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward1, m, n1, n2,
-            GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
-        LaunchNttHost(workspace, buffers.Buf2B.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward2, m, n1, n2,
-            GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
+            // 3. Pointwise Square
+            GpuBigIntMulKernels.LaunchMultiplyNttPointwiseSquareKernelPtr(
+                buffers.Buf1A.DevicePointer, buffers.Buf2A.DevicePointer, m,
+                gridDimX: gridDim, blockDimX: blockDim,
+                hStream: workspace.Stream);
+        }
+        else
+        {
+            // 1. Unpack both operands (fuses initial 2D transpose when m > 512)
+            GpuBigIntMulKernels.LaunchMultiplyNttUnpackKernelPtr(
+                new GpuBigIntMulKernels.AotContexts.NttUnpack
+                {
+                    OpA = leftOperand.DevicePointer,
+                    OpB = rightOperand.DevicePointer,
+                    NttBuf1A = buffers.Buf1A.DevicePointer,
+                    NttBuf2A = buffers.Buf2A.DevicePointer,
+                    NttBuf1B = buffers.Buf1B.DevicePointer,
+                    NttBuf2B = buffers.Buf2B.DevicePointer,
+                    TransformLength = m,
+                    NumWordsA = leftOperand.NumWords,
+                    NumWordsB = rightOperand.NumWords,
+                    N1 = n1,
+                    N2 = n2
+                },
+                gridDimX: gridDim, blockDimX: blockDim,
+                hStream: workspace.Stream);
 
-        // 3. Pointwise Multiply
-        GpuBigIntMulKernels.LaunchMultiplyNttPointwiseMultiplyKernelPtr(
-            buffers.Buf1A.DevicePointer, buffers.Buf2A.DevicePointer, buffers.Buf1B.DevicePointer,
-            buffers.Buf2B.DevicePointer, m,
-            gridDimX: gridDim, blockDimX: blockDim
-            , hStream: workspace.Stream);
+            // 2. Forward NTTs
+            LaunchNttHost(workspace, buffers.Buf1A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward1, m, n1,
+                n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
+            LaunchNttHost(workspace, buffers.Buf2A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward2, m, n1,
+                n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
+            LaunchNttHost(workspace, buffers.Buf1B.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward1, m, n1,
+                n2, GpuBigIntNttKernels.Prime1, GpuBigIntNttKernels.BarrettMagic1, false);
+            LaunchNttHost(workspace, buffers.Buf2B.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Forward2, m, n1,
+                n2, GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, false);
+
+            // 3. Pointwise Multiply
+            GpuBigIntMulKernels.LaunchMultiplyNttPointwiseMultiplyKernelPtr(
+                buffers.Buf1A.DevicePointer, buffers.Buf2A.DevicePointer, buffers.Buf1B.DevicePointer,
+                buffers.Buf2B.DevicePointer, m,
+                gridDimX: gridDim, blockDimX: blockDim,
+                hStream: workspace.Stream);
+        }
 
         // 4. Inverse NTTs
         LaunchNttHost(workspace, buffers.Buf1A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Inverse1, m, n1, n2,
@@ -479,12 +515,12 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         LaunchNttHost(workspace, buffers.Buf2A.DevicePointer, buffers.TmpBuf.DevicePointer, twiddle.Inverse2, m, n1, n2,
             GpuBigIntNttKernels.Prime2, GpuBigIntNttKernels.BarrettMagic2, true);
 
-        // 5. CRT Coefficients
+        // 5. CRT Coefficients (fuses final 2D transpose read when m > 512)
         GpuBigIntMulKernels.LaunchMultiplyNttComputeCrtKernelPtr(
             buffers.Buf1A.DevicePointer, buffers.Buf2A.DevicePointer, buffers.UncarriedLow.DevicePointer,
-            buffers.UncarriedHigh.DevicePointer, m,
-            gridDimX: gridDim, blockDimX: blockDim
-            , hStream: workspace.Stream);
+            buffers.UncarriedHigh.DevicePointer, m, n1, n2,
+            gridDimX: gridDim, blockDimX: blockDim,
+            hStream: workspace.Stream);
 
         // 6. Resolve Carries (Cooperative Block)
         var numBlocks = buffers.NumBlocks;
@@ -505,8 +541,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
         GpuBigIntNttKernels.LaunchResolveNttCarriesApplyKernelPtr(
             resultBuffer.DevicePointer, buffers.BlockCarries.DevicePointer, writeWords, buffers.ChunkSize, numBlocks,
-            gridDimX: applyGridDim, blockDimX: applyBlockDim
-            , hStream: workspace.Stream);
+            gridDimX: applyGridDim, blockDimX: applyBlockDim,
+            hStream: workspace.Stream);
     }
 
     private TwiddleCache GetOrCreateTwiddleFactors(GpuWorkspace workspace, int m)
@@ -578,7 +614,7 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
                 new GpuBigIntMulKernels.AotContexts.NumberTheoreticTransform
                 {
                     Buffer = buffer,
-                    TemporaryBuffer = tempBuffer,
+                    TemporaryBuffer = buffer,
                     Twiddle = twiddle,
                     M = m,
                     N1 = n1,
@@ -590,8 +626,8 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
                     MaxBlocks = 1,
                     CurrentL = m
                 },
-                gridDimX: 1, blockDimX: (uint)threads, sharedMemBytes: (uint)((m + (m >> 5)) * 4)
-                , hStream: workspace.Stream);
+                gridDimX: 1, blockDimX: (uint)threads, sharedMemBytes: (uint)((m + (m >> 5)) * 4),
+                hStream: workspace.Stream);
             return;
         }
 
@@ -600,26 +636,14 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         var secondW = isInverse ? n2 : n1;
         var secondH = isInverse ? n1 : n2;
 
-        var currentBuf = buffer;
+        // Pass 1: In-place row butterflies on buffer (initial transpose already fused in Unpack)
+        LaunchSharedRow(workspace, buffer, buffer, twiddle, m, n1, n2, p, pm, false, true, firstW, firstH);
 
-        if (!isInverse)
-        {
-            LaunchTranspose(workspace, currentBuf, tempBuffer, firstW, firstH);
-            currentBuf = tempBuffer;
-        }
+        // Single intermediate transpose: buffer -> tempBuffer
+        LaunchTranspose(workspace, buffer, tempBuffer, firstH, firstW);
 
-        LaunchSharedRow(workspace, currentBuf, tempBuffer, twiddle, m, n1, n2, p, pm, false, true, firstW, firstH);
-
-        var nextBuf = currentBuf == buffer ? tempBuffer : buffer;
-        LaunchTranspose(workspace, currentBuf, nextBuf, firstH, firstW);
-        currentBuf = nextBuf;
-
-        LaunchSharedRow(workspace, currentBuf, tempBuffer, twiddle, m, n1, n2, p, pm, false, false, secondW, secondH);
-
-        if (isInverse)
-        {
-            LaunchTranspose(workspace, currentBuf, buffer, secondH, secondW);
-        }
+        // Pass 2: Out-of-place row butterflies reading from tempBuffer and writing directly to buffer
+        LaunchSharedRow(workspace, tempBuffer, buffer, twiddle, m, n1, n2, p, pm, false, false, secondW, secondH);
     }
 
     private uint CpuModPow(ulong baseVal, ulong exp, uint p)
@@ -814,9 +838,10 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         public readonly GpuBigUInt BlockCarries;
         public readonly int NumBlocks;
         public readonly int ChunkSize;
+        private readonly bool _ownsOperandB;
 
         public NttWorkspaceBuffers(GpuWorkspace workspace, int requiredLen, int maxOutWords,
-            KernelAdvancedMathHandler handler)
+            KernelAdvancedMathHandler handler, bool allocateOperandB = true)
         {
             var m = 1;
             while (m < requiredLen * 2)
@@ -826,11 +851,12 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
 
             TransformLength = m;
             Twiddle = handler.GetOrCreateTwiddleFactors(workspace, m);
+            _ownsOperandB = allocateOperandB;
 
             Buf1A = workspace.RentTemp(m);
             Buf2A = workspace.RentTemp(m);
-            Buf1B = workspace.RentTemp(m);
-            Buf2B = workspace.RentTemp(m);
+            Buf1B = allocateOperandB ? workspace.RentTemp(m) : Buf1A;
+            Buf2B = allocateOperandB ? workspace.RentTemp(m) : Buf2A;
             TmpBuf = workspace.RentTemp(m);
 
             UncarriedLow = workspace.RentTemp(m);
@@ -845,8 +871,12 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         {
             Buf1A.Dispose();
             Buf2A.Dispose();
-            Buf1B.Dispose();
-            Buf2B.Dispose();
+            if (_ownsOperandB)
+            {
+                Buf1B.Dispose();
+                Buf2B.Dispose();
+            }
+
             TmpBuf.Dispose();
             UncarriedLow.Dispose();
             UncarriedHigh.Dispose();
@@ -854,3 +884,5 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         }
     }
 }
+
+

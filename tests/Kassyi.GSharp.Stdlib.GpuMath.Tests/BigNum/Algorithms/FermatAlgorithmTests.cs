@@ -9,6 +9,10 @@ public class FermatAlgorithmTests
     [InlineData(4)]
     [InlineData(5)]
     [InlineData(6)]
+    [InlineData(31)]
+    [InlineData(32)]
+    [InlineData(33)]
+    [InlineData(64)]
     public void FermatAlgorithm_RunFermatPrp_MatchesCpuBigInteger_SmallE(int e)
     {
         CudaCapability.EnsureGpuAvailable();
@@ -46,6 +50,27 @@ public class FermatAlgorithmTests
         var x = BigInteger.One << e;
         var n = (BigInteger.One << (2 * e + 1)) - x + 11;
         BigInteger expected = Enumerable.Range(0, e)
+            .Aggregate(new BigInteger(2), (cur, _) => (cur * cur) % n);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void FermatAlgorithm_RunFermatPrpWithGerbiczCheck_VerifiesAndMatchesCpuBigInteger()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        const int E = 40;
+        using var scope = new GpuKernelLoader.CudaContextScope();
+        using var runner = new FermatAlgorithm(E);
+
+        var (resultArray, _, checksPassed, _) = runner.RunFermatPrpWithGerbiczCheck(blockSize: 10, checkStepBlocks: 2);
+        Assert.True(checksPassed >= 2);
+
+        var actual = GetBigIntegerFromResult(resultArray, E);
+        var x = BigInteger.One << E;
+        var n = (BigInteger.One << (2 * E + 1)) - x + 11;
+        BigInteger expected = Enumerable.Range(0, E)
             .Aggregate(new BigInteger(2), (cur, _) => (cur * cur) % n);
 
         Assert.Equal(expected, actual);

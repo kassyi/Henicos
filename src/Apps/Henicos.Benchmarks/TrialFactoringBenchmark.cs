@@ -29,6 +29,20 @@ public class TrialFactoringBenchmark
         Logger<TrialFactoringBenchmark>.Info(
             $"Testing odd numbers from 3 up to {maxP:N0} in batches of {BatchSize:N0}...");
 
+        // Warm-up launch to ensure FATBIN module loading is excluded from steady-state kernel timing
+        FermatTrialFactoringKernels.LaunchSearchFactors32KernelPtr(
+            3u,
+            (uint)e,
+            resultsBuffer.DevicePointer,
+            resultCountBuffer.DevicePointer,
+            maxResults,
+            gridDimX: 1,
+            blockDimX: 1
+        );
+        GpuKernelLoader.SynchronizeDevice();
+        zeroCount[0] = 0;
+        resultCountBuffer.CopyToDevice(zeroCount);
+
         var sw = Stopwatch.StartNew();
 
         for (uint startOdd = 3; startOdd < maxP; startOdd += BatchSize * 2)

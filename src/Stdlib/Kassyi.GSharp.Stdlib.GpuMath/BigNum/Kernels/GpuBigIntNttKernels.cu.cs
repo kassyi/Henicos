@@ -26,6 +26,110 @@ public static partial class GpuBigIntNttKernels
     public const ulong BarrettMagic1 = 4398046510UL; // for P1
     public const ulong BarrettMagic2 = 6787108810UL; // for P2
 
+    // Phase 2: 64-bit Goldilocks Prime (P = 2^64 - 2^32 + 1) Constants
+    public const ulong GoldilocksPrime = 0xFFFFFFFF00000001UL;
+    public const ulong GoldilocksEpsilon = 0xFFFFFFFFUL;
+    public const ulong GoldilocksTwoAdicRoot = 7277203076849721926UL;
+
+    [GpuDeviceFunction, GpuInline]
+    public static ulong GoldilocksAdd(ulong operandA, ulong operandB)
+    {
+        ulong sum = operandA + operandB;
+        ulong carry = sum < operandA ? GoldilocksEpsilon : 0UL;
+        ulong res = sum + carry;
+        if (res < sum)
+        {
+            res += GoldilocksEpsilon;
+        }
+
+        if (res >= GoldilocksPrime)
+        {
+            res -= GoldilocksPrime;
+        }
+
+        return res;
+    }
+
+    [GpuDeviceFunction, GpuInline]
+    public static ulong GoldilocksSub(ulong operandA, ulong operandB)
+    {
+        ulong diff = operandA - operandB;
+        ulong borrow = operandA < operandB ? GoldilocksEpsilon : 0UL;
+        ulong res = diff - borrow;
+        if (diff < borrow)
+        {
+            res -= GoldilocksEpsilon;
+        }
+
+        if (res >= GoldilocksPrime)
+        {
+            res -= GoldilocksPrime;
+        }
+
+        return res;
+    }
+
+    [GpuDeviceFunction, GpuInline]
+    public static ulong GoldilocksMul(ulong operandA, ulong operandB)
+    {
+        ulong a0 = operandA & GoldilocksEpsilon;
+        ulong a1 = operandA >> 32;
+        ulong b0 = operandB & GoldilocksEpsilon;
+        ulong b1 = operandB >> 32;
+
+        ulong p00 = a0 * b0;
+        ulong p01 = a0 * b1;
+        ulong p10 = a1 * b0;
+        ulong p11 = a1 * b1;
+
+        ulong mid = (p00 >> 32) + (p01 & GoldilocksEpsilon) + (p10 & GoldilocksEpsilon);
+        ulong xLo = (p00 & GoldilocksEpsilon) | (mid << 32);
+        ulong xHi = p11 + (p01 >> 32) + (p10 >> 32) + (mid >> 32);
+
+        ulong xHiHi = xHi >> 32;
+        ulong xHiLo = xHi & GoldilocksEpsilon;
+
+        ulong t0 = xLo - xHiHi;
+        if (xLo < xHiHi)
+        {
+            t0 -= GoldilocksEpsilon;
+        }
+
+        ulong t1 = (xHiLo << 32) - xHiLo;
+
+        ulong res = t0 + t1;
+        if (res < t0)
+        {
+            res += GoldilocksEpsilon;
+        }
+
+        if (res >= GoldilocksPrime)
+        {
+            res -= GoldilocksPrime;
+        }
+
+        return res;
+    }
+
+    [GpuDeviceFunction]
+    public static ulong GoldilocksPow(ulong baseValue, ulong exponent)
+    {
+        ulong result = 1UL;
+        baseValue %= GoldilocksPrime;
+        while (exponent > 0UL)
+        {
+            if ((exponent & 1UL) != 0UL)
+            {
+                result = GoldilocksMul(result, baseValue);
+            }
+
+            baseValue = GoldilocksMul(baseValue, baseValue);
+            exponent >>= 1;
+        }
+
+        return result;
+    }
+
     [GpuDeviceFunction]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModAdd(uint operandA, uint operandB, uint primeModulus)
@@ -110,6 +214,7 @@ public static partial class GpuBigIntNttKernels
     public static void ExecuteNttSharedRow(NumberTheoreticTransform args)
     {
         var deviceData = args.Buffer;
+        var deviceOutput = args.TemporaryBuffer;
         var deviceTwiddle = args.Twiddle;
         var transformLength = args.M;
         var currentLength = args.CurrentL;
@@ -152,7 +257,7 @@ public static partial class GpuBigIntNttKernels
             for (int threadId = ThreadIndex.X; threadId < threadsNeeded; threadId += BlockDimension.X)
             {
                 ExecuteNttTwiddleAfterAndStore(rowIndex, threadId, currentLength, transformLength, applyTwiddleAfter,
-                    primeModulus, barrettMagic, deviceData, deviceTwiddle);
+                    primeModulus, barrettMagic, deviceOutput, deviceTwiddle);
             }
 
             Gpu.SyncThreads();
@@ -228,7 +333,7 @@ public static partial class GpuBigIntNttKernels
     private static void ExecuteNttTwiddleAfterAndStore(
         int rowIndex, int threadId, int currentLength, int transformLength,
         bool applyTwiddleAfter, uint primeModulus, ulong barrettMagic,
-        uint[] deviceData, [GpuReadOnly] uint[] deviceTwiddle)
+        uint[] deviceOutput, [GpuReadOnly] uint[] deviceTwiddle)
     {
         Gpu.InlinePtx("extern __shared__ uint32_t s_row[];");
         var blockOffset = rowIndex * currentLength;
@@ -236,30 +341,22 @@ public static partial class GpuBigIntNttKernels
         uint padId1 = (uint)(threadId + (threadId >> 5));
         uint padId2 = (uint)((threadId + currentLength / 2) + ((threadId + currentLength / 2) >> 5));
 
-        if (applyTwiddleAfter)
-        {
-            var twiddleIndex1 = (ulong)rowIndex * (ulong)threadId;
-            twiddleIndex1 %= (ulong)transformLength;
-            uint result1 = 0;
-            Gpu.InlinePtx($"{result1} = s_row[{padId1}];");
-            result1 = ModMulBarrett(result1, deviceTwiddle[twiddleIndex1], primeModulus, barrettMagic);
-            Gpu.InlinePtx($"s_row[{padId1}] = {result1};");
-
-            var twiddleIndex2 = (ulong)rowIndex * (ulong)(threadId + currentLength / 2);
-            twiddleIndex2 %= (ulong)transformLength;
-            uint result2 = 0;
-            Gpu.InlinePtx($"{result2} = s_row[{padId2}];");
-            result2 = ModMulBarrett(result2, deviceTwiddle[twiddleIndex2], primeModulus, barrettMagic);
-            Gpu.InlinePtx($"s_row[{padId2}] = {result2};");
-        }
-
         uint output1 = 0;
         uint output2 = 0;
         Gpu.InlinePtx($"{output1} = s_row[{padId1}];");
         Gpu.InlinePtx($"{output2} = s_row[{padId2}];");
 
-        deviceData[blockOffset + threadId] = output1;
-        deviceData[blockOffset + threadId + currentLength / 2] = output2;
+        if (applyTwiddleAfter)
+        {
+            var twiddleIndex1 = ((ulong)rowIndex * (ulong)threadId) % (ulong)transformLength;
+            output1 = ModMulBarrett(output1, deviceTwiddle[twiddleIndex1], primeModulus, barrettMagic);
+
+            var twiddleIndex2 = ((ulong)rowIndex * (ulong)(threadId + currentLength / 2)) % (ulong)transformLength;
+            output2 = ModMulBarrett(output2, deviceTwiddle[twiddleIndex2], primeModulus, barrettMagic);
+        }
+
+        deviceOutput[blockOffset + threadId] = output1;
+        deviceOutput[blockOffset + threadId + currentLength / 2] = output2;
     }
 
     [GpuDeviceFunction]
@@ -299,6 +396,44 @@ public static partial class GpuBigIntNttKernels
 
             ulong value1 = ModMulBarrett(deviceResult1[index], inverseN1, Prime1, BarrettMagic1);
             ulong value2 = ModMulBarrett(deviceResult2[index], inverseN2, Prime2, BarrettMagic2);
+
+            ulong difference;
+            ulong v1Mod2 = value1 % Modulus2;
+            if (value2 >= v1Mod2)
+            {
+                difference = value2 - v1Mod2;
+            }
+            else
+            {
+                difference = value2 + Modulus2 - v1Mod2;
+            }
+
+            const ulong Prime1InverseModPrime2 = 1050101200UL;
+            var crtCoefficient = (difference * Prime1InverseModPrime2) % Modulus2;
+            var recombinedValue = value1 + Modulus1 * crtCoefficient;
+
+            uncarriedLow[index] = (uint)(recombinedValue & 0xFFFFFFFF);
+            uncarriedHigh[index] = (uint)(recombinedValue >> 32);
+        });
+    }
+
+    [GpuDeviceFunction]
+    public static void ExecuteCrtComputeCoefficientsTransposed([GpuReadOnly] uint[] deviceResult1,
+        [GpuReadOnly] uint[] deviceResult2,
+        uint[] uncarriedLow, uint[] uncarriedHigh,
+        int transformLength, int n1, int n2)
+    {
+        var inverseN1 = ModPow((uint)transformLength, Prime1 - 2, Prime1, BarrettMagic1);
+        var inverseN2 = ModPow((uint)transformLength, Prime2 - 2, Prime2, BarrettMagic2);
+
+        Gpu.GridStrideLoop(transformLength, index =>
+        {
+            const ulong Modulus1 = Prime1;
+            const ulong Modulus2 = Prime2;
+
+            var srcIdx = transformLength > 512 ? (index % n2) * n1 + (index / n2) : index;
+            ulong value1 = ModMulBarrett(deviceResult1[srcIdx], inverseN1, Prime1, BarrettMagic1);
+            ulong value2 = ModMulBarrett(deviceResult2[srcIdx], inverseN2, Prime2, BarrettMagic2);
 
             ulong difference;
             ulong v1Mod2 = value1 % Modulus2;
@@ -538,6 +673,7 @@ public static partial class GpuBigIntNttKernels
 
         if (transformLength <= 512)
         {
+            args.TemporaryBuffer = buffer;
             args.CurrentL = transformLength;
             args.ApplyTwiddleBefore = false;
             args.ApplyTwiddleAfter = false;
@@ -549,12 +685,14 @@ public static partial class GpuBigIntNttKernels
 
         var argsRow1 = args;
         argsRow1.Buffer = temporaryBuffer;
+        argsRow1.TemporaryBuffer = temporaryBuffer;
         argsRow1.CurrentL = length1;
         argsRow1.ApplyTwiddleBefore = false;
         argsRow1.ApplyTwiddleAfter = true;
         argsRow1.MaxBlocks = length2;
 
         var argsRow2 = args;
+        argsRow2.TemporaryBuffer = buffer;
         argsRow2.CurrentL = length2;
         argsRow2.ApplyTwiddleBefore = false;
         argsRow2.ApplyTwiddleAfter = false;
@@ -581,6 +719,7 @@ public static partial class GpuBigIntNttKernels
 
         if (transformLength <= 512)
         {
+            args.TemporaryBuffer = buffer;
             args.CurrentL = transformLength;
             args.ApplyTwiddleBefore = false;
             args.ApplyTwiddleAfter = false;
@@ -591,6 +730,7 @@ public static partial class GpuBigIntNttKernels
         }
 
         var argsRow1 = args;
+        argsRow1.TemporaryBuffer = buffer;
         argsRow1.CurrentL = length2;
         argsRow1.ApplyTwiddleBefore = false;
         argsRow1.ApplyTwiddleAfter = false;
@@ -598,6 +738,7 @@ public static partial class GpuBigIntNttKernels
 
         var argsRow2 = args;
         argsRow2.Buffer = temporaryBuffer;
+        argsRow2.TemporaryBuffer = temporaryBuffer;
         argsRow2.CurrentL = length1;
         argsRow2.ApplyTwiddleBefore = true;
         argsRow2.ApplyTwiddleAfter = false;
