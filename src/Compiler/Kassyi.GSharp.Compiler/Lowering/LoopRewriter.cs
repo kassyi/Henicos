@@ -25,11 +25,12 @@ public class LoopRewriter : CSharpSyntaxRewriter
     }
 
     /// <summary>Rewrites loops within the block into flat goto sequences.</summary>
-    public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
+    public BlockSyntax Rewrite(BlockSyntax block) =>
+        ContainsBarrier(block) ? (BlockSyntax)Visit(block) : block;
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
     {
-        var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
+        var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>(node.Statements.Count);
 
         foreach (var statement in node.Statements)
         {
@@ -37,7 +38,9 @@ public class LoopRewriter : CSharpSyntaxRewriter
 
             if (visited is BlockSyntax nestedBlock)
             {
-                if (ContainsBarrier(statement))
+                // [WHY] Loop statements only become BlockSyntax when they already contain a barrier.
+                // Explicit nested BlockSyntax nodes are only inlined if they contain a barrier.
+                if (statement is not BlockSyntax || ContainsBarrier(statement))
                 {
                     newStatements.AddRange(nestedBlock.Statements);
                 }

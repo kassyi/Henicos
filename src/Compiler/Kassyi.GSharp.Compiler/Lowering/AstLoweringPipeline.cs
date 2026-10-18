@@ -7,20 +7,33 @@ public static class AstLoweringPipeline
     public static (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields) Lower(
         BlockSyntax body)
     {
-        var annotatedBody = body.ReplaceNodes(body.DescendantNodesAndSelf(), (original, rewritten) =>
-            rewritten.WithAdditionalAnnotations(new SyntaxAnnotation("GSharpOriginalSpan",
-                $"{original.SpanStart},{original.Span.Length}"))
-        );
+        var annotatedBody = (BlockSyntax)SpanAnnotationRewriter.Instance.Visit(body)!;
 
-        var hoistedBody = annotatedBody
-            .LowerWith<WarpInstructionRewriter>()
-            .LowerWith<BranchRewriter>()
-            .LowerWith<LoopRewriter>();
+        var hoistedBody = new WarpInstructionRewriter().Rewrite(annotatedBody);
+        hoistedBody = new BranchRewriter().Rewrite(hoistedBody);
+        hoistedBody = new LoopRewriter().Rewrite(hoistedBody);
 
         var (contextHoistedBody, contextFields) = new ContextHoister().Hoist(hoistedBody);
         var stateMachineBody = new StateMachineLowerer().Lower(contextHoistedBody);
 
         return (stateMachineBody, contextFields);
+    }
+
+    private sealed class SpanAnnotationRewriter : CSharpSyntaxRewriter
+    {
+        public static readonly SpanAnnotationRewriter Instance = new();
+
+        public override SyntaxNode? Visit(SyntaxNode? node)
+        {
+            if (node == null)
+            {
+                return null;
+            }
+
+            var visited = base.Visit(node)!;
+            return visited.WithAdditionalAnnotations(
+                new SyntaxAnnotation("GSharpOriginalSpan", $"{node.SpanStart},{node.Span.Length}"));
+        }
     }
 }
 

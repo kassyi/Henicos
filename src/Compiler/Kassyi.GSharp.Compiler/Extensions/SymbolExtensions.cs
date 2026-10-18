@@ -84,7 +84,7 @@ internal static class SymbolExtensions
     /// Checks whether the type is Kassyi.GSharp.Core.SharedMemory&lt;T&gt;.
     /// </summary>
     public static bool IsSharedMemoryType(
-        [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] this ITypeSymbol? type) =>
+        [NotNullWhen(true)] this ITypeSymbol? type) =>
         type is { Name: TypeConstants.SharedMemoryType } && type.ContainingNamespace.IsCoreNamespace();
 
     /// <summary>
@@ -92,7 +92,7 @@ internal static class SymbolExtensions
     /// </summary>
     public static bool TryGetDeclaringSyntax<TSyntax>(
         this ISymbol? symbol,
-        [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out TSyntax? syntax)
+        [NotNullWhen(true)] out TSyntax? syntax)
         where TSyntax : SyntaxNode
     {
         if (symbol is { DeclaringSyntaxReferences.Length: > 0 } &&

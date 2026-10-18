@@ -10,7 +10,7 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
     {
-        var newStatements = SyntaxFactory.List<StatementSyntax>();
+        var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>(node.Statements.Count);
 
         foreach (var statement in node.Statements)
         {
@@ -19,12 +19,11 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             // Rewrite the statement and capture any hoisted warp instructions
             var rewrittenStatement = new StatementRewriter(this, hoistedAssignments).Visit(statement);
 
-            newStatements = newStatements.AddRange(hoistedAssignments);
-
-            newStatements = newStatements.Add((StatementSyntax)rewrittenStatement);
+            newStatements.AddRange(hoistedAssignments);
+            newStatements.Add((StatementSyntax)rewrittenStatement);
         }
 
-        return node.WithStatements(newStatements);
+        return node.WithStatements(SyntaxFactory.List(newStatements));
     }
 
     private string GetNextTempName() => $"_warpTemp_{_tempCounter++}";
