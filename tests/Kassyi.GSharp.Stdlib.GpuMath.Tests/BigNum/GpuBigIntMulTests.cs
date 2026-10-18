@@ -181,6 +181,65 @@ public class GpuBigIntMulTests
         Assert.Throws<ArgumentException>(() => GpuBigIntMath.MultiplyNtt(a, b, resultTooSmall));
     }
 
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(16)]
+    [InlineData(128)]
+    [InlineData(512)]
+    [InlineData(1024)]
+    [InlineData(2048)]
+    public void Mul_SameOperandSquaring_SingleAndTwoDimensionalNtt_MatchesBigIntegerReference(int numWords)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuWorkspace(numWords * 8, GpuExecutionEngine.GSharpAot);
+
+        var aArr = new uint[numWords];
+        for (var i = 0; i < numWords; i++)
+        {
+            aArr[i] = (uint)((i + 1) * 0x9E3779B9u + 0x12345678u);
+        }
+
+        var bigA = ToBigInteger(aArr);
+        var expected = bigA * bigA;
+
+        using var a = new GpuBigUInt(ctx, aArr);
+        using var result = new GpuBigUInt(ctx, numWords * 2);
+
+        GpuBigIntMath.Mul(a, a, result);
+
+        Assert.Equal(expected, result.ToBigInteger());
+    }
+
+    [Theory]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData(512)]
+    [InlineData(1024)]
+    public void Mul_DistinctOperands_TwoDimensionalNtt_MatchesBigIntegerReference(int numWords)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuWorkspace(numWords * 8, GpuExecutionEngine.GSharpAot);
+
+        var aArr = new uint[numWords];
+        var bArr = new uint[numWords];
+        for (var i = 0; i < numWords; i++)
+        {
+            aArr[i] = (uint)((i + 1) * 0x9E3779B9u + 0x12345678u);
+            bArr[i] = (uint)((i + 1) * 0x85EBCA6Bu + 0x87654321u);
+        }
+
+        var expected = ToBigInteger(aArr) * ToBigInteger(bArr);
+
+        using var a = new GpuBigUInt(ctx, aArr);
+        using var b = new GpuBigUInt(ctx, bArr);
+        using var result = new GpuBigUInt(ctx, numWords * 2);
+
+        GpuBigIntMath.Mul(a, b, result);
+
+        Assert.Equal(expected, result.ToBigInteger());
+    }
+
     private static BigInteger ToBigInteger(uint[] words)
     {
         var bytes = new byte[words.Length * sizeof(uint)];
@@ -188,3 +247,4 @@ public class GpuBigIntMulTests
         return new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
     }
 }
+
