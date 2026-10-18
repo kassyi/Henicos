@@ -93,9 +93,9 @@ public struct OperandContext
 }
 
 /// <summary>
-/// Encapsulates the complete workspace scratch memory state for Newton-Raphson mega kernels.
+/// Encapsulates intermediate multi-precision polynomial and iteration scratch buffers for Newton-Raphson and Barrett steps.
 /// </summary>
-public struct WorkspaceStateContext
+public struct IterationScratchContext
 {
     /// <summary>Scratch buffer for squared variable $X^2$.</summary>
     public uint[] XSquared;
@@ -111,6 +111,15 @@ public struct WorkspaceStateContext
     public uint[] NextXShifted;
     /// <summary>Scratch buffer for next iteration value.</summary>
     public uint[] NextIter;
+    /// <summary>Expanded modulus for Barrett reduction.</summary>
+    public uint[] ModulusExpanded;
+}
+
+/// <summary>
+/// Encapsulates dual-prime NTT convolution and CRT carry-resolution scratch buffers.
+/// </summary>
+public struct NttConvolutionScratchContext
+{
     /// <summary>First NTT scratch buffer for operand A.</summary>
     public uint[] NttBuf1A;
     /// <summary>Second NTT scratch buffer for operand A.</summary>
@@ -127,8 +136,17 @@ public struct WorkspaceStateContext
     public uint[] UncarriedHigh;
     /// <summary>Block-level carry propagation array.</summary>
     public uint[] BlockCarries;
-    /// <summary>Expanded modulus for Barrett reduction.</summary>
-    public uint[] ModulusExpanded;
+}
+
+/// <summary>
+/// Encapsulates the complete workspace scratch memory state for Newton-Raphson mega kernels.
+/// </summary>
+public struct WorkspaceStateContext
+{
+    /// <summary>Intermediate polynomial iteration scratch buffers.</summary>
+    public IterationScratchContext Iteration;
+    /// <summary>Dual-prime NTT convolution and CRT carry-resolution scratch buffers.</summary>
+    public NttConvolutionScratchContext NttScratch;
 }
 
 /// <summary>
@@ -156,6 +174,19 @@ public struct GpuBigIntContext
 }
 
 /// <summary>
+/// Encapsulates the 2D Six-Step NTT grid dimensions ($M = N_1 \times N_2$).
+/// </summary>
+public struct NttGridContext
+{
+    /// <summary>Batch/total transform dimension parameter M.</summary>
+    public int M;
+    /// <summary>First transform length dimension N1.</summary>
+    public int N1;
+    /// <summary>Second transform length dimension N2.</summary>
+    public int N2;
+}
+
+/// <summary>
 /// Context parameters for dual-pass NTT GPU execution.
 /// </summary>
 public struct DualNtt
@@ -170,12 +201,8 @@ public struct DualNtt
     [GpuReadOnly] public uint[] Twiddle1;
     /// <summary>Twiddle factor table 2.</summary>
     [GpuReadOnly] public uint[] Twiddle2;
-    /// <summary>Batch dimension parameter M.</summary>
-    public int M;
-    /// <summary>First transform length dimension N1.</summary>
-    public int N1;
-    /// <summary>Second transform length dimension N2.</summary>
-    public int N2;
+    /// <summary>2D NTT grid dimensions ($M, N_1, N_2$).</summary>
+    public NttGridContext Grid;
 }
 
 /// <summary>
@@ -192,12 +219,8 @@ public struct NumberTheoreticTransform
     [GpuReadOnly]
     public uint[] Twiddle;
 
-    /// <summary>Batch dimension parameter M.</summary>
-    public int M;
-    /// <summary>First transform length dimension N1.</summary>
-    public int N1;
-    /// <summary>Second transform length dimension N2.</summary>
-    public int N2;
+    /// <summary>2D NTT grid dimensions ($M, N_1, N_2$).</summary>
+    public NttGridContext Grid;
     /// <summary>Prime modulus P.</summary>
     public uint P;
     /// <summary>Barrett reduction or multiplicative inverse parameter Pm.</summary>
@@ -215,9 +238,9 @@ public struct NumberTheoreticTransform
 }
 
 /// <summary>
-/// Context parameters for the Newton-Raphson Sqrt MegaKernel.
+/// Common execution state for iterative Newton-Raphson and NTT-based MegaKernels.
 /// </summary>
-public struct SqrtNewtonRaphson
+public struct NewtonRaphsonContext
 {
     /// <summary>Input and output operand buffers.</summary>
     public OperandContext Operands;
@@ -229,6 +252,15 @@ public struct SqrtNewtonRaphson
     public WorkspaceStateContext Workspace;
     /// <summary>Carry accumulation buffer.</summary>
     public long[] CarryBuffer;
+}
+
+/// <summary>
+/// Context parameters for the Newton-Raphson Sqrt MegaKernel.
+/// </summary>
+public struct SqrtNewtonRaphson
+{
+    /// <summary>Core Newton-Raphson and NTT execution state.</summary>
+    public NewtonRaphsonContext Core;
 }
 
 /// <summary>
@@ -236,42 +268,35 @@ public struct SqrtNewtonRaphson
 /// </summary>
 public struct ReciprocalNewtonRaphson
 {
-    /// <summary>Input and output operand buffers.</summary>
-    public OperandContext Operands;
-    /// <summary>Dimension metadata for precision and word sizes.</summary>
-    public DimensionContext Dimensions;
-    /// <summary>NTT transformation context.</summary>
-    public Ntt Ntt;
-    /// <summary>State scratch buffers for intermediate iterations.</summary>
-    public WorkspaceStateContext Workspace;
-    /// <summary>Carry accumulation buffer.</summary>
-    public long[] CarryBuffer;
+    /// <summary>Core Newton-Raphson and NTT execution state.</summary>
+    public NewtonRaphsonContext Core;
 }
 
 /// <summary>
-/// Encapsulates static constant parameters for RNS base extension and modular reductions.
+/// Encapsulates a windowed slice of an exponent buffer for chunked modular exponentiation.
+/// </summary>
+public struct ExponentSliceContext
+{
+    /// <summary>Exponent word buffer.</summary>
+    public uint[] Words;
+    /// <summary>Total number of words in the exponent.</summary>
+    public int TotalWords;
+    /// <summary>Starting word index for exponentiation.</summary>
+    public int StartWord;
+    /// <summary>Ending word index for exponentiation.</summary>
+    public int EndWord;
+}
+
+/// <summary>
+/// Encapsulates context parameters for the NTT-Barrett Modular Exponentiation MegaKernel.
 /// </summary>
 public struct ModPowNttContext
 {
-    /// <summary>Input and output operand buffers.</summary>
-    public OperandContext Operands;
+    /// <summary>Core Newton-Raphson and NTT execution state.</summary>
+    public NewtonRaphsonContext Core;
     /// <summary>Reciprocal modulus for Barrett reduction.</summary>
     public uint[] ReciprocalMod;
-    /// <summary>Exponent value.</summary>
-    public uint[] Exponent;
-    /// <summary>Number of words in the exponent.</summary>
-    public int ExponentWords;
-    /// <summary>Starting word index for exponentiation.</summary>
-    public int ExponentStartWord;
-    /// <summary>Ending word index for exponentiation.</summary>
-    public int ExponentEndWord;
-    /// <summary>Dimension metadata for precision and word sizes.</summary>
-    public DimensionContext Dimensions;
-    /// <summary>NTT transformation context.</summary>
-    public Ntt Ntt;
-    /// <summary>State scratch buffers for intermediate iterations.</summary>
-    public WorkspaceStateContext Workspace;
-    /// <summary>Carry accumulation buffer.</summary>
-    public long[] CarryBuffer;
+    /// <summary>Windowed exponent slice parameters.</summary>
+    public ExponentSliceContext Exponent;
 }
 
