@@ -13,8 +13,8 @@ public class SyntaxExtensionsTests
         var token = SyntaxFactory.Token(SyntaxKind.RefKeyword);
 
         Assert.True(token.IsKind(SyntaxKind.RefKeyword, SyntaxKind.OutKeyword));
+        Assert.True(token.IsKind(SyntaxKind.InKeyword, SyntaxKind.OutKeyword, SyntaxKind.RefKeyword));
         Assert.False(token.IsKind(SyntaxKind.InKeyword, SyntaxKind.OutKeyword));
-        Assert.False(token.IsKind());
     }
 
     [Fact]
@@ -24,7 +24,7 @@ public class SyntaxExtensionsTests
         var node = SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression);
 
         Assert.True(node.IsKind(SyntaxKind.NumericLiteralExpression, SyntaxKind.StringLiteralExpression));
+        Assert.True(node.IsKind(SyntaxKind.TrueLiteralExpression, SyntaxKind.FalseLiteralExpression, SyntaxKind.NumericLiteralExpression));
         Assert.False(node.IsKind(SyntaxKind.TrueLiteralExpression, SyntaxKind.FalseLiteralExpression));
-        Assert.False(node.IsKind());
     }
 }

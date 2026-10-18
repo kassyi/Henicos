@@ -46,7 +46,7 @@ public class GpuKernelDirectInvocationAnalyzer : DiagnosticAnalyzer
             enclosingSymbol = enclosingSymbol.ContainingSymbol;
         }
 
-        context.Report(
+        context.ReportDiagnostic(
             GSharpDiagnostics.DirectGpuKernelInvocation,
             invocation,
             methodSymbol.Name);

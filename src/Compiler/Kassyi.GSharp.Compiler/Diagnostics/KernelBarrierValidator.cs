@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Extensions;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
 /// <summary>
@@ -60,9 +62,9 @@ internal readonly ref struct KernelBarrierValidator(
                 continue;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(
+            context.ReportDiagnostic(
                 GSharpDiagnostics.AsyncYieldInKernelProhibited,
-                methodDecl.Identifier.GetLocation()));
+                methodDecl.Identifier.GetLocation());
             break;
         }
 
@@ -72,8 +74,7 @@ internal readonly ref struct KernelBarrierValidator(
             var isByRef = false;
             foreach (var mod in param.Modifiers)
             {
-                if (!mod.IsKind(SyntaxKind.RefKeyword) && !mod.IsKind(SyntaxKind.OutKeyword) &&
-                    !mod.IsKind(SyntaxKind.InKeyword))
+                if (!mod.IsKind(SyntaxKind.RefKeyword, SyntaxKind.OutKeyword, SyntaxKind.InKeyword))
                 {
                     continue;
                 }
@@ -84,20 +85,20 @@ internal readonly ref struct KernelBarrierValidator(
 
             if (isByRef)
             {
-                context.ReportDiagnostic(Diagnostic.Create(
+                context.ReportDiagnostic(
                     GSharpDiagnostics.KernelParameterRefStructProhibited,
                     param.GetLocation(),
-                    param.Identifier.ValueText));
+                    param.Identifier.ValueText);
                 continue;
             }
 
-            var paramSymbol = semanticModel.GetDeclaredSymbol(param);
+            var paramSymbol = semanticModel.GetDeclaredSymbol<IParameterSymbol>(param);
             if (paramSymbol?.Type.IsRefLikeType == true)
             {
-                context.ReportDiagnostic(Diagnostic.Create(
+                context.ReportDiagnostic(
                     GSharpDiagnostics.KernelParameterRefStructProhibited,
                     param.GetLocation(),
-                    param.Identifier.ValueText));
+                    param.Identifier.ValueText);
             }
         }
     }
@@ -112,23 +113,23 @@ internal readonly ref struct KernelBarrierValidator(
                 case SyntaxKind.AwaitExpression:
                 case SyntaxKind.YieldReturnStatement:
                 case SyntaxKind.YieldBreakStatement:
-                    context.ReportDiagnostic(Diagnostic.Create(
+                    context.ReportDiagnostic(
                         GSharpDiagnostics.AsyncYieldInKernelProhibited,
-                        node.GetLocation()));
+                        node.GetLocation());
                     break;
 
                 case SyntaxKind.LockStatement:
                     var lockStmt = (LockStatementSyntax)node;
-                    context.ReportDiagnostic(Diagnostic.Create(
+                    context.ReportDiagnostic(
                         GSharpDiagnostics.LockStatementInKernelProhibited,
-                        lockStmt.LockKeyword.GetLocation()));
+                        lockStmt.LockKeyword.GetLocation());
                     break;
 
                 case SyntaxKind.TryStatement:
                     var tryStmt = (TryStatementSyntax)node;
-                    context.ReportDiagnostic(Diagnostic.Create(
+                    context.ReportDiagnostic(
                         GSharpDiagnostics.ExceptionHandlingInKernelProhibited,
-                        tryStmt.TryKeyword.GetLocation()));
+                        tryStmt.TryKeyword.GetLocation());
                     break;
 
                 case SyntaxKind.GotoStatement:
@@ -159,12 +160,12 @@ internal readonly ref struct KernelBarrierValidator(
     /// <summary>Checks if a variable declarator is a ref struct or local pointer that needs cross-barrier tracking.</summary>
     private void InspectLocalVariableDeclarator(VariableDeclaratorSyntax varDecl)
     {
-        if (semanticModel.GetDeclaredSymbol(varDecl) is not ILocalSymbol localSym)
+        if (semanticModel.GetDeclaredSymbol<ILocalSymbol>(varDecl) is not { } localSym)
         {
             return;
         }
 
-        var isRefLikeOrRef = (localSym.Type.IsRefLikeType && localSym.Type.Name != "SharedMemory") || localSym.IsRef;
+        var isRefLikeOrRef = (localSym.Type.IsRefLikeType && !localSym.Type.IsSharedMemoryType()) || localSym.IsRef;
         var isLocalPointer = false;
 
         if (localSym.Type is IPointerTypeSymbol && varDecl.Initializer != null)
@@ -199,15 +200,15 @@ internal readonly ref struct KernelBarrierValidator(
             {
                 // GSH0043: fixed block barrier prohibited
                 case FixedStatementSyntax:
-                    context.ReportDiagnostic(Diagnostic.Create(
+                    context.ReportDiagnostic(
                         GSharpDiagnostics.FixedBlockBarrierProhibited,
-                        barrier.GetLocation()));
+                        barrier.GetLocation());
                     break;
                 // GSH0037: Divergent barrier in conditional branches
                 case IfStatementSyntax or SwitchStatementSyntax or SwitchSectionSyntax:
-                    context.ReportDiagnostic(Diagnostic.Create(
+                    context.ReportDiagnostic(
                         GSharpDiagnostics.DivergentBarrierProhibited,
-                        barrier.GetLocation()));
+                        barrier.GetLocation());
                     break;
                 // GSH0045: Queue local function containing barrier for recursion check
                 case LocalFunctionStatementSyntax localFunc:
@@ -240,7 +241,7 @@ internal readonly ref struct KernelBarrierValidator(
     {
         foreach (var localFunc in _localFunctionsWithBarrier)
         {
-            var localFuncSymbol = semanticModel.GetDeclaredSymbol(localFunc);
+            var localFuncSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(localFunc);
             if (localFuncSymbol == null)
             {
                 continue;
@@ -254,8 +255,8 @@ internal readonly ref struct KernelBarrierValidator(
                     continue;
                 }
 
-                var calledSym = semanticModel.GetSymbolInfo(innerInv).Symbol;
-                if (!SymbolEqualityComparer.Default.Equals(calledSym, localFuncSymbol))
+                var calledSym = semanticModel.GetSymbol(innerInv);
+                if (!calledSym.IsEqualTo(localFuncSymbol))
                 {
                     continue;
                 }
@@ -266,10 +267,10 @@ internal readonly ref struct KernelBarrierValidator(
 
             if (isRecursive)
             {
-                context.ReportDiagnostic(Diagnostic.Create(
+                context.ReportDiagnostic(
                     GSharpDiagnostics.RecursiveBarrierProhibited,
                     localFunc.Identifier.GetLocation(),
-                    localFunc.Identifier.ValueText));
+                    localFunc.Identifier.ValueText);
             }
         }
     }
@@ -322,9 +323,9 @@ internal readonly ref struct KernelBarrierValidator(
             var firstBarrier = FindFirstBarrierAfter(start);
             if (firstBarrier != null && firstBarrier.Span.End < end)
             {
-                context.ReportDiagnostic(Diagnostic.Create(
+                context.ReportDiagnostic(
                     GSharpDiagnostics.CrossBarrierGotoProhibited,
-                    gotoStmt.GetLocation()));
+                    gotoStmt.GetLocation());
             }
         }
     }
@@ -357,24 +358,24 @@ internal readonly ref struct KernelBarrierValidator(
                     id.SpanStart > firstBarrierAfterEnd &&
                     id.Identifier.ValueText == tracked.IdentifierText)
                 {
-                    var idSym = semanticModel.GetSymbolInfo(id).Symbol;
-                    if (!SymbolEqualityComparer.Default.Equals(idSym, tracked.Symbol))
+                    var idSym = semanticModel.GetSymbol(id);
+                    if (!idSym.IsEqualTo(tracked.Symbol))
                     {
                         continue;
                     }
 
                     if (tracked.IsRefLikeOrRef)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(
+                        context.ReportDiagnostic(
                             GSharpDiagnostics.CrossBarrierRefStructProhibited,
                             tracked.Declarator.Identifier.GetLocation(),
-                            tracked.IdentifierText));
+                            tracked.IdentifierText);
                     }
                     else if (tracked.IsLocalPointer)
                     {
-                        context.ReportDiagnostic(Diagnostic.Create(
+                        context.ReportDiagnostic(
                             GSharpDiagnostics.CrossBarrierLocalPointerProhibited,
-                            tracked.Declarator.Identifier.GetLocation()));
+                            tracked.Declarator.Identifier.GetLocation());
                     }
 
                     break;

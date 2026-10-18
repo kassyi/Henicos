@@ -152,14 +152,20 @@ internal static class KernelLaunchEmitter
         }
 
         if (type is INamedTypeSymbol { IsGenericType: true } genericType &&
-            genericType.ContainingNamespace.ToString() is "System" or "System.Collections.Immutable")
+            genericType.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or "Memory" or "ReadOnlyMemory" or "ArraySegment" or "ImmutableArray" &&
+            (genericType.ContainingNamespace.IsSystemNamespace() ||
+             genericType.ContainingNamespace is
+             {
+                 Name: "Immutable",
+                 ContainingNamespace:
+                 {
+                     Name: "Collections",
+                     ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+                 }
+             }))
         {
-            if (genericType.Name is "Span" or "ReadOnlySpan" or "Memory" or "ReadOnlyMemory" or "ArraySegment"
-                or "ImmutableArray")
-            {
-                elementType = genericType.TypeArguments[0];
-                return true;
-            }
+            elementType = genericType.TypeArguments[0];
+            return true;
         }
 
         elementType = null!;
@@ -525,21 +531,23 @@ internal static class KernelLaunchEmitter
         foreach (var attr in p.GetAttributes())
         {
             var cls = attr.AttributeClass;
-
-            if (cls?.Name is not ("InAttribute" or "OutAttribute") ||
-                cls.ContainingNamespace?.GetFullNamespaceName() != "System.Runtime.InteropServices")
+            if (cls?.ContainingNamespace is not
+                {
+                    Name: "InteropServices",
+                    ContainingNamespace:
+                    { Name: "Runtime", ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true } }
+                })
             {
                 continue;
             }
 
-            switch (cls.Name)
+            if (attr.IsAttribute(KnownAttributes.In))
             {
-                case "InAttribute":
-                    hasIn = true;
-                    break;
-                case "OutAttribute":
-                    hasOut = true;
-                    break;
+                hasIn = true;
+            }
+            else if (attr.IsAttribute(KnownAttributes.Out))
+            {
+                hasOut = true;
             }
         }
     }

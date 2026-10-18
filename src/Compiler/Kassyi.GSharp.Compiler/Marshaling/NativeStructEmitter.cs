@@ -40,8 +40,9 @@ internal static class NativeStructEmitter
                 var fieldLayout = CudaLayoutRules.GetCudaLayout(field.Type);
                 currentOffset = CudaLayoutRules.AlignUp(currentOffset, fieldLayout.Alignment);
 
-                writer.AppendLine(
-                    $"public const string DebugName_{field.Name} = \"{field.Type.GetFullyQualifiedName()}\";");
+                writer.Append($"public const string DebugName_{field.Name} = \"");
+                writer.AppendFullyQualifiedCsharpName(field.Type);
+                writer.AppendLine("\";");
                 writer.AppendLine($"[System.Runtime.InteropServices.FieldOffset({currentOffset})]");
 
                 MapToNativeField(writer, field, fieldLayout.Size);

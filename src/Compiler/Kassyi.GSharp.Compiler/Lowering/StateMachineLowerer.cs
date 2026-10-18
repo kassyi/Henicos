@@ -71,7 +71,7 @@ public class StateMachineLowerer
                     var name = (barrierInv.Expression as MemberAccessExpressionSyntax)?.Name.Identifier.ValueText
                                ?? (barrierInv.Expression as IdentifierNameSyntax)?.Identifier.ValueText;
 
-                    if (name == "SyncGrid")
+                    if (name == TypeConstants.GpuMacros.SyncGrid)
                     {
                         currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
                             SyntaxFactory.AssignmentExpression(
@@ -135,7 +135,7 @@ public class StateMachineLowerer
     {
         public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
         {
-            if (node.Kind() != SyntaxKind.GotoStatement || node.Expression is not IdentifierNameSyntax id)
+            if (!node.IsKind(SyntaxKind.GotoStatement) || node.Expression is not IdentifierNameSyntax id)
             {
                 return base.VisitGotoStatement(node);
             }

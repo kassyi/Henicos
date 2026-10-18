@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Extensions;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -28,13 +30,11 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var syntax = field.DeclaringSyntaxReferences.Length > 0
-            ? field.DeclaringSyntaxReferences[0].GetSyntax() as VariableDeclaratorSyntax
-            : null;
+        field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
         if (syntax?.Initializer?.Value is ObjectCreationExpressionSyntax)
         {
-            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.StaticDisposableAllocation,
-                syntax.GetLocation()));
+            context.ReportDiagnostic(GSharpDiagnostics.StaticDisposableAllocation,
+                syntax.GetLocation());
         }
     }
 
@@ -74,8 +74,8 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
 
         if (allocationCount >= 2 && !hasTry)
         {
-            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.UnguardedMultiAllocation,
-                ctor.Identifier.GetLocation()));
+            context.ReportDiagnostic(GSharpDiagnostics.UnguardedMultiAllocation,
+                ctor.Identifier.GetLocation());
         }
     }
 
@@ -88,8 +88,8 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
                 ContainingType: { Name: "Unsafe", ContainingType.Name: TypeConstants.GpuType }
             })
         {
-            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.ManualUnmanagedAllocation,
-                invocation.GetLocation()));
+            context.ReportDiagnostic(GSharpDiagnostics.ManualUnmanagedAllocation,
+                invocation.GetLocation());
         }
     }
 }

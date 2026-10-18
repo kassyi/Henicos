@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Extensions;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
 /// <summary>
@@ -52,9 +54,9 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
         if (enclosingSymbol is not IMethodSymbol enclosingMethod)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
+            context.ReportDiagnostic(
                 GSharpDiagnostics.ExternalBarrierCallProhibited,
-                invocation.GetLocation()));
+                invocation.GetLocation());
             return;
         }
 
@@ -63,9 +65,9 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
         if (!isGpuMethod)
         {
-            context.ReportDiagnostic(Diagnostic.Create(
+            context.ReportDiagnostic(
                 GSharpDiagnostics.ExternalBarrierCallProhibited,
-                invocation.GetLocation()));
+                invocation.GetLocation());
         }
     }
 
@@ -73,7 +75,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     {
         var methodDecl = (MethodDeclarationSyntax)context.Node;
         var semanticModel = context.SemanticModel;
-        var methodSymbol = semanticModel.GetDeclaredSymbol(methodDecl);
+        var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
         if (methodSymbol == null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel))
         {
             return;
@@ -94,7 +96,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (semanticModel.GetSymbolInfo(invocation).Symbol is IMethodSymbol symbol)
+        if (semanticModel.GetSymbol(invocation) is IMethodSymbol symbol)
         {
             return symbol.ContainingType?.Name == TypeConstants.GpuType;
         }

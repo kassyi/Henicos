@@ -80,7 +80,7 @@ public class SideEffectAnalyzer : DiagnosticAnalyzer
             if (node is ObjectCreationExpressionSyntax oce &&
                 DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeSymbol(oce)))
             {
-                context.Report(descriptor, oce);
+                context.ReportDiagnostic(descriptor, oce);
             }
         }
     }
@@ -93,7 +93,7 @@ public class SideEffectAnalyzer : DiagnosticAnalyzer
             if (node is ObjectCreationExpressionSyntax oce &&
                 DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeSymbol(oce)))
             {
-                context.Report(descriptor, oce);
+                context.ReportDiagnostic(descriptor, oce);
             }
         }
     }

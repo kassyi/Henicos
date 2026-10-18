@@ -37,8 +37,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
     private static bool CheckSuppressGs0001(MethodDeclarationSyntax methodDeclaration)
     {
-        var suppressGs0001 = false;
         var root = methodDeclaration.SyntaxTree.GetRoot();
+        if (!root.ContainsDirectives)
+        {
+            return false;
+        }
+
+        var suppressGs0001 = false;
         var nodes = root.DescendantNodes(TextSpan.FromBounds(0, methodDeclaration.Span.End), descendIntoTrivia: true);
 
         foreach (var node in nodes)
@@ -135,12 +140,18 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cudaSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
                 collector.Report,
                 isDevice: false, cudaDialect, out var requiredIncludesCuda);
+
+            (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? lowered =
+                methodDeclaration.Body != null
+                    ? Lowering.AstLoweringPipeline.Lower(methodDeclaration.Body)
+                    : null;
+
             var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
             {
-            }, isDevice: false, cppDialect, out var requiredIncludesCpp);
+            }, isDevice: false, cppDialect, out var requiredIncludesCpp, lowered);
 
             var managedCSharpSource =
-                MethodTranspiler.GenerateManagedCSharpSource(methodDeclaration, context.SemanticModel);
+                MethodTranspiler.GenerateManagedCSharpSource(methodDeclaration, context.SemanticModel, lowered);
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {

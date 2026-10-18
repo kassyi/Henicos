@@ -15,19 +15,7 @@ internal static class LambdaTranspilerHelper
         {
             if (block != null)
             {
-                using (context.Emitter.Writer.Scope())
-                {
-                    for (var i = 0; i < block.Statements.Count; i++)
-                    {
-                        var stmt = block.Statements[i];
-                        context.Visitor.Visit(stmt);
-                        context.Emitter.Writer.AppendLine();
-                        if (context.Visitor.ShouldInsertAutoSync(block.Statements, i))
-                        {
-                            context.Emitter.Writer.AppendLine("cg::this_grid().sync();");
-                        }
-                    }
-                }
+                context.Visitor.VisitStatementOrBlock(block);
             }
             else if (expressionBody != null)
             {

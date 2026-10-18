@@ -12,7 +12,7 @@ internal sealed class LinqNotSupportedRule : ISyntaxValidationRule<QueryExpressi
 
     public void Analyze(QueryExpressionSyntax node, ref ValidationContext context)
     {
-        context.Report(
+        context.ReportDiagnostic(
             GSharpDiagnostics.LinqNotSupported,
             node,
             context.MethodSymbol.Name);
@@ -27,7 +27,7 @@ internal sealed class LinqNotSupportedRule : ISyntaxValidationRule<QueryExpressi
 
             if (isLinqMethod)
             {
-                context.Report(
+                context.ReportDiagnostic(
                     GSharpDiagnostics.LinqNotSupported,
                     node,
                     context.MethodSymbol.Name);

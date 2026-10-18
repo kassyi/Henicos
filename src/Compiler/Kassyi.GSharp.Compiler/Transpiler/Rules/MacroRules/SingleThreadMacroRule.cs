@@ -11,7 +11,7 @@ internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
-        if (symbol.Name != "SingleThread" || symbol.ContainingType.Name != TypeConstants.GpuType)
+        if (symbol.Name != TypeConstants.GpuMacros.SingleThread || symbol.ContainingType.Name != TypeConstants.GpuType)
         {
             return false;
         }

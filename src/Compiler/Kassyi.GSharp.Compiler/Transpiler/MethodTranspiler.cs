@@ -30,6 +30,9 @@ public static class MethodTranspiler
     /// <param name="requiredIncludes">
     /// When this method returns, contains the set of header include directives required by the emitted code.
     /// </param>
+    /// <param name="preLowered">
+    /// Optional pre-computed lowered body and context fields to avoid redundant AST lowering.
+    /// </param>
     /// <returns>
     /// A string containing the complete emitted source code, including topologically sorted struct dependencies and the function definition.
     /// </returns>
@@ -38,7 +41,8 @@ public static class MethodTranspiler
     /// </exception>
     public static string GenerateCudaSource(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
         Action<Diagnostic>? reportDiagnostic, bool isDevice,
-        ITranspilerDialect dialect, out HashSet<string> requiredIncludes)
+        ITranspilerDialect dialect, out HashSet<string> requiredIncludes,
+        (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? preLowered = null)
     {
         using var session = TranspilationSession.Begin(methodDecl, semanticModel, reportDiagnostic, dialect);
         if (session.ErrorMessage != null)
@@ -55,7 +59,7 @@ public static class MethodTranspiler
 
         if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.Body != null)
         {
-            var tuple = AstLoweringPipeline.Lower(methodDecl.Body);
+            var tuple = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body);
             loweredBody = tuple.LoweredBody;
             contextFields = tuple.ContextFields;
         }
@@ -67,13 +71,8 @@ public static class MethodTranspiler
 
         if (contextFields != null)
         {
-            var methodName = methodDecl.Identifier.Text;
             var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-            if (methodSymbol != null)
-            {
-                methodName = $"{methodSymbol.ContainingType.Name}_{methodName}";
-            }
-
+            var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
             WriteContextStruct(methodName, contextFields, ref context);
         }
 
@@ -141,13 +140,8 @@ public static class MethodTranspiler
 
         if (contextFields != null)
         {
-            var methodName = methodDecl.Identifier.Text;
             var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-            if (methodSymbol != null)
-            {
-                methodName = $"{methodSymbol.ContainingType.Name}_{methodName}";
-            }
-
+            var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
             WriteContextStruct(methodName, contextFields, ref context);
         }
 
@@ -170,9 +164,13 @@ public static class MethodTranspiler
     /// </summary>
     /// <param name="methodDecl">The Roslyn method declaration syntax node to transpile.</param>
     /// <param name="semanticModel">The semantic model bound to the compilation containing the method.</param>
+    /// <param name="preLowered">Optional pre-computed lowered body and context fields to avoid redundant AST lowering.</param>
     /// <returns>A string containing the generated managed C# state machine source code.</returns>
-    public static string GenerateManagedCSharpSource(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel) =>
-        ManagedCSharpTranspiler.Generate(methodDecl, semanticModel);
+    public static string GenerateManagedCSharpSource(
+        MethodDeclarationSyntax methodDecl,
+        SemanticModel semanticModel,
+        (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? preLowered = null) =>
+        ManagedCSharpTranspiler.Generate(methodDecl, semanticModel, preLowered);
 
     private static void WriteContextStruct(string methodName, IReadOnlyList<VariableDeclaratorSyntax> fields,
         ref TranspileContext context)

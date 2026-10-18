@@ -6,6 +6,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class MethodSignatureTranspiler
 {
+    public static string GetKernelMethodName(MethodDeclarationSyntax method, IMethodSymbol? methodSymbol) =>
+        methodSymbol != null ? $"{methodSymbol.ContainingType.Name}_{method.Identifier.Text}" : method.Identifier.Text;
+
     public static void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice, bool hasContext,
         ref TranspileContext context)
     {
@@ -21,11 +24,7 @@ internal static class MethodSignatureTranspiler
             WriteKernelMethodPrefix(ref context);
         }
 
-        var methodName = method.Identifier.Text;
-        if (!isDevice && methodSymbol != null)
-        {
-            methodName = $"{methodSymbol.ContainingType.Name}_{methodName}";
-        }
+        var methodName = isDevice ? method.Identifier.Text : GetKernelMethodName(method, methodSymbol);
 
         context.Emitter.Writer.Append($" {methodName}");
         using (context.Emitter.Writer.Parentheses())
@@ -70,8 +69,8 @@ internal static class MethodSignatureTranspiler
         foreach (var parameter in methodSymbol.Parameters)
         {
             if (parameter.Type is not IFunctionPointerTypeSymbol ||
-                parameter.DeclaringSyntaxReferences.IsEmpty ||
-                parameter.DeclaringSyntaxReferences[0].GetSyntax() is not ParameterSyntax { Type: { } typeSyntax })
+                !parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var paramSyntax) ||
+                paramSyntax.Type is not { } typeSyntax)
             {
                 continue;
             }
@@ -92,11 +91,11 @@ internal static class MethodSignatureTranspiler
             }
 
             var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(p.SyntaxTree);
-            var typeSymbol = paramSemanticModel.GetTypeInfo(p.Type!).Type;
+            var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type);
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 
-            var paramSymbol = paramSemanticModel.GetDeclaredSymbol(p) as IParameterSymbol;
+            var paramSymbol = paramSemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
             var isReadOnly = paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
             var isArray = typeSymbol != null && KernelLaunchEmitter.IsArrayLikeType(typeSymbol, out _);
 
@@ -166,23 +165,28 @@ internal static class MethodSignatureTranspiler
 
         foreach (var attr in methodSymbol.GetAttributes())
         {
-            var keyword = attr.AttributeClass?.Name switch
+            if (attr.IsAttribute(KnownAttributes.GpuInline))
             {
-                KnownAttributes.GpuInline or KnownAttributes.GpuInline + "Attribute" => "__forceinline__",
-                KnownAttributes.GpuNoInline or KnownAttributes.GpuNoInline + "Attribute" => "__noinline__",
-                KnownAttributes.MethodImpl or KnownAttributes.MethodImpl + "Attribute" => ExtractMethodImplOptions(attr)
-                    switch
-                    {
-                        var opt when (opt & MethodImplOptions.AggressiveInlining) != 0 => "__forceinline__",
-                        var opt when (opt & MethodImplOptions.NoInlining) != 0 => "__noinline__",
-                        _ => null
-                    },
-                _ => null
-            };
+                return "__forceinline__";
+            }
 
-            if (keyword != null)
+            if (attr.IsAttribute(KnownAttributes.GpuNoInline))
             {
-                return keyword;
+                return "__noinline__";
+            }
+
+            if (attr.IsAttribute(KnownAttributes.MethodImpl))
+            {
+                var opt = ExtractMethodImplOptions(attr);
+                if ((opt & MethodImplOptions.AggressiveInlining) != 0)
+                {
+                    return "__forceinline__";
+                }
+
+                if ((opt & MethodImplOptions.NoInlining) != 0)
+                {
+                    return "__noinline__";
+                }
             }
         }
 

@@ -36,7 +36,7 @@ public class ContextHoister : CSharpSyntaxRewriter
 
             var isSharedMemory = decl.Parent is VariableDeclarationSyntax
             {
-                Type: GenericNameSyntax { Identifier.ValueText: "SharedMemory" }
+                Type: GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType }
             };
 
             if (isSharedMemory)
@@ -78,7 +78,7 @@ public class ContextHoister : CSharpSyntaxRewriter
             {
                 // [WHY] Hoisted variables reside in the context struct, so initializations must become explicit member assignments.
                 var typeSyntax = (variable.Parent as VariableDeclarationSyntax)?.Type;
-                var isSharedMemory = typeSyntax is GenericNameSyntax { Identifier.ValueText: "SharedMemory" };
+                var isSharedMemory = typeSyntax is GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType };
 
                 if (variable.Initializer == null || isSharedMemory)
                 {

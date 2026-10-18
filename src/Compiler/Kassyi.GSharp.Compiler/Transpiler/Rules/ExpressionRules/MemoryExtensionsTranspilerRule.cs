@@ -5,7 +5,9 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
 {
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        if (symbol.ContainingType.Name != "MemoryExtensions" || symbol.Name != "Sort")
+        if (symbol.ContainingType.Name != "MemoryExtensions" ||
+            symbol.Name != "Sort" ||
+            !symbol.ContainingNamespace.IsSystemNamespace())
         {
             return false;
         }

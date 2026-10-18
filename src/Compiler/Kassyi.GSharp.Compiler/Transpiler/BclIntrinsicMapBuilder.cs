@@ -4,8 +4,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>Discovers assembly attributes and builds immutable mappings from BCL methods to CUDA intrinsic functions.</summary>
 internal static class BclIntrinsicMapBuilder
 {
-    private const string BclIntrinsicMapAttributeFullName = "Kassyi.GSharp.Core.BclIntrinsicMapAttribute";
-
     private static readonly ConditionalWeakTable<Compilation, ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>>
         s_cache =
             new();
@@ -29,7 +27,7 @@ internal static class BclIntrinsicMapBuilder
 
     private static ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> BuildMap(Compilation compilation)
     {
-        var attributeSymbol = compilation.GetTypeByMetadataName(BclIntrinsicMapAttributeFullName);
+        var attributeSymbol = compilation.GetTypeByMetadataName(KnownAttributes.BclIntrinsicMapMetadataName);
         if (attributeSymbol == null)
         {
             return ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty;

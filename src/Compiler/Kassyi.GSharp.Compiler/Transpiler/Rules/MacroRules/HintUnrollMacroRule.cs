@@ -12,8 +12,8 @@ internal sealed class HintUnrollMacroRule : IMacroTranspilerRule
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
-        if (symbol.Name != "Unroll" ||
-            symbol.ContainingType.Name != "Hint" ||
+        if (symbol.Name != TypeConstants.GpuMacros.Unroll ||
+            symbol.ContainingType.Name != TypeConstants.GpuMacros.Hint ||
             symbol.ContainingType.ContainingType?.Name != TypeConstants.GpuType)
         {
             return false;
@@ -30,14 +30,11 @@ internal sealed class HintUnrollMacroRule : IMacroTranspilerRule
         if (args.Count > 0)
         {
             var factorExpr = args[0].Expression;
-            var constantValue = context.Query.SemanticModel.GetSafeConstantValue(factorExpr);
-            if (!constantValue.HasValue || constantValue.Value is not int intVal || intVal < 0)
+            if (!MacroTranspilerHelper.TryGetConstantInt(factorExpr, context.Query.SemanticModel, out factor) || factor < 0)
             {
                 context.Reporter.Report(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
                 return true;
             }
-
-            factor = intVal;
         }
 
         if (factor > 0)

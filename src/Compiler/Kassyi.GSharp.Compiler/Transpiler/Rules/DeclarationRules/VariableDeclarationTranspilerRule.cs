@@ -9,7 +9,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 /// <para><b>Thread Safety:</b> This rule is stateless and safe for concurrent execution across threads.</para>
 /// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
 /// </remarks>
-public class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<VariableDeclarationSyntax>
+public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRuleBase<VariableDeclarationSyntax>
 {
     private readonly struct VariableMapping(
         ITypeSymbol? typeSymbol,

@@ -37,26 +37,6 @@ internal static class TypeConstants
         public const string Unroll = nameof(Unroll);
         public const string GridStrideLoop = nameof(GridStrideLoop);
         public const string SingleThread = nameof(SingleThread);
-    }
-
-    public static class CudaTypes
-    {
-        public const string Void = "void";
-        public const string Bool = "bool";
-        public const string Char = "char";
-        public const string UnsignedChar = "unsigned char";
-        public const string Short = "short";
-        public const string UnsignedShort = "unsigned short";
-        public const string Int = "int";
-        public const string UnsignedInt = "unsigned int";
-        public const string LongLong = "long long";
-        public const string UnsignedLongLong = "unsigned long long";
-        public const string Float = "float";
-        public const string Double = "double";
-
-        public const string Float2 = "float2";
-        public const string Float3 = "float3";
-        public const string Float4 = "float4";
-        public const string UnsignedIntPtr = "unsigned int*";
+        public const string Constant = nameof(Constant);
     }
 }

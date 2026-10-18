@@ -1,3 +1,6 @@
+using Kassyi.GSharp.Compiler.Extensions;
+using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules.StackLinq;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -45,13 +48,9 @@ public class StackLinqChainAnalyzer : DiagnosticAnalyzer
 
         while (currentExpression is InvocationExpressionSyntax currentInvocation)
         {
-            var symbol = semanticModel.GetSymbolInfo(currentInvocation, context.CancellationToken).Symbol as IMethodSymbol;
+            var symbol = semanticModel.GetSymbol(currentInvocation, context.CancellationToken) as IMethodSymbol;
             
-            if (symbol == null ||
-                symbol.ContainingType?.Name != "StackLinqExtensions" ||
-                symbol.ContainingNamespace?.Name != "Linq" ||
-                symbol.ContainingNamespace?.ContainingNamespace?.Name != "ZeroAlloc" ||
-                symbol.ContainingNamespace?.ContainingNamespace?.ContainingNamespace?.Name != "Kassyi")
+            if (symbol == null || !StackLinqHelper.IsStackLinqMethod(symbol) || symbol.ContainingType?.Name != "StackLinqExtensions")
             {
                 // Not a StackLinq extension method, stop counting
                 break;
@@ -71,8 +70,7 @@ public class StackLinqChainAnalyzer : DiagnosticAnalyzer
 
         if (depth > MaxChainDepth)
         {
-            var diagnostic = Diagnostic.Create(Rule, invocation.GetLocation(), MaxChainDepth);
-            context.ReportDiagnostic(diagnostic);
+            context.ReportDiagnostic(Rule, invocation.GetLocation(), MaxChainDepth);
         }
     }
 }

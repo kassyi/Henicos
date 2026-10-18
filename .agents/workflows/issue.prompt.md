@@ -23,16 +23,16 @@ Your mission is to understand the user's issue topic (bug report, feature reques
 
 ```mermaid
 graph TD
-    Start([Invoke /issue]) --> Identify[1. Identify Issue Category & Context]
-    Identify --> Inspect[2. Inspect Repo for Reproduction / Context if needed]
+    Start([Invoke /issue]) --> FetchLabels[1. Fetch Existing Labels & Classify Issue]
+    FetchLabels --> Inspect[2. Inspect Repo for Reproduction / Context if needed]
     Inspect --> ReadTemplate[3. Read corresponding .github/ISSUE_TEMPLATE/*.yml]
-    ReadTemplate --> Draft[4. Synthesize Structured Issue Draft]
-    Draft --> Propose[5. Present Proposal (Title, Label, Body) to User]
+    ReadTemplate --> Draft[4. Synthesize Structured Issue Draft & Labels (Max 2)]
+    Draft --> Propose[5. Present Proposal (Title, Labels, Body) to User]
     Propose --> UserDecision{User Approval?}
     UserDecision -- Modifications Requested --> Revise[Revise draft and re-propose]
     Revise --> Propose
     UserDecision -- Approved (yes/y) --> WriteTemp[Write body to tmp/issue_body.md]
-    WriteTemp --> Execute[6. Run gh issue create --body-file]
+    WriteTemp --> Execute[6. Run gh issue create --label & --body-file]
     Execute --> Cleanup[Clean up tmp/issue_body.md & Report Issue URL]
 ```
 
@@ -40,19 +40,30 @@ graph TD
 
 ## Step-by-Step Instructions
 
-### Step 1: Issue Category Identification
+### Step 1: Existing Label Retrieval & Issue Category Identification
 
-Analyze the user's request and classify into one of the 3 templates:
+1. **Fetch Existing Repository Labels**:
+   Retrieve the current labels registered in the repository:
+   ```bash
+   gh label list --limit 100 --json name,description
+   ```
 
-1. **Bug Report** (`.github/ISSUE_TEMPLATE/bug_report.yml`)
-    - Title format: `[Bug]: <Concise description>`
-    - Label: `bug`
-2. **Feature / Syntax Request** (`.github/ISSUE_TEMPLATE/feature_request.yml`)
-    - Title format: `[Feature]: <Concise description>`
-    - Label: `enhancement`
-3. **Performance / Optimization** (`.github/ISSUE_TEMPLATE/performance.yml`)
-    - Title format: `[Perf]: <Concise description>`
-    - Label: `performance`
+2. **Classify Issue Template & Select Labels (Max 2)**:
+   Analyze the user's request and classify into one of the 3 templates:
+   - **Bug Report** (`.github/ISSUE_TEMPLATE/bug_report.yml`)
+     - Title format: `[Bug]: <Concise description>`
+     - Primary Label: `bug`
+   - **Feature / Syntax Request** (`.github/ISSUE_TEMPLATE/feature_request.yml`)
+     - Title format: `[Feature]: <Concise description>`
+     - Primary Label: `feature` (or `enhancement`)
+   - **Performance / Optimization** (`.github/ISSUE_TEMPLATE/performance.yml`)
+     - Title format: `[Perf]: <Concise description>`
+     - Primary Label: `performance`
+
+   - **Multi-Topic Classification (1–2 Labels Maximum)**:
+     - Select **1 to 2 labels** from the existing repository labels fetched above (e.g., `feature`, `refactor`, `bug`, `performance`, `test`, `documentation`, `chore`, `enhancement`).
+     - If the issue spans two distinct topics (e.g., a new feature combined with refactoring -> `feature,refactor`), attach both labels.
+     - **Strict Cap**: Assign **at most 2 labels** (`1 <= count <= 2`) so that label classification remains focused and meaningful.
 
 If ambiguous, briefly ask the user to clarify the issue type.
 
@@ -99,7 +110,7 @@ Present the proposed Issue to the user in the following structure. **Note**: Do 
 ### 提案する Issue 内容
 
 - **Title**: `[Bug]: ...`
-- **Labels**: `bug`
+- **Labels**: `<label1>` (or `<label1>, <label2>` — 最大2件まで)
 
 ### Issue 本文:
 
@@ -119,9 +130,9 @@ Upon explicit approval from the user:
     if (!(Test-Path -Path "tmp")) { New-Item -ItemType Directory -Path "tmp" }
     ```
 2. Write the finalized issue body into `tmp/issue/issue_body.md` using `write_to_file`.
-3. Run the `gh` command:
+3. Run the `gh` command (passing the 1–2 selected labels separated by a comma):
     ```powershell
-    gh issue create --title "<Title>" --label "<Label>" --body-file tmp/issue/issue_body.md
+    gh issue create --title "<Title>" --label "<label1,label2>" --body-file tmp/issue/issue_body.md
     ```
 4. Remove the temporary file:
     ```powershell

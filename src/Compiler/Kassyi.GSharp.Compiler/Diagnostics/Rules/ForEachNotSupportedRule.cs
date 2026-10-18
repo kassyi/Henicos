@@ -36,7 +36,7 @@ internal sealed class ForEachNotSupportedRule : ISyntaxValidationRule<ForEachSta
             }
         }
 
-        context.Report(
+        context.ReportDiagnostic(
             GSharpDiagnostics.ForeachNotSupported,
             node,
             context.MethodSymbol.Name);

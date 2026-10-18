@@ -11,7 +11,7 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
-        if (symbol.Name != "SyncGrid" || symbol.ContainingType.Name != TypeConstants.GpuType ||
+        if (symbol.Name != TypeConstants.GpuMacros.SyncGrid || symbol.ContainingType.Name != TypeConstants.GpuType ||
             symbol.Parameters.Length != 1)
         {
             return false;
@@ -25,61 +25,43 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
             return false;
         }
 
-        return lambdaExpr.Body switch
+        switch (lambdaExpr.Body)
         {
-            BlockSyntax block => TranspileBlock(block, ref context),
-            ExpressionSyntax expr => TranspileExpression(expr, ref context),
-            _ => false
-        };
+            case BlockSyntax block:
+                var flatStatements = RoslynToCudaVisitor.FlattenStatements(block.Statements, context.Query.SemanticModel);
+                if (MacroTranspilerHelper.HasExecutableStatements(flatStatements))
+                {
+                    EmitSyncGridBody(ref context, flatStatements, expr: null);
+                }
+
+                // [WHY] Completely eliminate empty Gpu.SyncGrid(() => {}) as a No-op (zero CUDA C++ output).
+                return true;
+
+            case ExpressionSyntax expr:
+                EmitSyncGridBody(ref context, flatStatements: null, expr);
+                return true;
+
+            default:
+                return false;
+        }
     }
 
-    private static bool TranspileBlock(BlockSyntax block, ref TranspileContext context)
+    private static void EmitSyncGridBody(
+        ref TranspileContext context,
+        IReadOnlyList<CSharpSyntaxNode>? flatStatements,
+        ExpressionSyntax? expr)
     {
-        var flatStatements = RoslynToCudaVisitor.FlattenStatements(block.Statements, context.Query.SemanticModel);
-        if (!MacroTranspilerHelper.HasExecutableStatements(flatStatements))
-        {
-            // [WHY] Completely eliminate empty Gpu.SyncGrid(() => {}) as a No-op (zero CUDA C++ output).
-            return true;
-        }
-
         var isNested = context.Emitter.AutoSyncGridDepth > 0;
         context.Emitter.AutoSyncGridDepth++;
         try
         {
-            if (isNested)
+            using (isNested ? default : context.Emitter.Writer.Scope())
             {
-                MacroTranspilerHelper.EmitFlattenedSyncGridBlock(flatStatements, ref context);
-            }
-            else
-            {
-                using (context.Emitter.Writer.Scope())
+                if (flatStatements != null)
                 {
                     MacroTranspilerHelper.EmitFlattenedSyncGridBlock(flatStatements, ref context);
                 }
-            }
-        }
-        finally
-        {
-            context.Emitter.AutoSyncGridDepth--;
-        }
-
-        return true;
-    }
-
-    private static bool TranspileExpression(ExpressionSyntax expr, ref TranspileContext context)
-    {
-        var isNested = context.Emitter.AutoSyncGridDepth > 0;
-        context.Emitter.AutoSyncGridDepth++;
-        try
-        {
-            if (isNested)
-            {
-                context.Visitor.Visit(expr);
-                context.Emitter.Writer.AppendSemiColonLine();
-            }
-            else
-            {
-                using (context.Emitter.Writer.Scope())
+                else if (expr != null)
                 {
                     context.Visitor.Visit(expr);
                     context.Emitter.Writer.AppendSemiColonLine();
@@ -90,7 +72,5 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
         {
             context.Emitter.AutoSyncGridDepth--;
         }
-
-        return true;
     }
 }

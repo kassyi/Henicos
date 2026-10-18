@@ -24,11 +24,12 @@ public class BranchRewriter : CSharpSyntaxRewriter
     }
 
     /// <summary>Rewrites branching statements within the block into flat goto sequences.</summary>
-    public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
+    public BlockSyntax Rewrite(BlockSyntax block) =>
+        ContainsBarrier(block) ? (BlockSyntax)Visit(block) : block;
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
     {
-        var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
+        var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>(node.Statements.Count);
 
         foreach (var statement in node.Statements)
         {
@@ -36,8 +37,9 @@ public class BranchRewriter : CSharpSyntaxRewriter
 
             if (visited is BlockSyntax nestedBlock)
             {
-                // [WHY] Only inline blocks that contain a barrier to preserve variable scopes and prevent unnecessary hoisting.
-                if (ContainsBarrier(statement))
+                // [WHY] Non-block statements (e.g. IfStatement) only become BlockSyntax when they already contain a barrier.
+                // Explicit nested BlockSyntax nodes are only inlined if they contain a barrier to preserve variable scopes.
+                if (statement is not BlockSyntax || ContainsBarrier(statement))
                 {
                     newStatements.AddRange(nestedBlock.Statements);
                 }

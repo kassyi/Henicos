@@ -11,7 +11,7 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
-        if (symbol.Name != "ForUnroll" || symbol.ContainingType.Name != TypeConstants.GpuType)
+        if (symbol.Name != TypeConstants.GpuMacros.ForUnroll || symbol.ContainingType.Name != TypeConstants.GpuType)
         {
             return false;
         }
@@ -32,7 +32,7 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
             return false;
         }
 
-        if (!MacroTranspilerHelper.TryBeginMacroScope(invocation, lambdaExpr, hasContext, args, ref context, "ForUnroll", out var macroScope))
+        if (!MacroTranspilerHelper.TryBeginMacroScope(invocation, lambdaExpr, hasContext, args, ref context, TypeConstants.GpuMacros.ForUnroll, out var macroScope))
         {
             return false;
         }

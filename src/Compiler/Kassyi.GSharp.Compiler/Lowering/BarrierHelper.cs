@@ -19,7 +19,7 @@ internal static class BarrierHelper
                 break;
         }
 
-        if ((name == "SyncThreads" || name == "SyncGrid") && className is TypeConstants.GpuType or "")
+        if ((name == "SyncThreads" || name == TypeConstants.GpuMacros.SyncGrid) && className is TypeConstants.GpuType or "")
         {
             return true;
         }

@@ -10,28 +10,50 @@ internal static class CppNameFormatter
     /// </summary>
     public static ref readonly SourceWriter AppendFullyQualifiedCppName(this in SourceWriter writer, ISymbol symbol)
     {
-        AppendSymbolPath(symbol,
-            appendName: static (ref SourceWriter w, string name) => w.Append(name),
-            appendSeparator: static (ref SourceWriter w) => w.Append('_'),
-            appendParent: static (ref SourceWriter w, ISymbol parent) => w.AppendFullyQualifiedCppName(parent),
-            ref Unsafe.AsRef(in writer));
+        switch (symbol)
+        {
+            case ITypeParameterSymbol:
+                writer.Append(symbol.Name);
+                return ref writer;
+            case INamespaceSymbol { IsGlobalNamespace: true }:
+                return ref writer;
+        }
+
+        if (symbol.ContainingSymbol is { } parent and not INamespaceSymbol { IsGlobalNamespace: true })
+        {
+            writer.AppendFullyQualifiedCppName(parent);
+            writer.Append('_');
+        }
+
+        writer.Append(symbol.Name);
         return ref writer;
     }
 
     public static string ToSafeCppIdentifier(this ISymbol symbol)
     {
-        var sb = new StringBuilder();
-        AppendSafeIdentifierRecursive(symbol, sb);
-        return sb.ToString();
+        using var writer = new SourceWriter();
+        AppendSafeIdentifierRecursive(writer, symbol);
+        return writer.ToString();
     }
 
-    private static void AppendSafeIdentifierRecursive(ISymbol symbol, StringBuilder sb)
+    private static void AppendSafeIdentifierRecursive(in SourceWriter writer, ISymbol symbol)
     {
-        AppendSymbolPath(symbol,
-            appendName: static (ref StringBuilder b, string name) => b.Append(name),
-            appendSeparator: static (ref StringBuilder b) => b.Append('_'),
-            appendParent: static (ref StringBuilder b, ISymbol parent) => AppendSafeIdentifierRecursive(parent, b),
-            ref sb);
+        switch (symbol)
+        {
+            case ITypeParameterSymbol:
+                writer.Append(symbol.Name);
+                return;
+            case INamespaceSymbol { IsGlobalNamespace: true }:
+                return;
+        }
+
+        if (symbol.ContainingSymbol is { } parent and not INamespaceSymbol { IsGlobalNamespace: true })
+        {
+            AppendSafeIdentifierRecursive(writer, parent);
+            writer.Append('_');
+        }
+
+        writer.Append(symbol.Name);
 
         if (symbol is not INamedTypeSymbol { IsGenericType: true } namedType)
         {
@@ -40,93 +62,37 @@ internal static class CppNameFormatter
 
         foreach (var typeArg in namedType.TypeArguments)
         {
-            sb.Append('_');
-            AppendSafeIdentifierRecursive(typeArg, sb);
+            writer.Append('_');
+            AppendSafeIdentifierRecursive(writer, typeArg);
         }
-    }
-
-    private delegate void AppendNameDelegate<TState>(ref TState state, string name);
-    private delegate void AppendSeparatorDelegate<TState>(ref TState state);
-    private delegate void AppendParentDelegate<TState>(ref TState state, ISymbol parent);
-
-    private static void AppendSymbolPath<TState>(
-        ISymbol symbol,
-        AppendNameDelegate<TState> appendName,
-        AppendSeparatorDelegate<TState> appendSeparator,
-        AppendParentDelegate<TState> appendParent,
-        ref TState state)
-    {
-        switch (symbol)
-        {
-            case ITypeParameterSymbol:
-                appendName(ref state, symbol.Name);
-                return;
-            case INamespaceSymbol { IsGlobalNamespace: true }:
-                return;
-        }
-
-        if (symbol.ContainingSymbol is { } parent and not INamespaceSymbol { IsGlobalNamespace: true })
-        {
-            appendParent(ref state, parent);
-            appendSeparator(ref state);
-        }
-
-        appendName(ref state, symbol.Name);
     }
 
     public static ref readonly SourceWriter AppendNestedCppName(this in SourceWriter writer, ISymbol symbol)
     {
-        AppendNestedSymbolPath(symbol,
-            appendName: static (ref SourceWriter w, string name) => w.Append(name),
-            appendSeparator: static (ref SourceWriter w) => w.Append('_'),
-            appendParent: static (ref SourceWriter w, ISymbol parent) => w.AppendNestedCppName(parent),
-            ref Unsafe.AsRef(in writer));
-        return ref writer;
-    }
-
-    private static void AppendNestedSymbolPath<TState>(
-        ISymbol symbol,
-        AppendNameDelegate<TState> appendName,
-        AppendSeparatorDelegate<TState> appendSeparator,
-        AppendParentDelegate<TState> appendParent,
-        ref TState state)
-    {
         if (symbol.ContainingType is { } parentType)
         {
-            appendParent(ref state, parentType);
-            appendSeparator(ref state);
+            writer.AppendNestedCppName(parentType);
+            writer.Append('_');
         }
 
-        appendName(ref state, symbol.Name);
+        writer.Append(symbol.Name);
+        return ref writer;
     }
 
     public static ref readonly SourceWriter AppendAotStructPath(this in SourceWriter writer, ISymbol symbol)
     {
-        AppendAotStructPathRecursive(symbol,
-            appendName: static (ref SourceWriter w, string name) => w.Append(name),
-            appendSeparator: static (ref SourceWriter w) => w.Append('.'),
-            appendParent: static (ref SourceWriter w, ISymbol parent) => w.AppendAotStructPath(parent),
-            ref Unsafe.AsRef(in writer));
-        return ref writer;
-    }
-
-    private static void AppendAotStructPathRecursive<TState>(
-        ISymbol symbol,
-        AppendNameDelegate<TState> appendName,
-        AppendSeparatorDelegate<TState> appendSeparator,
-        AppendParentDelegate<TState> appendParent,
-        ref TState state)
-    {
         if (symbol.ContainingType is { } parentType && CudaLayoutRules.IsCustomStruct(parentType))
         {
-            appendParent(ref state, parentType);
-            appendSeparator(ref state);
-            appendName(ref state, TrimContextSuffix(symbol.Name));
+            writer.AppendAotStructPath(parentType);
+            writer.Append('.');
         }
         else
         {
-            appendName(ref state, "AotContexts." + TrimContextSuffix(symbol.Name));
+            writer.Append("AotContexts.");
         }
+
+        writer.Append(TrimContextSuffix(symbol.Name));
+        return ref writer;
     }
 
     public static string TrimContextSuffix(string name) => name.EndsWith("Context") ? name[..^7] : name;

@@ -9,20 +9,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// </remarks>
 public sealed class ObjectCreationExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<ObjectCreationExpressionSyntax>
 {
-    /// <summary>
-    /// Gets the singleton instance of the <see cref="ObjectCreationExpressionTranspilerRule"/>.
-    /// </summary>
-    public ObjectCreationExpressionTranspilerRule()
-    {
-    }
-
     /// <inheritdoc />
-    public override void Transpile(ObjectCreationExpressionSyntax node, ref TranspileContext context)
-    {
-        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node);
-        ObjectCreationHelper.TryTranspileObjectCreationHelper(typeSymbol, node, node.Initializer, node.ArgumentList,
-            ref context);
-    }
+    public override void Transpile(ObjectCreationExpressionSyntax node, ref TranspileContext context) =>
+        ObjectCreationHelper.TranspileObjectCreation(node, ref context);
 }
 
 /// <summary>
@@ -34,20 +23,9 @@ public sealed class ObjectCreationExpressionTranspilerRule : SyntaxNodeTranspile
 /// </remarks>
 public sealed class ImplicitObjectCreationExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<ImplicitObjectCreationExpressionSyntax>
 {
-    /// <summary>
-    /// Gets the singleton instance of the <see cref="ImplicitObjectCreationExpressionTranspilerRule"/>.
-    /// </summary>
-    public ImplicitObjectCreationExpressionTranspilerRule()
-    {
-    }
-
     /// <inheritdoc />
-    public override void Transpile(ImplicitObjectCreationExpressionSyntax node, ref TranspileContext context)
-    {
-        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node);
-        ObjectCreationHelper.TryTranspileObjectCreationHelper(typeSymbol, node, node.Initializer, node.ArgumentList,
-            ref context);
-    }
+    public override void Transpile(ImplicitObjectCreationExpressionSyntax node, ref TranspileContext context) =>
+        ObjectCreationHelper.TranspileObjectCreation(node, ref context);
 }
 
 /// <summary>
@@ -55,20 +33,18 @@ public sealed class ImplicitObjectCreationExpressionTranspilerRule : SyntaxNodeT
 /// </summary>
 internal static class ObjectCreationHelper
 {
-    public static void TryTranspileObjectCreationHelper(
-        ITypeSymbol? typeSymbol,
-        ExpressionSyntax node,
-        InitializerExpressionSyntax? initializer,
-        ArgumentListSyntax? argumentList,
-        ref TranspileContext context)
+    public static void TranspileObjectCreation(BaseObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
+        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node);
         if (typeSymbol is null or IErrorTypeSymbol || typeSymbol.TypeKind == TypeKind.Error)
         {
             return;
         }
 
-        if (typeSymbol is { Name: TypeConstants.SharedMemoryType } &&
-            typeSymbol.ContainingNamespace.IsCoreNamespace())
+        var initializer = node.Initializer;
+        var argumentList = node.ArgumentList;
+
+        if (typeSymbol.IsSharedMemoryType())
         {
             if (typeSymbol is not INamedTypeSymbol namedType || namedType.TypeArguments.Length != 1)
             {
@@ -150,13 +126,7 @@ internal static class ObjectCreationHelper
     {
         using (context.Emitter.Writer.Parentheses())
         {
-            using (context.Emitter.Writer.Brackets())
-            {
-                context.Emitter.Writer.Append("&");
-            }
-
-            context.Emitter.Writer.AppendParentheses();
-            context.Emitter.Writer.AppendSpace();
+            context.Emitter.Writer.Append("[&]() ");
             using (context.Emitter.Writer.Scope())
             {
                 context.Emitter.Dialect.AppendType(ref context, typeSymbol);

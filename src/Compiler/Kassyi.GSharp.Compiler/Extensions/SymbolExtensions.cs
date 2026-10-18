@@ -80,6 +80,31 @@ internal static class SymbolExtensions
         return false;
     }
 
+    /// <summary>
+    /// Checks whether the type is Kassyi.GSharp.Core.SharedMemory&lt;T&gt;.
+    /// </summary>
+    public static bool IsSharedMemoryType(
+        [NotNullWhen(true)] this ITypeSymbol? type) =>
+        type is { Name: TypeConstants.SharedMemoryType } && type.ContainingNamespace.IsCoreNamespace();
+
+    /// <summary>
+    /// Attempts to get the first declaring syntax node of the specified type for this symbol.
+    /// </summary>
+    public static bool TryGetDeclaringSyntax<TSyntax>(
+        this ISymbol? symbol,
+        [NotNullWhen(true)] out TSyntax? syntax)
+        where TSyntax : SyntaxNode
+    {
+        if (symbol is { DeclaringSyntaxReferences.Length: > 0 } &&
+            symbol.DeclaringSyntaxReferences[0].GetSyntax() is TSyntax node)
+        {
+            syntax = node;
+            return true;
+        }
+
+        syntax = null;
+        return false;
+    }
 
     /// <summary>
     /// Checks if the attribute matches the specified short name (e.g. "GpuKernel" matches both "GpuKernel" and "GpuKernelAttribute").
@@ -93,8 +118,7 @@ internal static class SymbolExtensions
     /// </summary>
     public static bool IsStructLayoutAttribute(this AttributeData attr)
     {
-        var name = attr.AttributeClass?.Name;
-        if (name != "StructLayoutAttribute" && name != "StructLayout")
+        if (!attr.IsAttribute(KnownAttributes.StructLayout))
         {
             return false;
         }
@@ -104,7 +128,7 @@ internal static class SymbolExtensions
         {
             Name: "InteropServices",
             ContainingNamespace:
-            { Name: "Runtime", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } }
+            { Name: "Runtime", ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true } }
         };
     }
 
@@ -181,21 +205,6 @@ internal static class SymbolExtensions
                 current = current.ContainingNamespace;
             }
         }
-    }
-
-    /// <summary>
-    /// Gets the fully qualified name (e.g. global::Namespace.TypeName) without allocating via ToDisplayString().
-    /// </summary>
-    public static string GetFullyQualifiedName(this ITypeSymbol? typeSymbol)
-    {
-        if (typeSymbol == null)
-        {
-            return string.Empty;
-        }
-
-        using var writer = new SourceWriter();
-        writer.AppendFullyQualifiedCsharpName(typeSymbol);
-        return writer.ToString();
     }
 
     public static ref readonly SourceWriter AppendConstantField(this in SourceWriter writer, IFieldSymbol field)
@@ -327,8 +336,7 @@ internal static class SymbolExtensions
             return ref writer;
         }
 
-        if (symbol.DeclaringSyntaxReferences.Length > 0 &&
-            symbol.DeclaringSyntaxReferences[0].GetSyntax() is BaseTypeDeclarationSyntax typeDecl)
+        if (symbol.TryGetDeclaringSyntax<BaseTypeDeclarationSyntax>(out var typeDecl))
         {
             writer.Append("global::");
             AppendParentNamespaceOrTypeFromAst(writer, typeDecl.Parent);
@@ -392,5 +400,25 @@ internal static class SymbolExtensions
         AppendContainingNamespaceOrType(writer, parent.ContainingSymbol);
         writer.Append(parent.Name);
         writer.Append('.');
+    }
+
+    /// <summary>
+    /// Recursively writes the namespace hierarchy to the source writer without string allocations.
+    /// </summary>
+    public static ref readonly SourceWriter AppendNamespace(this in SourceWriter writer, INamespaceSymbol? ns)
+    {
+        if (ns is null || ns.IsGlobalNamespace)
+        {
+            return ref writer;
+        }
+
+        if (ns.ContainingNamespace is { IsGlobalNamespace: false } parentNs)
+        {
+            writer.AppendNamespace(parentNs);
+            writer.Append('.');
+        }
+
+        writer.Append(ns.Name);
+        return ref writer;
     }
 }

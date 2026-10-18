@@ -7,6 +7,7 @@ using Rules;
 /// </summary>
 /// <param name="writer">The active <see cref="SourceWriter"/> used to emit generated source code.</param>
 /// <param name="localVariableOverrides">A dictionary mapping variable identifiers to macro expansion replacement values.</param>
+/// <param name="activeSwitchIds">A pooled stack tracking active switch statement IDs for nested <c>goto case</c> / <c>goto default</c> labels.</param>
 /// <param name="dialect">The target language and hardware dialect implementation.</param>
 /// <remarks>
 /// <para><b>Performance:</b> Designed as a mutable value type (<see langword="struct"/>) to be passed by reference (<see langword="ref"/>), eliminating heap allocations during recursive syntax tree walking.</para>
@@ -16,6 +17,7 @@ using Rules;
 public struct Emitter(
     SourceWriter writer,
     OverrideScopeStack localVariableOverrides,
+    Stack<int> activeSwitchIds,
     ITranspilerDialect dialect)
 {
     public SourceWriter Writer = writer;
@@ -23,17 +25,19 @@ public struct Emitter(
     public ITranspilerDialect Dialect { get; } = dialect;
     public HashSet<string> RequiredIncludes { get; } = new();
 
-    public bool HasEmittedDynamicSmemBase = false;
-    public bool SkipLocalsInit = false;
-    public bool IsGpuKernelEntry = false;
-    public bool IsVoidReturn = false;
-    public int CallableDepth = 0;
-    public int AutoSyncGridDepth = 0;
-    public string? LabelSuffix = null;
-    public int SmemAllocCount = 0;
+    public bool HasEmittedDynamicSmemBase;
+    public bool SkipLocalsInit;
+    public bool IsGpuKernelEntry;
+    public bool IsVoidReturn;
+    public int CallableDepth;
+    public int AutoSyncGridDepth;
+    public string? LabelSuffix;
+    public int SmemAllocCount;
 
-    public int SwitchIdCounter = 0;
-    public Stack<int> ActiveSwitchIds = new();
+    public int SwitchIdCounter;
+    public Stack<int> ActiveSwitchIds = activeSwitchIds;
+
+    public int CurrentSwitchId => ActiveSwitchIds.Count > 0 ? ActiveSwitchIds.Peek() : 0;
 
     public int PushOverrideScope(string name, OverrideValue value) =>
         LocalVariableOverrides.Push(name, value);
@@ -60,16 +64,17 @@ public readonly struct Reporter(Action<Diagnostic>? reportDiagnostic)
     public Action<Diagnostic>? ReportDiagnostic { get; } = reportDiagnostic;
 
     public void Report(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[]? messageArgs) =>
-        ReportDiagnostic?.Invoke(Diagnostic.Create(descriptor, node.GetLocation(), messageArgs));
+        ReportDiagnostic.ReportDiagnostic(descriptor, node, messageArgs);
 
     public void Report(DiagnosticDescriptor descriptor, Location? location, params object?[]? messageArgs) =>
-        ReportDiagnostic?.Invoke(Diagnostic.Create(descriptor, location, messageArgs));
+        ReportDiagnostic.ReportDiagnostic(descriptor, location, messageArgs);
 }
 
 public struct TranspileContext(
     SourceWriter writer,
     HashSet<INamedTypeSymbol> usedStructs,
     OverrideScopeStack localVariableOverrides,
+    Stack<int> activeSwitchIds,
     SemanticModel semanticModel,
     Action<Diagnostic>? reportDiagnostic,
     RoslynToCudaVisitor visitor,
@@ -77,7 +82,7 @@ public struct TranspileContext(
     ITranspilerDialect dialect,
     ITranspilerRuleRegistry ruleRegistry)
 {
-    public Emitter Emitter = new(writer, localVariableOverrides, dialect);
+    public Emitter Emitter = new(writer, localVariableOverrides, activeSwitchIds, dialect);
     public Query Query = new(semanticModel, bclIntrinsicMap, usedStructs);
     public Reporter Reporter = new(reportDiagnostic);
 
