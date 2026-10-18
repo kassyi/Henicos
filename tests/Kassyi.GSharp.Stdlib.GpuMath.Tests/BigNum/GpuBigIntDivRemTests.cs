@@ -87,13 +87,13 @@ public class GpuBigIntDivRemTests : IDisposable
 
         // Also test GpuBigFloat.Divide scenario (shiftedLeft has 3 * NumWords = 12,288 words, rightOperand has 4,096 words)
         var execCtx = new GpuBigIntExecutionContext(workspace, workspace.MemoryManager, workspace.Stream);
-        var floatProvider = Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.GSharpKernelFloatProvider.Instance;
+        var floatProvider = GSharpKernelFloatProvider.Instance;
         using var floatResult = new GpuBigUInt(workspace, NumWords);
         var leftOp = new GpuFloatOperand(gpuA.Handle, 1000);
         var rightOp = new GpuFloatOperand(gpuB.Handle, 1000);
         var floatRes = floatProvider.Divide(ref execCtx, in leftOp, in rightOp, floatResult.Handle);
 
-        var cpuFloatProvider = Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.CSharpCpuBigFloatArithmetic.Instance;
+        var cpuFloatProvider = CSharpCpuBigFloatArithmetic.Instance;
         using var cpuResult = new GpuBigUInt(workspace, NumWords);
         var expectedFloatRes = cpuFloatProvider.Divide(ref execCtx, in leftOp, in rightOp, cpuResult.Handle);
 
