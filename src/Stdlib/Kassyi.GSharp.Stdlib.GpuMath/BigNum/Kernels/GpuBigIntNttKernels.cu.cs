@@ -216,7 +216,7 @@ public static partial class GpuBigIntNttKernels
         var deviceData = args.Buffer;
         var deviceOutput = args.TemporaryBuffer;
         var deviceTwiddle = args.Twiddle;
-        var transformLength = args.M;
+        var transformLength = args.Grid.M;
         var currentLength = args.CurrentL;
         var primeModulus = args.P;
         var barrettMagic = args.Pm;
@@ -667,9 +667,9 @@ public static partial class GpuBigIntNttKernels
     {
         var buffer = args.Buffer;
         var temporaryBuffer = args.TemporaryBuffer;
-        var transformLength = args.M;
-        var length1 = args.N1;
-        var length2 = args.N2;
+        var transformLength = args.Grid.M;
+        var length1 = args.Grid.N1;
+        var length2 = args.Grid.N2;
 
         if (transformLength <= 512)
         {
@@ -713,9 +713,9 @@ public static partial class GpuBigIntNttKernels
     {
         var buffer = args.Buffer;
         var temporaryBuffer = args.TemporaryBuffer;
-        var transformLength = args.M;
-        var length1 = args.N1;
-        var length2 = args.N2;
+        var transformLength = args.Grid.M;
+        var length1 = args.Grid.N1;
+        var length2 = args.Grid.N2;
 
         if (transformLength <= 512)
         {
@@ -762,9 +762,7 @@ public static partial class GpuBigIntNttKernels
             Buffer = ctx.Buffer1,
             TemporaryBuffer = ctx.TemporaryBuffer,
             Twiddle = ctx.Twiddle1,
-            M = ctx.M,
-            N1 = ctx.N1,
-            N2 = ctx.N2,
+            Grid = ctx.Grid,
             P = Prime1,
             Pm = BarrettMagic1
         };
@@ -775,9 +773,7 @@ public static partial class GpuBigIntNttKernels
             Buffer = ctx.Buffer2,
             TemporaryBuffer = ctx.TemporaryBuffer,
             Twiddle = ctx.Twiddle2,
-            M = ctx.M,
-            N1 = ctx.N1,
-            N2 = ctx.N2,
+            Grid = ctx.Grid,
             P = Prime2,
             Pm = BarrettMagic2
         };
@@ -792,9 +788,7 @@ public static partial class GpuBigIntNttKernels
             Buffer = ctx.Buffer1,
             TemporaryBuffer = ctx.TemporaryBuffer,
             Twiddle = ctx.Twiddle1,
-            M = ctx.M,
-            N1 = ctx.N1,
-            N2 = ctx.N2,
+            Grid = ctx.Grid,
             P = Prime1,
             Pm = BarrettMagic1,
             IsInverse = true
@@ -806,9 +800,7 @@ public static partial class GpuBigIntNttKernels
             Buffer = ctx.Buffer2,
             TemporaryBuffer = ctx.TemporaryBuffer,
             Twiddle = ctx.Twiddle2,
-            M = ctx.M,
-            N1 = ctx.N1,
-            N2 = ctx.N2,
+            Grid = ctx.Grid,
             P = Prime2,
             Pm = BarrettMagic2,
             IsInverse = true
