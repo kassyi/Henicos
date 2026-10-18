@@ -40,4 +40,20 @@ public class BranchTests : StateMachineTestBase
             }
         });
     }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Lower_IfStatement_WithNonBlockElseBarrier()
+    {
+        bool condition = true;
+        return VerifyBranchRewrite(() =>
+        {
+            if (condition)
+            {
+                int a = 1;
+            }
+            else Gpu.SyncThreads();
+        });
+    }
 }

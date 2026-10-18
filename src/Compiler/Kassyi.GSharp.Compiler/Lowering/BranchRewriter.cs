@@ -134,7 +134,8 @@ public class BranchRewriter : CSharpSyntaxRewriter
             }
             else
             {
-                statements.Add(SyntaxFactory.LabeledStatement(elseLabelName, elseStmt));
+                statements.Add(SyntaxFactory.LabeledStatement(elseLabelName, SyntaxFactory.EmptyStatement()));
+                statements.Add(elseStmt);
             }
 
             // EndLabel:
