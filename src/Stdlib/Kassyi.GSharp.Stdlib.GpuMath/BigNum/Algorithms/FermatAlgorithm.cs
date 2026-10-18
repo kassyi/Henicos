@@ -45,10 +45,13 @@ public class FermatAlgorithm : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="FermatAlgorithm"/> class configured for Fermat exponent <paramref name="e"/>.
     /// </summary>
-    /// <param name="e">The Fermat exponent $E$.</param>
+    /// <param name="e">The Fermat exponent $E$. Must be greater than zero.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="e"/> is less than or equal to zero.</exception>
     /// <exception cref="InvalidOperationException">Thrown when GPU context initialization fails.</exception>
     public FermatAlgorithm(int e)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(e);
+
         E = e;
 
         _numWords = (2 * E + 1 + 31) / 32;
@@ -104,6 +107,8 @@ public class FermatAlgorithm : IDisposable
     [ExcludeFromCodeCoverage]
     public uint[] GetState()
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         var copy = new uint[OutNumWords];
         _gpuWorkspace.Provider.CopyDeviceToHost(copy, _valueT.DevicePointer, OutNumWords, _gpuWorkspace.Stream);
         return copy;
@@ -118,6 +123,8 @@ public class FermatAlgorithm : IDisposable
     /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
     public async ValueTask<uint[]> GetStateAsync(CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         var copy = new uint[OutNumWords];
         await _gpuWorkspace.Provider
             .CopyDeviceToHostAsync(copy, _valueT.DevicePointer, OutNumWords, _gpuWorkspace.Stream, cancellationToken)
@@ -129,10 +136,14 @@ public class FermatAlgorithm : IDisposable
     /// Loads a previously saved state buffer (<c>ValueT</c>) into the GPU device execution context.
     /// </summary>
     /// <param name="valueT">An array containing the state buffer words to load.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="valueT"/> is <see langword="null"/>.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="valueT"/> length does not equal <see cref="OutNumWords"/>.</exception>
     [ExcludeFromCodeCoverage]
     public void LoadState(uint[] valueT)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(valueT);
+
         if (valueT.Length != OutNumWords)
         {
             throw new ArgumentException($"Invalid state buffer size. Expected {OutNumWords}, got {valueT.Length}.");
@@ -141,21 +152,14 @@ public class FermatAlgorithm : IDisposable
         _gpuWorkspace.Provider.CopyHostToDevice(_valueT.DevicePointer, valueT, OutNumWords, _gpuWorkspace.Stream);
     }
 
-    private void MultiplySquareAndReduceHost()
+    private void LaunchFermatReduceKernel(IntPtr valueTPointer)
     {
-        // Copy the lower _numWords of _valueT into _valueTReduced
-        _gpuWorkspace.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, _valueT.DevicePointer, _numWords,
-            _gpuWorkspace.Stream);
-
-        // Square it using host-side NTT multiplication orchestration
-        GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
-
         // Mega-Kernel reduction: replaces 11 separate kernel launches and H2D copies with a single pass
         // Executed in a single block (gridDimX = 1) with 256 threads to allow block-wide synchronization (__syncthreads).
         GpuBigIntFermatKernels.LaunchKernelFermatReduceMegaPtr(
             new GpuBigIntFermatKernels.AotContexts.FermatReduce
             {
-                ValueT = _valueT.DevicePointer,
+                ValueT = valueTPointer,
                 MulResult = _mulResult.DevicePointer,
                 Quotient = _quotient.DevicePointer,
                 Remainder = _remainder.DevicePointer,
@@ -168,6 +172,18 @@ public class FermatAlgorithm : IDisposable
             },
             gridDimX: 1, blockDimX: 256, hStream: _gpuWorkspace.Stream
         );
+    }
+
+    private void MultiplySquareAndReduceHost()
+    {
+        // Copy the lower _numWords of _valueT into _valueTReduced
+        _gpuWorkspace.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, _valueT.DevicePointer, _numWords,
+            _gpuWorkspace.Stream);
+
+        // Square it using host-side NTT multiplication orchestration
+        GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
+
+        LaunchFermatReduceKernel(_valueT.DevicePointer);
 
         (_valueT, _remainder) = (_remainder, _valueT);
     }
@@ -198,34 +214,47 @@ public class FermatAlgorithm : IDisposable
                 return;
             }
 
-            graphProvider.BeginCapture(stream);
-            IntPtr graph;
-            try
+            // Use an even chunk size so (_valueT, _remainder) buffer swap parity is preserved across graph launches
+            const int MaxGraphCaptureChunk = 256;
+            while (iterations > 0)
             {
-                for (var i = 0; i < iterations; i++)
+                var chunkIterations = Math.Min(iterations, MaxGraphCaptureChunk);
+                var repeats = chunkIterations == MaxGraphCaptureChunk ? iterations / MaxGraphCaptureChunk : 1;
+
+                graphProvider.BeginCapture(stream);
+                IntPtr graph;
+                try
                 {
-                    MultiplySquareAndReduceHost();
+                    for (var i = 0; i < chunkIterations; i++)
+                    {
+                        MultiplySquareAndReduceHost();
+                    }
                 }
-            }
-            finally
-            {
-                graph = graphProvider.EndCapture(stream);
-            }
+                finally
+                {
+                    graph = graphProvider.EndCapture(stream);
+                }
 
-            if (graph == IntPtr.Zero)
-            {
-                return;
-            }
+                if (graph == IntPtr.Zero)
+                {
+                    return;
+                }
 
-            var graphExec = graphProvider.InstantiateGraph(graph);
+                var graphExec = IntPtr.Zero;
+                try
+                {
+                    graphExec = graphProvider.InstantiateGraph(graph);
+                    for (var r = 0; r < repeats; r++)
+                    {
+                        graphProvider.LaunchGraph(graphExec, stream);
+                    }
+                }
+                finally
+                {
+                    graphProvider.DestroyGraph(graph, graphExec);
+                }
 
-            try
-            {
-                graphProvider.LaunchGraph(graphExec, stream);
-            }
-            finally
-            {
-                graphProvider.DestroyGraph(graph, graphExec);
+                iterations -= chunkIterations * repeats;
             }
         }
         else
@@ -254,22 +283,7 @@ public class FermatAlgorithm : IDisposable
             GpuBigIntMath.Mul(_valueTReduced, rightReduced, _mulResult);
         }
 
-        GpuBigIntFermatKernels.LaunchKernelFermatReduceMegaPtr(
-            new GpuBigIntFermatKernels.AotContexts.FermatReduce
-            {
-                ValueT = targetDest.DevicePointer,
-                MulResult = _mulResult.DevicePointer,
-                Quotient = _quotient.DevicePointer,
-                Remainder = _remainder.DevicePointer,
-                Temp = _temp.DevicePointer,
-                RemainderMask = _remainderMask.DevicePointer,
-                NumWords = _numWords,
-                OutNumWords = OutNumWords,
-                TotalShiftBits = 2 * E + 1,
-                Exponent = _exponent
-            },
-            gridDimX: 1, blockDimX: 256, hStream: _gpuWorkspace.Stream
-        );
+        LaunchFermatReduceKernel(targetDest.DevicePointer);
 
         _gpuWorkspace.Provider.CopyDeviceToDevice(targetDest.DevicePointer, _remainder.DevicePointer, OutNumWords,
             _gpuWorkspace.Stream);
@@ -300,6 +314,8 @@ public class FermatAlgorithm : IDisposable
     /// <returns>A tuple containing the final state array and the elapsed execution time in milliseconds.</returns>
     public (uint[] Result, long ElapsedMs) RunFermatPrp()
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         var sw = Stopwatch.StartNew();
 
         EnqueueIterations(E);
@@ -319,15 +335,9 @@ public class FermatAlgorithm : IDisposable
     public (uint[] Result, long ElapsedMs, int ChecksPassed, int Rollbacks) RunFermatPrpWithGerbiczCheck(
         int blockSize = 100, int checkStepBlocks = 10)
     {
-        if (blockSize <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(blockSize));
-        }
-
-        if (checkStepBlocks <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(checkStepBlocks));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(blockSize);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(checkStepBlocks);
 
         var sw = Stopwatch.StartNew();
         using var checkD = new GpuBigUInt(_gpuWorkspace, OutNumWords);
@@ -440,6 +450,7 @@ public class FermatAlgorithm : IDisposable
     public async ValueTask<(uint[] Result, long ElapsedMs)> RunFermatPrpAsync(
         CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         cancellationToken.ThrowIfCancellationRequested();
         var sw = Stopwatch.StartNew();
 
@@ -457,6 +468,8 @@ public class FermatAlgorithm : IDisposable
     /// <param name="chunkSize">The number of squaring iterations to execute.</param>
     public void RunBenchmarkChunk(int chunkSize = 100)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         EnqueueIterations(chunkSize);
 
         GpuKernelLoader.SynchronizeDevice();
@@ -475,6 +488,8 @@ public class FermatAlgorithm : IDisposable
     /// <exception cref="OperationCanceledException"><paramref name="cancellationToken"/> was canceled.</exception>
     public ValueTask RunBenchmarkChunkAsync(int chunkSize = 100, CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         if (cancellationToken.IsCancellationRequested)
         {
             return ValueTask.FromCanceled(cancellationToken);
@@ -517,13 +532,5 @@ public class FermatAlgorithm : IDisposable
     {
         Dispose(true);
         GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Finalizes an instance of the <see cref="FermatAlgorithm"/> class.
-    /// </summary>
-    ~FermatAlgorithm()
-    {
-        Dispose(false);
     }
 }
