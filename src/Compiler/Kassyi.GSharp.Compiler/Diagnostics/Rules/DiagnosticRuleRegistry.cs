@@ -3,6 +3,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 internal static class DiagnosticRuleRegistry
 {
     public static readonly ImmutableArray<IValidationRule> Rules = ImmutableArray.Create<IValidationRule>(
+        CppReservedIdentifierRule.Instance,
         ForEachNotSupportedRule.Instance,
         GpuMacroArgumentRule.Instance,
         ImplicitVarNeedsSuffixRule.Instance,

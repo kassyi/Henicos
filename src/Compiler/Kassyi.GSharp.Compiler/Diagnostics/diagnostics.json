@@ -503,5 +503,23 @@
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "DoubleUnderscoreIdentifier",
+    "id": "GSH0057",
+    "title": "Identifier containing '__' is reserved",
+    "messageFormat": "'{0}' contains '__', which is reserved for the G# compiler and the C++ implementation; rename it",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "CppKeywordIdentifier",
+    "id": "GSH0058",
+    "title": "Identifier is a C++ keyword (temporary)",
+    "messageFormat": "'{0}' is a keyword in C++/CUDA and cannot be emitted as an identifier yet; rename it (temporary restriction until automatic renaming, see #369)",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
   }
 ]
