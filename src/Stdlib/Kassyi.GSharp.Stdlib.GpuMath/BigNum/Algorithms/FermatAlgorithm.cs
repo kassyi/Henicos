@@ -237,6 +237,63 @@ public class FermatAlgorithm : IDisposable
         }
     }
 
+    private void MultiplyOperandsAndReduceHost(GpuBigUInt leftSource, GpuBigUInt rightSource, GpuBigUInt targetDest)
+    {
+        _gpuWorkspace.Provider.CopyDeviceToDevice(_valueTReduced.DevicePointer, leftSource.DevicePointer, _numWords,
+            _gpuWorkspace.Stream);
+
+        if (leftSource.DevicePointer == rightSource.DevicePointer)
+        {
+            GpuBigIntMath.Mul(_valueTReduced, _valueTReduced, _mulResult);
+        }
+        else
+        {
+            using var rightReduced = _gpuWorkspace.RentTemp(_numWords);
+            _gpuWorkspace.Provider.CopyDeviceToDevice(rightReduced.DevicePointer, rightSource.DevicePointer, _numWords,
+                _gpuWorkspace.Stream);
+            GpuBigIntMath.Mul(_valueTReduced, rightReduced, _mulResult);
+        }
+
+        GpuBigIntFermatKernels.LaunchKernelFermatReduceMegaPtr(
+            new GpuBigIntFermatKernels.AotContexts.FermatReduce
+            {
+                ValueT = targetDest.DevicePointer,
+                MulResult = _mulResult.DevicePointer,
+                Quotient = _quotient.DevicePointer,
+                Remainder = _remainder.DevicePointer,
+                Temp = _temp.DevicePointer,
+                RemainderMask = _remainderMask.DevicePointer,
+                NumWords = _numWords,
+                OutNumWords = OutNumWords,
+                TotalShiftBits = 2 * E + 1,
+                Exponent = _exponent
+            },
+            gridDimX: 1, blockDimX: 256, hStream: _gpuWorkspace.Stream
+        );
+
+        _gpuWorkspace.Provider.CopyDeviceToDevice(targetDest.DevicePointer, _remainder.DevicePointer, OutNumWords,
+            _gpuWorkspace.Stream);
+    }
+
+    private static BigInteger ExtractCanonicalModN(uint[] rawWords, int e)
+    {
+        var x = BigInteger.One << e;
+        var n = (BigInteger.One << (2 * e + 1)) - x + 11;
+        var highestWord = rawWords[^1];
+        var resBytes = new byte[rawWords.Length * 4 + 1];
+        Buffer.BlockCopy(rawWords, 0, resBytes, 0, rawWords.Length * 4);
+        var isNegative = (highestWord & 0x80000000) != 0;
+        resBytes[rawWords.Length * 4] = isNegative ? (byte)0xFF : (byte)0x00;
+
+        var actual = new BigInteger(resBytes) % n;
+        if (actual < 0)
+        {
+            actual += n;
+        }
+
+        return actual;
+    }
+
     /// <summary>
     /// Executes the full Fermat Probable Prime (PRP) loop on the GPU and returns the final result words and elapsed time.
     /// </summary>
@@ -251,6 +308,119 @@ public class FermatAlgorithm : IDisposable
         sw.Stop();
 
         return (GetState(), sw.ElapsedMilliseconds);
+    }
+
+    /// <summary>
+    /// Executes the Fermat Probable Prime (PRP) loop with periodic Gerbicz-Li self-verification and automatic checkpoint rollback.
+    /// </summary>
+    /// <param name="blockSize">The number of squarings $B$ per Gerbicz accumulation step ($d \leftarrow d \cdot u \bmod N$).</param>
+    /// <param name="checkStepBlocks">The number of $B$-sized blocks between full $u_0 \cdot d^{2^B} \equiv d_{\text{new}} \pmod N$ checks.</param>
+    /// <returns>A tuple containing the final state words, elapsed milliseconds, number of passed checks, and number of rollbacks.</returns>
+    public (uint[] Result, long ElapsedMs, int ChecksPassed, int Rollbacks) RunFermatPrpWithGerbiczCheck(
+        int blockSize = 100, int checkStepBlocks = 10)
+    {
+        if (blockSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(blockSize));
+        }
+
+        if (checkStepBlocks <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(checkStepBlocks));
+        }
+
+        var sw = Stopwatch.StartNew();
+        using var checkD = new GpuBigUInt(_gpuWorkspace, OutNumWords);
+        using var checkAux = new GpuBigUInt(_gpuWorkspace, OutNumWords);
+        using var baseTwo = new GpuBigUInt(_gpuWorkspace, OutNumWords);
+
+        var initOne = new uint[OutNumWords];
+        initOne[0] = 1u;
+        _gpuWorkspace.Provider.CopyHostToDevice(checkD.DevicePointer, initOne, OutNumWords, _gpuWorkspace.Stream);
+
+        var initTwo = new uint[OutNumWords];
+        initTwo[0] = 2u;
+        _gpuWorkspace.Provider.CopyHostToDevice(baseTwo.DevicePointer, initTwo, OutNumWords, _gpuWorkspace.Stream);
+
+        var verifiedK = 0;
+        var verifiedU = GetState();
+        var verifiedD = (uint[])initOne.Clone();
+
+        var checkInterval = blockSize * checkStepBlocks;
+        var skipNextCheckUpdate = false;
+        var checksPassed = 0;
+        var rollbacks = 0;
+        var dRef = checkD;
+        var auxRef = checkAux;
+
+        var k = 0;
+        while (k < E)
+        {
+            if (skipNextCheckUpdate)
+            {
+                skipNextCheckUpdate = false;
+            }
+            else if (k % blockSize == 0)
+            {
+                MultiplyOperandsAndReduceHost(dRef, _valueT, dRef);
+            }
+
+            var stepIters = Math.Min(blockSize - (k % blockSize), E - k);
+            EnqueueIterations(stepIters);
+            k += stepIters;
+
+            var shouldCheck = (k % checkInterval == 0 && k % blockSize == 0) || (k == E && k % blockSize == 0);
+            if (!shouldCheck)
+            {
+                continue;
+            }
+
+            // Gerbicz-Li check (gpuowl doCheck): verify d_old * u == u_0 * (d_old^(2^blockSize)) mod N
+            _gpuWorkspace.Provider.CopyDeviceToDevice(auxRef.DevicePointer, dRef.DevicePointer, OutNumWords,
+                _gpuWorkspace.Stream);
+            for (var s = 0; s < blockSize; s++)
+            {
+                MultiplyOperandsAndReduceHost(auxRef, auxRef, auxRef);
+            }
+
+            MultiplyOperandsAndReduceHost(auxRef, baseTwo, auxRef);
+            MultiplyOperandsAndReduceHost(dRef, _valueT, dRef);
+
+            GpuKernelLoader.SynchronizeDevice();
+
+            var dHost = new uint[OutNumWords];
+            var auxHost = new uint[OutNumWords];
+            _gpuWorkspace.Provider.CopyDeviceToHost(dHost, dRef.DevicePointer, OutNumWords, _gpuWorkspace.Stream);
+            _gpuWorkspace.Provider.CopyDeviceToHost(auxHost, auxRef.DevicePointer, OutNumWords, _gpuWorkspace.Stream);
+
+            if (ExtractCanonicalModN(dHost, E) == ExtractCanonicalModN(auxHost, E))
+            {
+                checksPassed++;
+                skipNextCheckUpdate = true;
+                verifiedK = k;
+                verifiedU = GetState();
+                verifiedD = dHost;
+            }
+            else
+            {
+                rollbacks++;
+                if (rollbacks > 3)
+                {
+                    throw new InvalidOperationException("Gerbicz-Li PRP verification failed repeatedly.");
+                }
+
+                k = verifiedK;
+                LoadState(verifiedU);
+                _gpuWorkspace.Provider.CopyHostToDevice(dRef.DevicePointer, verifiedD, OutNumWords,
+                    _gpuWorkspace.Stream);
+                skipNextCheckUpdate = false;
+            }
+        }
+
+        GpuKernelLoader.SynchronizeDevice();
+        sw.Stop();
+
+        return (GetState(), sw.ElapsedMilliseconds, checksPassed, rollbacks);
     }
 
     /// <summary>
