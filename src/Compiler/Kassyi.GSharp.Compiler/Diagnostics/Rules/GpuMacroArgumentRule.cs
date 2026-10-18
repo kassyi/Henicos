@@ -257,25 +257,63 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
 
     private void CheckDynamicControlFlow(StatementSyntax loopStmt, ref ValidationContext context)
     {
-        var hasDynamicControlFlow = false;
-        foreach (var n in loopStmt.DescendantNodes())
+        if (HasDynamicControlFlow(loopStmt, isRoot: true, insideNestedLoop: false, insideNestedSwitch: false))
         {
-            if (n is not (BreakStatementSyntax or ReturnStatementSyntax or GotoStatementSyntax))
+            context.ReportDiagnostic(GSharpDiagnostics.UnrolledLoopMayBeIgnored, loopStmt);
+        }
+    }
+
+    private static bool HasDynamicControlFlow(
+        SyntaxNode node,
+        bool isRoot,
+        bool insideNestedLoop,
+        bool insideNestedSwitch)
+    {
+        if (!isRoot)
+        {
+            if (node is LambdaExpressionSyntax or AnonymousMethodExpressionSyntax or LocalFunctionStatementSyntax)
             {
-                continue;
+                return false;
             }
 
-            hasDynamicControlFlow = true;
-            break;
+            if (node is ReturnStatementSyntax or GotoStatementSyntax)
+            {
+                return true;
+            }
+
+            if (node is BreakStatementSyntax)
+            {
+                return !insideNestedLoop && !insideNestedSwitch;
+            }
+
+            if (node is ContinueStatementSyntax)
+            {
+                return !insideNestedLoop;
+            }
         }
 
-        if (!hasDynamicControlFlow)
+        var nextInsideLoop = insideNestedLoop || (!isRoot && IsLoop(node));
+        var nextInsideSwitch = insideNestedSwitch || (!isRoot && IsSwitch(node));
+
+        foreach (var child in node.ChildNodes())
         {
-            return;
+            if (HasDynamicControlFlow(child, isRoot: false, insideNestedLoop: nextInsideLoop, insideNestedSwitch: nextInsideSwitch))
+            {
+                return true;
+            }
         }
 
-        context.ReportDiagnostic(GSharpDiagnostics.UnrolledLoopMayBeIgnored, loopStmt);
+        return false;
     }
+
+    private static bool IsLoop(SyntaxNode node) =>
+        node is ForStatementSyntax or
+                ForEachStatementSyntax or
+                WhileStatementSyntax or
+                DoStatementSyntax;
+
+    private static bool IsSwitch(SyntaxNode node) =>
+        node is SwitchStatementSyntax or SwitchExpressionSyntax;
 
     private void CheckStringLiteral(ExpressionSyntax expr, ref ValidationContext context)
     {
