@@ -152,14 +152,20 @@ internal static class KernelLaunchEmitter
         }
 
         if (type is INamedTypeSymbol { IsGenericType: true } genericType &&
-            genericType.ContainingNamespace.ToString() is "System" or "System.Collections.Immutable")
+            genericType.Name is "Span" or "ReadOnlySpan" or "Memory" or "ReadOnlyMemory" or "ArraySegment" or "ImmutableArray" &&
+            (genericType.ContainingNamespace.IsSystemNamespace() ||
+             genericType.ContainingNamespace is
+             {
+                 Name: "Immutable",
+                 ContainingNamespace:
+                 {
+                     Name: "Collections",
+                     ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+                 }
+             }))
         {
-            if (genericType.Name is "Span" or "ReadOnlySpan" or "Memory" or "ReadOnlyMemory" or "ArraySegment"
-                or "ImmutableArray")
-            {
-                elementType = genericType.TypeArguments[0];
-                return true;
-            }
+            elementType = genericType.TypeArguments[0];
+            return true;
         }
 
         elementType = null!;
@@ -527,7 +533,12 @@ internal static class KernelLaunchEmitter
             var cls = attr.AttributeClass;
 
             if (cls?.Name is not ("InAttribute" or "OutAttribute") ||
-                cls.ContainingNamespace?.GetFullNamespaceName() != "System.Runtime.InteropServices")
+                cls.ContainingNamespace is not
+                {
+                    Name: "InteropServices",
+                    ContainingNamespace:
+                    { Name: "Runtime", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } }
+                })
             {
                 continue;
             }

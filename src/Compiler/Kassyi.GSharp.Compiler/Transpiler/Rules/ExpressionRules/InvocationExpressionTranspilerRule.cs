@@ -160,8 +160,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     }
 
     private static ExpressionSyntax? GetDefaultValueSyntax(IParameterSymbol parameter) =>
-        parameter.DeclaringSyntaxReferences.Length > 0 &&
-        parameter.DeclaringSyntaxReferences[0].GetSyntax() is ParameterSyntax { Default: { } defaultClause }
+        parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var paramSyntax) &&
+        paramSyntax is { Default: { } defaultClause }
             ? defaultClause.Value
             : null;
 

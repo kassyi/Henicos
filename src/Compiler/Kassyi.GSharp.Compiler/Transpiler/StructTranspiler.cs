@@ -16,7 +16,7 @@ internal static class StructTranspiler
             return;
         }
 
-        if (namedStruct.Name == TypeConstants.SharedMemoryType && namedStruct.ContainingNamespace.IsCoreNamespace())
+        if (namedStruct.IsSharedMemoryType())
         {
             return;
         }
@@ -382,12 +382,7 @@ internal static class StructTranspiler
         {
             case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
                 {
-                    VariableDeclaratorSyntax? syntax = null;
-                    var syntaxRefs = field.DeclaringSyntaxReferences;
-                    if (!syntaxRefs.IsEmpty)
-                    {
-                        syntax = syntaxRefs[0].GetSyntax() as VariableDeclaratorSyntax;
-                    }
+                    field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
 
                     ExpressionSyntax? sizeExp = null;
                     if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)

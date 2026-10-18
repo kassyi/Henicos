@@ -44,8 +44,7 @@ internal static class ObjectCreationHelper
         var initializer = node.Initializer;
         var argumentList = node.ArgumentList;
 
-        if (typeSymbol is { Name: TypeConstants.SharedMemoryType } &&
-            typeSymbol.ContainingNamespace.IsCoreNamespace())
+        if (typeSymbol.IsSharedMemoryType())
         {
             if (typeSymbol is not INamedTypeSymbol namedType || namedType.TypeArguments.Length != 1)
             {

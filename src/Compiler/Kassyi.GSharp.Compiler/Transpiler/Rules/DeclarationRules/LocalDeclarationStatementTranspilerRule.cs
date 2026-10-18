@@ -29,8 +29,7 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
     public override void Transpile(LocalDeclarationStatementSyntax node, ref TranspileContext context)
     {
         var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Declaration.Type);
-        if (typeSymbol?.Name == TypeConstants.SharedMemoryType &&
-            typeSymbol.ContainingNamespace.IsCoreNamespace())
+        if (typeSymbol.IsSharedMemoryType())
         {
             ProcessSharedMemoryDeclaration(node, (INamedTypeSymbol)typeSymbol, ref context);
             return;

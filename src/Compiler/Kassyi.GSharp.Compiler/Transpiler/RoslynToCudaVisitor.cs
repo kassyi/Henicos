@@ -196,7 +196,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// <inheritdoc />
     public override void VisitParameter(ParameterSyntax node)
     {
-        var paramSymbol = Context.Query.SemanticModel.GetSafeDeclaredSymbol(node);
+        var paramSymbol = Context.Query.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(node);
         var isReadOnly = paramSymbol?.HasAttribute(KnownAttributes.GpuReadOnly) == true;
 
         if (node.Type != null)

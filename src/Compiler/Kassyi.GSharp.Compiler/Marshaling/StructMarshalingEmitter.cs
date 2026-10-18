@@ -89,7 +89,9 @@ internal static class StructMarshalingEmitter
                 writer.AppendLine($"fixed (byte* pField = native.{member.Name})");
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"*(({member.Type.GetFullyQualifiedName()}*)pField) = host.{member.Name};");
+                    writer.Append("*((");
+                    writer.AppendFullyQualifiedCsharpName(member.Type);
+                    writer.AppendLine($"*)pField) = host.{member.Name};");
                 }
             }
         }
@@ -229,7 +231,9 @@ internal static class StructMarshalingEmitter
                 writer.AppendLine($"fixed (byte* pField = native.{member.Name})");
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"host.{member.Name} = *(({member.Type.GetFullyQualifiedName()}*)pField);");
+                    writer.Append($"host.{member.Name} = *((");
+                    writer.AppendFullyQualifiedCsharpName(member.Type);
+                    writer.AppendLine("*)pField);");
                 }
             }
         }

@@ -135,7 +135,7 @@ internal static class WrapperEmitter
         if (!isGlobalNamespace)
         {
             writer.Append("namespace ");
-            WriteNamespace(writer, classSymbol.ContainingNamespace);
+            writer.AppendNamespace(classSymbol.ContainingNamespace);
             writer.AppendLine();
             writer.AppendLine("{");
         }
@@ -474,9 +474,14 @@ internal static class WrapperEmitter
         foreach (var methodResult in kernelMethods)
         {
             var method = methodResult.MethodSymbol;
-            var ns = method.ContainingNamespace.IsGlobalNamespace ? "" : method.ContainingNamespace + ".";
-            var typeName = method.ContainingType.Name;
-            writer.AppendLine($"global::{ns}{typeName}.WarmupFunctionPointer{method.Name}();");
+            writer.Append("global::");
+            writer.AppendNamespace(method.ContainingNamespace);
+            if (!method.ContainingNamespace.IsGlobalNamespace)
+            {
+                writer.Append('.');
+            }
+            writer.Append(method.ContainingType.Name);
+            writer.AppendLine($".WarmupFunctionPointer{method.Name}();");
         }
 
         writer.AppendLine("}}}");
@@ -802,16 +807,5 @@ internal static class WrapperEmitter
         {
             writer.AppendLine("return __gsharp_auto_result;");
         }
-    }
-
-    private static void WriteNamespace(SourceWriter writer, INamespaceSymbol ns)
-    {
-        if (ns.ContainingNamespace is not null && !ns.ContainingNamespace.IsGlobalNamespace)
-        {
-            WriteNamespace(writer, ns.ContainingNamespace);
-            writer.Append('.');
-        }
-
-        writer.Append(ns.Name);
     }
 }

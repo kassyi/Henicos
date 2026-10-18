@@ -19,20 +19,9 @@ internal static class GpuOperatorMacroTranspiler
             return false;
         }
 
-        AttributeData? macroAttr = null;
-        foreach (var a in methodSymbol.GetAttributes())
-        {
-            if (!a.IsAttribute("GpuOperatorMacro") ||
-                a.AttributeClass?.ContainingNamespace.IsCoreNamespace() != true)
-            {
-                continue;
-            }
-
-            macroAttr = a;
-            break;
-        }
-
-        if (macroAttr == null || macroAttr.ConstructorArguments.Length < 2)
+        var macroAttr = methodSymbol.GetAttribute("GpuOperatorMacro");
+        if (macroAttr?.AttributeClass?.ContainingNamespace.IsCoreNamespace() != true ||
+            macroAttr.ConstructorArguments.Length < 2)
         {
             return false;
         }

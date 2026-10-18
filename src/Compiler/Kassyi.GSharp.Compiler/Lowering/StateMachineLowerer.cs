@@ -135,7 +135,7 @@ public class StateMachineLowerer
     {
         public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
         {
-            if (node.Kind() != SyntaxKind.GotoStatement || node.Expression is not IdentifierNameSyntax id)
+            if (!node.IsKind(SyntaxKind.GotoStatement) || node.Expression is not IdentifierNameSyntax id)
             {
                 return base.VisitGotoStatement(node);
             }

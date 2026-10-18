@@ -69,8 +69,8 @@ internal static class MethodSignatureTranspiler
         foreach (var parameter in methodSymbol.Parameters)
         {
             if (parameter.Type is not IFunctionPointerTypeSymbol ||
-                parameter.DeclaringSyntaxReferences.IsEmpty ||
-                parameter.DeclaringSyntaxReferences[0].GetSyntax() is not ParameterSyntax { Type: { } typeSyntax })
+                !parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var paramSyntax) ||
+                paramSyntax.Type is not { } typeSyntax)
             {
                 continue;
             }
@@ -91,11 +91,11 @@ internal static class MethodSignatureTranspiler
             }
 
             var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(p.SyntaxTree);
-            var typeSymbol = paramSemanticModel.GetTypeInfo(p.Type!).Type;
+            var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type);
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 
-            var paramSymbol = paramSemanticModel.GetDeclaredSymbol(p) as IParameterSymbol;
+            var paramSymbol = paramSemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
             var isReadOnly = paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
             var isArray = typeSymbol != null && KernelLaunchEmitter.IsArrayLikeType(typeSymbol, out _);
 

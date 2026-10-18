@@ -16,12 +16,12 @@ internal static class CudaLayoutRules
     /// <summary>Recursively collects all custom structs referenced within the type tree.</summary>
     internal static void CollectStructs(ITypeSymbol type, HashSet<INamedTypeSymbol> structs)
     {
-        if (type is not INamedTypeSymbol { TypeKind: TypeKind.Struct } named ||
-            named.ContainingNamespace.IsSystemOrNumerics() ||
-            named.ContainingNamespace.IsCoreNamespace())
+        if (!IsCustomStruct(type))
         {
             return;
         }
+
+        var named = (INamedTypeSymbol)type;
 
         if (!structs.Add(named))
         {

@@ -15,10 +15,7 @@ internal static class DisposableAnalyzerHelper
             return true;
         }
 
-        return type is
-        {
-            Name: "IDisposable", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
-        };
+        return type is { Name: "IDisposable" } && type.ContainingNamespace.IsSystemNamespace();
     }
 
     public static bool IsDisposable(ITypeSymbol? type)

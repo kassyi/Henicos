@@ -172,20 +172,9 @@ public class CudaImportGenerator : IIncrementalGenerator
         }
 
         writer.Append("namespace ");
-        EmitNamespaceRecursive(writer, namespaceSymbol);
+        writer.AppendNamespace(namespaceSymbol);
         writer.AppendLine(";");
         writer.AppendLine();
-    }
-
-    private static void EmitNamespaceRecursive(SourceWriter writer, INamespaceSymbol namespaceSymbol)
-    {
-        if (namespaceSymbol.ContainingNamespace is not null && !namespaceSymbol.ContainingNamespace.IsGlobalNamespace)
-        {
-            EmitNamespaceRecursive(writer, namespaceSymbol.ContainingNamespace);
-            writer.Append('.');
-        }
-
-        writer.Append(namespaceSymbol.Name);
     }
 
     private static void EmitClassDeclaration(SourceWriter writer, INamedTypeSymbol containingClass)
