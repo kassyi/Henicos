@@ -11,7 +11,7 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
-        if (symbol.Name != "SyncGrid" || symbol.ContainingType.Name != TypeConstants.GpuType ||
+        if (symbol.Name != TypeConstants.GpuMacros.SyncGrid || symbol.ContainingType.Name != TypeConstants.GpuType ||
             symbol.Parameters.Length != 1)
         {
             return false;

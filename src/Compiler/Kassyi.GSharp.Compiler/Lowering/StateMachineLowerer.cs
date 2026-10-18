@@ -71,7 +71,7 @@ public class StateMachineLowerer
                     var name = (barrierInv.Expression as MemberAccessExpressionSyntax)?.Name.Identifier.ValueText
                                ?? (barrierInv.Expression as IdentifierNameSyntax)?.Identifier.ValueText;
 
-                    if (name == "SyncGrid")
+                    if (name == TypeConstants.GpuMacros.SyncGrid)
                     {
                         currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
                             SyntaxFactory.AssignmentExpression(

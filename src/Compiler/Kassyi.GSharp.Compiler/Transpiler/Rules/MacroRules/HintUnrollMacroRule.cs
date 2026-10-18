@@ -12,8 +12,8 @@ internal sealed class HintUnrollMacroRule : IMacroTranspilerRule
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
-        if (symbol.Name != "Unroll" ||
-            symbol.ContainingType.Name != "Hint" ||
+        if (symbol.Name != TypeConstants.GpuMacros.Unroll ||
+            symbol.ContainingType.Name != TypeConstants.GpuMacros.Hint ||
             symbol.ContainingType.ContainingType?.Name != TypeConstants.GpuType)
         {
             return false;

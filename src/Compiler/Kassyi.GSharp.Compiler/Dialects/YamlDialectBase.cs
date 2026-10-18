@@ -28,9 +28,9 @@ public abstract class YamlDialectBase : ITranspilerDialect
         }
 
         if (typeSymbol is INamedTypeSymbol { IsGenericType: true } genericType &&
-            genericType.ContainingNamespace.ToString() is "System" or "System.Collections.Immutable")
+            genericType.ContainingNamespace.ToString() is TypeConstants.SystemNamespace or "System.Collections.Immutable")
         {
-            if (genericType.Name is "Span" or "ReadOnlySpan" or "Memory" or "ReadOnlyMemory" or "ArraySegment" or "ImmutableArray")
+            if (genericType.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or "Memory" or "ReadOnlyMemory" or "ArraySegment" or "ImmutableArray")
             {
                 context.Emitter.Writer.Append("GSharpArray<");
                 AppendType(ref context, genericType.TypeArguments[0]);

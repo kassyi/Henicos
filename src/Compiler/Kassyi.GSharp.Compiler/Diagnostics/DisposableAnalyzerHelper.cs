@@ -65,5 +65,5 @@ internal static class DisposableAnalyzerHelper
     }
 
     public static bool HasGpuResourceAttribute(ITypeSymbol? type) =>
-        type?.HasAttribute("GpuResource") ?? false;
+        type?.HasAttribute(KnownAttributes.GpuResource) ?? false;
 }

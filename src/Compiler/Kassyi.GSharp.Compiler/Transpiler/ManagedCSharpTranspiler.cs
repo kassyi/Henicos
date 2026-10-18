@@ -101,14 +101,14 @@ internal static class ManagedCSharpTranspiler
         }
 
         // Fallback: If we couldn't resolve the type (e.g., synthesized node) but the initializer looks like a ref struct
-        return initString.Contains("SharedMemory") || initString.Contains("Span")
+        return initString.Contains(TypeConstants.SharedMemoryType) || initString.Contains(TypeConstants.SpanType)
             ? "var"
             : "dynamic";
     }
 
     private static bool IsRefStructType(string typeString, string initString) =>
-        typeString.Contains("SharedMemory") || typeString.Contains("Span<") ||
-        initString.Contains("SharedMemory") || initString.Contains("Span");
+        typeString.Contains(TypeConstants.SharedMemoryType) || typeString.Contains("Span<") ||
+        initString.Contains(TypeConstants.SharedMemoryType) || initString.Contains(TypeConstants.SpanType);
 
     private static string UnhoistRefStructField(
         string bodySource,
@@ -239,8 +239,8 @@ internal static class ManagedCSharpTranspiler
                 "_state" or "_warpExchange" or "_yieldedForGridSync" => SyntaxFactory.MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.IdentifierName("_ctx"), node)
                     .WithTriviaFrom(node),
-                "BitOperations" => SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                        SyntaxFactory.IdentifierName("System.Numerics"), SyntaxFactory.IdentifierName("BitOperations"))
+                TypeConstants.BitOperationsType => SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.IdentifierName("System.Numerics"), SyntaxFactory.IdentifierName(TypeConstants.BitOperationsType))
                     .WithTriviaFrom(node),
                 _ => base.VisitIdentifierName(node)
             };
@@ -275,7 +275,7 @@ internal static class ManagedCSharpTranspiler
         {
             if (node.Expression is InvocationExpressionSyntax
                 {
-                    Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "InlinePtx" }
+                    Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: TypeConstants.GpuMacros.InlinePtx }
                 })
             {
                 return SyntaxFactory.ParseStatement(
@@ -285,7 +285,7 @@ internal static class ManagedCSharpTranspiler
 
             if (node.Expression is not InvocationExpressionSyntax invocation ||
                 invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
-                memberAccess.Name.Identifier.Text != "GridStrideLoop" ||
+                memberAccess.Name.Identifier.Text != TypeConstants.GpuMacros.GridStrideLoop ||
                 invocation.ArgumentList.Arguments.Count != 2)
             {
                 return base.VisitExpressionStatement(node);

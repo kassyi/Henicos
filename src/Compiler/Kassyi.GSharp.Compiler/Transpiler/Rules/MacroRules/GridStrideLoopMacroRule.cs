@@ -11,7 +11,7 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
-        if (symbol.Name != "GridStrideLoop" || symbol.ContainingType.Name != TypeConstants.GpuType)
+        if (symbol.Name != TypeConstants.GpuMacros.GridStrideLoop || symbol.ContainingType.Name != TypeConstants.GpuType)
         {
             return false;
         }
@@ -31,7 +31,7 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
                 hasContext,
                 args,
                 ref context,
-                "GridStrideLoop",
+                TypeConstants.GpuMacros.GridStrideLoop,
                 out var macroScope))
         {
             return false;

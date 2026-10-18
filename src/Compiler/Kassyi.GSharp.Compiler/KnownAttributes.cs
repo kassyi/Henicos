@@ -16,6 +16,16 @@ public static class KnownAttributes
     public const string MethodImpl = nameof(MethodImpl);
     public const string SkipLocalsInit = nameof(SkipLocalsInit);
     public const string InlineArray = nameof(InlineArray);
+    public const string GpuOperatorMacro = nameof(GpuOperatorMacro);
+    public const string GpuResource = nameof(GpuResource);
+    public const string TakesOwnership = nameof(TakesOwnership);
+    public const string CudaImport = nameof(CudaImport);
+    public const string CudaImportMetadataName = $"{TypeConstants.CoreNamespace}.{CudaImport}Attribute";
+    public const string BclIntrinsicMap = nameof(BclIntrinsicMap);
+    public const string BclIntrinsicMapMetadataName = $"{TypeConstants.CoreNamespace}.{BclIntrinsicMap}Attribute";
+    public const string StructLayout = nameof(StructLayout);
+    public const string In = nameof(In);
+    public const string Out = nameof(Out);
 
     /// <summary>
     /// Zero-allocation, reflection-free helper to match an attribute name against a short name or its Attribute-suffixed name.

@@ -175,9 +175,9 @@ internal static class CudaLayoutRules
 
         var vectorLayout = type.Name switch
         {
-            "Float2" or "Int2" or "UInt2" or "Vector2" => new CudaLayoutInfo(8, 8),
-            "Float3" or "Int3" or "UInt3" or "Vector3" => new CudaLayoutInfo(12, 4),
-            "Float4" or "Int4" or "UInt4" or "Vector4" => new CudaLayoutInfo(16, 16),
+            "Float2" or "Int2" or "UInt2" or TypeConstants.Vector2Type => new CudaLayoutInfo(8, 8),
+            "Float3" or "Int3" or "UInt3" or TypeConstants.Vector3Type => new CudaLayoutInfo(12, 4),
+            "Float4" or "Int4" or "UInt4" or TypeConstants.Vector4Type => new CudaLayoutInfo(16, 16),
             "Double2" or "Long2" or "ULong2" => new CudaLayoutInfo(16, 16),
             "Double3" or "Long3" or "ULong3" => new CudaLayoutInfo(24, 8),
             "Double4" or "Long4" or "ULong4" => new CudaLayoutInfo(32, 16),

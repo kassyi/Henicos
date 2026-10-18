@@ -107,7 +107,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool HasTakesOwnershipAttribute(IParameterSymbol param) =>
-        param.HasAttribute("TakesOwnership");
+        param.HasAttribute(KnownAttributes.TakesOwnership);
 
     private static void CollectBorrowedFieldNames(
         INamedTypeSymbol namedType,

@@ -9,11 +9,11 @@ internal static class InitializationSyntaxExtractor
 
         switch (typeSymbol)
         {
-            case INamedTypeSymbol { TypeArguments.Length: 1, Name: "Span" or "ReadOnlySpan" } named:
+            case INamedTypeSymbol { TypeArguments.Length: 1, Name: TypeConstants.SpanType or TypeConstants.ReadOnlySpanType } named:
 
                 elemType = named.TypeArguments[0];
 
-                isConst = named.Name == "ReadOnlySpan";
+                isConst = named.Name == TypeConstants.ReadOnlySpanType;
 
                 return true;
             case IArrayTypeSymbol arrayType:

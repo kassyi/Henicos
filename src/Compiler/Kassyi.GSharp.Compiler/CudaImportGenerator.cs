@@ -9,15 +9,11 @@ using NativeApi;
 [Generator]
 public class CudaImportGenerator : IIncrementalGenerator
 {
-    private const string CudaImportAttribute = "CudaImportAttribute";
-    private const string AttributeMetadataName = "Kassyi.GSharp.Core.CudaImportAttribute";
-    private const string AttributeShortName = "CudaImport";
-
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var methodDeclarations = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                AttributeMetadataName,
+                KnownAttributes.CudaImportMetadataName,
                 predicate: static (s, _) => s is MethodDeclarationSyntax m && HasPartialModifier(m),
                 transform: static (ctx, _) => ctx)
             .Where(static m => m.TargetSymbol is IMethodSymbol);
@@ -89,7 +85,7 @@ public class CudaImportGenerator : IIncrementalGenerator
                 AttributeData? attributeData = null;
                 foreach (var a in ctx.Attributes)
                 {
-                    if (a.AttributeClass?.Name != CudaImportAttribute)
+                    if (!a.IsAttribute(KnownAttributes.CudaImport))
                     {
                         continue;
                     }
@@ -119,7 +115,7 @@ public class CudaImportGenerator : IIncrementalGenerator
                 AttributeData? attributeData = null;
                 foreach (var a in ctx.Attributes)
                 {
-                    if (a.AttributeClass?.Name != CudaImportAttribute)
+                    if (!a.IsAttribute(KnownAttributes.CudaImport))
                     {
                         continue;
                     }
@@ -342,8 +338,8 @@ public class CudaImportGenerator : IIncrementalGenerator
     {
         return name switch
         {
-            IdentifierNameSyntax id => id.Identifier.ValueText is AttributeShortName or nameof(CudaImportAttribute),
-            QualifiedNameSyntax q => q.Right.Identifier.ValueText is AttributeShortName or nameof(CudaImportAttribute),
+            IdentifierNameSyntax id => KnownAttributes.IsAttributeName(id.Identifier.ValueText, KnownAttributes.CudaImport),
+            QualifiedNameSyntax q => KnownAttributes.IsAttributeName(q.Right.Identifier.ValueText, KnownAttributes.CudaImport),
             _ => false
         };
     }
@@ -364,8 +360,8 @@ public class CudaImportGenerator : IIncrementalGenerator
                 elementTypeName = elementWriter.ToString();
             }
 
-            var hasIn = param.HasAttribute("In");
-            var hasOut = param.HasAttribute("Out");
+            var hasIn = param.HasAttribute(KnownAttributes.In);
+            var hasOut = param.HasAttribute(KnownAttributes.Out);
             builder.Add(new KernelLaunchParameter(
                 param.Name,
                 typeWriter.ToString(),

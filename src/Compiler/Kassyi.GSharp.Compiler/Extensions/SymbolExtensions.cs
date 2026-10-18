@@ -118,8 +118,7 @@ internal static class SymbolExtensions
     /// </summary>
     public static bool IsStructLayoutAttribute(this AttributeData attr)
     {
-        var name = attr.AttributeClass?.Name;
-        if (name != "StructLayoutAttribute" && name != "StructLayout")
+        if (!attr.IsAttribute(KnownAttributes.StructLayout))
         {
             return false;
         }
@@ -129,7 +128,7 @@ internal static class SymbolExtensions
         {
             Name: "InteropServices",
             ContainingNamespace:
-            { Name: "Runtime", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } }
+            { Name: "Runtime", ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true } }
         };
     }
 
