@@ -82,4 +82,58 @@ public class CpuKernelLoaderTests
             if (File.Exists(dllFile)) File.Delete(dllFile);
         }
     }
+
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    private delegate uint GetTickCountDelegate();
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CpuLoader_LoadPtrAndDelegate_SameExport_DoesNotCollide()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var systemDll = Path.Combine(Environment.SystemDirectory, "kernel32.dll");
+        if (!File.Exists(systemDll))
+        {
+            return;
+        }
+
+        var tempDll = Path.Combine(Path.GetTempPath(), $"gsharp_test_{Guid.NewGuid():N}.dll");
+        try
+        {
+            var rawDll = File.ReadAllBytes(systemDll);
+            var sig = Ed25519.Sign(rawDll, Ed25519.DefaultDevKeySeed);
+            byte[] signedDll = [..rawDll, ..sig];
+            File.WriteAllBytes(tempDll, signedDll);
+
+            var ptr = CpuKernelLoader.LoadAotKernelPtr("GetTickCount", tempDll);
+            Assert.NotEqual(IntPtr.Zero, ptr);
+
+            var del = CpuKernelLoader.LoadAotKernel<GetTickCountDelegate>("GetTickCount", tempDll);
+            Assert.NotNull(del);
+            _ = del();
+
+            var ptrAgain = CpuKernelLoader.LoadAotKernelPtr("GetTickCount", tempDll);
+            Assert.Equal(ptr, ptrAgain);
+        }
+        finally
+        {
+            CpuKernelLoader.Shutdown();
+            if (File.Exists(tempDll))
+            {
+                try
+                {
+                    File.Delete(tempDll);
+                }
+                catch
+                {
+                    // Ignore if OS handle is still releasing
+                }
+            }
+        }
+    }
 }
