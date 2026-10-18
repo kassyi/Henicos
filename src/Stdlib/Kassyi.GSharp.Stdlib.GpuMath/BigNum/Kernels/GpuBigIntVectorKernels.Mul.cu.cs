@@ -154,5 +154,23 @@ public static partial class GpuBigIntVectorKernels
                 Gpu.SyncThreads();
             }
         }
+
+        if (tid == 0)
+        {
+            bool isZero = true;
+            for (int w = 0; w < ctx.NumWordsResult; w++)
+            {
+                if (ctx.Result[offsetResult + w] != 0u)
+                {
+                    isZero = false;
+                    break;
+                }
+            }
+
+            if (isZero)
+            {
+                ctx.SignResult[batchIdx] = 0u;
+            }
+        }
     }
 }

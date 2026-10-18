@@ -452,6 +452,70 @@ public static class GpuBigNumberStackLinqExtensions
         new(new ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, T, T, T>(
             left.Enumerator, right.Enumerator, static (a, b) => a / b));
 
+    /// <summary>
+    /// Computes the remainder (modulo) of each element of a parallel <see cref="GpuBigUInt"/> sequence divided by a scalar.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">The parallel sequence of dividends.</param>
+    /// <param name="scalar">The scalar divisor.</param>
+    /// <returns>A new parallel sequence containing the remainders.</returns>
+    public static ParallelStackEnumerable<SelectEnumerator<TEnumerator, GpuBigUInt, GpuBigUInt>, GpuBigUInt>
+        SelectModulo<TEnumerator>(
+            this ParallelStackEnumerable<TEnumerator, GpuBigUInt> source,
+            GpuBigUInt scalar)
+        where TEnumerator : struct, IStackEnumerator<GpuBigUInt>, allows ref struct =>
+        source.Select(x => (x % scalar).Node.Evaluate(x.Workspace));
+
+    /// <summary>
+    /// Computes the remainder (modulo) of each element of a stack-allocated <see cref="GpuBigUInt"/> sequence divided by a scalar.
+    /// </summary>
+    /// <typeparam name="TEnumerator">The type of the source enumerator.</typeparam>
+    /// <param name="source">The sequence of dividends.</param>
+    /// <param name="scalar">The scalar divisor.</param>
+    /// <returns>A new stack-allocated sequence containing the remainders.</returns>
+    public static StackEnumerable<SelectEnumerator<TEnumerator, GpuBigUInt, GpuBigUInt>, GpuBigUInt>
+        SelectModulo<TEnumerator>(
+            this StackEnumerable<TEnumerator, GpuBigUInt> source,
+            GpuBigUInt scalar)
+        where TEnumerator : struct, IStackEnumerator<GpuBigUInt>, allows ref struct =>
+        source.Select(x => (x % scalar).Node.Evaluate(x.Workspace));
+
+    /// <summary>
+    /// Computes the remainder (modulo) of the first parallel <see cref="GpuBigUInt"/> sequence divided by the second parallel sequence element-wise.
+    /// </summary>
+    /// <typeparam name="TLeftEnumerator">The type of the left source enumerator.</typeparam>
+    /// <typeparam name="TRightEnumerator">The type of the right source enumerator.</typeparam>
+    /// <param name="left">The dividend parallel sequence.</param>
+    /// <param name="right">The divisor parallel sequence.</param>
+    /// <returns>A new parallel sequence containing the element-wise remainders.</returns>
+    public static ParallelStackEnumerable<
+            ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, GpuBigUInt, GpuBigUInt, GpuBigUInt>, GpuBigUInt>
+        ZipModulo<TLeftEnumerator, TRightEnumerator>(
+            this ParallelStackEnumerable<TLeftEnumerator, GpuBigUInt> left,
+            ParallelStackEnumerable<TRightEnumerator, GpuBigUInt> right)
+        where TLeftEnumerator : struct, IStackEnumerator<GpuBigUInt>, allows ref struct
+        where TRightEnumerator : struct, IStackEnumerator<GpuBigUInt>, allows ref struct =>
+        new(new ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, GpuBigUInt, GpuBigUInt, GpuBigUInt>(
+            left.Enumerator, right.Enumerator, static (a, b) => (a % b).Node.Evaluate(a.Workspace)));
+
+    /// <summary>
+    /// Computes the remainder (modulo) of the first stack-allocated <see cref="GpuBigUInt"/> sequence divided by the second sequence element-wise.
+    /// </summary>
+    /// <typeparam name="TLeftEnumerator">The type of the left source enumerator.</typeparam>
+    /// <typeparam name="TRightEnumerator">The type of the right source enumerator.</typeparam>
+    /// <param name="left">The dividend sequence.</param>
+    /// <param name="right">The divisor sequence.</param>
+    /// <returns>A new stack-allocated sequence containing the element-wise remainders.</returns>
+    public static StackEnumerable<
+            ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, GpuBigUInt, GpuBigUInt, GpuBigUInt>, GpuBigUInt>
+        ZipModulo<TLeftEnumerator, TRightEnumerator>(
+            this StackEnumerable<TLeftEnumerator, GpuBigUInt> left,
+            StackEnumerable<TRightEnumerator, GpuBigUInt> right)
+        where TLeftEnumerator : struct, IStackEnumerator<GpuBigUInt>, allows ref struct
+        where TRightEnumerator : struct, IStackEnumerator<GpuBigUInt>, allows ref struct =>
+        new(new ZipStackEnumerator<TLeftEnumerator, TRightEnumerator, GpuBigUInt, GpuBigUInt, GpuBigUInt>(
+            left.Enumerator, right.Enumerator, static (a, b) => (a % b).Node.Evaluate(a.Workspace)));
+
     private static T Clone<T>(T source)
         where T : struct, IGpuBigNumber<T>
     {

@@ -309,4 +309,75 @@ public partial class GpuBigIntVectorLinqExtensionsTests
         using var divZeroExpr = negArray.AsVectorizedEnumerable().SelectDivideByUInt32(0u);
         Assert.Throws<DivideByZeroException>(() => divZeroExpr.Evaluate(_context));
     }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void SelectDivideAndModulo_ZeroScalar_ThrowsDivideByZeroException()
+    {
+        using var array = CreateArray([100, -47, 25]);
+        using var zeroScalar = CreateScalar(0);
+
+        using var divExpr = array.AsVectorizedEnumerable().SelectDivide(zeroScalar);
+        Assert.Throws<DivideByZeroException>(() => divExpr.Evaluate(_context));
+
+        using var modExpr = array.AsVectorizedEnumerable().SelectModulo(zeroScalar);
+        Assert.Throws<DivideByZeroException>(() => modExpr.Evaluate(_context));
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void SelectMultiplyAndZipMultiply_NegativeTimesZero_NormalizesSignToZero()
+    {
+        using var array = CreateArray([-42, 0, -999999999999]);
+        using var zeroScalar = CreateScalar(0);
+
+        using var selectMulExpr = array.AsVectorizedEnumerable().SelectMultiply(zeroScalar);
+        using var selectMulResult = selectMulExpr.Evaluate(_context);
+        for (var i = 0; i < array.Length; i++)
+        {
+            var elem = selectMulResult.GetElement(i);
+            Assert.False(elem.IsNegative);
+            Assert.Equal(BigInteger.Zero, ToBigInt(elem));
+        }
+
+        using var rhsArray = CreateArray([0, -77, 0]);
+        using var zipMulExpr = array.AsVectorizedEnumerable().ZipMultiply(rhsArray.AsVectorizedEnumerable());
+        using var zipMulResult = zipMulExpr.Evaluate(_context);
+        for (var i = 0; i < array.Length; i++)
+        {
+            var elem = zipMulResult.GetElement(i);
+            Assert.False(elem.IsNegative);
+            Assert.Equal(BigInteger.Zero, ToBigInt(elem));
+        }
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.Boundary)]
+    public void SelectAndZipDivideModulo_LargeMultiLimbExceeding128Words_EvaluatesCorrectly()
+    {
+        const int numWords = 160;
+        var p = (BigInteger.One << (140 * 32)) - 123456789;
+        var q = (BigInteger.One << (75 * 32)) + 987654321;
+
+        BigInteger[] dividends = [p, -p, q - 1];
+        using var array = CreateArray(dividends, numWords);
+        using var scalarDivisor = CreateScalar(q, numWords);
+
+        using var divExpr = array.AsVectorizedEnumerable().SelectDivide(scalarDivisor);
+        using var divResult = divExpr.Evaluate(_context);
+        var hostDiv = ToHostArray(divResult);
+
+        using var modExpr = array.AsVectorizedEnumerable().SelectModulo(scalarDivisor);
+        using var modResult = modExpr.Evaluate(_context);
+        var hostMod = ToHostArray(modResult);
+
+        for (var i = 0; i < dividends.Length; i++)
+        {
+            Assert.Equal(dividends[i] / q, hostDiv[i]);
+            Assert.Equal(dividends[i] % q, hostMod[i]);
+        }
+    }
 }
