@@ -42,7 +42,7 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         if (context.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(declarator) is { } symbol &&
             IsGpuBigIntExpr(symbol.Type, t1, t2, t3))
         {
-            context.Report(GSharpDiagnostics.GpuBigIntExprDirectAssignment, declarator);
+            context.ReportDiagnostic(GSharpDiagnostics.GpuBigIntExprDirectAssignment, declarator);
         }
     }
 
@@ -55,7 +55,7 @@ public class GpuBigIntExprAnalyzer : DiagnosticAnalyzer
         // Prevent assignments where the target evaluates to GpuBigIntExpr
         if (targetType != null && IsGpuBigIntExpr(targetType, t1, t2, t3))
         {
-            context.Report(GSharpDiagnostics.GpuBigIntExprDirectAssignment, assignment);
+            context.ReportDiagnostic(GSharpDiagnostics.GpuBigIntExprDirectAssignment, assignment);
         }
     }
 

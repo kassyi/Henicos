@@ -30,7 +30,7 @@ internal sealed class ImplicitVarNeedsSuffixRule : ISyntaxValidationRule<Variabl
             return;
         }
 
-        context.Report(
+        context.ReportDiagnostic(
             GSharpDiagnostics.ImplicitVarNeedsSuffix,
             variable,
             variable.Identifier.Text);

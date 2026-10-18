@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Extensions;
+
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 /// <summary>Diagnostic rule that verifies required arguments to GPU macro methods are compile-time constants.</summary>
@@ -100,7 +102,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
             var args = invocation.ArgumentList.Arguments;
             if (args.Count >= 1 && args[0].Expression is not LambdaExpressionSyntax)
             {
-                context.Report(
+                context.ReportDiagnostic(
                     GSharpDiagnostics.UnsupportedSyntax,
                     args[0],
                     "Gpu.SyncGrid requires a lambda expression argument");
@@ -110,7 +112,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         if (context.MethodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
             !IsCooperativeKernel(context.MethodSymbol))
         {
-            context.Report(
+            context.ReportDiagnostic(
                 GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
                 invocation,
                 context.MethodSymbol.Name);
@@ -125,10 +127,10 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         if (args.Count >= 1)
         {
             var factorExpr = args[0].Expression;
-            var constant = context.SemanticModel.GetConstantValue(factorExpr);
+            var constant = context.SemanticModel.GetSafeConstantValue(factorExpr);
             if (!constant.HasValue || constant.Value is not int intVal || intVal < 0)
             {
-                context.Report(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
+                context.ReportDiagnostic(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
             }
         }
 
@@ -140,7 +142,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         var loopStmt = GetSupportedLoop(exprStmt);
         if (loopStmt == null)
         {
-            context.Report(GSharpDiagnostics.UnrollHintMustPrecedeLoop, invocation);
+            context.ReportDiagnostic(GSharpDiagnostics.UnrollHintMustPrecedeLoop, invocation);
         }
         else
         {
@@ -220,7 +222,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
     {
         while (true)
         {
-            var constant = context.SemanticModel.GetConstantValue(expr);
+            var constant = context.SemanticModel.GetSafeConstantValue(expr);
             if (constant.HasValue)
             {
                 return true;
@@ -251,7 +253,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
     }
 
     private void ReportGsh0032(StatementSyntax loopStmt, ref ValidationContext context) =>
-        context.Report(GSharpDiagnostics.UnrolledLoopMustBeStatic, loopStmt);
+        context.ReportDiagnostic(GSharpDiagnostics.UnrolledLoopMustBeStatic, loopStmt);
 
     private void CheckDynamicControlFlow(StatementSyntax loopStmt, ref ValidationContext context)
     {
@@ -272,30 +274,30 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
             return;
         }
 
-        context.Report(GSharpDiagnostics.UnrolledLoopMayBeIgnored, loopStmt);
+        context.ReportDiagnostic(GSharpDiagnostics.UnrolledLoopMayBeIgnored, loopStmt);
     }
 
     private void CheckStringLiteral(ExpressionSyntax expr, ref ValidationContext context)
     {
         if ((expr is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression)) ||
             expr is InterpolatedStringExpressionSyntax ||
-            context.SemanticModel.GetConstantValue(expr) is { HasValue: true, Value: string })
+            context.SemanticModel.GetSafeConstantValue(expr) is { HasValue: true, Value: string })
         {
             return;
         }
 
-        context.Report(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, expr);
+        context.ReportDiagnostic(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, expr);
     }
 
     private void CheckConstant(ExpressionSyntax expr, string paramName, string macroName, ref ValidationContext context)
     {
-        var constant = context.SemanticModel.GetConstantValue(expr);
+        var constant = context.SemanticModel.GetSafeConstantValue(expr);
         if (constant.HasValue)
         {
             return;
         }
 
-        context.Report(
+        context.ReportDiagnostic(
             GSharpDiagnostics.MacroArgumentMustBeConstant,
             expr,
             paramName,

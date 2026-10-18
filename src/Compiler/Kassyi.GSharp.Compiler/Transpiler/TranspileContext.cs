@@ -64,10 +64,10 @@ public readonly struct Reporter(Action<Diagnostic>? reportDiagnostic)
     public Action<Diagnostic>? ReportDiagnostic { get; } = reportDiagnostic;
 
     public void Report(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[]? messageArgs) =>
-        ReportDiagnostic?.Invoke(Diagnostic.Create(descriptor, node.GetLocation(), messageArgs));
+        ReportDiagnostic.ReportDiagnostic(descriptor, node, messageArgs);
 
     public void Report(DiagnosticDescriptor descriptor, Location? location, params object?[]? messageArgs) =>
-        ReportDiagnostic?.Invoke(Diagnostic.Create(descriptor, location, messageArgs));
+        ReportDiagnostic.ReportDiagnostic(descriptor, location, messageArgs);
 }
 
 public struct TranspileContext(

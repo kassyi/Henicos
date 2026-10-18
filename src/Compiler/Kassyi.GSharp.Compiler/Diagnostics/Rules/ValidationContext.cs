@@ -11,9 +11,10 @@ internal readonly struct ValidationContext(
 
     public void ReportDiagnostic(Diagnostic diagnostic) => reportDiagnostic(diagnostic);
 
-    public void Report(DiagnosticDescriptor descriptor, Location? location, params object?[]? messageArgs) =>
-        reportDiagnostic(Diagnostic.Create(descriptor, location, messageArgs));
+    public void ReportDiagnostic(DiagnosticDescriptor descriptor, Location? location, params object?[]? messageArgs) =>
+        reportDiagnostic.ReportDiagnostic(descriptor, location, messageArgs);
 
-    public void Report(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[]? messageArgs) =>
-        reportDiagnostic(Diagnostic.Create(descriptor, node.GetLocation(), messageArgs));
+    public void ReportDiagnostic(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[]? messageArgs) =>
+        reportDiagnostic.ReportDiagnostic(descriptor, node, messageArgs);
+
 }

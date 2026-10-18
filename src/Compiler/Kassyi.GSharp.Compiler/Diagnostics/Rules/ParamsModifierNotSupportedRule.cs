@@ -13,7 +13,7 @@ internal sealed class ParamsModifierNotSupportedRule : ISyntaxValidationRule<Par
     {
         if (node.Modifiers.Any(SyntaxKind.ParamsKeyword))
         {
-            context.Report(
+            context.ReportDiagnostic(
                 GSharpDiagnostics.ParamsModifierNotSupported,
                 node,
                 node.Identifier.Text,

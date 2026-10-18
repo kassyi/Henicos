@@ -29,7 +29,7 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
             (symbol.ContainingNamespace.IsSystemNamespace() || symbol.ContainingNamespace.IsSystemThreading() ||
              symbol.ContainingNamespace.IsSystemOrNumerics()))
         {
-            context.Report(
+            context.ReportDiagnostic(
                 GSharpDiagnostics.UnsupportedSyntax,
                 node,
                 $"{symbol.ContainingType.Name}.{symbol.Name}");

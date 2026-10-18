@@ -13,7 +13,7 @@ internal sealed class ManualEnumeratorRule : ISyntaxValidationRule<InvocationExp
     {
         if (context.SemanticModel.GetSymbol(node) is IMethodSymbol { Name: "GetEnumerator" })
         {
-            context.Report(GSharpDiagnostics.ManualEnumeratorNotSupported, node);
+            context.ReportDiagnostic(GSharpDiagnostics.ManualEnumeratorNotSupported, node);
         }
     }
 }

@@ -203,7 +203,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             if (ContextInferenceEngine.IsParallelDependent(methodSymbol, inferenceCache, context.Compilation))
             {
-                context.Report(
+                context.ReportDiagnostic(
                     GSharpDiagnostics.ParallelDependentCallFromSingleThreadContext,
                     node,
                     methodSymbol.Name);

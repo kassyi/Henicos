@@ -38,7 +38,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         {
             if (!classDecl.Modifiers.Any(SyntaxKind.PartialKeyword))
             {
-                context.Report(
+                context.ReportDiagnostic(
                     GSharpDiagnostics.KernelClassMustBePartial,
                     classDecl.Identifier.GetLocation(),
                     classDecl.Identifier.Text);

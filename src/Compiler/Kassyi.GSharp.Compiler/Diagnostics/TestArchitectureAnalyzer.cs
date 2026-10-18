@@ -79,7 +79,7 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
 
         if (!inheritsRequiredBase)
         {
-            context.Report(
+            context.ReportDiagnostic(
                 GSharpDiagnostics.TestClassMustInheritFromBase,
                 classDeclaration.Identifier.GetLocation(),
                 classDeclaration.Identifier.Text);
@@ -89,7 +89,7 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
         var hasCategoryTrait = HasCategoryTrait(methodSymbol) || HasCategoryTrait(classSymbol);
         if (!hasCategoryTrait)
         {
-            context.Report(
+            context.ReportDiagnostic(
                 GSharpDiagnostics.TestMethodMustHaveCategoryTrait,
                 methodDeclaration.Identifier.GetLocation(),
                 methodSymbol.Name);
