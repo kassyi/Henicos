@@ -10,6 +10,7 @@ public static class BbpAlgorithm
 {
     private const double Epsilon = 1e-17;
     private const int SafeChunkSize = 8; // Max digits extracted in a single double precision pass
+    private const int ParallelThreshold = 10_000;
 
     /// <summary>
     /// Computes the sequence of hexadecimal digits of Pi immediately following the specified position (id).
@@ -38,8 +39,7 @@ public static class BbpAlgorithm
         while (remaining > 0)
         {
             var take = Math.Min(remaining, SafeChunkSize);
-            var chunk = ExtractChunk(currentOffset, take);
-            sb.Append(chunk);
+            AppendChunk(sb, currentOffset, take);
 
             currentOffset += take;
             remaining -= take;
@@ -52,7 +52,7 @@ public static class BbpAlgorithm
     /// Extracts up to 8 hexadecimal digits starting directly after the specified offset.
     /// Uses parallel reduction when the offset is sufficiently large.
     /// </summary>
-    private static string ExtractChunk(int id, int count)
+    private static void AppendChunk(StringBuilder sb, int id, int count)
     {
         var s1 = Series(1, id);
         var s2 = Series(4, id);
@@ -66,7 +66,7 @@ public static class BbpAlgorithm
             pid += 1.0;
         }
 
-        var hexChars = new char[count];
+        Span<char> hexChars = stackalloc char[SafeChunkSize];
         for (var i = 0; i < count; i++)
         {
             pid = 16.0 * (pid - Math.Floor(pid));
@@ -74,7 +74,7 @@ public static class BbpAlgorithm
             hexChars[i] = digit < 10 ? (char)('0' + digit) : (char)('A' + digit - 10);
         }
 
-        return new string(hexChars);
+        sb.Append(hexChars[..count]);
     }
 
     private static double Series(int m, int id)
@@ -82,15 +82,12 @@ public static class BbpAlgorithm
         var s = 0.0;
 
         // Sum the series up to id (Parallel execution for large id)
-        if (id >= 10000)
+        if (id >= ParallelThreshold)
         {
             var lockObj = new object();
             Parallel.For(0, id + 1, () => 0.0, (k, _, localSum) =>
                 {
-                    var ak = 8L * k + m;
-                    long p = id - k;
-                    var t = ModExp16(p, ak);
-                    localSum += (double)t / ak;
+                    localSum += ComputeSeriesTerm(k, m, id);
                     return localSum - Math.Floor(localSum);
                 },
                 localSum =>
@@ -106,10 +103,7 @@ public static class BbpAlgorithm
         {
             for (var k = 0; k <= id; k++)
             {
-                var ak = 8L * k + m;
-                long p = id - k;
-                var t = ModExp16(p, ak);
-                s += (double)t / ak;
+                s += ComputeSeriesTerm(k, m, id);
                 s -= Math.Floor(s);
             }
         }
@@ -131,6 +125,15 @@ public static class BbpAlgorithm
         return s;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static double ComputeSeriesTerm(int k, int m, int id)
+    {
+        var ak = 8L * k + m;
+        long p = id - k;
+        var t = ModExp16(p, ak);
+        return (double)t / ak;
+    }
+
     /// <summary>
     /// Computes (16^p) mod ak accurately using standard binary exponentiation.
     /// </summary>
@@ -141,7 +144,8 @@ public static class BbpAlgorithm
             return 0;
         }
 
-        var baseVal = 16UL % (ulong)ak;
+        var mod = (ulong)ak;
+        var baseVal = 16UL % mod;
         ulong result = 1;
         var exp = p;
 
@@ -149,10 +153,10 @@ public static class BbpAlgorithm
         {
             if ((exp & 1) == 1)
             {
-                result = (result * baseVal) % (ulong)ak;
+                result = (ulong)(((UInt128)result * baseVal) % mod);
             }
 
-            baseVal = (baseVal * baseVal) % (ulong)ak;
+            baseVal = (ulong)(((UInt128)baseVal * baseVal) % mod);
             exp >>= 1;
         }
 

@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 /// GPU-accelerated Chudnovsky binary splitting algorithm for ultra-fast high-precision Pi computation.
 /// Utilizes G# <see cref="GpuBigUInt"/> and NTT multiplication kernels with Zero-PCIe intermediate merges.
 /// </summary>
-public partial class ChudnovskyAlgorithm
+public static partial class ChudnovskyAlgorithm
 {
     /// <summary>
     /// Average number of decimal digits contributed per hypergeometric series term in the Chudnovsky algorithm.
@@ -19,6 +19,14 @@ public partial class ChudnovskyAlgorithm
     /// </summary>
     private const double BitsPerDecimalDigit = 3.321928094887362;
 
+    /// <summary>
+    /// Average number of bits contributed per hypergeometric series term.
+    /// </summary>
+    private const double BitsPerTerm = DigitsPerTerm * BitsPerDecimalDigit;
+
+    private const int ExtraDigits = 20;
+    private const int ExtraBits = 1024;
+    private const int MarginBits = 256;
 
     private class ProgressState(int totalTerms, int totalDigits)
     {
@@ -95,19 +103,16 @@ public partial class ChudnovskyAlgorithm
 
         int totalDigits;
         int totalTerms;
-        var extraDigits = 20;
 
         if (asHex)
         {
             var exactBits = (int)Math.Floor(digits * BitsPerDecimalDigit / 32) * 32;
-            var extraBits = 1024; // Safe margin for series truncation error
-            var marginBits = 256; // Division noise margin
-            totalDigits = exactBits + extraBits + marginBits;
-            totalTerms = (int)Math.Ceiling(totalDigits / DigitsPerTerm);
+            totalDigits = exactBits + ExtraBits + MarginBits;
+            totalTerms = (int)Math.Ceiling(totalDigits / BitsPerTerm) + 1;
         }
         else
         {
-            totalDigits = digits + extraDigits;
+            totalDigits = digits + ExtraDigits;
             totalTerms = (int)Math.Ceiling(digits / DigitsPerTerm) + 1;
         }
 
@@ -126,7 +131,7 @@ public partial class ChudnovskyAlgorithm
 
         // 1. Compute Binary Splitting tree using Hybrid CPU/GPU execution
         var progressState = new ProgressState(totalTerms, digits);
-        var pqt = ComputeTree(0, totalTerms, workspace, thresholdTerms, progressState);
+        using var pqt = ComputeTree(0, totalTerms, workspace, thresholdTerms, progressState);
         var treeTimeMs = totalStopwatch.ElapsedMilliseconds;
         Logger.Info("GPU-Pi", $"Binary Splitting Tree computed in {treeTimeMs} ms");
 
@@ -134,7 +139,7 @@ public partial class ChudnovskyAlgorithm
         using var gpuPiExt = ComputeFinalPiFraction(workspace, pqt, digits, totalDigits, asHex);
 
         // 3. Fast D&C Radix Conversion & Streaming Output
-        WritePiOutput(workspace, gpuPiExt, gpuPiExt.NumWords, digits, extraDigits, outputWriter, asHex);
+        WritePiOutput(workspace, gpuPiExt, gpuPiExt.NumWords, digits, ExtraDigits, outputWriter, asHex);
 
         totalStopwatch.Stop();
         Logger.Info("GPU-Pi", $"Total Pipeline Time: {totalStopwatch.ElapsedMilliseconds} ms");
@@ -151,7 +156,7 @@ public partial class ChudnovskyAlgorithm
     {
         var finalStageStopwatch = Stopwatch.StartNew();
 
-        var gpuSqrtBase = ComputeSqrtBase(workspace, digits, totalDigits, asHex);
+        using var gpuSqrtBase = ComputeSqrtBase(workspace, digits, totalDigits, asHex);
         using var gpuNumerator = ComputeNumerator(workspace, gpuSqrtBase, pqt.Q);
         var gpuPiExt = ExecuteFinalDivision(workspace, gpuNumerator, pqt.T.Value);
 
@@ -168,10 +173,8 @@ public partial class ChudnovskyAlgorithm
 
         if (asHex)
         {
-            var exactBits = (int)Math.Floor(digits * 3.32192809489 / 32) * 32;
-            var extraBits = 1024; // Safe margin for series truncation error
-            var marginBits = 256; // Division noise margin
-            var targetBits = exactBits + extraBits + marginBits;
+            var exactBits = (int)Math.Floor(digits * BitsPerDecimalDigit / 32) * 32;
+            var targetBits = exactBits + ExtraBits + MarginBits;
 
             Logger.Info("GPU-Pi", $"Computing Sqrt base (10005 * 2^{2 * targetBits})...");
 
@@ -208,7 +211,6 @@ public partial class ChudnovskyAlgorithm
         var swSqrt = Stopwatch.StartNew();
         GpuBigIntDivRem.Sqrt(gpuSqrtBase, gpuSqrtResult);
         swSqrt.Stop();
-        gpuSqrtBase.Dispose();
         Logger.Info("GPU-Pi", $"Final division (Sqrt) computed in {swSqrt.ElapsedMilliseconds} ms");
 
         var swMul1 = Stopwatch.StartNew();
@@ -234,14 +236,14 @@ public partial class ChudnovskyAlgorithm
         GpuBigUInt denominator)
     {
         var targetWords = Math.Max(numerator.NumWords, denominator.NumWords);
-        using var paddedNumerator = numerator.PadTo(targetWords);
-        using var paddedDenominator = denominator.PadTo(targetWords);
+        using GpuBigUInt? paddedNumerator = numerator.NumWords == targetWords ? null : numerator.PadTo(targetWords);
+        using GpuBigUInt? paddedDenominator = denominator.NumWords == targetWords ? null : denominator.PadTo(targetWords);
 
         var gpuPiExt = new GpuBigUInt(workspace, targetWords);
         using var remainder = new GpuBigUInt(workspace, targetWords);
 
         // Execute Final Division entirely on GPU via Newton-Raphson NTT Division
-        GpuBigIntDivRem.DivRem(paddedNumerator, paddedDenominator, gpuPiExt, remainder);
+        GpuBigIntDivRem.DivRem(paddedNumerator ?? numerator, paddedDenominator ?? denominator, gpuPiExt, remainder);
 
         return gpuPiExt;
     }
@@ -276,10 +278,6 @@ public partial class ChudnovskyAlgorithm
 
     private static void WriteHexPiOutput(GpuBigUInt gpuPiExt, TextWriter hexWriter)
     {
-        // Exact bits that are guaranteed to be correct (word-aligned)
-        const int ExtraBits = 1024; // Safe margin for series truncation error
-        const int MarginBits = 256; // Division noise margin
-
         var hostData = gpuPiExt.ToHostArray();
 
         // Find the actual integer part (the first non-zero word from the top)
@@ -305,7 +303,11 @@ public partial class ChudnovskyAlgorithm
                 hostData[CheckIndex + 1].ToString("X8") + hostData[CheckIndex].ToString("X8");
             var offset = (actualTopIndex - CheckIndex - 2) * 8;
 
-            PiVerifier.VerifyWithBbp(computedHexTail, offset);
+            if (!PiVerifier.VerifyWithBbp(computedHexTail, offset))
+            {
+                throw new InvalidOperationException(
+                    $"BBP hexadecimal verification failed at offset {offset} (computed tail: {computedHexTail}).");
+            }
         }
         else if (!Console.IsOutputRedirected)
         {
@@ -336,8 +338,8 @@ public partial class ChudnovskyAlgorithm
         using var extraDivGpu = GpuBigUInt.FromBigInteger(workspace, extraDivisor, targetWords);
         using var finalPi = new GpuBigUInt(workspace, targetWords);
         using var finalRem = new GpuBigUInt(workspace, targetWords);
-        using var paddedPiExt = gpuPiExt.PadTo(targetWords);
-        GpuBigIntDivRem.DivRem(paddedPiExt, extraDivGpu, finalPi, finalRem);
+        using GpuBigUInt? paddedPiExt = gpuPiExt.NumWords == targetWords ? null : gpuPiExt.PadTo(targetWords);
+        GpuBigIntDivRem.DivRem(paddedPiExt ?? gpuPiExt, extraDivGpu, finalPi, finalRem);
 
         GpuRadixConverter.ConvertAndWrite(workspace, finalPi, digits + 1, writer, isMostSignificant: true);
         writer.Flush();
@@ -357,42 +359,30 @@ public partial class ChudnovskyAlgorithm
         }
 
         var m = (a + b) / 2;
-        var swLeft = Stopwatch.StartNew();
-        var left = ComputeTree(a, m, workspace, thresholdTerms, state);
-        swLeft.Stop();
-        var swRight = Stopwatch.StartNew();
-        var right = ComputeTree(m, b, workspace, thresholdTerms, state);
-        swRight.Stop();
+        using var left = ComputeTree(a, m, workspace, thresholdTerms, state);
+        using var right = ComputeTree(m, b, workspace, thresholdTerms, state);
 
-        var swMerge = Stopwatch.StartNew();
         var result = HypergeometricTerms.Merge(workspace, left, right);
-        swMerge.Stop();
 
         state.Report(b);
         return result;
     }
 
-
     private static HypergeometricTerms UploadToGpu(GpuWorkspace workspace, ChudnovskyPqt cpu)
     {
-        var sw = Stopwatch.StartNew();
-        var pNeg = cpu.P < 0;
-        var absP = BigInteger.Abs(cpu.P);
-        var gpuP = GpuBigUInt.FromBigInteger(workspace, absP);
-
+        var gpuP = ToGpuBigInt(workspace, cpu.P);
         var gpuQ = GpuBigUInt.FromBigInteger(workspace, cpu.Q);
+        var gpuT = ToGpuBigInt(workspace, cpu.T);
 
-        var tNeg = cpu.T < 0;
-        var absT = BigInteger.Abs(cpu.T);
-        var gpuT = GpuBigUInt.FromBigInteger(workspace, absT);
+        return new HypergeometricTerms(gpuP, gpuQ, gpuT);
+    }
 
-        var result = new HypergeometricTerms(
-            new GpuBigInt(gpuP, pNeg),
-            gpuQ,
-            new GpuBigInt(gpuT, tNeg)
-        );
-        sw.Stop();
-        return result;
+    private static GpuBigInt ToGpuBigInt(GpuWorkspace workspace, BigInteger value)
+    {
+        var isNegative = value < 0;
+        var absValue = BigInteger.Abs(value);
+        var gpuValue = GpuBigUInt.FromBigInteger(workspace, absValue);
+        return new GpuBigInt(gpuValue, isNegative);
     }
 }
 

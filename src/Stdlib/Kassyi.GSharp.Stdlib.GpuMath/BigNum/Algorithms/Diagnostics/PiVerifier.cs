@@ -3,7 +3,6 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Diagnostics;
 /// <summary>
 /// Provides verification functionality for computed Pi digits.
 /// </summary>
-[ExcludeFromCodeCoverage]
 public static class PiVerifier
 {
     /// <summary>
@@ -28,10 +27,8 @@ public static class PiVerifier
             Logger.Info("Verification", $"PASS: Expected {expectedHex} == Computed {computedHexTail}");
             return true;
         }
-        else
-        {
-            Logger.Error("Verification", $"FAIL: Expected {expectedHex} != Computed {computedHexTail}");
-            return false;
-        }
+
+        Logger.Error("Verification", $"FAIL: Expected {expectedHex} != Computed {computedHexTail}");
+        return false;
     }
 }

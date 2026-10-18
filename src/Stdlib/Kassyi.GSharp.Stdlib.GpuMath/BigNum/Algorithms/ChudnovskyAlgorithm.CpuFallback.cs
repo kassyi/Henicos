@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>Computes high-precision Pi digits using the Chudnovsky binary splitting algorithm on CPU.</summary>
-public partial class ChudnovskyAlgorithm
+public static partial class ChudnovskyAlgorithm
 {
     /// <summary>Represents the intermediate terms P, Q, and T in the binary splitting algorithm.</summary>
     public struct ChudnovskyPqt
@@ -19,8 +19,10 @@ public partial class ChudnovskyAlgorithm
     /// <returns>A string representation of Pi.</returns>
     public static string ComputePi(int digits)
     {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(digits);
+
         // 14 digits per term approx
-        var n = digits / 14 + 1;
+        var n = (int)Math.Ceiling(digits / DigitsPerTerm) + 1;
 
         var sw = Stopwatch.StartNew();
         var pqt = ComputeSubtree(0, n);
@@ -30,19 +32,18 @@ public partial class ChudnovskyAlgorithm
         var factorQ = pqt.Q;
         var factorT = pqt.T;
 
-        // Add 20 extra digits for precision during division
-        var extraDigits = 20;
-        var totalDigits = digits + extraDigits;
+        // Add extra digits for precision during division
+        var totalDigits = digits + ExtraDigits;
 
         // Calculate Sqrt(10005 * 10^(2*totalDigits))
         var sqrtBase = 10005 * BigInteger.Pow(10, 2 * totalDigits);
         var sqrt10005 = sqrtBase.Sqrt();
 
         var piExt = (chudnovskyConstant * sqrt10005 * factorQ) / factorT;
-        var pi = piExt / BigInteger.Pow(10, extraDigits);
+        var pi = piExt / BigInteger.Pow(10, ExtraDigits);
         sw.Stop();
 
-        Logger<ChudnovskyAlgorithm>.Info($"Computed {digits} digits in {sw.ElapsedMilliseconds} ms");
+        Logger.Info(nameof(ChudnovskyAlgorithm), $"Computed {digits} digits in {sw.ElapsedMilliseconds} ms");
         return pi.ToString();
     }
 
@@ -52,6 +53,9 @@ public partial class ChudnovskyAlgorithm
     /// <returns>The computed P, Q, and T values for the subtree.</returns>
     public static ChudnovskyPqt ComputeSubtree(int a, int b)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(a);
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(b, a);
+
         if (a + 1 == b)
         {
             if (a == 0)
