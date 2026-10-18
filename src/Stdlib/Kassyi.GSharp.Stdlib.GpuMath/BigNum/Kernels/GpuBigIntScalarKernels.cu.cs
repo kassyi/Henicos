@@ -3,8 +3,8 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
-[Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[SkipSnapshotConsistency("Tested in separate suites or WIP")]
+[ExcludeFromCodeCoverage]
 public static partial class GpuBigIntScalarKernels
 {
     [GpuKernel]
