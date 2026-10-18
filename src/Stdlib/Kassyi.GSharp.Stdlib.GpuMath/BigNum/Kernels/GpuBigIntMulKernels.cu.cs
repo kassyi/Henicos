@@ -35,15 +35,37 @@ public static partial class GpuBigIntMulKernels
         public int TransformLength;
         public int NumWordsA;
         public int NumWordsB;
+        public int N1;
+        public int N2;
+    }
+
+    public struct NttUnpackSingleContext
+    {
+        [GpuReadOnly]
+        public uint[] OpA;
+
+        public uint[] NttBuf1A;
+        public uint[] NttBuf2A;
+        public int TransformLength;
+        public int NumWordsA;
+        public int N1;
+        public int N2;
     }
 
     [GpuKernel]
     public static void MultiplyNttUnpackKernel(NttUnpackContext ctx)
     {
-        GpuBigIntFermatKernels.DeviceUnpack16(ctx.OpA, ctx.NttBuf1A, ctx.NttBuf2A, ctx.TransformLength, ctx.NumWordsA,
-            true);
-        GpuBigIntFermatKernels.DeviceUnpack16(ctx.OpB, ctx.NttBuf1B, ctx.NttBuf2B, ctx.TransformLength, ctx.NumWordsB,
-            true);
+        GpuBigIntFermatKernels.DeviceUnpack16Transposed(ctx.OpA, ctx.NttBuf1A, ctx.NttBuf2A, ctx.TransformLength,
+            ctx.NumWordsA, ctx.N1, ctx.N2, true);
+        GpuBigIntFermatKernels.DeviceUnpack16Transposed(ctx.OpB, ctx.NttBuf1B, ctx.NttBuf2B, ctx.TransformLength,
+            ctx.NumWordsB, ctx.N1, ctx.N2, true);
+    }
+
+    [GpuKernel]
+    public static void MultiplyNttUnpackSingleKernel(NttUnpackSingleContext ctx)
+    {
+        GpuBigIntFermatKernels.DeviceUnpack16Transposed(ctx.OpA, ctx.NttBuf1A, ctx.NttBuf2A, ctx.TransformLength,
+            ctx.NumWordsA, ctx.N1, ctx.N2, true);
     }
 
     [GpuKernel]
@@ -67,11 +89,20 @@ public static partial class GpuBigIntMulKernels
     }
 
     [GpuKernel]
-    public static void MultiplyNttComputeCrtKernel(
-        uint[] deviceResult1, uint[] deviceResult2, uint[] uncarriedLow, uint[] uncarriedHigh, int transformLength)
+    public static void MultiplyNttPointwiseSquareKernel(
+        uint[] nttBuf1A, uint[] nttBuf2A, int transformLength)
     {
-        GpuBigIntNttKernels.ExecuteCrtComputeCoefficients(
-            deviceResult1, deviceResult2, uncarriedLow, uncarriedHigh, transformLength);
+        GpuBigIntNttKernels.ExecuteNttPointwiseSquare(
+            nttBuf1A, nttBuf2A, transformLength);
+    }
+
+    [GpuKernel]
+    public static void MultiplyNttComputeCrtKernel(
+        uint[] deviceResult1, uint[] deviceResult2, uint[] uncarriedLow, uint[] uncarriedHigh, int transformLength,
+        int n1, int n2)
+    {
+        GpuBigIntNttKernels.ExecuteCrtComputeCoefficientsTransposed(
+            deviceResult1, deviceResult2, uncarriedLow, uncarriedHigh, transformLength, n1, n2);
     }
 
     /// <summary>
