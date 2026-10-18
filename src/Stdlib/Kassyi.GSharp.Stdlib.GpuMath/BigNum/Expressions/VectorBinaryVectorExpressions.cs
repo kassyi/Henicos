@@ -57,24 +57,30 @@ internal abstract class VectorBinaryVectorExpressionBase(
         return destination;
     }
 
-    protected TContext CreateZipContext<TContext>(VectorZipOperands operands)
-        where TContext : struct, GpuBigIntVectorKernels.AotContexts.IVectorBinaryAotContext
-    {
-        var ctx = default(TContext);
-        ctx.InitializeBinary(
-            operands.Left.Values.DevicePointer,
-            operands.Right.Values.DevicePointer,
-            operands.Destination.Values.DevicePointer,
-            operands.Left.Signs.DevicePointer,
-            operands.Right.Signs.DevicePointer,
-            operands.Destination.Signs.DevicePointer,
-            operands.Left.WordsPerElement,
-            operands.Right.WordsPerElement,
-            WordsPerElement,
-            scalarSign: 0u,
-            isScalar: false);
-        return ctx;
-    }
+    protected GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation CreateZipOp(VectorZipOperands operands) =>
+        new()
+        {
+            Left = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
+            {
+                Limbs = operands.Left.Values.DevicePointer,
+                Signs = operands.Left.Signs.DevicePointer,
+                NumWords = operands.Left.WordsPerElement
+            },
+            Right = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
+            {
+                Limbs = operands.Right.Values.DevicePointer,
+                Signs = operands.Right.Signs.DevicePointer,
+                NumWords = operands.Right.WordsPerElement
+            },
+            Result = new GpuBigIntVectorKernels.AotContexts.SignedVectorOutput
+            {
+                Limbs = operands.Destination.Values.DevicePointer,
+                Signs = operands.Destination.Signs.DevicePointer,
+                NumWords = WordsPerElement
+            },
+            ScalarSign = 0u,
+            IsScalar = false
+        };
 
     protected abstract void DispatchKernel(
         GpuWorkspace workspace,
@@ -105,8 +111,11 @@ internal sealed class VectorAddVectorExpression(
         VectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(operands);
-        ctx.OpSign = 0u;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorAddSub
+        {
+            Op = CreateZipOp(operands),
+            OpSign = 0u
+        };
         GpuBigIntVectorKernels.LaunchVectorZipAddKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -122,8 +131,11 @@ internal sealed class VectorSubVectorExpression(
         VectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(operands);
-        ctx.OpSign = 1u;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorAddSub
+        {
+            Op = CreateZipOp(operands),
+            OpSign = 1u
+        };
         GpuBigIntVectorKernels.LaunchVectorZipSubKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -139,7 +151,10 @@ internal sealed class VectorMulVectorExpression(
         VectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorMul>(operands);
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorMul
+        {
+            Op = CreateZipOp(operands)
+        };
         GpuBigIntVectorKernels.LaunchVectorZipMulKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -159,8 +174,11 @@ internal sealed class VectorDivVectorExpression(
         VectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(operands);
-        ctx.IsModulo = false;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorDivMod
+        {
+            Op = CreateZipOp(operands),
+            IsModulo = false
+        };
         GpuBigIntVectorKernels.LaunchVectorZipDivKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
@@ -180,8 +198,11 @@ internal sealed class VectorModVectorExpression(
         VectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(operands);
-        ctx.IsModulo = true;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorDivMod
+        {
+            Op = CreateZipOp(operands),
+            IsModulo = true
+        };
         GpuBigIntVectorKernels.LaunchVectorZipModKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

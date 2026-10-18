@@ -46,24 +46,30 @@ internal abstract class VectorBinaryScalarExpressionBase(
         return destination;
     }
 
-    protected TContext CreateScalarContext<TContext>(VectorScalarOperands operands)
-        where TContext : struct, GpuBigIntVectorKernels.AotContexts.IVectorBinaryAotContext
-    {
-        var ctx = default(TContext);
-        ctx.InitializeBinary(
-            operands.Vector.Values.DevicePointer,
-            operands.Scalar.Value.DevicePointer,
-            operands.Destination.Values.DevicePointer,
-            operands.Vector.Signs.DevicePointer,
-            operands.Vector.Signs.DevicePointer,
-            operands.Destination.Signs.DevicePointer,
-            vector.WordsPerElement,
-            operands.Scalar.Value.NumWords,
-            WordsPerElement,
-            operands.Scalar.IsNegative ? 1u : 0u,
-            isScalar: true);
-        return ctx;
-    }
+    protected GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation CreateScalarOp(VectorScalarOperands operands) =>
+        new()
+        {
+            Left = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
+            {
+                Limbs = operands.Vector.Values.DevicePointer,
+                Signs = operands.Vector.Signs.DevicePointer,
+                NumWords = vector.WordsPerElement
+            },
+            Right = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
+            {
+                Limbs = operands.Scalar.Value.DevicePointer,
+                Signs = operands.Vector.Signs.DevicePointer,
+                NumWords = operands.Scalar.Value.NumWords
+            },
+            Result = new GpuBigIntVectorKernels.AotContexts.SignedVectorOutput
+            {
+                Limbs = operands.Destination.Values.DevicePointer,
+                Signs = operands.Destination.Signs.DevicePointer,
+                NumWords = WordsPerElement
+            },
+            ScalarSign = operands.Scalar.IsNegative ? 1u : 0u,
+            IsScalar = true
+        };
 
     protected abstract void DispatchKernel(
         GpuWorkspace workspace,
@@ -93,7 +99,10 @@ internal sealed class VectorMulScalarExpression(
         VectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorMul>(operands);
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorMul
+        {
+            Op = CreateScalarOp(operands)
+        };
         GpuBigIntVectorKernels.LaunchVectorMulScalarKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -109,8 +118,11 @@ internal sealed class VectorAddScalarExpression(
         VectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(operands);
-        ctx.OpSign = 0u;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorAddSub
+        {
+            Op = CreateScalarOp(operands),
+            OpSign = 0u
+        };
         GpuBigIntVectorKernels.LaunchVectorAddScalarKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -126,8 +138,11 @@ internal sealed class VectorSubScalarExpression(
         VectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorAddSub>(operands);
-        ctx.OpSign = 1u;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorAddSub
+        {
+            Op = CreateScalarOp(operands),
+            OpSign = 1u
+        };
         GpuBigIntVectorKernels.LaunchVectorSubScalarKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -148,8 +163,11 @@ internal sealed class VectorDivScalarExpression(
             throw new DivideByZeroException();
         }
 
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(operands);
-        ctx.IsModulo = false;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorDivMod
+        {
+            Op = CreateScalarOp(operands),
+            IsModulo = false
+        };
         GpuBigIntVectorKernels.LaunchVectorDivScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
@@ -170,8 +188,11 @@ internal sealed class VectorModScalarExpression(
             throw new DivideByZeroException();
         }
 
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(operands);
-        ctx.IsModulo = true;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorDivMod
+        {
+            Op = CreateScalarOp(operands),
+            IsModulo = true
+        };
         GpuBigIntVectorKernels.LaunchVectorModScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }
