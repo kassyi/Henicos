@@ -382,4 +382,55 @@ public class GpuBigIntStackLinqExtensionsTests : IDisposable
         using var modResult = zipModSumExpr.Evaluate(_context);
         Assert.Equal(expectedModSum, ToBigInt(modResult));
     }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void GpuBigUInt_SelectAndZipModulo_CalculatesCorrectSum()
+    {
+        const int numElements = 8;
+        var left = new GpuBigUInt[numElements];
+        var right = new GpuBigUInt[numElements];
+        using var divisor = new GpuBigUInt(_context, new uint[] { 7, 0, 0, 0, 0, 0, 0, 0 });
+        BigInteger expectedSelectModSum = 0;
+        BigInteger expectedZipModSum = 0;
+
+        for (var i = 0; i < numElements; i++)
+        {
+            var aVal = (uint)((i + 2) * 37);
+            var bVal = (uint)((i + 1) * 5 + 2);
+            left[i] = new GpuBigUInt(_context, new uint[] { aVal, 0, 0, 0, 0, 0, 0, 0 });
+            right[i] = new GpuBigUInt(_context, new uint[] { bVal, 0, 0, 0, 0, 0, 0, 0 });
+            expectedSelectModSum += aVal % 7u;
+            expectedZipModSum += aVal % bVal;
+        }
+
+        using var parallelSelectResult = left.AsStackEnumerable()
+            .AsParallel()
+            .SelectModulo(divisor)
+            .Sum();
+        Assert.Equal(expectedSelectModSum, parallelSelectResult.ToBigInteger());
+
+        using var sequentialSelectResult = left.AsStackEnumerable()
+            .SelectModulo(divisor)
+            .Sum();
+        Assert.Equal(expectedSelectModSum, sequentialSelectResult.ToBigInteger());
+
+        using var parallelZipResult = left.AsStackEnumerable()
+            .AsParallel()
+            .ZipModulo(right.AsStackEnumerable().AsParallel())
+            .Sum();
+        Assert.Equal(expectedZipModSum, parallelZipResult.ToBigInteger());
+
+        using var sequentialZipResult = left.AsStackEnumerable()
+            .ZipModulo(right.AsStackEnumerable())
+            .Sum();
+        Assert.Equal(expectedZipModSum, sequentialZipResult.ToBigInteger());
+
+        for (var i = 0; i < numElements; i++)
+        {
+            left[i].Dispose();
+            right[i].Dispose();
+        }
+    }
 }
