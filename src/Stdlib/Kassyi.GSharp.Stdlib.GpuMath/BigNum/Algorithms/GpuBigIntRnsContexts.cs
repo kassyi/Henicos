@@ -1,36 +1,35 @@
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 
 /// <summary>
-/// Precomputed constants for RNS (Residue Number System) operations.
+/// Precomputed constants for a single RNS base and its base-extension coefficients.
+/// </summary>
+public struct RnsBaseConstantsContext
+{
+    /// <summary>Moduli values for this RNS base.</summary>
+    [GpuReadOnly] public uint[] Moduli;
+    /// <summary>Gamma values for this RNS base.</summary>
+    [GpuReadOnly] public uint[] Gamma;
+    /// <summary>Precomputed values of M / m_i mod Msk.</summary>
+    [GpuReadOnly] public uint[] MOverMiModMsk;
+    /// <summary>Precomputed inverse of M mod Msk.</summary>
+    public uint MInvModMsk;
+    /// <summary>Precomputed values of M / m_i mod m_other.</summary>
+    [GpuReadOnly] public uint[] MOverMiModOther;
+    /// <summary>Precomputed values of M mod m_other.</summary>
+    [GpuReadOnly] public uint[] MModOther;
+}
+
+/// <summary>
+/// Precomputed constants for RNS (Residue Number System) operations across dual bases and the Shenoy-Kumaresan modulus.
 /// </summary>
 public struct RnsConstantsContext
 {
-    /// <summary>Moduli values for the first RNS base.</summary>
-    [GpuReadOnly] public uint[] ModuliB1;
-    /// <summary>Moduli values for the second RNS base.</summary>
-    [GpuReadOnly] public uint[] ModuliB2;
-    /// <summary>Special sk modulus.</summary>
+    /// <summary>Precomputed constants for the first RNS base (B1) and B1 -> B2 extension.</summary>
+    public RnsBaseConstantsContext Base1;
+    /// <summary>Precomputed constants for the second RNS base (B2) and B2 -> B1 extension.</summary>
+    public RnsBaseConstantsContext Base2;
+    /// <summary>Special Shenoy-Kumaresan modulus (m_sk).</summary>
     public uint ModSk;
-    /// <summary>Gamma values for base 1.</summary>
-    [GpuReadOnly] public uint[] GammaB1;
-    /// <summary>Gamma values for base 2.</summary>
-    [GpuReadOnly] public uint[] GammaB2;
-    /// <summary>Precomputed values of M1 / mi mod Msk.</summary>
-    [GpuReadOnly] public uint[] M1OverMiModMsk;
-    /// <summary>Precomputed inverse of M1 mod Msk.</summary>
-    public uint M1InvModMsk;
-    /// <summary>Precomputed values of M2 / mj mod Msk.</summary>
-    [GpuReadOnly] public uint[] M2OverMjModMsk;
-    /// <summary>Precomputed inverse of M2 mod Msk.</summary>
-    public uint M2InvModMsk;
-    /// <summary>Precomputed values of M1 / mi mod mj.</summary>
-    [GpuReadOnly] public uint[] M1OverMiModMj;
-    /// <summary>Precomputed values of M2 / mj mod mi.</summary>
-    [GpuReadOnly] public uint[] M2OverMjModMi;
-    /// <summary>Precomputed values of M1 mod mj.</summary>
-    [GpuReadOnly] public uint[] M1ModMj;
-    /// <summary>Precomputed values of M2 mod mi.</summary>
-    [GpuReadOnly] public uint[] M2ModMi;
     /// <summary>Size of the RNS bases (k).</summary>
     public int KSize;
 }
