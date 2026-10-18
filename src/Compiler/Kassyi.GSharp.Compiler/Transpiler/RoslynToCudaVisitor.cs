@@ -19,6 +19,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     // [WHY] Reusable collections pooled per visitor instance to ensure zero-allocation during generation.
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
     private readonly OverrideScopeStack _localVariableOverrides = new();
+    private readonly Stack<int> _activeSwitchIds = new();
 
     internal TranspileContext Context;
     private int _isRented;
@@ -65,11 +66,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
         visitor._usedStructs.Clear();
         visitor._localVariableOverrides.Clear();
+        visitor._activeSwitchIds.Clear();
 
         visitor.Context = new TranspileContext(
             default, // Writer is injected by MethodTranspiler
             visitor._usedStructs,
             visitor._localVariableOverrides,
+            visitor._activeSwitchIds,
             semanticModel,
             reportDiagnostic,
             visitor,
@@ -249,34 +252,17 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// <param name="statement">The Roslyn statement syntax node to transpile.</param>
     public void VisitStatementOrBlock(StatementSyntax statement)
     {
-        if (statement is BlockSyntax block)
+        // [WHY] Automatically wraps single-statement bodies (like unbraced if/for branches) in C++ braces to prevent scoping bugs in generated CUDA code.
+        using (Context.Emitter.Writer.Scope())
         {
-            using (Context.Emitter.Writer.Scope())
+            if (statement is BlockSyntax block)
             {
-                var statements = Context.Emitter.AutoSyncGridDepth > 0
-                    ? FlattenStatements(block.Statements, Context.Query.SemanticModel)
-                    : block.Statements;
-                for (var i = 0; i < statements.Count; i++)
-                {
-                    Visit(statements[i]);
-                    Context.Emitter.Writer.AppendLine();
-                    if (ShouldInsertAutoSync(statements, i))
-                    {
-                        Context.Emitter.Writer.AppendLine("cg::this_grid().sync();");
-                    }
-                }
+                VisitBlock(block);
             }
-        }
-        else
-        {
-            // [WHY] Automatically wraps single-statement bodies (like unbraced if/for branches) in C++ braces to prevent scoping bugs in generated CUDA code.
-            using (Context.Emitter.Writer.Scope())
+            else
             {
                 Visit(statement);
-                if (!statement.IsKind(SyntaxKind.Block))
-                {
-                    Context.Emitter.Writer.AppendLine();
-                }
+                Context.Emitter.Writer.AppendLine();
             }
         }
     }
@@ -286,9 +272,22 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
-        IReadOnlyList<CSharpSyntaxNode> statements = Context.Emitter.AutoSyncGridDepth > 0
-            ? FlattenStatements(node.Statements, Context.Query.SemanticModel)
-            : ToNodeList(node.Statements);
+        if (Context.Emitter.AutoSyncGridDepth > 0)
+        {
+            var flatStatements = FlattenStatements(node.Statements, Context.Query.SemanticModel);
+            VisitStatementsWithAutoSync(flatStatements);
+            return;
+        }
+
+        foreach (var statement in node.Statements)
+        {
+            Visit(statement);
+            Context.Emitter.Writer.AppendLine();
+        }
+    }
+
+    internal void VisitStatementsWithAutoSync(IReadOnlyList<CSharpSyntaxNode> statements)
+    {
         for (var i = 0; i < statements.Count; i++)
         {
             Visit(statements[i]);
@@ -360,16 +359,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         var result = ImmutableArray.CreateBuilder<CSharpSyntaxNode>(statements.Count);
         FlattenInto(statements, semanticModel, result);
         return result.ToImmutable();
-    }
-
-    internal static IReadOnlyList<CSharpSyntaxNode> ToNodeList(SyntaxList<StatementSyntax> statements)
-    {
-        var result = new CSharpSyntaxNode[statements.Count];
-        for (var i = 0; i < statements.Count; i++)
-        {
-            result[i] = statements[i];
-        }
-        return result;
     }
 
     private static void FlattenInto(
@@ -462,7 +451,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         Context.Emitter.Writer.Append("case ");
         Visit(node.Value);
         Context.Emitter.Writer.AppendLine(":");
-        var activeId = Context.Emitter.ActiveSwitchIds.Count > 0 ? Context.Emitter.ActiveSwitchIds.Peek().ToString() : "0";
+        var activeId = Context.Emitter.CurrentSwitchId;
         Context.Emitter.Writer.Append($"__gsharp_switch_{activeId}_state_");
         Visit(node.Value);
         Context.Emitter.Writer.Append(":");
@@ -470,7 +459,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitDefaultSwitchLabel(DefaultSwitchLabelSyntax node)
     {
-        var activeId = Context.Emitter.ActiveSwitchIds.Count > 0 ? Context.Emitter.ActiveSwitchIds.Peek().ToString() : "0";
+        var activeId = Context.Emitter.CurrentSwitchId;
         Context.Emitter.Writer.Append($"default:\n__gsharp_switch_{activeId}_state_default:");
     }
 
@@ -588,38 +577,23 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
         => Context.Emitter.Writer.Append(node.Identifier.Text);
 
-    public override void VisitCollectionExpression(CollectionExpressionSyntax node)
-    {
-        using (Context.Emitter.Writer.Braces())
-        {
-            Context.Emitter.Writer.AppendSpace();
-            for (var i = 0; i < node.Elements.Count; i++)
-            {
-                Visit(node.Elements[i]);
-                if (i >= node.Elements.Count - 1)
-                {
-                    continue;
-                }
-
-                Context.Emitter.Writer.AppendComma();
-                Context.Emitter.Writer.AppendSpace();
-            }
-
-            Context.Emitter.Writer.AppendSpace();
-        }
-    }
+    public override void VisitCollectionExpression(CollectionExpressionSyntax node) =>
+        VisitBracedSeparatedList(node.Elements);
 
     public override void VisitExpressionElement(ExpressionElementSyntax node) => Visit(node.Expression);
 
-    public override void VisitInitializerExpression(InitializerExpressionSyntax node)
+    public override void VisitInitializerExpression(InitializerExpressionSyntax node) =>
+        VisitBracedSeparatedList(node.Expressions);
+
+    private void VisitBracedSeparatedList<TNode>(SeparatedSyntaxList<TNode> elements) where TNode : SyntaxNode
     {
         using (Context.Emitter.Writer.Braces())
         {
             Context.Emitter.Writer.AppendSpace();
-            for (var i = 0; i < node.Expressions.Count; i++)
+            for (var i = 0; i < elements.Count; i++)
             {
-                Visit(node.Expressions[i]);
-                if (i >= node.Expressions.Count - 1)
+                Visit(elements[i]);
+                if (i >= elements.Count - 1)
                 {
                     continue;
                 }

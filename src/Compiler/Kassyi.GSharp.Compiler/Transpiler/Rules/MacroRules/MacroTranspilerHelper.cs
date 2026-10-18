@@ -69,20 +69,7 @@ internal static class MacroTranspilerHelper
             switch (rewrittenBody)
             {
                 case BlockSyntax block:
-                    var flatStatements = context.Emitter.AutoSyncGridDepth > 0
-                        ? RoslynToCudaVisitor.FlattenStatements(block.Statements, context.Query.SemanticModel)
-                        : RoslynToCudaVisitor.ToNodeList(block.Statements);
-                    for (var i = 0; i < flatStatements.Count; i++)
-                    {
-                        var stmt = flatStatements[i];
-                        context.Visitor.Visit(stmt);
-                        context.Emitter.Writer.AppendLine();
-                        if (context.Visitor.ShouldInsertAutoSync(flatStatements, i))
-                        {
-                            context.Emitter.Writer.AppendLine("cg::this_grid().sync();");
-                        }
-                    }
-
+                    context.Visitor.VisitBlock(block);
                     break;
 
                 case ExpressionSyntax expr:
@@ -134,17 +121,6 @@ internal static class MacroTranspilerHelper
         return false;
     }
 
-    public static void EmitFlattenedSyncGridBlock(IReadOnlyList<CSharpSyntaxNode> flatStatements, ref TranspileContext context)
-    {
-        for (var i = 0; i < flatStatements.Count; i++)
-        {
-            var stmt = flatStatements[i];
-            context.Visitor.Visit(stmt);
-            context.Emitter.Writer.AppendLine();
-            if (context.Visitor.ShouldInsertAutoSync(flatStatements, i))
-            {
-                context.Emitter.Writer.AppendLine("cg::this_grid().sync();");
-            }
-        }
-    }
+    public static void EmitFlattenedSyncGridBlock(IReadOnlyList<CSharpSyntaxNode> flatStatements, ref TranspileContext context) =>
+        context.Visitor.VisitStatementsWithAutoSync(flatStatements);
 }

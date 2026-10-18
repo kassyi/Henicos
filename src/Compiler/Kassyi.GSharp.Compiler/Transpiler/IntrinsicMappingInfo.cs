@@ -9,16 +9,4 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <para><b>Performance:</b> Readonly value type ensuring zero-allocation storage in symbol lookup tables.</para>
 /// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
 /// </remarks>
-public readonly record struct IntrinsicMappingInfo(string CudaIntrinsicName, string? CastFirstArgumentTo)
-{
-    /// <summary>
-    /// Gets the target intrinsic function identifier.
-    /// </summary>
-    public readonly string CudaIntrinsicName = CudaIntrinsicName;
-
-    /// <summary>
-    /// Gets the optional type cast applied to the first parameter before invocation.
-    /// </summary>
-    public readonly string? CastFirstArgumentTo = CastFirstArgumentTo;
-}
-
+public readonly record struct IntrinsicMappingInfo(string CudaIntrinsicName, string? CastFirstArgumentTo);
