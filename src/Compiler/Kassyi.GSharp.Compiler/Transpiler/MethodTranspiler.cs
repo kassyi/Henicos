@@ -67,13 +67,8 @@ public static class MethodTranspiler
 
         if (contextFields != null)
         {
-            var methodName = methodDecl.Identifier.Text;
             var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-            if (methodSymbol != null)
-            {
-                methodName = $"{methodSymbol.ContainingType.Name}_{methodName}";
-            }
-
+            var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
             WriteContextStruct(methodName, contextFields, ref context);
         }
 
@@ -141,13 +136,8 @@ public static class MethodTranspiler
 
         if (contextFields != null)
         {
-            var methodName = methodDecl.Identifier.Text;
             var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-            if (methodSymbol != null)
-            {
-                methodName = $"{methodSymbol.ContainingType.Name}_{methodName}";
-            }
-
+            var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
             WriteContextStruct(methodName, contextFields, ref context);
         }
 

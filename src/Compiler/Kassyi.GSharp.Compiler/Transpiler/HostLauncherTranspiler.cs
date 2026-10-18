@@ -18,7 +18,7 @@ internal static class HostLauncherTranspiler
 
         context.Emitter.Writer.AppendLine();
         context.Emitter.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
-        var methodName = $"{methodSymbol.ContainingType.Name}_{method.Identifier.Text}";
+        var methodName = MethodSignatureTranspiler.GetKernelMethodName(method, methodSymbol);
         context.Emitter.Writer.Append($" __gsharp_launch_{methodName}(");
 
         // Launch dimensions
@@ -105,7 +105,7 @@ internal static class HostLauncherTranspiler
         foreach (var field in contextFields)
         {
             var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
-            if (typeSyntax is not GenericNameSyntax genericName || genericName.Identifier.ValueText != "SharedMemory")
+            if (typeSyntax is not GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType })
             {
                 continue;
             }
@@ -139,7 +139,7 @@ internal static class HostLauncherTranspiler
         foreach (var field in contextFields)
         {
             var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
-            if (typeSyntax is GenericNameSyntax { Identifier.ValueText: "SharedMemory" })
+            if (typeSyntax is GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType })
             {
                 context.Emitter.Writer.AppendLine(
                     $"ctx.{field.Identifier.ValueText}.data = _smem_buffer_{field.Identifier.ValueText}.data();");
@@ -184,24 +184,12 @@ internal static class HostLauncherTranspiler
 
                     foreach (var parameter in method.ParameterList.Parameters)
                     {
-                        if (!isFirst)
-                        {
-                            context.Emitter.Writer.AppendComma().AppendSpace();
-                        }
-
-                        isFirst = false;
-                        context.Emitter.Writer.Append(parameter.Identifier.Text);
+                        AppendArgument(parameter.Identifier.Text, ref isFirst, ref context);
                     }
 
                     if (hasContext)
                     {
-                        if (!isFirst)
-                        {
-                            context.Emitter.Writer.AppendComma().AppendSpace();
-                        }
-
-                        isFirst = false;
-                        context.Emitter.Writer.Append("&_gsharp_contexts[_ctxtid]");
+                        AppendArgument("&_gsharp_contexts[_ctxtid]", ref isFirst, ref context);
                     }
 
                     var isKernelWithReturn = methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
@@ -209,17 +197,23 @@ internal static class HostLauncherTranspiler
 
                     if (isKernelWithReturn)
                     {
-                        if (!isFirst)
-                        {
-                            context.Emitter.Writer.AppendComma().AppendSpace();
-                        }
-
-                        context.Emitter.Writer.Append("__gsharp_auto_result");
+                        AppendArgument("__gsharp_auto_result", ref isFirst, ref context);
                     }
                 }
 
                 context.Emitter.Writer.AppendSemiColonLine();
             }
         }
+    }
+
+    private static void AppendArgument(string argument, ref bool isFirst, ref TranspileContext context)
+    {
+        if (!isFirst)
+        {
+            context.Emitter.Writer.AppendComma().AppendSpace();
+        }
+
+        isFirst = false;
+        context.Emitter.Writer.Append(argument);
     }
 }

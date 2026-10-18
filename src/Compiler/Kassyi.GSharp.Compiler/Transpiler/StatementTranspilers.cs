@@ -102,14 +102,7 @@ internal static class StatementTranspilers
         }
         else
         {
-            for (var i = 0; i < node.Initializers.Count; i++)
-            {
-                context.Visitor.Visit(node.Initializers[i]);
-                if (i < node.Initializers.Count - 1)
-                {
-                    context.Emitter.Writer.AppendComma();
-                }
-            }
+            TranspileCommaSeparatedExpressions(node.Initializers, ref context);
         }
     }
 
@@ -121,12 +114,16 @@ internal static class StatementTranspilers
         }
     }
 
-    private static void TranspileForIncrementors(ForStatementSyntax node, ref TranspileContext context)
+    private static void TranspileForIncrementors(ForStatementSyntax node, ref TranspileContext context) =>
+        TranspileCommaSeparatedExpressions(node.Incrementors, ref context);
+
+    private static void TranspileCommaSeparatedExpressions(SeparatedSyntaxList<ExpressionSyntax> expressions,
+        ref TranspileContext context)
     {
-        for (var i = 0; i < node.Incrementors.Count; i++)
+        for (var i = 0; i < expressions.Count; i++)
         {
-            context.Visitor.Visit(node.Incrementors[i]);
-            if (i < node.Incrementors.Count - 1)
+            context.Visitor.Visit(expressions[i]);
+            if (i < expressions.Count - 1)
             {
                 context.Emitter.Writer.AppendComma();
             }
@@ -230,16 +227,14 @@ internal static class StatementTranspilers
     {
         if (node.IsKind(SyntaxKind.GotoCaseStatement))
         {
-            var activeId = context.Emitter.ActiveSwitchIds.Count > 0 ? context.Emitter.ActiveSwitchIds.Peek().ToString() : "0";
-            context.Emitter.Writer.Append($"goto __gsharp_switch_{activeId}_state_");
+            context.Emitter.Writer.Append($"goto __gsharp_switch_{context.Emitter.CurrentSwitchId}_state_");
             context.Visitor.Visit(node.Expression);
             context.Emitter.Writer.AppendSemiColonLine();
             return;
         }
         else if (node.IsKind(SyntaxKind.GotoDefaultStatement))
         {
-            var activeId = context.Emitter.ActiveSwitchIds.Count > 0 ? context.Emitter.ActiveSwitchIds.Peek().ToString() : "0";
-            context.Emitter.Writer.AppendLine($"goto __gsharp_switch_{activeId}_state_default;");
+            context.Emitter.Writer.AppendLine($"goto __gsharp_switch_{context.Emitter.CurrentSwitchId}_state_default;");
             return;
         }
 
@@ -278,26 +273,25 @@ internal static class StatementTranspilers
         var emitStateTermination = !isStateMachineReturn && !context.Emitter.Dialect.IsCuda
                                    && context.Emitter is { IsGpuKernelEntry: true, CallableDepth: 0 };
 
-        if (context.Emitter is { IsGpuKernelEntry: true, IsVoidReturn: false, CallableDepth: 0 } &&
-            node.Expression != null)
-        {
-            DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
-            context.Emitter.Writer.Append("__gsharp_auto_result[__gsharp_global_tid] = ");
-            context.Visitor.Visit(node.Expression);
-            context.Emitter.Writer.AppendSemiColonLine();
-
-            if (emitStateTermination)
-            {
-                context.Emitter.Writer.Append("_state = -1;");
-            }
-
-            context.Emitter.Writer.AppendKeyword("return;");
-            return;
-        }
-
         if (node.Expression != null)
         {
             DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
+
+            if (context.Emitter is { IsGpuKernelEntry: true, IsVoidReturn: false, CallableDepth: 0 })
+            {
+                context.Emitter.Writer.Append("__gsharp_auto_result[__gsharp_global_tid] = ");
+                context.Visitor.Visit(node.Expression);
+                context.Emitter.Writer.AppendSemiColonLine();
+
+                if (emitStateTermination)
+                {
+                    context.Emitter.Writer.Append("_state = -1;");
+                }
+
+                context.Emitter.Writer.AppendKeyword("return;");
+                return;
+            }
+
             if (emitStateTermination)
             {
                 context.Emitter.Writer.Append("_state = -1;");
@@ -306,16 +300,15 @@ internal static class StatementTranspilers
             context.Emitter.Writer.Append("return ");
             context.Visitor.Visit(node.Expression);
             context.Emitter.Writer.AppendSemiColon();
+            return;
         }
-        else
-        {
-            if (emitStateTermination)
-            {
-                context.Emitter.Writer.Append("_state = -1;");
-            }
 
-            context.Emitter.Writer.AppendKeyword("return;");
+        if (emitStateTermination)
+        {
+            context.Emitter.Writer.Append("_state = -1;");
         }
+
+        context.Emitter.Writer.AppendKeyword("return;");
     }
 }
 

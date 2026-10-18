@@ -9,8 +9,10 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 /// <para><b>Thread Safety:</b> This rule is stateless and safe for concurrent execution across threads.</para>
 /// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
 /// </remarks>
-public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleBase<LocalDeclarationStatementSyntax>
+public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleBase<LocalDeclarationStatementSyntax>
 {
+    private const int MaxSharedMemoryWarningBytes = 32768;
+
     private readonly struct SharedMemoryAllocation(
         VariableDeclaratorSyntax declarator,
         ExpressionSyntax sizeArgument,
@@ -109,9 +111,10 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
     {
         var elemSize = context.Emitter.Dialect.GetApproximateSize(typeArg);
         var byteSize = elementCount * elemSize;
-        if (byteSize > 32768)
+        if (byteSize > MaxSharedMemoryWarningBytes)
         {
-            context.Reporter.Report(GSharpDiagnostics.ExcessiveSharedMemoryWarning, sizeArg, byteSize, 32768);
+            context.Reporter.Report(GSharpDiagnostics.ExcessiveSharedMemoryWarning, sizeArg, byteSize,
+                MaxSharedMemoryWarningBytes);
         }
     }
 
@@ -146,28 +149,28 @@ public class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleB
         context.Emitter.Writer.Append("__smem_offset = ");
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.Writer.Append("__smem_offset + alignof");
-            using (context.Emitter.Writer.Parentheses())
-            {
-                context.Emitter.Dialect.AppendType(ref context, typeArg);
-            }
-
-            context.Emitter.Writer.Append(" - 1");
+            context.Emitter.Writer.Append("__smem_offset + ");
+            AppendAlignmentMask(typeArg, ref context);
         }
 
         context.Emitter.Writer.Append(" & ~");
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.Writer.Append("alignof");
-            using (context.Emitter.Writer.Parentheses())
-            {
-                context.Emitter.Dialect.AppendType(ref context, typeArg);
-            }
-
-            context.Emitter.Writer.Append(" - 1");
+            AppendAlignmentMask(typeArg, ref context);
         }
 
         context.Emitter.Writer.AppendSemiColonLine();
+    }
+
+    private static void AppendAlignmentMask(ITypeSymbol typeArg, ref TranspileContext context)
+    {
+        context.Emitter.Writer.Append("alignof");
+        using (context.Emitter.Writer.Parentheses())
+        {
+            context.Emitter.Dialect.AppendType(ref context, typeArg);
+        }
+
+        context.Emitter.Writer.Append(" - 1");
     }
 
     private static void EmitDynamicSharedMemoryPointerAndAdvance(SharedMemoryAllocation alloc,

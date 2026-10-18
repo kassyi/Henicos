@@ -4,14 +4,14 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>Emits CUDA C++ struct definitions, operator overloads, and handles InlineArray structures.</summary>
 internal static class StructTranspiler
 {
+    private const int LargeStructByValueThresholdBytes = 32;
+
     /// <summary>
     /// Recursively registers referenced struct symbols and their field types to ensure necessary forward definitions are emitted.
     /// </summary>
     public static void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol, ref TranspileContext context)
     {
-        var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
-        if (structType is not INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct ||
-            namedStruct.ContainingNamespace.IsSystemOrNumerics())
+        if (!TryGetUserStruct(typeSymbol, out var namedStruct))
         {
             return;
         }
@@ -26,9 +26,12 @@ internal static class StructTranspiler
             return;
         }
 
-        foreach (var dep in GetStructDependencies(namedStruct))
+        foreach (var member in namedStruct.GetMembers())
         {
-            RegisterUsedStructIfApplicable(dep, ref context);
+            if (member is IFieldSymbol { IsStatic: false } field)
+            {
+                RegisterUsedStructIfApplicable(field.Type, ref context);
+            }
         }
     }
 
@@ -68,9 +71,11 @@ internal static class StructTranspiler
                 return;
             }
 
-            foreach (var dep in GetStructDependencies(s))
+            foreach (var member in s.GetMembers())
             {
-                if (structSet.Contains(dep))
+                if (member is IFieldSymbol { IsStatic: false } field &&
+                    TryGetUserStruct(field.Type, out var dep) &&
+                    structSet.Contains(dep))
                 {
                     visit(dep);
                 }
@@ -82,22 +87,18 @@ internal static class StructTranspiler
         }
     }
 
-    private static IEnumerable<INamedTypeSymbol> GetStructDependencies(INamedTypeSymbol structSymbol)
+    private static bool TryGetUserStruct(ITypeSymbol? typeSymbol, [NotNullWhen(true)] out INamedTypeSymbol? namedStruct)
     {
-        foreach (var member in structSymbol.GetMembers())
+        var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
+        if (structType is INamedTypeSymbol { TypeKind: TypeKind.Struct } candidate &&
+            !candidate.ContainingNamespace.IsSystemOrNumerics())
         {
-            if (member is not IFieldSymbol { IsStatic: false } field)
-            {
-                continue;
-            }
-
-            var fieldType = field.Type is IArrayTypeSymbol arrayType ? arrayType.ElementType : field.Type;
-            if (fieldType is INamedTypeSymbol { TypeKind: TypeKind.Struct } namedStruct &&
-                !namedStruct.ContainingNamespace.IsSystemOrNumerics())
-            {
-                yield return namedStruct;
-            }
+            namedStruct = candidate;
+            return true;
         }
+
+        namedStruct = null;
+        return false;
     }
 
     /// <summary>
@@ -113,7 +114,7 @@ internal static class StructTranspiler
         }
 
         var size = context.Emitter.Dialect.GetApproximateSize(typeSymbol);
-        if (size >= 32)
+        if (size >= LargeStructByValueThresholdBytes)
         {
             context.Reporter.Report(GSharpDiagnostics.LargeStructByValueWarning, p, p.Identifier.Text, size);
         }
@@ -124,42 +125,10 @@ internal static class StructTranspiler
     /// </summary>
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
-        int? packValue = null;
-        AttributeData? structLayoutAttr = null;
-        foreach (var a in structSym.GetAttributes())
+        var hasPack = TryGetStructPack(structSym, out var packValue);
+        if (hasPack)
         {
-            if (!a.IsStructLayoutAttribute())
-            {
-                continue;
-            }
-
-            structLayoutAttr = a;
-            break;
-        }
-
-        if (structLayoutAttr != null)
-        {
-            TypedConstant? packArgValue = null;
-            foreach (var kvp in structLayoutAttr.NamedArguments)
-            {
-                if (kvp.Key != "Pack")
-                {
-                    continue;
-                }
-
-                packArgValue = kvp.Value;
-                break;
-            }
-
-            if (packArgValue is { IsNull: false, Value: int p and > 0 })
-            {
-                packValue = p;
-            }
-        }
-
-        if (packValue.HasValue)
-        {
-            context.Emitter.Writer.AppendLine($"#pragma pack(push, {packValue.Value})");
+            context.Emitter.Writer.AppendLine($"#pragma pack(push, {packValue})");
         }
 
         var inlineArrayAttr = structSym.GetAttribute(KnownAttributes.InlineArray);
@@ -172,10 +141,35 @@ internal static class StructTranspiler
             WriteStandardStructDefinition(structSym, ref context);
         }
 
-        if (packValue.HasValue)
+        if (hasPack)
         {
             context.Emitter.Writer.AppendLine("#pragma pack(pop)");
         }
+    }
+
+    private static bool TryGetStructPack(INamedTypeSymbol structSym, out int packValue)
+    {
+        foreach (var attr in structSym.GetAttributes())
+        {
+            if (!attr.IsStructLayoutAttribute())
+            {
+                continue;
+            }
+
+            foreach (var kvp in attr.NamedArguments)
+            {
+                if (kvp is { Key: "Pack", Value: { IsNull: false, Value: int p and > 0 } })
+                {
+                    packValue = p;
+                    return true;
+                }
+            }
+
+            break;
+        }
+
+        packValue = 0;
+        return false;
     }
 
     private static void WriteInlineArrayDefinition(INamedTypeSymbol structSym, AttributeData inlineArrayAttr,
@@ -210,23 +204,24 @@ internal static class StructTranspiler
 
     private static void WriteInlineArrayIterators(ref TranspileContext context, IFieldSymbol firstField, int length)
     {
-        context.Emitter.Writer.Append("__device__ inline ");
-        context.Emitter.Dialect.AppendType(ref context, firstField.Type);
-        context.Emitter.Writer.AppendLine($"* begin() {{ return {firstField.Name}; }}");
-
-        context.Emitter.Writer.Append("__device__ inline ");
-        context.Emitter.Dialect.AppendType(ref context, firstField.Type);
-        context.Emitter.Writer.AppendLine($"* end() {{ return {firstField.Name} + {length}; }}");
-
-        context.Emitter.Writer.Append("__device__ inline const ");
-        context.Emitter.Dialect.AppendType(ref context, firstField.Type);
-        context.Emitter.Writer.AppendLine($"* begin() const {{ return {firstField.Name}; }}");
-
-        context.Emitter.Writer.Append("__device__ inline const ");
-        context.Emitter.Dialect.AppendType(ref context, firstField.Type);
-        context.Emitter.Writer.AppendLine($"* end() const {{ return {firstField.Name} + {length}; }}");
-
+        WriteInlineArrayIteratorPair(ref context, firstField, length, isConst: false);
+        WriteInlineArrayIteratorPair(ref context, firstField, length, isConst: true);
         context.Emitter.Writer.AppendLine($"__device__ inline int size() const {{ return {length}; }}");
+    }
+
+    private static void WriteInlineArrayIteratorPair(ref TranspileContext context, IFieldSymbol firstField, int length,
+        bool isConst)
+    {
+        var prefix = isConst ? "__device__ inline const " : "__device__ inline ";
+        var suffix = isConst ? " const" : string.Empty;
+
+        context.Emitter.Writer.Append(prefix);
+        context.Emitter.Dialect.AppendType(ref context, firstField.Type);
+        context.Emitter.Writer.AppendLine($"* begin(){suffix} {{ return {firstField.Name}; }}");
+
+        context.Emitter.Writer.Append(prefix);
+        context.Emitter.Dialect.AppendType(ref context, firstField.Type);
+        context.Emitter.Writer.AppendLine($"* end(){suffix} {{ return {firstField.Name} + {length}; }}");
     }
 
     private static void WriteInlineArrayIndexer(ref TranspileContext context, IFieldSymbol firstField, bool isConst)
