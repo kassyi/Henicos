@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.Diagnostics;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum.Algorithms;
 
@@ -39,5 +40,25 @@ public class PiAlgorithmsTests
         ChudnovskyAlgorithm.ComputePi(digits, sw, 1, asHex);
         var output = sw.ToString();
         Assert.Contains(expected.ToUpperInvariant(), output.ToUpperInvariant());
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void PiVerifier_VerifyWithBbp_ValidatesCorrectAndIncorrectHexTails()
+    {
+        Assert.True(PiVerifier.VerifyWithBbp("243F6A88", 0));
+        Assert.False(PiVerifier.VerifyWithBbp("DEADBEEF", 0));
+        Assert.False(PiVerifier.VerifyWithBbp(string.Empty, 0));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void ChudnovskyAlgorithm_Cpu_InvalidArguments_ThrowArgumentOutOfRangeException()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => ChudnovskyAlgorithm.ComputePi(0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ChudnovskyAlgorithm.ComputePi(-5));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ChudnovskyAlgorithm.ComputeSubtree(-1, 2));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ChudnovskyAlgorithm.ComputeSubtree(3, 3));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ChudnovskyAlgorithm.ComputeSubtree(4, 2));
     }
 }

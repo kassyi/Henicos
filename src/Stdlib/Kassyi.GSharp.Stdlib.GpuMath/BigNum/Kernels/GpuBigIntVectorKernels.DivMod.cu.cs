@@ -10,8 +10,8 @@ public static partial class GpuBigIntVectorKernels
     [GpuKernel]
     public static void VectorDivScalarKernel(VectorDivModContext ctx)
     {
-        ctx.SignB = ctx.SignA;
-        ctx.IsScalar = true;
+        ctx.Op.Right.Signs = ctx.Op.Left.Signs;
+        ctx.Op.IsScalar = true;
         ctx.IsModulo = false;
         ctx.PreShiftBits = 0;
         DeviceVectorDivModParallel(ctx);
@@ -20,8 +20,8 @@ public static partial class GpuBigIntVectorKernels
     [GpuKernel]
     public static void VectorModScalarKernel(VectorDivModContext ctx)
     {
-        ctx.SignB = ctx.SignA;
-        ctx.IsScalar = true;
+        ctx.Op.Right.Signs = ctx.Op.Left.Signs;
+        ctx.Op.IsScalar = true;
         ctx.IsModulo = true;
         ctx.PreShiftBits = 0;
         DeviceVectorDivModParallel(ctx);
@@ -30,8 +30,8 @@ public static partial class GpuBigIntVectorKernels
     [GpuKernel]
     public static void VectorZipDivKernel(VectorDivModContext ctx)
     {
-        ctx.ScalarSign = 0u;
-        ctx.IsScalar = false;
+        ctx.Op.ScalarSign = 0u;
+        ctx.Op.IsScalar = false;
         ctx.IsModulo = false;
         ctx.PreShiftBits = 0;
         DeviceVectorDivModParallel(ctx);
@@ -40,8 +40,8 @@ public static partial class GpuBigIntVectorKernels
     [GpuKernel]
     public static void VectorZipModKernel(VectorDivModContext ctx)
     {
-        ctx.ScalarSign = 0u;
-        ctx.IsScalar = false;
+        ctx.Op.ScalarSign = 0u;
+        ctx.Op.IsScalar = false;
         ctx.IsModulo = true;
         ctx.PreShiftBits = 0;
         DeviceVectorDivModParallel(ctx);
@@ -50,16 +50,16 @@ public static partial class GpuBigIntVectorKernels
     [GpuKernel]
     public static void VectorFloatDivScalarKernel(VectorFloatDivContext ctx)
     {
-        ctx.IsScalar = true;
-        ctx.SignB = ctx.SignA;
+        ctx.FloatOp.Core.IsScalar = true;
+        ctx.FloatOp.Core.Right.Signs = ctx.FloatOp.Core.Left.Signs;
         DeviceVectorFloatDivParallel(ctx);
     }
 
     [GpuKernel]
     public static void VectorFloatZipDivKernel(VectorFloatDivContext ctx)
     {
-        ctx.IsScalar = false;
-        ctx.ScalarSign = 0u;
+        ctx.FloatOp.Core.IsScalar = false;
+        ctx.FloatOp.Core.ScalarSign = 0u;
         DeviceVectorFloatDivParallel(ctx);
     }
 
@@ -67,19 +67,11 @@ public static partial class GpuBigIntVectorKernels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DeviceVectorFloatDivParallel(VectorFloatDivContext ctx)
     {
+        var core = ctx.FloatOp.Core;
+        var exps = ctx.FloatOp.Exponents;
         var divCtx = new VectorDivModContext
         {
-            A = ctx.A,
-            B = ctx.B,
-            Result = ctx.Result,
-            SignA = ctx.SignA,
-            SignB = ctx.SignB,
-            SignResult = ctx.SignResult,
-            NumWordsA = ctx.NumWordsA,
-            NumWordsB = ctx.NumWordsB,
-            NumWordsResult = ctx.NumWordsResult,
-            ScalarSign = ctx.ScalarSign,
-            IsScalar = ctx.IsScalar,
+            Op = core,
             IsModulo = false,
             PreShiftBits = ctx.PreShiftBits
         };
@@ -87,8 +79,8 @@ public static partial class GpuBigIntVectorKernels
         if (ThreadIndex.X == 0)
         {
             int bIdx = BlockIndex.X;
-            int eB = ctx.IsScalar ? ctx.ScalarExp : (int)ctx.ExpB[bIdx];
-            ctx.ExpResult[bIdx] = (uint)((int)ctx.ExpA[bIdx] - eB - ctx.PreShiftBits);
+            int eB = core.IsScalar ? exps.ScalarExp : (int)exps.ExpB[bIdx];
+            exps.ExpResult[bIdx] = (uint)((int)exps.ExpA[bIdx] - eB - ctx.PreShiftBits);
         }
     }
 
@@ -108,29 +100,30 @@ public static partial class GpuBigIntVectorKernels
             return;
         }
 
-        int offsetA = batchIdx * ctx.NumWordsA;
-        int offsetB = ctx.IsScalar ? 0 : batchIdx * ctx.NumWordsB;
-        int offsetResult = batchIdx * ctx.NumWordsResult;
+        var op = ctx.Op;
+        int offsetA = batchIdx * op.Left.NumWords;
+        int offsetB = op.IsScalar ? 0 : batchIdx * op.Right.NumWords;
+        int offsetResult = batchIdx * op.Result.NumWords;
 
-        int maxInputWords = ctx.NumWordsA > ctx.NumWordsB ? ctx.NumWordsA : ctx.NumWordsB;
-        int evalWords = ctx.NumWordsResult > maxInputWords ? ctx.NumWordsResult : maxInputWords;
+        int maxInputWords = op.Left.NumWords > op.Right.NumWords ? op.Left.NumWords : op.Right.NumWords;
+        int evalWords = op.Result.NumWords > maxInputWords ? op.Result.NumWords : maxInputWords;
         if (evalWords > 512)
         {
             evalWords = 512;
         }
 
-        InitializeDivModBuffersWarp(ctx.Result, offsetResult, ctx.NumWordsResult, sharedRem, sharedQuot, evalWords, laneId);
+        InitializeDivModBuffersWarp(op.Result.Limbs, offsetResult, op.Result.NumWords, sharedRem, sharedQuot, evalWords, laneId);
 
-        if (FindMaxNonZeroWordWarp(ctx.B, offsetB, ctx.NumWordsB, laneId) < 0)
+        if (FindMaxNonZeroWordWarp(op.Right.Limbs, offsetB, op.Right.NumWords, laneId) < 0)
         {
-            if (laneId == 0) ctx.SignResult[batchIdx] = 0u;
+            if (laneId == 0) op.Result.Signs[batchIdx] = 0u;
             return;
         }
 
-        int maxNonZeroWordA = FindMaxNonZeroWordWarp(ctx.A, offsetA, ctx.NumWordsA, laneId);
+        int maxNonZeroWordA = FindMaxNonZeroWordWarp(op.Left.Limbs, offsetA, op.Left.NumWords, laneId);
         if (maxNonZeroWordA < 0)
         {
-            if (laneId == 0) ctx.SignResult[batchIdx] = 0u;
+            if (laneId == 0) op.Result.Signs[batchIdx] = 0u;
             return;
         }
 
@@ -141,15 +134,15 @@ public static partial class GpuBigIntVectorKernels
             if (bit >= ctx.PreShiftBits)
             {
                 int srcBit = bit - ctx.PreShiftBits;
-                aBit = (ctx.A[offsetA + (srcBit >> 5)] >> (srcBit & 31)) & 1u;
+                aBit = (op.Left.Limbs[offsetA + (srcBit >> 5)] >> (srcBit & 31)) & 1u;
             }
 
             uint remOverflow = ShiftLeftOneBitWarp(sharedRem, evalWords, laneId, aBit);
-            uint noBorrow = SubtractDivisorWarp(ctx.B, offsetB, ctx.NumWordsB, sharedRem, evalWords, laneId, false);
+            uint noBorrow = SubtractDivisorWarp(op.Right.Limbs, offsetB, op.Right.NumWords, sharedRem, evalWords, laneId, false);
 
             if (remOverflow != 0u || noBorrow != 0u)
             {
-                SubtractDivisorWarp(ctx.B, offsetB, ctx.NumWordsB, sharedRem, evalWords, laneId, true);
+                SubtractDivisorWarp(op.Right.Limbs, offsetB, op.Right.NumWords, sharedRem, evalWords, laneId, true);
 
                 int qWordIdx = bit >> 5;
                 int qBitIdx = bit & 31;
@@ -323,13 +316,14 @@ public static partial class GpuBigIntVectorKernels
         uint syncDummy = Warp.ShuffleSync(0xFFFFFFFFu, sharedQuot[0], 0);
         uint outAny = syncDummy & 0u;
 
-        for (int offset = 0; offset < ctx.NumWordsResult; offset += 32)
+        var op = ctx.Op;
+        for (int offset = 0; offset < op.Result.NumWords; offset += 32)
         {
             int idx = offset + laneId;
-            if (idx < ctx.NumWordsResult)
+            if (idx < op.Result.NumWords)
             {
                 uint val = idx < evalWords ? (ctx.IsModulo ? sharedRem[idx] : sharedQuot[idx]) : 0u;
-                ctx.Result[offsetResult + idx] = val;
+                op.Result.Limbs[offsetResult + idx] = val;
                 outAny |= val;
             }
         }
@@ -342,10 +336,10 @@ public static partial class GpuBigIntVectorKernels
         outAny = Warp.ShuffleSync(0xFFFFFFFFu, outAny, 0);
         if (laneId == 0)
         {
-            uint sA = ctx.SignA[batchIdx];
-            uint sB = ctx.IsScalar ? ctx.ScalarSign : ctx.SignB[batchIdx];
+            uint sA = op.Left.Signs[batchIdx];
+            uint sB = op.IsScalar ? op.ScalarSign : op.Right.Signs[batchIdx];
             uint rawSign = ctx.IsModulo ? sA : (sA ^ sB);
-            ctx.SignResult[batchIdx] = outAny != 0u ? rawSign : 0u;
+            op.Result.Signs[batchIdx] = outAny != 0u ? rawSign : 0u;
         }
     }
 }

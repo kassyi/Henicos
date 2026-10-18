@@ -50,28 +50,42 @@ internal abstract class FloatVectorBinaryScalarExpressionBase(
         return destination;
     }
 
-    protected static TContext CreateScalarContext<TContext>(FloatVectorScalarOperands operands)
-        where TContext : struct, GpuBigIntVectorKernels.AotContexts.IVectorFloatBinaryAotContext
+    protected static GpuBigIntVectorKernels.AotContexts.VectorFloatBinaryOperation CreateScalarFloatOp(FloatVectorScalarOperands operands)
     {
         var scalarSig = operands.Scalar.Significand;
-        var ctx = default(TContext);
-        ctx.InitializeFloatBinary(
-            operands.Vector.Significands.DevicePointer,
-            scalarSig.DevicePointer,
-            operands.Destination.Significands.DevicePointer,
-            operands.Vector.Exponents.DevicePointer,
-            operands.Vector.Exponents.DevicePointer,
-            operands.Destination.Exponents.DevicePointer,
-            operands.Vector.Signs.DevicePointer,
-            operands.Vector.Signs.DevicePointer,
-            operands.Destination.Signs.DevicePointer,
-            operands.Vector.WordsPerElement,
-            scalarSig.NumWords,
-            operands.Destination.WordsPerElement,
-            operands.Scalar.Exponent,
-            operands.Scalar.IsNegative ? 1u : 0u,
-            isScalar: true);
-        return ctx;
+        return new GpuBigIntVectorKernels.AotContexts.VectorFloatBinaryOperation
+        {
+            Core = new GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation
+            {
+                Left = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
+                {
+                    Limbs = operands.Vector.Significands.DevicePointer,
+                    Signs = operands.Vector.Signs.DevicePointer,
+                    NumWords = operands.Vector.WordsPerElement
+                },
+                Right = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
+                {
+                    Limbs = scalarSig.DevicePointer,
+                    Signs = operands.Vector.Signs.DevicePointer,
+                    NumWords = scalarSig.NumWords
+                },
+                Result = new GpuBigIntVectorKernels.AotContexts.SignedVectorOutput
+                {
+                    Limbs = operands.Destination.Significands.DevicePointer,
+                    Signs = operands.Destination.Signs.DevicePointer,
+                    NumWords = operands.Destination.WordsPerElement
+                },
+                ScalarSign = operands.Scalar.IsNegative ? 1u : 0u,
+                IsScalar = true
+            },
+            Exponents = new GpuBigIntVectorKernels.AotContexts.FloatVectorExponents
+            {
+                ExpA = operands.Vector.Exponents.DevicePointer,
+                ExpB = operands.Vector.Exponents.DevicePointer,
+                ExpResult = operands.Destination.Exponents.DevicePointer,
+                ScalarExp = operands.Scalar.Exponent
+            }
+        };
     }
 
     protected abstract void DispatchKernel(
@@ -104,8 +118,11 @@ internal sealed class FloatVectorAddScalarExpression(
         FloatVectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub>(operands);
-        ctx.OpSign = 0u;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub
+        {
+            FloatOp = CreateScalarFloatOp(operands),
+            OpSign = 0u
+        };
         GpuBigIntVectorKernels.LaunchVectorFloatAddScalarKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -124,8 +141,11 @@ internal sealed class FloatVectorSubScalarExpression(
         FloatVectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub>(operands);
-        ctx.OpSign = 1u;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub
+        {
+            FloatOp = CreateScalarFloatOp(operands),
+            OpSign = 1u
+        };
         GpuBigIntVectorKernels.LaunchVectorFloatSubScalarKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -144,7 +164,10 @@ internal sealed class FloatVectorMulScalarExpression(
         FloatVectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorFloatMul>(operands);
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatMul
+        {
+            FloatOp = CreateScalarFloatOp(operands)
+        };
         GpuBigIntVectorKernels.LaunchVectorFloatMulScalarKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -163,8 +186,11 @@ internal sealed class FloatVectorDivScalarExpression(
         FloatVectorScalarOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorFloatDiv>(operands);
-        ctx.PreShiftBits = DefaultDivShiftBits;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatDiv
+        {
+            FloatOp = CreateScalarFloatOp(operands),
+            PreShiftBits = DefaultDivShiftBits
+        };
         GpuBigIntVectorKernels.LaunchVectorFloatDivScalarKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

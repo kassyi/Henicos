@@ -113,7 +113,10 @@ public class GpuBigIntMatrix2x2 : IDisposable
         }
         catch
         {
-            // [WHY] Constituent limbs are tracked by GpuWorkspace and released upon workspace disposal.
+            M00.Dispose();
+            M01.Dispose();
+            M10.Dispose();
+            M11.Dispose();
             throw;
         }
     }
@@ -159,6 +162,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// The word count of each element in the resulting matrix equals the sum of the operand limb lengths (<c>v.M00.NumWords + u.M00.NumWords</c>).
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="v"/> or <paramref name="u"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when <paramref name="v"/> or <paramref name="u"/> has been disposed.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="v"/> and <paramref name="u"/> belong to different <see cref="GpuWorkspace"/> instances.</exception>
     /// <remarks>
     /// <para>
@@ -179,6 +183,8 @@ public class GpuBigIntMatrix2x2 : IDisposable
     {
         ArgumentNullException.ThrowIfNull(v);
         ArgumentNullException.ThrowIfNull(u);
+        ObjectDisposedException.ThrowIf(v._disposed, v);
+        ObjectDisposedException.ThrowIf(u._disposed, u);
 
         if (v.Workspace != u.Workspace)
         {
@@ -189,30 +195,37 @@ public class GpuBigIntMatrix2x2 : IDisposable
         var outWords = v.M00.NumWords + u.M00.NumWords;
         var result = new GpuBigIntMatrix2x2(workspace, outWords, v.IsOddStep ^ u.IsOddStep);
 
-        using var temp1 = new GpuBigUInt(workspace, outWords);
-        using var temp2 = new GpuBigUInt(workspace, outWords);
+        try
+        {
+            using var temp1 = new GpuBigUInt(workspace, outWords);
+            using var temp2 = new GpuBigUInt(workspace, outWords);
 
-        // M00 = v00 * u00 + v01 * u10
-        GpuBigIntMath.Mul(v.M00, u.M00, temp1);
-        GpuBigIntMath.Mul(v.M01, u.M10, temp2);
-        GpuBigIntMath.Add(temp1, temp2, result.M00);
+            ComputeMatrixElement(v.M00, u.M00, v.M01, u.M10, temp1, temp2, result.M00);
+            ComputeMatrixElement(v.M00, u.M01, v.M01, u.M11, temp1, temp2, result.M01);
+            ComputeMatrixElement(v.M10, u.M00, v.M11, u.M10, temp1, temp2, result.M10);
+            ComputeMatrixElement(v.M10, u.M01, v.M11, u.M11, temp1, temp2, result.M11);
 
-        // M01 = v00 * u01 + v01 * u11
-        GpuBigIntMath.Mul(v.M00, u.M01, temp1);
-        GpuBigIntMath.Mul(v.M01, u.M11, temp2);
-        GpuBigIntMath.Add(temp1, temp2, result.M01);
+            return result;
+        }
+        catch
+        {
+            result.Dispose();
+            throw;
+        }
+    }
 
-        // M10 = v10 * u00 + v11 * u10
-        GpuBigIntMath.Mul(v.M10, u.M00, temp1);
-        GpuBigIntMath.Mul(v.M11, u.M10, temp2);
-        GpuBigIntMath.Add(temp1, temp2, result.M10);
-
-        // M11 = v10 * u01 + v11 * u11
-        GpuBigIntMath.Mul(v.M10, u.M01, temp1);
-        GpuBigIntMath.Mul(v.M11, u.M11, temp2);
-        GpuBigIntMath.Add(temp1, temp2, result.M11);
-
-        return result;
+    private static void ComputeMatrixElement(
+        GpuBigUInt left1,
+        GpuBigUInt right1,
+        GpuBigUInt left2,
+        GpuBigUInt right2,
+        GpuBigUInt temp1,
+        GpuBigUInt temp2,
+        GpuBigUInt destination)
+    {
+        GpuBigIntMath.Mul(left1, right1, temp1);
+        GpuBigIntMath.Mul(left2, right2, temp2);
+        GpuBigIntMath.Add(temp1, temp2, destination);
     }
 
     /// <summary>
@@ -223,6 +236,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <param name="outA">The destination <see cref="GpuBigUInt"/> to receive the transformed first element $A'$. Cannot be <see langword="null"/>.</param>
     /// <param name="outB">The destination <see cref="GpuBigUInt"/> to receive the transformed second element $B'$. Cannot be <see langword="null"/>.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="a"/>, <paramref name="b"/>, <paramref name="outA"/>, or <paramref name="outB"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when this matrix has been disposed.</exception>
     /// <exception cref="ArgumentException">Thrown when any argument does not belong to the same <see cref="GpuWorkspace"/> as this matrix.</exception>
     /// <remarks>
     /// <para>
@@ -250,6 +264,8 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// </remarks>
     public void Apply(GpuBigUInt a, GpuBigUInt b, GpuBigUInt outA, GpuBigUInt outB)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
         if (a.Workspace != Workspace || b.Workspace != Workspace || outA.Workspace != Workspace ||
             outB.Workspace != Workspace)
         {
@@ -257,36 +273,39 @@ public class GpuBigIntMatrix2x2 : IDisposable
         }
 
         var workspace = Workspace;
-        var tempWords = M00.NumWords + Math.Max(a.NumWords, b.NumWords);
+        var wordsA = M00.NumWords + a.NumWords;
+        var wordsB = M01.NumWords + b.NumWords;
+        var tempWords = Math.Max(wordsA, wordsB);
 
-        using var tempA1 = new GpuBigUInt(workspace, tempWords);
-        using var tempA2 = new GpuBigUInt(workspace, tempWords);
-        using var tempB1 = new GpuBigUInt(workspace, tempWords);
-        using var tempB2 = new GpuBigUInt(workspace, tempWords);
+        using var rawA1 = new GpuBigUInt(workspace, wordsA);
+        using var rawA2 = new GpuBigUInt(workspace, wordsB);
+        using var rawB1 = new GpuBigUInt(workspace, wordsA);
+        using var rawB2 = new GpuBigUInt(workspace, wordsB);
 
-        GpuBigIntMath.Mul(M00, a, tempA1);
-        GpuBigIntMath.Mul(M01, b, tempA2);
+        GpuBigIntMath.Mul(M00, a, rawA1);
+        GpuBigIntMath.Mul(M01, b, rawA2);
+        GpuBigIntMath.Mul(M10, a, rawB1);
+        GpuBigIntMath.Mul(M11, b, rawB2);
 
-        GpuBigIntMath.Mul(M10, a, tempB1);
-        GpuBigIntMath.Mul(M11, b, tempB2);
+        using GpuBigUInt? padA1 = wordsA == tempWords ? null : rawA1.PadTo(tempWords);
+        using GpuBigUInt? padA2 = wordsB == tempWords ? null : rawA2.PadTo(tempWords);
+        using GpuBigUInt? padB1 = wordsA == tempWords ? null : rawB1.PadTo(tempWords);
+        using GpuBigUInt? padB2 = wordsB == tempWords ? null : rawB2.PadTo(tempWords);
+
+        var tempA1 = padA1 ?? rawA1;
+        var tempA2 = padA2 ?? rawA2;
+        var tempB1 = padB1 ?? rawB1;
+        var tempB2 = padB2 ?? rawB2;
 
         using var resA = new GpuBigUInt(workspace, tempWords);
         using var resB = new GpuBigUInt(workspace, tempWords);
 
-        if (!IsOddStep)
-        {
-            // A' = U00*A - U01*B
-            // B' = U11*B - U10*A
-            GpuBigIntMath.Sub(tempA1, tempA2, resA);
-            GpuBigIntMath.Sub(tempB2, tempB1, resB);
-        }
-        else
-        {
-            // A' = U01*B - U00*A
-            // B' = U10*A - U11*B
-            GpuBigIntMath.Sub(tempA2, tempA1, resA);
-            GpuBigIntMath.Sub(tempB1, tempB2, resB);
-        }
+        var (minuendA, subtrahendA, minuendB, subtrahendB) = IsOddStep
+            ? (tempA2, tempA1, tempB1, tempB2)
+            : (tempA1, tempA2, tempB2, tempB1);
+
+        GpuBigIntMath.Sub(minuendA, subtrahendA, resA);
+        GpuBigIntMath.Sub(minuendB, subtrahendB, resB);
 
         // [WHY] Destination buffers may have fewer limbs or need cleanup since reduced numbers decrease in magnitude.
         outA.Clear();
@@ -328,13 +347,5 @@ public class GpuBigIntMatrix2x2 : IDisposable
     {
         Dispose(true);
         GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Finalizes an instance of the <see cref="GpuBigIntMatrix2x2"/> class.
-    /// </summary>
-    ~GpuBigIntMatrix2x2()
-    {
-        Dispose(false);
     }
 }

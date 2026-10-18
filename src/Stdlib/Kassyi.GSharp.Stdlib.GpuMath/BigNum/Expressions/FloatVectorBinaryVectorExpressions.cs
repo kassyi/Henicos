@@ -61,28 +61,40 @@ internal abstract class FloatVectorBinaryVectorExpressionBase(
         return destination;
     }
 
-    protected static TContext CreateZipContext<TContext>(FloatVectorZipOperands operands)
-        where TContext : struct, GpuBigIntVectorKernels.AotContexts.IVectorFloatBinaryAotContext
-    {
-        var ctx = default(TContext);
-        ctx.InitializeFloatBinary(
-            operands.Left.Significands.DevicePointer,
-            operands.Right.Significands.DevicePointer,
-            operands.Destination.Significands.DevicePointer,
-            operands.Left.Exponents.DevicePointer,
-            operands.Right.Exponents.DevicePointer,
-            operands.Destination.Exponents.DevicePointer,
-            operands.Left.Signs.DevicePointer,
-            operands.Right.Signs.DevicePointer,
-            operands.Destination.Signs.DevicePointer,
-            operands.Left.WordsPerElement,
-            operands.Right.WordsPerElement,
-            operands.Destination.WordsPerElement,
-            scalarExp: 0,
-            scalarSign: 0u,
-            isScalar: false);
-        return ctx;
-    }
+    protected static GpuBigIntVectorKernels.AotContexts.VectorFloatBinaryOperation CreateZipFloatOp(FloatVectorZipOperands operands) =>
+        new()
+        {
+            Core = new GpuBigIntVectorKernels.AotContexts.VectorBinaryOperation
+            {
+                Left = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
+                {
+                    Limbs = operands.Left.Significands.DevicePointer,
+                    Signs = operands.Left.Signs.DevicePointer,
+                    NumWords = operands.Left.WordsPerElement
+                },
+                Right = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
+                {
+                    Limbs = operands.Right.Significands.DevicePointer,
+                    Signs = operands.Right.Signs.DevicePointer,
+                    NumWords = operands.Right.WordsPerElement
+                },
+                Result = new GpuBigIntVectorKernels.AotContexts.SignedVectorOutput
+                {
+                    Limbs = operands.Destination.Significands.DevicePointer,
+                    Signs = operands.Destination.Signs.DevicePointer,
+                    NumWords = operands.Destination.WordsPerElement
+                },
+                ScalarSign = 0u,
+                IsScalar = false
+            },
+            Exponents = new GpuBigIntVectorKernels.AotContexts.FloatVectorExponents
+            {
+                ExpA = operands.Left.Exponents.DevicePointer,
+                ExpB = operands.Right.Exponents.DevicePointer,
+                ExpResult = operands.Destination.Exponents.DevicePointer,
+                ScalarExp = 0
+            }
+        };
 
     protected abstract void DispatchKernel(
         GpuWorkspace workspace,
@@ -115,8 +127,11 @@ internal sealed class FloatVectorAddVectorExpression(
         FloatVectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub>(operands);
-        ctx.OpSign = 0u;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub
+        {
+            FloatOp = CreateZipFloatOp(operands),
+            OpSign = 0u
+        };
         GpuBigIntVectorKernels.LaunchVectorFloatZipAddKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -135,8 +150,11 @@ internal sealed class FloatVectorSubVectorExpression(
         FloatVectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub>(operands);
-        ctx.OpSign = 1u;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatAddSub
+        {
+            FloatOp = CreateZipFloatOp(operands),
+            OpSign = 1u
+        };
         GpuBigIntVectorKernels.LaunchVectorFloatZipSubKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -155,7 +173,10 @@ internal sealed class FloatVectorMulVectorExpression(
         FloatVectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorFloatMul>(operands);
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatMul
+        {
+            FloatOp = CreateZipFloatOp(operands)
+        };
         GpuBigIntVectorKernels.LaunchVectorFloatZipMulKernelPtr(
             ctx, gridDimX, 1, 1, BlockDimX, 1, 1, 0, workspace.Stream);
     }
@@ -174,8 +195,11 @@ internal sealed class FloatVectorDivVectorExpression(
         FloatVectorZipOperands operands,
         uint gridDimX)
     {
-        var ctx = CreateZipContext<GpuBigIntVectorKernels.AotContexts.VectorFloatDiv>(operands);
-        ctx.PreShiftBits = DefaultDivShiftBits;
+        var ctx = new GpuBigIntVectorKernels.AotContexts.VectorFloatDiv
+        {
+            FloatOp = CreateZipFloatOp(operands),
+            PreShiftBits = DefaultDivShiftBits
+        };
         GpuBigIntVectorKernels.LaunchVectorFloatZipDivKernelPtr(
             ctx, gridDimX, 1, 1, 32, 1, 1, 0, workspace.Stream);
     }

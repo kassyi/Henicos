@@ -1,5 +1,3 @@
-// ReSharper disable All
-
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 /// <summary>
@@ -15,57 +13,51 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 /// </remarks>
 // ReSharper disable once UnusedType.Global -- Public API exposed for library consumers
 // ReSharper disable once UnusedMember.Global -- Public API exposed for library consumers
-[Kassyi.GSharp.Core.SkipSnapshotConsistency("Tested in separate suites or WIP")]
-[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+[SkipSnapshotConsistency("Tested in separate suites or WIP")]
+[ExcludeFromCodeCoverage]
 public static partial class GpuBigIntMulKernels
 {
     // Global Non-Cooperative NTT approach for Multi-Million digit multiplications
-    public struct NttUnpackContext
+    public struct NttUnpackOperandContext
     {
         [GpuReadOnly]
-        public uint[] OpA;
+        public uint[] Source;
 
-        [GpuReadOnly]
-        public uint[] OpB;
+        public uint[] NttBuf1;
+        public uint[] NttBuf2;
+        public int NumWords;
+    }
 
-        public uint[] NttBuf1A;
-        public uint[] NttBuf2A;
-        public uint[] NttBuf1B;
-        public uint[] NttBuf2B;
-        public int TransformLength;
-        public int NumWordsA;
-        public int NumWordsB;
-        public int N1;
-        public int N2;
+    public struct NttUnpackContext
+    {
+        public NttUnpackOperandContext OperandA;
+        public NttUnpackOperandContext OperandB;
+        public NttGridContext Grid;
     }
 
     public struct NttUnpackSingleContext
     {
-        [GpuReadOnly]
-        public uint[] OpA;
-
-        public uint[] NttBuf1A;
-        public uint[] NttBuf2A;
-        public int TransformLength;
-        public int NumWordsA;
-        public int N1;
-        public int N2;
+        public NttUnpackOperandContext Operand;
+        public NttGridContext Grid;
     }
 
     [GpuKernel]
     public static void MultiplyNttUnpackKernel(NttUnpackContext ctx)
     {
-        GpuBigIntFermatKernels.DeviceUnpack16Transposed(ctx.OpA, ctx.NttBuf1A, ctx.NttBuf2A, ctx.TransformLength,
-            ctx.NumWordsA, ctx.N1, ctx.N2, true);
-        GpuBigIntFermatKernels.DeviceUnpack16Transposed(ctx.OpB, ctx.NttBuf1B, ctx.NttBuf2B, ctx.TransformLength,
-            ctx.NumWordsB, ctx.N1, ctx.N2, true);
+        GpuBigIntFermatKernels.DeviceUnpack16Transposed(
+            ctx.OperandA.Source, ctx.OperandA.NttBuf1, ctx.OperandA.NttBuf2,
+            ctx.Grid.M, ctx.OperandA.NumWords, ctx.Grid.N1, ctx.Grid.N2, true);
+        GpuBigIntFermatKernels.DeviceUnpack16Transposed(
+            ctx.OperandB.Source, ctx.OperandB.NttBuf1, ctx.OperandB.NttBuf2,
+            ctx.Grid.M, ctx.OperandB.NumWords, ctx.Grid.N1, ctx.Grid.N2, true);
     }
 
     [GpuKernel]
     public static void MultiplyNttUnpackSingleKernel(NttUnpackSingleContext ctx)
     {
-        GpuBigIntFermatKernels.DeviceUnpack16Transposed(ctx.OpA, ctx.NttBuf1A, ctx.NttBuf2A, ctx.TransformLength,
-            ctx.NumWordsA, ctx.N1, ctx.N2, true);
+        GpuBigIntFermatKernels.DeviceUnpack16Transposed(
+            ctx.Operand.Source, ctx.Operand.NttBuf1, ctx.Operand.NttBuf2,
+            ctx.Grid.M, ctx.Operand.NumWords, ctx.Grid.N1, ctx.Grid.N2, true);
     }
 
     [GpuKernel]

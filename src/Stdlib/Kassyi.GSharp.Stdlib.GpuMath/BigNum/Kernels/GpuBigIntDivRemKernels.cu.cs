@@ -13,12 +13,13 @@ public static partial class GpuBigIntDivRemKernels
     }
 
     [GpuDeviceFunction]
-    private static void ExecuteNttMultiplyMacro(
-        ReciprocalNewtonRaphson ctx,
+    public static void ExecuteNttMultiplyMacro(
+        NewtonRaphsonContext core,
         uint[] opA, uint[] opB, uint[] resultDest,
-        int numWordsA, int numWordsB, int numWordsResult)
+        int numWordsA, int numWordsB, int numWordsResult,
+        int chunkSize)
     {
-        var m = ctx.Ntt.TransformLength;
+        var m = core.Ntt.TransformLength;
         int n2 = 1;
         while (n2 * n2 < m)
         {
@@ -32,73 +33,77 @@ public static partial class GpuBigIntDivRemKernels
             n2 = 1;
         }
 
+        var nttScratch = core.Workspace.NttScratch;
+
         // 1. Unpack
-        GpuBigIntFermatKernels.DeviceUnpack16(opA, ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A, m, numWordsA);
-        GpuBigIntFermatKernels.DeviceUnpack16(opB, ctx.Workspace.NttBuf1B, ctx.Workspace.NttBuf2B, m, numWordsB);
+        GpuBigIntFermatKernels.DeviceUnpack16(opA, nttScratch.NttBuf1A, nttScratch.NttBuf2A, m, numWordsA);
+        GpuBigIntFermatKernels.DeviceUnpack16(opB, nttScratch.NttBuf1B, nttScratch.NttBuf2B, m, numWordsB);
         Gpu.SyncGrid();
 
         // 2. Base NTT Context
         var baseNtt = new DualNtt
         {
-            TemporaryBuffer = ctx.Workspace.TmpBuf,
-            M = m,
-            N1 = n1,
-            N2 = n2
+            TemporaryBuffer = nttScratch.TmpBuf,
+            Grid = new NttGridContext { M = m, N1 = n1, N2 = n2 }
         };
 
         // 3. Forward NTT A (Prime 1 & 2)
         var forwardA = baseNtt;
-        forwardA.Buffer1 = ctx.Workspace.NttBuf1A;
-        forwardA.Buffer2 = ctx.Workspace.NttBuf2A;
-        forwardA.Twiddle1 = ctx.Ntt.TwiddleFactors.Forward1;
-        forwardA.Twiddle2 = ctx.Ntt.TwiddleFactors.Forward2;
+        forwardA.Buffer1 = nttScratch.NttBuf1A;
+        forwardA.Buffer2 = nttScratch.NttBuf2A;
+        forwardA.Twiddle1 = core.Ntt.TwiddleFactors.Forward1;
+        forwardA.Twiddle2 = core.Ntt.TwiddleFactors.Forward2;
         GpuBigIntNttKernels.ExecuteDualForwardNtt(forwardA);
 
         // 4. Forward NTT B (Prime 1 & 2)
         var forwardB = forwardA; // Twiddles are the same, just update buffers
-        forwardB.Buffer1 = ctx.Workspace.NttBuf1B;
-        forwardB.Buffer2 = ctx.Workspace.NttBuf2B;
+        forwardB.Buffer1 = nttScratch.NttBuf1B;
+        forwardB.Buffer2 = nttScratch.NttBuf2B;
         GpuBigIntNttKernels.ExecuteDualForwardNtt(forwardB);
 
         // 5. Pointwise Multiply
-        GpuBigIntNttKernels.ExecuteNttPointwiseMultiply(ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A,
-            ctx.Workspace.NttBuf1B, ctx.Workspace.NttBuf2B, m);
+        GpuBigIntNttKernels.ExecuteNttPointwiseMultiply(nttScratch.NttBuf1A, nttScratch.NttBuf2A,
+            nttScratch.NttBuf1B, nttScratch.NttBuf2B, m);
         Gpu.SyncGrid();
 
         // 6. Inverse NTT (Prime 1 & 2)
         var inverseA = baseNtt;
-        inverseA.Buffer1 = ctx.Workspace.NttBuf1A;
-        inverseA.Buffer2 = ctx.Workspace.NttBuf2A;
-        inverseA.Twiddle1 = ctx.Ntt.TwiddleFactors.Inverse1;
-        inverseA.Twiddle2 = ctx.Ntt.TwiddleFactors.Inverse2;
+        inverseA.Buffer1 = nttScratch.NttBuf1A;
+        inverseA.Buffer2 = nttScratch.NttBuf2A;
+        inverseA.Twiddle1 = core.Ntt.TwiddleFactors.Inverse1;
+        inverseA.Twiddle2 = core.Ntt.TwiddleFactors.Inverse2;
         GpuBigIntNttKernels.ExecuteDualInverseNtt(inverseA);
 
         // 6. Compute CRT
-        GpuBigIntNttKernels.ExecuteCrtComputeCoefficients(ctx.Workspace.NttBuf1A, ctx.Workspace.NttBuf2A,
-            ctx.Workspace.UncarriedLow, ctx.Workspace.UncarriedHigh, m);
+        GpuBigIntNttKernels.ExecuteCrtComputeCoefficients(nttScratch.NttBuf1A, nttScratch.NttBuf2A,
+            nttScratch.UncarriedLow, nttScratch.UncarriedHigh, m);
         Gpu.SyncGrid();
 
         // 7-8. Resolve Carries (Blocked & Apply)
-        int numBlocks = (numWordsResult + 1023) / 1024;
-        GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(ctx.Workspace.UncarriedLow, ctx.Workspace.UncarriedHigh,
-            resultDest, ctx.Workspace.BlockCarries, m, numWordsResult, 1024);
+        int numBlocks = (numWordsResult + chunkSize - 1) / chunkSize;
+        GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(nttScratch.UncarriedLow, nttScratch.UncarriedHigh,
+            resultDest, nttScratch.BlockCarries, m, numWordsResult, chunkSize);
         Gpu.SyncGrid();
-        GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, ctx.Workspace.BlockCarries, numWordsResult,
-            1024, numBlocks);
+        GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, nttScratch.BlockCarries, numWordsResult,
+            chunkSize, numBlocks);
         Gpu.SyncGrid();
     }
 
     [GpuKernel(Cooperative = true)]
     public static void ReciprocalNewtonRaphsonMegaKernel(ReciprocalNewtonRaphson ctx)
     {
-        int n = ctx.Dimensions.NumberOfWords;
-        int resultWords = (ctx.Dimensions.TargetBits + 31) / 32;
+        var core = ctx.Core;
+        var dims = core.Dimensions;
+        var ops = core.Operands;
+        var iterScratch = core.Workspace.Iteration;
+        int n = dims.NumberOfWords;
+        int resultWords = (dims.TargetBits + 31) / 32;
 
-        for (int i = 0; i < ctx.Dimensions.Iterations; i++)
+        for (int i = 0; i < dims.Iterations; i++)
         {
             // 1. currentProduct = targetOperand * resultBuffer (n, resultWords -> n + resultWords)
-            ExecuteNttMultiplyMacro(ctx, ctx.Operands.TargetOperand, ctx.Operands.ResultBuffer,
-                ctx.Workspace.CurrentProduct, n, resultWords, n + resultWords);
+            ExecuteNttMultiplyMacro(core, ops.TargetOperand, ops.ResultBuffer,
+                iterScratch.CurrentProduct, n, resultWords, n + resultWords, 1024);
 
             // 2. diff = constant - currentProduct
             Gpu.SyncGrid();
@@ -106,20 +111,20 @@ public static partial class GpuBigIntDivRemKernels
             {
                 var subCtx = new GpuBigIntContext
                 {
-                    Operands = new OperandContext { CarryBuffer = ctx.CarryBuffer },
+                    Operands = new OperandContext { CarryBuffer = core.CarryBuffer },
                     NumberOfWords = n + resultWords
                 };
-                GpuBigIntKernels.ExecuteSub(ref subCtx, ctx.Workspace.Diff, ctx.Operands.Constant,
-                    ctx.Workspace.CurrentProduct);
+                GpuBigIntKernels.ExecuteSub(ref subCtx, iterScratch.Diff, ops.Constant,
+                    iterScratch.CurrentProduct);
             });
             Gpu.SyncGrid();
 
             // 3. nextIter = resultBuffer * diff (resultWords, n + resultWords -> n + 2 * resultWords)
-            ExecuteNttMultiplyMacro(ctx, ctx.Operands.ResultBuffer, ctx.Workspace.Diff, ctx.Workspace.NextIter,
-                resultWords, n + resultWords, n + 2 * resultWords);
+            ExecuteNttMultiplyMacro(core, ops.ResultBuffer, iterScratch.Diff, iterScratch.NextIter,
+                resultWords, n + resultWords, n + 2 * resultWords, 1024);
 
             // 4. copy resultBuffer = nextIter >> (2 * numBits + marginBits)
-            int shiftTotal = ctx.Dimensions.TargetBits;
+            int shiftTotal = dims.TargetBits;
             int wordShift = shiftTotal / 32;
             int bitShift = shiftTotal % 32;
             int destWords = resultWords;
@@ -129,11 +134,11 @@ public static partial class GpuBigIntDivRemKernels
             {
                 int srcIdx = idx + wordShift;
                 // Ensure we don't read out of bounds.
-                uint w0 = (srcIdx < srcMaxWords) ? ctx.Workspace.NextIter[srcIdx] : 0u;
-                uint w1 = (srcIdx + 1 < srcMaxWords) ? ctx.Workspace.NextIter[srcIdx + 1] : 0u;
+                uint w0 = (srcIdx < srcMaxWords) ? iterScratch.NextIter[srcIdx] : 0u;
+                uint w1 = (srcIdx + 1 < srcMaxWords) ? iterScratch.NextIter[srcIdx + 1] : 0u;
 
                 uint shiftedValue = (w0 >> bitShift) | (bitShift == 0 ? 0u : (w1 << (32 - bitShift)));
-                ctx.Operands.ResultBuffer[idx] = shiftedValue;
+                ops.ResultBuffer[idx] = shiftedValue;
             });
             Gpu.SyncGrid();
         }

@@ -30,8 +30,8 @@ public static partial class GpuBigIntRnsMontgomeryKernels
             return;
         }
 
-        var m1 = ctx.ModuliB1[tid];
-        var m2 = ctx.ModuliB2[tid];
+        var m1 = ctx.Base1.Moduli[tid];
+        var m2 = ctx.Base2.Moduli[tid];
 
         // Shared memory arrays for intermediate xi (Maximum supported K is 128)
         var xiQShared = new SharedMemory<uint>(128);
@@ -45,7 +45,7 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         uint qB1 = (uint)(qTemp % m1);
 
         // xi for Approximate Base Extension
-        xiQShared[tid] = (uint)(((ulong)qB1 * ctx.GammaB1[tid]) % m1);
+        xiQShared[tid] = (uint)(((ulong)qB1 * ctx.Base1.Gamma[tid]) % m1);
 
         Gpu.SyncThreads();
 
@@ -55,7 +55,7 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         ulong qB2 = 0;
         for (int i = 0; i < ctx.KSize; i++)
         {
-            ulong term = (ulong)xiQShared[i] * ctx.M1OverMiModMj[i * ctx.KSize + tid];
+            ulong term = (ulong)xiQShared[i] * ctx.Base1.MOverMiModOther[i * ctx.KSize + tid];
             qB2 = (qB2 + term) % m2;
         }
 
@@ -68,7 +68,7 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         uint rB2 = (uint)((rTempB2 * montCtx.RInvB2[tid]) % m2);
 
         // xi for Shenoy-Kumaresan Base Extension (B2 -> B1)
-        xiRShared[tid] = (uint)(((ulong)rB2 * ctx.GammaB2[tid]) % m2);
+        xiRShared[tid] = (uint)(((ulong)rB2 * ctx.Base2.Gamma[tid]) % m2);
 
         // Output Base 2 result
         result.B2[tid] = rB2;
@@ -84,10 +84,10 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         ulong sumSkR = 0;
         for (int i = 0; i < ctx.KSize; i++)
         {
-            ulong termQ = (ulong)xiQShared[i] * ctx.M1OverMiModMsk[i];
+            ulong termQ = (ulong)xiQShared[i] * ctx.Base1.MOverMiModMsk[i];
             qSkSum = (qSkSum + termQ) % ctx.ModSk;
 
-            ulong termR = (ulong)xiRShared[i] * ctx.M2OverMjModMsk[i];
+            ulong termR = (ulong)xiRShared[i] * ctx.Base2.MOverMiModMsk[i];
             sumSkR = (sumSkR + termR) % ctx.ModSk;
         }
 
@@ -95,7 +95,7 @@ public static partial class GpuBigIntRnsMontgomeryKernels
         ulong abSk = (ulong)a.Sk * b.Sk;
         ulong qnSk = qSkSum * montCtx.NSk;
         ulong rTempSk = ((abSk % ctx.ModSk) + (qnSk % ctx.ModSk)) % ctx.ModSk;
-        uint rSk = (uint)((rTempSk * ctx.M1InvModMsk) % ctx.ModSk);
+        uint rSk = (uint)((rTempSk * ctx.Base1.MInvModMsk) % ctx.ModSk);
 
         // Calculate alpha for B2 -> B1
         long alphaTempR = (long)sumSkR - rSk;
@@ -104,17 +104,17 @@ public static partial class GpuBigIntRnsMontgomeryKernels
             alphaTempR += ctx.ModSk;
         }
 
-        ulong alphaR = ((ulong)alphaTempR * ctx.M2InvModMsk) % ctx.ModSk;
+        ulong alphaR = ((ulong)alphaTempR * ctx.Base2.MInvModMsk) % ctx.ModSk;
 
         // Calculate r in Base 1
         ulong sumB1 = 0;
         for (int j = 0; j < ctx.KSize; j++)
         {
-            ulong term = (ulong)xiRShared[j] * ctx.M2OverMjModMi[j * ctx.KSize + tid];
+            ulong term = (ulong)xiRShared[j] * ctx.Base2.MOverMiModOther[j * ctx.KSize + tid];
             sumB1 = (sumB1 + term) % m1;
         }
 
-        ulong alphaTermR = (alphaR * ctx.M2ModMi[tid]) % m1;
+        ulong alphaTermR = (alphaR * ctx.Base2.MModOther[tid]) % m1;
 
         long resultTempR = (long)sumB1 - (long)alphaTermR;
         if (resultTempR < 0)

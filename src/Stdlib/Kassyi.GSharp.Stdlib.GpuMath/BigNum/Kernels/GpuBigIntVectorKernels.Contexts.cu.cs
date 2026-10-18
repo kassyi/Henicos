@@ -2,16 +2,77 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 
 public static partial class GpuBigIntVectorKernels
 {
-    public struct VectorSignConvertContext
+    public struct SignedVectorOperandReadOnlyContext
     {
         [GpuReadOnly]
-        public uint[] Src;
+        public uint[] Limbs;
 
         [GpuReadOnly]
-        public uint[] SignSrc;
+        public uint[] Signs;
 
-        public uint[] Dest;
         public int NumWords;
+    }
+
+    public struct SignedVectorOutputContext
+    {
+        public uint[] Limbs;
+        public uint[] Signs;
+        public int NumWords;
+    }
+
+    public struct VectorBinaryOperationContext
+    {
+        public SignedVectorOperandReadOnlyContext Left;
+        public SignedVectorOperandReadOnlyContext Right;
+        public SignedVectorOutputContext Result;
+        public uint ScalarSign;
+        public bool IsScalar;
+    }
+
+    public struct FloatVectorExponentsContext
+    {
+        [GpuReadOnly]
+        public uint[] ExpA;
+
+        [GpuReadOnly]
+        public uint[] ExpB;
+
+        public uint[] ExpResult;
+        public int ScalarExp;
+    }
+
+    public struct VectorFloatBinaryOperationContext
+    {
+        public VectorBinaryOperationContext Core;
+        public FloatVectorExponentsContext Exponents;
+    }
+
+    public struct FloatVectorOperandReadOnlyContext
+    {
+        [GpuReadOnly]
+        public uint[] Limbs;
+
+        [GpuReadOnly]
+        public uint[] Exponents;
+
+        [GpuReadOnly]
+        public uint[] Signs;
+
+        public int NumWords;
+    }
+
+    public struct FloatVectorOutputContext
+    {
+        public uint[] Limbs;
+        public uint[] Exponents;
+        public uint[] Signs;
+        public int NumWords;
+    }
+
+    public struct VectorSignConvertContext
+    {
+        public SignedVectorOperandReadOnlyContext Source;
+        public uint[] Dest;
         public int BatchSize;
     }
 
@@ -28,206 +89,46 @@ public static partial class GpuBigIntVectorKernels
 
     public struct VectorAddSubContext
     {
-        [GpuReadOnly]
-        public uint[] A;
-
-        [GpuReadOnly]
-        public uint[] B;
-
-        public uint[] Result;
-
-        [GpuReadOnly]
-        public uint[] SignA;
-
-        [GpuReadOnly]
-        public uint[] SignB;
-
-        public uint[] SignResult;
-        public int NumWordsA;
-        public int NumWordsB;
-        public int NumWordsResult;
+        public VectorBinaryOperationContext Op;
         public uint OpSign;
-        public uint ScalarSign;
-        public bool IsScalar;
         public int BitOffsetA;
         public int BitOffsetB;
     }
 
     public struct VectorMulContext
     {
-        [GpuReadOnly]
-        public uint[] A;
-
-        [GpuReadOnly]
-        public uint[] B;
-
-        public uint[] Result;
-
-        [GpuReadOnly]
-        public uint[] SignA;
-
-        [GpuReadOnly]
-        public uint[] SignB;
-
-        public uint[] SignResult;
-        public int NumWordsA;
-        public int NumWordsB;
-        public int NumWordsResult;
-        public uint ScalarSign;
-        public bool IsScalar;
+        public VectorBinaryOperationContext Op;
     }
 
     public struct VectorDivModContext
     {
-        [GpuReadOnly]
-        public uint[] A;
-
-        [GpuReadOnly]
-        public uint[] B;
-
-        public uint[] Result;
-
-        [GpuReadOnly]
-        public uint[] SignA;
-
-        [GpuReadOnly]
-        public uint[] SignB;
-
-        public uint[] SignResult;
-        public int NumWordsA;
-        public int NumWordsB;
-        public int NumWordsResult;
-        public uint ScalarSign;
-        public bool IsScalar;
+        public VectorBinaryOperationContext Op;
         public bool IsModulo;
         public int PreShiftBits;
     }
 
     public struct VectorFloatAddSubContext
     {
-        [GpuReadOnly]
-        public uint[] A;
-
-        [GpuReadOnly]
-        public uint[] B;
-
-        public uint[] Result;
-
-        [GpuReadOnly]
-        public uint[] ExpA;
-
-        [GpuReadOnly]
-        public uint[] ExpB;
-
-        public uint[] ExpResult;
-
-        [GpuReadOnly]
-        public uint[] SignA;
-
-        [GpuReadOnly]
-        public uint[] SignB;
-
-        public uint[] SignResult;
-        public int NumWordsA;
-        public int NumWordsB;
-        public int NumWordsResult;
+        public VectorFloatBinaryOperationContext FloatOp;
         public uint OpSign;
-        public int ScalarExp;
-        public uint ScalarSign;
-        public bool IsScalar;
     }
 
     public struct VectorFloatMulContext
     {
-        [GpuReadOnly]
-        public uint[] A;
-
-        [GpuReadOnly]
-        public uint[] B;
-
-        public uint[] Result;
-
-        [GpuReadOnly]
-        public uint[] ExpA;
-
-        [GpuReadOnly]
-        public uint[] ExpB;
-
-        public uint[] ExpResult;
-
-        [GpuReadOnly]
-        public uint[] SignA;
-
-        [GpuReadOnly]
-        public uint[] SignB;
-
-        public uint[] SignResult;
-        public int NumWordsA;
-        public int NumWordsB;
-        public int NumWordsResult;
-        public int ScalarExp;
-        public uint ScalarSign;
-        public bool IsScalar;
+        public VectorFloatBinaryOperationContext FloatOp;
     }
 
     public struct VectorFloatDivContext
     {
-        [GpuReadOnly]
-        public uint[] A;
-
-        [GpuReadOnly]
-        public uint[] B;
-
-        public uint[] Result;
-
-        [GpuReadOnly]
-        public uint[] ExpA;
-
-        [GpuReadOnly]
-        public uint[] ExpB;
-
-        public uint[] ExpResult;
-
-        [GpuReadOnly]
-        public uint[] SignA;
-
-        [GpuReadOnly]
-        public uint[] SignB;
-
-        public uint[] SignResult;
-        public int NumWordsA;
-        public int NumWordsB;
-        public int NumWordsResult;
-        public int ScalarExp;
-        public uint ScalarSign;
-        public bool IsScalar;
+        public VectorFloatBinaryOperationContext FloatOp;
         public int PreShiftBits;
     }
 
     public struct VectorFloatCompareContext
     {
-        [GpuReadOnly]
-        public uint[] A;
-
-        [GpuReadOnly]
-        public uint[] B;
-
+        public FloatVectorOperandReadOnlyContext Left;
+        public FloatVectorOperandReadOnlyContext Right;
         public uint[] Result;
-
-        [GpuReadOnly]
-        public uint[] ExpA;
-
-        [GpuReadOnly]
-        public uint[] ExpB;
-
-        [GpuReadOnly]
-        public uint[] SignA;
-
-        [GpuReadOnly]
-        public uint[] SignB;
-
-        public int NumWordsA;
-        public int NumWordsB;
         public int ScalarExp;
         public uint ScalarSign;
         public bool IsScalar;
@@ -236,33 +137,10 @@ public static partial class GpuBigIntVectorKernels
 
     public struct VectorFloatReductionChunkContext
     {
-        [GpuReadOnly]
-        public uint[] A;
-
-        [GpuReadOnly]
-        public uint[] ExpA;
-
-        [GpuReadOnly]
-        public uint[] SignA;
-
-        public uint[] Result;
-        public uint[] ExpResult;
-        public uint[] SignResult;
-        public int NumWords;
+        public FloatVectorOperandReadOnlyContext Input;
+        public FloatVectorOutputContext Output;
         public int BatchSize;
         public int ChunkSize;
-    }
-
-    public struct VectorAccumulateContext
-    {
-        [GpuReadOnly]
-        public uint[] Src;
-
-        public int SrcOffset;
-        public uint[] Dest;
-        public int DestOffset;
-        public int NumWords;
-        public ulong TargetCmpBits;
     }
 
     public struct BlockBitLengthContext
@@ -274,41 +152,38 @@ public static partial class GpuBigIntVectorKernels
         public int NumWords;
     }
 
-    public struct ElementCompareContext
+    public struct ShiftedLimbSliceContext
     {
-        [GpuReadOnly]
-        public uint[] A;
-
-        public int BaseA;
-        public int NumWordsA;
-        public int ExpA;
-        public uint SignA;
-
-        [GpuReadOnly]
-        public uint[] B;
-
-        public int BaseB;
-        public int NumWordsB;
-        public int ExpB;
-        public uint SignB;
+        public BlockBitLengthContext Slice;
+        public int Shift;
     }
 
     public struct ShiftedLimbCompareContext
     {
-        [GpuReadOnly]
-        public uint[] A;
-
-        public int BaseA;
-        public int NumWordsA;
-        public int ShiftA;
-
-        [GpuReadOnly]
-        public uint[] B;
-
-        public int BaseB;
-        public int NumWordsB;
-        public int ShiftB;
+        public ShiftedLimbSliceContext Left;
+        public ShiftedLimbSliceContext Right;
         public int CompareWords;
+    }
+
+    public struct FloatElementSliceContext
+    {
+        public BlockBitLengthContext Slice;
+        public int Exp;
+        public uint Sign;
+    }
+
+    public struct ElementCompareContext
+    {
+        public FloatElementSliceContext Left;
+        public FloatElementSliceContext Right;
+    }
+
+    public struct VectorAccumulateContext
+    {
+        public BlockBitLengthContext Source;
+        public uint[] Dest;
+        public int DestOffset;
+        public ulong TargetCmpBits;
     }
 
     public struct FloatAlignmentInput
@@ -333,17 +208,11 @@ public static partial class GpuBigIntVectorKernels
 
     public struct FloatAccumulateStepContext
     {
-        [GpuReadOnly]
-        public uint[] Src;
-
-        public int SrcOffset;
-        public int SrcExp;
-        public uint SrcSign;
+        public FloatElementSliceContext Source;
         public uint[] Dest;
         public int DestOffset;
         public uint[] ExpResult;
         public uint[] SignResult;
         public int BlockIdx;
-        public int NumWords;
     }
 }

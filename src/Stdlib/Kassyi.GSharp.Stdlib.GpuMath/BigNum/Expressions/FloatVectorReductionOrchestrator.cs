@@ -63,13 +63,20 @@ internal static class FloatVectorReductionOrchestrator
 
                 var chunkCtx = new GpuBigIntVectorKernels.AotContexts.VectorFloatReductionChunk
                 {
-                    A = currentInput.Significands.DevicePointer,
-                    ExpA = currentInput.Exponents.DevicePointer,
-                    SignA = currentInput.Signs.DevicePointer,
-                    Result = currentOutput.Significands.DevicePointer,
-                    ExpResult = currentOutput.Exponents.DevicePointer,
-                    SignResult = currentOutput.Signs.DevicePointer,
-                    NumWords = numWords,
+                    Input = new GpuBigIntVectorKernels.AotContexts.FloatVectorOperandReadOnly
+                    {
+                        Limbs = currentInput.Significands.DevicePointer,
+                        Exponents = currentInput.Exponents.DevicePointer,
+                        Signs = currentInput.Signs.DevicePointer,
+                        NumWords = numWords
+                    },
+                    Output = new GpuBigIntVectorKernels.AotContexts.FloatVectorOutput
+                    {
+                        Limbs = currentOutput.Significands.DevicePointer,
+                        Exponents = currentOutput.Exponents.DevicePointer,
+                        Signs = currentOutput.Signs.DevicePointer,
+                        NumWords = numWords
+                    },
                     BatchSize = pass.BatchSize,
                     ChunkSize = pass.ChunkSize
                 };

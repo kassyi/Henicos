@@ -120,21 +120,22 @@ public static partial class GpuBigIntVectorKernels
             return;
         }
 
-        int srcOffset = bIdx * ctx.NumWords;
-        int destOffset = bIdx * ctx.NumWords;
-        int sign = (int)ctx.SignSrc[bIdx];
+        int numWords = ctx.Source.NumWords;
+        int srcOffset = bIdx * numWords;
+        int destOffset = bIdx * numWords;
+        int sign = (int)ctx.Source.Signs[bIdx];
         int laneId = tid % 32;
         int warpId = tid / 32;
 
         uint blockCarryIn = (uint)sign;
         SharedMemory<uint> sharedCarry = new SharedMemory<uint>(32);
 
-        for (int offset = 0; offset < ctx.NumWords; offset += bDim)
+        for (int offset = 0; offset < numWords; offset += bDim)
         {
             int idx = offset + tid;
-            bool valid = idx < ctx.NumWords;
+            bool valid = idx < numWords;
 
-            uint val = valid ? ctx.Src[srcOffset + idx] : 0u;
+            uint val = valid ? ctx.Source.Limbs[srcOffset + idx] : 0u;
             if (sign == 1)
             {
                 val = ~val;
@@ -172,11 +173,12 @@ public static partial class GpuBigIntVectorKernels
             return;
         }
 
-        int destOffset = bIdx * ctx.NumWords;
+        int numWords = ctx.Source.NumWords;
+        int destOffset = bIdx * numWords;
 
         if (tid == 0)
         {
-            ctx.Dest[destOffset + ctx.NumWords - 1] ^= 0x80000000u;
+            ctx.Dest[destOffset + numWords - 1] ^= 0x80000000u;
         }
     }
 }

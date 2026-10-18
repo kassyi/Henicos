@@ -77,10 +77,13 @@ internal abstract class VectorReductionExpressionBase : IGpuBigIntExpression, ID
         var blockDimX = (uint)Math.Min(1024, NumWords);
         var convertCtx = new GpuBigIntVectorKernels.AotContexts.VectorSignConvert
         {
-            Src = vecResult.Values.DevicePointer,
-            SignSrc = vecResult.Signs.DevicePointer,
+            Source = new GpuBigIntVectorKernels.AotContexts.SignedVectorOperandReadOnly
+            {
+                Limbs = vecResult.Values.DevicePointer,
+                Signs = vecResult.Signs.DevicePointer,
+                NumWords = NumWords
+            },
             Dest = initialPtr,
-            NumWords = NumWords,
             BatchSize = _vector.Length
         };
 

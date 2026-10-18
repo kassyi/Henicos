@@ -7,6 +7,13 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms;
 /// </summary>
 public static class PrimeSearchAlgorithm
 {
+    private const int DefaultMillerRabinIterations = 10;
+
+    private static ReadOnlySpan<int> SmallPrimes =>
+    [
+        2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+    ];
+
     /// <summary>
     /// Generates a strictly positive probable prime (PRP) of the specified bit length.
     /// Uses CPU trial division for small primes, followed by robust Miller-Rabin / Fermat PRP testing.
@@ -31,8 +38,8 @@ public static class PrimeSearchAlgorithm
                 continue;
             }
 
-            // 2. Probable Prime Test (Fermat / Miller-Rabin)
-            if (IsProbablePrime(candidate, 10))
+            // 2. Probable Prime Test (Miller-Rabin)
+            if (IsProbablePrime(candidate, DefaultMillerRabinIterations))
             {
                 return candidate;
             }
@@ -66,15 +73,14 @@ public static class PrimeSearchAlgorithm
     private static bool IsPrimeCpu(BigInteger n)
     {
         // Trial division with first 25 primes
-        int[] smallPrimes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
-        ];
-        foreach (var p in smallPrimes)
+        foreach (var p in SmallPrimes)
         {
             if (n % p == 0)
             {
                 return n == p;
             }
         }
+
         return true;
     }
 
@@ -90,16 +96,54 @@ public static class PrimeSearchAlgorithm
             return true;
         }
 
-        // Simplified Fermat PRP Test using bases starting from 2
-        // TODO: Full Miller-Rabin or FermatRunner offload for extremely large numbers
-        for (int i = 0; i < iterations; i++)
+        if (n.IsEven)
         {
-            var a = new BigInteger(2) + i;
-            if (BigInteger.ModPow(a, n - 1, n) != 1)
+            return false;
+        }
+
+        // Decompose n - 1 = 2^s * d with d odd
+        var d = n - 1;
+        var s = 0;
+        while (d.IsEven)
+        {
+            d >>= 1;
+            s++;
+        }
+
+        for (var i = 0; i < iterations; i++)
+        {
+            var a = new BigInteger(2 + i);
+            if (a >= n - 1)
+            {
+                break;
+            }
+
+            if (!IsMillerRabinWitnessPass(a, d, s, n))
             {
                 return false;
             }
         }
+
         return true;
+    }
+
+    private static bool IsMillerRabinWitnessPass(BigInteger a, BigInteger d, int s, BigInteger n)
+    {
+        var x = BigInteger.ModPow(a, d, n);
+        if (x == 1 || x == n - 1)
+        {
+            return true;
+        }
+
+        for (var r = 1; r < s; r++)
+        {
+            x = BigInteger.ModPow(x, 2, n);
+            if (x == n - 1)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

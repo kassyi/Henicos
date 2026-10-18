@@ -9,6 +9,7 @@ public class FermatAlgorithmTests
     [InlineData(4)]
     [InlineData(5)]
     [InlineData(6)]
+    [InlineData(10)]
     [InlineData(31)]
     [InlineData(32)]
     [InlineData(33)]
@@ -24,29 +25,6 @@ public class FermatAlgorithmTests
 
         var actual = GetBigIntegerFromResult(resultArray, e);
 
-        var x = BigInteger.One << e;
-        var n = (BigInteger.One << (2 * e + 1)) - x + 11;
-        BigInteger expected = Enumerable.Range(0, e)
-            .Aggregate(new BigInteger(2), (cur, _) => (cur * cur) % n);
-
-        Assert.Equal(expected, actual);
-    }
-
-    [SkippableFact]
-    public void FermatAlgorithm_RunFermatPrp_MatchesCpuBigInteger_E10()
-    {
-        CudaCapability.EnsureGpuAvailable();
-        int e = 10;
-        using var scope = new GpuKernelLoader.CudaContextScope();
-        using var runner = new FermatAlgorithm(e);
-
-        var (resultArray, elapsedMs) = runner.RunFermatPrp();
-        Assert.True(elapsedMs >= 0);
-
-        // Convert resultArray to BigInteger
-        var actual = GetBigIntegerFromResult(resultArray, e);
-
-        // Compute correct expected value on CPU
         var x = BigInteger.One << e;
         var n = (BigInteger.One << (2 * e + 1)) - x + 11;
         BigInteger expected = Enumerable.Range(0, e)
@@ -76,15 +54,34 @@ public class FermatAlgorithmTests
         Assert.Equal(expected, actual);
     }
 
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(-10)]
+    public void FermatAlgorithm_Constructor_NonPositiveExponent_ThrowsArgumentOutOfRangeException(int invalidE)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new FermatAlgorithm(invalidE));
+    }
+
     [SkippableFact]
     [Scenario(TestScenario.SadPath)]
-    public void FermatAlgorithm_LoadState_InvalidBufferSize_ThrowsArgumentException()
+    public void FermatAlgorithm_LoadState_And_Disposed_ThrowsExpectedExceptions()
     {
         CudaCapability.EnsureGpuAvailable();
         using var scope = new GpuKernelLoader.CudaContextScope();
-        using var runner = new FermatAlgorithm(4);
+        var runner = new FermatAlgorithm(4);
 
+        Assert.Throws<ArgumentNullException>(() => runner.LoadState(null!));
         Assert.Throws<ArgumentException>(() => runner.LoadState(new uint[1]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => runner.RunFermatPrpWithGerbiczCheck(blockSize: 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => runner.RunFermatPrpWithGerbiczCheck(checkStepBlocks: 0));
+
+        runner.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => runner.GetState());
+        Assert.Throws<ObjectDisposedException>(() => runner.RunFermatPrp());
+        Assert.Throws<ObjectDisposedException>(() => runner.RunBenchmarkChunk());
     }
 
 
