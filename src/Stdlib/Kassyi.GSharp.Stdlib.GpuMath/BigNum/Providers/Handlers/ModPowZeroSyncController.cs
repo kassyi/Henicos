@@ -36,7 +36,7 @@ internal static class ModPowZeroSyncController
         var marginBits = 512;
         var marginWords = marginBits / 32;
         var aActualWords = 4 * n; // Max size for tempMul
-        var targetBits = aActualWords * 32 + marginBits;
+        var targetBits = n * 32 + aActualWords * 32 + marginBits;
         var targetWords = (targetBits + 31) / 32;
 
         using var reciprocalNorm = new GpuBigUInt(baseVal.Workspace, targetWords);

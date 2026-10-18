@@ -117,7 +117,7 @@ public static partial class GpuBigIntDivRem
         var marginBits = 512;
         var marginWords = marginBits / 32;
         var aActualWords = (aActualBits + 31) / 32;
-        var targetBits = aActualWords * 32 + marginBits;
+        var targetBits = n * 32 + aActualWords * 32 + marginBits;
         var targetWords = (targetBits + 31) / 32;
 
         using var reciprocalNorm = new GpuBigUInt(rightOperand.Workspace, targetWords);
