@@ -423,6 +423,38 @@ public class FatbinParserTests
     }
 
     [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_TryParse_Boundary_ItemSizeOverflow_ReturnsFalse()
+    {
+        byte[] corrupted = (byte[])RealNvcc_DummyFatbin.Clone();
+        // Item data size at offset 16 + 8 = 24 set to ulong.MaxValue (wraps around when added to itemHeaderSize)
+        BitConverter.TryWriteBytes(corrupted.AsSpan(24, 8), ulong.MaxValue);
+
+        bool success = FatbinParser.TryParse(corrupted, out FatbinImage? image);
+
+        Assert.False(success);
+        Assert.Null(image);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_TryParse_Boundary_ObjectNameOffsetOverflow_DoesNotThrow()
+    {
+        byte[] corrupted = (byte[])RealNvcc_IdentFatbin.Clone();
+        // name_off at offset 16 + 0x20 = 48, name_len at offset 16 + 0x24 = 52
+        // 0x80000010u + 0x80000010u wraps around to 0x20u in 32-bit uint arithmetic
+        BitConverter.TryWriteBytes(corrupted.AsSpan(48, 4), 0x80000010u);
+        BitConverter.TryWriteBytes(corrupted.AsSpan(52, 4), 0x80000010u);
+
+        bool success = FatbinParser.TryParse(corrupted, out FatbinImage? image);
+
+        Assert.True(success);
+        Assert.NotNull(image);
+        Assert.Single(image.Items);
+        Assert.Null(image.Items[0].ObjectName);
+    }
+
+    [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_TryParse_ReadOnlyMemory_And_Span_Overloads()
     {
