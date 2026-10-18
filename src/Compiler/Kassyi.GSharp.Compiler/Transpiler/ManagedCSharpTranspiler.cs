@@ -9,130 +9,160 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class ManagedCSharpTranspiler
 {
-    public static string Generate(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel)
+    public static string Generate(
+        MethodDeclarationSyntax methodDecl,
+        SemanticModel semanticModel,
+        (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? preLowered = null)
     {
         if (methodDecl.Body == null)
         {
             return string.Empty;
         }
 
-        var tuple = AstLoweringPipeline.Lower(methodDecl.Body);
-        var loweredBody = tuple.LoweredBody;
-        var contextFields = tuple.ContextFields;
-
+        var (loweredBody, contextFields) = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body);
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
         var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
 
+        var bodySource = RewriteAndNormalizeBody(loweredBody);
+        var (transformedBody, localInits, regularFields) =
+            ProcessContextFields(bodySource, contextFields, semanticModel);
+
         using var writer = new SourceWriter();
+        EmitContextClass(writer, methodName, regularFields);
+        EmitStateMachineMethod(writer, methodName, methodSymbol, localInits, transformedBody);
+        return writer.ToString();
+    }
 
-        // Replace "_ctx->" with "_ctx." for C# managed execution
+    private static string RewriteAndNormalizeBody(BlockSyntax loweredBody)
+    {
         var rewriter = new ManagedExecutionRewriter();
-        loweredBody = (BlockSyntax)rewriter.Visit(loweredBody);
+        var rewritten = (BlockSyntax)rewriter.Visit(loweredBody);
+        return rewritten.NormalizeWhitespace().ToFullString().Replace("_ctx->", "_ctx.");
+    }
 
-        var bodySource = loweredBody.NormalizeWhitespace().ToFullString().Replace("_ctx->", "_ctx.");
-
+    private static (string TransformedBody, string LocalInits, List<(string Type, string Name)> RegularFields)
+        ProcessContextFields(
+            string bodySource,
+            IReadOnlyList<VariableDeclaratorSyntax>? contextFields,
+            SemanticModel semanticModel)
+    {
+        var regularFields = new List<(string Type, string Name)>();
         var localInitBuilder = new StringBuilder();
 
-        // Output context struct
+        if (contextFields == null)
+        {
+            return (bodySource, string.Empty, regularFields);
+        }
+
+        foreach (var field in contextFields)
+        {
+            if (field.Parent is not VariableDeclarationSyntax declaration)
+            {
+                continue;
+            }
+
+            var typeSyntax = declaration.Type;
+            var initString = field.Initializer?.Value.ToFullString() ?? "";
+            var typeString = ResolveFieldType(typeSyntax, initString, semanticModel);
+            var fieldName = field.Identifier.ValueText;
+
+            if (IsRefStructType(typeString, initString))
+            {
+                bodySource = UnhoistRefStructField(bodySource, fieldName, typeString, field.Initializer,
+                    localInitBuilder);
+            }
+            else
+            {
+                regularFields.Add((typeString, fieldName));
+            }
+        }
+
+        return (bodySource, localInitBuilder.ToString(), regularFields);
+    }
+
+    private static string ResolveFieldType(
+        TypeSyntax typeSyntax,
+        string initString,
+        SemanticModel semanticModel)
+    {
+        var typeString = typeSyntax.ToFullString().Trim();
+        if (!typeSyntax.IsVar && typeString != "var")
+        {
+            return typeString;
+        }
+
+        var resolvedType = typeSyntax.SyntaxTree == semanticModel.SyntaxTree
+            ? semanticModel.GetTypeInfo(typeSyntax).Type
+            : null;
+
+        if (resolvedType != null && resolvedType.TypeKind != TypeKind.Error)
+        {
+            return resolvedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        }
+
+        // Fallback: If we couldn't resolve the type (e.g., synthesized node) but the initializer looks like a ref struct
+        return initString.Contains("SharedMemory") || initString.Contains("Span")
+            ? "var"
+            : "dynamic";
+    }
+
+    private static bool IsRefStructType(string typeString, string initString) =>
+        typeString.Contains("SharedMemory") || typeString.Contains("Span<") ||
+        initString.Contains("SharedMemory") || initString.Contains("Span");
+
+    private static string UnhoistRefStructField(
+        string bodySource,
+        string fieldName,
+        string typeString,
+        EqualsValueClauseSyntax? initializer,
+        StringBuilder localInitBuilder)
+    {
+        bodySource = bodySource.Replace($"_ctx.{fieldName}", fieldName);
+
+        var init = initializer != null ? initializer.ToFullString() : "";
+        localInitBuilder.AppendLine(
+            $"        {(typeString == "int" ? "var" : typeString)} {fieldName} {init};");
+
+        if (string.IsNullOrWhiteSpace(init))
+        {
+            return bodySource;
+        }
+
+        bodySource = bodySource.Replace($"{fieldName} {init};", "");
+        bodySource = bodySource.Replace($"{fieldName}{init};", "");
+
+        return bodySource;
+    }
+
+    private static void EmitContextClass(
+        SourceWriter writer,
+        string methodName,
+        IReadOnlyList<(string Type, string Name)> regularFields)
+    {
         writer.AppendLine($"public class __gsharp_context_{methodName} {{");
         writer.AppendLine("public int _state;");
         writer.AppendLine("public uint _warpExchange;");
         writer.AppendLine("public bool _yieldedForGridSync;");
-        if (contextFields != null)
+
+        foreach (var (type, name) in regularFields)
         {
-            foreach (var field in contextFields)
-            {
-                var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
-                if (typeSyntax == null)
-                {
-                    continue;
-                }
-
-                var typeString = typeSyntax.ToFullString().Trim();
-                var initString = field.Initializer?.Value.ToFullString() ?? "";
-
-                if (typeSyntax.IsVar || typeString == "var")
-                {
-                    var resolvedType = typeSyntax.SyntaxTree == semanticModel.SyntaxTree
-                        ? semanticModel.GetTypeInfo(typeSyntax).Type
-                        : null;
-                    if (resolvedType != null && resolvedType.TypeKind != TypeKind.Error)
-                    {
-                        typeString = resolvedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                    }
-                    else
-                    {
-                        // Fallback: If we couldn't resolve the type (e.g., synthesized node) but the initializer looks like a ref struct
-                        typeString = initString.Contains("SharedMemory") || initString.Contains("Span")
-                            ? "var"
-                            : "dynamic";
-                    }
-                }
-
-                if (typeString.Contains("SharedMemory") || typeString.Contains("Span<") ||
-                    initString.Contains("SharedMemory") || initString.Contains("Span"))
-                {
-                    // Un-hoist ref structs
-                    bodySource = bodySource.Replace($"_ctx.{field.Identifier.ValueText}", field.Identifier.ValueText);
-
-                    var init = field.Initializer != null ? field.Initializer.ToFullString() : "";
-                    localInitBuilder.AppendLine(
-                        $"        {(typeString == "int" ? "var" : typeString)} {field.Identifier.ValueText} {init};");
-
-                    // Remove the assignment from the body to avoid double allocation (which consumes an extra Allocation Index)
-                    if (!string.IsNullOrWhiteSpace(init))
-                    {
-                        bodySource = bodySource.Replace($"{field.Identifier.ValueText} {init};", "");
-                        bodySource = bodySource.Replace($"{field.Identifier.ValueText}{init};", ""); // Without space
-                    }
-                }
-                else
-                {
-                    writer.AppendLine($"public {typeString} {field.Identifier.ValueText};");
-                }
-            }
+            writer.AppendLine($"public {type} {name};");
         }
 
         writer.AppendLine("}");
         writer.AppendLine();
+    }
 
-        // Output the state machine function
-        writer.Append($"public static unsafe void __gsharp_statemachine_{methodName}(");
-        if (methodSymbol != null)
-        {
-            var isFirst = true;
-            foreach (var p in methodSymbol.Parameters)
-            {
-                if (!isFirst)
-                {
-                    writer.Append(", ");
-                }
-
-                isFirst = false;
-                var refKind = p.RefKind switch
-                {
-                    RefKind.Ref => "ref ",
-                    RefKind.Out => "out ",
-                    RefKind.In => "in ",
-                    _ => ""
-                };
-                writer.Append($"{refKind}{p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {p.Name}");
-            }
-
-            if (!isFirst)
-            {
-                writer.Append(", ");
-            }
-
-            writer.Append($"__gsharp_context_{methodName} _ctx");
-
-            if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
-            {
-                writer.Append($", ref {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} __gsharp_auto_result");
-            }
-        }
-
+    private static void EmitStateMachineMethod(
+        SourceWriter writer,
+        string methodName,
+        IMethodSymbol? methodSymbol,
+        string localInits,
+        string bodySource)
+    {
+        EmitStateMachineSignature(writer, methodName, methodSymbol);
         writer.AppendLine(") {");
+
         if (methodSymbol != null)
         {
             foreach (var p in methodSymbol.Parameters)
@@ -144,11 +174,53 @@ internal static class ManagedCSharpTranspiler
             }
         }
 
-        writer.Append(localInitBuilder.ToString());
+        writer.Append(localInits);
         writer.AppendLine(bodySource);
         writer.AppendLine("}");
+    }
 
-        return writer.ToString();
+    private static void EmitStateMachineSignature(
+        SourceWriter writer,
+        string methodName,
+        IMethodSymbol? methodSymbol)
+    {
+        writer.Append($"public static unsafe void __gsharp_statemachine_{methodName}(");
+        if (methodSymbol == null)
+        {
+            return;
+        }
+
+        var isFirst = true;
+        foreach (var p in methodSymbol.Parameters)
+        {
+            if (!isFirst)
+            {
+                writer.Append(", ");
+            }
+
+            isFirst = false;
+            var refKind = p.RefKind switch
+            {
+                RefKind.Ref => "ref ",
+                RefKind.Out => "out ",
+                RefKind.In => "in ",
+                _ => ""
+            };
+            writer.Append($"{refKind}{p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {p.Name}");
+        }
+
+        if (!isFirst)
+        {
+            writer.Append(", ");
+        }
+
+        writer.Append($"__gsharp_context_{methodName} _ctx");
+
+        if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            writer.Append(
+                $", ref {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} __gsharp_auto_result");
+        }
     }
 
     private sealed class ManagedExecutionRewriter : CSharpSyntaxRewriter
@@ -162,23 +234,16 @@ internal static class ManagedCSharpTranspiler
                 return base.VisitIdentifierName(node);
             }
 
-            if (node.Identifier.Text is "_state" or "_warpExchange" or "_yieldedForGridSync")
+            return node.Identifier.Text switch
             {
-                return SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.IdentifierName("_ctx"),
-                    node).WithTriviaFrom(node);
-            }
-
-            if (node.Identifier.Text == "BitOperations")
-            {
-                return SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.IdentifierName("System.Numerics"),
-                    SyntaxFactory.IdentifierName("BitOperations")).WithTriviaFrom(node);
-            }
-
-            return base.VisitIdentifierName(node);
+                "_state" or "_warpExchange" or "_yieldedForGridSync" => SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.IdentifierName("_ctx"), node)
+                    .WithTriviaFrom(node),
+                "BitOperations" => SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.IdentifierName("System.Numerics"), SyntaxFactory.IdentifierName("BitOperations"))
+                    .WithTriviaFrom(node),
+                _ => base.VisitIdentifierName(node)
+            };
         }
 
         public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) =>
@@ -208,11 +273,13 @@ internal static class ManagedCSharpTranspiler
 
         public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
         {
-            if (node.Expression is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax inlinePtxAccess } &&
-                inlinePtxAccess.Name.Identifier.Text == "InlinePtx")
+            if (node.Expression is InvocationExpressionSyntax
+                {
+                    Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "InlinePtx" }
+                })
             {
                 return SyntaxFactory.ParseStatement(
-                    "throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\");")
+                        "throw new global::System.NotSupportedException(\"Gpu.InlinePtx is not supported by the StandardCppDialect dialect\");")
                     .WithTriviaFrom(node);
             }
 
@@ -225,7 +292,10 @@ internal static class ManagedCSharpTranspiler
             }
 
             var countArg = invocation.ArgumentList.Arguments[0].Expression;
-            if (invocation.ArgumentList.Arguments[1].Expression is not SimpleLambdaExpressionSyntax { Block: not null } lambda)
+            if (invocation.ArgumentList.Arguments[1].Expression is not SimpleLambdaExpressionSyntax
+                {
+                    Block: not null
+                } lambda)
             {
                 return base.VisitExpressionStatement(node);
             }
@@ -270,35 +340,35 @@ internal static class ManagedCSharpTranspiler
 
         public override SyntaxNode? VisitReturnStatement(ReturnStatementSyntax node)
         {
-            if (_inLambdaOrLocalFuncCount == 0 && !node.HasAnnotations("StateMachineReturn"))
+            if (_inLambdaOrLocalFuncCount != 0 || node.HasAnnotations("StateMachineReturn"))
             {
-                var statements = new List<StatementSyntax>();
+                return base.VisitReturnStatement(node);
+            }
 
-                if (node.Expression != null)
-                {
-                    statements.Add(SyntaxFactory.ExpressionStatement(
-                        SyntaxFactory.AssignmentExpression(
-                            SyntaxKind.SimpleAssignmentExpression,
-                            SyntaxFactory.IdentifierName("__gsharp_auto_result"),
-                            Visit(node.Expression) as ExpressionSyntax ?? node.Expression
-                        )
-                    ));
-                }
+            var statements = new List<StatementSyntax>();
 
+            if (node.Expression != null)
+            {
                 statements.Add(SyntaxFactory.ExpressionStatement(
                     SyntaxFactory.AssignmentExpression(
                         SyntaxKind.SimpleAssignmentExpression,
-                        SyntaxFactory.ParseExpression("_ctx._state"),
-                        SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-1))
+                        SyntaxFactory.IdentifierName("__gsharp_auto_result"),
+                        Visit(node.Expression) as ExpressionSyntax ?? node.Expression
                     )
                 ));
-
-                statements.Add(SyntaxFactory.ReturnStatement());
-
-                return SyntaxFactory.Block(statements).WithTriviaFrom(node);
             }
 
-            return base.VisitReturnStatement(node);
+            statements.Add(SyntaxFactory.ExpressionStatement(
+                SyntaxFactory.AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    SyntaxFactory.ParseExpression("_ctx._state"),
+                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-1))
+                )
+            ));
+
+            statements.Add(SyntaxFactory.ReturnStatement());
+
+            return SyntaxFactory.Block(statements).WithTriviaFrom(node);
         }
     }
 }
