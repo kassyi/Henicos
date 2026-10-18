@@ -44,7 +44,11 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             var (memberSymbol, type) = m switch
             {
                 IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } f => ((ISymbol)f, f.Type),
-                IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: true, AssociatedSymbol: IPropertySymbol { IsStatic: false } p } => (p, p.Type),
+                IFieldSymbol
+                {
+                    IsStatic: false, IsImplicitlyDeclared: true,
+                    AssociatedSymbol: IPropertySymbol { IsStatic: false } p
+                } => (p, p.Type),
                 _ => (null, null)
             };
 
@@ -72,12 +76,14 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         var validationCtx = new OwnershipValidationContext(context, namedType, disposableMembers, borrowedFields);
         ValidateMissingIDisposable(in validationCtx, implementsIDisposable);
 
-        if (implementsIDisposable)
+        if (!implementsIDisposable)
         {
-            var disposedMemberNames = s_tDisposedMemberNames ??= new HashSet<string>(StringComparer.Ordinal);
-            disposedMemberNames.Clear();
-            ValidateDisposeImplementation(in validationCtx, disposedMemberNames);
+            return;
         }
+
+        var disposedMemberNames = s_tDisposedMemberNames ??= new HashSet<string>(StringComparer.Ordinal);
+        disposedMemberNames.Clear();
+        ValidateDisposeImplementation(in validationCtx, disposedMemberNames);
     }
 
     private readonly record struct OwnershipValidationContext(
@@ -119,16 +125,12 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             borrowedFields.Add("_" + p);
         }
 
-        foreach (var r in namedType.DeclaringSyntaxReferences)
+        // Direct lookup via symbol constructors reduces member search from O(Members) to O(Constructors).
+        foreach (var ctor in namedType.Constructors)
         {
-            if (r.GetSyntax() is not TypeDeclarationSyntax typeDecl)
+            foreach (var r in ctor.DeclaringSyntaxReferences)
             {
-                continue;
-            }
-
-            foreach (var member in typeDecl.Members)
-            {
-                if (member is not ConstructorDeclarationSyntax ctorDecl)
+                if (r.GetSyntax() is not ConstructorDeclarationSyntax ctorDecl)
                 {
                     continue;
                 }
@@ -139,7 +141,10 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
-                foreach (var node in root.DescendantNodes())
+                // Prune traversal into nested scopes (local functions, lambdas, type declarations) to minimize worst-case AST exploration.
+                foreach (var node in root.DescendantNodes(descendIntoChildren: static n =>
+                             n is not (TypeDeclarationSyntax or LocalFunctionStatementSyntax
+                                 or AnonymousFunctionExpressionSyntax)))
                 {
                     if (node is not AssignmentExpressionSyntax assign ||
                         assign.Right is not IdentifierNameSyntax id ||
@@ -153,10 +158,10 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
                         IdentifierNameSyntax idLeft => idLeft.Identifier.Text,
                         MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } maLeft => maLeft.Name
                             .Identifier.Text,
-                        _ => ""
+                        _ => null
                     };
 
-                    if (!string.IsNullOrEmpty(leftName))
+                    if (leftName != null)
                     {
                         borrowedFields.Add(leftName);
                     }
@@ -177,11 +182,13 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         var hasOwnedDisposableField = false;
         foreach (var member in ctx.DisposableMembers)
         {
-            if (!ctx.BorrowedFields.Contains(member.Name))
+            if (ctx.BorrowedFields.Contains(member.Name))
             {
-                hasOwnedDisposableField = true;
-                break;
+                continue;
             }
+
+            hasOwnedDisposableField = true;
+            break;
         }
 
         var hasTakesOwnership = false;
@@ -189,12 +196,15 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         {
             foreach (var p in ctor.Parameters)
             {
-                if (HasTakesOwnershipAttribute(p))
+                if (!HasTakesOwnershipAttribute(p))
                 {
-                    hasTakesOwnership = true;
-                    break;
+                    continue;
                 }
+
+                hasTakesOwnership = true;
+                break;
             }
+
             if (hasTakesOwnership)
             {
                 break;
@@ -207,7 +217,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         }
 
         var location = ctx.NamedType.Locations.Length > 0 ? ctx.NamedType.Locations[0] : null;
-        ctx.AnalysisContext.Report(GSharpDiagnostics.MissingIDisposable, location);
+        ctx.AnalysisContext.ReportDiagnostic(GSharpDiagnostics.MissingIDisposable, location);
     }
 
     private static void ValidateDisposeImplementation(
@@ -226,11 +236,12 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
             if (isBorrowed && isDisposed)
             {
-                ctx.AnalysisContext.Report(GSharpDiagnostics.DisposingBorrowedResource, locationForDispose);
+                ctx.AnalysisContext.ReportDiagnostic(GSharpDiagnostics.DisposingBorrowedResource, locationForDispose);
             }
             else if (!isBorrowed && !isDisposed && parameterlessDispose != null)
             {
-                ctx.AnalysisContext.Report(GSharpDiagnostics.UndisposedGpuScope, locationForDispose, member.Name);
+                ctx.AnalysisContext.ReportDiagnostic(GSharpDiagnostics.UndisposedGpuScope, locationForDispose,
+                    member.Name);
             }
         }
     }
@@ -242,47 +253,83 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
     {
         parameterlessDispose = null;
 
-        foreach (var r in namedType.DeclaringSyntaxReferences)
+        // Use symbol-based index lookup to locate Dispose methods in O(1), eliminating linear scan over all type members.
+        foreach (var member in namedType.GetMembers("Dispose"))
         {
-            if (r.GetSyntax() is not TypeDeclarationSyntax typeDecl)
+            if (member is IMethodSymbol method)
+            {
+                InspectMethod(method, ref parameterlessDispose, disposedMemberNames);
+            }
+        }
+
+        // Locate explicit interface implementations (IDisposable.Dispose).
+        foreach (var iface in namedType.AllInterfaces)
+        {
+            if (!DisposableAnalyzerHelper.IsSystemIDisposable(iface))
             {
                 continue;
             }
 
-            foreach (var member in typeDecl.Members)
+            foreach (var ifaceMember in iface.GetMembers("Dispose"))
             {
-                if (member is not MethodDeclarationSyntax { Identifier.Text: "Dispose" } m)
+                if (namedType.FindImplementationForInterfaceMember(ifaceMember) is IMethodSymbol
+                    {
+                        MethodKind: MethodKind.ExplicitInterfaceImplementation
+                    } implMethod)
+                {
+                    InspectMethod(implMethod, ref parameterlessDispose, disposedMemberNames);
+                }
+            }
+        }
+    }
+
+    private static void InspectMethod(
+        IMethodSymbol methodSymbol,
+        ref MethodDeclarationSyntax? parameterlessDispose,
+        HashSet<string> disposedMemberNames)
+    {
+        foreach (var syntaxRef in methodSymbol.DeclaringSyntaxReferences)
+        {
+            if (syntaxRef.GetSyntax() is not MethodDeclarationSyntax m)
+            {
+                continue;
+            }
+
+            if (parameterlessDispose == null && m.ParameterList.Parameters.Count == 0)
+            {
+                parameterlessDispose = m;
+            }
+
+            var root = (SyntaxNode?)m.Body ?? m.ExpressionBody;
+            if (root == null)
+            {
+                continue;
+            }
+
+            // Prune traversal into independent scopes (local functions, lambdas, nested types) to minimize search complexity.
+            foreach (var node in root.DescendantNodes(descendIntoChildren: static n =>
+                         n is not (TypeDeclarationSyntax or LocalFunctionStatementSyntax
+                             or AnonymousFunctionExpressionSyntax)))
+            {
+                if (node is not InvocationExpressionSyntax
+                    {
+                        Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" } ma
+                    })
                 {
                     continue;
                 }
 
-                if (parameterlessDispose == null && m.ParameterList.Parameters.Count == 0)
+                var targetName = ma.Expression switch
                 {
-                    parameterlessDispose = m;
-                }
+                    IdentifierNameSyntax id => id.Identifier.Text,
+                    MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } memberMa => memberMa.Name
+                        .Identifier.Text,
+                    _ => null
+                };
 
-                foreach (var node in m.DescendantNodes())
+                if (targetName != null)
                 {
-                    if (node is not InvocationExpressionSyntax
-                        {
-                            Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" } ma
-                        })
-                    {
-                        continue;
-                    }
-
-                    var targetName = ma.Expression switch
-                    {
-                        IdentifierNameSyntax id => id.Identifier.Text,
-                        MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } memberMa => memberMa.Name
-                            .Identifier.Text,
-                        _ => null
-                    };
-
-                    if (targetName != null)
-                    {
-                        disposedMemberNames.Add(targetName);
-                    }
+                    disposedMemberNames.Add(targetName);
                 }
             }
         }
@@ -324,7 +371,7 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
 
         if (disposes)
         {
-            context.Report(GSharpDiagnostics.DisposableInDim, method.Identifier.GetLocation());
+            context.ReportDiagnostic(GSharpDiagnostics.DisposableInDim, method.Identifier.GetLocation());
         }
     }
 }
