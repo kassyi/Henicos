@@ -74,4 +74,20 @@ public class GpuKernelLoaderAotTests
 
         Assert.Contains("does not contain any PTX or cuBIN compatible with the current GPU", ex.Message);
     }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_LoadModule_And_LoadAotKernel_SharesCachedModule()
+    {
+        if (!GpuKernelLoader.IsDriverAvailable) return;
+
+        var module1 = GpuKernelLoader.LoadModule(s_validPtx);
+        var module2 = GpuKernelLoader.LoadModule(s_validPtx);
+        Assert.NotEqual(IntPtr.Zero, module1);
+        Assert.Equal(module1, module2);
+
+        var hfunc = GpuKernelLoader.LoadAotKernel(s_validPtx, "empty_kernel");
+        Assert.NotEqual(IntPtr.Zero, hfunc);
+    }
 }

@@ -10,6 +10,8 @@ public class LaunchDimensionTests
     [InlineData(1024, 1024, 1u, 1024u)]
     [InlineData(1025, 1024, 2u, 1024u)]
     [InlineData(0, 256, 0u, 0u)]
+    [InlineData(int.MaxValue, 256, 8388608u, 256u)]
+    [InlineData(int.MaxValue, 1024, 2097152u, 1024u)]
     public void Test_Calculate1D_ReturnsCorrectDimensions(int total, int tbp, uint expectedGrid, uint expectedBlock)
     {
         var (grid, block) = LaunchDimension.Calculate1D(total, tbp);

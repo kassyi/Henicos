@@ -22,13 +22,18 @@ public static class CudaStreamExtensions
         ArgumentNullException.ThrowIfNull(consumer);
         ArgumentNullException.ThrowIfNull(producer);
 
-        if (ReferenceEquals(consumer, producer) || consumer.Handle == producer.Handle)
+        var consumerHandle = consumer.Handle;
+        var producerHandle = producer.Handle;
+        ObjectDisposedException.ThrowIf(consumerHandle == IntPtr.Zero, consumer);
+        ObjectDisposedException.ThrowIf(producerHandle == IntPtr.Zero, producer);
+
+        if (ReferenceEquals(consumer, producer) || consumerHandle == producerHandle)
         {
             return;
         }
 
         using var scope = new GpuKernelLoader.CudaContextScope();
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamGetCtx(producer.Handle, out var producerContext));
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamGetCtx(producerHandle, out var producerContext));
         using var producerScope = new GpuKernelLoader.CudaContextScope(producerContext);
 
         CudaException.ThrowIfError(CudaDriverApi.cuEventCreate(out var eventHandle, EventDisableTimingFlag));

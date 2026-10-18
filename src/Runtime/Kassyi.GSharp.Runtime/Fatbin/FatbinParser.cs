@@ -27,6 +27,15 @@ public static class FatbinParser
     /// </summary>
     private const int MinimumItemHeaderSize = 40;
 
+    private const int ItemTypeOffset = 0x00;
+    private const int ItemHeaderSizeOffset = 0x04;
+    private const int ItemDataSizeOffset = 0x08;
+    private const int ItemMinorOffset = 0x18;
+    private const int ItemMajorOffset = 0x1A;
+    private const int ItemComputeVersionOffset = 0x1C;
+    private const int ItemNameOffsetOffset = 0x20;
+    private const int ItemNameLengthOffset = 0x24;
+
     /// <summary>
     /// Size of the G# appended Ed25519 digital signature in bytes.
     /// </summary>
@@ -85,7 +94,7 @@ public static class FatbinParser
         var totalPayloadSize = header.HeaderSize + header.PayloadItemsSize;
 
         // Defensive check against overflow or binary shorter than the declared payload
-        if ((ulong)span.Length < totalPayloadSize || totalPayloadSize < header.HeaderSize)
+        if ((ulong)span.Length < totalPayloadSize || totalPayloadSize < header.HeaderSize || totalPayloadSize > int.MaxValue)
         {
             return false;
         }
@@ -199,9 +208,9 @@ public static class FatbinParser
             return false;
         }
 
-        var type = BinaryPrimitives.ReadUInt16LittleEndian(itemSpan.Slice(0x00, 2));
-        var itemHeaderSize = BinaryPrimitives.ReadUInt32LittleEndian(itemSpan.Slice(0x04, 4));
-        var itemDataSize = BinaryPrimitives.ReadUInt64LittleEndian(itemSpan.Slice(0x08, 8));
+        var type = BinaryPrimitives.ReadUInt16LittleEndian(itemSpan.Slice(ItemTypeOffset, 2));
+        var itemHeaderSize = BinaryPrimitives.ReadUInt32LittleEndian(itemSpan.Slice(ItemHeaderSizeOffset, 4));
+        var itemDataSize = BinaryPrimitives.ReadUInt64LittleEndian(itemSpan.Slice(ItemDataSizeOffset, 8));
 
         if (itemHeaderSize < MinimumItemHeaderSize)
         {
@@ -209,21 +218,21 @@ public static class FatbinParser
         }
 
         var itemSize = itemHeaderSize + itemDataSize;
-        if (itemSize == 0 || (ulong)remainingBytes < itemSize)
+        if (itemSize < itemHeaderSize || (ulong)remainingBytes < itemSize || itemSize > int.MaxValue)
         {
             return false;
         }
 
-        var rawMinor = BinaryPrimitives.ReadUInt16LittleEndian(itemSpan.Slice(0x18, 2));
-        var rawMajor = BinaryPrimitives.ReadUInt16LittleEndian(itemSpan.Slice(0x1A, 2));
-        var computeVersion = BinaryPrimitives.ReadUInt32LittleEndian(itemSpan.Slice(0x1C, 4));
+        var rawMinor = BinaryPrimitives.ReadUInt16LittleEndian(itemSpan.Slice(ItemMinorOffset, 2));
+        var rawMajor = BinaryPrimitives.ReadUInt16LittleEndian(itemSpan.Slice(ItemMajorOffset, 2));
+        var computeVersion = BinaryPrimitives.ReadUInt32LittleEndian(itemSpan.Slice(ItemComputeVersionOffset, 4));
 
         var (major, minor) = computeVersion >= 10
             ? ((ushort)(computeVersion / 10), (ushort)(computeVersion % 10))
             : (rawMajor, rawMinor);
 
-        var nameOff = BinaryPrimitives.ReadUInt32LittleEndian(itemSpan.Slice(0x20, 4));
-        var nameLen = BinaryPrimitives.ReadUInt32LittleEndian(itemSpan.Slice(0x24, 4));
+        var nameOff = BinaryPrimitives.ReadUInt32LittleEndian(itemSpan.Slice(ItemNameOffsetOffset, 4));
+        var nameLen = BinaryPrimitives.ReadUInt32LittleEndian(itemSpan.Slice(ItemNameLengthOffset, 4));
         var objectName = TryExtractObjectName(itemSpan, nameOff, nameLen, itemHeaderSize);
 
         item = new FatbinItemInfo(type, major, minor, computeVersion, objectName, itemDataSize);
@@ -237,7 +246,8 @@ public static class FatbinParser
         uint nameLen,
         uint itemHeaderSize)
     {
-        if (nameLen == 0 || nameOff == 0 || nameOff + nameLen > itemHeaderSize)
+        var nameEnd = (ulong)nameOff + nameLen;
+        if (nameLen == 0 || nameOff == 0 || nameEnd > itemHeaderSize || nameEnd > (ulong)itemSpan.Length)
         {
             return null;
         }

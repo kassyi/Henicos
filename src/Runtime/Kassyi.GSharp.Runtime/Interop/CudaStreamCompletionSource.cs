@@ -194,10 +194,20 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
             return;
         }
 
-        // Before signaling, so that an awaiter resuming on the success path already observes the hook's effects.
-        source._hook?.OnStreamCompleted();
-        source.TryComplete(source._armedVersion, error: null);
-        source.Release();
+        try
+        {
+            // Before signaling, so that an awaiter resuming on the success path already observes the hook's effects.
+            source._hook?.OnStreamCompleted();
+            source.TryComplete(source._armedVersion, error: null);
+        }
+        catch (Exception ex)
+        {
+            source.TryComplete(source._armedVersion, ex);
+        }
+        finally
+        {
+            source.Release();
+        }
     }
 
     private void OnWatchdogTick()
@@ -208,14 +218,21 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
             return;
         }
 
+        var context = Volatile.Read(ref _context);
+        var stream = Volatile.Read(ref _stream);
+        if (Volatile.Read(ref _pendingVersion) != version)
+        {
+            return;
+        }
+
         CUresult status;
         try
         {
-            using var scope = new GpuKernelLoader.CudaContextScope(_context);
+            using var scope = new GpuKernelLoader.CudaContextScope(context);
 
             // Also observes work enqueued after the completion signal. That is harmless because only fault codes
             // are acted upon; success is always left to the host callback, which owns the reuse handshake.
-            status = CudaDriverApi.cuStreamQuery(_stream);
+            status = CudaDriverApi.cuStreamQuery(stream);
         }
         catch (CudaException ex)
         {
@@ -264,8 +281,8 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
         _watchdog.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         Volatile.Write(ref _pendingVersion, NotArmed);
         _cancellationRegistration = default;
-        _stream = IntPtr.Zero;
-        _context = IntPtr.Zero;
+        Volatile.Write(ref _stream, IntPtr.Zero);
+        Volatile.Write(ref _context, IntPtr.Zero);
         _hook = null;
         _core.Reset();
 

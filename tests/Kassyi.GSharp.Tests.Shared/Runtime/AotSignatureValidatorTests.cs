@@ -57,4 +57,30 @@ public class AotSignatureValidatorTests
         var expectedHashStruct = new AotSignatureValidator.Hash256(signature.AsSpan(0, 32));
         Assert.Equal(expectedHashStruct, result.EmbeddedHash);
     }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void ExtractAndVerify_WhenSignedWithDynamicTrustedKey_ReturnsPayloadAndStruct()
+    {
+        // Arrange
+        var dynamicSeed = new byte[32];
+        Array.Fill(dynamicSeed, (byte)0x5A);
+        var dynamicPublicKey = Ed25519.GetPublicKey(dynamicSeed);
+        Kassyi.GSharp.Runtime.Fatbin.GpuSecurityPolicy.RegisterTrustedKey(dynamicPublicKey);
+
+        var payload = "DynamicKeySignedAotBinary"u8.ToArray();
+        var signature = Ed25519.Sign(payload, dynamicSeed);
+
+        var binary = new byte[payload.Length + Ed25519.SignatureSize];
+        Array.Copy(payload, binary, payload.Length);
+        Array.Copy(signature, 0, binary, payload.Length, Ed25519.SignatureSize);
+
+        // Act
+        var result = AotSignatureValidator.ExtractAndVerify(binary);
+
+        // Assert
+        Assert.Equal(payload, result.Payload);
+        var expectedHashStruct = new AotSignatureValidator.Hash256(signature.AsSpan(0, 32));
+        Assert.Equal(expectedHashStruct, result.EmbeddedHash);
+    }
 }

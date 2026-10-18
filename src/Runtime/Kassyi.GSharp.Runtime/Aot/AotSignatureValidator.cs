@@ -51,23 +51,7 @@ internal static class AotSignatureValidator
         var signature = binaryData.Slice(binaryData.Length - SignatureSize);
         var payloadSpan = binaryData.Slice(0, binaryData.Length - SignatureSize);
 
-        var trustedKeys = GpuSecurityPolicy.EmbeddedKeys;
-        var verified = false;
-
-        if (!trustedKeys.IsEmpty)
-        {
-            for (var offset = 0; offset < trustedKeys.Length; offset += Ed25519.PublicKeySize)
-            {
-                var key = trustedKeys.Slice(offset, Ed25519.PublicKeySize);
-                if (Ed25519.Verify(payloadSpan, signature, key))
-                {
-                    verified = true;
-                    break;
-                }
-            }
-        }
-
-        if (!verified)
+        if (!GpuSecurityPolicy.VerifySignature(payloadSpan, signature))
         {
             throw new InvalidOperationException("AOT native binary signature verification failed: signature does not match any trusted public key.");
         }

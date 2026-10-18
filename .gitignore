@@ -80,6 +80,7 @@ dist-ssr/
 /.agents/workflows/ci.en.prompt.md
 /.agents/workflows/ci.ja.prompt.md
 /.agents/workflows/clean-branches.prompt.md
+/.agents/workflows/code-review.prompt.md
 /.agents/workflows/commit.en.prompt.md
 /.agents/workflows/commit.ja.prompt.md
 /.agents/workflows/design-pattern-plan.prompt.md
@@ -87,8 +88,6 @@ dist-ssr/
 /.agents/workflows/grill-you.ja.prompt.md
 /.agents/workflows/kickoff.prompt.md
 /.agents/workflows/make-pr.prompt.md
-/.agents/workflows/phased-code-review-flash.prompt.md
-/.agents/workflows/phased-code-review-pro.prompt.md
 /.agents/workflows/qodo.en.prompt.md
 /.agents/workflows/qodo.ja.prompt.md
 /.agents/workflows/write-csharp-xml-comment.en.prompt.md
@@ -96,6 +95,7 @@ dist-ssr/
 /.claude/commands/ci.en.prompt.md
 /.claude/commands/ci.ja.prompt.md
 /.claude/commands/clean-branches.prompt.md
+/.claude/commands/code-review.prompt.md
 /.claude/commands/commit.en.prompt.md
 /.claude/commands/commit.ja.prompt.md
 /.claude/commands/design-pattern-plan.prompt.md

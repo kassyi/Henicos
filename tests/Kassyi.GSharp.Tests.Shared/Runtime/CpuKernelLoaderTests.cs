@@ -82,4 +82,32 @@ public class CpuKernelLoaderTests
             if (File.Exists(dllFile)) File.Delete(dllFile);
         }
     }
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int ConsumeLastErrorDelegate(out IntPtr outMessage);
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CpuLoader_LoadPtrAndDelegate_SameExport_DoesNotCollide()
+    {
+        var ext = OperatingSystem.IsWindows() ? "*.dll" : "*.so";
+        var candidates = Directory.GetFiles(AppContext.BaseDirectory, $"Kassyi.GSharp.Kernels_*{ext}");
+        if (candidates.Length == 0)
+        {
+            return;
+        }
+
+        var aotDll = candidates[0];
+
+        var ptr = CpuKernelLoader.LoadAotKernelPtr("__gsharp_consume_last_error", aotDll);
+        Assert.NotEqual(IntPtr.Zero, ptr);
+
+        var del = CpuKernelLoader.LoadAotKernel<ConsumeLastErrorDelegate>("__gsharp_consume_last_error", aotDll);
+        Assert.NotNull(del);
+        _ = del(out _);
+
+        var ptrAgain = CpuKernelLoader.LoadAotKernelPtr("__gsharp_consume_last_error", aotDll);
+        Assert.Equal(ptr, ptrAgain);
+    }
 }

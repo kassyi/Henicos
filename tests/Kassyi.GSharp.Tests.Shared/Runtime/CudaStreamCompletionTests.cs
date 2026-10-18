@@ -326,6 +326,37 @@ public class CudaStreamCompletionTests
         await Assert.ThrowsAsync<ObjectDisposedException>(async () => await timer.SynchronizeAsync());
     }
 
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Arm_WhenCompletionHookThrows_SurfacesExceptionToAwaiter()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        var stream = CudaTestEnvironment.InContext(static () => new CudaStream());
+        try
+        {
+            var pending = CudaTestEnvironment.InContext(() =>
+                CudaStreamCompletionSource.Arm(
+                    stream.Handle,
+                    GpuKernelLoader.GlobalContext,
+                    CancellationToken.None,
+                    new ThrowingCompletionHook()).AsTask());
+
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => pending.WaitAsync(CompletionTimeout));
+            Assert.Equal("Simulated hook failure.", ex.Message);
+        }
+        finally
+        {
+            CudaTestEnvironment.InContext(stream.Dispose);
+        }
+    }
+
+    private sealed class ThrowingCompletionHook : IStreamCompletionHook
+    {
+        public void OnStreamCompleted() => throw new InvalidOperationException("Simulated hook failure.");
+    }
+
     private static void SpinUntilConsumed(ValueTask pending)
     {
         // Polls on the calling thread so that no async state machine or continuation is allocated by the test itself.
