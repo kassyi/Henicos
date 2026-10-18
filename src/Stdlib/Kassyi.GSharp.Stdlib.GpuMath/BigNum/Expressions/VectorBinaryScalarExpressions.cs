@@ -143,6 +143,11 @@ internal sealed class VectorDivScalarExpression(
         VectorScalarOperands operands,
         uint gridDimX)
     {
+        if (operands.Scalar.IsZero())
+        {
+            throw new DivideByZeroException();
+        }
+
         var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(operands);
         ctx.IsModulo = false;
         GpuBigIntVectorKernels.LaunchVectorDivScalarKernelPtr(
@@ -160,6 +165,11 @@ internal sealed class VectorModScalarExpression(
         VectorScalarOperands operands,
         uint gridDimX)
     {
+        if (operands.Scalar.IsZero())
+        {
+            throw new DivideByZeroException();
+        }
+
         var ctx = CreateScalarContext<GpuBigIntVectorKernels.AotContexts.VectorDivMod>(operands);
         ctx.IsModulo = true;
         GpuBigIntVectorKernels.LaunchVectorModScalarKernelPtr(

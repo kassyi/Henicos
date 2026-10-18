@@ -100,8 +100,8 @@ public static partial class GpuBigIntVectorKernels
         int batchIdx = BlockIndex.X;
         int laneId = tid & 31;
 
-        var sharedRem = new SharedMemory<uint>(128);
-        var sharedQuot = new SharedMemory<uint>(128);
+        var sharedRem = new SharedMemory<uint>(512);
+        var sharedQuot = new SharedMemory<uint>(512);
 
         if (tid >= 32)
         {
@@ -114,9 +114,9 @@ public static partial class GpuBigIntVectorKernels
 
         int maxInputWords = ctx.NumWordsA > ctx.NumWordsB ? ctx.NumWordsA : ctx.NumWordsB;
         int evalWords = ctx.NumWordsResult > maxInputWords ? ctx.NumWordsResult : maxInputWords;
-        if (evalWords > 128)
+        if (evalWords > 512)
         {
-            evalWords = 128;
+            evalWords = 512;
         }
 
         InitializeDivModBuffersWarp(ctx.Result, offsetResult, ctx.NumWordsResult, sharedRem, sharedQuot, evalWords, laneId);
