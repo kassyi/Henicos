@@ -40,9 +40,21 @@ public readonly struct HypergeometricTerms([TakesOwnership] GpuBigInt p, [TakesO
     /// </summary>
     public void Dispose()
     {
-        P.Dispose();
-        Q.Dispose();
-        T.Dispose();
+        try
+        {
+            P.Dispose();
+        }
+        finally
+        {
+            try
+            {
+                Q.Dispose();
+            }
+            finally
+            {
+                T.Dispose();
+            }
+        }
     }
 
     /// <summary>
@@ -60,40 +72,56 @@ public readonly struct HypergeometricTerms([TakesOwnership] GpuBigInt p, [TakesO
     {
         ArgumentNullException.ThrowIfNull(workspace);
 
-        // P = Pl * Pr
-        var pWords = left.P.Value.NumWords + right.P.Value.NumWords;
-        var resultP = new GpuBigUInt(workspace, pWords);
-        GpuBigIntMath.Mul(left.P.Value, right.P.Value, resultP);
-        var pNegative = left.P.IsNegative ^ right.P.IsNegative;
+        GpuBigUInt resultP = default;
+        GpuBigUInt resultQ = default;
+        GpuBigUInt resultT = default;
 
-        // Q = Ql * Qr
-        var qWords = left.Q.NumWords + right.Q.NumWords;
-        var resultQ = new GpuBigUInt(workspace, qWords);
-        GpuBigIntMath.Mul(left.Q, right.Q, resultQ);
+        try
+        {
+            // P = Pl * Pr
+            var pWords = left.P.Value.NumWords + right.P.Value.NumWords;
+            resultP = new GpuBigUInt(workspace, pWords);
+            GpuBigIntMath.Mul(left.P.Value, right.P.Value, resultP);
+            var pNegative = left.P.IsNegative ^ right.P.IsNegative;
 
-        // T = Tl * Qr + Pl * Tr
-        var wordsA = left.T.Value.NumWords + right.Q.NumWords;
-        using var rawTermA = new GpuBigUInt(workspace, wordsA);
-        GpuBigIntMath.Mul(left.T.Value, right.Q, rawTermA);
-        var signA = left.T.IsNegative;
+            // Q = Ql * Qr
+            var qWords = left.Q.NumWords + right.Q.NumWords;
+            resultQ = new GpuBigUInt(workspace, qWords);
+            GpuBigIntMath.Mul(left.Q, right.Q, resultQ);
 
-        var wordsB = left.P.Value.NumWords + right.T.Value.NumWords;
-        using var rawTermB = new GpuBigUInt(workspace, wordsB);
-        GpuBigIntMath.Mul(left.P.Value, right.T.Value, rawTermB);
-        var signB = left.P.IsNegative ^ right.T.IsNegative;
+            // T = Tl * Qr + Pl * Tr
+            var wordsA = left.T.Value.NumWords + right.Q.NumWords;
+            using var rawTermA = new GpuBigUInt(workspace, wordsA);
+            GpuBigIntMath.Mul(left.T.Value, right.Q, rawTermA);
+            var signA = left.T.IsNegative;
 
-        var maxTWords = Math.Max(wordsA, wordsB);
-        using var termA = rawTermA.PadTo(maxTWords);
-        using var termB = rawTermB.PadTo(maxTWords);
-        var resultT = new GpuBigUInt(workspace, maxTWords);
+            var wordsB = left.P.Value.NumWords + right.T.Value.NumWords;
+            using var rawTermB = new GpuBigUInt(workspace, wordsB);
+            GpuBigIntMath.Mul(left.P.Value, right.T.Value, rawTermB);
+            var signB = left.P.IsNegative ^ right.T.IsNegative;
 
-        var tNegative = GpuBigIntMath.AddSignedMagnitude(termA, signA, termB, signB, resultT);
+            var maxTWords = Math.Max(wordsA, wordsB);
+            using GpuBigUInt? padA = wordsA == maxTWords ? null : rawTermA.PadTo(maxTWords);
+            using GpuBigUInt? padB = wordsB == maxTWords ? null : rawTermB.PadTo(maxTWords);
+            var termA = padA ?? rawTermA;
+            var termB = padB ?? rawTermB;
 
-        return new HypergeometricTerms(
-            new GpuBigInt(resultP, pNegative),
-            resultQ,
-            new GpuBigInt(resultT, tNegative)
-        );
+            resultT = new GpuBigUInt(workspace, maxTWords);
+            var tNegative = GpuBigIntMath.AddSignedMagnitude(termA, signA, termB, signB, resultT);
+
+            return new HypergeometricTerms(
+                new GpuBigInt(resultP, pNegative),
+                resultQ,
+                new GpuBigInt(resultT, tNegative)
+            );
+        }
+        catch
+        {
+            resultP.Dispose();
+            resultQ.Dispose();
+            resultT.Dispose();
+            throw;
+        }
     }
 }
 
