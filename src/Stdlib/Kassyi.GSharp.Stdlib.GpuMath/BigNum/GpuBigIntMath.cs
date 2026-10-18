@@ -137,6 +137,38 @@ public static class GpuBigIntMath
         leftOperand.Workspace.Provider.Mul(leftOperand.Workspace, leftOperand, rightOperand, resultBuffer);
 
     /// <summary>
+    /// Computes the full arbitrary-precision product of two big integers on the GPU using the Number Theoretic Transform (NTT) algorithm
+    /// (<c>resultBuffer = leftOperand * rightOperand</c>).
+    /// </summary>
+    /// <param name="leftOperand">The multiplicand operand.</param>
+    /// <param name="rightOperand">The multiplier operand.</param>
+    /// <param name="resultBuffer">The destination buffer in GPU device memory receiving the product.</param>
+    /// <exception cref="ArgumentException">Thrown when <c>resultBuffer.NumWords</c> is less than <c>leftOperand.NumWords + rightOperand.NumWords</c>.</exception>
+    public static void MultiplyNtt(GpuBigUInt leftOperand, GpuBigUInt rightOperand, GpuBigUInt resultBuffer)
+    {
+        var requiredWords = leftOperand.NumWords + rightOperand.NumWords;
+        if (resultBuffer.NumWords < requiredWords)
+        {
+            throw new ArgumentException(
+                $"Result buffer must have at least the sum of input buffer sizes for MultiplyNtt. a: {leftOperand.NumWords}, b: {rightOperand.NumWords}, result: {resultBuffer.NumWords} words.");
+        }
+
+        if (resultBuffer.NumWords <= 512 &&
+            leftOperand.Workspace.Provider is GSharpKernelProvider &&
+            !GpuKernelLoader.IsCpuFallbackMode)
+        {
+            GpuBigIntMulKernels.LaunchMultiplyNttKernelPtr(
+                resultBuffer.DevicePointer, resultBuffer.NumWords,
+                leftOperand.DevicePointer, leftOperand.NumWords,
+                rightOperand.DevicePointer, rightOperand.NumWords,
+                gridDimX: 1, blockDimX: 256, hStream: leftOperand.Workspace.Stream);
+            return;
+        }
+
+        leftOperand.Workspace.Provider.Mul(leftOperand.Workspace, leftOperand, rightOperand, resultBuffer);
+    }
+
+    /// <summary>
     /// Divides an unsigned big integer by a 32-bit unsigned scalar on the GPU (<c>quotientBuffer = dividend / divisor</c>) and returns the 32-bit remainder.
     /// </summary>
     /// <param name="dividend">The dividend operand.</param>
