@@ -2634,8 +2634,12 @@ int N2;
 #endif
 inline void ExecuteNttMultiplyMacroModPow(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx, GSharpArray<unsigned int> opA, GSharpArray<unsigned int> opB, GSharpArray<unsigned int> resultDest, int numWordsA, int numWordsB, int numWordsResult){
 auto m = ctx.Ntt.TransformLength;
-int n1 = 32;
-int n2 = m/32;
+int n2 = 1;
+while(n2*n2<m)
+{
+n2*=2;
+}
+int n1 = m/n2;
 if(m<=512)
 {
 n1=m;

@@ -27,7 +27,7 @@ internal static class ModPowNttHostController
         var aActualWords = (maxABits + 31) / 32;
         var marginBits = 512;
         var marginWords = marginBits / 32;
-        var targetBits = aActualWords * 32 + marginBits;
+        var targetBits = n * 32 + aActualWords * 32 + marginBits;
         var targetWords = (targetBits + 31) / 32;
 
         using var reciprocalNorm = new GpuBigUInt(workspace, targetWords);
