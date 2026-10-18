@@ -176,27 +176,22 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         _ => (value.ToString() ?? string.Empty) + GetIntegerSuffix(type.SpecialType)
     };
 
-    private static string FormatFloat(float value) => value switch
-    {
-        float.NaN => "NAN",
-        _ when float.IsPositiveInfinity(value) => "INFINITY",
-        _ when float.IsNegativeInfinity(value) => "-INFINITY",
-        _ => value.ToString(CultureInfo.InvariantCulture) + "f"
-    };
+    private static string FormatFloat(float value) =>
+        FormatNonFinite(double.IsNaN(value), float.IsPositiveInfinity(value), float.IsNegativeInfinity(value))
+        ?? value.ToString(CultureInfo.InvariantCulture) + "f";
 
-    private static string FormatDouble(double value) => value switch
-    {
-        double.NaN => "NAN",
-        _ when double.IsPositiveInfinity(value) => "INFINITY",
-        _ when double.IsNegativeInfinity(value) => "-INFINITY",
-        _ => value.ToString(CultureInfo.InvariantCulture)
-    };
+    private static string FormatDouble(double value) =>
+        FormatNonFinite(double.IsNaN(value), double.IsPositiveInfinity(value), double.IsNegativeInfinity(value))
+        ?? value.ToString(CultureInfo.InvariantCulture);
+
+    private static string? FormatNonFinite(bool isNaN, bool isPosInf, bool isNegInf) =>
+        isNaN ? "NAN" : isPosInf ? "INFINITY" : isNegInf ? "-INFINITY" : null;
 
     private static string GetIntegerSuffix(SpecialType specialType) => specialType switch
     {
         SpecialType.System_UInt32 => "u",
-        SpecialType.System_Int64 => "L",
-        SpecialType.System_UInt64 => "UL",
+        SpecialType.System_Int64 => "ll",
+        SpecialType.System_UInt64 => "ull",
         _ => string.Empty
     };
 }

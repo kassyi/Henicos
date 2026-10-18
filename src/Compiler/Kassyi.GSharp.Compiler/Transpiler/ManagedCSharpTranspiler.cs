@@ -1,5 +1,7 @@
 using Kassyi.GSharp.Compiler.Lowering;
 
+#pragma warning disable RS0030 // ManagedCSharpTranspiler is a host-side debug C#-to-C# state machine rewriter
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -7,7 +9,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class ManagedCSharpTranspiler
 {
-#pragma warning disable RS0030
     public static string Generate(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel)
     {
         if (methodDecl.Body == null)
@@ -19,12 +20,8 @@ internal static class ManagedCSharpTranspiler
         var loweredBody = tuple.LoweredBody;
         var contextFields = tuple.ContextFields;
 
-        var methodName = methodDecl.Identifier.Text;
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        if (methodSymbol != null)
-        {
-            methodName = $"{methodSymbol.ContainingType.Name}_{methodName}";
-        }
+        var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
 
         using var writer = new SourceWriter();
 
@@ -56,37 +53,19 @@ internal static class ManagedCSharpTranspiler
 
                 if (typeSyntax.IsVar || typeString == "var")
                 {
-                    try
+                    var resolvedType = typeSyntax.SyntaxTree == semanticModel.SyntaxTree
+                        ? semanticModel.GetTypeInfo(typeSyntax).Type
+                        : null;
+                    if (resolvedType != null && resolvedType.TypeKind != TypeKind.Error)
                     {
-                        var typeInfo = semanticModel.GetTypeInfo(typeSyntax);
-                        if (typeInfo.Type != null && typeInfo.Type.TypeKind != TypeKind.Error)
-                        {
-                            typeString = typeInfo.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                        }
-                        else
-                        {
-                            // Fallback: If we couldn't resolve the type but the initializer looks like a ref struct
-                            if (initString.Contains("SharedMemory") || initString.Contains("Span"))
-                            {
-                                typeString = "var";
-                            }
-                            else
-                            {
-                                typeString = "dynamic";
-                            }
-                        }
+                        typeString = resolvedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
                     }
-                    catch (ArgumentException)
+                    else
                     {
-                        // Syntax node is not within syntax tree
-                        if (initString.Contains("SharedMemory") || initString.Contains("Span"))
-                        {
-                            typeString = "var";
-                        }
-                        else
-                        {
-                            typeString = "dynamic";
-                        }
+                        // Fallback: If we couldn't resolve the type (e.g., synthesized node) but the initializer looks like a ref struct
+                        typeString = initString.Contains("SharedMemory") || initString.Contains("Span")
+                            ? "var"
+                            : "dynamic";
                     }
                 }
 
@@ -121,7 +100,7 @@ internal static class ManagedCSharpTranspiler
         writer.Append($"public static unsafe void __gsharp_statemachine_{methodName}(");
         if (methodSymbol != null)
         {
-            bool isFirst = true;
+            var isFirst = true;
             foreach (var p in methodSymbol.Parameters)
             {
                 if (!isFirst)
@@ -149,8 +128,7 @@ internal static class ManagedCSharpTranspiler
 
             if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
             {
-                writer.Append(
-                    $", ref {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} __gsharp_auto_result");
+                writer.Append($", ref {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} __gsharp_auto_result");
             }
         }
 
@@ -179,14 +157,13 @@ internal static class ManagedCSharpTranspiler
 
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
         {
-            if (node.Identifier.Text == "_state" || node.Identifier.Text == "_warpExchange" ||
-                node.Identifier.Text == "_yieldedForGridSync")
+            if (node.Parent is MemberAccessExpressionSyntax parent && parent.Name == node)
             {
-                if (node.Parent is MemberAccessExpressionSyntax parent && parent.Name == node)
-                {
-                    return base.VisitIdentifierName(node);
-                }
+                return base.VisitIdentifierName(node);
+            }
 
+            if (node.Identifier.Text is "_state" or "_warpExchange" or "_yieldedForGridSync")
+            {
                 return SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
                     SyntaxFactory.IdentifierName("_ctx"),
@@ -195,12 +172,6 @@ internal static class ManagedCSharpTranspiler
 
             if (node.Identifier.Text == "BitOperations")
             {
-                if (node.Parent is MemberAccessExpressionSyntax parent && parent.Name == node)
-                {
-                    // It's the right side of a dot (e.g. System.Numerics.BitOperations), do not replace to avoid InvalidCastException
-                    return base.VisitIdentifierName(node);
-                }
-
                 return SyntaxFactory.MemberAccessExpression(
                     SyntaxKind.SimpleMemberAccessExpression,
                     SyntaxFactory.IdentifierName("System.Numerics"),
@@ -210,36 +181,29 @@ internal static class ManagedCSharpTranspiler
             return base.VisitIdentifierName(node);
         }
 
-        public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
-        {
-            _inLambdaOrLocalFuncCount++;
-            var result = base.VisitLocalFunctionStatement(node);
-            _inLambdaOrLocalFuncCount--;
-            return result;
-        }
+        public override SyntaxNode? VisitLocalFunctionStatement(LocalFunctionStatementSyntax node) =>
+            VisitNestedCallable(node, base.VisitLocalFunctionStatement);
 
-        public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node)
-        {
-            _inLambdaOrLocalFuncCount++;
-            var result = base.VisitSimpleLambdaExpression(node);
-            _inLambdaOrLocalFuncCount--;
-            return result;
-        }
+        public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) =>
+            VisitNestedCallable(node, base.VisitSimpleLambdaExpression);
 
-        public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node)
-        {
-            _inLambdaOrLocalFuncCount++;
-            var result = base.VisitParenthesizedLambdaExpression(node);
-            _inLambdaOrLocalFuncCount--;
-            return result;
-        }
+        public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) =>
+            VisitNestedCallable(node, base.VisitParenthesizedLambdaExpression);
 
-        public override SyntaxNode? VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node)
+        public override SyntaxNode? VisitAnonymousMethodExpression(AnonymousMethodExpressionSyntax node) =>
+            VisitNestedCallable(node, base.VisitAnonymousMethodExpression);
+
+        private SyntaxNode? VisitNestedCallable<TNode>(TNode node, Func<TNode, SyntaxNode?> baseVisitor)
         {
             _inLambdaOrLocalFuncCount++;
-            var result = base.VisitAnonymousMethodExpression(node);
-            _inLambdaOrLocalFuncCount--;
-            return result;
+            try
+            {
+                return baseVisitor(node);
+            }
+            finally
+            {
+                _inLambdaOrLocalFuncCount--;
+            }
         }
 
         public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
@@ -337,5 +301,4 @@ internal static class ManagedCSharpTranspiler
             return base.VisitReturnStatement(node);
         }
     }
-#pragma warning restore RS0030
 }

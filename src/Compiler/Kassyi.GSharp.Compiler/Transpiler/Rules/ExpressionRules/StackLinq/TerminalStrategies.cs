@@ -8,27 +8,16 @@ internal sealed class SumStrategy : IStackLinqTerminalStrategy
         context.Emitter.Writer.AppendLine($" {resultVar} = 0;");
     }
 
-    public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
-    {
-        if (StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol))
-        {
-            var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
-            context.Emitter.Writer.Append($"{resultVar} += (");
-            context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__val_{valIndex});");
-        }
-        else
-        {
-            context.Emitter.Writer.AppendLine($"{resultVar} += __val_{valIndex};");
-        }
-    }
+    public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex) =>
+        StackLinqHelper.EmitAccumulateElement(ref context, in stage, resultVar, valIndex);
 
     public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) { }
 }
 
 internal sealed class CountStrategy : IStackLinqTerminalStrategy
 {
-    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage) => context.Emitter.Writer.AppendLine($"int {resultVar} = 0;");
+    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage) =>
+        context.Emitter.Writer.AppendLine($"int {resultVar} = 0;");
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
@@ -54,7 +43,8 @@ internal sealed class CountStrategy : IStackLinqTerminalStrategy
 
 internal sealed class AnyStrategy : IStackLinqTerminalStrategy
 {
-    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage) => context.Emitter.Writer.AppendLine($"bool {resultVar} = false;");
+    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage) =>
+        context.Emitter.Writer.AppendLine($"bool {resultVar} = false;");
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
@@ -80,7 +70,8 @@ internal sealed class AnyStrategy : IStackLinqTerminalStrategy
 
 internal sealed class AllStrategy : IStackLinqTerminalStrategy
 {
-    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage) => context.Emitter.Writer.AppendLine($"bool {resultVar} = true;");
+    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage) =>
+        context.Emitter.Writer.AppendLine($"bool {resultVar} = true;");
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
@@ -97,7 +88,10 @@ internal sealed class AllStrategy : IStackLinqTerminalStrategy
     public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) { }
 }
 
-internal sealed class FirstStrategy : IStackLinqTerminalStrategy
+/// <summary>
+/// Parameterized terminal strategy for <c>First</c>, <c>FirstOrDefault</c>, <c>Last</c>, and <c>LastOrDefault</c>.
+/// </summary>
+internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch) : IStackLinqTerminalStrategy
 {
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
@@ -107,6 +101,7 @@ internal sealed class FirstStrategy : IStackLinqTerminalStrategy
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
+        var statementSuffix = stopOnFirstMatch ? "; break;" : ";";
         if (StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol))
         {
             var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
@@ -115,19 +110,22 @@ internal sealed class FirstStrategy : IStackLinqTerminalStrategy
             context.Emitter.Writer.AppendLine($")(__val_{valIndex}))");
             using (context.Emitter.Writer.Braces())
             {
-                context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex}; break;");
+                context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex}{statementSuffix}");
             }
         }
         else
         {
-            context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex}; break;");
+            context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex}{statementSuffix}");
         }
     }
 
     public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) { }
 }
 
-internal sealed class MaxStrategy : IStackLinqTerminalStrategy
+/// <summary>
+/// Parameterized terminal strategy for <c>Max</c> and <c>Min</c>.
+/// </summary>
+internal sealed class ExtremaStrategy(string comparisonOperator) : IStackLinqTerminalStrategy
 {
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
@@ -147,72 +145,11 @@ internal sealed class MaxStrategy : IStackLinqTerminalStrategy
         context.Emitter.Writer.AppendLine("else");
         using (context.Emitter.Writer.Braces())
         {
-            context.Emitter.Writer.AppendLine($"if (__val_{valIndex} > {resultVar})");
+            context.Emitter.Writer.AppendLine($"if (__val_{valIndex} {comparisonOperator} {resultVar})");
             using (context.Emitter.Writer.Braces())
             {
                 context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex};");
             }
-        }
-    }
-
-    public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) { }
-}
-
-internal sealed class MinStrategy : IStackLinqTerminalStrategy
-{
-    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
-    {
-        context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
-        context.Emitter.Writer.AppendLine($" {resultVar} = {{}};");
-        context.Emitter.Writer.AppendLine($"bool {resultVar}_init = false;");
-    }
-
-    public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
-    {
-        context.Emitter.Writer.AppendLine($"if (!{resultVar}_init)");
-        using (context.Emitter.Writer.Braces())
-        {
-            context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex};");
-            context.Emitter.Writer.AppendLine($"{resultVar}_init = true;");
-        }
-        context.Emitter.Writer.AppendLine("else");
-        using (context.Emitter.Writer.Braces())
-        {
-            context.Emitter.Writer.AppendLine($"if (__val_{valIndex} < {resultVar})");
-            using (context.Emitter.Writer.Braces())
-            {
-                context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex};");
-            }
-        }
-    }
-
-    public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) { }
-}
-
-internal sealed class FirstOrDefaultStrategy : IStackLinqTerminalStrategy
-{
-    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
-    {
-        context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
-        context.Emitter.Writer.AppendLine($" {resultVar} = {{}};");
-    }
-
-    public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
-    {
-        if (StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol))
-        {
-            var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
-            context.Emitter.Writer.Append("if ((");
-            context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__val_{valIndex}))");
-            using (context.Emitter.Writer.Braces())
-            {
-                context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex}; break;");
-            }
-        }
-        else
-        {
-            context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex}; break;");
         }
     }
 
@@ -221,7 +158,8 @@ internal sealed class FirstOrDefaultStrategy : IStackLinqTerminalStrategy
 
 internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
 {
-    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage) => context.Emitter.Writer.AppendLine($"bool {resultVar} = false;");
+    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage) =>
+        context.Emitter.Writer.AppendLine($"bool {resultVar} = false;");
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
@@ -249,17 +187,7 @@ internal sealed class AverageStrategy : IStackLinqTerminalStrategy
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
-        if (StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol))
-        {
-            var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
-            context.Emitter.Writer.Append($"{resultVar} += (");
-            context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__val_{valIndex});");
-        }
-        else
-        {
-            context.Emitter.Writer.AppendLine($"{resultVar} += __val_{valIndex};");
-        }
+        StackLinqHelper.EmitAccumulateElement(ref context, in stage, resultVar, valIndex);
         context.Emitter.Writer.AppendLine($"{resultVar}_count++;");
     }
 
@@ -316,65 +244,6 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
             context.Emitter.Writer.Append($"{resultVar} = (");
             context.Visitor.Visit(funcArg);
             context.Emitter.Writer.AppendLine($")({resultVar}, __val_{valIndex});");
-        }
-    }
-
-    public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) { }
-}
-internal sealed class LastStrategy : IStackLinqTerminalStrategy
-{
-    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
-    {
-        context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
-        context.Emitter.Writer.AppendLine($" {resultVar} = {{}};");
-    }
-
-    public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
-    {
-        if (StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol))
-        {
-            var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
-            context.Emitter.Writer.Append("if ((");
-            context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__val_{valIndex}))");
-            using (context.Emitter.Writer.Braces())
-            {
-                context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex};");
-            }
-        }
-        else
-        {
-            context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex};");
-        }
-    }
-
-    public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) { }
-}
-
-internal sealed class LastOrDefaultStrategy : IStackLinqTerminalStrategy
-{
-    public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
-    {
-        context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
-        context.Emitter.Writer.AppendLine($" {resultVar} = {{}};");
-    }
-
-    public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
-    {
-        if (StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol))
-        {
-            var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
-            context.Emitter.Writer.Append("if ((");
-            context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__val_{valIndex}))");
-            using (context.Emitter.Writer.Braces())
-            {
-                context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex};");
-            }
-        }
-        else
-        {
-            context.Emitter.Writer.AppendLine($"{resultVar} = __val_{valIndex};");
         }
     }
 

@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules.StackLinq;
+
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 /// <summary>
@@ -7,9 +9,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 {
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        if (symbol.ContainingNamespace?.Name != "Linq" ||
-            symbol.ContainingNamespace?.ContainingNamespace?.Name != "ZeroAlloc" ||
-            symbol.ContainingNamespace?.ContainingNamespace?.ContainingNamespace?.Name != "Kassyi")
+        if (!StackLinqHelper.IsStackLinqMethod(symbol))
         {
             return false;
         }

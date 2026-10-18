@@ -22,12 +22,12 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         { "Count", new CountStrategy() },
         { "Any", new AnyStrategy() },
         { "All", new AllStrategy() },
-        { "First", new FirstStrategy() },
-        { "FirstOrDefault", new FirstOrDefaultStrategy() },
-        { "Last", new LastStrategy() },
-        { "LastOrDefault", new LastOrDefaultStrategy() },
-        { "Max", new MaxStrategy() },
-        { "Min", new MinStrategy() },
+        { "First", new ElementSelectionStrategy(stopOnFirstMatch: true) },
+        { "FirstOrDefault", new ElementSelectionStrategy(stopOnFirstMatch: true) },
+        { "Last", new ElementSelectionStrategy(stopOnFirstMatch: false) },
+        { "LastOrDefault", new ElementSelectionStrategy(stopOnFirstMatch: false) },
+        { "Max", new ExtremaStrategy(">") },
+        { "Min", new ExtremaStrategy("<") },
         { "Average", new AverageStrategy() },
         { "Aggregate", new AggregateStrategy() },
         { "Contains", new ContainsStrategy() }
@@ -40,7 +40,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             return false;
         }
 
-        if (chain.IsParallel && context.Emitter.Dialect.GetType().Name.Contains("Cuda"))
+        if (chain.IsParallel && context.Emitter.Dialect.IsCuda && chain.TerminalMethodName is "Sum" or "Count")
         {
             EmitParallelFusedLoop(in chain, ref context);
         }
@@ -60,7 +60,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
     {
         chain = default;
 
-        if (!IsStackLinqMethod(symbol))
+        if (!StackLinqHelper.IsStackLinqMethod(symbol))
         {
             return false;
         }
@@ -103,7 +103,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
                 })
             {
                 if (semanticModel.GetSymbol(nextInvocation) is IMethodSymbol nextSymbol &&
-                    IsStackLinqMethod(nextSymbol))
+                    StackLinqHelper.IsStackLinqMethod(nextSymbol))
                 {
                     current = nextInvocation;
                     currentSymbol = nextSymbol;
@@ -118,7 +118,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             }
 
             if (semanticModel.GetSymbol(argInvocation) is not IMethodSymbol next ||
-                !IsStackLinqMethod(next))
+                !StackLinqHelper.IsStackLinqMethod(next))
             {
                 return false;
             }
@@ -149,56 +149,41 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 
         using (context.Emitter.Writer.ImmediatelyInvokedLambda("auto"))
         {
-            // 1. Intermediate and Result variable initialization
-            for (var i = 0; i < chain.Stages.Length - 1; i++)
-            {
-                var stage = chain.Stages[i];
-                if (s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
-                {
-                    strategy.EmitInitialValue(ref context, in stage, i);
-                }
-            }
+            EmitInitializations(in chain, ref context, terminalStrategy, in terminalStage, ResultVar);
 
-            terminalStrategy.EmitInitialValue(ref context, ResultVar, in terminalStage);
-
-            // 2. For loop
             context.Emitter.Writer.Append("int __fusion_length = ");
             context.Visitor.Visit(chain.SourceArrayExpression);
             context.Emitter.Writer.AppendLine(".length;");
 
             context.Emitter.Writer.AppendLine("for (int __i = 0; __i < __fusion_length; __i++)");
-            context.Emitter.Writer.AppendLine("{"); // Manually open for scope
-
-            // 3. Initial element
-            context.Emitter.Writer.Append("auto __val_0 = ");
-            context.Visitor.Visit(chain.SourceArrayExpression);
-            context.Emitter.Writer.AppendLine("[__i];");
-
-            // 4. Intermediate stages
-            var valIndex = 0;
-            var openBraces = 1;
-
-            for (var i = 0; i < chain.Stages.Length - 1; i++)
+            using (context.Emitter.Writer.Scope())
             {
-                var stage = chain.Stages[i];
-                if (s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
+                context.Emitter.Writer.Append("auto __val_0 = ");
+                context.Visitor.Visit(chain.SourceArrayExpression);
+                context.Emitter.Writer.AppendLine("[__i];");
+
+                var valIndex = 0;
+                var openBraces = 0;
+
+                for (var i = 0; i < chain.Stages.Length - 1; i++)
                 {
-                    strategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
+                    var stage = chain.Stages[i];
+                    if (s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
+                    {
+                        strategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
+                    }
                 }
-            }
 
-            // 5. Terminal stage
-            terminalStrategy.Emit(ref context, in terminalStage, ResultVar, valIndex);
+                terminalStrategy.Emit(ref context, in terminalStage, ResultVar, valIndex);
 
-            // 6. Close braces
-            for (var i = 0; i < openBraces; i++)
-            {
-                context.Emitter.Writer.AppendLine("}");
+                for (var i = 0; i < openBraces; i++)
+                {
+                    context.Emitter.Writer.AppendLine("}");
+                }
             }
 
             terminalStrategy.EmitPostLoop(ref context, in terminalStage, ResultVar);
 
-            // 7. Return statement
             context.Emitter.Writer.Append($"return {ResultVar};");
             context.Emitter.Writer.AppendLine();
         }
@@ -217,9 +202,9 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 
         using (context.Emitter.Writer.ImmediatelyInvokedLambda("auto"))
         {
-            EmitInitializations(in chain, ref context, terminalStrategy, terminalStage, ResultVar);
-            EmitThreadLocalReductionLoop(in chain, ref context, terminalStrategy, terminalStage, ResultVar);
-            EmitBlockWideReduction(in chain, ref context, terminalStage, ResultVar);
+            EmitInitializations(in chain, ref context, terminalStrategy, in terminalStage, ResultVar);
+            EmitThreadLocalReductionLoop(in chain, ref context, terminalStrategy, in terminalStage, ResultVar);
+            EmitBlockWideReduction(ref context, in terminalStage, ResultVar);
 
             context.Emitter.Writer.AppendLine($"return {ResultVar};");
         }
@@ -270,9 +255,6 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
 
                 if (s_intermediateStrategies.TryGetValue(stage.Name, out var strategy))
                 {
-                    // Emit may append lines that open scopes
-                    // We must be careful about openBraces. Currently intermediate strategies open manual braces.
-                    // For now we keep openBraces logic for backward compatibility with IStackLinqIntermediateStrategy.
                     strategy.Emit(ref context, in stage, i, ref valIndex, ref openBraces);
                 }
             }
@@ -288,16 +270,11 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         }
     }
 
-    private static void EmitBlockWideReduction(in StackLinqChain chain, ref TranspileContext context,
+    private static void EmitBlockWideReduction(ref TranspileContext context,
         in LinqStage terminalStage, string resultVar)
     {
         context.Emitter.Writer.AppendLine("unsigned int __mask = 0xffffffff;");
-        context.Emitter.Writer.AppendLine("#pragma unroll");
-        context.Emitter.Writer.AppendLine("for (int __offset = 16; __offset > 0; __offset /= 2)");
-        using (context.Emitter.Writer.Scope())
-        {
-            context.Emitter.Writer.AppendLine($"{resultVar} += __shfl_down_sync(__mask, {resultVar}, __offset);");
-        }
+        EmitWarpShuffleSum(ref context, resultVar);
 
         context.Emitter.Writer.Append("__shared__ ");
         context.Emitter.Dialect.AppendType(ref context, terminalStage.Symbol.ReturnType);
@@ -319,18 +296,17 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
         {
             context.Emitter.Writer.AppendLine(
                 $"{resultVar} = (__lane_id < (blockDim.x + 31) / 32) ? __warp_sums[__lane_id] : 0;");
-            context.Emitter.Writer.AppendLine("#pragma unroll");
-            context.Emitter.Writer.AppendLine("for (int __offset = 16; __offset > 0; __offset /= 2)");
-            using (context.Emitter.Writer.Scope())
-            {
-                context.Emitter.Writer.AppendLine($"{resultVar} += __shfl_down_sync(__mask, {resultVar}, __offset);");
-            }
+            EmitWarpShuffleSum(ref context, resultVar);
         }
     }
 
-    private static bool IsStackLinqMethod(IMethodSymbol symbol)
+    private static void EmitWarpShuffleSum(ref TranspileContext context, string resultVar)
     {
-        return symbol.ContainingNamespace is
-            { Name: "Linq", ContainingNamespace: { Name: "ZeroAlloc", ContainingNamespace.Name: "Kassyi" } };
+        context.Emitter.Writer.AppendLine("#pragma unroll");
+        context.Emitter.Writer.AppendLine("for (int __offset = 16; __offset > 0; __offset /= 2)");
+        using (context.Emitter.Writer.Scope())
+        {
+            context.Emitter.Writer.AppendLine($"{resultVar} += __shfl_down_sync(__mask, {resultVar}, __offset);");
+        }
     }
 }
