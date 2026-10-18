@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Runtime;
 
 /// <summary>
@@ -6,28 +5,32 @@ namespace Kassyi.GSharp.Runtime;
 /// </summary>
 public sealed class CudaStream : IDisposable
 {
+    private const uint NonBlockingStreamFlag = 1;
+
+    private IntPtr _handle;
+
     /// <summary>
     /// The underlying CUDA stream handle.
     /// </summary>
-    public IntPtr Handle
-    {
-        get;
-    }
+    public IntPtr Handle => Volatile.Read(ref _handle);
 
     /// <summary>
     /// Creates a new non-blocking CUDA stream.
     /// </summary>
     public CudaStream()
     {
-        // CU_STREAM_NON_BLOCKING = 1
-        CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out var handle, 1));
-        Handle = handle;
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out _handle, NonBlockingStreamFlag));
     }
 
     /// <summary>
     /// Blocks the current host thread until all operations in this stream have completed.
     /// </summary>
-    public void Synchronize() => CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(Handle));
+    public void Synchronize()
+    {
+        var handle = Volatile.Read(ref _handle);
+        ObjectDisposedException.ThrowIf(handle == IntPtr.Zero, this);
+        CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(handle));
+    }
 
     /// <summary>
     /// Asynchronously waits until all operations currently enqueued on this stream have completed,
@@ -36,20 +39,24 @@ public sealed class CudaStream : IDisposable
     /// <param name="cancellationToken">A token that detaches the awaiter; the GPU work itself is not canceled.</param>
     /// <returns>A <see cref="ValueTask"/> that completes when the stream has drained.</returns>
     /// <seealso cref="CudaStreamCompletion.WaitAsync"/>
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) =>
-        CudaStreamCompletion.WaitAsync(Handle, cancellationToken);
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+    {
+        var handle = Volatile.Read(ref _handle);
+        ObjectDisposedException.ThrowIf(handle == IntPtr.Zero, this);
+        return CudaStreamCompletion.WaitAsync(handle, cancellationToken);
+    }
 
     /// <summary>
     /// Destroys the CUDA stream.
     /// </summary>
     public void Dispose()
     {
-        if (Handle != IntPtr.Zero)
+        var handle = Interlocked.Exchange(ref _handle, IntPtr.Zero);
+        if (handle != IntPtr.Zero)
         {
             // cuStreamDestroy does not implicitly synchronize, but it will complete 
             // all pending work before destroying the stream on the device.
-            CudaDriverApi.cuStreamDestroy(Handle);
+            CudaDriverApi.cuStreamDestroy(handle);
         }
     }
 }
-

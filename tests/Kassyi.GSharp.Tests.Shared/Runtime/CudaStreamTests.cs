@@ -1,5 +1,6 @@
 #if GSHARP_CUDA
 using System;
+using System.Threading.Tasks;
 using Xunit;
 using Kassyi.GSharp.Core;
 using Kassyi.GSharp.Runtime;
@@ -7,35 +8,19 @@ using Kassyi.GSharp.Runtime.Aot;
 
 namespace Kassyi.GSharp.Tests.Shared.Runtime;
 
-public partial class CudaStreamKernels
-{
-    [GpuKernel]
-    public static void DelayKernel(int[] data, int iterations)
-    {
-        int tid = ThreadIndex.X;
-        if (tid != 0) return;
-        
-        // Dummy delay loop to occupy the GPU stream
-        int val = 0;
-        for (int i = 0; i < iterations; i++) 
-        {
-            val += i;
-        }
-        data[0] = val;
-    }
-}
-
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class CudaStreamTests : TranspilerTestBase
 {
     [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_CudaStream_MultipleStreamsExecuteConcurrently()
     {
         using var ctx = new GpuKernelLoader.CudaContextScope();
-        
+
         using var stream1 = new CudaStream();
         using var stream2 = new CudaStream();
-        
+
         using var buf1 = new GpuBuffer<int>(1);
         using var buf2 = new GpuBuffer<int>(1);
 
@@ -50,6 +35,27 @@ public class CudaStreamTests : TranspilerTestBase
 
         // Verify that execution succeeded without crashing
         Assert.True(true);
+    }
+
+    [Fact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_CudaStream_UseAfterDispose_ThrowsObjectDisposedException()
+    {
+        using var ctx = new GpuKernelLoader.CudaContextScope();
+
+        var stream = new CudaStream();
+        Assert.NotEqual(IntPtr.Zero, stream.Handle);
+
+        stream.Dispose();
+        Assert.Equal(IntPtr.Zero, stream.Handle);
+
+        // Double dispose must be safe
+        var ex = Record.Exception(() => stream.Dispose());
+        Assert.Null(ex);
+
+        Assert.Throws<ObjectDisposedException>(() => stream.Synchronize());
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await stream.SynchronizeAsync());
     }
 }
 

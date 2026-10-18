@@ -72,6 +72,7 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
 
         if (_byteSize <= 0)
         {
+            GC.SuppressFinalize(this);
             return;
         }
 
@@ -85,15 +86,6 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
 
         CudaException.ThrowIfError(CudaDriverApi.cuCtxGetCurrent(out _owningContext));
         CudaException.ThrowIfError(CudaDriverApi.cuMemAlloc_v2(out _devicePointer, _byteSize));
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="GpuBuffer{T}"/> class with the specified byte size.
-    /// </summary>
-    /// <param name="byteSize">The raw byte size of the buffer.</param>
-    public GpuBuffer(IntPtr byteSize)
-    {
-        _byteSize = byteSize;
     }
 
     /// <summary>
@@ -209,63 +201,51 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
 
     private CUresult ReleaseUnmanagedResources()
     {
-        if (_devicePointer == IntPtr.Zero)
+        var devicePtr = Interlocked.Exchange(ref _devicePointer, IntPtr.Zero);
+        if (devicePtr == IntPtr.Zero)
         {
             return CUresult.CudaSuccess;
         }
 
         if (_isCpuFallback)
         {
-            Marshal.FreeHGlobal(_devicePointer);
-            _devicePointer = IntPtr.Zero;
+            Marshal.FreeHGlobal(devicePtr);
             return CUresult.CudaSuccess;
         }
 
         var stream = Interlocked.Exchange(ref _transferStream, IntPtr.Zero);
-        CUresult res;
-        if (_owningContext != IntPtr.Zero)
-        {
-            CudaDriverApi.cuCtxPushCurrent_v2(_owningContext);
-            if (stream != IntPtr.Zero)
-            {
-                CudaDriverApi.cuStreamDestroy(stream);
-            }
-
-            res = CudaDriverApi.cuMemFree_v2(_devicePointer);
-            CudaDriverApi.cuCtxPopCurrent_v2(out _);
-        }
-        else
+        var pushed = _owningContext != IntPtr.Zero &&
+                     CudaDriverApi.cuCtxPushCurrent_v2(_owningContext) == CUresult.CudaSuccess;
+        try
         {
             if (stream != IntPtr.Zero)
             {
                 CudaDriverApi.cuStreamDestroy(stream);
             }
 
-            res = CudaDriverApi.cuMemFree_v2(_devicePointer);
+            return CudaDriverApi.cuMemFree_v2(devicePtr);
         }
-
-        if (res == CUresult.CudaSuccess)
+        finally
         {
-            _devicePointer = IntPtr.Zero;
+            if (pushed)
+            {
+                CudaDriverApi.cuCtxPopCurrent_v2(out _);
+            }
         }
-
-        return res;
     }
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        if (!_isDisposed)
+        if (_isDisposed)
         {
-            var res = ReleaseUnmanagedResources();
-            if (res == CUresult.CudaSuccess)
-            {
-                _isDisposed = true;
-                GC.SuppressFinalize(this);
-            }
-
-            CudaException.ThrowIfError(res);
+            return;
         }
+
+        _isDisposed = true;
+        GC.SuppressFinalize(this);
+        var res = ReleaseUnmanagedResources();
+        CudaException.ThrowIfError(res);
     }
 
     /// <summary>
@@ -275,11 +255,8 @@ public sealed class GpuBuffer<T> : IDisposable where T : unmanaged
     {
         if (!_isDisposed)
         {
-            var res = ReleaseUnmanagedResources();
-            if (res == CUresult.CudaSuccess)
-            {
-                _isDisposed = true;
-            }
+            _isDisposed = true;
+            _ = ReleaseUnmanagedResources();
         }
     }
 }
