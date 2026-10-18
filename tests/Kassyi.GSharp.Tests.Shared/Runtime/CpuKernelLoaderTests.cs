@@ -83,57 +83,31 @@ public class CpuKernelLoaderTests
         }
     }
 
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-    private delegate uint GetTickCountDelegate();
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int ConsumeLastErrorDelegate(out IntPtr outMessage);
 
     [Fact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CpuLoader_LoadPtrAndDelegate_SameExport_DoesNotCollide()
     {
-        if (!OperatingSystem.IsWindows())
+        var ext = OperatingSystem.IsWindows() ? "*.dll" : "*.so";
+        var candidates = Directory.GetFiles(AppContext.BaseDirectory, $"Kassyi.GSharp.Kernels_*{ext}");
+        if (candidates.Length == 0)
         {
             return;
         }
 
-        var systemDll = Path.Combine(Environment.SystemDirectory, "kernel32.dll");
-        if (!File.Exists(systemDll))
-        {
-            return;
-        }
+        var aotDll = candidates[0];
 
-        var tempDll = Path.Combine(Path.GetTempPath(), $"gsharp_test_{Guid.NewGuid():N}.dll");
-        try
-        {
-            var rawDll = File.ReadAllBytes(systemDll);
-            var sig = Ed25519.Sign(rawDll, Ed25519.DefaultDevKeySeed);
-            byte[] signedDll = [..rawDll, ..sig];
-            File.WriteAllBytes(tempDll, signedDll);
+        var ptr = CpuKernelLoader.LoadAotKernelPtr("__gsharp_consume_last_error", aotDll);
+        Assert.NotEqual(IntPtr.Zero, ptr);
 
-            var ptr = CpuKernelLoader.LoadAotKernelPtr("GetTickCount", tempDll);
-            Assert.NotEqual(IntPtr.Zero, ptr);
+        var del = CpuKernelLoader.LoadAotKernel<ConsumeLastErrorDelegate>("__gsharp_consume_last_error", aotDll);
+        Assert.NotNull(del);
+        _ = del(out _);
 
-            var del = CpuKernelLoader.LoadAotKernel<GetTickCountDelegate>("GetTickCount", tempDll);
-            Assert.NotNull(del);
-            _ = del();
-
-            var ptrAgain = CpuKernelLoader.LoadAotKernelPtr("GetTickCount", tempDll);
-            Assert.Equal(ptr, ptrAgain);
-        }
-        finally
-        {
-            CpuKernelLoader.Shutdown();
-            if (File.Exists(tempDll))
-            {
-                try
-                {
-                    File.Delete(tempDll);
-                }
-                catch
-                {
-                    // Ignore if OS handle is still releasing
-                }
-            }
-        }
+        var ptrAgain = CpuKernelLoader.LoadAotKernelPtr("__gsharp_consume_last_error", aotDll);
+        Assert.Equal(ptr, ptrAgain);
     }
 }
