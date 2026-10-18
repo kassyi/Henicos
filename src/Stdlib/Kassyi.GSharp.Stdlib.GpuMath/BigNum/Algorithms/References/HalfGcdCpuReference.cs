@@ -21,8 +21,10 @@ internal static class HalfGcdCpuReference
     /// <param name="b">The second operand.</param>
     /// <returns>The greatest common divisor of <paramref name="a"/> and <paramref name="b"/>.</returns>
     public static BigInteger Gcd(BigInteger a, BigInteger b)
-
     {
+        a = BigInteger.Abs(a);
+        b = BigInteger.Abs(b);
+
         if (a < b)
         {
             (a, b) = (b, a);
@@ -30,81 +32,33 @@ internal static class HalfGcdCpuReference
 
         while (!b.IsZero)
         {
-            var bitsA = GetBitLength(a);
-            var bitsB = GetBitLength(b);
+            var bitsA = (int)a.GetBitLength();
+            var bitsB = (int)b.GetBitLength();
 
-            if (bitsA - bitsB > 64 || bitsA <= 64)
+            if (bitsA - bitsB <= 64 && bitsA > 64)
             {
-                var r = a % b;
-                a = b;
-                b = r;
-                continue;
-            }
+                var shift = bitsA - 64;
+                var x = (ulong)(a >> shift);
+                var y = (ulong)(b >> shift);
 
-            var shift = bitsA - 64;
-            if (shift < 0)
-            {
-                shift = 0;
-            }
-
-            var x = (ulong)(a >> shift);
-            var y = (ulong)(b >> shift);
-
-            var progress =
-                GpuBigIntGcdKernels.ComputeLehmerMatrix(x, y, out var u0,
-                    out var v0, out var u1, out var v1);
-
-            if (!progress)
-            {
-                var r = a % b;
-                a = b;
-                b = r;
-            }
-            else
-            {
-                var newA = a * u0 + b * v0;
-                var newB = a * u1 + b * v1;
-
-                // Safety fallback
-                if (newA < 0 || newB < 0 || newB > newA)
+                if (GpuBigIntGcdKernels.ComputeLehmerMatrix(x, y, out var u0, out var v0, out var u1, out var v1))
                 {
-                    var r = a % b;
-                    a = b;
-                    b = r;
-                }
-                else
-                {
-                    a = newA;
-                    b = newB;
+                    var newA = a * u0 + b * v0;
+                    var newB = a * u1 + b * v1;
+
+                    if (newA >= 0 && newB >= 0 && newB <= newA)
+                    {
+                        a = newA;
+                        b = newB;
+                        continue;
+                    }
                 }
             }
+
+            (a, b) = (b, a % b);
         }
 
         return a;
-    }
-
-    private static int GetBitLength(BigInteger b)
-    {
-        if (b.IsZero)
-        {
-            return 0;
-        }
-
-        if (b.Sign < 0)
-        {
-            b = -b;
-        }
-
-        var bytes = b.ToByteArray(isUnsigned: true, isBigEndian: true);
-        var bitLength = (bytes.Length - 1) * 8;
-        var first = bytes[0];
-        while (first > 0)
-        {
-            bitLength++;
-            first >>= 1;
-        }
-
-        return bitLength;
     }
 }
 

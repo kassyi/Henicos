@@ -30,6 +30,9 @@ internal static class NttCpuReference
     /// <summary>Primitive root of unity for <see cref="P3"/>.</summary>
     public const uint G3 = 11;
 
+    private static readonly uint s_inverseP1ModP2 = ModInverse(P1, P2);
+    private static readonly uint s_inverseP1P2ModP3 = ModInverse((uint)(((ulong)P1 * P2) % P3), P3);
+
     /// <summary>Computes modular exponentiation (baseValue^exponent % modulus).</summary>
     /// <param name="baseValue">The base value.</param>
     /// <param name="exponent">The exponent.</param>
@@ -69,13 +72,8 @@ internal static class NttCpuReference
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint ModAdd(uint operandA, uint operandB, uint modulus)
     {
-        var result = operandA + operandB;
-        if (result >= modulus)
-        {
-            result -= modulus;
-        }
-
-        return result;
+        var sum = (ulong)operandA + operandB;
+        return (uint)(sum >= modulus ? sum - modulus : sum);
     }
 
     /// <summary>Computes modular subtraction (a - b % modulus) with wrap-around handling.</summary>
@@ -88,7 +86,7 @@ internal static class NttCpuReference
     {
         if (operandA < operandB)
         {
-            return operandA + modulus - operandB;
+            return (uint)((ulong)operandA + modulus - operandB);
         }
 
         return operandA - operandB;
@@ -109,35 +107,16 @@ internal static class NttCpuReference
     /// <param name="isInverse">If <c>true</c>, performs the inverse NTT; otherwise, the forward NTT.</param>
     public static void Ntt(uint[] values, uint modulus, uint primitiveRoot, bool isInverse)
     {
+        ArgumentNullException.ThrowIfNull(values);
+
         var length = values.Length;
-        var numberOfBits = 0;
-        while ((1 << numberOfBits) < length)
+        if (!BitOperations.IsPow2(length))
         {
-            numberOfBits++;
+            throw new ArgumentException("Length must be a power of 2.", nameof(values));
         }
 
-        if ((1 << numberOfBits) != length)
-        {
-            throw new ArgumentException("Length must be a power of 2");
-        }
-
-        // Bit reversal permutation
-        for (var index = 0; index < length; index++)
-        {
-            var reversedIndex = 0;
-            for (var bitIndex = 0; bitIndex < numberOfBits; bitIndex++)
-            {
-                if ((index & (1 << bitIndex)) != 0)
-                {
-                    reversedIndex |= (1 << (numberOfBits - 1 - bitIndex));
-                }
-            }
-
-            if (index < reversedIndex)
-            {
-                (values[index], values[reversedIndex]) = (values[reversedIndex], values[index]);
-            }
-        }
+        var numberOfBits = BitOperations.Log2((uint)length);
+        BitReversePermute(values, length, numberOfBits);
 
         // Roots of unity
         for (var currentLength = 2; currentLength <= length; currentLength <<= 1)
@@ -169,6 +148,26 @@ internal static class NttCpuReference
             for (var index = 0; index < length; index++)
             {
                 values[index] = ModMul(values[index], lengthInverse, modulus);
+            }
+        }
+    }
+
+    private static void BitReversePermute(uint[] values, int length, int numberOfBits)
+    {
+        for (var index = 0; index < length; index++)
+        {
+            var reversedIndex = 0;
+            for (var bitIndex = 0; bitIndex < numberOfBits; bitIndex++)
+            {
+                if ((index & (1 << bitIndex)) != 0)
+                {
+                    reversedIndex |= 1 << (numberOfBits - 1 - bitIndex);
+                }
+            }
+
+            if (index < reversedIndex)
+            {
+                (values[index], values[reversedIndex]) = (values[reversedIndex], values[index]);
             }
         }
     }
@@ -206,12 +205,11 @@ internal static class NttCpuReference
     // ReSharper disable once UnusedMember.Global -- External API used by test assemblies
     public static uint[] Multiply(uint[] operandA, uint[] operandB)
     {
+        ArgumentNullException.ThrowIfNull(operandA);
+        ArgumentNullException.ThrowIfNull(operandB);
+
         var combinedLength = operandA.Length + operandB.Length;
-        var transformLength = 1;
-        while (transformLength < combinedLength)
-        {
-            transformLength <<= 1;
-        }
+        var transformLength = combinedLength <= 1 ? 1 : (int)BitOperations.RoundUpToPowerOf2((uint)combinedLength);
 
         var result1 = new uint[transformLength];
         var result2 = new uint[transformLength];
@@ -222,10 +220,7 @@ internal static class NttCpuReference
         ExecuteNttPass(operandA, operandB, result3, P3, G3, transformLength);
 
         // X = x1 + x2*P1 + x3*P1*P2
-        var inverseP1ModP2 = ModInverse(P1, P2);
-        var inverseP1P2ModP3 = ModInverse((uint)(((ulong)P1 * P2) % P3), P3);
-
-        return GarnerReconstruct(result1, result2, result3, transformLength, inverseP1ModP2, inverseP1P2ModP3);
+        return GarnerReconstruct(result1, result2, result3, transformLength, s_inverseP1ModP2, s_inverseP1P2ModP3);
     }
 
     private static uint[] GarnerReconstruct(uint[] result1, uint[] result2, uint[] result3, int transformLength, uint inverseP1ModP2, uint inverseP1P2ModP3)
