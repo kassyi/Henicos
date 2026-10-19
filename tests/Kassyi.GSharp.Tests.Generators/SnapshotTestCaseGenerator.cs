@@ -8,6 +8,18 @@ namespace Kassyi.GSharp.Tests.Generators;
 [Generator]
 public class SnapshotTestCaseGenerator : IIncrementalGenerator
 {
+    private const string RepositoryRootMarker = "Henicos.slnx";
+
+#pragma warning disable RS2008 // Test-only generator; not shipped, so analyzer release tracking does not apply.
+    private static readonly DiagnosticDescriptor s_rootNotFoundDescriptor = new(
+        id: "GSHT0001",
+        title: "Repository root not found",
+        messageFormat: "Could not find 'Henicos.slnx' in '{0}' or any parent directory; snapshot test cases were not generated",
+        category: "GSharpTests",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+#pragma warning restore RS2008
+
     private static readonly Regex s_skipAttributeRegex = new(
         @"\[\s*(Kassyi\.GSharp\.Core\.)?SkipSnapshotConsistency.*?\]",
         RegexOptions.Compiled);
@@ -25,6 +37,8 @@ public class SnapshotTestCaseGenerator : IIncrementalGenerator
             var rootDir = TryFindRepositoryRoot(projDir);
             if (rootDir is null)
             {
+                var startingDir = string.IsNullOrEmpty(projDir) ? "<unknown>" : projDir;
+                spc.ReportDiagnostic(Diagnostic.Create(s_rootNotFoundDescriptor, Location.None, startingDir));
                 return;
             }
 
@@ -44,7 +58,7 @@ public class SnapshotTestCaseGenerator : IIncrementalGenerator
         var dir = new DirectoryInfo(projDir);
         while (dir != null)
         {
-            if (Directory.Exists(Path.Combine(dir.FullName, ".git")))
+            if (File.Exists(Path.Combine(dir.FullName, RepositoryRootMarker)))
             {
                 return dir.FullName;
             }
