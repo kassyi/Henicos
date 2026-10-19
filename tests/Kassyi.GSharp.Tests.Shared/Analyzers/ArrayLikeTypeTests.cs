@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using Kassyi.GSharp.Compiler.Extensions;
-using Kassyi.GSharp.Tests.Infrastructure;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Microsoft.CodeAnalysis;
 using Xunit;
@@ -12,7 +11,7 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 [Category(TestCategory.Compiler)]
 public class ArrayLikeTypeTests
 {
-    private static IFieldSymbol GetFieldSymbol(Compilation compilation, SyntaxTree tree, SemanticModel semanticModel, string fieldName)
+    private static IFieldSymbol GetFieldSymbol(Compilation compilation, string fieldName)
     {
         var classType = compilation.GetTypeByMetadataName("Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.ArrayLikeTypeTestCase");
         if (classType == null)
@@ -47,8 +46,8 @@ public class ArrayLikeTypeTests
     [Scenario(TestScenario.HappyPath)]
     public void Test_TryGetArrayLikeElementType_HappyPath_ReturnsTrue(string fieldName)
     {
-        var (compilation, tree, semanticModel) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "ArrayLikeTypeTestCase.cs"));
-        var fieldSymbol = GetFieldSymbol(compilation, tree, semanticModel, fieldName);
+        var (compilation, _, _) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "ArrayLikeTypeTestCase.cs"));
+        var fieldSymbol = GetFieldSymbol(compilation, fieldName);
 
         var isArrayLike = fieldSymbol.Type.TryGetArrayLikeElementType(out var elementType);
 
@@ -66,8 +65,8 @@ public class ArrayLikeTypeTests
     [Scenario(TestScenario.SadPath)]
     public void Test_TryGetArrayLikeElementType_SadPath_ReturnsFalse(string fieldName)
     {
-        var (compilation, tree, semanticModel) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "ArrayLikeTypeTestCase.cs"));
-        var fieldSymbol = GetFieldSymbol(compilation, tree, semanticModel, fieldName);
+        var (compilation, _, _) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "ArrayLikeTypeTestCase.cs"));
+        var fieldSymbol = GetFieldSymbol(compilation, fieldName);
 
         var isArrayLike = fieldSymbol.Type.TryGetArrayLikeElementType(out var elementType);
 
