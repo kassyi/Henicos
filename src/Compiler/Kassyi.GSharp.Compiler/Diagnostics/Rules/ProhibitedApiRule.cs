@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 /// <summary>
 /// Ensures that prohibited APIs (like System.Math, System.Threading.Interlocked) are not used in GPU kernels.
 /// </summary>
-internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpressionSyntax>
+internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpressionSyntax>, ISyntaxValidationRule<InvocationExpressionSyntax>
 {
     public static readonly ProhibitedApiRule Instance = new();
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(GSharpDiagnostics.UnsupportedSyntax);
@@ -21,6 +21,22 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
             symbol = context.SemanticModel.GetSymbol(invocation);
         }
 
+        AnalyzeSymbol(symbol, node, ref context);
+    }
+
+    public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)
+    {
+        if (node.Expression is MemberAccessExpressionSyntax)
+        {
+            return;
+        }
+
+        var symbol = context.SemanticModel.GetSymbol(node);
+        AnalyzeSymbol(symbol, node, ref context);
+    }
+
+    private static void AnalyzeSymbol(ISymbol? symbol, SyntaxNode locationNode, ref ValidationContext context)
+    {
         if (symbol is
             {
                 ContainingType.Name: TypeConstants.MathType or TypeConstants.MathFType
@@ -31,7 +47,7 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.UnsupportedSyntax,
-                node,
+                locationNode,
                 $"{symbol.ContainingType.Name}.{symbol.Name}");
         }
     }

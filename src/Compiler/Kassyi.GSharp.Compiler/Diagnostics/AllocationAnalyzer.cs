@@ -31,7 +31,7 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
         }
 
         field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
-        if (syntax?.Initializer?.Value is ObjectCreationExpressionSyntax)
+        if (syntax?.Initializer?.Value is BaseObjectCreationExpressionSyntax)
         {
             context.ReportDiagnostic(GSharpDiagnostics.StaticDisposableAllocation,
                 syntax.GetLocation());
@@ -61,7 +61,7 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
                 }
             }
             else if (allocationCount < 2 &&
-                     node is ObjectCreationExpressionSyntax oce &&
+                     node is BaseObjectCreationExpressionSyntax oce &&
                      DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeSymbol(oce)))
             {
                 allocationCount++;
