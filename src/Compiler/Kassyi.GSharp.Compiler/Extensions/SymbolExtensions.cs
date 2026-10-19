@@ -6,16 +6,14 @@ internal static class SymbolExtensions
     public static bool IsSystemNamespace(this INamespaceSymbol? ns) =>
         ns is { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true };
 
-    public static bool IsSystemOrNumerics(this INamespaceSymbol? ns)
-    {
-        if (ns == null || ns.IsGlobalNamespace)
+    public static bool IsSystemOrNumerics(this INamespaceSymbol? ns) =>
+        ns is { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+            or
         {
-            return false;
-        }
-
-        var fullNs = ns.GetFullNamespaceName();
-        return fullNs == TypeConstants.SystemNamespace || fullNs.StartsWith("System.", StringComparison.Ordinal);
-    }
+            Name: TypeConstants.NumericsNamespace,
+            ContainingNamespace:
+            { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+        };
 
     public static bool IsSystemThreading(this INamespaceSymbol? ns) =>
         ns is

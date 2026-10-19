@@ -102,12 +102,7 @@ internal static class MethodSignatureTranspiler
             return;
         }
 
-        var firstTree = parameters[0].SyntaxTree;
-        var paramSemanticModel = firstTree == context.Query.SemanticModel.SyntaxTree
-            ? context.Query.SemanticModel
-            : (context.Query.SemanticModel.Compilation.ContainsSyntaxTree(firstTree)
-                ? context.Query.SemanticModel.Compilation.GetSemanticModel(firstTree)
-                : context.Query.SemanticModel);
+        var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(parameters[0].SyntaxTree);
 
         for (var i = 0; i < parameters.Count; i++)
         {
