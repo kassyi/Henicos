@@ -127,7 +127,7 @@ throw new global::System.ArgumentNullException(nameof(u64Data));
 if (u64Data.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u64Data));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerBitOperationsTestKernel();
 IntPtr hfunc = s_hfunc_BitOperationsTestKernel!.Value;
@@ -209,7 +209,7 @@ if (d_u64Data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_u64Data, hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchBitOperationsTestKernelPtr(IntPtr u32Data, IntPtr u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerBitOperationsTestKernel();
 IntPtr hfunc = s_hfunc_BitOperationsTestKernel!.Value;
@@ -296,7 +296,7 @@ throw new global::System.ArgumentNullException(nameof(i32Out));
 if (i32Out.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(i32Out));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerPtxIntrinsicsExpansionKernel();
 IntPtr hfunc = s_hfunc_PtxIntrinsicsExpansionKernel!.Value;
@@ -405,7 +405,7 @@ if (d_i32Out != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_i32Out, hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchPtxIntrinsicsExpansionKernelPtr(IntPtr u32Out, IntPtr u64Out, IntPtr i32Out, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerPtxIntrinsicsExpansionKernel();
 IntPtr hfunc = s_hfunc_PtxIntrinsicsExpansionKernel!.Value;

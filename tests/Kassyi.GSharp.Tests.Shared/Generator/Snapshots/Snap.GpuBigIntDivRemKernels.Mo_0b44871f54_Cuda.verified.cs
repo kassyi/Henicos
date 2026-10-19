@@ -2305,7 +2305,7 @@ s_hfunc_ModPowNttMegaKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchModPowNttMegaKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerModPowNttMegaKernel();
 IntPtr hfunc = s_hfunc_ModPowNttMegaKernel!.Value;
@@ -2339,7 +2339,7 @@ foreach (var ptr in ctx_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchModPowNttMegaKernelPtr(AotContexts.ModPowNtt ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerModPowNttMegaKernel();
 IntPtr hfunc = s_hfunc_ModPowNttMegaKernel!.Value;
@@ -2609,9 +2609,9 @@ DeviceUnpack16(opA,nttScratch.NttBuf1A,nttScratch.NttBuf2A,m,numWordsA,true);
 DeviceUnpack16(opB,nttScratch.NttBuf1B,nttScratch.NttBuf2B,m,numWordsB,true);
 cg::this_grid().sync();
 auto baseNtt = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt _tmp{}; _tmp.TemporaryBuffer = nttScratch.TmpBuf; _tmp.Grid = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttGridContext _tmp{}; _tmp.M = m; _tmp.N1 = n1; _tmp.N2 = n2; return _tmp; }
-()); return _tmp; }
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt __gsharp_tmp{}; __gsharp_tmp.TemporaryBuffer = nttScratch.TmpBuf; __gsharp_tmp.Grid = ([&]() {
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttGridContext __gsharp_tmp{}; __gsharp_tmp.M = m; __gsharp_tmp.N1 = n1; __gsharp_tmp.N2 = n2; return __gsharp_tmp; }
+()); return __gsharp_tmp; }
 ());
 auto forwardA = baseNtt;
 forwardA.Buffer1=nttScratch.NttBuf1A;
@@ -2792,9 +2792,9 @@ cg::this_grid().sync();
 ExecuteNttMultiplyMacroModPow(core,quotientBuffer,rightOperand,iterScratch.NextIter,destWords,n,destWords+n);
 int evalWords = aActualWords+1;
 auto subCtx = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext _tmp{}; _tmp.Operands = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext _tmp{}; _tmp.CarryBuffer = core.CarryBuffer; return _tmp; }
-()); _tmp.NumberOfWords = evalWords; return _tmp; }
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext __gsharp_tmp{}; __gsharp_tmp.Operands = ([&]() {
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext __gsharp_tmp{}; __gsharp_tmp.CarryBuffer = core.CarryBuffer; return __gsharp_tmp; }
+()); __gsharp_tmp.NumberOfWords = evalWords; return __gsharp_tmp; }
 ());
 for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < evalWords; idx += gridDim.x * blockDim.x)
 {

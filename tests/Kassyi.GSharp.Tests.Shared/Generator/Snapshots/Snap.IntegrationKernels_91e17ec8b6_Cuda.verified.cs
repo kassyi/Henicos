@@ -177,22 +177,22 @@ return x+5-5;
 int a;
 int b;
 ([&]() {
-auto _t0 = LocalInlineFunc(tid);
-auto _t1 = tid*2;
-a = _t0;
-b = _t1;
+auto __gsharp_tuple_0 = LocalInlineFunc(tid);
+auto __gsharp_tuple_1 = tid*2;
+a = __gsharp_tuple_0;
+b = __gsharp_tuple_1;
 }());
 ([&]() {
-auto _t0 = b;
-auto _t1 = a;
-a = _t0;
-b = _t1;
+auto __gsharp_tuple_0 = b;
+auto __gsharp_tuple_1 = a;
+a = __gsharp_tuple_0;
+b = __gsharp_tuple_1;
 }());
 ([&]() {
-auto _t0 = b;
-auto _t1 = a;
-a = _t0;
-b = _t1;
+auto __gsharp_tuple_0 = b;
+auto __gsharp_tuple_1 = a;
+a = __gsharp_tuple_0;
+b = __gsharp_tuple_1;
 }());
 int processed;
 bool ok = TryProcess(intInput[tid],&processed);
@@ -350,7 +350,7 @@ throw new global::System.ArgumentNullException(nameof(globalCounter));
 if (globalCounter.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(globalCounter));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerAllInOneKernel();
 IntPtr hfunc = s_hfunc_AllInOneKernel!.Value;
@@ -497,7 +497,7 @@ if (d_globalCounter != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_globalCounter
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAllInOneKernelPtr(IntPtr intInput, IntPtr floatInput, IntPtr results, AotContexts.Tier1CustomStruct config, IntPtr globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerAllInOneKernel();
 IntPtr hfunc = s_hfunc_AllInOneKernel!.Value;

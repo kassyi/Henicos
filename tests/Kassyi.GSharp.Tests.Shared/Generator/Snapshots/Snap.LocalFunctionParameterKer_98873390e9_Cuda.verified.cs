@@ -118,7 +118,7 @@ throw new global::System.ArgumentNullException(nameof(table));
 if (table.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(table));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerReadOnlyLocalFunctionParameterKernel();
 IntPtr hfunc = s_hfunc_ReadOnlyLocalFunctionParameterKernel!.Value;
@@ -202,7 +202,7 @@ if (d_table != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_table, hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchReadOnlyLocalFunctionParameterKernelPtr(IntPtr output, IntPtr table, global::System.Int32 scale, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerReadOnlyLocalFunctionParameterKernel();
 IntPtr hfunc = s_hfunc_ReadOnlyLocalFunctionParameterKernel!.Value;

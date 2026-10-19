@@ -2,7 +2,7 @@
 {
     public void LoweredMethod()
 {
-    var _warpTemp_0 = Gpu.WarpShuffle(y, 0);
-    int a = x + _warpTemp_0 * z;
+    var __gsharp_warp_temp_0 = Gpu.WarpShuffle(y, 0);
+    int a = x + __gsharp_warp_temp_0 * z;
 }
 }

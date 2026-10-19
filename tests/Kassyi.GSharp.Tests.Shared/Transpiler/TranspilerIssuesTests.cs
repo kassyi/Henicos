@@ -69,10 +69,10 @@ public class TranspilerIssuesTests : TranspilerTestBase
             nameof(TranspilerIssuesTarget.GeneralTupleSupport), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("auto _t0 = y*2;", cudaSource);
-        Assert.Contains("auto _t1 = x+3;", cudaSource);
-        Assert.Contains("x = _t0;", cudaSource);
-        Assert.Contains("y = _t1;", cudaSource);
+        Assert.Contains("auto __gsharp_tuple_0 = y*2;", cudaSource);
+        Assert.Contains("auto __gsharp_tuple_1 = x+3;", cudaSource);
+        Assert.Contains("x = __gsharp_tuple_0;", cudaSource);
+        Assert.Contains("y = __gsharp_tuple_1;", cudaSource);
     }
 
     [Fact]

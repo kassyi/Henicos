@@ -34,214 +34,214 @@ public static partial class AotContexts
 {
 }
 public const string WarpReduceSumKernel_Source = @"struct __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel {
-int _state = 0;
-__gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel* _all_contexts = nullptr;
-uint64_t _warpExchange = 0;
-bool _yieldedForGridSync = false;
+int __gsharp_state = 0;
+__gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel* __gsharp_all_contexts = nullptr;
+uint64_t __gsharp_warp_exchange = 0;
+bool __gsharp_yielded_for_grid_sync = false;
 int tid;
 int lane;
 int warpId;
 int val;
 unsigned int mask;
-int _warpTemp_0;
-int _warpTemp_1;
-int _warpTemp_2;
-int _warpTemp_3;
+int __gsharp_warp_temp_0;
+int __gsharp_warp_temp_1;
+int __gsharp_warp_temp_2;
+int __gsharp_warp_temp_3;
 };
-extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpReduceSumKernel(GSharpArray<int> input, GSharpArray<int> output, __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel* _ctx){
-#define _state _ctx->_state
-#define _yieldedForGridSync _ctx->_yieldedForGridSync
-switch(_state)
+extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpReduceSumKernel(GSharpArray<int> input, GSharpArray<int> output, __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-_ctx->tid=threadIdx.x;
-_ctx->lane=_ctx->tid%32;
-_ctx->warpId=_ctx->tid/32;
-_ctx->val=input[_ctx->tid];
-_ctx->mask=0xffffffff;
-__gsharp_warp_exchange_assign(_ctx->val);
-_state=1;
+__gsharp_ctx->tid=threadIdx.x;
+__gsharp_ctx->lane=__gsharp_ctx->tid%32;
+__gsharp_ctx->warpId=__gsharp_ctx->tid/32;
+__gsharp_ctx->val=input[__gsharp_ctx->tid];
+__gsharp_ctx->mask=0xffffffff;
+__gsharp_warp_exchange_assign(__gsharp_ctx->val);
+__gsharp_state=1;
 return;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-_ctx->_warpTemp_0=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,16);
-_ctx->val+=_ctx->_warpTemp_0;
-__gsharp_warp_exchange_assign(_ctx->val);
-_state=2;
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,__gsharp_ctx->mask,__gsharp_ctx->val,16);
+__gsharp_ctx->val+=__gsharp_ctx->__gsharp_warp_temp_0;
+__gsharp_warp_exchange_assign(__gsharp_ctx->val);
+__gsharp_state=2;
 return;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-_ctx->_warpTemp_1=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,8);
-_ctx->val+=_ctx->_warpTemp_1;
-__gsharp_warp_exchange_assign(_ctx->val);
-_state=3;
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,__gsharp_ctx->mask,__gsharp_ctx->val,8);
+__gsharp_ctx->val+=__gsharp_ctx->__gsharp_warp_temp_1;
+__gsharp_warp_exchange_assign(__gsharp_ctx->val);
+__gsharp_state=3;
 return;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-_ctx->_warpTemp_2=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,4);
-_ctx->val+=_ctx->_warpTemp_2;
-__gsharp_warp_exchange_assign(_ctx->val);
-_state=4;
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,__gsharp_ctx->mask,__gsharp_ctx->val,4);
+__gsharp_ctx->val+=__gsharp_ctx->__gsharp_warp_temp_2;
+__gsharp_warp_exchange_assign(__gsharp_ctx->val);
+__gsharp_state=4;
 return;
 }
 case 4:
 __gsharp_switch_1_state_4:
 {
-_ctx->_warpTemp_3=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,2);
-_ctx->val+=_ctx->_warpTemp_3;
-__gsharp_warp_exchange_assign(_ctx->val);
-_state=5;
+__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,__gsharp_ctx->mask,__gsharp_ctx->val,2);
+__gsharp_ctx->val+=__gsharp_ctx->__gsharp_warp_temp_3;
+__gsharp_warp_exchange_assign(__gsharp_ctx->val);
+__gsharp_state=5;
 return;
 }
 case 5:
 __gsharp_switch_1_state_5:
 {
-auto _warpTemp_4 = __gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,1);
-_ctx->val+=_warpTemp_4;
-if(_ctx->lane==0)
+auto __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,__gsharp_ctx->mask,__gsharp_ctx->val,1);
+__gsharp_ctx->val+=__gsharp_warp_temp_4;
+if(__gsharp_ctx->lane==0)
 {
-output[_ctx->warpId]=_ctx->val;
+output[__gsharp_ctx->warpId]=__gsharp_ctx->val;
 }
-_state=-1;
+__gsharp_state=-1;
 return;
 }
 }
-#undef _state
-#undef _yieldedForGridSync
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_WarpLevelConcurrencyKernels_WarpReduceSumKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> input, GSharpArray<int> output)
 {
 __gsharp_host_last_error.Reset();
-GSharpErrorSlot _gsharp_launch_error;
-int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+GSharpErrorSlot __gsharp_launch_error;
+int32_t __gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
-for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+for (int32_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-if (_gsharp_launch_error.HasError()) continue;
-int32_t bx = _b_idx % gridDimX;
-int32_t by = (_b_idx / gridDimX) % gridDimY;
-int32_t bz = _b_idx / (gridDimX * gridDimY);
+if (__gsharp_launch_error.HasError()) continue;
+int32_t bx = __gsharp_block_index % gridDimX;
+int32_t by = (__gsharp_block_index / gridDimX) % gridDimY;
+int32_t bz = __gsharp_block_index / (gridDimX * gridDimY);
 __gsharp_reset_smem();
-std::vector<__gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (auto& ctx : _gsharp_contexts) {
-ctx._state = 0;
-ctx._all_contexts = _gsharp_contexts.data();
+std::vector<__gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel> __gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+for (auto& ctx : __gsharp_contexts) {
+ctx.__gsharp_state = 0;
+ctx.__gsharp_all_contexts = __gsharp_contexts.data();
 }
 std::atomic<bool> anyActive{true};
-while (anyActive && !_gsharp_launch_error.HasError())
+while (anyActive && !__gsharp_launch_error.HasError())
 {
 anyActive = false;
-int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+int32_t __gsharp_threads_per_block = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
-for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-if (_gsharp_launch_error.HasError()) continue;
-__gsharp_active_error_slot = &_gsharp_launch_error;
-int32_t tx = _t_idx % blockDimX;
-int32_t ty = (_t_idx / blockDimX) % blockDimY;
-int32_t tz = _t_idx / (blockDimX * blockDimY);
-uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
-if (_gsharp_contexts[_ctxtid]._state != -1)
+if (__gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t tx = __gsharp_thread_index % blockDimX;
+int32_t ty = (__gsharp_thread_index / blockDimX) % blockDimY;
+int32_t tz = __gsharp_thread_index / (blockDimX * blockDimY);
+uint32_t __gsharp_ctx_tid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
 anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WarpLevelConcurrencyKernels_WarpReduceSumKernel(input, output, &_gsharp_contexts[_ctxtid]);
+WarpLevelConcurrencyKernels_WarpReduceSumKernel(input, output, &__gsharp_contexts[__gsharp_ctx_tid]);
 }
 }
 }
 }
-if (_gsharp_launch_error.HasError()) {
-__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
 }
 }
 ";
 public static readonly string WarpReduceSumKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpReduceSumKernel_Source;
 public class __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel {
-public int _state;
-public uint _warpExchange;
-public bool _yieldedForGridSync;
+public int __gsharp_state;
+public uint __gsharp_warp_exchange;
+public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int lane;
 public int warpId;
 public int val;
 public // Warp synchronous reduction
         uint mask;
-public dynamic _warpTemp_0;
-public dynamic _warpTemp_1;
-public dynamic _warpTemp_2;
-public dynamic _warpTemp_3;
+public dynamic __gsharp_warp_temp_0;
+public dynamic __gsharp_warp_temp_1;
+public dynamic __gsharp_warp_temp_2;
+public dynamic __gsharp_warp_temp_3;
 }
-public static unsafe void __gsharp_statemachine_WarpLevelConcurrencyKernels_WarpReduceSumKernel(int[] input, int[] output, __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel _ctx) {
+public static unsafe void __gsharp_statemachine_WarpLevelConcurrencyKernels_WarpReduceSumKernel(int[] input, int[] output, __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel __gsharp_ctx) {
 {
-    switch (_ctx._state)
+    switch (__gsharp_ctx.__gsharp_state)
     {
         case 0:
         {
-            _ctx.tid = ThreadIndex.X;
-            _ctx.lane = _ctx.tid % 32;
-            _ctx.warpId = _ctx.tid / 32;
-            _ctx.val = input[_ctx.tid];
-            _ctx.mask = 0xffffffff;
-            __gsharp_warp_exchange_assign(_ctx.val);
-            _ctx._state = 1;
+            __gsharp_ctx.tid = ThreadIndex.X;
+            __gsharp_ctx.lane = __gsharp_ctx.tid % 32;
+            __gsharp_ctx.warpId = __gsharp_ctx.tid / 32;
+            __gsharp_ctx.val = input[__gsharp_ctx.tid];
+            __gsharp_ctx.mask = 0xffffffff;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 1;
             return;
         }
 
         case 1:
         {
-            _ctx._warpTemp_0 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 16);
-            _ctx.val += _ctx._warpTemp_0;
-            __gsharp_warp_exchange_assign(_ctx.val);
-            _ctx._state = 2;
+            __gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 16);
+            __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_0;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 2;
             return;
         }
 
         case 2:
         {
-            _ctx._warpTemp_1 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 8);
-            _ctx.val += _ctx._warpTemp_1;
-            __gsharp_warp_exchange_assign(_ctx.val);
-            _ctx._state = 3;
+            __gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 8);
+            __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_1;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 3;
             return;
         }
 
         case 3:
         {
-            _ctx._warpTemp_2 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 4);
-            _ctx.val += _ctx._warpTemp_2;
-            __gsharp_warp_exchange_assign(_ctx.val);
-            _ctx._state = 4;
+            __gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 4);
+            __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_2;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 4;
             return;
         }
 
         case 4:
         {
-            _ctx._warpTemp_3 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 2);
-            _ctx.val += _ctx._warpTemp_3;
-            __gsharp_warp_exchange_assign(_ctx.val);
-            _ctx._state = 5;
+            __gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 2);
+            __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_3;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 5;
             return;
         }
 
         case 5:
         {
-            var _warpTemp_4 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 1);
-            _ctx.val += _warpTemp_4;
+            var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 1);
+            __gsharp_ctx.val += __gsharp_warp_temp_4;
             // First thread of each warp writes the result
-            if (_ctx.lane == 0)
+            if (__gsharp_ctx.lane == 0)
             {
-                output[_ctx.warpId] = _ctx.val;
+                output[__gsharp_ctx.warpId] = __gsharp_ctx.val;
             }
 
-            _ctx._state = -1;
+            __gsharp_ctx.__gsharp_state = -1;
             return;
         }
     }
@@ -272,22 +272,22 @@ var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
-int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
-int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var _gsharp_contexts = new __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel();
+int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var __gsharp_contexts = new __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
+for (int i = 0; i < __gsharp_contexts.Length; i++) {
+  __gsharp_contexts[i] = new __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
 while (anyGridActive)
 {
 anyGridActive = false;
-for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-int bx = _b_idx % (int)gridDimX;
-int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
-int bz = _b_idx / (int)(gridDimX * gridDimY);
+int bx = __gsharp_block_index % (int)gridDimX;
+int by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 try
 {
@@ -305,23 +305,23 @@ while (anyBlockActive)
 {
 anyBlockActive = false;
 bool gridSyncRequested = false;
-for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-int tx = _t_idx % (int)blockDimX;
-int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
-int tz = _t_idx / (int)(blockDimX * blockDimY);
+int tx = __gsharp_thread_index % (int)blockDimX;
+int ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
-if (_gsharp_contexts[linear_tid]._state != -1)
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_WarpLevelConcurrencyKernels_WarpReduceSumKernel(input, output, _gsharp_contexts[linear_tid]);
-if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+__gsharp_statemachine_WarpLevelConcurrencyKernels_WarpReduceSumKernel(input, output, __gsharp_contexts[__gsharp_linear_tid]);
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
 gridSyncRequested = true;
 }
@@ -351,218 +351,218 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 #pragma warning restore CS8500
 public const string WarpPrimitivesKernel_Source = @"struct __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel {
-int _state = 0;
-__gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel* _all_contexts = nullptr;
-uint64_t _warpExchange = 0;
-bool _yieldedForGridSync = false;
+int __gsharp_state = 0;
+__gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel* __gsharp_all_contexts = nullptr;
+uint64_t __gsharp_warp_exchange = 0;
+bool __gsharp_yielded_for_grid_sync = false;
 int tid;
 unsigned int mask;
 int val;
-int _warpTemp_0;
-int _warpTemp_1;
-int _warpTemp_2;
-int _warpTemp_3;
-int _warpTemp_4;
+int __gsharp_warp_temp_0;
+int __gsharp_warp_temp_1;
+int __gsharp_warp_temp_2;
+int __gsharp_warp_temp_3;
+int __gsharp_warp_temp_4;
 };
-extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpPrimitivesKernel(GSharpArray<int> input, GSharpArray<int> output, __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel* _ctx){
-#define _state _ctx->_state
-#define _yieldedForGridSync _ctx->_yieldedForGridSync
-switch(_state)
+extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpPrimitivesKernel(GSharpArray<int> input, GSharpArray<int> output, __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-_ctx->tid=threadIdx.x;
-_ctx->mask=__activemask();
-_ctx->val=input[_ctx->tid];
-__gsharp_warp_exchange_assign(_ctx->val);
-_state=1;
+__gsharp_ctx->tid=threadIdx.x;
+__gsharp_ctx->mask=__activemask();
+__gsharp_ctx->val=input[__gsharp_ctx->tid];
+__gsharp_warp_exchange_assign(__gsharp_ctx->val);
+__gsharp_state=1;
 return;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-_ctx->_warpTemp_0=__gsharp_warp_shuffle_read_sync(_ctx,_ctx->mask,_ctx->val,0);
-_ctx->val=_ctx->_warpTemp_0;
-__gsharp_warp_exchange_assign((unsigned int)_ctx->val);
-_state=2;
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_sync(__gsharp_ctx,__gsharp_ctx->mask,__gsharp_ctx->val,0);
+__gsharp_ctx->val=__gsharp_ctx->__gsharp_warp_temp_0;
+__gsharp_warp_exchange_assign((unsigned int)__gsharp_ctx->val);
+__gsharp_state=2;
 return;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-_ctx->_warpTemp_1=__gsharp_warp_shuffle_read_sync(_ctx,_ctx->mask,(unsigned int)_ctx->val,0);
-_ctx->val=(int)_ctx->_warpTemp_1;
-__gsharp_warp_exchange_assign(_ctx->val);
-_state=3;
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_sync(__gsharp_ctx,__gsharp_ctx->mask,(unsigned int)__gsharp_ctx->val,0);
+__gsharp_ctx->val=(int)__gsharp_ctx->__gsharp_warp_temp_1;
+__gsharp_warp_exchange_assign(__gsharp_ctx->val);
+__gsharp_state=3;
 return;
 }
 case 3:
 __gsharp_switch_1_state_3:
 {
-_ctx->_warpTemp_2=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,_ctx->val,1);
-_ctx->val=_ctx->_warpTemp_2;
-__gsharp_warp_exchange_assign((unsigned int)_ctx->val);
-_state=4;
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,__gsharp_ctx->mask,__gsharp_ctx->val,1);
+__gsharp_ctx->val=__gsharp_ctx->__gsharp_warp_temp_2;
+__gsharp_warp_exchange_assign((unsigned int)__gsharp_ctx->val);
+__gsharp_state=4;
 return;
 }
 case 4:
 __gsharp_switch_1_state_4:
 {
-_ctx->_warpTemp_3=__gsharp_warp_shuffle_read_down_sync(_ctx,_ctx->mask,(unsigned int)_ctx->val,1);
-_ctx->val=(int)_ctx->_warpTemp_3;
-__gsharp_warp_exchange_assign(_ctx->val);
-_state=5;
+__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,__gsharp_ctx->mask,(unsigned int)__gsharp_ctx->val,1);
+__gsharp_ctx->val=(int)__gsharp_ctx->__gsharp_warp_temp_3;
+__gsharp_warp_exchange_assign(__gsharp_ctx->val);
+__gsharp_state=5;
 return;
 }
 case 5:
 __gsharp_switch_1_state_5:
 {
-_ctx->_warpTemp_4=__gsharp_warp_shuffle_read_up_sync(_ctx,_ctx->mask,_ctx->val,1);
-_ctx->val=_ctx->_warpTemp_4;
-__gsharp_warp_exchange_assign(_ctx->val);
-_state=6;
+__gsharp_ctx->__gsharp_warp_temp_4=__gsharp_warp_shuffle_read_up_sync(__gsharp_ctx,__gsharp_ctx->mask,__gsharp_ctx->val,1);
+__gsharp_ctx->val=__gsharp_ctx->__gsharp_warp_temp_4;
+__gsharp_warp_exchange_assign(__gsharp_ctx->val);
+__gsharp_state=6;
 return;
 }
 case 6:
 __gsharp_switch_1_state_6:
 {
-auto _warpTemp_5 = __gsharp_warp_shuffle_read_xor_sync(_ctx,_ctx->mask,_ctx->val,1);
-_ctx->val=_warpTemp_5;
-output[_ctx->tid]=_ctx->val;
-_state=-1;
+auto __gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx,__gsharp_ctx->mask,__gsharp_ctx->val,1);
+__gsharp_ctx->val=__gsharp_warp_temp_5;
+output[__gsharp_ctx->tid]=__gsharp_ctx->val;
+__gsharp_state=-1;
 return;
 }
 }
-#undef _state
-#undef _yieldedForGridSync
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> input, GSharpArray<int> output)
 {
 __gsharp_host_last_error.Reset();
-GSharpErrorSlot _gsharp_launch_error;
-int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+GSharpErrorSlot __gsharp_launch_error;
+int32_t __gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
-for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+for (int32_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-if (_gsharp_launch_error.HasError()) continue;
-int32_t bx = _b_idx % gridDimX;
-int32_t by = (_b_idx / gridDimX) % gridDimY;
-int32_t bz = _b_idx / (gridDimX * gridDimY);
+if (__gsharp_launch_error.HasError()) continue;
+int32_t bx = __gsharp_block_index % gridDimX;
+int32_t by = (__gsharp_block_index / gridDimX) % gridDimY;
+int32_t bz = __gsharp_block_index / (gridDimX * gridDimY);
 __gsharp_reset_smem();
-std::vector<__gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (auto& ctx : _gsharp_contexts) {
-ctx._state = 0;
-ctx._all_contexts = _gsharp_contexts.data();
+std::vector<__gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel> __gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+for (auto& ctx : __gsharp_contexts) {
+ctx.__gsharp_state = 0;
+ctx.__gsharp_all_contexts = __gsharp_contexts.data();
 }
 std::atomic<bool> anyActive{true};
-while (anyActive && !_gsharp_launch_error.HasError())
+while (anyActive && !__gsharp_launch_error.HasError())
 {
 anyActive = false;
-int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+int32_t __gsharp_threads_per_block = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
-for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-if (_gsharp_launch_error.HasError()) continue;
-__gsharp_active_error_slot = &_gsharp_launch_error;
-int32_t tx = _t_idx % blockDimX;
-int32_t ty = (_t_idx / blockDimX) % blockDimY;
-int32_t tz = _t_idx / (blockDimX * blockDimY);
-uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
-if (_gsharp_contexts[_ctxtid]._state != -1)
+if (__gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t tx = __gsharp_thread_index % blockDimX;
+int32_t ty = (__gsharp_thread_index / blockDimX) % blockDimY;
+int32_t tz = __gsharp_thread_index / (blockDimX * blockDimY);
+uint32_t __gsharp_ctx_tid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
 anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-WarpLevelConcurrencyKernels_WarpPrimitivesKernel(input, output, &_gsharp_contexts[_ctxtid]);
+WarpLevelConcurrencyKernels_WarpPrimitivesKernel(input, output, &__gsharp_contexts[__gsharp_ctx_tid]);
 }
 }
 }
 }
-if (_gsharp_launch_error.HasError()) {
-__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
 }
 }
 ";
 public static readonly string WarpPrimitivesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +WarpPrimitivesKernel_Source;
 public class __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel {
-public int _state;
-public uint _warpExchange;
-public bool _yieldedForGridSync;
+public int __gsharp_state;
+public uint __gsharp_warp_exchange;
+public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public uint mask;
 public int val;
-public dynamic _warpTemp_0;
-public dynamic _warpTemp_1;
-public dynamic _warpTemp_2;
-public dynamic _warpTemp_3;
-public dynamic _warpTemp_4;
+public dynamic __gsharp_warp_temp_0;
+public dynamic __gsharp_warp_temp_1;
+public dynamic __gsharp_warp_temp_2;
+public dynamic __gsharp_warp_temp_3;
+public dynamic __gsharp_warp_temp_4;
 }
-public static unsafe void __gsharp_statemachine_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(int[] input, int[] output, __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel _ctx) {
+public static unsafe void __gsharp_statemachine_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(int[] input, int[] output, __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel __gsharp_ctx) {
 {
-    switch (_ctx._state)
+    switch (__gsharp_ctx.__gsharp_state)
     {
         case 0:
         {
-            _ctx.tid = ThreadIndex.X;
-            _ctx.mask = Warp.ActiveMask();
-            _ctx.val = input[_ctx.tid];
-            __gsharp_warp_exchange_assign(_ctx.val);
-            _ctx._state = 1;
+            __gsharp_ctx.tid = ThreadIndex.X;
+            __gsharp_ctx.mask = Warp.ActiveMask();
+            __gsharp_ctx.val = input[__gsharp_ctx.tid];
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 1;
             return;
         }
 
         case 1:
         {
-            _ctx._warpTemp_0 = __gsharp_warp_shuffle_read_sync(_ctx, _ctx.mask, _ctx.val, 0);
+            __gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 0);
             // Test all primitives to ensure they emit correct C++ intrinsics
-            _ctx.val = _ctx._warpTemp_0;
-            __gsharp_warp_exchange_assign((uint)_ctx.val);
-            _ctx._state = 2;
+            __gsharp_ctx.val = __gsharp_ctx.__gsharp_warp_temp_0;
+            __gsharp_warp_exchange_assign((uint)__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 2;
             return;
         }
 
         case 2:
         {
-            _ctx._warpTemp_1 = __gsharp_warp_shuffle_read_sync(_ctx, _ctx.mask, (uint)_ctx.val, 0);
-            _ctx.val = (int)_ctx._warpTemp_1;
-            __gsharp_warp_exchange_assign(_ctx.val);
-            _ctx._state = 3;
+            __gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, __gsharp_ctx.mask, (uint)__gsharp_ctx.val, 0);
+            __gsharp_ctx.val = (int)__gsharp_ctx.__gsharp_warp_temp_1;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 3;
             return;
         }
 
         case 3:
         {
-            _ctx._warpTemp_2 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, _ctx.val, 1);
-            _ctx.val = _ctx._warpTemp_2;
-            __gsharp_warp_exchange_assign((uint)_ctx.val);
-            _ctx._state = 4;
+            __gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 1);
+            __gsharp_ctx.val = __gsharp_ctx.__gsharp_warp_temp_2;
+            __gsharp_warp_exchange_assign((uint)__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 4;
             return;
         }
 
         case 4:
         {
-            _ctx._warpTemp_3 = __gsharp_warp_shuffle_read_down_sync(_ctx, _ctx.mask, (uint)_ctx.val, 1);
-            _ctx.val = (int)_ctx._warpTemp_3;
-            __gsharp_warp_exchange_assign(_ctx.val);
-            _ctx._state = 5;
+            __gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, (uint)__gsharp_ctx.val, 1);
+            __gsharp_ctx.val = (int)__gsharp_ctx.__gsharp_warp_temp_3;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 5;
             return;
         }
 
         case 5:
         {
-            _ctx._warpTemp_4 = __gsharp_warp_shuffle_read_up_sync(_ctx, _ctx.mask, _ctx.val, 1);
-            _ctx.val = _ctx._warpTemp_4;
-            __gsharp_warp_exchange_assign(_ctx.val);
-            _ctx._state = 6;
+            __gsharp_ctx.__gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 1);
+            __gsharp_ctx.val = __gsharp_ctx.__gsharp_warp_temp_4;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 6;
             return;
         }
 
         case 6:
         {
-            var _warpTemp_5 = __gsharp_warp_shuffle_read_xor_sync(_ctx, _ctx.mask, _ctx.val, 1);
-            _ctx.val = _warpTemp_5;
-            output[_ctx.tid] = _ctx.val;
-            _ctx._state = -1;
+            var __gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 1);
+            __gsharp_ctx.val = __gsharp_warp_temp_5;
+            output[__gsharp_ctx.tid] = __gsharp_ctx.val;
+            __gsharp_ctx.__gsharp_state = -1;
             return;
         }
     }
@@ -593,22 +593,22 @@ var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
-int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
-int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var _gsharp_contexts = new __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel();
+int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var __gsharp_contexts = new __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
+for (int i = 0; i < __gsharp_contexts.Length; i++) {
+  __gsharp_contexts[i] = new __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
 while (anyGridActive)
 {
 anyGridActive = false;
-for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-int bx = _b_idx % (int)gridDimX;
-int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
-int bz = _b_idx / (int)(gridDimX * gridDimY);
+int bx = __gsharp_block_index % (int)gridDimX;
+int by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 try
 {
@@ -626,23 +626,23 @@ while (anyBlockActive)
 {
 anyBlockActive = false;
 bool gridSyncRequested = false;
-for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-int tx = _t_idx % (int)blockDimX;
-int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
-int tz = _t_idx / (int)(blockDimX * blockDimY);
+int tx = __gsharp_thread_index % (int)blockDimX;
+int ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
-if (_gsharp_contexts[linear_tid]._state != -1)
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(input, output, _gsharp_contexts[linear_tid]);
-if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+__gsharp_statemachine_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(input, output, __gsharp_contexts[__gsharp_linear_tid]);
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
 gridSyncRequested = true;
 }

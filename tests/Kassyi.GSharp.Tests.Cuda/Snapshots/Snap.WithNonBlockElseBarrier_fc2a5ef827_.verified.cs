@@ -3,13 +3,13 @@
     public void LoweredMethod()
 {
     if (!(condition))
-        goto _BranchElse_0;
+        goto __gsharp_BranchElse_0;
     int a = 1;
-    goto _BranchEnd_0;
-    _BranchElse_0:
+    goto __gsharp_BranchEnd_0;
+    __gsharp_BranchElse_0:
         ;
     Gpu.SyncThreads();
-    _BranchEnd_0:
+    __gsharp_BranchEnd_0:
         ;
 }
 }
