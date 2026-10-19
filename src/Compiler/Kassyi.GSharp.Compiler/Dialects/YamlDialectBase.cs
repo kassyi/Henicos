@@ -19,24 +19,12 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return;
         }
 
-        if (typeSymbol is IArrayTypeSymbol array)
+        if (typeSymbol.TryGetArrayLikeElementType(out var elementType))
         {
             context.Emitter.Writer.Append("GSharpArray<");
-            AppendType(ref context, array.ElementType);
+            AppendType(ref context, elementType);
             context.Emitter.Writer.Append(">");
             return;
-        }
-
-        if (typeSymbol is INamedTypeSymbol { IsGenericType: true } genericType &&
-            genericType.ContainingNamespace.ToString() is TypeConstants.SystemNamespace or "System.Collections.Immutable")
-        {
-            if (genericType.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or "Memory" or "ReadOnlyMemory" or "ArraySegment" or "ImmutableArray")
-            {
-                context.Emitter.Writer.Append("GSharpArray<");
-                AppendType(ref context, genericType.TypeArguments[0]);
-                context.Emitter.Writer.Append(">");
-                return;
-            }
         }
 
         if (IsCuda && typeSymbol.TypeKind == TypeKind.Delegate)
@@ -192,7 +180,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
         var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(p.SyntaxTree);
         var paramSymbol = paramSemanticModel.GetDeclaredSymbol(p);
         var isReadOnly = paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
-        var isArray = typeSymbol != null && KernelLaunchEmitter.IsArrayLikeType(typeSymbol, out var _);
+        var isArray = typeSymbol.TryGetArrayLikeElementType(out var elementType);
 
         if (typeSymbol.IsSharedMemoryType() && typeSymbol is INamedTypeSymbol { TypeArguments.Length: 1 } namedType)
         {
@@ -202,7 +190,6 @@ public abstract class YamlDialectBase : ITranspilerDialect
         }
         else if (isArray)
         {
-            KernelLaunchEmitter.IsArrayLikeType(typeSymbol!, out var elementType);
             context.Emitter.Writer.Append("GSharpArray<");
             if (isReadOnly)
             {

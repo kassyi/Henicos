@@ -101,7 +101,7 @@ internal sealed class CppReservedIdentifierRule :
             {
                 type = pointer.PointedAtType;
             }
-            else if (KernelLaunchEmitter.IsArrayLikeType(type, out var elementType))
+            else if (type.TryGetArrayLikeElementType(out var elementType))
             {
                 type = elementType;
             }

@@ -42,6 +42,46 @@ internal static class SymbolExtensions
             }
         };
 
+    public static bool IsSystemCollectionsImmutable(this INamespaceSymbol? ns) =>
+        ns is
+        {
+            Name: "Immutable",
+            ContainingNamespace:
+            {
+                Name: "Collections",
+                ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+            }
+        };
+
+    /// <summary>
+    /// Attempts to get the element type of an array-like type (T[], Span, ReadOnlySpan, Memory, ReadOnlyMemory, ArraySegment, ImmutableArray).
+    /// </summary>
+    public static bool TryGetArrayLikeElementType(this ITypeSymbol? type, [NotNullWhen(true)] out ITypeSymbol? elementType)
+    {
+        if (type is IArrayTypeSymbol arrayType)
+        {
+            elementType = arrayType.ElementType;
+            return true;
+        }
+
+        if (type is INamedTypeSymbol { IsGenericType: true } genericType &&
+            genericType.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or "Memory" or "ReadOnlyMemory" or "ArraySegment" or "ImmutableArray" &&
+            (genericType.ContainingNamespace.IsSystemNamespace() ||
+             genericType.ContainingNamespace.IsSystemCollectionsImmutable()))
+        {
+            elementType = genericType.TypeArguments[0];
+            return true;
+        }
+
+        elementType = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Determines whether the type is an array-like type (T[], Span, ReadOnlySpan, Memory, ReadOnlyMemory, ArraySegment, ImmutableArray).
+    /// </summary>
+    public static bool IsArrayLikeType(this ITypeSymbol? type) => type.TryGetArrayLikeElementType(out _);
+
     public static bool IsCoreNamespace(this INamespaceSymbol? ns) =>
         ns is
         {

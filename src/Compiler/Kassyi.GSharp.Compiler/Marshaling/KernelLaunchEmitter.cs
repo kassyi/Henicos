@@ -27,7 +27,7 @@ internal static class KernelLaunchEmitter
                     writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
                 }
             }
-            else if ((!isDevicePtr && IsArrayLikeType(p.Type, out _)) ||
+            else if ((!isDevicePtr && p.Type.IsArrayLikeType()) ||
                      (!isDevicePtr && p.RefKind is RefKind.Ref or RefKind.Out))
             {
                 writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
@@ -143,35 +143,6 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    internal static bool IsArrayLikeType(ITypeSymbol type, out ITypeSymbol elementType)
-    {
-        if (type is IArrayTypeSymbol arrayType)
-        {
-            elementType = arrayType.ElementType;
-            return true;
-        }
-
-        if (type is INamedTypeSymbol { IsGenericType: true } genericType &&
-            genericType.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or "Memory" or "ReadOnlyMemory" or "ArraySegment" or "ImmutableArray" &&
-            (genericType.ContainingNamespace.IsSystemNamespace() ||
-             genericType.ContainingNamespace is
-             {
-                 Name: "Immutable",
-                 ContainingNamespace:
-                 {
-                     Name: "Collections",
-                     ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
-                 }
-             }))
-        {
-            elementType = genericType.TypeArguments[0];
-            return true;
-        }
-
-        elementType = null!;
-        return false;
-    }
-
     private static string GetSpanExpression(IParameterSymbol p)
     {
         if (p.Type is INamedTypeSymbol { Name: "Memory" or "ReadOnlyMemory" })
@@ -188,10 +159,10 @@ internal static class KernelLaunchEmitter
 
     private static void WriteParameterMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex, bool isDevicePtr)
     {
-        if (isDevicePtr && (IsArrayLikeType(p.Type, out _) || CudaLayoutRules.IsCustomStruct(p.Type) ||
+        if (isDevicePtr && (p.Type.IsArrayLikeType() || CudaLayoutRules.IsCustomStruct(p.Type) ||
                             p.RefKind is RefKind.Ref or RefKind.Out))
         {
-            var kind = IsArrayLikeType(p.Type, out _) ? "array" :
+            var kind = p.Type.IsArrayLikeType() ? "array" :
                 CudaLayoutRules.IsCustomStruct(p.Type) ? "struct" : "scalar";
             writer.AppendLine($"// Marshal device {kind}: {p.Name}");
             if (kind == "array")
@@ -213,7 +184,7 @@ internal static class KernelLaunchEmitter
         {
             WriteCustomStructMarshal(writer, p, paramIndex, isDevicePtr);
         }
-        else if (IsArrayLikeType(p.Type, out var elementType))
+        else if (p.Type.TryGetArrayLikeElementType(out var elementType))
         {
             WriteArrayMarshal(writer, p, elementType, paramIndex);
         }
@@ -396,7 +367,7 @@ internal static class KernelLaunchEmitter
 
     public static void WriteParameterUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
-        if (isDevicePtr && (IsArrayLikeType(p.Type, out _) || CudaLayoutRules.IsCustomStruct(p.Type) ||
+        if (isDevicePtr && (p.Type.IsArrayLikeType() || CudaLayoutRules.IsCustomStruct(p.Type) ||
                             p.RefKind is RefKind.Ref or RefKind.Out))
         {
             return;
@@ -406,7 +377,7 @@ internal static class KernelLaunchEmitter
         {
             WriteCustomStructUnmarshal(writer, p, isDevicePtr);
         }
-        else if (IsArrayLikeType(p.Type, out _))
+        else if (p.Type.IsArrayLikeType())
         {
             WriteArrayUnmarshal(writer, p, isDevicePtr);
         }
@@ -468,7 +439,10 @@ internal static class KernelLaunchEmitter
         {
             var spanExpr = GetSpanExpression(p);
             writer.Append("fixed (");
-            IsArrayLikeType(p.Type, out var elementType);
+            if (!p.Type.TryGetArrayLikeElementType(out var elementType))
+            {
+                throw new InvalidOperationException($"Parameter '{p.Name}' is not an array-like type.");
+            }
             writer.AppendFullyQualifiedCsharpName(elementType);
             writer.AppendLine($"* p_{p.Name} = {spanExpr})");
             using (writer.Scope())

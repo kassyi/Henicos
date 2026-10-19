@@ -63,7 +63,7 @@ internal static class StructMarshalingEmitter
 
     private static void WriteMarshalMember(SourceWriter writer, IFieldSymbol member)
     {
-        if (KernelLaunchEmitter.IsArrayLikeType(member.Type, out var elementType))
+        if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
             WriteMarshalArrayMember(writer, member, elementType);
         }
@@ -205,7 +205,7 @@ internal static class StructMarshalingEmitter
 
     private static void WriteUnmarshalMember(SourceWriter writer, IFieldSymbol member)
     {
-        if (KernelLaunchEmitter.IsArrayLikeType(member.Type, out var elementType))
+        if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
             WriteUnmarshalArrayMember(writer, member, elementType);
         }
