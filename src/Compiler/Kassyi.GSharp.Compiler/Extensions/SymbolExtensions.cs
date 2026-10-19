@@ -83,6 +83,27 @@ internal static class SymbolExtensions
     /// </summary>
     public static bool IsArrayLikeType(this ITypeSymbol? type) => type.TryGetArrayLikeElementType(out _);
 
+    /// <summary>
+    /// Returns T when type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } and its single type argument is array-like; otherwise returns type unchanged.
+    /// </summary>
+    public static ITypeSymbol? UnwrapNullableArrayLike(this ITypeSymbol? type)
+    {
+        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1 } nullableType &&
+            nullableType.TypeArguments[0].IsArrayLikeType())
+        {
+            return nullableType.TypeArguments[0];
+        }
+
+        return type;
+    }
+
+    /// <summary>
+    /// Returns true exactly when UnwrapNullableArrayLike would unwrap.
+    /// </summary>
+    public static bool IsNullableArrayLike(this ITypeSymbol? type) =>
+        type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1 } nullableType &&
+        nullableType.TypeArguments[0].IsArrayLikeType();
+
     public static bool IsCoreNamespace(this INamespaceSymbol? ns) =>
         ns is
         {

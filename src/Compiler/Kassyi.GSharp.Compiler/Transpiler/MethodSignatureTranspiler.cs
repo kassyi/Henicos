@@ -82,6 +82,7 @@ internal static class MethodSignatureTranspiler
     internal static (bool IsRefPointer, bool IsPointerType, bool HasRestrict) WriteParameterDeclaration(
         ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol, ref TranspileContext context)
     {
+        typeSymbol = typeSymbol.UnwrapNullableArrayLike();
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
         var isArray = typeSymbol.IsArrayLikeType();
 
@@ -111,7 +112,7 @@ internal static class MethodSignatureTranspiler
                 continue;
             }
 
-            var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type);
+            var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type).UnwrapNullableArrayLike();
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 

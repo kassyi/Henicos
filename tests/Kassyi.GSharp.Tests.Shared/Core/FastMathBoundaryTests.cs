@@ -133,15 +133,16 @@ public class FastMathBoundaryTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_GpuSide_FastMath_EmptyInputs()
     {
+        // Empty array arguments are rejected instead of silently skipping the launch
         float[] empty = [];
-        var ex = Record.Exception(() =>
-        {
-            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Exp(empty, empty);
-            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Log(empty, empty);
-            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Sqrt(empty, empty);
-            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Abs(empty, empty);
-        });
-        Assert.Null(ex);
+        Assert.Equal("input", Assert.Throws<ArgumentException>(() =>
+            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Exp(empty, empty)).ParamName);
+        Assert.Equal("input", Assert.Throws<ArgumentException>(() =>
+            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Log(empty, empty)).ParamName);
+        Assert.Equal("input", Assert.Throws<ArgumentException>(() =>
+            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Sqrt(empty, empty)).ParamName);
+        Assert.Equal("input", Assert.Throws<ArgumentException>(() =>
+            FastMathBoundaryKernels.LaunchKernel_COR01_FastMath_Abs(empty, empty)).ParamName);
     }
 
     [SkippableFact]

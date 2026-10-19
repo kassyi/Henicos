@@ -521,7 +521,40 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // C# accepts "2f" and "2d", but C++ treats "2" as an integer literal (so "f" is an unknown suffix) and has no "d" suffix.
+        if (node.IsKind(SyntaxKind.NumericLiteralExpression) && node.Token.Value is float or double)
+        {
+            AppendFloatingPointLiteral(node.Token.Text, node.Token.Value is float);
+            return;
+        }
+
         Context.Emitter.Writer.Append(node.Token.Text);
+    }
+
+    private void AppendFloatingPointLiteral(string text, bool isSingle)
+    {
+        var end = text.Length;
+        while (end > 0 && text[end - 1] is 'f' or 'F' or 'd' or 'D')
+        {
+            end--;
+        }
+
+        var hasFraction = false;
+        for (var i = 0; i < end; i++)
+        {
+            Context.Emitter.Writer.Append(text[i]);
+            hasFraction |= text[i] is '.' or 'e' or 'E';
+        }
+
+        if (!hasFraction)
+        {
+            Context.Emitter.Writer.Append(".0");
+        }
+
+        if (isSingle)
+        {
+            Context.Emitter.Writer.Append('f');
+        }
     }
 
     private void AppendInt64Literal(string text, bool isUnsigned)

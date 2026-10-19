@@ -38,6 +38,39 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
             return;
         }
 
+        if (node.IsKind(SyntaxKind.EqualsExpression) || node.IsKind(SyntaxKind.NotEqualsExpression))
+        {
+            var leftType = context.Query.SemanticModel.GetTypeSymbol(node.Left);
+            var rightType = context.Query.SemanticModel.GetTypeSymbol(node.Right);
+
+            var leftIsNull = node.Left.IsKind(SyntaxKind.NullLiteralExpression);
+            var rightIsNull = node.Right.IsKind(SyntaxKind.NullLiteralExpression);
+
+            if (leftIsNull && (rightType != null && (rightType.IsArrayLikeType() || rightType.IsNullableArrayLike())))
+            {
+                var op = node.IsKind(SyntaxKind.EqualsExpression) ? "==" : "!=";
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Visitor.Visit(node.Right);
+                    context.Emitter.Writer.Append($".data {op} nullptr");
+                }
+
+                return;
+            }
+
+            if (rightIsNull && (leftType != null && (leftType.IsArrayLikeType() || leftType.IsNullableArrayLike())))
+            {
+                var op = node.IsKind(SyntaxKind.EqualsExpression) ? "==" : "!=";
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Visitor.Visit(node.Left);
+                    context.Emitter.Writer.Append($".data {op} nullptr");
+                }
+
+                return;
+            }
+        }
+
         context.Visitor.Visit(node.Left);
 
         var opText = node.OperatorToken.Text;

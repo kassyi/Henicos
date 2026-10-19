@@ -119,8 +119,29 @@ private unsafe delegate void Rotate32Kernel_Delegate(uint gridDimX, uint gridDim
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRotate32Kernel(global::System.UInt32[] val, global::System.Int32[] shift, global::System.UInt32[] rotLeftRes, global::System.UInt32[] rotRightRes, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (val.Length == 0 || shift.Length == 0 || rotLeftRes.Length == 0 || rotRightRes.Length == 0){
-return;
+if (val is null){
+throw new global::System.ArgumentNullException(nameof(val));
+}
+if (val.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(val));
+}
+if (shift is null){
+throw new global::System.ArgumentNullException(nameof(shift));
+}
+if (shift.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(shift));
+}
+if (rotLeftRes is null){
+throw new global::System.ArgumentNullException(nameof(rotLeftRes));
+}
+if (rotLeftRes.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(rotLeftRes));
+}
+if (rotRightRes is null){
+throw new global::System.ArgumentNullException(nameof(rotRightRes));
+}
+if (rotRightRes.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(rotRightRes));
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -306,8 +327,29 @@ private unsafe delegate void Rotate64Kernel_Delegate(uint gridDimX, uint gridDim
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRotate64Kernel(global::System.UInt64[] val, global::System.Int32[] shift, global::System.UInt64[] rotLeftRes, global::System.UInt64[] rotRightRes, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (val.Length == 0 || shift.Length == 0 || rotLeftRes.Length == 0 || rotRightRes.Length == 0){
-return;
+if (val is null){
+throw new global::System.ArgumentNullException(nameof(val));
+}
+if (val.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(val));
+}
+if (shift is null){
+throw new global::System.ArgumentNullException(nameof(shift));
+}
+if (shift.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(shift));
+}
+if (rotLeftRes is null){
+throw new global::System.ArgumentNullException(nameof(rotLeftRes));
+}
+if (rotLeftRes.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(rotLeftRes));
+}
+if (rotRightRes is null){
+throw new global::System.ArgumentNullException(nameof(rotRightRes));
+}
+if (rotRightRes.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(rotRightRes));
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";

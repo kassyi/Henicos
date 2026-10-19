@@ -89,7 +89,8 @@ internal static class StructTranspiler
 
     private static bool TryGetUserStruct(ITypeSymbol? typeSymbol, [NotNullWhen(true)] out INamedTypeSymbol? namedStruct)
     {
-        var structType = typeSymbol is IArrayTypeSymbol arrayType ? arrayType.ElementType : typeSymbol;
+        // [WHY] Array-like wrappers (T[], Memory<T>, ImmutableArray<T>, ...) reach the device as GSharpArray<T>; only their element type can be a user struct.
+        var structType = typeSymbol.TryGetArrayLikeElementType(out var elementType) ? elementType : typeSymbol;
         if (structType is INamedTypeSymbol { TypeKind: TypeKind.Struct } candidate &&
             !candidate.ContainingNamespace.IsSystemOrNumerics())
         {
@@ -108,6 +109,7 @@ internal static class StructTranspiler
         ref TranspileContext context)
     {
         if (isPointer || typeSymbol is not { TypeKind: TypeKind.Struct } ||
+            typeSymbol.IsArrayLikeType() ||
             typeSymbol.ContainingNamespace.IsSystemOrNumerics())
         {
             return;

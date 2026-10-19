@@ -8,7 +8,9 @@ internal static class CudaLayoutRules
     /// <summary>Determines whether the type requires custom native struct generation.</summary>
     internal static bool IsCustomStruct(ITypeSymbol type)
     {
+        // [WHY] Array-like structs (ImmutableArray<T> in System.Collections.Immutable) are marshaled as GSharpArray, not as native shadow structs.
         return type is INamedTypeSymbol { TypeKind: TypeKind.Struct } named &&
+               !named.IsArrayLikeType() &&
                !named.ContainingNamespace.IsSystemOrNumerics() &&
                !named.ContainingNamespace.IsCoreNamespace();
     }

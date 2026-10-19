@@ -6,6 +6,8 @@ namespace Kassyi.GSharp.Compiler;
 /// <summary>Generates host-side C# wrapper classes that load and invoke GPU kernels.</summary>
 internal static class WrapperEmitter
 {
+    private const string EmptyArrayMessage = "Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.";
+
     private readonly struct InteropParameterInfo(
         string modifier,
         ITypeSymbol? type,
@@ -41,6 +43,10 @@ internal static class WrapperEmitter
                 else if (Type != null)
                 {
                     writer.AppendFullyQualifiedCsharpName(Type);
+                    if (Type.IsReferenceType && Type.NullableAnnotation == NullableAnnotation.Annotated)
+                    {
+                        writer.Append("?");
+                    }
                     writer.AppendSpace();
                 }
             }
@@ -74,9 +80,10 @@ internal static class WrapperEmitter
             };
         }
 
+        var marshaledType = KernelLaunchEmitter.GetMarshaledType(p);
         switch (isDevicePtr)
         {
-            case true when (p.Type.IsArrayLikeType() ||
+            case true when (marshaledType.IsArrayLikeType() ||
                             p.RefKind is RefKind.Ref or RefKind.Out):
             {
                 if (p.HasExplicitDefaultValue)
@@ -86,10 +93,10 @@ internal static class WrapperEmitter
 
                 return new InteropParameterInfo(string.Empty, null, true, defaultValue);
             }
-            case true when CudaLayoutRules.IsCustomStruct(p.Type):
+            case true when CudaLayoutRules.IsCustomStruct(marshaledType):
             {
                 var tempWriter = new SourceWriter();
-                tempWriter.AppendAotStructPath(p.Type);
+                tempWriter.AppendAotStructPath(marshaledType);
                 var rawTypeName = tempWriter.ToString();
                 return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
             }
@@ -211,7 +218,7 @@ internal static class WrapperEmitter
             if (!isDevicePtr)
             {
                 WriteOutParameterDefaults(writer, method);
-                WriteEmptyArrayGuards(writer, method);
+                WriteArrayArgumentChecks(writer, method);
             }
 
             WriteAutoResultAllocation(writer, method);
@@ -249,7 +256,7 @@ internal static class WrapperEmitter
         using (writer.Scope())
         {
             WriteOutParameterDefaults(writer, method);
-            WriteEmptyArrayGuards(writer, method);
+            WriteArrayArgumentChecks(writer, method);
             WriteAutoResultAllocation(writer, method);
             WriteManagedExecutionFallback(writer, method);
             WriteCpuDelegateGetOrCompile(writer, method);
@@ -318,7 +325,7 @@ internal static class WrapperEmitter
     {
         foreach (var p in method.Parameters)
         {
-            if (p.RefKind is not RefKind.Out || p.Type.IsArrayLikeType())
+            if (p.RefKind is not RefKind.Out || KernelLaunchEmitter.GetMarshaledType(p).IsArrayLikeType())
             {
                 continue;
             }
@@ -328,62 +335,93 @@ internal static class WrapperEmitter
         }
     }
 
-    private static void WriteEmptyArrayGuards(SourceWriter writer, IMethodSymbol method)
+    private static void WriteArrayArgumentChecks(SourceWriter writer, IMethodSymbol method)
     {
-        var hasArray = false;
         foreach (var p in method.Parameters)
         {
-            if (!p.Type.IsArrayLikeType())
+            var marshaled = KernelLaunchEmitter.GetMarshaledType(p);
+            if (!marshaled.IsArrayLikeType())
             {
                 continue;
             }
 
-            hasArray = true;
-            break;
-        }
-
-        if (!hasArray)
-        {
-            return;
-        }
-
-        writer.Append("if ");
-        using (writer.Parentheses())
-        {
-            var isFirst = true;
-            foreach (var p in method.Parameters)
+            if (KernelLaunchEmitter.IsOptionalArray(p))
             {
-                if (!p.Type.IsArrayLikeType())
+                var lenMember = marshaled is INamedTypeSymbol { Name: "ArraySegment" } ? "Count" : "Length";
+                writer.Append("if ");
+                using (writer.Parentheses())
                 {
-                    continue;
+                    writer.Append($"{p.Name} is {{ {lenMember}: 0 }}");
                 }
 
-                if (!isFirst)
+                using (writer.Scope())
                 {
-                    writer.Append(" || ");
+                    writer.AppendLine($"{p.Name} = null;");
                 }
-
-                writer.Append(p.Name);
-                writer.Append(".Length == 0");
-                isFirst = false;
             }
-        }
-
-        using (writer.Scope())
-        {
-            if (method.ReturnType.SpecialType != SpecialType.System_Void)
+            else if (marshaled is IArrayTypeSymbol || marshaled.IsReferenceType)
             {
-                writer.Append("return System.Array.Empty<");
-                writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-                writer.AppendLine(">();");
+                writer.Append("if ");
+                using (writer.Parentheses())
+                {
+                    writer.Append($"{p.Name} is null");
+                }
+
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({p.Name}));");
+                }
+
+                writer.Append("if ");
+                using (writer.Parentheses())
+                {
+                    writer.Append($"{p.Name}.Length == 0");
+                }
+
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name}));");
+                }
+            }
+            else if (marshaled is INamedTypeSymbol { Name: "ImmutableArray" })
+            {
+                writer.Append("if ");
+                using (writer.Parentheses())
+                {
+                    writer.Append($"{p.Name}.IsDefault");
+                }
+
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({p.Name}));");
+                }
+
+                writer.Append("if ");
+                using (writer.Parentheses())
+                {
+                    writer.Append($"{p.Name}.Length == 0");
+                }
+
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name}));");
+                }
             }
             else
             {
-                writer.AppendLine("return;");
+                var lenExpr = KernelLaunchEmitter.GetLengthExpression(p);
+                writer.Append("if ");
+                using (writer.Parentheses())
+                {
+                    writer.Append($"{lenExpr} == 0");
+                }
+
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name}));");
+                }
             }
         }
-
-        writer.AppendLine();
     }
 
 
@@ -511,7 +549,8 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
 
-                if (p.Type.IsArrayLikeType())
+                var marshaledType = KernelLaunchEmitter.GetMarshaledType(p);
+                if (marshaledType.IsArrayLikeType())
                 {
                     writer.Append("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ");
                     writer.Append(p.Name);
@@ -702,11 +741,13 @@ internal static class WrapperEmitter
 
         foreach (var p in method.Parameters)
         {
-            if (p.Type.TryGetArrayLikeElementType(out var elementType))
+            var marshaledType = KernelLaunchEmitter.GetMarshaledType(p);
+            if (marshaledType.TryGetArrayLikeElementType(out var elementType))
             {
                 writer.Append("fixed (");
                 writer.AppendFullyQualifiedCsharpName(elementType);
-                writer.AppendLine($"* p_{p.Name} = {p.Name})");
+                var spanExpr = KernelLaunchEmitter.GetSpanExpression(p);
+                writer.AppendLine($"* p_{p.Name} = {spanExpr})");
                 hasFixed = true;
             }
             else if (p.RefKind is RefKind.Ref or RefKind.Out)
@@ -758,10 +799,12 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
 
-                if (p.Type.IsArrayLikeType())
+                var marshaledType = KernelLaunchEmitter.GetMarshaledType(p);
+                if (marshaledType.IsArrayLikeType())
                 {
+                    var lenExpr = KernelLaunchEmitter.GetLengthExpression(p);
                     writer.Append(
-                        $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{p.Name}, Length = {p.Name}.Length }}");
+                        $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{p.Name}, Length = {lenExpr} }}");
                 }
                 else if (p.RefKind is RefKind.Ref or RefKind.Out)
                 {
