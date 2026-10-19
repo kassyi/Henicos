@@ -323,4 +323,63 @@ public class TrustedKeysGeneratorTests
         Assert.Equal("GSH0059", diag.Id);
         Assert.Contains("invalid character", diag.GetMessage());
     }
+
+    [Theory]
+    // RFC 8032 Section 7.1 Test Vectors 1-3 public keys
+    [InlineData("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a,fnv1a64:5553fd74df")]
+    [InlineData("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c,fnv1a64:b7819df3c0")]
+    [InlineData("fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025,fnv1a64:07d9f356d7")]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_TrustedKeysGenerator_Rfc8032PublicKeys_Accepted(string line)
+    {
+        Assert.Empty(RunDiagnostics(line));
+    }
+
+    [Theory]
+    // All 8 small-order points (canonical encodings), each with a matching fingerprint.
+    [InlineData("0100000000000000000000000000000000000000000000000000000000000000,fnv1a64:a05e7487b0")]
+    [InlineData("ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f,fnv1a64:3a25be95a7")]
+    [InlineData("0000000000000000000000000000000000000000000000000000000000000000,fnv1a64:68497138cf")]
+    [InlineData("0000000000000000000000000000000000000000000000000000000000000080,fnv1a64:682e8138ce")]
+    [InlineData("26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05,fnv1a64:6cae59afea")]
+    [InlineData("26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85,fnv1a64:6cc949afea")]
+    [InlineData("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a,fnv1a64:b2fcb037d2")]
+    [InlineData("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa,fnv1a64:b3a3b437d3")]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_TrustedKeysGenerator_SmallOrderKey_ReportsGSH0059(string line)
+    {
+        var diag = Assert.Single(RunDiagnostics(line));
+
+        Assert.Equal("GSH0059", diag.Id);
+        Assert.Contains("small-order Ed25519 public key", diag.GetMessage());
+    }
+
+    [Theory]
+    // Non-canonical y (y = p, y = p + 1, y = 2^255 - 1)
+    [InlineData("edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f,fnv1a64:e30ce14a7b")]
+    [InlineData("eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f,fnv1a64:ed80e09ecb")]
+    [InlineData("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f,fnv1a64:d61789ba55")]
+    // y = 2 has no square root for x^2
+    [InlineData("0200000000000000000000000000000000000000000000000000000000000000,fnv1a64:0345d332d3")]
+    // 0xAB repeated: well-formed but not on the curve
+    [InlineData("abababababababababababababababababababababababababababababababab,fnv1a64:544cc8e1f3")]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_TrustedKeysGenerator_NotDecompressibleKey_ReportsGSH0059(string line)
+    {
+        var diag = Assert.Single(RunDiagnostics(line));
+
+        Assert.Equal("GSH0059", diag.Id);
+        Assert.Contains("not a valid Ed25519 public key", diag.GetMessage());
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_TrustedKeysGenerator_TypoInKey_ReportsFingerprintMismatchBeforePointValidation()
+    {
+        // A typo is the likely cause, so the fingerprint is checked before the curve point.
+        var diag = Assert.Single(RunDiagnostics(
+            "0200000000000000000000000000000000000000000000000000000000000000,fnv1a64:5553fd74df"));
+
+        Assert.Contains("fingerprint mismatch", diag.GetMessage());
+    }
 }

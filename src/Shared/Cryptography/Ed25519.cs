@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Cryptography;
 [ExcludeFromCodeCoverage]
 internal static class Ed25519
 {
-    public const int PublicKeySize = 32;
+    public const int PublicKeySize = Ed25519PublicKeyValidator.PublicKeySize;
     public const int SecretKeySeedSize = 32;
     public const int SignatureSize = 64;
 
@@ -42,16 +42,15 @@ internal static class Ed25519
     /// </summary>
     public static ReadOnlySpan<byte> DefaultDevPublicKey => s_defaultDevPublicKey;
 
-    private static readonly BigInteger s_p = BigInteger.Pow(2, 255) - 19;
+    private static readonly BigInteger s_p = Ed25519Field.P;
 
     private static readonly BigInteger s_l = BigInteger.Pow(2, 252) +
                                              BigInteger.Parse("27742317777372353535851937790883648493");
 
-    private static readonly BigInteger s_d = Mod(-121665 * ModInverse(121666, s_p), s_p);
-    private static readonly BigInteger s_i = BigInteger.ModPow(2, (s_p - 1) / 4, s_p);
+    private static readonly BigInteger s_d = Ed25519Field.D;
 
     private static readonly BigInteger s_by = Mod(4 * ModInverse(5, s_p), s_p);
-    private static readonly BigInteger s_bx = RecoverX(s_by, 0);
+    private static readonly BigInteger s_bx = Ed25519Field.RecoverX(s_by, 0);
     private static readonly Point s_basePoint = new(s_bx, s_by);
 
     private readonly struct Point(BigInteger x, BigInteger y)
@@ -60,46 +59,9 @@ internal static class Ed25519
         public readonly BigInteger Y = y;
     }
 
-    private static BigInteger Mod(BigInteger x, BigInteger m)
-    {
-        var r = x % m;
-        return r < 0 ? r + m : r;
-    }
+    private static BigInteger Mod(BigInteger x, BigInteger m) => Ed25519Field.Mod(x, m);
 
-    private static BigInteger ModInverse(BigInteger a, BigInteger m) =>
-        BigInteger.ModPow(Mod(a, m), m - 2, m);
-
-    private static BigInteger RecoverX(BigInteger y, int sign)
-    {
-        if (y >= s_p)
-        {
-            return -1;
-        }
-
-        var x2 = Mod((y * y - 1) * ModInverse(s_d * y * y + 1, s_p), s_p);
-        if (x2 == 0)
-        {
-            return sign != 0 ? -1 : 0;
-        }
-
-        var x = BigInteger.ModPow(x2, (s_p + 3) / 8, s_p);
-        if (Mod(x * x - x2, s_p) != 0)
-        {
-            x = Mod(x * s_i, s_p);
-        }
-
-        if (Mod(x * x - x2, s_p) != 0)
-        {
-            return -1;
-        }
-
-        if ((x % 2 == 0 ? 0 : 1) != sign)
-        {
-            x = s_p - x;
-        }
-
-        return x;
-    }
+    private static BigInteger ModInverse(BigInteger a, BigInteger m) => Ed25519Field.ModInverse(a, m);
 
     private static Point PointAdd(Point p1, Point p2)
     {
@@ -147,25 +109,9 @@ internal static class Ed25519
 
     private static bool TryDecodePoint(ReadOnlySpan<byte> enc, out Point p)
     {
-        p = default;
-        if (enc.Length != PublicKeySize)
+        if (!Ed25519Field.TryDecodePoint(enc, out var x, out var y))
         {
-            return false;
-        }
-
-        var encCopy = enc.ToArray();
-        var sign = (encCopy[31] >> 7) & 1;
-        encCopy[31] &= 0x7F;
-
-        var y = FromLittleEndian(encCopy);
-        if (y >= s_p)
-        {
-            return false;
-        }
-
-        var x = RecoverX(y, sign);
-        if (x < 0)
-        {
+            p = default;
             return false;
         }
 
@@ -173,12 +119,7 @@ internal static class Ed25519
         return true;
     }
 
-    private static BigInteger FromLittleEndian(ReadOnlySpan<byte> bytes)
-    {
-        var unsigned = new byte[bytes.Length + 1];
-        bytes.CopyTo(unsigned);
-        return new BigInteger(unsigned);
-    }
+    private static BigInteger FromLittleEndian(ReadOnlySpan<byte> bytes) => Ed25519Field.FromLittleEndian(bytes);
 
     private static byte[] To32BytesLittleEndian(BigInteger n)
     {

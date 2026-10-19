@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Cryptography;
+
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>
@@ -111,6 +113,15 @@ public sealed class TrustedKeysGenerator : IIncrementalGenerator
             reason = fingerprint.StartsWith(FingerprintPrefix.AsSpan(), StringComparison.Ordinal)
                 ? "fingerprint mismatch"
                 : "missing fingerprint";
+            return false;
+        }
+
+        // Checked after the fingerprint: a typo is the likely cause of an invalid point, and the fingerprint names it.
+        var status = Ed25519PublicKeyValidator.Validate(bytes);
+        if (status != Ed25519PublicKeyStatus.Valid)
+        {
+            bytes = [];
+            reason = Ed25519PublicKeyValidator.GetReason(status);
             return false;
         }
 
