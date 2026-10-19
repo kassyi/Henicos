@@ -343,4 +343,4 @@ doctest file_path assemblies="":
     pwsh ./scripts/Test-DocSnippet.ps1 -FilePath {{file_path}} -Assemblies {{assemblies}}
 
 rebuild-and-test:
-    dotnet build --no-incremental; just test
+    dotnet build --no-incremental && just test
