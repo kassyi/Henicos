@@ -127,7 +127,7 @@ public class OptionalArrayTests : TranspilerTestBase
     public void Test_MemoryAddKernel_EmptyX_ShouldThrowArgumentException()
     {
         var ex = Assert.Throws<ArgumentException>(() =>
-            OptionalArrayKernels.LaunchMemoryAddKernel(Memory<float>.Empty, [10f, 20f], blockDimX: 2));
+            OptionalArrayKernels.LaunchMemoryAddKernel(Memory<float>.Empty, new float[] { 10f, 20f }, blockDimX: 2));
         Assert.Equal("x", ex.ParamName);
     }
 
