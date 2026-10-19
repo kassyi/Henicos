@@ -528,7 +528,25 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
+        // C++ rejects '_' inside numbers (and "0x'FF"), so digit separators are dropped.
+        if (node.IsKind(SyntaxKind.NumericLiteralExpression))
+        {
+            AppendWithoutSeparators(node.Token.Text, node.Token.Text.Length);
+            return;
+        }
+
         Context.Emitter.Writer.Append(node.Token.Text);
+    }
+
+    private void AppendWithoutSeparators(string text, int end)
+    {
+        for (var i = 0; i < end; i++)
+        {
+            if (text[i] != '_')
+            {
+                Context.Emitter.Writer.Append(text[i]);
+            }
+        }
     }
 
     private void AppendFloatingPointLiteral(string text, bool isSingle)
@@ -542,9 +560,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         var hasFraction = false;
         for (var i = 0; i < end; i++)
         {
-            Context.Emitter.Writer.Append(text[i]);
             hasFraction |= text[i] is '.' or 'e' or 'E';
         }
+
+        AppendWithoutSeparators(text, end);
 
         if (!hasFraction)
         {
@@ -565,10 +584,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             end--;
         }
 
-        for (var i = 0; i < end; i++)
-        {
-            Context.Emitter.Writer.Append(text[i]);
-        }
+        AppendWithoutSeparators(text, end);
 
         Context.Emitter.Writer.Append(isUnsigned ? "ull" : "ll");
     }
