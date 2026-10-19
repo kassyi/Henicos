@@ -79,9 +79,30 @@ internal static class MethodSignatureTranspiler
         }
     }
 
+    internal static (bool IsRefPointer, bool IsPointerType, bool HasRestrict) WriteParameterDeclaration(
+        ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol, ref TranspileContext context)
+    {
+        var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
+        var isArray = typeSymbol.IsArrayLikeType();
+
+        if (isReadOnly && !isArray)
+        {
+            context.Emitter.Writer.Append("const ");
+        }
+
+        return context.Emitter.Dialect.AppendParameter(ref context, p, typeSymbol, parameterSymbol);
+    }
+
     public static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
         ref TranspileContext context)
     {
+        if (parameters.Count == 0)
+        {
+            return;
+        }
+
+        var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(parameters[0].SyntaxTree);
+
         for (var i = 0; i < parameters.Count; i++)
         {
             var p = parameters[i];
@@ -90,22 +111,15 @@ internal static class MethodSignatureTranspiler
                 continue;
             }
 
-            var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(p.SyntaxTree);
             var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type);
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 
             var paramSymbol = paramSemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
-            var isReadOnly = paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
-            var isArray = typeSymbol.IsArrayLikeType();
-
-            if (isReadOnly && !isArray)
-            {
-                context.Emitter.Writer.Append("const ");
-            }
 
             var (isRefPointer, isPointerType, hasRestrict) =
-                context.Emitter.Dialect.AppendParameter(ref context, p, typeSymbol);
+                WriteParameterDeclaration(p, typeSymbol, paramSymbol, ref context);
+
             StructTranspiler.CheckLargeStructByValue(p, typeSymbol, isRefPointer, ref context);
 
             if (!isDevice && isPointerType && !hasRestrict)

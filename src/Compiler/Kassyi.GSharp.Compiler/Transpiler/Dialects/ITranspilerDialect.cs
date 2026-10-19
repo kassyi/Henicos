@@ -84,6 +84,7 @@ public interface ITranspilerDialect
     /// <param name="context">The active transpilation context used for source output.</param>
     /// <param name="p">The syntax node defining the method parameter.</param>
     /// <param name="typeSymbol">The resolved semantic type symbol for the parameter, or <see langword="null"/> if unresolvable.</param>
+    /// <param name="parameterSymbol">The resolved parameter symbol, or <see langword="null"/> if unresolvable.</param>
     /// <returns>
     /// A tuple containing:
     /// <list type="bullet">
@@ -92,7 +93,7 @@ public interface ITranspilerDialect
     /// <item><term><c>HasRestrict</c></term><description><see langword="true"/> if the parameter is decorated with the C++ <c>__restrict__</c> keyword.</description></item>
     /// </list>
     /// </returns>
-    (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol);
+    (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol);
 
     /// <summary>
     /// Computes the approximate unmanaged memory footprint in bytes for the specified type according to the target's alignment rules.
