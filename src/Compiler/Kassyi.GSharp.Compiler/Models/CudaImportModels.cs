@@ -1,6 +1,4 @@
 namespace Kassyi.GSharp.Compiler.Models;
-
-using Kassyi.GSharp.Compiler.Helpers;
 using Kassyi.GSharp.Compiler.NativeApi;
 
 /// <summary>

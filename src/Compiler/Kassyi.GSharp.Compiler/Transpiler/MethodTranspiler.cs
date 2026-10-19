@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Compiler.Lowering;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 

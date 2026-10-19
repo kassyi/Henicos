@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Helpers;
 #nullable enable
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
@@ -301,7 +302,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         foreach (var pureName in mandatorySnapshotKernels)
         {
             var prefix = SnapshotNamingHelper.GetMeaningfulPrefix(pureName);
-            var hash10 = HashHelper.ComputeShortHash(pureName);
+            var hash10 = HashHelper.ComputeFnv1A64ShortHash(pureName);
             var expectedPattern = $"{prefix}_{hash10}";
 
             if (!snapshotFiles.Any(f => f.Contains(expectedPattern, StringComparison.OrdinalIgnoreCase)))
