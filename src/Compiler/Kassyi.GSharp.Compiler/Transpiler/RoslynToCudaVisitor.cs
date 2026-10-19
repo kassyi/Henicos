@@ -196,44 +196,16 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// <inheritdoc />
     public override void VisitParameter(ParameterSyntax node)
     {
-        var paramSymbol = Context.Query.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(node);
-        var isReadOnly = paramSymbol?.HasAttribute(KnownAttributes.GpuReadOnly) == true;
-
         if (node.Type != null)
         {
             var typeSymbol = Context.Query.SemanticModel.GetTypeSymbol(node.Type);
             if (typeSymbol != null)
             {
-                var isArray = typeSymbol.TryGetArrayLikeElementType(out var elementType);
-                
-                if (isReadOnly && !isArray)
-                {
-                    Context.Emitter.Writer.Append("const ");
-                }
-
-                if (isArray)
-                {
-                    Context.Emitter.Writer.Append("GSharpArray<");
-                    if (isReadOnly)
-                    {
-                        Context.Emitter.Writer.Append("const ");
-                    }
-
-                    Context.Emitter.Dialect.AppendType(ref Context, elementType);
-                    Context.Emitter.Writer.Append(">");
-                }
-                else
-                {
-                    Context.Emitter.Dialect.AppendType(ref Context, typeSymbol);
-                }
+                var paramSymbol = Context.Query.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(node);
+                MethodSignatureTranspiler.WriteParameterDeclaration(node, typeSymbol, paramSymbol, ref Context);
             }
             else
             {
-                if (isReadOnly)
-                {
-                    Context.Emitter.Writer.Append("const ");
-                }
-
                 Visit(node.Type);
             }
         }

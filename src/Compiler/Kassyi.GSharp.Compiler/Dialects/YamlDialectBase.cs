@@ -172,14 +172,12 @@ public abstract class YamlDialectBase : ITranspilerDialect
     }
 
     public virtual (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(
-        ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol)
+        ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol)
     {
         var isRefPointer = p.Modifiers.Any(SyntaxKind.RefKeyword) || p.Modifiers.Any(SyntaxKind.OutKeyword);
         var isPointerType = typeSymbol is IPointerTypeSymbol;
-        
-        var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(p.SyntaxTree);
-        var paramSymbol = paramSemanticModel.GetDeclaredSymbol(p);
-        var isReadOnly = paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
+
+        var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
         var isArray = typeSymbol.TryGetArrayLikeElementType(out var elementType);
 
         if (typeSymbol.IsSharedMemoryType() && typeSymbol is INamedTypeSymbol { TypeArguments.Length: 1 } namedType)
