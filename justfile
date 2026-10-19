@@ -344,3 +344,26 @@ doctest file_path assemblies="":
 
 rebuild-and-test:
     dotnet build --no-incremental && just test
+
+# Print a trusted_keys.txt line (`<key>,fnv1a64:<fingerprint>`) for a 64-char hex or 44-char Base64 Ed25519 public key
+[windows]
+trusted-key-line key:
+    $k = '{{key}}'; if ($k.Length -eq 64) { $hex = $k.ToLowerInvariant() } elseif ($k.Length -eq 44) { $hex = [System.BitConverter]::ToString([Convert]::FromBase64String($k)).Replace('-', '').ToLowerInvariant() } else { throw 'key must be 64 hex or 44 Base64 characters' }; [bigint]$h = [bigint]::Parse('14695981039346656037'); [bigint]$prime = [bigint]::Parse('1099511628211'); [bigint]$mod = [bigint]::Pow(2, 64); foreach ($c in $hex.ToCharArray()) { $h = (($h -bxor [bigint][int]$c) * $prime) % $mod }; $s = $h.ToString('x').TrimStart('0').PadLeft(16, '0'); "$k,fnv1a64:" + $s.Substring(0, 10)
+
+[unix]
+trusted-key-line key:
+    #!/usr/bin/env bash
+    set -eu
+    k='{{key}}'
+    case ${#k} in
+        64) hex=$(printf '%s' "$k" | tr 'A-F' 'a-f') ;;
+        44) hex=$(printf '%s' "$k" | base64 -d | od -An -v -tx1 | tr -d '[:space:]') ;;
+        *) echo 'key must be 64 hex or 44 Base64 characters' >&2; exit 1 ;;
+    esac
+    # bash integer arithmetic wraps modulo 2^64, which is exactly what 64-bit FNV-1a needs
+    h=-3750763034362895579
+    for ((i = 0; i < ${#hex}; i++)); do
+        printf -v c '%d' "'${hex:i:1}"
+        h=$(( (h ^ c) * 1099511628211 ))
+    done
+    printf '%s,fnv1a64:%s\n' "$k" "$(printf '%016x' "$h" | cut -c1-10)"
