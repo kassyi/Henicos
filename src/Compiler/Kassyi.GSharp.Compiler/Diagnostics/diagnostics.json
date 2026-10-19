@@ -521,5 +521,14 @@
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "MalformedTrustedKey",
+    "id": "GSH0059",
+    "title": "Malformed trusted key line",
+    "messageFormat": "Line {1} of '{0}' is not a valid trusted key: {2}",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
   }
 ]
