@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Kassyi.GSharp.Compiler;
-using Kassyi.GSharp.Tests.Infrastructure;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -13,8 +12,12 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
+[Category(TestCategory.Compiler)]
 public class TrustedKeysGeneratorTests
 {
+    // Leading bytes of Convert.FromBase64String("1111111111111111111111111111111111111111111="); '1' decodes to the repeating 0xd7 0x5d 0x75.
+    private const string Base64KeyLeadingBytes = "0xd7, 0x5d, 0x75, 0xd7";
+
     private sealed class InMemoryAdditionalText(string path, string text) : AdditionalText
     {
         public override string Path => path;
@@ -23,9 +26,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    [Category(TestCategory.Compiler)]
-    public void Test_TrustedKeysGenerator_WithValidHexKey_GeneratesSource()
+    [Scenario(TestScenario.HappyPath)]    public void Test_TrustedKeysGenerator_WithValidHexKey_GeneratesSource()
     {
         const string TrustedKeysContent = """
             # Test comment
@@ -54,9 +55,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.HappyPath)]
-    [Category(TestCategory.Compiler)]
-    public void Test_TrustedKeysGenerator_WithMultipleKeysAndComments_ParsesAll()
+    [Scenario(TestScenario.HappyPath)]    public void Test_TrustedKeysGenerator_WithMultipleKeysAndComments_ParsesAll()
     {
         const string TrustedKeysContent = """
             # Primary Key
@@ -83,13 +82,12 @@ public class TrustedKeysGeneratorTests
 
         // 64 bytes total (32 bytes * 2 keys) -> should contain both keys
         Assert.Contains("0xd7, 0x5a, 0x98, 0x01", generatedSource);
+        Assert.Contains(Base64KeyLeadingBytes, generatedSource);
         Assert.Contains("GetCustomEmbeddedKeys", generatedSource);
     }
 
     [Fact]
-    [Scenario(TestScenario.Boundary)]
-    [Category(TestCategory.Compiler)]
-    public void Test_TrustedKeysGenerator_NoTrustedKeysFile_EmitsNothing()
+    [Scenario(TestScenario.Boundary)]    public void Test_TrustedKeysGenerator_NoTrustedKeysFile_EmitsNothing()
     {
         var compilation = CSharpCompilation.Create("TestCompilation");
         var otherFile = new InMemoryAdditionalText("other_file.txt", "some content");
@@ -107,9 +105,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]
-    [Category(TestCategory.Compiler)]
-    public void Test_TrustedKeysGenerator_InvalidBase64_ReportsGSH0059()
+    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_InvalidBase64_ReportsGSH0059()
     {
         const string TrustedKeysContent = """
             # Valid comment
@@ -136,9 +132,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]
-    [Category(TestCategory.Compiler)]
-    public void Test_TrustedKeysGenerator_Base64WrongLength_ReportsGSH0059()
+    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_Base64WrongLength_ReportsGSH0059()
     {
         const string TrustedKeysContent = "11111111111111111111111=";
 
@@ -158,9 +152,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]
-    [Category(TestCategory.Compiler)]
-    public void Test_TrustedKeysGenerator_InvalidHex_ReportsGSH0059()
+    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_InvalidHex_ReportsGSH0059()
     {
         const string TrustedKeysContent = """
             d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511
@@ -185,9 +177,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.Boundary)]
-    [Category(TestCategory.Compiler)]
-    public void Test_TrustedKeysGenerator_MixedContentWithMalformedLine_EmitsDiagnosticAndValidKeys()
+    [Scenario(TestScenario.Boundary)]    public void Test_TrustedKeysGenerator_MixedContentWithMalformedLine_EmitsDiagnosticAndValidKeys()
     {
         const string TrustedKeysContent = """
             # Primary Key
@@ -218,6 +208,7 @@ public class TrustedKeysGeneratorTests
         Assert.Single(runResult.GeneratedTrees);
         var generatedSource = runResult.GeneratedTrees[0].ToString();
         Assert.Contains("0xd7, 0x5a, 0x98, 0x01", generatedSource);
+        Assert.Contains(Base64KeyLeadingBytes, generatedSource);
         Assert.Contains("GetCustomEmbeddedKeys", generatedSource);
     }
 }
