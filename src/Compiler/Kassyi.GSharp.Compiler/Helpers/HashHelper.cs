@@ -26,30 +26,6 @@ internal static class HashHelper
     }
 
     /// <summary>
-    /// Computes a short (10-character) lowercase hexadecimal hash using the 64-bit FNV-1a algorithm.
-    /// Single source of truth for snapshot file names and trusted key fingerprints; not a security hash.
-    /// </summary>
-    public static string ComputeFnv1A64ShortHash(string text)
-    {
-        if (text is null)
-        {
-            throw new ArgumentNullException(nameof(text));
-        }
-
-        unchecked
-        {
-            var hash = 14695981039346656037UL;
-            foreach (var c in text)
-            {
-                hash ^= c;
-                hash *= 1099511628211UL;
-            }
-
-            return hash.ToString("x16")[..10];
-        }
-    }
-
-    /// <summary>
     /// Combines multiple object hashes into a single deterministic hash.
     /// If an object is a string, it uses ComputeFnv1AHash for stability.
     /// </summary>

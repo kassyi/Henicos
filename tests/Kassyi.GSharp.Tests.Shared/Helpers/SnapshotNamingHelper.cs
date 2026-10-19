@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Compiler.Helpers;
 using System;
 using VerifyTests;
 
@@ -16,7 +15,7 @@ public static class SnapshotNamingHelper
         ArgumentNullException.ThrowIfNull(testMethodName);
 
         var prefix = GetMeaningfulPrefix(testMethodName);
-        var hash10 = HashHelper.ComputeFnv1A64ShortHash(testMethodName);
+        var hash10 = HashHelper.ComputeShortHash(testMethodName);
         var dialectSuffix = string.IsNullOrEmpty(dialect) ? "" : dialect;
 
         var snapshotName = $"Snap.{prefix}_{hash10}_{dialectSuffix}";

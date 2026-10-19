@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules.StackLinq;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
