@@ -30,7 +30,7 @@ public class TrustedKeysGeneratorTests
     {
         const string TrustedKeysContent = """
             # Test comment
-            d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a
+            d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a,fnv1a64:5553fd74df
             """;
 
         var compilation = CSharpCompilation.Create("TestCompilation");
@@ -59,10 +59,10 @@ public class TrustedKeysGeneratorTests
     {
         const string TrustedKeysContent = """
             # Primary Key
-            d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a
+            d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a,fnv1a64:5553fd74df
 
             # Secondary Key (Base64 for 32-byte key)
-            1111111111111111111111111111111111111111111=
+            1111111111111111111111111111111111111111111=,fnv1a64:25c9e1ea82
             """;
 
         var compilation = CSharpCompilation.Create("TestCompilation");
@@ -181,13 +181,13 @@ public class TrustedKeysGeneratorTests
     {
         const string TrustedKeysContent = """
             # Primary Key
-            d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a
+            d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a,fnv1a64:5553fd74df
 
             # Bad Key
             AAAA!!notbase64==
 
             # Secondary Key (Base64)
-            1111111111111111111111111111111111111111111=
+            1111111111111111111111111111111111111111111=,fnv1a64:25c9e1ea82
             """;
 
         var compilation = CSharpCompilation.Create("TestCompilation");
@@ -210,5 +210,117 @@ public class TrustedKeysGeneratorTests
         Assert.Contains("0xd7, 0x5a, 0x98, 0x01", generatedSource);
         Assert.Contains(Base64KeyLeadingBytes, generatedSource);
         Assert.Contains("GetCustomEmbeddedKeys", generatedSource);
+    }
+
+    private static ImmutableArray<Diagnostic> RunDiagnostics(string content)
+    {
+        var compilation = CSharpCompilation.Create("TestCompilation");
+        var additionalText = new InMemoryAdditionalText("trusted_keys.txt", content);
+
+        var generator = new TrustedKeysGenerator();
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators: [generator.AsSourceGenerator()],
+            additionalTexts: [additionalText]);
+
+        return driver.RunGenerators(compilation).GetRunResult().Diagnostics;
+    }
+
+    [Theory]
+    [InlineData(",")]
+    [InlineData(" , ")]
+    [InlineData("	,	")]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_TrustedKeysGenerator_FingerprintSeparatedByComma_Accepted(string separator)
+    {
+        var content = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a" + separator + "fnv1a64:5553fd74df";
+
+        Assert.Empty(RunDiagnostics(content));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_TrustedKeysGenerator_HexAndBase64FormsOfSameKey_ShareOneFingerprint()
+    {
+        // RFC 8032 Section 7.1 Test Vector 1 in both encodings; the fingerprint is computed over normalized lowercase hex.
+        const string Content = """
+            d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a,fnv1a64:5553fd74df
+            11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=,fnv1a64:5553fd74df
+            """;
+
+        Assert.Empty(RunDiagnostics(Content));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_TrustedKeysGenerator_UppercaseHexKey_UsesNormalizedLowercaseFingerprint()
+    {
+        const string Content = "D75A980182B10AB7D54BFED3C964073A0EE172F3DAA62325AF021A68F707511A,fnv1a64:5553fd74df";
+
+        Assert.Empty(RunDiagnostics(Content));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_TrustedKeysGenerator_WhitespaceInsteadOfComma_ReportsGSH0059()
+    {
+        // Whitespace is not a valid key/fingerprint separator.
+        var diag = Assert.Single(RunDiagnostics(
+            "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a  fnv1a64:5553fd74df"));
+
+        Assert.Equal("GSH0059", diag.Id);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_TrustedKeysGenerator_MissingFingerprint_ReportsGSH0059()
+    {
+        var diag = Assert.Single(RunDiagnostics("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"));
+
+        Assert.Equal("GSH0059", diag.Id);
+        Assert.Contains("missing fingerprint", diag.GetMessage());
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_TrustedKeysGenerator_MismatchedFingerprint_ReportsGSH0059WithoutExpectedValue()
+    {
+        // One hex character of the key differs from the fingerprinted key (typo).
+        const string Content = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511b,fnv1a64:5553fd74df";
+
+        var diag = Assert.Single(RunDiagnostics(Content));
+
+        Assert.Equal("GSH0059", diag.Id);
+        var message = diag.GetMessage();
+        Assert.Contains("fingerprint mismatch", message);
+        // The expected fingerprint must never be printed, otherwise users could paste it without checking the key.
+        var expected = Kassyi.GSharp.Compiler.Helpers.HashHelper.ComputeFnv1A64ShortHash(
+            "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511b");
+        Assert.DoesNotContain(expected, message);
+    }
+
+    [Theory]
+    [InlineData("fnv1a64:5553fd74d")]
+    [InlineData("fnv1a64:")]
+    [InlineData("fnv1a64:5553FD74DF")]
+    [InlineData("sha256:5553fd74df")]
+    [InlineData("5553fd74df")]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_TrustedKeysGenerator_NonCanonicalFingerprintSuffix_ReportsGSH0059(string suffix)
+    {
+        var content = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a," + suffix;
+
+        var diag = Assert.Single(RunDiagnostics(content));
+
+        Assert.Equal("GSH0059", diag.Id);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_TrustedKeysGenerator_MalformedKeyWithFingerprint_ReportsKeyFormatReason()
+    {
+        var diag = Assert.Single(RunDiagnostics("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511g,fnv1a64:5553fd74df"));
+
+        Assert.Equal("GSH0059", diag.Id);
+        Assert.Contains("invalid character", diag.GetMessage());
     }
 }

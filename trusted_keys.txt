@@ -1,7 +1,8 @@
 # G# Authorized Keys (Ed25519 Public Keys for Fatbin Verification)
-# Format: 32-byte public key in Hex (64 chars) or Base64 (44 chars) per line.
+# Format: <32-byte public key in Hex (64 chars) or Base64 (44 chars)>,fnv1a64:<10 hex> per line.
+# The fingerprint detects typos only (not a security feature). Generate a line with `just trusted-key-line <key>`.
 # Lines starting with '#' and blank lines are ignored.
 
 # Default development public key: RFC 8032 Section 7.1 Test Vector 1 (Ed25519)
 # Paired secret key seed: 9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60
-d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a
+d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a,fnv1a64:5553fd74df
