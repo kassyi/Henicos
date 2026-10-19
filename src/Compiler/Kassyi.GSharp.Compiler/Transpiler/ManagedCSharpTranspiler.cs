@@ -54,6 +54,7 @@ internal static class ManagedCSharpTranspiler
             return (bodySource, string.Empty, regularFields);
         }
 
+        var seenFields = new HashSet<string>();
         foreach (var field in contextFields)
         {
             if (field.Parent is not VariableDeclarationSyntax declaration)
@@ -61,10 +62,15 @@ internal static class ManagedCSharpTranspiler
                 continue;
             }
 
+            var fieldName = field.Identifier.ValueText;
+            if (!seenFields.Add(fieldName))
+            {
+                continue;
+            }
+
             var typeSyntax = declaration.Type;
             var initString = field.Initializer?.Value.ToFullString() ?? "";
             var typeString = ResolveFieldType(typeSyntax, initString, semanticModel);
-            var fieldName = field.Identifier.ValueText;
 
             if (IsRefStructType(typeString, initString))
             {

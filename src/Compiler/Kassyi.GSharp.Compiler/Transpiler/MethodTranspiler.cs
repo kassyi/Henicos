@@ -180,8 +180,15 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendLine($"__gsharp_context_{methodName}* _all_contexts = nullptr;");
         context.Emitter.Writer.AppendLine("uint64_t _warpExchange = 0;");
         context.Emitter.Writer.AppendLine("bool _yieldedForGridSync = false;");
+        var seenFields = new HashSet<string>();
         foreach (var field in fields)
         {
+            var fieldName = field.Identifier.ValueText;
+            if (!seenFields.Add(fieldName))
+            {
+                continue;
+            }
+
             var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
             if (typeSyntax == null)
             {

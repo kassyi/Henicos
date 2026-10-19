@@ -186,9 +186,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         catch (Exception ex)
         {
             var collector = new DiagnosticCollector();
-#pragma warning disable RS1035
-            File.AppendAllText(@"P:\Projects\Active\Henicos\tmp\gsharp_error.txt", ex + "\n\n");
-#pragma warning restore RS1035
+            Console.Error.WriteLine("TranspileKernel error: " + ex);
             collector.Report(Diagnostic.Create(
                 GSharpDiagnostics.InternalCompilerError,
                 Location.None,
@@ -248,9 +246,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         catch (Exception ex)
         {
             var collector = new DiagnosticCollector();
-#pragma warning disable RS1035
-            File.AppendAllText(@"P:\Projects\Active\Henicos\tmp\gsharp_error.txt", ex + "\n\n");
-#pragma warning restore RS1035
+            Console.Error.WriteLine("TranspileDeviceMethod error: " + ex);
             collector.Report(Diagnostic.Create(
                 GSharpDiagnostics.InternalCompilerError,
                 Location.None,

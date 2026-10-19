@@ -41,7 +41,53 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
+        if (TryTranspileSpecialArrayMembers(node, ref context))
+        {
+            return;
+        }
+
         TranspileMemberAccess(node, ref context);
+    }
+
+    private static bool TryTranspileSpecialArrayMembers(MemberAccessExpressionSyntax node, ref TranspileContext context)
+    {
+        var memberName = node.Name.Identifier.Text;
+        var operandType = context.Query.SemanticModel.GetTypeSymbol(node.Expression);
+
+        if (operandType == null)
+        {
+            return false;
+        }
+
+        if (memberName == "Span" &&
+            operandType is INamedTypeSymbol { Name: "Memory" or "ReadOnlyMemory", ContainingNamespace.IsGlobalNamespace: false } nsSymbol &&
+            nsSymbol.ContainingNamespace.IsSystemNamespace())
+        {
+            context.Visitor.Visit(node.Expression);
+            return true;
+        }
+
+        if (operandType.IsNullableArrayLike())
+        {
+            if (memberName == "Value")
+            {
+                context.Visitor.Visit(node.Expression);
+                return true;
+            }
+
+            if (memberName == "HasValue")
+            {
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Visitor.Visit(node.Expression);
+                    context.Emitter.Writer.Append(".data != nullptr");
+                }
+
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool TryTranspileIntrinsic(ISymbol symbol, ref TranspileContext context)

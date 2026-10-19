@@ -82,6 +82,7 @@ internal static class MethodSignatureTranspiler
     internal static (bool IsRefPointer, bool IsPointerType, bool HasRestrict) WriteParameterDeclaration(
         ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol, ref TranspileContext context)
     {
+        typeSymbol = typeSymbol.UnwrapNullableArrayLike();
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
         var isArray = typeSymbol.IsArrayLikeType();
 
@@ -101,7 +102,12 @@ internal static class MethodSignatureTranspiler
             return;
         }
 
-        var paramSemanticModel = context.Query.SemanticModel.Compilation.GetSemanticModel(parameters[0].SyntaxTree);
+        var firstTree = parameters[0].SyntaxTree;
+        var paramSemanticModel = firstTree == context.Query.SemanticModel.SyntaxTree
+            ? context.Query.SemanticModel
+            : (context.Query.SemanticModel.Compilation.ContainsSyntaxTree(firstTree)
+                ? context.Query.SemanticModel.Compilation.GetSemanticModel(firstTree)
+                : context.Query.SemanticModel);
 
         for (var i = 0; i < parameters.Count; i++)
         {
@@ -111,7 +117,7 @@ internal static class MethodSignatureTranspiler
                 continue;
             }
 
-            var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type);
+            var typeSymbol = paramSemanticModel.GetTypeSymbol(p.Type).UnwrapNullableArrayLike();
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
 

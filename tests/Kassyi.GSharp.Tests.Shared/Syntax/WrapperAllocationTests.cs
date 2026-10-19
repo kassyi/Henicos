@@ -82,7 +82,7 @@ public class WrapperAllocationTests : TranspilerTestBase
     }
 
     [SkippableFact]
-    public void Test_LaunchEmptyArray_ShouldReturnEarlyAndSetDefaultOut()
+    public void Test_LaunchEmptyArray_ShouldThrowArgumentException()
     {
         using var _ctx = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope();
 
@@ -91,12 +91,10 @@ public class WrapperAllocationTests : TranspilerTestBase
         int[] emptyArray = [];
         uint constantVal = 10;
 
-        // Launch with empty array - should early-return without executing GPU kernel
-        WrapperAllocationKernels.LaunchAllocationTestKernel(ref ioVal, out outVal, emptyArray, constantVal);
-
-        // Verification: ioVal is untouched, outVal gets C# default(float) = 0f
-        Assert.Equal(42, ioVal);
-        Assert.Equal(0f, outVal);
+        // Launch with empty array - should throw ArgumentException
+        var ex = Assert.Throws<ArgumentException>(() =>
+            WrapperAllocationKernels.LaunchAllocationTestKernel(ref ioVal, out outVal, emptyArray, constantVal));
+        Assert.Equal("arrayVal", ex.ParamName);
     }
 
     [SkippableFact]
