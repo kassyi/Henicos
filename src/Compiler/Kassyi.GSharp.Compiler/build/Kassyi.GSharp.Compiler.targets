@@ -31,6 +31,11 @@
     </GetCopyToOutputDirectoryItemsDependsOn>
   </PropertyGroup>
 
+  <!-- Debug builds are development builds and sign with the default key on purpose. GS0002 stays a warning in Release and pack builds. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);GS0002</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
   <Target Name="GSharpAddGeneratedItemsToOutputDirectory" DependsOnTargets="GSharpCompileCuda;GSharpCompileCpu" BeforeTargets="CopyFilesToOutputDirectory">
     <ItemGroup>
       <!-- For transitive ProjectReference copy -->
