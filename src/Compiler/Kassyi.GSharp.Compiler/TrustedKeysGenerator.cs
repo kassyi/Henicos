@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>
@@ -17,21 +16,26 @@ public sealed class TrustedKeysGenerator : IIncrementalGenerator
                 var fileName = Path.GetFileName(file.Path);
                 return string.Equals(fileName, TargetFileName, StringComparison.OrdinalIgnoreCase);
             })
-            .Select(static (file, ct) => file.GetText(ct)?.ToString() ?? string.Empty);
+            .Select(static (file, ct) => (file.Path, Text: file.GetText(ct)));
 
-        var combinedTexts = trustedKeysFiles.Collect();
+        var combinedFiles = trustedKeysFiles.Collect();
 
-        context.RegisterSourceOutput(combinedTexts, static (spc, texts) =>
+        context.RegisterSourceOutput(combinedFiles, static (spc, files) =>
         {
-            if (texts.IsEmpty)
+            if (files.IsEmpty)
             {
                 return;
             }
 
             var builder = ImmutableArray.CreateBuilder<byte>();
-            foreach (var text in texts)
+            foreach (var file in files)
             {
-                ParseKeysInto(text, builder);
+                if (file.Text is not { } sourceText)
+                {
+                    continue;
+                }
+
+                ParseKeysAndReportDiagnostics(spc, file.Path, sourceText, builder);
             }
 
             if (builder.Count == 0)
@@ -45,37 +49,130 @@ public sealed class TrustedKeysGenerator : IIncrementalGenerator
         });
     }
 
-    private static void ParseKeysInto(string text, ImmutableArray<byte>.Builder builder)
+    private static void ParseKeysAndReportDiagnostics(
+        SourceProductionContext spc,
+        string path,
+        SourceText sourceText,
+        ImmutableArray<byte>.Builder builder)
     {
-        using var reader = new StringReader(text);
-        while (reader.ReadLine() is { } line)
+        foreach (var line in sourceText.Lines)
         {
-            var trimmed = line.AsSpan().Trim();
+            var lineSpan = line.Span;
+            var lineText = sourceText.ToString(lineSpan);
+            var trimmed = lineText.AsSpan().Trim();
+
             if (trimmed.Length == 0 || trimmed[0] == '#')
             {
                 continue;
             }
 
-            if (trimmed.Length == 64 && TryParseHex(trimmed, out var hexBytes))
+            if (ValidateAndParseLine(trimmed, out var keyBytes, out var reason))
             {
-                builder.AddRange(hexBytes);
+                builder.AddRange(keyBytes);
             }
             else
             {
-                try
-                {
-                    var base64Bytes = Convert.FromBase64String(trimmed.ToString());
-                    if (base64Bytes.Length == 32)
-                    {
-                        builder.AddRange(base64Bytes);
-                    }
-                }
-                catch
-                {
-                    // Ignore malformed lines on best-effort basis
-                }
+                var lineNumber = line.LineNumber + 1;
+                var location = Location.Create(path, lineSpan, sourceText.Lines.GetLinePositionSpan(lineSpan));
+                spc.ReportDiagnostic(Diagnostic.Create(
+                    GSharpDiagnostics.MalformedTrustedKey,
+                    location,
+                    path,
+                    lineNumber,
+                    reason));
             }
         }
+    }
+
+    private static bool ValidateAndParseLine(ReadOnlySpan<char> trimmed, out byte[] bytes, out string reason)
+    {
+        bytes = [];
+        reason = string.Empty;
+
+        if (trimmed.Length == 64)
+        {
+            if (TryParseHex(trimmed, out bytes))
+            {
+                return true;
+            }
+
+            reason = "invalid character";
+            return false;
+        }
+
+        if (trimmed.Length == 44)
+        {
+            if (trimmed[43] == '=')
+            {
+                if (IsValidBase64Head(trimmed.Slice(0, 43)))
+                {
+                    bytes = Convert.FromBase64String(trimmed.ToString());
+                    return true;
+                }
+
+                reason = "invalid character";
+                return false;
+            }
+
+            reason = "expected 44 Base64 characters ending with '='";
+            return false;
+        }
+
+        if (ContainsInvalidChar(trimmed))
+        {
+            reason = "invalid character";
+            return false;
+        }
+
+        if (trimmed[trimmed.Length - 1] == '=' || HasChar(trimmed, '+') || HasChar(trimmed, '/'))
+        {
+            reason = "expected 44 Base64 characters ending with '='";
+            return false;
+        }
+
+        reason = "expected 64 hex characters";
+        return false;
+    }
+
+    private static bool IsValidBase64Head(ReadOnlySpan<char> span)
+    {
+        for (var i = 0; i < span.Length; i++)
+        {
+            var c = span[i];
+            if (!(c is (>= 'A' and <= 'Z') or (>= 'a' and <= 'z') or (>= '0' and <= '9') or '+' or '/'))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool ContainsInvalidChar(ReadOnlySpan<char> span)
+    {
+        for (var i = 0; i < span.Length; i++)
+        {
+            var c = span[i];
+            if (!(c is (>= 'A' and <= 'Z') or (>= 'a' and <= 'z') or (>= '0' and <= '9') or '+' or '/' or '='))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasChar(ReadOnlySpan<char> span, char target)
+    {
+        for (var i = 0; i < span.Length; i++)
+        {
+            if (span[i] == target)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool TryParseHex(ReadOnlySpan<char> hex, out byte[] bytes)
