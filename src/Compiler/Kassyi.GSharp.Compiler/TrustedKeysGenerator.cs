@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Cryptography;
+
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>
@@ -7,6 +9,9 @@ namespace Kassyi.GSharp.Compiler;
 public sealed class TrustedKeysGenerator : IIncrementalGenerator
 {
     private const string TargetFileName = "trusted_keys.txt";
+    private const char FingerprintSeparator = ',';
+    private const string FingerprintPrefix = "fnv1a64:";
+    private const int FingerprintHexLength = 10;
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -85,6 +90,72 @@ public sealed class TrustedKeysGenerator : IIncrementalGenerator
     }
 
     private static bool ValidateAndParseLine(ReadOnlySpan<char> trimmed, out byte[] bytes, out string reason)
+    {
+        var separatorIndex = trimmed.IndexOf(FingerprintSeparator);
+        var keyText = separatorIndex < 0 ? trimmed : trimmed.Slice(0, separatorIndex).Trim();
+
+        if (!TryParseKey(keyText, out bytes, out reason))
+        {
+            return false;
+        }
+
+        if (separatorIndex < 0)
+        {
+            bytes = [];
+            reason = "missing fingerprint";
+            return false;
+        }
+
+        var fingerprint = trimmed.Slice(separatorIndex + 1).Trim();
+        if (!MatchesFingerprint(bytes, fingerprint))
+        {
+            bytes = [];
+            reason = fingerprint.StartsWith(FingerprintPrefix.AsSpan(), StringComparison.Ordinal)
+                ? "fingerprint mismatch"
+                : "missing fingerprint";
+            return false;
+        }
+
+        // Checked after the fingerprint: a typo is the likely cause of an invalid point, and the fingerprint names it.
+        var status = Ed25519PublicKeyValidator.Validate(bytes);
+        if (status != Ed25519PublicKeyStatus.Valid)
+        {
+            bytes = [];
+            reason = Ed25519PublicKeyValidator.GetReason(status);
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool MatchesFingerprint(byte[] keyBytes, ReadOnlySpan<char> fingerprint)
+    {
+        if (fingerprint.Length != FingerprintPrefix.Length + FingerprintHexLength
+            || !fingerprint.StartsWith(FingerprintPrefix.AsSpan(), StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        // The hash input is the normalized lowercase hex text, so hex and Base64 forms of one key share a fingerprint.
+        var expected = HashHelper.ComputeFnv1A64ShortHash(ToLowerHex(keyBytes));
+        return fingerprint.Slice(FingerprintPrefix.Length).SequenceEqual(expected.AsSpan());
+    }
+
+    private static string ToLowerHex(byte[] bytes)
+    {
+        var chars = new char[bytes.Length * 2];
+        for (var i = 0; i < bytes.Length; i++)
+        {
+            chars[i * 2] = HexDigit(bytes[i] >> 4);
+            chars[i * 2 + 1] = HexDigit(bytes[i] & 0xF);
+        }
+
+        return new string(chars);
+    }
+
+    private static char HexDigit(int value) => (char)(value < 10 ? '0' + value : 'a' + value - 10);
+
+    private static bool TryParseKey(ReadOnlySpan<char> trimmed, out byte[] bytes, out string reason)
     {
         bytes = [];
         reason = string.Empty;

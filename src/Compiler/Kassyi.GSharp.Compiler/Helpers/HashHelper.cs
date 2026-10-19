@@ -27,7 +27,7 @@ internal static class HashHelper
 
     /// <summary>
     /// Computes a short (10-character) lowercase hexadecimal hash using the 64-bit FNV-1a algorithm.
-    /// Single source of truth for snapshot file names and trusted key fingerprints; not a security hash.
+    /// Used to detect typos (trusted key fingerprints); not a security hash.
     /// </summary>
     public static string ComputeFnv1A64ShortHash(string text)
     {

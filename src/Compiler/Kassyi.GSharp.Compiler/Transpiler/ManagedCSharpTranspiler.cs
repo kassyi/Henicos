@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Lowering;
 
 #pragma warning disable RS0030 // ManagedCSharpTranspiler is a host-side debug C#-to-C# state machine rewriter
 

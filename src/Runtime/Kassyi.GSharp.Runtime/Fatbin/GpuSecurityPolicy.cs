@@ -33,6 +33,13 @@ public static partial class GpuSecurityPolicy
             throw new ArgumentException($"Public key must be {Ed25519.PublicKeySize} bytes.", nameof(publicKey));
         }
 
+        var status = Ed25519PublicKeyValidator.Validate(publicKey);
+        if (status != Ed25519PublicKeyStatus.Valid)
+        {
+            throw new ArgumentException(
+                $"Public key is rejected: {Ed25519PublicKeyValidator.GetReason(status)}.", nameof(publicKey));
+        }
+
         if (ContainsKey(EmbeddedKeys, publicKey))
         {
             return;

@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Extensions;
 
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 

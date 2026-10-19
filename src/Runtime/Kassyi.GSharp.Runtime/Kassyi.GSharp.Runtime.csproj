@@ -29,6 +29,8 @@
 
   <ItemGroup>
     <Compile Include="..\..\Shared\Cryptography\Ed25519.cs" Link="Cryptography\Ed25519.cs" />
+    <Compile Include="..\..\Shared\Cryptography\Ed25519Field.cs" Link="Cryptography\Ed25519Field.cs" />
+    <Compile Include="..\..\Shared\Cryptography\Ed25519PublicKeyValidator.cs" Link="Cryptography\Ed25519PublicKeyValidator.cs" />
   </ItemGroup>
 
   <ItemGroup>
