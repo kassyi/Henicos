@@ -1,6 +1,8 @@
 namespace Kassyi.GSharp.Compiler;
 
 using Extensions;
+using Helpers;
+using Models;
 using NativeApi;
 
 /// <summary>
@@ -9,38 +11,48 @@ using NativeApi;
 [Generator]
 public class CudaImportGenerator : IIncrementalGenerator
 {
+    public const string MethodTrackingName = "CudaImportMethod";
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var methodDeclarations = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 KnownAttributes.CudaImportMetadataName,
                 predicate: static (s, _) => s is MethodDeclarationSyntax m && HasPartialModifier(m),
-                transform: static (ctx, _) => ctx)
-            .Where(static m => m.TargetSymbol is IMethodSymbol);
+                transform: static (ctx, _) => TransformMethod(ctx))
+            .WithTrackingName(MethodTrackingName)
+            .Where(static m => m.HasValue)
+            .Select(static (m, _) => m!.Value); // [WHY] Safe because null values are filtered out by m.HasValue in the preceding Where step.
 
         var classGroups = methodDeclarations.Collect().SelectMany(static (items, _) =>
         {
-            var groups =
-                new Dictionary<INamedTypeSymbol, ImmutableArray<GeneratorAttributeSyntaxContext>.Builder>(
-                    SymbolEqualityComparer.Default);
+            var groups = new Dictionary<string, ImmutableArray<CudaImportMethodModel>.Builder>(StringComparer.Ordinal);
+            var order = ImmutableArray.CreateBuilder<string>();
+
             foreach (var item in items)
             {
-                var type = item.TargetSymbol.ContainingType;
-                if (!groups.TryGetValue(type, out var builder))
+                if (!groups.TryGetValue(item.ClassKey, out var builder))
                 {
-                    builder = ImmutableArray.CreateBuilder<GeneratorAttributeSyntaxContext>();
-                    groups[type] = builder;
+                    builder = ImmutableArray.CreateBuilder<CudaImportMethodModel>();
+                    groups[item.ClassKey] = builder;
+                    order.Add(item.ClassKey);
                 }
 
                 builder.Add(item);
             }
 
-            var result = ImmutableArray
-                .CreateBuilder<KeyValuePair<INamedTypeSymbol, ImmutableArray<GeneratorAttributeSyntaxContext>>>();
-            foreach (var kvp in groups)
+            var result = ImmutableArray.CreateBuilder<CudaImportClassModel>(order.Count);
+            foreach (var key in order)
             {
-                result.Add(new KeyValuePair<INamedTypeSymbol, ImmutableArray<GeneratorAttributeSyntaxContext>>(kvp.Key,
-                    kvp.Value.ToImmutable()));
+                var builder = groups[key];
+                var first = builder[0];
+                var lastDot = key.LastIndexOf('.');
+                var className = lastDot >= 0 ? key[(lastDot + 1)..] : key;
+                result.Add(new CudaImportClassModel(
+                    first.NamespaceName,
+                    className,
+                    first.ClassHeader,
+                    builder.ToImmutable().AsEquatableArray()));
             }
 
             return result.ToImmutable();
@@ -62,91 +74,112 @@ public class CudaImportGenerator : IIncrementalGenerator
         return false;
     }
 
-    private static void GenerateCudaImportForClass(SourceProductionContext context,
-        KeyValuePair<INamedTypeSymbol, ImmutableArray<GeneratorAttributeSyntaxContext>> group)
+    private static CudaImportMethodModel? TransformMethod(GeneratorAttributeSyntaxContext ctx)
     {
-        var containingClass = group.Key;
-        var contexts = group.Value;
+        if (ctx.TargetSymbol is not IMethodSymbol methodSymbol)
+        {
+            return null;
+        }
 
+        var containingClass = methodSymbol.ContainingType;
+        if (containingClass == null)
+        {
+            return null;
+        }
+
+        var methodSyntax = (MethodDeclarationSyntax)ctx.TargetNode;
+
+        AttributeData? attributeData = null;
+        foreach (var a in ctx.Attributes)
+        {
+            if (a.IsAttribute(KnownAttributes.CudaImport))
+            {
+                attributeData = a;
+                break;
+            }
+        }
+
+        if (attributeData == null)
+        {
+            return null;
+        }
+
+        ExtractAttributeArguments(attributeData, methodSyntax, methodSymbol.Name, out var moduleName, out var entryPoint, out var packContext);
+
+        var parameters = CreateLaunchParameters(methodSymbol).AsEquatableArray();
+
+        string namespaceName;
+        if (containingClass.ContainingNamespace == null || containingClass.ContainingNamespace.IsGlobalNamespace)
+        {
+            namespaceName = string.Empty;
+        }
+        else
+        {
+            using var nsWriter = new SourceWriter();
+            nsWriter.AppendNamespace(containingClass.ContainingNamespace);
+            namespaceName = nsWriter.ToString();
+        }
+
+        using var classWriter = new SourceWriter();
+        EmitClassDeclaration(classWriter, containingClass);
+        var classHeader = classWriter.ToString();
+
+        using var sigWriter = new SourceWriter();
+        EmitMethodSignature(sigWriter, methodSyntax, methodSymbol);
+        var signature = sigWriter.ToString();
+
+        var className = containingClass.Name;
+        var classKey = string.IsNullOrEmpty(namespaceName) ? className : $"{namespaceName}.{className}";
+
+        return new CudaImportMethodModel(
+            classKey,
+            namespaceName,
+            classHeader,
+            methodSymbol.Name,
+            moduleName,
+            entryPoint,
+            packContext,
+            signature,
+            parameters);
+    }
+
+    private static void GenerateCudaImportForClass(SourceProductionContext context, CudaImportClassModel classGroup)
+    {
         using var writer = new SourceWriter();
         EmitFileHeader(writer);
 
-        EmitNamespace(writer, containingClass.ContainingNamespace);
+        EmitNamespace(writer, classGroup.NamespaceName);
 
-        EmitClassDeclaration(writer, containingClass);
+        writer.AppendLine(classGroup.ClassHeader);
         using (writer.Scope())
         {
             var generatedFatbins = new HashSet<string>();
 
-            foreach (var ctx in contexts)
+            foreach (var method in classGroup.Methods)
             {
-                var methodSymbol = (IMethodSymbol)ctx.TargetSymbol;
-                var methodSyntax = (MethodDeclarationSyntax)ctx.TargetNode;
-                AttributeData? attributeData = null;
-                foreach (var a in ctx.Attributes)
+                if (generatedFatbins.Add(method.ModuleName))
                 {
-                    if (!a.IsAttribute(KnownAttributes.CudaImport))
-                    {
-                        continue;
-                    }
-
-                    attributeData = a;
-                    break;
-                }
-                if (attributeData == null)
-                {
-                    continue;
-                }
-
-                ExtractAttributeArguments(attributeData, methodSyntax, methodSymbol.Name, out var moduleName, out var _,
-                    out var _);
-
-                if (generatedFatbins.Add(moduleName))
-                {
-                    KernelLaunchEmitter.EmitModuleCacheField(writer, moduleName);
+                    KernelLaunchEmitter.EmitModuleCacheField(writer, method.ModuleName);
                 }
             }
 
-            foreach (var ctx in contexts)
+            foreach (var method in classGroup.Methods)
             {
-                var methodSymbol = (IMethodSymbol)ctx.TargetSymbol;
-                var methodSyntax = (MethodDeclarationSyntax)ctx.TargetNode;
-
-                AttributeData? attributeData = null;
-                foreach (var a in ctx.Attributes)
+                var parameters = method.Parameters.AsImmutableArray();
+                if (method.PackContext)
                 {
-                    if (!a.IsAttribute(KnownAttributes.CudaImport))
-                    {
-                        continue;
-                    }
-
-                    attributeData = a;
-                    break;
-                }
-                if (attributeData == null)
-                {
-                    continue;
+                    KernelLaunchEmitter.EmitNativeContextStruct(writer, method.MethodName, parameters);
                 }
 
-                ExtractAttributeArguments(attributeData, methodSyntax, methodSymbol.Name, out var moduleName,
-                    out var entryPoint, out var packContext);
-
-                var parameters = CreateLaunchParameters(methodSymbol);
-                if (packContext)
-                {
-                    KernelLaunchEmitter.EmitNativeContextStruct(writer, methodSymbol.Name, parameters);
-                }
-
-                EmitMethodSignature(writer, methodSyntax, methodSymbol);
+                writer.AppendLine(method.Signature);
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.EmitLaunchBody(writer, moduleName, entryPoint, methodSymbol.Name, parameters,
-                        packContext);
+                    KernelLaunchEmitter.EmitLaunchBody(writer, method.ModuleName, method.EntryPoint, method.MethodName, parameters, method.PackContext);
                 }
             }
         }
 
-        context.AddSource($"{containingClass.Name}_CudaImport.g.cs", writer.ToString());
+        context.AddSource($"{classGroup.ClassName}_CudaImport.g.cs", writer.ToString());
     }
 
     private static void EmitFileHeader(SourceWriter writer)
@@ -160,15 +193,15 @@ public class CudaImportGenerator : IIncrementalGenerator
         writer.AppendLine();
     }
 
-    private static void EmitNamespace(SourceWriter writer, INamespaceSymbol? namespaceSymbol)
+    private static void EmitNamespace(SourceWriter writer, string namespaceName)
     {
-        if (namespaceSymbol == null || namespaceSymbol.IsGlobalNamespace)
+        if (string.IsNullOrEmpty(namespaceName))
         {
             return;
         }
 
         writer.Append("namespace ");
-        writer.AppendNamespace(namespaceSymbol);
+        writer.Append(namespaceName);
         writer.AppendLine(";");
         writer.AppendLine();
     }
@@ -213,7 +246,7 @@ public class CudaImportGenerator : IIncrementalGenerator
             writer.Append(" partial");
         }
 
-        writer.AppendLine($" class {containingClass.Name}");
+        writer.Append($" class {containingClass.Name}");
     }
 
     private static void EmitMethodSignature(SourceWriter writer, MethodDeclarationSyntax methodSyntax,
@@ -237,7 +270,7 @@ public class CudaImportGenerator : IIncrementalGenerator
             }
         }
 
-        writer.AppendLine(")");
+        writer.Append(")");
     }
 
     private static void ExtractAttributeArguments(
@@ -281,8 +314,6 @@ public class CudaImportGenerator : IIncrementalGenerator
 
         if (!entryPointResolved)
         {
-            // Fallback to syntax tree parsing if the constant couldn't be resolved by the SemanticModel
-            // (e.g. because it is generated by another generator in the same pass)
             var attributeSyntax = FindCudaImportAttribute(methodSyntax);
             if (attributeSyntax?.ArgumentList == null)
             {
