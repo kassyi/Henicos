@@ -5,6 +5,7 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 [Category(TestCategory.Syntax)]
+[TestTarget(ExecutionTarget.GpuExecution)]
 public class OptionalArrayTests : TranspilerTestBase
 {
     [Scenario(TestScenario.HappyPath)]
