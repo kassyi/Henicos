@@ -368,10 +368,10 @@ inline void __gsharp_warp_exchange_assign_impl(T val, uint64_t* exchange) {
     *exchange = raw;
 }
 
-#define __gsharp_warp_exchange_assign(val) __gsharp_warp_exchange_assign_impl(val, &_ctx->_warpExchange)
+#define __gsharp_warp_exchange_assign(val) __gsharp_warp_exchange_assign_impl(val, &__gsharp_ctx->__gsharp_warp_exchange)
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_down_sync(TContext* _ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
+inline T __gsharp_warp_shuffle_read_down_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
     uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
     uint32_t laneId = tid % 32;
     uint32_t warpId = tid / 32;
@@ -381,7 +381,7 @@ inline T __gsharp_warp_shuffle_read_down_sync(TContext* _ctx, uint32_t mask, T v
     T result;
     if (srcLane < (uint32_t)width) {
         uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
+        uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange;
         std::memcpy(&result, &raw, sizeof(T));
     } else {
         result = val;
@@ -390,7 +390,7 @@ inline T __gsharp_warp_shuffle_read_down_sync(TContext* _ctx, uint32_t mask, T v
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_up_sync(TContext* _ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
+inline T __gsharp_warp_shuffle_read_up_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
     uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
     uint32_t laneId = tid % 32;
     uint32_t warpId = tid / 32;
@@ -400,7 +400,7 @@ inline T __gsharp_warp_shuffle_read_up_sync(TContext* _ctx, uint32_t mask, T val
     if (logicalLane >= delta) {
         uint32_t srcLane = logicalLane - delta;
         uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
+        uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange;
         std::memcpy(&result, &raw, sizeof(T));
     } else {
         result = val;
@@ -409,7 +409,7 @@ inline T __gsharp_warp_shuffle_read_up_sync(TContext* _ctx, uint32_t mask, T val
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_xor_sync(TContext* _ctx, uint32_t mask, T val, uint32_t laneMask, int width = 32) {
+inline T __gsharp_warp_shuffle_read_xor_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t laneMask, int width = 32) {
     uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
     uint32_t laneId = tid % 32;
     uint32_t warpId = tid / 32;
@@ -419,7 +419,7 @@ inline T __gsharp_warp_shuffle_read_xor_sync(TContext* _ctx, uint32_t mask, T va
     T result;
     if (srcLane < (uint32_t)width) {
         uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
+        uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange;
         std::memcpy(&result, &raw, sizeof(T));
     } else {
         result = val;
@@ -428,7 +428,7 @@ inline T __gsharp_warp_shuffle_read_xor_sync(TContext* _ctx, uint32_t mask, T va
 }
 
 template<typename TContext, typename T>
-inline T __gsharp_warp_shuffle_read_sync(TContext* _ctx, uint32_t mask, T val, uint32_t srcLane, int width = 32) {
+inline T __gsharp_warp_shuffle_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t srcLane, int width = 32) {
     uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
     uint32_t laneId = tid % 32;
     uint32_t warpId = tid / 32;
@@ -437,7 +437,7 @@ inline T __gsharp_warp_shuffle_read_sync(TContext* _ctx, uint32_t mask, T val, u
     T result;
     if (srcLane < (uint32_t)width && (mask & (1u << srcLane))) {
         uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = _ctx->_all_contexts[srcTid]._warpExchange;
+        uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange;
         std::memcpy(&result, &raw, sizeof(T));
     } else {
         result = val;

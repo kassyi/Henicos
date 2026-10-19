@@ -2240,10 +2240,10 @@ Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ExponentSliceContext Exponent;
 ;
 #endif
 struct __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel {
-int _state = 0;
-__gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel* _all_contexts = nullptr;
-uint64_t _warpExchange = 0;
-bool _yieldedForGridSync = false;
+int __gsharp_state = 0;
+__gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel* __gsharp_all_contexts = nullptr;
+uint64_t __gsharp_warp_exchange = 0;
+bool __gsharp_yielded_for_grid_sync = false;
 Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext core;
 Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext iterScratch;
 Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ExponentSliceContext expSlice;
@@ -2256,39 +2256,39 @@ int targetWords;
 int outWords;
 int i;
 };
-extern ""C"" __declspec(dllexport) void GpuBigIntDivRemKernels_ModPowNttMegaKernel(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx, __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel* _ctx){
-#define _state _ctx->_state
-#define _yieldedForGridSync _ctx->_yieldedForGridSync
-switch(_state)
+extern ""C"" __declspec(dllexport) void GpuBigIntDivRemKernels_ModPowNttMegaKernel(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx, __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel* __gsharp_ctx){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+switch(__gsharp_state)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-_ctx->core=ctx.Core;
-_ctx->iterScratch=_ctx->core.Workspace.Iteration;
-_ctx->expSlice=ctx.Exponent;
-_ctx->n=_ctx->core.Dimensions.NumberOfWords;
-_ctx->expWords=_ctx->expSlice.TotalWords;
-_ctx->targetBits=_ctx->core.Dimensions.TargetBits;
-_ctx->maxABits=2*_ctx->n*32;
-_ctx->aActualWords=(_ctx->maxABits+31)/32;
-_ctx->targetWords=(_ctx->targetBits+31)/32;
-_ctx->outWords=_ctx->aActualWords+_ctx->targetWords;
-if(!(_ctx->expSlice.StartWord==0))
+__gsharp_ctx->core=ctx.Core;
+__gsharp_ctx->iterScratch=__gsharp_ctx->core.Workspace.Iteration;
+__gsharp_ctx->expSlice=ctx.Exponent;
+__gsharp_ctx->n=__gsharp_ctx->core.Dimensions.NumberOfWords;
+__gsharp_ctx->expWords=__gsharp_ctx->expSlice.TotalWords;
+__gsharp_ctx->targetBits=__gsharp_ctx->core.Dimensions.TargetBits;
+__gsharp_ctx->maxABits=2*__gsharp_ctx->n*32;
+__gsharp_ctx->aActualWords=(__gsharp_ctx->maxABits+31)/32;
+__gsharp_ctx->targetWords=(__gsharp_ctx->targetBits+31)/32;
+__gsharp_ctx->outWords=__gsharp_ctx->aActualWords+__gsharp_ctx->targetWords;
+if(!(__gsharp_ctx->expSlice.StartWord==0))
 {
 goto __gsharp_switch_1_state_2;
 }
-for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < _ctx->outWords; idx += gridDim.x * blockDim.x)
+for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < __gsharp_ctx->outWords; idx += gridDim.x * blockDim.x)
 {
-if(idx<2*_ctx->n)
+if(idx<2*__gsharp_ctx->n)
 {
-_ctx->iterScratch.AxSquared[idx]=(idx==0?1u:0u);
-_ctx->iterScratch.XSquared[idx]=(idx<_ctx->n?_ctx->core.Operands.TargetOperand[idx]:0u);
+__gsharp_ctx->iterScratch.AxSquared[idx]=(idx==0?1u:0u);
+__gsharp_ctx->iterScratch.XSquared[idx]=(idx<__gsharp_ctx->n?__gsharp_ctx->core.Operands.TargetOperand[idx]:0u);
 }
-_ctx->iterScratch.ModulusExpanded[idx]=(idx<_ctx->n?_ctx->core.Operands.Constant[idx]:0u);
+__gsharp_ctx->iterScratch.ModulusExpanded[idx]=(idx<__gsharp_ctx->n?__gsharp_ctx->core.Operands.Constant[idx]:0u);
 }
-_yieldedForGridSync=true;
-_state=1;
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=1;
 return;
 }
 case 1:
@@ -2299,9 +2299,9 @@ goto __gsharp_switch_1_state_2;
 case 2:
 __gsharp_switch_1_state_2:
 {
-for(int i = _ctx->expSlice.StartWord;_ctx->i<_ctx->expSlice.EndWord;_ctx->i++)
+for(int i = __gsharp_ctx->expSlice.StartWord;__gsharp_ctx->i<__gsharp_ctx->expSlice.EndWord;__gsharp_ctx->i++)
 {
-unsigned int e = _ctx->expSlice.Words[_ctx->i];
+unsigned int e = __gsharp_ctx->expSlice.Words[__gsharp_ctx->i];
 if(e==0)
 {
 }
@@ -2309,24 +2309,24 @@ for(int bit = 0;bit<32;bit++)
 {
 if((e&1)==1)
 {
-ExecuteNttMultiplyMacroModPow(_ctx->core,_ctx->iterScratch.AxSquared,_ctx->iterScratch.XSquared,_ctx->iterScratch.NextXUnshifted,2*_ctx->n,2*_ctx->n,4*_ctx->n);
-ExecuteBarrettReductionMacro(_ctx->core,_ctx->iterScratch.NextXUnshifted,_ctx->iterScratch.ModulusExpanded,ctx.ReciprocalMod,_ctx->targetBits,_ctx->aActualWords,_ctx->iterScratch.NextXShifted,_ctx->iterScratch.AxSquared);
+ExecuteNttMultiplyMacroModPow(__gsharp_ctx->core,__gsharp_ctx->iterScratch.AxSquared,__gsharp_ctx->iterScratch.XSquared,__gsharp_ctx->iterScratch.NextXUnshifted,2*__gsharp_ctx->n,2*__gsharp_ctx->n,4*__gsharp_ctx->n);
+ExecuteBarrettReductionMacro(__gsharp_ctx->core,__gsharp_ctx->iterScratch.NextXUnshifted,__gsharp_ctx->iterScratch.ModulusExpanded,ctx.ReciprocalMod,__gsharp_ctx->targetBits,__gsharp_ctx->aActualWords,__gsharp_ctx->iterScratch.NextXShifted,__gsharp_ctx->iterScratch.AxSquared);
 }
-ExecuteNttMultiplyMacroModPow(_ctx->core,_ctx->iterScratch.XSquared,_ctx->iterScratch.XSquared,_ctx->iterScratch.NextXUnshifted,2*_ctx->n,2*_ctx->n,4*_ctx->n);
-ExecuteBarrettReductionMacro(_ctx->core,_ctx->iterScratch.NextXUnshifted,_ctx->iterScratch.ModulusExpanded,ctx.ReciprocalMod,_ctx->targetBits,_ctx->aActualWords,_ctx->iterScratch.NextXShifted,_ctx->iterScratch.XSquared);
+ExecuteNttMultiplyMacroModPow(__gsharp_ctx->core,__gsharp_ctx->iterScratch.XSquared,__gsharp_ctx->iterScratch.XSquared,__gsharp_ctx->iterScratch.NextXUnshifted,2*__gsharp_ctx->n,2*__gsharp_ctx->n,4*__gsharp_ctx->n);
+ExecuteBarrettReductionMacro(__gsharp_ctx->core,__gsharp_ctx->iterScratch.NextXUnshifted,__gsharp_ctx->iterScratch.ModulusExpanded,ctx.ReciprocalMod,__gsharp_ctx->targetBits,__gsharp_ctx->aActualWords,__gsharp_ctx->iterScratch.NextXShifted,__gsharp_ctx->iterScratch.XSquared);
 e>>=1;
 }
 }
-if(!(_ctx->expSlice.EndWord==_ctx->expWords))
+if(!(__gsharp_ctx->expSlice.EndWord==__gsharp_ctx->expWords))
 {
 goto __gsharp_switch_1_state_4;
 }
-for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < _ctx->n; idx += gridDim.x * blockDim.x)
+for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < __gsharp_ctx->n; idx += gridDim.x * blockDim.x)
 {
-_ctx->core.Operands.ResultBuffer[idx]=_ctx->iterScratch.AxSquared[idx];
+__gsharp_ctx->core.Operands.ResultBuffer[idx]=__gsharp_ctx->iterScratch.AxSquared[idx];
 }
-_yieldedForGridSync=true;
-_state=3;
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=3;
 return;
 }
 case 3:
@@ -2337,64 +2337,64 @@ goto __gsharp_switch_1_state_4;
 case 4:
 __gsharp_switch_1_state_4:
 {
-_state=-1;
+__gsharp_state=-1;
 return;
 }
 }
-#undef _state
-#undef _yieldedForGridSync
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_GpuBigIntDivRemKernels_ModPowNttMegaKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx)
 {
 __gsharp_host_last_error.Reset();
-GSharpErrorSlot _gsharp_launch_error;
-int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+GSharpErrorSlot __gsharp_launch_error;
+int32_t __gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
 #pragma omp parallel for schedule(dynamic)
-for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+for (int32_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-if (_gsharp_launch_error.HasError()) continue;
-int32_t bx = _b_idx % gridDimX;
-int32_t by = (_b_idx / gridDimX) % gridDimY;
-int32_t bz = _b_idx / (gridDimX * gridDimY);
+if (__gsharp_launch_error.HasError()) continue;
+int32_t bx = __gsharp_block_index % gridDimX;
+int32_t by = (__gsharp_block_index / gridDimX) % gridDimY;
+int32_t bz = __gsharp_block_index / (gridDimX * gridDimY);
 __gsharp_reset_smem();
-std::vector<__gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (auto& ctx : _gsharp_contexts) {
-ctx._state = 0;
-ctx._all_contexts = _gsharp_contexts.data();
+std::vector<__gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel> __gsharp_contexts(blockDimX * blockDimY * blockDimZ);
+for (auto& ctx : __gsharp_contexts) {
+ctx.__gsharp_state = 0;
+ctx.__gsharp_all_contexts = __gsharp_contexts.data();
 }
 std::atomic<bool> anyActive{true};
-while (anyActive && !_gsharp_launch_error.HasError())
+while (anyActive && !__gsharp_launch_error.HasError())
 {
 anyActive = false;
-int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);
+int32_t __gsharp_threads_per_block = (int32_t)(blockDimX * blockDimY * blockDimZ);
 #pragma omp parallel for schedule(static)
-for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)
+for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-if (_gsharp_launch_error.HasError()) continue;
-__gsharp_active_error_slot = &_gsharp_launch_error;
-int32_t tx = _t_idx % blockDimX;
-int32_t ty = (_t_idx / blockDimX) % blockDimY;
-int32_t tz = _t_idx / (blockDimX * blockDimY);
-uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
-if (_gsharp_contexts[_ctxtid]._state != -1)
+if (__gsharp_launch_error.HasError()) continue;
+__gsharp_active_error_slot = &__gsharp_launch_error;
+int32_t tx = __gsharp_thread_index % blockDimX;
+int32_t ty = (__gsharp_thread_index / blockDimX) % blockDimY;
+int32_t tz = __gsharp_thread_index / (blockDimX * blockDimY);
+uint32_t __gsharp_ctx_tid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
 anyActive = true;
 __gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-GpuBigIntDivRemKernels_ModPowNttMegaKernel(ctx, &_gsharp_contexts[_ctxtid]);
+GpuBigIntDivRemKernels_ModPowNttMegaKernel(ctx, &__gsharp_contexts[__gsharp_ctx_tid]);
 }
 }
 }
 }
-if (_gsharp_launch_error.HasError()) {
-__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);
+if (__gsharp_launch_error.HasError()) {
+__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
 }
 }
 ";
 public static readonly string ModPowNttMegaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ModPowNttMegaKernel_Source;
 public class __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel {
-public int _state;
-public uint _warpExchange;
-public bool _yieldedForGridSync;
+public int __gsharp_state;
+public uint __gsharp_warp_exchange;
+public bool __gsharp_yielded_for_grid_sync;
 public dynamic core;
 public dynamic iterScratch;
 public dynamic expSlice;
@@ -2407,37 +2407,37 @@ public int targetWords;
 public int outWords;
 public int i;
 }
-public static unsafe void __gsharp_statemachine_GpuBigIntDivRemKernels_ModPowNttMegaKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext ctx, __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel _ctx) {
+public static unsafe void __gsharp_statemachine_GpuBigIntDivRemKernels_ModPowNttMegaKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext ctx, __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel __gsharp_ctx) {
 {
-    switch (_ctx._state)
+    switch (__gsharp_ctx.__gsharp_state)
     {
         case 0:
         {
-            _ctx.core = ctx.Core;
-            _ctx.iterScratch = _ctx.core.Workspace.Iteration;
-            _ctx.expSlice = ctx.Exponent;
-            _ctx.n = _ctx.core.Dimensions.NumberOfWords;
-            _ctx.expWords = _ctx.expSlice.TotalWords;
-            _ctx.targetBits = _ctx.core.Dimensions.TargetBits;
-            _ctx.maxABits = 2 * _ctx.n * 32;
-            _ctx.aActualWords = (_ctx.maxABits + 31) / 32;
-            _ctx.targetWords = (_ctx.targetBits + 31) / 32;
-            _ctx.outWords = _ctx.aActualWords + _ctx.targetWords;
-            if (!(_ctx.expSlice.StartWord == 0))
+            __gsharp_ctx.core = ctx.Core;
+            __gsharp_ctx.iterScratch = __gsharp_ctx.core.Workspace.Iteration;
+            __gsharp_ctx.expSlice = ctx.Exponent;
+            __gsharp_ctx.n = __gsharp_ctx.core.Dimensions.NumberOfWords;
+            __gsharp_ctx.expWords = __gsharp_ctx.expSlice.TotalWords;
+            __gsharp_ctx.targetBits = __gsharp_ctx.core.Dimensions.TargetBits;
+            __gsharp_ctx.maxABits = 2 * __gsharp_ctx.n * 32;
+            __gsharp_ctx.aActualWords = (__gsharp_ctx.maxABits + 31) / 32;
+            __gsharp_ctx.targetWords = (__gsharp_ctx.targetBits + 31) / 32;
+            __gsharp_ctx.outWords = __gsharp_ctx.aActualWords + __gsharp_ctx.targetWords;
+            if (!(__gsharp_ctx.expSlice.StartWord == 0))
                 goto case 2;
-            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (_ctx.outWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.outWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
             {
-                if (idx < 2 * _ctx.n)
+                if (idx < 2 * __gsharp_ctx.n)
                 {
-                    _ctx.iterScratch.AxSquared[idx] = idx == 0 ? 1u : 0u; // TempResult
-                    _ctx.iterScratch.XSquared[idx] = idx < _ctx.n ? _ctx.core.Operands.TargetOperand[idx] : 0u; // TempBase
+                    __gsharp_ctx.iterScratch.AxSquared[idx] = idx == 0 ? 1u : 0u; // TempResult
+                    __gsharp_ctx.iterScratch.XSquared[idx] = idx < __gsharp_ctx.n ? __gsharp_ctx.core.Operands.TargetOperand[idx] : 0u; // TempBase
                 }
 
-                _ctx.iterScratch.ModulusExpanded[idx] = idx < _ctx.n ? _ctx.core.Operands.Constant[idx] : 0u;
+                __gsharp_ctx.iterScratch.ModulusExpanded[idx] = idx < __gsharp_ctx.n ? __gsharp_ctx.core.Operands.Constant[idx] : 0u;
             }
 
-            _ctx._yieldedForGridSync = true;
-            _ctx._state = 1;
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 1;
             return;
         }
 
@@ -2448,9 +2448,9 @@ public static unsafe void __gsharp_statemachine_GpuBigIntDivRemKernels_ModPowNtt
 
         case 2:
         {
-            for (int i = _ctx.expSlice.StartWord; _ctx.i < _ctx.expSlice.EndWord; _ctx.i++)
+            for (int i = __gsharp_ctx.expSlice.StartWord; __gsharp_ctx.i < __gsharp_ctx.expSlice.EndWord; __gsharp_ctx.i++)
             {
-                uint e = _ctx.expSlice.Words[_ctx.i];
+                uint e = __gsharp_ctx.expSlice.Words[__gsharp_ctx.i];
                 if (e == 0)
                 {
                 }
@@ -2459,25 +2459,25 @@ public static unsafe void __gsharp_statemachine_GpuBigIntDivRemKernels_ModPowNtt
                 {
                     if ((e & 1) == 1)
                     {
-                        ExecuteNttMultiplyMacroModPow(_ctx.core, _ctx.iterScratch.AxSquared, _ctx.iterScratch.XSquared, _ctx.iterScratch.NextXUnshifted, 2 * _ctx.n, 2 * _ctx.n, 4 * _ctx.n);
-                        ExecuteBarrettReductionMacro(_ctx.core, _ctx.iterScratch.NextXUnshifted, _ctx.iterScratch.ModulusExpanded, ctx.ReciprocalMod, _ctx.targetBits, _ctx.aActualWords, _ctx.iterScratch.NextXShifted, _ctx.iterScratch.AxSquared);
+                        ExecuteNttMultiplyMacroModPow(__gsharp_ctx.core, __gsharp_ctx.iterScratch.AxSquared, __gsharp_ctx.iterScratch.XSquared, __gsharp_ctx.iterScratch.NextXUnshifted, 2 * __gsharp_ctx.n, 2 * __gsharp_ctx.n, 4 * __gsharp_ctx.n);
+                        ExecuteBarrettReductionMacro(__gsharp_ctx.core, __gsharp_ctx.iterScratch.NextXUnshifted, __gsharp_ctx.iterScratch.ModulusExpanded, ctx.ReciprocalMod, __gsharp_ctx.targetBits, __gsharp_ctx.aActualWords, __gsharp_ctx.iterScratch.NextXShifted, __gsharp_ctx.iterScratch.AxSquared);
                     }
 
-                    ExecuteNttMultiplyMacroModPow(_ctx.core, _ctx.iterScratch.XSquared, _ctx.iterScratch.XSquared, _ctx.iterScratch.NextXUnshifted, 2 * _ctx.n, 2 * _ctx.n, 4 * _ctx.n);
-                    ExecuteBarrettReductionMacro(_ctx.core, _ctx.iterScratch.NextXUnshifted, _ctx.iterScratch.ModulusExpanded, ctx.ReciprocalMod, _ctx.targetBits, _ctx.aActualWords, _ctx.iterScratch.NextXShifted, _ctx.iterScratch.XSquared);
+                    ExecuteNttMultiplyMacroModPow(__gsharp_ctx.core, __gsharp_ctx.iterScratch.XSquared, __gsharp_ctx.iterScratch.XSquared, __gsharp_ctx.iterScratch.NextXUnshifted, 2 * __gsharp_ctx.n, 2 * __gsharp_ctx.n, 4 * __gsharp_ctx.n);
+                    ExecuteBarrettReductionMacro(__gsharp_ctx.core, __gsharp_ctx.iterScratch.NextXUnshifted, __gsharp_ctx.iterScratch.ModulusExpanded, ctx.ReciprocalMod, __gsharp_ctx.targetBits, __gsharp_ctx.aActualWords, __gsharp_ctx.iterScratch.NextXShifted, __gsharp_ctx.iterScratch.XSquared);
                     e >>= 1;
                 }
             }
 
-            if (!(_ctx.expSlice.EndWord == _ctx.expWords))
+            if (!(__gsharp_ctx.expSlice.EndWord == __gsharp_ctx.expWords))
                 goto case 4;
-            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (_ctx.n); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.n); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
             {
-                _ctx.core.Operands.ResultBuffer[idx] = _ctx.iterScratch.AxSquared[idx];
+                __gsharp_ctx.core.Operands.ResultBuffer[idx] = __gsharp_ctx.iterScratch.AxSquared[idx];
             }
 
-            _ctx._yieldedForGridSync = true;
-            _ctx._state = 3;
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 3;
             return;
         }
 
@@ -2488,7 +2488,7 @@ public static unsafe void __gsharp_statemachine_GpuBigIntDivRemKernels_ModPowNtt
 
         case 4:
         {
-            _ctx._state = -1;
+            __gsharp_ctx.__gsharp_state = -1;
             return;
         }
     }
@@ -2507,22 +2507,22 @@ var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
 var dllPath = System.IO.Path.Combine(System.AppContext.BaseDirectory, dllName);
 if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(dllPath))
 {
-int _gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
-int _gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
-var _gsharp_contexts = new __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel[_gsharp_total_blocks * _gsharp_threads_per_block];
-for (int i = 0; i < _gsharp_contexts.Length; i++) {
-  _gsharp_contexts[i] = new __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel();
+int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
+int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
+var __gsharp_contexts = new __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
+for (int i = 0; i < __gsharp_contexts.Length; i++) {
+  __gsharp_contexts[i] = new __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel();
 }
-global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(_gsharp_total_blocks);
+global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
 while (anyGridActive)
 {
 anyGridActive = false;
-for (int _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)
+for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-int bx = _b_idx % (int)gridDimX;
-int by = (_b_idx / (int)gridDimX) % (int)gridDimY;
-int bz = _b_idx / (int)(gridDimX * gridDimY);
+int bx = __gsharp_block_index % (int)gridDimX;
+int by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 try
 {
@@ -2540,23 +2540,23 @@ while (anyBlockActive)
 {
 anyBlockActive = false;
 bool gridSyncRequested = false;
-for (int _t_idx = 0; _t_idx < _gsharp_threads_per_block; _t_idx++)
+for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-int tx = _t_idx % (int)blockDimX;
-int ty = (_t_idx / (int)blockDimX) % (int)blockDimY;
-int tz = _t_idx / (int)(blockDimX * blockDimY);
+int tx = __gsharp_thread_index % (int)blockDimX;
+int ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
-int linear_tid = _b_idx * _gsharp_threads_per_block + _t_idx;
-if (_gsharp_contexts[linear_tid]._state != -1)
+int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
 anyGridActive = true;
 anyBlockActive = true;
-_gsharp_contexts[linear_tid]._yieldedForGridSync = false;
+__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
 global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-__gsharp_statemachine_GpuBigIntDivRemKernels_ModPowNttMegaKernel(ctx, _gsharp_contexts[linear_tid]);
-if (_gsharp_contexts[linear_tid]._yieldedForGridSync)
+__gsharp_statemachine_GpuBigIntDivRemKernels_ModPowNttMegaKernel(ctx, __gsharp_contexts[__gsharp_linear_tid]);
+if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
 gridSyncRequested = true;
 }
@@ -2777,9 +2777,9 @@ DeviceUnpack16(opA,nttScratch.NttBuf1A,nttScratch.NttBuf2A,m,numWordsA,true);
 DeviceUnpack16(opB,nttScratch.NttBuf1B,nttScratch.NttBuf2B,m,numWordsB,true);
 cg::this_grid().sync();
 auto baseNtt = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt _tmp{}; _tmp.TemporaryBuffer = nttScratch.TmpBuf; _tmp.Grid = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttGridContext _tmp{}; _tmp.M = m; _tmp.N1 = n1; _tmp.N2 = n2; return _tmp; }
-()); return _tmp; }
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt __gsharp_tmp{}; __gsharp_tmp.TemporaryBuffer = nttScratch.TmpBuf; __gsharp_tmp.Grid = ([&]() {
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttGridContext __gsharp_tmp{}; __gsharp_tmp.M = m; __gsharp_tmp.N1 = n1; __gsharp_tmp.N2 = n2; return __gsharp_tmp; }
+()); return __gsharp_tmp; }
 ());
 auto forwardA = baseNtt;
 forwardA.Buffer1=nttScratch.NttBuf1A;
@@ -2960,9 +2960,9 @@ cg::this_grid().sync();
 ExecuteNttMultiplyMacroModPow(core,quotientBuffer,rightOperand,iterScratch.NextIter,destWords,n,destWords+n);
 int evalWords = aActualWords+1;
 auto subCtx = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext _tmp{}; _tmp.Operands = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext _tmp{}; _tmp.CarryBuffer = core.CarryBuffer; return _tmp; }
-()); _tmp.NumberOfWords = evalWords; return _tmp; }
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext __gsharp_tmp{}; __gsharp_tmp.Operands = ([&]() {
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext __gsharp_tmp{}; __gsharp_tmp.CarryBuffer = core.CarryBuffer; return __gsharp_tmp; }
+()); __gsharp_tmp.NumberOfWords = evalWords; return __gsharp_tmp; }
 ());
 for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < evalWords; idx += gridDim.x * blockDim.x)
 {

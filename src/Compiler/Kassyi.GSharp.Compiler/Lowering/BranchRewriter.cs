@@ -66,8 +66,8 @@ public class BranchRewriter : CSharpSyntaxRewriter
 
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
         var id = _labelCounter++;
-        var endLabelName = $"_BranchEnd_{id}";
-        var elseLabelName = $"_BranchElse_{id}";
+        var endLabelName = $"{GSharpInternalNames.LabelPrefix}BranchEnd_{id}";
+        var elseLabelName = $"{GSharpInternalNames.LabelPrefix}BranchElse_{id}";
 
         var condition = (ExpressionSyntax)Visit(node.Condition);
         var notCondition = SyntaxFactory.PrefixUnaryExpression(

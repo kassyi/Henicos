@@ -176,10 +176,10 @@ public static class MethodTranspiler
         ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine($"struct __gsharp_context_{methodName} {{");
-        context.Emitter.Writer.AppendLine("int _state = 0;");
-        context.Emitter.Writer.AppendLine($"__gsharp_context_{methodName}* _all_contexts = nullptr;");
-        context.Emitter.Writer.AppendLine("uint64_t _warpExchange = 0;");
-        context.Emitter.Writer.AppendLine("bool _yieldedForGridSync = false;");
+        context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.State} = 0;");
+        context.Emitter.Writer.AppendLine($"__gsharp_context_{methodName}* {GSharpInternalNames.AllContexts} = nullptr;");
+        context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.WarpExchange} = 0;");
+        context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.YieldedForGridSync} = false;");
         foreach (var field in fields)
         {
             var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
@@ -192,7 +192,7 @@ public static class MethodTranspiler
             switch (typeSymbol)
             {
                 case null when typeSyntax.IsVar:
-                    // Fallback for dynamically generated AST nodes (e.g., _warTemp_X)
+                    // Fallback for dynamically generated AST nodes (e.g., warp temporaries)
                     // Since they are not in the semantic model, default to 'int' for C++ (which allows implicit cast).
                     context.Emitter.Writer.Append("int");
                     context.Emitter.Writer.Append($" {field.Identifier.ValueText};");
@@ -231,8 +231,10 @@ public static class MethodTranspiler
 
             if (loweredBody != null)
             {
-                context.Emitter.Writer.AppendLine("#define _state _ctx->_state");
-                context.Emitter.Writer.AppendLine("#define _yieldedForGridSync _ctx->_yieldedForGridSync");
+                context.Emitter.Writer.AppendLine(
+                    $"#define {GSharpInternalNames.State} {GSharpInternalNames.Context}->{GSharpInternalNames.State}");
+                context.Emitter.Writer.AppendLine(
+                    $"#define {GSharpInternalNames.YieldedForGridSync} {GSharpInternalNames.Context}->{GSharpInternalNames.YieldedForGridSync}");
             }
 
             if (loweredBody != null)
@@ -263,8 +265,8 @@ public static class MethodTranspiler
 
             if (loweredBody != null)
             {
-                context.Emitter.Writer.AppendLine("#undef _state");
-                context.Emitter.Writer.AppendLine("#undef _yieldedForGridSync");
+                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.State}");
+                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.YieldedForGridSync}");
             }
         }
     }

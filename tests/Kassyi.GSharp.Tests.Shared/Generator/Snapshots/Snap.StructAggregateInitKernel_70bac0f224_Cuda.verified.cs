@@ -95,7 +95,7 @@ int B;
 #endif
 extern ""C"" __global__ void StructAggregateInitKernels_AggregateInitKernel(GSharpArray<int> output){
 Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct s = ([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct _tmp{}; _tmp.A = 1; _tmp.B = 2; return _tmp; }
+Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct __gsharp_tmp{}; __gsharp_tmp.A = 1; __gsharp_tmp.B = 2; return __gsharp_tmp; }
 ());
 output[0]=s.A+s.B;
 }
@@ -120,7 +120,7 @@ throw new global::System.ArgumentNullException(nameof(output));
 if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerAggregateInitKernel();
 IntPtr hfunc = s_hfunc_AggregateInitKernel!.Value;
@@ -175,7 +175,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAggregateInitKernelPtr(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerAggregateInitKernel();
 IntPtr hfunc = s_hfunc_AggregateInitKernel!.Value;
@@ -222,9 +222,9 @@ int Y;
 #endif
 extern ""C"" __global__ void StructAggregateInitKernels_DeeplyNestedInitKernel(GSharpArray<int> output){
 Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct outer = ([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct _tmp{}; _tmp.B = ([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct _tmp{}; _tmp.X = 1; return _tmp; }
-()); _tmp.Y = 10; return _tmp; }
+Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct __gsharp_tmp{}; __gsharp_tmp.B = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct __gsharp_tmp{}; __gsharp_tmp.X = 1; return __gsharp_tmp; }
+()); __gsharp_tmp.Y = 10; return __gsharp_tmp; }
 ());
 output[0]=outer.B.X+outer.Y;
 }
@@ -249,7 +249,7 @@ throw new global::System.ArgumentNullException(nameof(output));
 if (output.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerDeeplyNestedInitKernel();
 IntPtr hfunc = s_hfunc_DeeplyNestedInitKernel!.Value;
@@ -304,7 +304,7 @@ if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchDeeplyNestedInitKernelPtr(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerDeeplyNestedInitKernel();
 IntPtr hfunc = s_hfunc_DeeplyNestedInitKernel!.Value;

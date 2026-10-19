@@ -3,20 +3,20 @@
     public void LoweredMethod()
 {
     int i = 0;
-    _ForStart_0:
+    __gsharp_ForStart_0:
         ;
     if (!(i < 10))
-        goto _ForEnd_0;
+        goto __gsharp_ForEnd_0;
     if (i == 5)
-        goto _ForContinue_0;
+        goto __gsharp_ForContinue_0;
     if (i == 8)
-        goto _ForEnd_0;
+        goto __gsharp_ForEnd_0;
     Gpu.SyncThreads();
-    _ForContinue_0:
+    __gsharp_ForContinue_0:
         ;
     i++;
-    goto _ForStart_0;
-    _ForEnd_0:
+    goto __gsharp_ForStart_0;
+    __gsharp_ForEnd_0:
         ;
 }
 }

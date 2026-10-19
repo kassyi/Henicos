@@ -144,7 +144,7 @@ throw new global::System.ArgumentNullException(nameof(ulongBuf));
 if (ulongBuf.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(ulongBuf));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerInterlockedKernel();
 IntPtr hfunc = s_hfunc_InterlockedKernel!.Value;
@@ -280,7 +280,7 @@ if (d_ulongBuf != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_ulongBuf, hStream)
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInterlockedKernelPtr(IntPtr intBuf, IntPtr uintBuf, IntPtr longBuf, IntPtr ulongBuf, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerInterlockedKernel();
 IntPtr hfunc = s_hfunc_InterlockedKernel!.Value;
@@ -367,7 +367,7 @@ throw new global::System.ArgumentNullException(nameof(structArray));
 if (structArray.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(structArray));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerInterlockedEdgeCasesKernel();
 IntPtr hfunc = s_hfunc_InterlockedEdgeCasesKernel!.Value;
@@ -449,7 +449,7 @@ if (d_structArray != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_structArray, hS
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInterlockedEdgeCasesKernelPtr(IntPtr array, IntPtr structArray, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerInterlockedEdgeCasesKernel();
 IntPtr hfunc = s_hfunc_InterlockedEdgeCasesKernel!.Value;
@@ -544,7 +544,7 @@ throw new global::System.ArgumentNullException(nameof(floatOutputs));
 if (floatOutputs.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(floatOutputs));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerMathKernel();
 IntPtr hfunc = s_hfunc_MathKernel!.Value;
@@ -680,7 +680,7 @@ if (d_floatOutputs != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_floatOutputs, 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMathKernelPtr(IntPtr doubleInputs, IntPtr doubleOutputs, IntPtr floatInputs, IntPtr floatOutputs, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerMathKernel();
 IntPtr hfunc = s_hfunc_MathKernel!.Value;
@@ -779,7 +779,7 @@ throw new global::System.ArgumentNullException(nameof(doubleSpecialResults));
 if (doubleSpecialResults.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(doubleSpecialResults));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerMathEdgeCasesKernel();
 IntPtr hfunc = s_hfunc_MathEdgeCasesKernel!.Value;
@@ -915,7 +915,7 @@ if (d_doubleSpecialResults != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_double
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMathEdgeCasesKernelPtr(IntPtr floatSpecialInputs, IntPtr floatSpecialResults, IntPtr doubleSpecialInputs, IntPtr doubleSpecialResults, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerMathEdgeCasesKernel();
 IntPtr hfunc = s_hfunc_MathEdgeCasesKernel!.Value;

@@ -421,7 +421,7 @@ DebugReduc_SpecTypes types = largeStructVal;
 auto origin = DebugReduc_Point{0, 0};
 auto distance = origin.X+p.X;
 auto nested = ([&]() {
-DebugReduc_NestedPhysicsState _tmp{}; _tmp.Position = p; _tmp.Velocity = p; _tmp.StatusFlag = 1; return _tmp; }
+DebugReduc_NestedPhysicsState __gsharp_tmp{}; __gsharp_tmp.Position = p; __gsharp_tmp.Velocity = p; __gsharp_tmp.StatusFlag = 1; return __gsharp_tmp; }
 ());
 float mag = ComputeMagnitude(p);
 mag=(float)fabsf(mag);

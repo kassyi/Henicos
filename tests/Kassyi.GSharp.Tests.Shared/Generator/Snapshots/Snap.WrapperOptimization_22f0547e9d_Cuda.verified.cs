@@ -144,7 +144,7 @@ throw new global::System.ArgumentNullException(nameof(arrayVal));
 if (arrayVal.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(arrayVal));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerComplexSignatureKernel();
 IntPtr hfunc = s_hfunc_ComplexSignatureKernel!.Value;
@@ -249,7 +249,7 @@ if (d_structRef != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_structRef, hStrea
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchComplexSignatureKernelPtr(IntPtr scalarRef, IntPtr scalarOut, IntPtr arrayVal, IntPtr structRef, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerComplexSignatureKernel();
 IntPtr hfunc = s_hfunc_ComplexSignatureKernel!.Value;

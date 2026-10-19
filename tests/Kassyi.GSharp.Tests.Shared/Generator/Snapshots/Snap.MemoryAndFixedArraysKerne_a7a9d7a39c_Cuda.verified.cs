@@ -105,7 +105,7 @@ floatSmem[tid]=tid*1.5f;
 if(tid<64)
 {
 pointSmem[tid]=([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint _tmp{}; _tmp.X = tid*1.0f; _tmp.Y = tid*2.0f; return _tmp; }
+Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint __gsharp_tmp{}; __gsharp_tmp.X = tid*1.0f; __gsharp_tmp.Y = tid*2.0f; return __gsharp_tmp; }
 ());
 }
 __syncthreads();
@@ -149,7 +149,7 @@ throw new global::System.ArgumentNullException(nameof(pointOutput));
 if (pointOutput.Length == 0){
 throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(pointOutput));
 }
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerSharedMemoryStaticKernel();
 IntPtr hfunc = s_hfunc_SharedMemoryStaticKernel!.Value;
@@ -258,7 +258,7 @@ if (d_pointOutput != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_pointOutput, hS
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSharedMemoryStaticKernelPtr(IntPtr intOutput, IntPtr floatOutput, IntPtr pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerSharedMemoryStaticKernel();
 IntPtr hfunc = s_hfunc_SharedMemoryStaticKernel!.Value;

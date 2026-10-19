@@ -46,31 +46,35 @@ internal static class HostLauncherTranspiler
         using (context.Emitter.Writer.Scope())
         {
             context.Emitter.Writer.AppendLine("__gsharp_host_last_error.Reset();");
-            context.Emitter.Writer.AppendLine("GSharpErrorSlot _gsharp_launch_error;");
+            context.Emitter.Writer.AppendLine($"GSharpErrorSlot {GSharpInternalNames.LaunchError};");
             context.Emitter.Writer.AppendLine(
-                "int32_t _gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);");
+                $"int32_t {GSharpInternalNames.TotalBlocks} = (int32_t)(gridDimX * gridDimY * gridDimZ);");
             context.Emitter.Writer.AppendLine("#pragma omp parallel for schedule(dynamic)");
-            context.Emitter.Writer.AppendLine("for (int32_t _b_idx = 0; _b_idx < _gsharp_total_blocks; _b_idx++)");
+            context.Emitter.Writer.AppendLine(
+                $"for (int32_t {GSharpInternalNames.BlockLoopIndex} = 0; {GSharpInternalNames.BlockLoopIndex} < {GSharpInternalNames.TotalBlocks}; {GSharpInternalNames.BlockLoopIndex}++)");
             using (context.Emitter.Writer.Scope())
             {
-                context.Emitter.Writer.AppendLine("if (_gsharp_launch_error.HasError()) continue;");
-                context.Emitter.Writer.AppendLine("int32_t bx = _b_idx % gridDimX;");
-                context.Emitter.Writer.AppendLine("int32_t by = (_b_idx / gridDimX) % gridDimY;");
-                context.Emitter.Writer.AppendLine("int32_t bz = _b_idx / (gridDimX * gridDimY);");
+                context.Emitter.Writer.AppendLine($"if ({GSharpInternalNames.LaunchError}.HasError()) continue;");
+                context.Emitter.Writer.AppendLine($"int32_t bx = {GSharpInternalNames.BlockLoopIndex} % gridDimX;");
+                context.Emitter.Writer.AppendLine(
+                    $"int32_t by = ({GSharpInternalNames.BlockLoopIndex} / gridDimX) % gridDimY;");
+                context.Emitter.Writer.AppendLine(
+                    $"int32_t bz = {GSharpInternalNames.BlockLoopIndex} / (gridDimX * gridDimY);");
                 context.Emitter.Writer.AppendLine("__gsharp_reset_smem();");
                 if (hasContext)
                 {
                     context.Emitter.Writer.AppendLine(
-                        $"std::vector<__gsharp_context_{methodName}> _gsharp_contexts(blockDimX * blockDimY * blockDimZ);");
+                        $"std::vector<__gsharp_context_{methodName}> {GSharpInternalNames.LaunchContexts}(blockDimX * blockDimY * blockDimZ);");
 
                     if (contextFields != null)
                     {
                         WriteSharedMemoryEmulationBuffers(contextFields, ref context);
                     }
 
-                    context.Emitter.Writer.AppendLine("for (auto& ctx : _gsharp_contexts) {");
-                    context.Emitter.Writer.AppendLine("ctx._state = 0;");
-                    context.Emitter.Writer.AppendLine("ctx._all_contexts = _gsharp_contexts.data();");
+                    context.Emitter.Writer.AppendLine($"for (auto& ctx : {GSharpInternalNames.LaunchContexts}) {{");
+                    context.Emitter.Writer.AppendLine($"ctx.{GSharpInternalNames.State} = 0;");
+                    context.Emitter.Writer.AppendLine(
+                        $"ctx.{GSharpInternalNames.AllContexts} = {GSharpInternalNames.LaunchContexts}.data();");
 
                     if (contextFields != null)
                     {
@@ -79,7 +83,8 @@ internal static class HostLauncherTranspiler
 
                     context.Emitter.Writer.AppendLine("}");
                     context.Emitter.Writer.AppendLine("std::atomic<bool> anyActive{true};");
-                    context.Emitter.Writer.AppendLine("while (anyActive && !_gsharp_launch_error.HasError())");
+                    context.Emitter.Writer.AppendLine(
+                        $"while (anyActive && !{GSharpInternalNames.LaunchError}.HasError())");
                     using (context.Emitter.Writer.Scope())
                     {
                         context.Emitter.Writer.AppendLine("anyActive = false;");
@@ -92,9 +97,9 @@ internal static class HostLauncherTranspiler
                 }
             }
 
-            context.Emitter.Writer.AppendLine("if (_gsharp_launch_error.HasError()) {");
+            context.Emitter.Writer.AppendLine($"if ({GSharpInternalNames.LaunchError}.HasError()) {{");
             context.Emitter.Writer.AppendLine(
-                "__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(_gsharp_launch_error.code.load(std::memory_order_acquire)), _gsharp_launch_error.message);");
+                $"__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>({GSharpInternalNames.LaunchError}.code.load(std::memory_order_acquire)), {GSharpInternalNames.LaunchError}.message);");
             context.Emitter.Writer.AppendLine("}");
         }
     }
@@ -127,7 +132,8 @@ internal static class HostLauncherTranspiler
 
             context.Emitter.Writer.Append("std::vector<");
             context.Emitter.Dialect.AppendType(ref context, typeArg);
-            context.Emitter.Writer.Append($"> _smem_buffer_{field.Identifier.ValueText}(");
+            context.Emitter.Writer.Append(
+                $"> {GSharpInternalNames.SharedMemoryBufferPrefix}{field.Identifier.ValueText}(");
             context.Visitor.Visit(sizeExpression);
             context.Emitter.Writer.AppendLine(");");
         }
@@ -142,7 +148,7 @@ internal static class HostLauncherTranspiler
             if (typeSyntax is GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType })
             {
                 context.Emitter.Writer.AppendLine(
-                    $"ctx.{field.Identifier.ValueText}.data = _smem_buffer_{field.Identifier.ValueText}.data();");
+                    $"ctx.{field.Identifier.ValueText}.data = {GSharpInternalNames.SharedMemoryBufferPrefix}{field.Identifier.ValueText}.data();");
             }
         }
     }
@@ -151,21 +157,25 @@ internal static class HostLauncherTranspiler
         bool hasContext, ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine(
-            "int32_t _gsharp_total_threads = (int32_t)(blockDimX * blockDimY * blockDimZ);");
+            $"int32_t {GSharpInternalNames.ThreadsPerBlock} = (int32_t)(blockDimX * blockDimY * blockDimZ);");
         context.Emitter.Writer.AppendLine("#pragma omp parallel for schedule(static)");
-        context.Emitter.Writer.AppendLine("for (int32_t _t_idx = 0; _t_idx < _gsharp_total_threads; _t_idx++)");
+        context.Emitter.Writer.AppendLine(
+            $"for (int32_t {GSharpInternalNames.ThreadLoopIndex} = 0; {GSharpInternalNames.ThreadLoopIndex} < {GSharpInternalNames.ThreadsPerBlock}; {GSharpInternalNames.ThreadLoopIndex}++)");
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Writer.AppendLine("if (_gsharp_launch_error.HasError()) continue;");
-            context.Emitter.Writer.AppendLine("__gsharp_active_error_slot = &_gsharp_launch_error;");
-            context.Emitter.Writer.AppendLine("int32_t tx = _t_idx % blockDimX;");
-            context.Emitter.Writer.AppendLine("int32_t ty = (_t_idx / blockDimX) % blockDimY;");
-            context.Emitter.Writer.AppendLine("int32_t tz = _t_idx / (blockDimX * blockDimY);");
+            context.Emitter.Writer.AppendLine($"if ({GSharpInternalNames.LaunchError}.HasError()) continue;");
+            context.Emitter.Writer.AppendLine($"__gsharp_active_error_slot = &{GSharpInternalNames.LaunchError};");
+            context.Emitter.Writer.AppendLine($"int32_t tx = {GSharpInternalNames.ThreadLoopIndex} % blockDimX;");
+            context.Emitter.Writer.AppendLine(
+                $"int32_t ty = ({GSharpInternalNames.ThreadLoopIndex} / blockDimX) % blockDimY;");
+            context.Emitter.Writer.AppendLine(
+                $"int32_t tz = {GSharpInternalNames.ThreadLoopIndex} / (blockDimX * blockDimY);");
             if (hasContext)
             {
                 context.Emitter.Writer.AppendLine(
-                    "uint32_t _ctxtid = tz * blockDimY * blockDimX + ty * blockDimX + tx;");
-                context.Emitter.Writer.AppendLine("if (_gsharp_contexts[_ctxtid]._state != -1)");
+                    $"uint32_t {GSharpInternalNames.ContextThreadIndex} = tz * blockDimY * blockDimX + ty * blockDimX + tx;");
+                context.Emitter.Writer.AppendLine(
+                    $"if ({GSharpInternalNames.LaunchContexts}[{GSharpInternalNames.ContextThreadIndex}].{GSharpInternalNames.State} != -1)");
             }
 
             using (hasContext ? context.Emitter.Writer.Scope() : default)
@@ -189,7 +199,9 @@ internal static class HostLauncherTranspiler
 
                     if (hasContext)
                     {
-                        AppendArgument("&_gsharp_contexts[_ctxtid]", ref isFirst, ref context);
+                        AppendArgument(
+                            $"&{GSharpInternalNames.LaunchContexts}[{GSharpInternalNames.ContextThreadIndex}]",
+                            ref isFirst, ref context);
                     }
 
                     var isKernelWithReturn = methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&

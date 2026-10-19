@@ -37,7 +37,8 @@ internal static class ManagedCSharpTranspiler
     {
         var rewriter = new ManagedExecutionRewriter();
         var rewritten = (BlockSyntax)rewriter.Visit(loweredBody);
-        return rewritten.NormalizeWhitespace().ToFullString().Replace("_ctx->", "_ctx.");
+        return rewritten.NormalizeWhitespace().ToFullString()
+            .Replace($"{GSharpInternalNames.Context}->", $"{GSharpInternalNames.Context}.");
     }
 
     private static (string TransformedBody, string LocalInits, List<(string Type, string Name)> RegularFields)
@@ -117,7 +118,7 @@ internal static class ManagedCSharpTranspiler
         EqualsValueClauseSyntax? initializer,
         StringBuilder localInitBuilder)
     {
-        bodySource = bodySource.Replace($"_ctx.{fieldName}", fieldName);
+        bodySource = bodySource.Replace($"{GSharpInternalNames.Context}.{fieldName}", fieldName);
 
         var init = initializer != null ? initializer.ToFullString() : "";
         localInitBuilder.AppendLine(
@@ -140,9 +141,9 @@ internal static class ManagedCSharpTranspiler
         IReadOnlyList<(string Type, string Name)> regularFields)
     {
         writer.AppendLine($"public class __gsharp_context_{methodName} {{");
-        writer.AppendLine("public int _state;");
-        writer.AppendLine("public uint _warpExchange;");
-        writer.AppendLine("public bool _yieldedForGridSync;");
+        writer.AppendLine($"public int {GSharpInternalNames.State};");
+        writer.AppendLine($"public uint {GSharpInternalNames.WarpExchange};");
+        writer.AppendLine($"public bool {GSharpInternalNames.YieldedForGridSync};");
 
         foreach (var (type, name) in regularFields)
         {
@@ -214,7 +215,7 @@ internal static class ManagedCSharpTranspiler
             writer.Append(", ");
         }
 
-        writer.Append($"__gsharp_context_{methodName} _ctx");
+        writer.Append($"__gsharp_context_{methodName} {GSharpInternalNames.Context}");
 
         if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
         {
@@ -236,9 +237,10 @@ internal static class ManagedCSharpTranspiler
 
             return node.Identifier.Text switch
             {
-                "_state" or "_warpExchange" or "_yieldedForGridSync" => SyntaxFactory.MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.IdentifierName("_ctx"), node)
-                    .WithTriviaFrom(node),
+                GSharpInternalNames.State or GSharpInternalNames.WarpExchange or GSharpInternalNames.YieldedForGridSync =>
+                    SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
+                            SyntaxFactory.IdentifierName(GSharpInternalNames.Context), node)
+                        .WithTriviaFrom(node),
                 TypeConstants.BitOperationsType => SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                         SyntaxFactory.IdentifierName("System.Numerics"), SyntaxFactory.IdentifierName(TypeConstants.BitOperationsType))
                     .WithTriviaFrom(node),
@@ -361,7 +363,7 @@ internal static class ManagedCSharpTranspiler
             statements.Add(SyntaxFactory.ExpressionStatement(
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
-                    SyntaxFactory.ParseExpression("_ctx._state"),
+                    SyntaxFactory.ParseExpression($"{GSharpInternalNames.Context}.{GSharpInternalNames.State}"),
                     SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-1))
                 )
             ));

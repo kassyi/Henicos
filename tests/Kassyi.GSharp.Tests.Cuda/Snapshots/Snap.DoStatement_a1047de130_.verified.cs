@@ -2,14 +2,14 @@
 {
     public void LoweredMethod()
 {
-    _DoStart_0:
+    __gsharp_DoStart_0:
         ;
     Gpu.SyncThreads();
-    _DoContinue_0:
+    __gsharp_DoContinue_0:
         ;
     if (condition)
-        goto _DoStart_0;
-    _DoEnd_0:
+        goto __gsharp_DoStart_0;
+    __gsharp_DoEnd_0:
         ;
 }
 }

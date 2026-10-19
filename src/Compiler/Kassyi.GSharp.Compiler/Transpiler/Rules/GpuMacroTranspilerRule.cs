@@ -44,7 +44,7 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
                 return;
             }
 
-            context.Emitter.Writer.AppendLine("_state = -1;");
+            context.Emitter.Writer.AppendLine(GSharpInternalNames.StateTermination);
             context.Emitter.Writer.AppendLine("return;");
             return;
         }

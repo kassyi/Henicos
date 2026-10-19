@@ -285,7 +285,7 @@ internal static class StatementTranspilers
 
                 if (emitStateTermination)
                 {
-                    context.Emitter.Writer.Append("_state = -1;");
+                    context.Emitter.Writer.Append(GSharpInternalNames.StateTermination);
                 }
 
                 context.Emitter.Writer.AppendKeyword("return;");
@@ -294,7 +294,7 @@ internal static class StatementTranspilers
 
             if (emitStateTermination)
             {
-                context.Emitter.Writer.Append("_state = -1;");
+                context.Emitter.Writer.Append(GSharpInternalNames.StateTermination);
             }
 
             context.Emitter.Writer.Append("return ");
@@ -305,7 +305,7 @@ internal static class StatementTranspilers
 
         if (emitStateTermination)
         {
-            context.Emitter.Writer.Append("_state = -1;");
+            context.Emitter.Writer.Append(GSharpInternalNames.StateTermination);
         }
 
         context.Emitter.Writer.AppendKeyword("return;");

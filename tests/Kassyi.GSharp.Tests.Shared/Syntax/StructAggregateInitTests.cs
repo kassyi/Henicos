@@ -33,11 +33,11 @@ public class TestClass_SYN90
 public partial class StructAggregateInitTests
     : TranspilerTestBase
 {
-    [GeneratedRegex(@"MyStruct_SYN90\s+_tmp\{\};\s*_tmp\.A\s*=\s*1;\s*_tmp\.B\s*=\s*2;")]
+    [GeneratedRegex(@"MyStruct_SYN90\s+__gsharp_tmp\{\};\s*__gsharp_tmp\.A\s*=\s*1;\s*__gsharp_tmp\.B\s*=\s*2;")]
     private static partial Regex MyStructInitRegex();
 
     [GeneratedRegex(
-        @"AStruct_SYN90\s+_tmp\{\};\s*_tmp\.B\s*=\s*\(\[\&\]\(\)\s*\{[\s\S]*?BStruct_SYN90\s+_tmp\{\};\s*_tmp\.X\s*=\s*1;\s*return\s*_tmp;\s*\}")]
+        @"AStruct_SYN90\s+__gsharp_tmp\{\};\s*__gsharp_tmp\.B\s*=\s*\(\[\&\]\(\)\s*\{[\s\S]*?BStruct_SYN90\s+__gsharp_tmp\{\};\s*__gsharp_tmp\.X\s*=\s*1;\s*return\s*__gsharp_tmp;\s*\}")]
     private static partial Regex NestedStructInitRegex();
 
     [SkippableFact]
