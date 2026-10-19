@@ -38,7 +38,7 @@ internal static class MethodSignatureTranspiler
                     context.Emitter.Writer.Append(", ");
                 }
 
-                context.Emitter.Writer.Append($"__gsharp_context_{methodName}* _ctx");
+                context.Emitter.Writer.Append($"__gsharp_context_{methodName}* {GSharpInternalNames.Context}");
             }
 
             if (isDevice || methodSymbol is null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||

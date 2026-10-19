@@ -137,7 +137,7 @@ public class ContextHoister : CSharpSyntaxRewriter
     {
         return SyntaxFactory.MemberAccessExpression(
             SyntaxKind.PointerMemberAccessExpression,
-            SyntaxFactory.IdentifierName("_ctx"),
+            SyntaxFactory.IdentifierName(GSharpInternalNames.Context),
             SyntaxFactory.IdentifierName(variableName)
         );
     }

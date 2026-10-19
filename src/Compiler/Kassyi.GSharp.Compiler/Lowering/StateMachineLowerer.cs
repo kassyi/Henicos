@@ -49,7 +49,7 @@ public class StateMachineLowerer
             {
                 if (BarrierHelper.IsWarpShuffle(barrierInv))
                 {
-                    // 1. _ctx->_warpExchange = val; (__gsharp_warp_exchange_assign(val))
+                    // 1. Publish val to the context's warp exchange slot (__gsharp_warp_exchange_assign(val))
                     var valArg = barrierInv.ArgumentList.Arguments[1].Expression;
                     currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
                         SyntaxFactory.InvocationExpression(
@@ -76,7 +76,7 @@ public class StateMachineLowerer
                         currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
                             SyntaxFactory.AssignmentExpression(
                                 SyntaxKind.SimpleAssignmentExpression,
-                                SyntaxFactory.IdentifierName("_yieldedForGridSync"),
+                                SyntaxFactory.IdentifierName(GSharpInternalNames.YieldedForGridSync),
                                 SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
                             )
                         ));
@@ -95,7 +95,7 @@ public class StateMachineLowerer
         commitState(-1, isBarrier: true);
 
         var switchStmt = SyntaxFactory.SwitchStatement(
-            SyntaxFactory.IdentifierName("_state"),
+            SyntaxFactory.IdentifierName(GSharpInternalNames.State),
             SyntaxFactory.List(cases)
         );
 
@@ -155,7 +155,7 @@ public class StateMachineLowerer
         return SyntaxFactory.ExpressionStatement(
             SyntaxFactory.AssignmentExpression(
                 SyntaxKind.SimpleAssignmentExpression,
-                SyntaxFactory.IdentifierName("_state"),
+                SyntaxFactory.IdentifierName(GSharpInternalNames.State),
                 SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(stateValue))
             )
         );
@@ -175,8 +175,8 @@ public class StateMachineLowerer
         };
 
         var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>();
-        // Arguments are: _ctx, mask, val, delta, width [optional]
-        newArgs = newArgs.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName("_ctx")));
+        // Arguments are: context, mask, val, delta, width [optional]
+        newArgs = newArgs.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.Context)));
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[0]);
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[1]); // pass val for type inference
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[2]);

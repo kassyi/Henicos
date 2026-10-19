@@ -26,7 +26,7 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
         return node.WithStatements(SyntaxFactory.List(newStatements));
     }
 
-    private string GetNextTempName() => $"_warpTemp_{_tempCounter++}";
+    private string GetNextTempName() => $"{GSharpInternalNames.WarpTempPrefix}{_tempCounter++}";
 
     private class StatementRewriter(
         WarpInstructionRewriter parent,
@@ -50,14 +50,14 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
                     case ExpressionStatementSyntax:
                     // If it's already perfectly hoisted, skip
                     case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax vd } when
-                        vd.Identifier.Text.StartsWith("_warpTemp_"):
+                        vd.Identifier.Text.StartsWith(GSharpInternalNames.WarpTempPrefix, StringComparison.Ordinal):
 
                         return visitedNode;
                 }
 
                 var tempName = parent.GetNextTempName();
 
-                // Create: var _warpTemp_X = <invocation>;
+                // Create: var <warp temp> = <invocation>;
                 var declaration = SyntaxFactory.LocalDeclarationStatement(
                     SyntaxFactory.VariableDeclaration(
                         SyntaxFactory.IdentifierName("var"),
