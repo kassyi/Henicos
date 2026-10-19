@@ -261,6 +261,79 @@ public class NativeApiGeneratorTests
             $"Unexpected reason: {o.Reason}"));
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ModuleDefinition_WithStreamParameter_EmitsCuStreamSynchronize()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: StreamKernels
+            moduleName: ./native/stream.fatbin
+            methods:
+              - name: LaunchWithStream
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: stream, type: IntPtr }
+            """;
+
+        var result = RunGenerator(Api("stream.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "StreamKernels");
+        Assert.Contains("CudaDriverApi.cuStreamSynchronize(stream)", source);
+        Assert.DoesNotContain("cuCtxSynchronize", source);
+        Assert.Contains(", stream, kernelParams,", source);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ModuleDefinition_WithoutStreamParameter_EmitsCuCtxSynchronize()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: NoStreamKernels
+            moduleName: ./native/nostream.fatbin
+            methods:
+              - name: LaunchWithoutStream
+                parameters:
+                  - { name: data, type: "float[]" }
+            """;
+
+        var result = RunGenerator(Api("nostream.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "NoStreamKernels");
+        Assert.Contains("CudaDriverApi.cuCtxSynchronize()", source);
+        Assert.DoesNotContain("cuStreamSynchronize", source);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_ModuleDefinition_WithStreamParameterAndArray_StreamSynchronizePrecedesCopyToHost()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: CopyOutKernels
+            moduleName: ./native/copyout.fatbin
+            methods:
+              - name: LaunchCopyOutStream
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: stream, type: IntPtr }
+            """;
+
+        var result = RunGenerator(Api("copyout.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        var source = FindSource(result, "CopyOutKernels");
+        var syncIndex = source.IndexOf("CudaDriverApi.cuStreamSynchronize(stream)");
+        var copyIndex = source.IndexOf(".CopyToHost(");
+
+        Assert.NotEqual(-1, syncIndex);
+        Assert.NotEqual(-1, copyIndex);
+        Assert.True(syncIndex < copyIndex, "cuStreamSynchronize(stream) must appear before CopyToHost");
+    }
+
     private sealed record TestFile(string Path, string Text, bool IsGSharpApi);
 
     private static TestFile Api(string path, string text) => new(path, text, IsGSharpApi: true);

@@ -25,6 +25,7 @@ internal readonly record struct KernelLaunchParameter(
 /// <remarks>
 /// Parameters named <c>gridDimX/Y/Z</c>, <c>blockDimX/Y/Z</c>, <c>sharedMemBytes</c> and <c>stream</c> are launch
 /// configuration and are not passed to the kernel. Managed arrays are staged through <c>GpuBuffer&lt;T&gt;</c>.
+/// When a stream is given, synchronization is scoped to that stream.
 /// </remarks>
 internal static class KernelLaunchEmitter
 {
@@ -214,6 +215,8 @@ internal static class KernelLaunchEmitter
             }
         }
 
+        var stream = GetLaunchParamOrValue(parameters, "stream", "IntPtr.Zero");
+
         writer.AppendLine("unsafe");
         using (writer.Scope())
         {
@@ -266,7 +269,6 @@ internal static class KernelLaunchEmitter
             var blockY = GetLaunchParamOrValue(parameters, "blockDimY", "1");
             var blockZ = GetLaunchParamOrValue(parameters, "blockDimZ", "1");
             var sharedMem = GetLaunchParamOrValue(parameters, "sharedMemBytes", "0");
-            var stream = GetLaunchParamOrValue(parameters, "stream", "IntPtr.Zero");
 
             writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(");
             writer.AppendLine("kernel,");
@@ -276,7 +278,14 @@ internal static class KernelLaunchEmitter
         }
 
         writer.AppendLine();
-        writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());");
+        if (HasLaunchParameter(parameters, "stream"))
+        {
+            writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(stream));");
+        }
+        else
+        {
+            writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());");
+        }
     }
 
     private static void EmitBufferOutputs(SourceWriter writer, ImmutableArray<KernelLaunchParameter> parameters)
@@ -292,17 +301,20 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static string GetLaunchParamOrValue(ImmutableArray<KernelLaunchParameter> parameters, string name,
-        string defaultValue)
+    private static bool HasLaunchParameter(ImmutableArray<KernelLaunchParameter> parameters, string name)
     {
         foreach (var p in parameters)
         {
             if (p.Name == name)
             {
-                return name;
+                return true;
             }
         }
 
-        return defaultValue;
+        return false;
     }
+
+    private static string GetLaunchParamOrValue(ImmutableArray<KernelLaunchParameter> parameters, string name,
+        string defaultValue) =>
+        HasLaunchParameter(parameters, name) ? name : defaultValue;
 }
