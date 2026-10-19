@@ -204,7 +204,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             var typeSymbol = Context.Query.SemanticModel.GetTypeSymbol(node.Type);
             if (typeSymbol != null)
             {
-                var isArray = KernelLaunchEmitter.IsArrayLikeType(typeSymbol, out var elementType);
+                var isArray = typeSymbol.TryGetArrayLikeElementType(out var elementType);
                 
                 if (isReadOnly && !isArray)
                 {

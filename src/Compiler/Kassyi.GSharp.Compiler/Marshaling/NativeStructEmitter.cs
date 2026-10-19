@@ -61,7 +61,7 @@ internal static class NativeStructEmitter
 
     private static void MapToNativeField(SourceWriter writer, IFieldSymbol field, int fieldSize)
     {
-        if (KernelLaunchEmitter.IsArrayLikeType(field.Type, out _))
+        if (field.Type.IsArrayLikeType())
         {
             writer.AppendLine($"public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {field.Name};");
         }

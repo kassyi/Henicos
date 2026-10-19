@@ -76,7 +76,7 @@ internal static class WrapperEmitter
 
         switch (isDevicePtr)
         {
-            case true when (KernelLaunchEmitter.IsArrayLikeType(p.Type, out _) ||
+            case true when (p.Type.IsArrayLikeType() ||
                             p.RefKind is RefKind.Ref or RefKind.Out):
             {
                 if (p.HasExplicitDefaultValue)
@@ -318,7 +318,7 @@ internal static class WrapperEmitter
     {
         foreach (var p in method.Parameters)
         {
-            if (p.RefKind is not RefKind.Out || KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
+            if (p.RefKind is not RefKind.Out || p.Type.IsArrayLikeType())
             {
                 continue;
             }
@@ -333,7 +333,7 @@ internal static class WrapperEmitter
         var hasArray = false;
         foreach (var p in method.Parameters)
         {
-            if (!KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
+            if (!p.Type.IsArrayLikeType())
             {
                 continue;
             }
@@ -353,7 +353,7 @@ internal static class WrapperEmitter
             var isFirst = true;
             foreach (var p in method.Parameters)
             {
-                if (!KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
+                if (!p.Type.IsArrayLikeType())
                 {
                     continue;
                 }
@@ -511,7 +511,7 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
 
-                if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
+                if (p.Type.IsArrayLikeType())
                 {
                     writer.Append("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ");
                     writer.Append(p.Name);
@@ -702,7 +702,7 @@ internal static class WrapperEmitter
 
         foreach (var p in method.Parameters)
         {
-            if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out var elementType))
+            if (p.Type.TryGetArrayLikeElementType(out var elementType))
             {
                 writer.Append("fixed (");
                 writer.AppendFullyQualifiedCsharpName(elementType);
@@ -758,7 +758,7 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
 
-                if (KernelLaunchEmitter.IsArrayLikeType(p.Type, out _))
+                if (p.Type.IsArrayLikeType())
                 {
                     writer.Append(
                         $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{p.Name}, Length = {p.Name}.Length }}");

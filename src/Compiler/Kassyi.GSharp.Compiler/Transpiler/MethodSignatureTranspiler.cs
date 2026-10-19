@@ -97,7 +97,7 @@ internal static class MethodSignatureTranspiler
 
             var paramSymbol = paramSemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
             var isReadOnly = paramSymbol != null && paramSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
-            var isArray = typeSymbol != null && KernelLaunchEmitter.IsArrayLikeType(typeSymbol, out _);
+            var isArray = typeSymbol.IsArrayLikeType();
 
             if (isReadOnly && !isArray)
             {

@@ -397,7 +397,7 @@ internal static class StructTranspiler
         ref TranspileContext context)
     {
         var isReadOnly = memberSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
-        var isArray = KernelLaunchEmitter.IsArrayLikeType(type, out var elementType);
+        var isArray = type.TryGetArrayLikeElementType(out var elementType);
 
         if (isReadOnly && !isArray)
         {
