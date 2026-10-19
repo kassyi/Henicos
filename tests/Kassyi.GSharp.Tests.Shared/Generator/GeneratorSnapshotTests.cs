@@ -44,7 +44,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         var dir = new DirectoryInfo(dirPath);
         while (dir != null)
         {
-            if (dir.GetFiles("Henicos.sln").Any() || dir.GetDirectories(".git").Any())
+            if (dir.GetFiles("Henicos.slnx").Length > 0)
             {
                 return dir.FullName;
             }
@@ -52,7 +52,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
             dir = dir.Parent;
         }
 
-        throw new InvalidOperationException("Repository root not found.");
+        throw new InvalidOperationException("Repository root containing Henicos.slnx not found.");
     }
 
     private static string GetSnapshotsDirectory()
