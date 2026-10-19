@@ -28,7 +28,7 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
+        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
         if (methodSymbol == null)
         {
             return;
@@ -38,7 +38,7 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
         var isTestMethod = false;
         foreach (var attribute in methodSymbol.GetAttributes())
         {
-            if (attribute.AttributeClass?.Name is not ("FactAttribute" or "TheoryAttribute"))
+            if (!attribute.IsAttribute("Fact") && !attribute.IsAttribute("Theory"))
             {
                 continue;
             }
@@ -58,7 +58,7 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var classSymbol = context.SemanticModel.GetDeclaredSymbol(classDeclaration);
+        var classSymbol = context.SemanticModel.GetDeclaredSymbol<INamedTypeSymbol>(classDeclaration);
         if (classSymbol == null)
         {
             return;
@@ -100,13 +100,15 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
     {
         foreach (var attribute in symbol.GetAttributes())
         {
-            var attrName = attribute.AttributeClass?.Name;
-            if (attrName is "CategoryAttribute" or "TestCategoryAttribute" or "TestTargetAttribute" or "ScenarioAttribute")
+            if (attribute.IsAttribute("Category") ||
+                attribute.IsAttribute("TestCategory") ||
+                attribute.IsAttribute("TestTarget") ||
+                attribute.IsAttribute("Scenario"))
             {
                 return true;
             }
 
-            if (attrName != "TraitAttribute")
+            if (!attribute.IsAttribute("Trait"))
             {
                 continue;
             }

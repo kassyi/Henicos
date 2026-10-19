@@ -26,12 +26,12 @@ public static partial class GSharpDiagnostics
             return true;
         }
 
-        reportDiagnostic?.Invoke(Diagnostic.Create(
+        reportDiagnostic.ReportDiagnostic(
             KernelReturnMustBeVoidOrBlittable,
             methodSymbol.Locations.Length > 0 ? methodSymbol.Locations[0] : Location.None,
             methodSymbol.Name,
 #pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path). Preserves complex type formatting for diagnostics.
-            methodSymbol.ReturnType.ToDisplayString()));
+            methodSymbol.ReturnType.ToDisplayString());
 #pragma warning restore RS0030
 
         return false;
