@@ -433,6 +433,47 @@ public class CudaStreamCompletionTests
         await Task.Delay(WatchdogQuietPeriod);
     }
 
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public async Task ContextDestroy_RacingHostCallback_Repeatedly_FaultsOrCompletes_WithoutTouchingDestroyedContext()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        for (var i = 0; i < RaceIterations; i++)
+        {
+            var isolated = IsolatedContext.Create();
+            try
+            {
+                var stream = isolated.Run(static () =>
+                {
+                    CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out var handle, 1));
+                    return handle;
+                });
+
+                // Gate in the global context, as above, so that cuCtxDestroy can drain it.
+                var holdTime = TimeSpan.FromMilliseconds(20 + (i * 37 % 120));
+                using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(stream, holdTime));
+
+                var pending = CudaStreamCompletion.WaitAsync(stream).AsTask();
+
+                // Destroy around the moment the gate opens, so DestroyContext races the host callback that completes the
+                // wait. A completion that has won but not yet passed the tick barrier must still keep cuCtxDestroy waiting.
+                await Task.Delay(holdTime + TimeSpan.FromMilliseconds((i % 5 - 2) * 5));
+                isolated.Dispose();
+
+                var error = await Record.ExceptionAsync(() => pending.WaitAsync(CompletionTimeout));
+                Assert.True(error is null or ObjectDisposedException, $"Unexpected completion fault: {error}");
+            }
+            finally
+            {
+                isolated.Dispose();
+            }
+        }
+
+        await Task.Delay(WatchdogQuietPeriod);
+    }
+
     private sealed class ThrowingCompletionHook : IStreamCompletionHook
     {
         public void OnStreamCompleted() => throw new InvalidOperationException("Simulated hook failure.");

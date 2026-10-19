@@ -38,7 +38,11 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// a tick runs its pending check and its driver calls under <see cref="_tickLock"/>, and the winner of
 /// <see cref="TryComplete"/> passes through that lock before signaling, so no tick is inside the driver once an awaiter
 /// can resume (and, for example, destroy the context). Contexts destroyed while an operation is still armed must go
-/// through <see cref="GpuKernelLoader.DestroyContext"/>, which abandons those operations first.
+/// through <see cref="GpuKernelLoader.DestroyContext"/>, which abandons those operations first. An operation leaves the
+/// armed registry only after that barrier, so an empty registry for a context means no tick is using it.
+/// </para>
+/// <para>
+/// <b>Lock order:</b> <see cref="_tickLock"/> before <see cref="s_armedLock"/>; no path acquires them the other way.
 /// </para>
 /// </remarks>
 internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
@@ -213,10 +217,15 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
     /// </remarks>
     internal static void AbandonContext(IntPtr context)
     {
+        var spinner = new SpinWait();
         while (TryTakeArmed(context, out var source, out var version))
         {
-            source.TryComplete(version, new ObjectDisposedException(
-                "CUDA context", "The CUDA context was destroyed while an operation was awaiting its stream."));
+            if (!source.TryComplete(version, new ObjectDisposedException(
+                    "CUDA context", "The CUDA context was destroyed while an operation was awaiting its stream.")))
+            {
+                // Another party won and unregisters the entry once its in-flight tick has left the driver.
+                spinner.SpinOnce();
+            }
         }
     }
 
@@ -232,7 +241,7 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
                     continue;
                 }
 
-                // TryComplete removes the entry, so the next call does not find it again.
+                // The winning TryComplete removes the entry, so the loop in AbandonContext ends once all winners pass.
                 source = candidate;
                 version = Volatile.Read(ref candidate._armedVersion);
                 return true;
@@ -310,22 +319,25 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
         }
     }
 
-    private void TryComplete(int version, Exception? error)
+    private bool TryComplete(int version, Exception? error)
     {
         if (Interlocked.CompareExchange(ref _pendingVersion, NotArmed, version) != version)
         {
-            return;
-        }
-
-        lock (s_armedLock)
-        {
-            s_armed.Remove(this);
+            return false;
         }
 
         // Waits for a tick that passed its pending check before the exchange above to leave the driver. Ticks that
         // start later see the exchange and return without touching the context.
         lock (_tickLock)
         {
+            // Unregistered only past that barrier: AbandonContext treats an absent entry as "no tick can be in the
+            // driver", so removing it earlier would let cuCtxDestroy run under an in-flight tick.
+            lock (s_armedLock)
+            {
+                s_armed.Remove(this);
+            }
+
+            // After the s_armedLock section, so that a concurrent ArmCore cannot restart the timer after this stop.
             _watchdog.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
 
@@ -337,6 +349,8 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
         {
             _core.SetException(error);
         }
+
+        return true;
     }
 
     private void Release()
