@@ -46,10 +46,11 @@ public class TranspilerInfrastructureTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_PinnedArrayTransfer_EmptyAndHugeArrays()
     {
-        // 1. Empty array transfer
+        // 1. Empty array transfer: the launcher rejects it instead of skipping the launch
         int[] emptyData = [];
-        TranspilerInfrastructureKernels.LaunchArrayTransferKernel(emptyData, 0, blockDimX: 1);
-        Assert.Empty(emptyData);
+        var emptyException = Assert.Throws<ArgumentException>(() =>
+            TranspilerInfrastructureKernels.LaunchArrayTransferKernel(emptyData, 0, blockDimX: 1));
+        Assert.Equal("data", emptyException.ParamName);
 
         // 2. Large array transfer (65,536 elements across 256 blocks of 256 threads)
         int length = 65536;

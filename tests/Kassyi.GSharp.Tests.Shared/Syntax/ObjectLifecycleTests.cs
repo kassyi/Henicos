@@ -33,9 +33,11 @@ public class ObjectLifecycleTests
     [TestTarget(ExecutionTarget.GpuExecution)]
     public void Test_LifecycleUpdateKernel_EmptyArrayEdgeCase()
     {
+        // Empty array arguments are rejected instead of silently skipping the launch
         LifecycleObjectState[] emptyStates = [];
-        ObjectLifecycleKernels.LaunchKernel_LifecycleUpdate(emptyStates, 0, 2, blockDimX: 1);
-        Assert.Empty(emptyStates);
+        var ex = Assert.Throws<ArgumentException>(() =>
+            ObjectLifecycleKernels.LaunchKernel_LifecycleUpdate(emptyStates, 0, 2, blockDimX: 1));
+        Assert.Equal("states", ex.ParamName);
     }
 
     [Fact]
@@ -44,8 +46,10 @@ public class ObjectLifecycleTests
     {
         int[] inputs = [];
         LifecycleObjectState[] outputs = [];
-        ObjectLifecycleKernels.LaunchKernel_FactoryInitialization(inputs, outputs, 0, blockDimX: 1);
-        Assert.Empty(outputs);
+        // Empty array arguments are rejected instead of silently skipping the launch
+        var ex = Assert.Throws<ArgumentException>(() =>
+            ObjectLifecycleKernels.LaunchKernel_FactoryInitialization(inputs, outputs, 0, blockDimX: 1));
+        Assert.Equal("inputValues", ex.ParamName);
     }
 
     [Fact]

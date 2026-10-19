@@ -63,10 +63,11 @@ public partial class MethodAttributesTests
         int[] input = [];
         int[] result = [];
 
-        var exception = Record.Exception(() =>
+        // Empty array arguments are rejected instead of silently skipping the launch
+        var exception = Assert.Throws<ArgumentException>(() =>
             MethodAttributesKernels.LaunchMethodAttributesKernel(input, result, blockDimX: 1));
 
-        Assert.Null(exception);
+        Assert.Equal("input", exception.ParamName);
     }
 
     [SkippableFact]

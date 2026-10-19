@@ -1277,7 +1277,7 @@ public class GpuBigIntCoreTests
     }
 
     [SkippableFact]
-    public void Test_NttCarryResolver_ZeroLengthBuffers_ReturnsEarly()
+    public void Test_NttCarryResolver_ZeroLengthBuffers_ThrowsArgumentException()
     {
         CudaCapability.EnsureGpuAvailable();
         var low = Array.Empty<uint>();
@@ -1285,14 +1285,15 @@ public class GpuBigIntCoreTests
         var output = Array.Empty<uint>();
         var blockCarries = Array.Empty<uint>();
 
-        // Assert no exceptions thrown for 0 length buffers due to guard clause
-        var exception = Record.Exception(() =>
-        {
+        // Launchers reject empty non-nullable array arguments instead of silently skipping the launch
+        var blockedException = Assert.Throws<ArgumentException>(() =>
             GpuBigIntNttKernels.LaunchResolveNttCarriesBlockedKernel(low, high, output, blockCarries, 0,
-                0, 256);
-            GpuBigIntNttKernels.LaunchResolveNttCarriesApplyKernel(output, blockCarries, 0, 256, 0);
-        });
-        Assert.Null(exception);
+                0, 256));
+        Assert.Equal("uncarriedLow", blockedException.ParamName);
+
+        var applyException = Assert.Throws<ArgumentException>(() =>
+            GpuBigIntNttKernels.LaunchResolveNttCarriesApplyKernel(output, blockCarries, 0, 256, 0));
+        Assert.Equal("outputBuffer", applyException.ParamName);
     }
 
     [SkippableFact]

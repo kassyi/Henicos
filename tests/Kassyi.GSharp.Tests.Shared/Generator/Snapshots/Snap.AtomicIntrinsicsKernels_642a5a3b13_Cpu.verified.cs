@@ -144,8 +144,29 @@ private unsafe delegate void AtomicArithmeticKernel_Delegate(uint gridDimX, uint
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAtomicArithmeticKernel(global::System.Int32[] intState, global::System.UInt32[] uintState, global::System.UInt64[] ulongState, global::System.Single[] floatState, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (intState.Length == 0 || uintState.Length == 0 || ulongState.Length == 0 || floatState.Length == 0){
-return;
+if (intState is null){
+throw new global::System.ArgumentNullException(nameof(intState));
+}
+if (intState.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(intState));
+}
+if (uintState is null){
+throw new global::System.ArgumentNullException(nameof(uintState));
+}
+if (uintState.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(uintState));
+}
+if (ulongState is null){
+throw new global::System.ArgumentNullException(nameof(ulongState));
+}
+if (ulongState.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(ulongState));
+}
+if (floatState is null){
+throw new global::System.ArgumentNullException(nameof(floatState));
+}
+if (floatState.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(floatState));
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -329,8 +350,11 @@ private unsafe delegate void AtomicIncDecWrapKernel_Delegate(uint gridDimX, uint
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAtomicIncDecWrapKernel(global::System.UInt32[] state, global::System.UInt32 limit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (state is null){
+throw new global::System.ArgumentNullException(nameof(state));
+}
 if (state.Length == 0){
-return;
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(state));
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -509,8 +533,11 @@ private unsafe delegate void AtomicFloatAddStressKernel_Delegate(uint gridDimX, 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAtomicFloatAddStressKernel(global::System.Single[] globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (globalSum is null){
+throw new global::System.ArgumentNullException(nameof(globalSum));
+}
 if (globalSum.Length == 0){
-return;
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(globalSum));
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -689,8 +716,11 @@ private unsafe delegate void AtomicRefParameterKernel_Delegate(uint gridDimX, ui
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAtomicRefParameterKernel(global::System.Int32[] counter, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (counter is null){
+throw new global::System.ArgumentNullException(nameof(counter));
+}
 if (counter.Length == 0){
-return;
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(counter));
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";

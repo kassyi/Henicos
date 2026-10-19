@@ -52,8 +52,29 @@ s_hfunc_AtomicArithmeticKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoad
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAtomicArithmeticKernel(global::System.Int32[] intState, global::System.UInt32[] uintState, global::System.UInt64[] ulongState, global::System.Single[] floatState, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (intState.Length == 0 || uintState.Length == 0 || ulongState.Length == 0 || floatState.Length == 0){
-return;
+if (intState is null){
+throw new global::System.ArgumentNullException(nameof(intState));
+}
+if (intState.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(intState));
+}
+if (uintState is null){
+throw new global::System.ArgumentNullException(nameof(uintState));
+}
+if (uintState.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(uintState));
+}
+if (ulongState is null){
+throw new global::System.ArgumentNullException(nameof(ulongState));
+}
+if (ulongState.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(ulongState));
+}
+if (floatState is null){
+throw new global::System.ArgumentNullException(nameof(floatState));
+}
+if (floatState.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(floatState));
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -253,8 +274,11 @@ s_hfunc_AtomicIncDecWrapKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoad
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAtomicIncDecWrapKernel(global::System.UInt32[] state, global::System.UInt32 limit, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (state is null){
+throw new global::System.ArgumentNullException(nameof(state));
+}
 if (state.Length == 0){
-return;
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(state));
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -361,8 +385,11 @@ s_hfunc_AtomicFloatAddStressKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernel
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAtomicFloatAddStressKernel(global::System.Single[] globalSum, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (globalSum is null){
+throw new global::System.ArgumentNullException(nameof(globalSum));
+}
 if (globalSum.Length == 0){
-return;
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(globalSum));
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -465,8 +492,11 @@ s_hfunc_AtomicRefParameterKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLo
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAtomicRefParameterKernel(global::System.Int32[] counter, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (counter is null){
+throw new global::System.ArgumentNullException(nameof(counter));
+}
 if (counter.Length == 0){
-return;
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(counter));
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

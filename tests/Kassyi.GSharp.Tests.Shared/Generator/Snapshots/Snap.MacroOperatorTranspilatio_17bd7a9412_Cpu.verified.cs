@@ -211,8 +211,23 @@ private unsafe delegate void MacroKernel_Delegate(uint gridDimX, uint gridDimY, 
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMacroKernel(global::TestNamespace.DummyContext ctx, global::System.UInt32[] dA, global::System.UInt32[] dB, global::System.UInt32[] dResult, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (dA.Length == 0 || dB.Length == 0 || dResult.Length == 0){
-return;
+if (dA is null){
+throw new global::System.ArgumentNullException(nameof(dA));
+}
+if (dA.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dA));
+}
+if (dB is null){
+throw new global::System.ArgumentNullException(nameof(dB));
+}
+if (dB.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dB));
+}
+if (dResult is null){
+throw new global::System.ArgumentNullException(nameof(dResult));
+}
+if (dResult.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(dResult));
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";

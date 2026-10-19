@@ -70,7 +70,8 @@ public class OptionalArrayTests : TranspilerTestBase
         var y = ImmutableArray.Create(10f, 20f);
         OptionalArrayKernels.LaunchImmutableAddKernel(x, y, blockDimX: 2);
         Assert.Equal([11f, 22f], x);
-        Assert.Equal([10f, 20f], y);
+        // [WHY] Compare elements: a collection expression here would be target-typed to ImmutableArray<float>, whose Equals compares the underlying array reference.
+        Assert.Equal([10f, 20f], y.AsSpan().ToArray());
     }
 
     [Scenario(TestScenario.HappyPath)]

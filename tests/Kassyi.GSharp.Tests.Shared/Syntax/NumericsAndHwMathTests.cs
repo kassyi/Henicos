@@ -154,11 +154,12 @@ public class NumericsAndHwMathTests : TranspilerTestBase
         float[] floatInputs = [];
         float[] floatOutputs = [];
 
-        var ex = Record.Exception(() =>
+        // Empty array arguments are rejected instead of silently skipping the launch
+        var ex = Assert.Throws<ArgumentException>(() =>
             InvocationAndIntrinsicsKernels.LaunchMathKernel(
                 doubleInputs, doubleOutputs, floatInputs, floatOutputs, blockDimX: 0));
 
-        Assert.Null(ex);
+        Assert.Equal("doubleInputs", ex.ParamName);
     }
 
     [SkippableFact]

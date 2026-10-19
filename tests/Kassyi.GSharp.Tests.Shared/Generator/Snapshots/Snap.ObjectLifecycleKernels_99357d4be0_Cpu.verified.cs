@@ -168,8 +168,11 @@ private unsafe delegate void Kernel_LifecycleUpdate_Delegate(uint gridDimX, uint
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchKernel_LifecycleUpdate(global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] states, global::System.Int32 length, global::System.Int32 multiplier, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (states is null){
+throw new global::System.ArgumentNullException(nameof(states));
+}
 if (states.Length == 0){
-return;
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(states));
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
@@ -375,8 +378,17 @@ private unsafe delegate void Kernel_FactoryInitialization_Delegate(uint gridDimX
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchKernel_FactoryInitialization(global::System.Int32[] inputValues, global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] outputStates, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (inputValues.Length == 0 || outputStates.Length == 0){
-return;
+if (inputValues is null){
+throw new global::System.ArgumentNullException(nameof(inputValues));
+}
+if (inputValues.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(inputValues));
+}
+if (outputStates is null){
+throw new global::System.ArgumentNullException(nameof(outputStates));
+}
+if (outputStates.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(outputStates));
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";

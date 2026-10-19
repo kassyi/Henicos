@@ -9,6 +9,21 @@ public class GpuMacroTests
     [InlineData(int.MinValue)]
     [InlineData(-1)]
     [InlineData(0)]
+    public void Test_MacroKernel_EmptyOutput_ThrowsArgumentException(int length)
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var scope = new GpuKernelLoader.CudaContextScope();
+
+        // Non-positive lengths produce an empty output buffer, which the launcher rejects instead of skipping the launch
+        var output = new uint[Math.Max(0, length)];
+
+        var exception = Assert.Throws<ArgumentException>(() =>
+            GpuMacroTestKernels.LaunchKernel_MacroTest_FillAndSingle(
+                output, length, 0x55555555, 0x12345678, blockDimX: 256));
+        Assert.Equal("outputBuffer", exception.ParamName);
+    }
+
+    [SkippableTheory]
     [InlineData(1)]
     [InlineData(1023)]
     [InlineData(1024)]
@@ -44,13 +59,7 @@ public class GpuMacroTests
             gridDimX: gridSize, blockDimX: blockSize);
 
         // Verify the results
-        if (length > 0)
-        {
-            Assert.Equal(singleValue, output[0]);
-            Assert.True(output.AsSpan(1).AsStackEnumerable().All(v => v == fillValue));
-        }
-
-        // For actualLength == 0, output array is length 0 and shouldn't be touched.
-        // The fact that it didn't throw an AccessViolationException verifies empty array handling.
+        Assert.Equal(singleValue, output[0]);
+        Assert.True(output.AsSpan(1).AsStackEnumerable().All(v => v == fillValue));
     }
 }

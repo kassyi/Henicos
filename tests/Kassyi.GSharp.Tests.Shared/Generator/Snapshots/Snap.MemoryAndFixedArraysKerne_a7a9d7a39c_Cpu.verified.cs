@@ -202,8 +202,23 @@ private unsafe delegate void SharedMemoryStaticKernel_Delegate(uint gridDimX, ui
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSharedMemoryStaticKernel(global::System.Int32[] intOutput, global::System.Single[] floatOutput, global::Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint[] pointOutput, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (intOutput.Length == 0 || floatOutput.Length == 0 || pointOutput.Length == 0){
-return;
+if (intOutput is null){
+throw new global::System.ArgumentNullException(nameof(intOutput));
+}
+if (intOutput.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(intOutput));
+}
+if (floatOutput is null){
+throw new global::System.ArgumentNullException(nameof(floatOutput));
+}
+if (floatOutput.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(floatOutput));
+}
+if (pointOutput is null){
+throw new global::System.ArgumentNullException(nameof(pointOutput));
+}
+if (pointOutput.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(pointOutput));
 }
 var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture == System.Runtime.InteropServices.Architecture.Arm64 ? "_arm64" : "_x64";
 var dllName = $"Kassyi.GSharp.Kernels_SnapshotTest{archSuffix}.dll";
