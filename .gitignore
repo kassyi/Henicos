@@ -105,8 +105,6 @@ dist-ssr/
 /.claude/commands/jules.ja.prompt.md
 /.claude/commands/kickoff.prompt.md
 /.claude/commands/make-pr.prompt.md
-/.claude/commands/phased-code-review-flash.prompt.md
-/.claude/commands/phased-code-review-pro.prompt.md
 /.claude/commands/qodo.en.prompt.md
 /.claude/commands/qodo.ja.prompt.md
 /.claude/commands/report-pr.ja.prompt.md
