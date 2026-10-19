@@ -55,6 +55,7 @@ public class ArtifactHelperTests
         Assert.Single(ctx.BuildEngine.LoggedWarnings);
         Assert.Contains("default G# development key", ctx.BuildEngine.LoggedWarnings[0]);
         Assert.Contains(ArtifactHelper.DefaultSigningKeyWarningCode, ctx.BuildEngine.LoggedWarningCodes);
+        Assert.Empty(ctx.BuildEngine.LoggedErrors);
     }
 
     [Fact]
@@ -71,6 +72,7 @@ public class ArtifactHelperTests
         var resultData = ctx.ReadResult();
         Assert.Equal(3 + Ed25519.SignatureSize, resultData.Length);
         Assert.Empty(ctx.BuildEngine.LoggedWarnings);
+        Assert.Empty(ctx.BuildEngine.LoggedErrors);
     }
 
     [Fact]
@@ -87,21 +89,27 @@ public class ArtifactHelperTests
         var resultData = ctx.ReadResult();
         Assert.Equal(3 + Ed25519.SignatureSize, resultData.Length);
         Assert.Empty(ctx.BuildEngine.LoggedWarnings);
+        Assert.Empty(ctx.BuildEngine.LoggedErrors);
     }
 
-    [Fact]
+    [Theory]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public void Test_ProcessArtifact_WithInvalidKey_FallsBackToDefault()
+    [InlineData("invalid_length_key")]
+    [InlineData("000000000000000000000000000000000000000000000000000000000000000g")]
+    [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!=")]
+    [InlineData("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")]
+    public void Test_ProcessArtifact_WithInvalidKey_ReportsGS0003AndLeavesFileUnchanged(string envValue)
     {
-        using var ctx = new ArtifactTestContext("invalid_length_key");
+        using var ctx = new ArtifactTestContext(envValue);
 
-        Assert.True(ctx.ProcessArtifact());
+        Assert.False(ctx.ProcessArtifact());
 
-        var resultData = ctx.ReadResult();
-        Assert.Equal(3 + Ed25519.SignatureSize, resultData.Length);
-        Assert.Contains(ctx.BuildEngine.LoggedWarnings, w => w.Contains("Failed to parse") || w.Contains("invalid"));
-        Assert.Contains(ArtifactHelper.DefaultSigningKeyWarningCode, ctx.BuildEngine.LoggedWarningCodes);
+        Assert.Single(ctx.BuildEngine.LoggedErrors);
+        Assert.Equal(ArtifactHelper.InvalidSigningKeyErrorCode, Assert.Single(ctx.BuildEngine.LoggedErrorCodes));
+        Assert.DoesNotContain(envValue, ctx.BuildEngine.LoggedErrors[0]);
+        Assert.Empty(ctx.BuildEngine.LoggedWarnings);
+        Assert.Equal(new byte[] { 1, 2, 3 }, ctx.ReadResult());
     }
 
     private sealed class ArtifactTestContext : IDisposable
@@ -143,10 +151,23 @@ public class ArtifactHelperTests
         public string ProjectFileOfTaskNode => string.Empty;
         public List<string> LoggedWarnings { get; } = [];
         public List<string> LoggedWarningCodes { get; } = [];
+        public List<string> LoggedErrors { get; } = [];
+        public List<string> LoggedErrorCodes { get; } = [];
 
         public bool BuildProjectFile(string projectFileName, string[] targetNames, IDictionary globalProperties, IDictionary targetOutputs) => true;
         public void LogCustomEvent(CustomBuildEventArgs e) { }
-        public void LogErrorEvent(BuildErrorEventArgs e) { }
+        public void LogErrorEvent(BuildErrorEventArgs e)
+        {
+            if (e.Message != null)
+            {
+                LoggedErrors.Add(e.Message);
+            }
+
+            if (e.Code != null)
+            {
+                LoggedErrorCodes.Add(e.Code);
+            }
+        }
         public void LogMessageEvent(BuildMessageEventArgs e) { }
         public void LogWarningEvent(BuildWarningEventArgs e)
         {
