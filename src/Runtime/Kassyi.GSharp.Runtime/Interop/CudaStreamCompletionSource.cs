@@ -32,6 +32,14 @@ namespace Kassyi.GSharp.Runtime.Interop;
 /// <c>cuStreamQuery</c> instead of a recorded event, because a pooled event would outlive the context that created it
 /// (e.g. an isolated <c>GpuWorkspace</c> context) and become a dangling handle.
 /// </para>
+/// <para>
+/// <b>Context lifetime:</b> the watchdog makes the observed context current, and a destroyed context handle crashes the
+/// process inside the driver instead of returning an error. Two rules keep the handle alive while it is used:
+/// a tick runs its pending check and its driver calls under <see cref="_tickLock"/>, and the winner of
+/// <see cref="TryComplete"/> passes through that lock before signaling, so no tick is inside the driver once an awaiter
+/// can resume (and, for example, destroy the context). Contexts destroyed while an operation is still armed must go
+/// through <see cref="GpuKernelLoader.DestroyContext"/>, which abandons those operations first.
+/// </para>
 /// </remarks>
 internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
 {
@@ -41,6 +49,11 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
     private static readonly TimeSpan s_watchdogPeriod = TimeSpan.FromMilliseconds(100);
     private static readonly CudaStreamCompletionSource?[] s_pool = new CudaStreamCompletionSource?[16];
 
+    // Armed operations, so that a context about to be destroyed can find the ones still observing it.
+    private static readonly Lock s_armedLock = new();
+    private static readonly List<CudaStreamCompletionSource> s_armed = new(s_pool.Length);
+
+    private readonly Lock _tickLock = new();
     private readonly Timer _watchdog;
     private ManualResetValueTaskSourceCore<bool> _core;
     private GCHandle _selfHandle;
@@ -176,12 +189,59 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
             throw new CudaException(result);
         }
 
-        if (Volatile.Read(ref _pendingVersion) == version)
+        lock (s_armedLock)
         {
-            _watchdog.Change(s_watchdogPeriod, s_watchdogPeriod);
+            // Checked under the lock: TryComplete unregisters under it too, so a concurrent completion either already
+            // happened (skip) or will remove this entry.
+            if (Volatile.Read(ref _pendingVersion) == version)
+            {
+                s_armed.Add(this);
+                _watchdog.Change(s_watchdogPeriod, s_watchdogPeriod);
+            }
         }
 
         return new ValueTask(this, version);
+    }
+
+    /// <summary>
+    /// Faults every operation still armed on a stream of <paramref name="context"/> and stops their watchdogs.
+    /// </summary>
+    /// <param name="context">The context that is about to be destroyed.</param>
+    /// <remarks>
+    /// Returns only after no watchdog is inside a driver call for those operations, so the caller may destroy
+    /// <paramref name="context"/> immediately afterwards.
+    /// </remarks>
+    internal static void AbandonContext(IntPtr context)
+    {
+        while (TryTakeArmed(context, out var source, out var version))
+        {
+            source.TryComplete(version, new ObjectDisposedException(
+                "CUDA context", "The CUDA context was destroyed while an operation was awaiting its stream."));
+        }
+    }
+
+    private static bool TryTakeArmed(IntPtr context, [NotNullWhen(true)] out CudaStreamCompletionSource? source,
+        out int version)
+    {
+        lock (s_armedLock)
+        {
+            foreach (var candidate in s_armed)
+            {
+                if (Volatile.Read(ref candidate._context) != context)
+                {
+                    continue;
+                }
+
+                // TryComplete removes the entry, so the next call does not find it again.
+                source = candidate;
+                version = Volatile.Read(ref candidate._armedVersion);
+                return true;
+            }
+        }
+
+        source = null;
+        version = NotArmed;
+        return false;
     }
 
     [UnmanagedCallersOnly]
@@ -212,41 +272,42 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
 
     private void OnWatchdogTick()
     {
-        var version = Volatile.Read(ref _armedVersion);
-        if (Volatile.Read(ref _pendingVersion) != version)
+        // Held across the pending check and the driver calls; see "Context lifetime" in the type remarks.
+        // TryComplete below re-enters it on this thread, which Lock permits.
+        lock (_tickLock)
         {
-            return;
-        }
+            var version = Volatile.Read(ref _armedVersion);
+            if (Volatile.Read(ref _pendingVersion) != version)
+            {
+                return;
+            }
 
-        var context = Volatile.Read(ref _context);
-        var stream = Volatile.Read(ref _stream);
-        if (Volatile.Read(ref _pendingVersion) != version)
-        {
-            return;
-        }
+            var context = Volatile.Read(ref _context);
+            var stream = Volatile.Read(ref _stream);
 
-        CUresult status;
-        try
-        {
-            using var scope = new GpuKernelLoader.CudaContextScope(context);
+            CUresult status;
+            try
+            {
+                using var scope = new GpuKernelLoader.CudaContextScope(context);
 
-            // Also observes work enqueued after the completion signal. That is harmless because only fault codes
-            // are acted upon; success is always left to the host callback, which owns the reuse handshake.
-            status = CudaDriverApi.cuStreamQuery(stream);
-        }
-        catch (CudaException ex)
-        {
-            // The owning context can no longer be made current (e.g. destroyed); surface it instead of hanging.
-            TryComplete(version, ex);
-            return;
-        }
+                // Also observes work enqueued after the completion signal. That is harmless because only fault codes
+                // are acted upon; success is always left to the host callback, which owns the reuse handshake.
+                status = CudaDriverApi.cuStreamQuery(stream);
+            }
+            catch (CudaException ex)
+            {
+                // The owning context can no longer be made current; surface it instead of hanging.
+                TryComplete(version, ex);
+                return;
+            }
 
-        if (status is CUresult.CudaSuccess or CUresult.CudaErrorNotReady)
-        {
-            return;
-        }
+            if (status is CUresult.CudaSuccess or CUresult.CudaErrorNotReady)
+            {
+                return;
+            }
 
-        TryComplete(version, new CudaException(status, $"CUDA stream faulted while awaiting completion: {status}"));
+            TryComplete(version, new CudaException(status, $"CUDA stream faulted while awaiting completion: {status}"));
+        }
     }
 
     private void TryComplete(int version, Exception? error)
@@ -256,7 +317,17 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
             return;
         }
 
-        _watchdog.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        lock (s_armedLock)
+        {
+            s_armed.Remove(this);
+        }
+
+        // Waits for a tick that passed its pending check before the exchange above to leave the driver. Ticks that
+        // start later see the exchange and return without touching the context.
+        lock (_tickLock)
+        {
+            _watchdog.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        }
 
         if (error is null)
         {

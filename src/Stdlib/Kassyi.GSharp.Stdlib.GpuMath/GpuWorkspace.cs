@@ -297,7 +297,7 @@ public class GpuWorkspace : IGpuResourceScope
 
             if (_isolatedContext != IntPtr.Zero)
             {
-                CudaDriverApi.cuCtxDestroy_v2(_isolatedContext);
+                GpuKernelLoader.DestroyContext(_isolatedContext);
             }
         }
         catch (Exception ex)

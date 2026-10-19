@@ -27,6 +27,10 @@ public class CudaStreamCompletionTests
     private static readonly TimeSpan CompletionTimeout = TimeSpan.FromSeconds(10);
     private static readonly TimeSpan GateHoldTime = TimeSpan.FromMilliseconds(500);
 
+    // Several watchdog periods (100 ms), long enough for a stale watchdog to fire at least once.
+    private static readonly TimeSpan WatchdogQuietPeriod = TimeSpan.FromMilliseconds(400);
+    private const int RaceIterations = 30;
+
     [SkippableFact]
     [Category(TestCategory.Runtime)]
     [Scenario(TestScenario.HappyPath)]
@@ -352,6 +356,83 @@ public class CudaStreamCompletionTests
         }
     }
 
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task ContextDestroy_WithArmedWait_FaultsAwaiter_AndWatchdogNeverTouchesContext()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        var isolated = IsolatedContext.Create();
+        try
+        {
+            // A raw handle: CudaStream would try to destroy it again after its context is gone.
+            var stream = isolated.Run(static () =>
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out var handle, 1));
+                return handle;
+            });
+
+            // Allocated and enqueued from the global context, so the gate outlives the isolated one and opens itself
+            // while cuCtxDestroy waits for the gated work (it drains outstanding work before returning).
+            using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(stream, GateHoldTime));
+
+            var pending = CudaStreamCompletion.WaitAsync(stream).AsTask();
+            Assert.False(pending.IsCompleted, "Completion must not be signaled while the stream is still gated.");
+
+            // The wait must be detached before cuCtxDestroy starts: while it drains the gated work, a watchdog tick would
+            // otherwise make the context current, which the driver forbids during destruction.
+            isolated.Dispose();
+
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => pending.WaitAsync(CompletionTimeout));
+
+            // A watchdog still bound to the destroyed context would make it current here and crash the process.
+            await Task.Delay(WatchdogQuietPeriod);
+        }
+        finally
+        {
+            isolated.Dispose();
+        }
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public async Task WaitAsync_ContextDestroyedRightAfterCompletion_Repeatedly_DoesNotTouchDestroyedContext()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        for (var i = 0; i < RaceIterations; i++)
+        {
+            var context = CudaTestEnvironment.InContext(static () =>
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuDeviceGet(out var device, 0));
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxCreate_v2(out var handle, 0, device));
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out var stream, 1));
+                CudaException.ThrowIfError(CudaDriverApi.cuCtxPopCurrent_v2(out _));
+                return (handle, stream);
+            });
+
+            // Hold times spread over the watchdog period, so completion lands at different phases of the timer.
+            var holdTime = TimeSpan.FromMilliseconds(20 + (i * 37 % 120));
+            using (CudaTestEnvironment.InContext(() => StreamGate.Enqueue(context.stream, holdTime)))
+            {
+                await CudaStreamCompletion.WaitAsync(context.stream).AsTask().WaitAsync(CompletionTimeout);
+            }
+
+            // Raw destroy on purpose: once the awaiter has resumed, no watchdog tick may still be using the context,
+            // even without GpuKernelLoader.DestroyContext.
+            using (new GpuKernelLoader.CudaContextScope(context.handle))
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamDestroy(context.stream));
+            }
+
+            CudaException.ThrowIfError(CudaDriverApi.cuCtxDestroy_v2(context.handle));
+        }
+
+        await Task.Delay(WatchdogQuietPeriod);
+    }
+
     private sealed class ThrowingCompletionHook : IStreamCompletionHook
     {
         public void OnStreamCompleted() => throw new InvalidOperationException("Simulated hook failure.");
@@ -409,7 +490,7 @@ public class CudaStreamCompletionTests
 
             var handle = _handle;
             _handle = IntPtr.Zero;
-            CudaException.ThrowIfError(CudaDriverApi.cuCtxDestroy_v2(handle));
+            GpuKernelLoader.DestroyContext(handle);
         }
     }
 }

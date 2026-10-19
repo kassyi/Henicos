@@ -255,7 +255,7 @@ public class CudaStreamGateTests
                 }
             }
 
-            CudaDriverApi.cuCtxDestroy_v2(isolatedContext);
+            GpuKernelLoader.DestroyContext(isolatedContext);
         }
     }
 

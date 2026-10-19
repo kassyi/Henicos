@@ -260,6 +260,30 @@ public static class GpuKernelLoader
     }
 
     /// <summary>
+    /// Faults every pending stream wait on <paramref name="context"/>, then destroys the context with <c>cuCtxDestroy</c>.
+    /// </summary>
+    /// <param name="context">A context created with <c>cuCtxCreate</c>. It must not be used after this call.</param>
+    /// <exception cref="CudaException"><c>cuCtxDestroy</c> failed.</exception>
+    /// <remarks>
+    /// <para>
+    /// <b>[WHY]:</b> <see cref="CudaStreamCompletion.WaitAsync"/> polls the awaited stream from a watchdog timer that makes
+    /// the stream's context current. The driver forbids using a context while <c>cuCtxDestroy</c> runs (it drains
+    /// outstanding work first), and a destroyed handle crashes the process instead of returning an error. Destroying a
+    /// context through this method detaches those waits before the driver call.
+    /// </para>
+    /// <para>
+    /// Awaiters of the faulted waits observe an <see cref="ObjectDisposedException"/>. The GPU work they were waiting for
+    /// is not canceled; it is drained or torn down together with the context.
+    /// </para>
+    /// </remarks>
+    // ReSharper disable once UnusedMember.Global -- Public API exposed for runtime consumers
+    public static void DestroyContext(IntPtr context)
+    {
+        CudaStreamCompletionSource.AbandonContext(context);
+        CudaException.ThrowIfError(CudaDriverApi.cuCtxDestroy_v2(context));
+    }
+
+    /// <summary>
     /// Loads an Ahead-Of-Time (AOT) compiled Fatbin directly into the CUDA driver.
     /// </summary>
     /// <param name="aotFatbin">The raw byte span of the AOT Fatbin binary.</param>
