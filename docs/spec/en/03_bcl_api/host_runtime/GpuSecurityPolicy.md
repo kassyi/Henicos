@@ -56,7 +56,7 @@ The 32-byte public key.
 #### Exceptions
 
 `ArgumentException`<br>
-`publicKey` is not exactly 32 bytes long.
+`publicKey` is not exactly 32 bytes long, is not a canonical and decompressible Ed25519 point (RFC 8032 Section 5.1.3), or is one of the 8 small-order points (including the identity). Small-order keys are rejected because some verifiers accept forged signatures for them.
 
 ## VerifyImage(FatbinImage)
 
@@ -99,7 +99,8 @@ using Kassyi.GSharp.Runtime.Fatbin;
 // Execution Context: Host (CPU)
 Console.WriteLine($"Embedded keys length: {GpuSecurityPolicy.EmbeddedKeys.Length}");
 
-byte[] customPublicKey = new byte[32];
+// RFC 8032 Section 7.1 Test Vector 2 public key. All-zero or other small-order keys are rejected.
+byte[] customPublicKey = Convert.FromHexString("3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c");
 GpuSecurityPolicy.RegisterTrustedKey(customPublicKey);
 ```
 
