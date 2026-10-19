@@ -42,6 +42,7 @@ internal static class SymbolExtensions
             }
         };
 
+    /// <summary>Determines whether the namespace is exactly <c>System.Collections.Immutable</c> rooted at the global namespace.</summary>
     public static bool IsSystemCollectionsImmutable(this INamespaceSymbol? ns) =>
         ns is
         {
