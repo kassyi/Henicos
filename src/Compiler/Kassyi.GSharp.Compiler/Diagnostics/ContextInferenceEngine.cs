@@ -48,16 +48,14 @@ public static class ContextInferenceEngine
 
 
         // AST Check: Get Syntax Reference
-        var syntaxRef = methodSymbol.DeclaringSyntaxReferences.Length > 0 ? methodSymbol.DeclaringSyntaxReferences[0] : null;
-        if (syntaxRef == null)
+        if (!methodSymbol.TryGetDeclaringSyntax<SyntaxNode>(out var syntaxNode))
         {
             // No source available. Fallback to false.
             cache[methodSymbol] = false;
             return false;
         }
 
-        var syntaxNode = syntaxRef.GetSyntax();
-        var semanticModel = compilation.GetSemanticModel(syntaxRef.SyntaxTree);
+        var semanticModel = compilation.GetSemanticModel(syntaxNode.SyntaxTree);
 
         var walker = new DependencyWalker(semanticModel, cache, compilation, visiting);
         walker.Visit(syntaxNode);

@@ -102,8 +102,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         var symbol = context.Query.SemanticModel.GetSymbol(node.Expression);
         if (symbol is ILocalSymbol localSym)
         {
-            var syntaxRef = localSym.DeclaringSyntaxReferences.Length > 0 ? localSym.DeclaringSyntaxReferences[0] : null;
-            if (syntaxRef?.GetSyntax() is not VariableDeclaratorSyntax decl)
+            if (!localSym.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var decl))
             {
                 return false;
             }
