@@ -3,12 +3,53 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits P/Invoke wrapper logic for launching CUDA kernels, including memory allocation, marshaling, and stream synchronization.</summary>
 internal static class KernelLaunchEmitter
 {
+    internal static ITypeSymbol GetMarshaledType(IParameterSymbol p) =>
+        p.Type.UnwrapNullableArrayLike() ?? p.Type;
+
+    internal static bool IsOptionalArray(IParameterSymbol p) =>
+        (p.Type.IsReferenceType && p.NullableAnnotation == NullableAnnotation.Annotated) ||
+        p.Type.IsNullableArrayLike();
+
+    internal static string GetValueExpression(IParameterSymbol p) =>
+        p.Type.IsNullableArrayLike() ? $"{p.Name}.GetValueOrDefault()" : p.Name;
+
+    internal static string GetLengthExpression(IParameterSymbol p)
+    {
+        var marshaled = GetMarshaledType(p);
+        var member = marshaled is INamedTypeSymbol { Name: "ArraySegment" } ? "Count" : "Length";
+        if (p.Type.IsReferenceType && p.NullableAnnotation == NullableAnnotation.Annotated)
+        {
+            return $"({p.Name}?.Length ?? 0)";
+        }
+
+        return $"{GetValueExpression(p)}.{member}";
+    }
+
+    internal static string GetSpanExpression(IParameterSymbol p)
+    {
+        var marshaled = GetMarshaledType(p);
+        var valExpr = GetValueExpression(p);
+
+        if (marshaled is INamedTypeSymbol { Name: "Memory" or "ReadOnlyMemory" })
+        {
+            return $"{valExpr}.Span";
+        }
+
+        if (marshaled is INamedTypeSymbol { Name: "ArraySegment" or "ImmutableArray" })
+        {
+            return $"{valExpr}.AsSpan()";
+        }
+
+        return valExpr;
+    }
+
     /// <summary>Emits local variable declarations for device pointers and tracking lists.</summary>
     internal static void WriteVariablesInitialization(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
         foreach (var p in method.Parameters)
         {
-            if (CudaLayoutRules.IsCustomStruct(p.Type))
+            var marshaledType = GetMarshaledType(p);
+            if (CudaLayoutRules.IsCustomStruct(marshaledType))
             {
                 if (!isDevicePtr)
                 {
@@ -27,7 +68,7 @@ internal static class KernelLaunchEmitter
                     writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
                 }
             }
-            else if ((!isDevicePtr && p.Type.IsArrayLikeType()) ||
+            else if ((!isDevicePtr && marshaledType.IsArrayLikeType()) ||
                      (!isDevicePtr && p.RefKind is RefKind.Ref or RefKind.Out))
             {
                 writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
@@ -143,27 +184,14 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static string GetSpanExpression(IParameterSymbol p)
-    {
-        if (p.Type is INamedTypeSymbol { Name: "Memory" or "ReadOnlyMemory" })
-        {
-            return $"{p.Name}.Span";
-        }
-        else if (p.Type is INamedTypeSymbol { Name: "ArraySegment" or "ImmutableArray" })
-        {
-            return $"{p.Name}.AsSpan()";
-        }
-
-        return p.Name;
-    }
-
     private static void WriteParameterMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex, bool isDevicePtr)
     {
-        if (isDevicePtr && (p.Type.IsArrayLikeType() || CudaLayoutRules.IsCustomStruct(p.Type) ||
+        var marshaledType = GetMarshaledType(p);
+        if (isDevicePtr && (marshaledType.IsArrayLikeType() || CudaLayoutRules.IsCustomStruct(marshaledType) ||
                             p.RefKind is RefKind.Ref or RefKind.Out))
         {
-            var kind = p.Type.IsArrayLikeType() ? "array" :
-                CudaLayoutRules.IsCustomStruct(p.Type) ? "struct" : "scalar";
+            var kind = marshaledType.IsArrayLikeType() ? "array" :
+                CudaLayoutRules.IsCustomStruct(marshaledType) ? "struct" : "scalar";
             writer.AppendLine($"// Marshal device {kind}: {p.Name}");
             if (kind == "array")
             {
@@ -180,11 +208,11 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        if (CudaLayoutRules.IsCustomStruct(p.Type))
+        if (CudaLayoutRules.IsCustomStruct(marshaledType))
         {
             WriteCustomStructMarshal(writer, p, paramIndex, isDevicePtr);
         }
-        else if (p.Type.TryGetArrayLikeElementType(out var elementType))
+        else if (marshaledType.TryGetArrayLikeElementType(out var elementType))
         {
             WriteArrayMarshal(writer, p, elementType, paramIndex);
         }
@@ -201,10 +229,11 @@ internal static class KernelLaunchEmitter
     private static void WriteCustomStructMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex,
         bool isDevicePtr)
     {
-        writer.AppendAotStructPath(p.Type);
+        var marshaledType = GetMarshaledType(p);
+        writer.AppendAotStructPath(marshaledType);
         writer.AppendLine($" native_{p.Name} = default;");
         writer.Append("AotContexts.Marshal_");
-        writer.AppendNestedCppName(p.Type);
+        writer.AppendNestedCppName(marshaledType);
         using (writer.Parentheses())
         {
             writer.Append(
@@ -217,7 +246,7 @@ internal static class KernelLaunchEmitter
         {
             writer.AppendLine($"// Marshal ref/out struct: {p.Name}");
             writer.Append($"int {p.Name}_size = sizeof(");
-            writer.AppendAotStructPath(p.Type);
+            writer.AppendAotStructPath(marshaledType);
             writer.AppendLine(");");
 
             writer.AppendLine(
@@ -246,15 +275,16 @@ internal static class KernelLaunchEmitter
         GetArrayDirection(p, out var hasIn, out var hasOut);
 
         var isOutOnly = hasOut && !hasIn;
+        var lenExpr = GetLengthExpression(p);
 
         writer.AppendLine($"// Marshal array: {p.Name}");
-        writer.Append($"int {p.Name}_size = {p.Name}.Length * sizeof(");
+        writer.Append($"int {p.Name}_size = {lenExpr} * sizeof(");
         writer.AppendFullyQualifiedCsharpName(elementType);
         writer.AppendLine(");");
 
         writer.AppendLine($"IntPtr* proxy_{p.Name} = stackalloc IntPtr[2];");
         writer.AppendLine($"proxy_{p.Name}[0] = IntPtr.Zero;");
-        writer.AppendLine($"((int*)(proxy_{p.Name} + 1))[0] = {p.Name}.Length;");
+        writer.AppendLine($"((int*)(proxy_{p.Name} + 1))[0] = {lenExpr};");
 
         writer.AppendLine($"if ({p.Name}_size > 0)");
         using (writer.Scope())
@@ -367,17 +397,18 @@ internal static class KernelLaunchEmitter
 
     public static void WriteParameterUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
     {
-        if (isDevicePtr && (p.Type.IsArrayLikeType() || CudaLayoutRules.IsCustomStruct(p.Type) ||
+        var marshaledType = GetMarshaledType(p);
+        if (isDevicePtr && (marshaledType.IsArrayLikeType() || CudaLayoutRules.IsCustomStruct(marshaledType) ||
                             p.RefKind is RefKind.Ref or RefKind.Out))
         {
             return;
         }
 
-        if (CudaLayoutRules.IsCustomStruct(p.Type))
+        if (CudaLayoutRules.IsCustomStruct(marshaledType))
         {
             WriteCustomStructUnmarshal(writer, p, isDevicePtr);
         }
-        else if (p.Type.IsArrayLikeType())
+        else if (marshaledType.IsArrayLikeType())
         {
             WriteArrayUnmarshal(writer, p, isDevicePtr);
         }
@@ -406,8 +437,9 @@ internal static class KernelLaunchEmitter
             }
         }
 
+        var marshaledType = GetMarshaledType(p);
         writer.Append("AotContexts.Unmarshal_");
-        writer.AppendNestedCppName(p.Type);
+        writer.AppendNestedCppName(marshaledType);
         using (writer.Parentheses())
         {
             writer.Append($"ref {p.Name}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")}, hStream");
@@ -426,8 +458,10 @@ internal static class KernelLaunchEmitter
         GetArrayDirection(p, out var hasIn, out var hasOut);
 
         var isInOnly = hasIn && !hasOut;
+        var marshaledType = GetMarshaledType(p);
+        var isReadOnlyArrayLike = marshaledType is INamedTypeSymbol { Name: "ReadOnlyMemory" or "ReadOnlySpan" or "ImmutableArray" };
 
-        if (isInOnly)
+        if (isInOnly || isReadOnlyArrayLike)
         {
             writer.AppendLine($"// Skip DtoH copy for [In] array: {p.Name}");
             return;
@@ -439,7 +473,7 @@ internal static class KernelLaunchEmitter
         {
             var spanExpr = GetSpanExpression(p);
             writer.Append("fixed (");
-            if (!p.Type.TryGetArrayLikeElementType(out var elementType))
+            if (!marshaledType.TryGetArrayLikeElementType(out var elementType))
             {
                 throw new InvalidOperationException($"Parameter '{p.Name}' is not an array-like type.");
             }
@@ -486,13 +520,14 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        if (CudaLayoutRules.IsCustomStruct(p.Type))
+        var marshaledType = GetMarshaledType(p);
+        if (CudaLayoutRules.IsCustomStruct(marshaledType))
         {
             writer.AppendLine(
                 $"foreach (var ptr in {p.Name}_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);");
         }
 
-        if (p.Type is IArrayTypeSymbol || p.RefKind is RefKind.Ref or RefKind.Out)
+        if (marshaledType.IsArrayLikeType() || p.RefKind is RefKind.Ref or RefKind.Out)
         {
             writer.AppendLine($"if (d_{p.Name} != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_{p.Name}, hStream);");
         }

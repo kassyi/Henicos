@@ -13,6 +13,8 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
     public virtual void AppendType(ref TranspileContext context, ITypeSymbol? typeSymbol)
     {
+        typeSymbol = typeSymbol.UnwrapNullableArrayLike();
+
         if (typeSymbol == null)
         {
             context.Emitter.Writer.Append("void");

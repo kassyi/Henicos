@@ -43,11 +43,12 @@ public class InvocationTests
         long[] longBuf = [];
         ulong[] ulongBuf = [];
 
-        var ex = Record.Exception(() => 
+        // Empty array arguments are rejected instead of silently skipping the launch
+        var ex = Assert.Throws<ArgumentException>(() =>
             InvocationAndIntrinsicsKernels.LaunchInterlockedKernel(
                 intBuf, uintBuf, longBuf, ulongBuf, blockDimX: 0));
 
-        Assert.Null(ex);
+        Assert.Equal("intBuf", ex.ParamName);
     }
 
     // SYN-49 Edge Cases
@@ -84,12 +85,12 @@ public class InvocationTests
         int[] emptyArray = [];
         AtomicTestStruct[] emptyStructArray = [];
 
-        // Should be rejected or safely handled (we assert no exception is thrown when blockDimX is 0, or we catch exception)
-        var ex = Record.Exception(() => 
+        // Empty array arguments are rejected instead of silently skipping the launch
+        var ex = Assert.Throws<ArgumentException>(() =>
             InvocationAndIntrinsicsKernels.LaunchInterlockedEdgeCasesKernel(
                 emptyArray, emptyStructArray, blockDimX: 0));
 
-        Assert.Null(ex);
+        Assert.Equal("array", ex.ParamName);
     }
 
     [SkippableFact]

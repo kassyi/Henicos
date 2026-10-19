@@ -6,7 +6,6 @@ public class VectorBuiltinTests
 :  TranspilerTestBase{
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    [InlineData(0)]
     [InlineData(1)]
     [InlineData(10)]
     public void GEN18_TestVector2AddKernel(int arrayLength)
@@ -33,7 +32,6 @@ public class VectorBuiltinTests
 
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    [InlineData(0)]
     [InlineData(1)]
     [InlineData(10)]
     public void GEN18_TestVector3AddKernel(int arrayLength)
@@ -61,7 +59,6 @@ public class VectorBuiltinTests
 
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    [InlineData(0)]
     [InlineData(1)]
     [InlineData(10)]
     public void GEN18_TestVector4AddKernel(int arrayLength)
@@ -86,5 +83,18 @@ public class VectorBuiltinTests
             Math.Abs(exp.Y - result[i].Y) < 1e-5f &&
             Math.Abs(exp.Z - result[i].Z) < 1e-5f &&
             Math.Abs(exp.W - result[i].W) < 1e-5f).All(ok => ok));
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    public void GEN18_TestVector2AddKernel_EmptyArrays_ThrowsArgumentException()
+    {
+        System.Numerics.Vector2[] empty = [];
+
+        // Empty array arguments are rejected instead of silently skipping the launch
+        var ex = Assert.Throws<ArgumentException>(() =>
+            VectorBuiltinKernels.LaunchVector2AddKernel(empty, empty, empty, 0, blockDimX: 32));
+
+        Assert.Equal("a", ex.ParamName);
     }
 }

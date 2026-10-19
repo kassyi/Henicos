@@ -115,8 +115,17 @@ s_hfunc_BitOperationsTestKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoa
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchBitOperationsTestKernel(global::System.UInt32[] u32Data, global::System.UInt64[] u64Data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (u32Data.Length == 0 || u64Data.Length == 0){
-return;
+if (u32Data is null){
+throw new global::System.ArgumentNullException(nameof(u32Data));
+}
+if (u32Data.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u32Data));
+}
+if (u64Data is null){
+throw new global::System.ArgumentNullException(nameof(u64Data));
+}
+if (u64Data.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u64Data));
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
@@ -269,8 +278,23 @@ s_hfunc_PtxIntrinsicsExpansionKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKern
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchPtxIntrinsicsExpansionKernel(global::System.UInt32[] u32Out, global::System.UInt64[] u64Out, global::System.Int32[] i32Out, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
-if (u32Out.Length == 0 || u64Out.Length == 0 || i32Out.Length == 0){
-return;
+if (u32Out is null){
+throw new global::System.ArgumentNullException(nameof(u32Out));
+}
+if (u32Out.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u32Out));
+}
+if (u64Out is null){
+throw new global::System.ArgumentNullException(nameof(u64Out));
+}
+if (u64Out.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(u64Out));
+}
+if (i32Out is null){
+throw new global::System.ArgumentNullException(nameof(i32Out));
+}
+if (i32Out.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(i32Out));
 }
 using (var _cudaCtxScope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {

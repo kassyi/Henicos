@@ -95,6 +95,7 @@ public sealed class TranspilerRuleRegistry : ITranspilerRuleRegistry
         registry.Register(SyntaxKind.ImplicitObjectCreationExpression,
             new ImplicitObjectCreationExpressionTranspilerRule());
         registry.Register(SyntaxKind.ParenthesizedExpression, new ParenthesizedExpressionTranspilerRule());
+        registry.Register(SyntaxKind.IsPatternExpression, new IsPatternExpressionTranspilerRule());
         registry.Register([
             SyntaxKind.PostIncrementExpression,
             SyntaxKind.PostDecrementExpression,
