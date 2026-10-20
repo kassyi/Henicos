@@ -43,3 +43,4 @@ You **MUST** load and read the corresponding skill using `view_file` when perfor
 - [Transpiler & Source Generator Guidelines](.agents/skills/gsharp-transpiler-guidelines/SKILL.md): Roslyn syntax rewriters, AST visitors, and generator pipelines.
 - [QA & Test Coverage Guidelines](.agents/skills/qa-testing-guidelines/SKILL.md): Test scenario matrix (Happy/Boundary/Sad) and snapshot workflows.
 - [Roadmap & Task Management](.agents/skills/roadmap-management/SKILL.md): Updating project roadmaps, tracking technical debt, and progress telemetry.
+- [Jules Wave Execution Rules](.agents/skills/jules-wave-spec/SKILL.md): Rules for issues handed to Google Jules (test first, allowed files, PR naming, stop conditions). Load when writing or reviewing a Jules Wave issue or PR.
