@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -10,6 +11,7 @@ using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
+[Category(TestCategory.Compiler)]
 public partial class DiagnosticParityTests : TranspilerTestBase
 {
     private sealed class DiagnosticMetadata
@@ -21,14 +23,19 @@ public partial class DiagnosticParityTests : TranspilerTestBase
         public bool IsObsolete { get; set; }
     }
 
-    private static List<DiagnosticMetadata> LoadDiagnosticsMetadata(out string rootPath)
+    private static string ReadDiagnosticsJson(out string rootPath)
     {
         rootPath = GetRepositoryRoot();
         string jsonPath = Path.Combine(rootPath, "src", "Compiler", "Kassyi.GSharp.Compiler", "Diagnostics",
             "diagnostics.json");
         Assert.True(File.Exists(jsonPath), $"diagnostics.json not found at {jsonPath}");
 
-        string json = File.ReadAllText(jsonPath);
+        return File.ReadAllText(jsonPath);
+    }
+
+    private static List<DiagnosticMetadata> LoadDiagnosticsMetadata(out string rootPath)
+    {
+        string json = ReadDiagnosticsJson(out rootPath);
         var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var diagnostics = JsonSerializer.Deserialize<List<DiagnosticMetadata>>(json, options);
 
@@ -177,6 +184,120 @@ public partial class DiagnosticParityTests : TranspilerTestBase
         }
     }
 
+    // A merge-conflict resolution once folded two entries into one object (#420). System.Text.Json keeps the last
+    // value of a repeated key, so the first diagnostic vanished without any of the checks above noticing.
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void DiagnosticsJson_HasNoDuplicateKeysInAnyEntry()
+    {
+        var violations = FindDuplicateKeys(ReadDiagnosticsJson(out _));
+
+        Assert.True(violations.Count == 0,
+            "diagnostics.json has entries with repeated keys:" + Environment.NewLine +
+            string.Join(Environment.NewLine, violations));
+    }
+
+    // Gaps are allowed: IDs are reserved for planned issues before they are used.
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void DiagnosticsJson_ListsIdsInAscendingOrderPerPrefix()
+    {
+        var violations = FindOutOfOrderIds(ReadDiagnosticsJson(out _));
+
+        Assert.True(violations.Count == 0,
+            "diagnostics.json lists IDs out of order:" + Environment.NewLine +
+            string.Join(Environment.NewLine, violations));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void FindDuplicateKeys_ReportsEntryMergedFromTwoDiagnostics()
+    {
+        // The shape the #420 conflict resolution produced.
+        const string Json = """
+            [
+              { "name": "A", "id": "GSH0001", "title": "First" },
+              { "name": "KernelParameterSpaceExceeded", "id": "GSH0066", "title": "B",
+                "name": "UserDefinedOperatorNotSupported", "id": "GSH0062", "title": "C" }
+            ]
+            """;
+
+        var violations = FindDuplicateKeys(Json);
+
+        Assert.Equal(["GSH0066+GSH0062: name", "GSH0066+GSH0062: id", "GSH0066+GSH0062: title"], violations);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void FindOutOfOrderIds_AllowsGapsAndReportsDescendingPair()
+    {
+        const string Json = """
+            [
+              { "id": "GSH0001" },
+              { "id": "GSH0003" },
+              { "id": "GSH0066" },
+              { "id": "GSH0062" },
+              { "id": "SLQ0001" }
+            ]
+            """;
+
+        var violations = FindOutOfOrderIds(Json);
+
+        Assert.Equal(["GSH0066 is followed by GSH0062"], violations);
+    }
+
+    private static List<string> FindDuplicateKeys(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var violations = new List<string>();
+        foreach (var entry in document.RootElement.EnumerateArray())
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            var ids = new List<string>();
+            var repeated = new List<string>();
+            foreach (var property in entry.EnumerateObject())
+            {
+                if (property.NameEquals("id"))
+                {
+                    ids.Add(property.Value.GetString() ?? "");
+                }
+
+                if (!seen.Add(property.Name))
+                {
+                    repeated.Add(property.Name);
+                }
+            }
+
+            foreach (var key in repeated)
+            {
+                violations.Add($"{string.Join("+", ids)}: {key}");
+            }
+        }
+
+        return violations;
+    }
+
+    private static List<string> FindOutOfOrderIds(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var previousByPrefix = new Dictionary<string, (int Number, string Id)>(StringComparer.Ordinal);
+        var violations = new List<string>();
+        foreach (var entry in document.RootElement.EnumerateArray())
+        {
+            var id = entry.GetProperty("id").GetString() ?? "";
+            var prefix = id[..^4];
+            var number = int.Parse(id[^4..], NumberStyles.None, CultureInfo.InvariantCulture);
+            if (previousByPrefix.TryGetValue(prefix, out var previous) && number <= previous.Number)
+            {
+                violations.Add($"{previous.Id} is followed by {id}");
+            }
+
+            previousByPrefix[prefix] = (number, id);
+        }
+
+        return violations;
+    }
+
     [GeneratedRegex(@"^[A-Z]{3}\d{4}$")]
     private static partial Regex DiagnosticIdRegex();
 
@@ -184,7 +305,12 @@ public partial class DiagnosticParityTests : TranspilerTestBase
     {
         var dirPath = Path.GetDirectoryName(callerPath) ?? throw new InvalidOperationException($"Invalid caller path: {callerPath}");
         var dir = new DirectoryInfo(dirPath);
-        return dir.Parent?.Parent?.Parent?.FullName ?? throw new InvalidOperationException("Failed to resolve repository root directory.");
+        while (dir != null && dir.GetFiles("Henicos.slnx").Length == 0)
+        {
+            dir = dir.Parent;
+        }
+
+        return dir?.FullName ?? throw new InvalidOperationException("Failed to resolve repository root directory.");
     }
 }
 
