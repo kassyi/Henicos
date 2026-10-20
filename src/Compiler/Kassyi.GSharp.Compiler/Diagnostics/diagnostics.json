@@ -516,8 +516,8 @@
   {
     "name": "CppKeywordIdentifier",
     "id": "GSH0058",
-    "title": "Identifier is a C++ keyword (temporary)",
-    "messageFormat": "'{0}' is a keyword in C++/CUDA and cannot be emitted as an identifier yet; rename it (temporary restriction until automatic renaming, see #369)",
+    "title": "GPU method name is a C++ keyword (temporary)",
+    "messageFormat": "'{0}' is a keyword in C++/CUDA and cannot be used as a GPU method name yet; rename the method (temporary restriction until method names are renamed automatically, see #402)",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true

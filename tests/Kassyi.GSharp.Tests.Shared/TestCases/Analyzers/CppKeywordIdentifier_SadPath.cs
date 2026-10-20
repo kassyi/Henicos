@@ -79,6 +79,15 @@ public static partial class GSH_58_CppKeywordIdentifier_SadPath
     [GpuDeviceFunction]
     public static int friend(int x) => x;
 
+    [GpuDeviceFunction]
+    public static int @class(int x) => x;
+
+    [GpuKernel]
+    public static void template(int[] data)
+    {
+        data[ThreadIndex.X] = 0;
+    }
+
     [GpuKernel]
     public static void StructFieldKernel(GSH_58_ReservedFieldStruct[] items)
     {

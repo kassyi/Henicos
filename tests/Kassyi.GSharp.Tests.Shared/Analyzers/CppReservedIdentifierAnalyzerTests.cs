@@ -27,7 +27,7 @@ public class CppReservedIdentifierAnalyzerTests : TranspilerTestBase
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CppKeywordIdentifier_ReportsEachDeclarationOnce()
+    public async Task Test_CppKeywordMethodName_ReportsEachMethodOnce()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/CppKeywordIdentifier_SadPath.cs", s_analyzer)
@@ -37,27 +37,25 @@ public class CppReservedIdentifierAnalyzerTests : TranspilerTestBase
 
         Assert.All(reported, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
         Assert.Equal(
-            new[]
-            {
-                "GSH_58_OuterStruct.Inner.register", "GSH_58_ReservedFieldStruct.register", "and", "class", "friend", "mutable", "not", "register",
-                "template", "typename", "union"
-            },
+            new[] { "class", "friend", "template" },
             reported.Select(GetIdentifier).Order(StringComparer.Ordinal).ToArray());
         Assert.DoesNotContain(diagnostics, d => d.Id == DoubleUnderscoreId);
     }
 
+    // Parameters, locals, out vars, foreach variables, local functions, lambda parameters and struct members are
+    // renamed by the transpiler, so only method names remain restricted.
     [Fact]
     [Category(TestCategory.Compiler)]
-    [Scenario(TestScenario.SadPath)]
-    public async Task Test_CppKeywordIdentifier_ReportsNestedStructMemberAtDeclaration()
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_CppKeywordIdentifier_AllowsRenamedDeclarations()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/CppKeywordIdentifier_SadPath.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
-        var nested = Assert.Single(diagnostics, d =>
-            d.Id == CppKeywordId && GetIdentifier(d) == "GSH_58_OuterStruct.Inner.register");
-        Assert.Contains("outer", nested.Location.SourceTree?.GetText().ToString(nested.Location.SourceSpan));
+        string[] renamed = ["and", "mutable", "not", "register", "typename", "union", "GSH_58_ReservedFieldStruct.register",
+            "GSH_58_OuterStruct.Inner.register"];
+        Assert.DoesNotContain(diagnostics, d => d.Id == CppKeywordId && renamed.Contains(GetIdentifier(d)));
     }
 
     [Fact]
