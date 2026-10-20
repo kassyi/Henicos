@@ -96,14 +96,6 @@ public interface ITranspilerDialect
     (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol);
 
     /// <summary>
-    /// Computes the approximate unmanaged memory footprint in bytes for the specified type according to the target's alignment rules.
-    /// </summary>
-    /// <param name="typeSymbol">The Roslyn type symbol to measure.</param>
-    /// <returns>The unmanaged size of the type in bytes.</returns>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="typeSymbol"/> is <see langword="null"/>.</exception>
-    int GetApproximateSize(ITypeSymbol typeSymbol);
-
-    /// <summary>
     /// Attempts to map an invocation of a C# method to a target-specific intrinsic or macro expression.
     /// </summary>
     /// <param name="symbol">The Roslyn method or member symbol being invoked.</param>

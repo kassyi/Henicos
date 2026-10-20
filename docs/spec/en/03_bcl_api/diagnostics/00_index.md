@@ -27,7 +27,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0011](GSH0011.md) | Error | Macro lambda requires a parameter |
 | [GSH0012](GSH0012.md) | Error | Macro arguments must be compile-time constants |
 | [GSH0013](GSH0013.md) | Warning | Excessive static shared memory usage |
-| [GSH0014](GSH0014.md) | Warning | Large struct passed by value |
+| [GSH0014](GSH0014.md) | Warning | Large struct passed by value (Deprecated) |
 | [GSH0015](GSH0015.md) | Warning | Auto-allocated array in loop |
 | [GSH0016](GSH0016.md) | Error | Unroll factor must be a non-negative compile-time constant |
 | [GSH0017](GSH0017.md) | Error | Unroll hint must precede a loop |
@@ -67,6 +67,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0051](GSH0051.md) | Error | [TakesOwnership] applied to non-IDisposable type |
 | [GSH0052](GSH0052.md) | Error | [TakesOwnership] is only allowed on constructor parameters |
 | [GSH0053](GSH0053.md) | Error | Cannot take ownership of a reference parameter |
+| [GSH0066](GSH0066.md) | Warning | Kernel parameters exceed the parameter space limit |
 | [GSH0062](GSH0062.md) | Error | User-defined operators are not supported in GPU code |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |

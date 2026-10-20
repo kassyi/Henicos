@@ -14,6 +14,7 @@ internal static class MethodSignatureTranspiler
     {
         var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
         ReportUnsupportedParameterTypes(methodSymbol, ref context);
+        ReportKernelParameterSpace(methodSymbol, method, isDevice, ref context);
 
         if (isDevice)
         {
@@ -54,6 +55,52 @@ internal static class MethodSignatureTranspiler
 
             context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
             context.Emitter.Writer.Append("* __restrict__ __gsharp_auto_result");
+        }
+    }
+
+    // [WHY] CUDA limits total parameter space for kernel arguments to 4 KB (4096 bytes).
+    private static void ReportKernelParameterSpace(IMethodSymbol? methodSymbol, MethodDeclarationSyntax method, bool isDevice, ref TranspileContext context)
+    {
+        if (isDevice || methodSymbol is null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel))
+        {
+            return;
+        }
+
+        var offset = 0;
+        foreach (var parameter in methodSymbol.Parameters)
+        {
+            int size;
+            int align;
+
+            if (parameter.RefKind != RefKind.None)
+            {
+                size = 8;
+                align = 8;
+            }
+            else if (parameter.Type.UnwrapNullableArrayLike() is { } unwrappedType)
+            {
+                var layout = CudaLayoutRules.GetCudaLayout(unwrappedType);
+                size = layout.Size;
+                align = layout.Alignment;
+            }
+            else
+            {
+                size = 4;
+                align = 4;
+            }
+
+            offset = CudaLayoutRules.AlignUp(offset, align) + size;
+        }
+
+        if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            offset = CudaLayoutRules.AlignUp(offset, 8) + 8;
+        }
+
+        if (offset > 4096)
+        {
+            var kernelName = GetKernelMethodName(method, methodSymbol);
+            context.Reporter.Report(GSharpDiagnostics.KernelParameterSpaceExceeded, method.Identifier.GetLocation(), kernelName, offset, 4096);
         }
     }
 
@@ -120,8 +167,6 @@ internal static class MethodSignatureTranspiler
 
             var (isRefPointer, isPointerType, hasRestrict) =
                 WriteParameterDeclaration(p, typeSymbol, paramSymbol, ref context);
-
-            StructTranspiler.CheckLargeStructByValue(p, typeSymbol, isRefPointer, ref context);
 
             if (!isDevice && isPointerType && !hasRestrict)
             {

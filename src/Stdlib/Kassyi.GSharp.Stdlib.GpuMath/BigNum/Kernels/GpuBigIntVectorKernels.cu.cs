@@ -1,4 +1,4 @@
-#pragma warning disable IDE0051, IDE0022, GSH0014
+#pragma warning disable IDE0051, IDE0022
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels;
 

@@ -217,8 +217,6 @@ public abstract class YamlDialectBase : ITranspilerDialect
         return (isRefPointer, isPointerType, isRefPointer);
     }
 
-    public virtual int GetApproximateSize(ITypeSymbol typeSymbol) => 4;
-
     public virtual CSharpSyntaxRewriter? GetAstPreProcessor(SemanticModel semanticModel) => null;
 
     public virtual CSharpSyntaxVisitor<bool> GetInterceptorVisitor(ref TranspileContext context) =>

@@ -77,7 +77,8 @@ The `Kassyi.Generators.GSharp` AOT pipeline enforces constraints natively during
 | [**GSH0011**](../03_bcl_api/diagnostics/GSH0011.md) | Error | Macro lambda requires a parameter | Triggered when a macro lambda mapping does not declare expected parameters. |
 | [**GSH0012**](../03_bcl_api/diagnostics/GSH0012.md) | Error | Macro arguments must be compile-time constants | Triggered when a macro argument cannot be folded into a constant value during transpilation. |
 | [**GSH0013**](../03_bcl_api/diagnostics/GSH0013.md) | Warning | Excessive static shared memory | Triggered when a static `SharedMemory<T>` allocation exceeds 32,768 bytes, which can reduce warp occupancy. |
-| [**GSH0014**](../03_bcl_api/diagnostics/GSH0014.md) | Warning | Large struct passed by value | Triggered when a custom struct $\ge$ 32 bytes is passed by value. Advises passing by reference (`ref`) or pointer. |
+| [**GSH0014**](../03_bcl_api/diagnostics/GSH0014.md) | Warning | Large struct passed by value (Deprecated) | Triggered when a custom struct $\ge$ 32 bytes is passed by value. Advises passing by reference (`ref`) or pointer. (Deprecated, replaced by GSH0066) |
+| [**GSH0066**](../03_bcl_api/diagnostics/GSH0066.md) | Warning | Kernel parameter space limit exceeded | Triggered when the total byte footprint of a kernel's parameters exceeds 4,096 bytes. |
 | [**GSH0015**](../03_bcl_api/diagnostics/GSH0015.md) | Warning | Auto-allocate return in loop | Triggered when an auto-allocated array return kernel is invoked from within a host CPU loop. |
 | [**GSH0016**](../03_bcl_api/diagnostics/GSH0016.md) | Error | Unroll factor must be non-negative constant | Triggered when `factor` in `Gpu.Hint.Unroll` is negative or non-constant. |
 | [**GSH0017**](../03_bcl_api/diagnostics/GSH0017.md) | Error | Unroll hint must precede a loop | Triggered when `Gpu.Hint.Unroll` does not immediately precede a `for`, `while`, or `do-while` loop. |
