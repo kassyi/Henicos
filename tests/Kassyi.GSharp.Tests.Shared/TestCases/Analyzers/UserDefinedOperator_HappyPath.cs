@@ -25,6 +25,25 @@ public struct CustomVec_UserDefinedOpTest
     }
 }
 
+// Declared here rather than reusing V2 from the SadPath file: test case files are compiled one at a time.
+public struct HostVec_UserDefinedOpTest
+{
+    public float X;
+    public float Y;
+
+    public static HostVec_UserDefinedOpTest operator +(HostVec_UserDefinedOpTest a, HostVec_UserDefinedOpTest b) =>
+        new HostVec_UserDefinedOpTest { X = a.X + b.X, Y = a.Y + b.Y };
+
+    public static HostVec_UserDefinedOpTest operator *(HostVec_UserDefinedOpTest a, float s) =>
+        new HostVec_UserDefinedOpTest { X = a.X * s, Y = a.Y * s };
+
+    public static HostVec_UserDefinedOpTest operator -(HostVec_UserDefinedOpTest a) =>
+        new HostVec_UserDefinedOpTest { X = -a.X, Y = -a.Y };
+
+    public static HostVec_UserDefinedOpTest operator ++(HostVec_UserDefinedOpTest a) =>
+        new HostVec_UserDefinedOpTest { X = a.X + 1, Y = a.Y + 1 };
+}
+
 public static partial class GSH_62_UserDefinedOperator_HappyPath
 {
     [GpuKernel]
@@ -48,7 +67,7 @@ public static partial class GSH_62_UserDefinedOperator_HappyPath
         items[t] = items[t] + items[t];
     }
 
-    public static void HostOnlyMethod(V2[] v)
+    public static void HostOnlyMethod(HostVec_UserDefinedOpTest[] v)
     {
         v[0] = (v[0] + v[0]) * 0.5f;
         v[0] = -v[0];

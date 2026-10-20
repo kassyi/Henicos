@@ -7,66 +7,64 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 [Category(TestCategory.Compiler)]
 public class StructSizeDiagnosticsTests : TranspilerTestBase
 {
-    [Fact]
+    private const string TestCasePath = "Analyzers/StructSizeDiagnostics.cs";
+
+    // The generator is run once for the whole class; every case reads the diagnostics inside its own method.
+    private static readonly Lazy<Task<(SyntaxTree Tree, ImmutableArray<Diagnostic> Diagnostics)>> s_result =
+        new(RunGeneratorAsync);
+
+    [Theory]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StructSizeDiagnostics_SadPathAndBoundaryCases()
+    // 16 (array header) + 4096 = 4112 bytes.
+    [InlineData("OverLimitKernel", "GSH0066", "4112 bytes")]
+    // 1 byte padded to 8, then 4096 = 4104 bytes (the unaligned sum would be 4097).
+    [InlineData("PaddingKernel", "GSH0066", "4104 bytes")]
+    // 4096 + hidden result pointer 8 = 4104 bytes.
+    [InlineData("ResultKernel", "GSH0066", "4104 bytes")]
+    // SharedMemory<double>(5000) = 40000 bytes.
+    [InlineData("DoubleSharedKernel", "GSH0013", "40000 bytes")]
+    public async Task Test_StructSizeDiagnostics_ReportsOverLimitCase(string methodName, string diagnosticId,
+        string expectedSize)
     {
-        var (compilation, tree, semanticModel) =
-            RoslynTestUtility.GetTestCaseContext("Analyzers/StructSizeDiagnostics.cs");
+        var diagnostics = await GetDiagnosticsForMethodAsync(methodName);
 
-        var diagnostics = await RoslynTestUtility.TestGenerator("Analyzers/StructSizeDiagnostics.cs")
-            .GetDiagnosticsAsync();
+        var diagnostic = Assert.Single(diagnostics, d => d.Id == diagnosticId);
+        Assert.Contains(expectedSize, diagnostic.GetMessage());
+    }
 
-        var methods = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().ToList();
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    // Exactly 4096 bytes of kernel parameters.
+    [InlineData("AtLimitKernel", "GSH0066")]
+    // A 48-byte struct by value: the retired GSH0014 warned, GSH0066 does not.
+    [InlineData("SmallStructKernel", "GSH0066")]
+    [InlineData("SmallStructKernel", "GSH0014")]
+    // Device functions are not checked; the kernel passes the struct through an array.
+    [InlineData("ReadBlock", "GSH0066")]
+    [InlineData("DeviceCallKernel", "GSH0066")]
+    // SharedMemory<double>(4096) = exactly 32768 bytes.
+    [InlineData("DoubleAtLimitKernel", "GSH0013")]
+    // SharedMemory<byte>(10000) = 10000 bytes (the old 4-byte guess computed 40000).
+    [InlineData("ByteSharedKernel", "GSH0013")]
+    public async Task Test_StructSizeDiagnostics_DoesNotReportWithinLimitCase(string methodName, string diagnosticId)
+    {
+        var diagnostics = await GetDiagnosticsForMethodAsync(methodName);
 
-        // Helper to find diagnostics targeting a specific method span
-        List<Diagnostic> GetDiagnosticsForMethod(string methodName)
-        {
-            var method = methods.First(m => m.Identifier.ValueText == methodName);
-            return diagnostics.Where(d => method.Span.Contains(d.Location.SourceSpan)).ToList();
-        }
+        Assert.DoesNotContain(diagnostics, d => d.Id == diagnosticId);
+    }
 
-        // Case 1: AtLimitKernel - total 4096 bytes -> no GSH0066
-        var case1Diags = GetDiagnosticsForMethod("AtLimitKernel");
-        Assert.DoesNotContain(case1Diags, d => d.Id == "GSH0066");
+    private static async Task<List<Diagnostic>> GetDiagnosticsForMethodAsync(string methodName)
+    {
+        var (tree, diagnostics) = await s_result.Value;
+        var method = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>()
+                         .Single(m => m.Identifier.ValueText == methodName);
+        return diagnostics.Where(d => method.Span.Contains(d.Location.SourceSpan)).ToList();
+    }
 
-        // Case 2: OverLimitKernel - 16 + 4096 = 4112 bytes -> GSH0066, message contains 4112
-        var case2Diags = GetDiagnosticsForMethod("OverLimitKernel");
-        var case2Diag = Assert.Single(case2Diags, d => d.Id == "GSH0066");
-        Assert.Contains("4112", case2Diag.GetMessage());
-
-        // Case 3: PaddingKernel - 1 byte padded to 8 + 4096 = 4104 bytes -> GSH0066, message contains 4104
-        var case3Diags = GetDiagnosticsForMethod("PaddingKernel");
-        var case3Diag = Assert.Single(case3Diags, d => d.Id == "GSH0066");
-        Assert.Contains("4104", case3Diag.GetMessage());
-
-        // Case 4: ResultKernel - 4096 + hidden result pointer 8 = 4104 bytes -> GSH0066, message contains 4104
-        var case4Diags = GetDiagnosticsForMethod("ResultKernel");
-        var case4Diag = Assert.Single(case4Diags, d => d.Id == "GSH0066");
-        Assert.Contains("4104", case4Diag.GetMessage());
-
-        // Case 5: SmallStructKernel - 48 bytes by value -> no GSH0066 (and GSH0014 retired)
-        var case5Diags = GetDiagnosticsForMethod("SmallStructKernel");
-        Assert.DoesNotContain(case5Diags, d => d.Id == "GSH0066");
-        Assert.DoesNotContain(case5Diags, d => d.Id == "GSH0014");
-
-        // Case 6: DeviceCallKernel / ReadBlock - device function not checked -> no GSH0066
-        var case6DiagsReadBlock = GetDiagnosticsForMethod("ReadBlock");
-        Assert.DoesNotContain(case6DiagsReadBlock, d => d.Id == "GSH0066");
-        var case6DiagsDeviceCall = GetDiagnosticsForMethod("DeviceCallKernel");
-        Assert.DoesNotContain(case6DiagsDeviceCall, d => d.Id == "GSH0066");
-
-        // Case 7: DoubleSharedKernel - SharedMemory<double>(5000) (40000 bytes) -> GSH0013, message contains 40000
-        var case7Diags = GetDiagnosticsForMethod("DoubleSharedKernel");
-        var case7Diag = Assert.Single(case7Diags, d => d.Id == "GSH0013");
-        Assert.Contains("40000", case7Diag.GetMessage());
-
-        // Case 8: DoubleAtLimitKernel - SharedMemory<double>(4096) (32768 bytes) -> no GSH0013
-        var case8Diags = GetDiagnosticsForMethod("DoubleAtLimitKernel");
-        Assert.DoesNotContain(case8Diags, d => d.Id == "GSH0013");
-
-        // Case 9: ByteSharedKernel - SharedMemory<byte>(10000) (10000 bytes) -> no GSH0013
-        var case9Diags = GetDiagnosticsForMethod("ByteSharedKernel");
-        Assert.DoesNotContain(case9Diags, d => d.Id == "GSH0013");
+    private static async Task<(SyntaxTree Tree, ImmutableArray<Diagnostic> Diagnostics)> RunGeneratorAsync()
+    {
+        var (_, tree, _) = RoslynTestUtility.GetTestCaseContext(TestCasePath);
+        var diagnostics = await RoslynTestUtility.TestGenerator(TestCasePath).GetDiagnosticsAsync();
+        return (tree, diagnostics);
     }
 }
