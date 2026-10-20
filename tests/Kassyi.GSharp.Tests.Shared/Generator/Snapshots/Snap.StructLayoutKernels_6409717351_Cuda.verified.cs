@@ -89,18 +89,18 @@ public const string ModifyStructLayoutKernel_Source = @"#pragma pack(push, 1)
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct__
 struct Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct
 {
-unsigned char A;
-double B;
-float C;
+unsigned char __gsharp_mb_A;
+double __gsharp_mb_B;
+float __gsharp_mb_C;
 }
 ;
 #endif
 #pragma pack(pop)
-extern ""C"" __global__ void StructLayoutKernels_ModifyStructLayoutKernel(GSharpArray<Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct> data){
-int tid = threadIdx.x;
-data[tid].A+=10;
-data[tid].B*=2.0;
-data[tid].C-=1.0f;
+extern ""C"" __global__ void StructLayoutKernels_ModifyStructLayoutKernel(GSharpArray<Kassyi_GSharp_Tests_Shared_Core_CustomLayoutStruct> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+__gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_A+=10;
+__gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_B*=2.0;
+__gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_C-=1.0f;
 }
 ";
 public static readonly string ModifyStructLayoutKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ModifyStructLayoutKernel_Source;
@@ -211,18 +211,18 @@ public const string ModifyPackedInlineArrayKernel_Source = @"#pragma pack(push, 
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray__
 struct Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray
 {
-unsigned char Element[4];
+unsigned char __gsharp_mb_Element[4];
 __device__ inline unsigned char& operator[](int index){
-return Element[index];
+return __gsharp_mb_Element[index];
 }
 __device__ inline const unsigned char& operator[](int index) const
 {
-return Element[index];
+return __gsharp_mb_Element[index];
 }
-__device__ inline unsigned char* begin() { return Element; }
-__device__ inline unsigned char* end() { return Element + 4; }
-__device__ inline const unsigned char* begin() const { return Element; }
-__device__ inline const unsigned char* end() const { return Element + 4; }
+__device__ inline unsigned char* begin() { return __gsharp_mb_Element; }
+__device__ inline unsigned char* end() { return __gsharp_mb_Element + 4; }
+__device__ inline const unsigned char* begin() const { return __gsharp_mb_Element; }
+__device__ inline const unsigned char* end() const { return __gsharp_mb_Element + 4; }
 __device__ inline int size() const { return 4; }
 }
 ;
@@ -233,18 +233,18 @@ __device__ inline int size() const { return 4; }
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray__
 struct Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray
 {
-unsigned char A;
-Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray Buffer;
-int B;
+unsigned char __gsharp_mb_A;
+Kassyi_GSharp_Tests_Shared_Core_PackedInlineArray __gsharp_mb_Buffer;
+int __gsharp_mb_B;
 }
 ;
 #endif
 #pragma pack(pop)
-extern ""C"" __global__ void StructLayoutKernels_ModifyPackedInlineArrayKernel(GSharpArray<Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray> data){
-int tid = threadIdx.x;
-data[tid].A+=1;
-data[tid].Buffer[0]+=2;
-data[tid].B+=3;
+extern ""C"" __global__ void StructLayoutKernels_ModifyPackedInlineArrayKernel(GSharpArray<Kassyi_GSharp_Tests_Shared_Core_StructWithPackedInlineArray> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+__gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_A+=1;
+__gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_Buffer[0]+=2;
+__gsharp_id_0_data[__gsharp_id_1_tid].__gsharp_mb_B+=3;
 }
 ";
 public static readonly string ModifyPackedInlineArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ModifyPackedInlineArrayKernel_Source;

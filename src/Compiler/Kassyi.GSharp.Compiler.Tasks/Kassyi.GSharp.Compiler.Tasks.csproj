@@ -20,6 +20,7 @@
     <Compile Include="..\..\Shared\Cryptography\Ed25519.cs" Link="Cryptography\Ed25519.cs" />
     <Compile Include="..\..\Shared\Cryptography\Ed25519Field.cs" Link="Cryptography\Ed25519Field.cs" />
     <Compile Include="..\..\Shared\Cryptography\Ed25519PublicKeyValidator.cs" Link="Cryptography\Ed25519PublicKeyValidator.cs" />
+    <Compile Include="..\..\Shared\Naming\GSharpNameEncoding.cs" Link="Naming\GSharpNameEncoding.cs" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Kassyi.GSharp.Tests.Integration" />

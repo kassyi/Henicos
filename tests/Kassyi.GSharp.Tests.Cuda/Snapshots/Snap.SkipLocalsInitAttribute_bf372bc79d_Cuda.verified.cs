@@ -1,5 +1,5 @@
-﻿extern "C" __global__ void MicroModifiersTarget_SkipLocalsInitAttribute(GSharpArray<int> output){
-int buf[4];
-buf[0]=77;
-output[0]=buf[0];
+﻿extern "C" __global__ void MicroModifiersTarget_SkipLocalsInitAttribute(GSharpArray<int> __gsharp_id_0_output){
+int __gsharp_id_1_buf[4];
+__gsharp_id_1_buf[0]=77;
+__gsharp_id_0_output[0]=__gsharp_id_1_buf[0];
 }

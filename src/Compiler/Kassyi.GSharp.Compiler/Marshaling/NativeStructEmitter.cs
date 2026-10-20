@@ -63,35 +63,35 @@ internal static class NativeStructEmitter
     {
         if (field.Type.IsArrayLikeType())
         {
-            writer.AppendLine($"public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {field.Name};");
+            writer.AppendLine($"public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {field.Name.ToCSharpIdentifier()};");
         }
         else if (CudaLayoutRules.IsCustomStruct(field.Type))
         {
             writer.Append("public ");
             writer.AppendAotStructPath(field.Type);
-            writer.AppendLine($" {field.Name};");
+            writer.AppendLine($" {field.Name.ToCSharpIdentifier()};");
         }
         else if (field.Type.IsReferenceType)
         {
-            writer.AppendLine($"#error Unsupported reference type in struct field: {field.Name}");
+            writer.AppendLine($"#error Unsupported reference type in struct field: {field.Name.ToCSharpIdentifier()}");
         }
         else if (field.Type.SpecialType != SpecialType.None)
         {
             writer.Append("public ");
             writer.AppendFullyQualifiedCsharpName(field.Type);
-            writer.AppendLine($" {field.Name};");
+            writer.AppendLine($" {field.Name.ToCSharpIdentifier()};");
         }
         else if (field.Type.TypeKind == TypeKind.Enum)
         {
             writer.Append("public ");
             writer.AppendFullyQualifiedCsharpName(field.Type);
-            writer.AppendLine($" {field.Name};");
+            writer.AppendLine($" {field.Name.ToCSharpIdentifier()};");
         }
         else
         {
             // Core vector types (Float4, etc.) or explicit structs are emitted as fixed byte arrays.
             // This is a workaround to bypass CLR nesting bugs (TypeLoadException) when explicit structs are nested inside other structs.
-            writer.AppendLine($"public fixed byte {field.Name}[{fieldSize}];");
+            writer.AppendLine($"public fixed byte {field.Name.ToCSharpIdentifier()}[{fieldSize}];");
         }
     }
 }

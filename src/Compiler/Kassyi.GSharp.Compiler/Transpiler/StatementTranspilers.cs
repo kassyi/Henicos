@@ -9,7 +9,9 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileLocalFunctionStatement(LocalFunctionStatementSyntax node, ref TranspileContext context)
     {
-        context.Emitter.Writer.Append($"auto {node.Identifier.Text} = [&]");
+        context.Emitter.Writer.Append("auto ");
+        CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
+        context.Emitter.Writer.Append(" = [&]");
         context.Visitor.Visit(node.ParameterList);
         context.Emitter.Writer.AppendSpace();
 
@@ -83,7 +85,8 @@ internal static class StatementTranspilers
                 context.Emitter.Writer.AppendSpace();
             }
 
-            context.Emitter.Writer.Append($"{node.Identifier.Text} : ");
+            CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
+            context.Emitter.Writer.Append(" : ");
             context.Visitor.Visit(node.Expression);
         }
 
@@ -241,7 +244,7 @@ internal static class StatementTranspilers
         context.Emitter.Writer.Append("goto ");
         if (node.Expression is IdentifierNameSyntax identifier && context.Emitter.LabelSuffix != null)
         {
-            context.Emitter.Writer.Append(identifier.Identifier.ValueText);
+            CppNameResolver.AppendReferencedName(identifier, identifier.Identifier, ref context);
             context.Emitter.Writer.Append(context.Emitter.LabelSuffix);
         }
         else
@@ -254,7 +257,7 @@ internal static class StatementTranspilers
 
     public static void TranspileLabeledStatement(LabeledStatementSyntax node, ref TranspileContext context)
     {
-        context.Emitter.Writer.Append(node.Identifier.ValueText);
+        CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
         if (context.Emitter.LabelSuffix != null)
         {
             context.Emitter.Writer.Append(context.Emitter.LabelSuffix);

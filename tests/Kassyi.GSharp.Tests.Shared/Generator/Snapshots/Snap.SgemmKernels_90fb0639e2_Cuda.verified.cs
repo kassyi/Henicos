@@ -83,44 +83,44 @@ public partial class SgemmKernels
 public static partial class AotContexts
 {
 }
-public const string SgemmKernel_Source = @"extern ""C"" __global__ void SgemmKernels_SgemmKernel(GSharpArray<float> a, GSharpArray<float> b, GSharpArray<float> c, int n){
-__shared__ float As[256];
-__shared__ float Bs[256];
-auto bx = blockIdx.x;
-auto by = blockIdx.y;
-auto tx = threadIdx.x;
-auto ty = threadIdx.y;
-auto row = by*16+ty;
-auto col = bx*16+tx;
-auto cValue = 0.0f;
-for(int m = 0;m<(n+15)/16;m++)
+public const string SgemmKernel_Source = @"extern ""C"" __global__ void SgemmKernels_SgemmKernel(GSharpArray<float> __gsharp_id_0_a, GSharpArray<float> __gsharp_id_1_b, GSharpArray<float> __gsharp_id_2_c, int __gsharp_id_3_n){
+__shared__ float __gsharp_id_4_As[256];
+__shared__ float __gsharp_id_5_Bs[256];
+auto __gsharp_id_6_bx = blockIdx.x;
+auto __gsharp_id_7_by = blockIdx.y;
+auto __gsharp_id_8_tx = threadIdx.x;
+auto __gsharp_id_9_ty = threadIdx.y;
+auto __gsharp_id_10_row = __gsharp_id_7_by*16+__gsharp_id_9_ty;
+auto __gsharp_id_11_col = __gsharp_id_6_bx*16+__gsharp_id_8_tx;
+auto __gsharp_id_12_cValue = 0.0f;
+for(int __gsharp_id_13_m = 0;__gsharp_id_13_m<(__gsharp_id_3_n+15)/16;__gsharp_id_13_m++)
 {
-if(row<n&&m*16+tx<n)
+if(__gsharp_id_10_row<__gsharp_id_3_n&&__gsharp_id_13_m*16+__gsharp_id_8_tx<__gsharp_id_3_n)
 {
-As[ty*16+tx]=a[row*n+m*16+tx];
+__gsharp_id_4_As[__gsharp_id_9_ty*16+__gsharp_id_8_tx]=__gsharp_id_0_a[__gsharp_id_10_row*__gsharp_id_3_n+__gsharp_id_13_m*16+__gsharp_id_8_tx];
 }
 else
 {
-As[ty*16+tx]=0.0f;
+__gsharp_id_4_As[__gsharp_id_9_ty*16+__gsharp_id_8_tx]=0.0f;
 }
-if(m*16+ty<n&&col<n)
+if(__gsharp_id_13_m*16+__gsharp_id_9_ty<__gsharp_id_3_n&&__gsharp_id_11_col<__gsharp_id_3_n)
 {
-Bs[ty*16+tx]=b[(m*16+ty)*n+col];
+__gsharp_id_5_Bs[__gsharp_id_9_ty*16+__gsharp_id_8_tx]=__gsharp_id_1_b[(__gsharp_id_13_m*16+__gsharp_id_9_ty)*__gsharp_id_3_n+__gsharp_id_11_col];
 }
 else
 {
-Bs[ty*16+tx]=0.0f;
+__gsharp_id_5_Bs[__gsharp_id_9_ty*16+__gsharp_id_8_tx]=0.0f;
 }
 __syncthreads();
-for(int k = 0;k<16;++k)
+for(int __gsharp_id_14_k = 0;__gsharp_id_14_k<16;++__gsharp_id_14_k)
 {
-cValue+=As[ty*16+k]*Bs[k*16+tx];
+__gsharp_id_12_cValue+=__gsharp_id_4_As[__gsharp_id_9_ty*16+__gsharp_id_14_k]*__gsharp_id_5_Bs[__gsharp_id_14_k*16+__gsharp_id_8_tx];
 }
 __syncthreads();
 }
-if(row<n&&col<n)
+if(__gsharp_id_10_row<__gsharp_id_3_n&&__gsharp_id_11_col<__gsharp_id_3_n)
 {
-c[row*n+col]=cValue;
+__gsharp_id_2_c[__gsharp_id_10_row*__gsharp_id_3_n+__gsharp_id_11_col]=__gsharp_id_12_cValue;
 }
 }
 ";

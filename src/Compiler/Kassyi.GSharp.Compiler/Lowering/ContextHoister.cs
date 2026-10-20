@@ -87,7 +87,7 @@ public class ContextHoister : CSharpSyntaxRewriter
 
                 var assignment = SyntaxFactory.AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
-                    CreateContextAccess(variable.Identifier.ValueText),
+                    CreateContextAccess(variable.Identifier, variable),
                     (ExpressionSyntax)Visit(variable.Initializer.Value)
                 );
                 assignments.Add(SyntaxFactory.ExpressionStatement(assignment));
@@ -127,18 +127,22 @@ public class ContextHoister : CSharpSyntaxRewriter
     {
         if (_hoistedVariables.Contains(node.Identifier.ValueText))
         {
-            return CreateContextAccess(node.Identifier.ValueText).WithTriviaFrom(node);
+            return CreateContextAccess(node.Identifier, node).WithTriviaFrom(node);
         }
 
         return base.VisitIdentifierName(node);
     }
 
-    private static MemberAccessExpressionSyntax CreateContextAccess(string variableName)
+    // [WHY] The member name keeps the original span of the replaced node, so that the transpiler resolves it to the
+    // hoisted local's symbol and emits the same C++ name as the context struct field. The original token keeps a
+    // verbatim '@' for the managed C# fallback.
+    private static MemberAccessExpressionSyntax CreateContextAccess(SyntaxToken identifier, SyntaxNode original)
     {
         return SyntaxFactory.MemberAccessExpression(
             SyntaxKind.PointerMemberAccessExpression,
             SyntaxFactory.IdentifierName(GSharpInternalNames.Context),
-            SyntaxFactory.IdentifierName(variableName)
+            SyntaxFactory.IdentifierName(identifier.WithoutTrivia())
+                .WithAdditionalAnnotations(original.GetAnnotations(AstLoweringPipeline.OriginalSpanAnnotationKind))
         );
     }
 

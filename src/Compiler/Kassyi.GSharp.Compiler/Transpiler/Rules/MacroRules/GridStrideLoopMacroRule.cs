@@ -39,14 +39,26 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
 
         using var scopeDisposer = macroScope;
 
+        // TryBeginMacroScope has already rejected lambdas without a loop parameter.
+        var loopVariable = MacroTranspilerHelper.ExtractUnrollLoopParameter(lambdaExpr, hasContext);
+        if (loopVariable == null)
+        {
+            return false;
+        }
+
         // Emit: for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < [EXPR]; {paramName} += gridDim.x * blockDim.x)
         context.Emitter.Writer.AppendKeyword("for");
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.Writer.Append(
-                $"int {macroScope.ParamName} = blockIdx.x * blockDim.x + threadIdx.x; {macroScope.ParamName} < ");
+            context.Emitter.Writer.Append("int ");
+            CppNameResolver.AppendDeclaredName(loopVariable, loopVariable.Identifier, ref context);
+            context.Emitter.Writer.Append(" = blockIdx.x * blockDim.x + threadIdx.x; ");
+            CppNameResolver.AppendDeclaredName(loopVariable, loopVariable.Identifier, ref context);
+            context.Emitter.Writer.Append(" < ");
             context.Visitor.Visit(args[offset].Expression);
-            context.Emitter.Writer.Append($"; {macroScope.ParamName} += gridDim.x * blockDim.x");
+            context.Emitter.Writer.Append("; ");
+            CppNameResolver.AppendDeclaredName(loopVariable, loopVariable.Identifier, ref context);
+            context.Emitter.Writer.Append(" += gridDim.x * blockDim.x");
         }
 
         context.Emitter.Writer.AppendLine();

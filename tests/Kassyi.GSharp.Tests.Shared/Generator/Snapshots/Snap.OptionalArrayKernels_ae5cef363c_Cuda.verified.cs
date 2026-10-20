@@ -90,9 +90,9 @@ public partial class OptionalArrayKernels
 public static partial class AotContexts
 {
 }
-public const string IsNullBiasKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_IsNullBiasKernel(GSharpArray<float> x, GSharpArray<float> bias){
-int i = threadIdx.x;
-x[i]=((bias.data == nullptr)?x[i]:x[i]+bias[i]);
+public const string IsNullBiasKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_IsNullBiasKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_bias){
+int __gsharp_id_2_i = threadIdx.x;
+__gsharp_id_0_x[__gsharp_id_2_i]=((__gsharp_id_1_bias.data == nullptr)?__gsharp_id_0_x[__gsharp_id_2_i]:__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i]);
 }
 ";
 public static readonly string IsNullBiasKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +IsNullBiasKernel_Source;
@@ -233,9 +233,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string EqualsNullBiasKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_EqualsNullBiasKernel(GSharpArray<float> x, GSharpArray<float> bias){
-int i = threadIdx.x;
-x[i]=((bias.data == nullptr)?-1.0f:(((bias.data != nullptr)?bias[i]:-2.0f)));
+public const string EqualsNullBiasKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_EqualsNullBiasKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_bias){
+int __gsharp_id_2_i = threadIdx.x;
+__gsharp_id_0_x[__gsharp_id_2_i]=((__gsharp_id_1_bias.data == nullptr)?-1.0f:(((__gsharp_id_1_bias.data != nullptr)?__gsharp_id_1_bias[__gsharp_id_2_i]:-2.0f)));
 }
 ";
 public static readonly string EqualsNullBiasKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +EqualsNullBiasKernel_Source;
@@ -376,9 +376,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string MemoryAddKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_MemoryAddKernel(GSharpArray<float> x, GSharpArray<float> y){
-int i = threadIdx.x;
-x[i]=x[i]+y[i];
+public const string MemoryAddKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_MemoryAddKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_y){
+int __gsharp_id_2_i = threadIdx.x;
+__gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_y[__gsharp_id_2_i];
 }
 ";
 public static readonly string MemoryAddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MemoryAddKernel_Source;
@@ -508,9 +508,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string SegmentScaleKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_SegmentScaleKernel(GSharpArray<float> segment){
-int i = threadIdx.x;
-segment[i]=segment[i]*2.0f+segment.length;
+public const string SegmentScaleKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_SegmentScaleKernel(GSharpArray<float> __gsharp_id_0_segment){
+int __gsharp_id_1_i = threadIdx.x;
+__gsharp_id_0_segment[__gsharp_id_1_i]=__gsharp_id_0_segment[__gsharp_id_1_i]*2.0f+__gsharp_id_0_segment.length;
 }
 ";
 public static readonly string SegmentScaleKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SegmentScaleKernel_Source;
@@ -613,9 +613,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ImmutableAddKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_ImmutableAddKernel(GSharpArray<float> x, GSharpArray<float> y){
-int i = threadIdx.x;
-x[i]=x[i]+y[i];
+public const string ImmutableAddKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_ImmutableAddKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_y){
+int __gsharp_id_2_i = threadIdx.x;
+__gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_y[__gsharp_id_2_i];
 }
 ";
 public static readonly string ImmutableAddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ImmutableAddKernel_Source;
@@ -751,11 +751,11 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string OptionalMemoryKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_OptionalMemoryKernel(GSharpArray<float> x, GSharpArray<float> bias){
-int i = threadIdx.x;
-if((bias.data != nullptr))
+public const string OptionalMemoryKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_OptionalMemoryKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_bias){
+int __gsharp_id_2_i = threadIdx.x;
+if((__gsharp_id_1_bias.data != nullptr))
 {
-x[i]=x[i]+bias[i];
+__gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i];
 }
 }
 ";
@@ -897,11 +897,11 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string OptionalSegmentKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_OptionalSegmentKernel(GSharpArray<float> x, GSharpArray<float> bias){
-int i = threadIdx.x;
-if((bias.data != nullptr))
+public const string OptionalSegmentKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_OptionalSegmentKernel(GSharpArray<float> __gsharp_id_0_x, GSharpArray<float> __gsharp_id_1_bias){
+int __gsharp_id_2_i = threadIdx.x;
+if((__gsharp_id_1_bias.data != nullptr))
 {
-x[i]=x[i]+bias[i];
+__gsharp_id_0_x[__gsharp_id_2_i]=__gsharp_id_0_x[__gsharp_id_2_i]+__gsharp_id_1_bias[__gsharp_id_2_i];
 }
 }
 ";
@@ -1043,9 +1043,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ScaleKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_ScaleKernel(GSharpArray<float> values, float* __restrict__ __gsharp_auto_result){
+public const string ScaleKernel_Source = @"extern ""C"" __global__ void OptionalArrayKernels_ScaleKernel(GSharpArray<float> __gsharp_id_0_values, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-__gsharp_auto_result[__gsharp_global_tid] = values[threadIdx.x]*2.0f;
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_values[threadIdx.x]*2.0f;
 return;
 }
 ";

@@ -122,6 +122,14 @@ public interface ITranspilerDialect
     bool TryMapMemberAccess(ITypeSymbol typeSymbol, string memberName, out string? mappedName, out bool isMethodCall);
 
     /// <summary>
+    /// Determines whether <see cref="AppendType"/> emits <paramref name="typeSymbol"/> as a dialect-defined type (for
+    /// example <c>float2</c>) rather than as a struct that G# defines itself.
+    /// </summary>
+    /// <param name="typeSymbol">The type to check.</param>
+    /// <returns><see langword="true"/> if the dialect maps the type; otherwise, <see langword="false"/>.</returns>
+    bool IsMappedType(ITypeSymbol typeSymbol);
+
+    /// <summary>
     /// Retrieves an AST rewriter to perform dialect-specific syntax lowering (e.g., desugaring <c>foreach</c> loops into <c>for</c> loops) prior to emission.
     /// </summary>
     /// <param name="semanticModel">The semantic model corresponding to the syntax tree being transformed.</param>

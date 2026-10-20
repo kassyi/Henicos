@@ -50,16 +50,7 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return;
         }
 
-        var format = SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
-            SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions &
-            ~SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
-        // [WHY] Dictionary key lookup for Yaml Dialects requires a string allocation.
-        // I tolerate ToDisplayString here because it is not in the execution hot path.
-#pragma warning disable RS0030 // Do not used banned APIs
-        var name = typeSymbol.ToDisplayString(format).Replace("global::", "");
-#pragma warning restore RS0030
-
-        if (TryMapType(name, out var mappedType))
+        if (TryMapType(GetTypeMappingKey(typeSymbol), out var mappedType))
         {
             context.Emitter.Writer.Append(mappedType);
             return;
@@ -89,6 +80,20 @@ public abstract class YamlDialectBase : ITranspilerDialect
     {
         mappedType = string.Empty;
         return false;
+    }
+
+    public bool IsMappedType(ITypeSymbol typeSymbol) => TryMapType(GetTypeMappingKey(typeSymbol), out _);
+
+    private static string GetTypeMappingKey(ITypeSymbol typeSymbol)
+    {
+        var format = SymbolDisplayFormat.FullyQualifiedFormat.WithMiscellaneousOptions(
+            SymbolDisplayFormat.FullyQualifiedFormat.MiscellaneousOptions &
+            ~SymbolDisplayMiscellaneousOptions.UseSpecialTypes);
+        // [WHY] Dictionary key lookup for Yaml Dialects requires a string allocation.
+        // I tolerate ToDisplayString here because it is not in the execution hot path.
+#pragma warning disable RS0030 // Do not used banned APIs
+        return typeSymbol.ToDisplayString(format).Replace("global::", "");
+#pragma warning restore RS0030
     }
 
     public virtual bool TryMapIntrinsic(ISymbol symbol, out string mappedExpression)

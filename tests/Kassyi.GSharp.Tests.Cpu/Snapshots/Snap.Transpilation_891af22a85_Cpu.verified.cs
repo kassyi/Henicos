@@ -1,3 +1,3 @@
-﻿inline int ParamsSpan(GSharpArray<int> values){
-return values.length;
+﻿inline int ParamsSpan(GSharpArray<int> __gsharp_id_0_values){
+return __gsharp_id_0_values.length;
 }

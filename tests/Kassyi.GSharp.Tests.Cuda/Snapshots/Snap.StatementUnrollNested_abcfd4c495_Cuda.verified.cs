@@ -1,12 +1,12 @@
-﻿extern "C" __global__ void SYN_156_LoopUnrollStatements_StatementUnrollNested(GSharpArray<int> data){
-int sum = 0;
-for(int i = 0;i<2;i++)
+﻿extern "C" __global__ void SYN_156_LoopUnrollStatements_StatementUnrollNested(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_sum = 0;
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<2;__gsharp_id_2_i++)
 {
 #pragma unroll
-for(int j = 0;j<3;j++)
+for(int __gsharp_id_3_j = 0;__gsharp_id_3_j<3;__gsharp_id_3_j++)
 {
-sum+=(i+1)*(j+1);
+__gsharp_id_1_sum+=(__gsharp_id_2_i+1)*(__gsharp_id_3_j+1);
 }
 }
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }

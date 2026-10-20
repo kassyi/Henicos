@@ -57,36 +57,36 @@ namespace Kassyi.GSharp.Generated
 internal static class GSharpSharedCudaDeviceCode
 {
 public const string Source = @"struct TestNamespace_DummyContext;
-inline __device__ void DummyOp(TestNamespace_DummyContext* __restrict__  ctx, GSharpArray<unsigned int> result, GSharpArray<unsigned int> left, GSharpArray<unsigned int> right);
+inline __device__ void DummyOp(TestNamespace_DummyContext* __restrict__  __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, GSharpArray<unsigned int> __gsharp_id_3_right);
 
-inline __device__ void DummyUnaryOp(GSharpArray<unsigned int> result, GSharpArray<unsigned int> operand);
+inline __device__ void DummyUnaryOp(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_operand);
 
 struct TestNamespace_DummyContext;
-inline __device__ void DummyShiftOp(TestNamespace_DummyContext ctx, GSharpArray<unsigned int> result, GSharpArray<unsigned int> operand, int shift);
+inline __device__ void DummyShiftOp(TestNamespace_DummyContext __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_operand, int __gsharp_id_3_shift);
 
 #ifndef __GSHARP_STRUCT_TestNamespace_DummyContext__
 #define __GSHARP_STRUCT_TestNamespace_DummyContext__
 struct TestNamespace_DummyContext
 {
-int State;
+int __gsharp_mb_State;
 }
 ;
 #endif
-inline __device__ void DummyOp(TestNamespace_DummyContext* __restrict__  ctx, GSharpArray<unsigned int> result, GSharpArray<unsigned int> left, GSharpArray<unsigned int> right){
+inline __device__ void DummyOp(TestNamespace_DummyContext* __restrict__  __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, GSharpArray<unsigned int> __gsharp_id_3_right){
 }
 
-inline __device__ void DummyUnaryOp(GSharpArray<unsigned int> result, GSharpArray<unsigned int> operand){
+inline __device__ void DummyUnaryOp(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_operand){
 }
 
 #ifndef __GSHARP_STRUCT_TestNamespace_DummyContext__
 #define __GSHARP_STRUCT_TestNamespace_DummyContext__
 struct TestNamespace_DummyContext
 {
-int State;
+int __gsharp_mb_State;
 }
 ;
 #endif
-inline __device__ void DummyShiftOp(TestNamespace_DummyContext ctx, GSharpArray<unsigned int> result, GSharpArray<unsigned int> operand, int shift){
+inline __device__ void DummyShiftOp(TestNamespace_DummyContext __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_operand, int __gsharp_id_3_shift){
 }
 
 ";
@@ -137,7 +137,7 @@ public const string MacroKernel_Source = @"#ifndef __GSHARP_STRUCT_TestNamespace
 #define __GSHARP_STRUCT_TestNamespace_DummyContext__
 struct TestNamespace_DummyContext
 {
-int State;
+int __gsharp_mb_State;
 }
 ;
 #endif
@@ -145,24 +145,24 @@ int State;
 #define __GSHARP_STRUCT_TestNamespace_DummyRef__
 struct TestNamespace_DummyRef
 {
-GSharpArray<unsigned int> Data;
+GSharpArray<unsigned int> __gsharp_mb_Data;
 __device__ inline TestNamespace_DummyRef() {}
 __device__ inline TestNamespace_DummyRef(GSharpArray<unsigned int> v) {
-this->Data = v;
+this->__gsharp_mb_Data = v;
 }
 __device__ inline operator GSharpArray<unsigned int>() const {
-return this->Data;
+return this->__gsharp_mb_Data;
 }
 }
 ;
 #endif
-extern ""C"" __global__ void TestKernels_MacroKernel(TestNamespace_DummyContext ctx, GSharpArray<unsigned int> dA, GSharpArray<unsigned int> dB, GSharpArray<unsigned int> dResult){
-TestNamespace_DummyRef a = dA;
-TestNamespace_DummyRef b = dB;
-TestNamespace_DummyRef c = dResult;
-DummyOp(&ctx,c,a,b);
-DummyUnaryOp(c,a);
-DummyShiftOp(ctx,c,a,5);
+extern ""C"" __global__ void TestKernels_MacroKernel(TestNamespace_DummyContext __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_dA, GSharpArray<unsigned int> __gsharp_id_2_dB, GSharpArray<unsigned int> __gsharp_id_3_dResult){
+TestNamespace_DummyRef __gsharp_id_4_a = __gsharp_id_1_dA;
+TestNamespace_DummyRef __gsharp_id_5_b = __gsharp_id_2_dB;
+TestNamespace_DummyRef __gsharp_id_6_c = __gsharp_id_3_dResult;
+DummyOp(&ctx,__gsharp_id_6_c,__gsharp_id_4_a,__gsharp_id_5_b);
+DummyUnaryOp(__gsharp_id_6_c,__gsharp_id_4_a);
+DummyShiftOp(ctx,__gsharp_id_6_c,__gsharp_id_4_a,5);
 }
 ";
 public static readonly string MacroKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MacroKernel_Source;

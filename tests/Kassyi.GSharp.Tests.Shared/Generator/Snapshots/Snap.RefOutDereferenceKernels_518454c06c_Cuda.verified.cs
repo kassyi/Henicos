@@ -56,32 +56,32 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ void ModifyRef(bool* __restrict__  successFlag);
+public const string Source = @"inline __device__ void ModifyRef(bool* __restrict__  __gsharp_id_0_successFlag);
 
 struct Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct;
-inline __device__ void MemberAccessRef(Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct* __restrict__  refArg);
+inline __device__ void MemberAccessRef(Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct* __restrict__  __gsharp_id_0_refArg);
 
-inline __device__ void ChainedAssignmentRef(int* __restrict__  refArg, int* __restrict__  a, int* __restrict__  b);
+inline __device__ void ChainedAssignmentRef(int* __restrict__  __gsharp_id_0_refArg, int* __restrict__  __gsharp_id_1_a, int* __restrict__  __gsharp_id_2_b);
 
-inline __device__ void ModifyRef(bool* __restrict__  successFlag){
-(*successFlag)=false;
+inline __device__ void ModifyRef(bool* __restrict__  __gsharp_id_0_successFlag){
+(*__gsharp_id_0_successFlag)=false;
 }
 
 #ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct__
 struct Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct
 {
-int Field;
-int Value;
+int __gsharp_mb_Field;
+int __gsharp_mb_Value;
 }
 ;
 #endif
-inline __device__ void MemberAccessRef(Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct* __restrict__  refArg){
-(*refArg).Field=5;
+inline __device__ void MemberAccessRef(Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct* __restrict__  __gsharp_id_0_refArg){
+(*__gsharp_id_0_refArg).__gsharp_mb_Field=5;
 }
 
-inline __device__ void ChainedAssignmentRef(int* __restrict__  refArg, int* __restrict__  a, int* __restrict__  b){
-(*a)=(*b)=(*refArg)=10;
+inline __device__ void ChainedAssignmentRef(int* __restrict__  __gsharp_id_0_refArg, int* __restrict__  __gsharp_id_1_a, int* __restrict__  __gsharp_id_2_b){
+(*__gsharp_id_1_a)=(*__gsharp_id_2_b)=(*__gsharp_id_0_refArg)=10;
 }
 
 ";
@@ -115,23 +115,23 @@ public const string RefOutTestKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_G
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct__
 struct Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct
 {
-int Field;
-int Value;
+int __gsharp_mb_Field;
+int __gsharp_mb_Value;
 }
 ;
 #endif
-extern ""C"" __global__ void RefOutDereferenceKernels_RefOutTestKernel(GSharpArray<int> data){
-bool flag = true;
-ModifyRef(&flag);
-Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct s = ([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct __gsharp_tmp{}; __gsharp_tmp.Field = 0; __gsharp_tmp.Value = 10; return __gsharp_tmp; }
+extern ""C"" __global__ void RefOutDereferenceKernels_RefOutTestKernel(GSharpArray<int> __gsharp_id_0_data){
+bool __gsharp_id_1_flag = true;
+ModifyRef(&__gsharp_id_1_flag);
+Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct __gsharp_id_2_s = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_RefTestStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Field = 0; __gsharp_tmp.__gsharp_mb_Value = 10; return __gsharp_tmp; }
 ());
-MemberAccessRef(&s);
-int a;
-int b;
-int val = 1;
-ChainedAssignmentRef(&val,&a,&b);
-data[0]=((flag?100:0))+s.Field+a+b+val;
+MemberAccessRef(&__gsharp_id_2_s);
+int __gsharp_id_3_a;
+int __gsharp_id_4_b;
+int __gsharp_id_5_val = 1;
+ChainedAssignmentRef(&__gsharp_id_5_val,&__gsharp_id_3_a,&__gsharp_id_4_b);
+__gsharp_id_0_data[0]=((__gsharp_id_1_flag?100:0))+__gsharp_id_2_s.__gsharp_mb_Field+__gsharp_id_3_a+__gsharp_id_4_b+__gsharp_id_5_val;
 }
 ";
 public static readonly string RefOutTestKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RefOutTestKernel_Source;

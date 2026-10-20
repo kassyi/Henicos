@@ -20,9 +20,9 @@ public partial class ControlFlowKernels
 public static partial class AotContexts
 {
 }
-public const string SimpleTernaryKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_SimpleTernaryKernel(GSharpArray<int> a, GSharpArray<int> b, GSharpArray<double> result){
-int tid = threadIdx.x;
-result[tid]=(a[tid]>b[tid]?a[tid]:b[tid]*1.5);
+public const string SimpleTernaryKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_SimpleTernaryKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<double> __gsharp_id_2_result){
+int __gsharp_id_3_tid = threadIdx.x;
+__gsharp_id_2_result[__gsharp_id_3_tid]=(__gsharp_id_0_a[__gsharp_id_3_tid]>__gsharp_id_1_b[__gsharp_id_3_tid]?__gsharp_id_0_a[__gsharp_id_3_tid]:__gsharp_id_1_b[__gsharp_id_3_tid]*1.5);
 }
 ";
 public static readonly string SimpleTernaryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SimpleTernaryKernel_Source;
@@ -204,12 +204,12 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string NestedTernaryKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_NestedTernaryKernel(GSharpArray<int> a, GSharpArray<int> b, GSharpArray<int> c, GSharpArray<int> result){
-int tid = threadIdx.x;
-int x = a[tid];
-int y = b[tid];
-int z = c[tid];
-result[tid]=(x>y?((y>z?1:2)):((x>z?3:4)));
+public const string NestedTernaryKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_NestedTernaryKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_c, GSharpArray<int> __gsharp_id_3_result){
+int __gsharp_id_4_tid = threadIdx.x;
+int __gsharp_id_5_x = __gsharp_id_0_a[__gsharp_id_4_tid];
+int __gsharp_id_6_y = __gsharp_id_1_b[__gsharp_id_4_tid];
+int __gsharp_id_7_z = __gsharp_id_2_c[__gsharp_id_4_tid];
+__gsharp_id_3_result[__gsharp_id_4_tid]=(__gsharp_id_5_x>__gsharp_id_6_y?((__gsharp_id_6_y>__gsharp_id_7_z?1:2)):((__gsharp_id_5_x>__gsharp_id_7_z?3:4)));
 }
 ";
 public static readonly string NestedTernaryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedTernaryKernel_Source;
@@ -429,11 +429,11 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string SwitchExpressionKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_SwitchExpressionKernel(GSharpArray<int> input, GSharpArray<int> output){
-int tid = threadIdx.x;
-int val = input[tid];
-output[tid]=([&]() {
-switch(val)
+public const string SwitchExpressionKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_SwitchExpressionKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_val = __gsharp_id_0_input[__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
+switch(__gsharp_id_3_val)
 {
 case 1: return 10;
 case 2: return 20;
@@ -584,15 +584,15 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string RefSwitchExpressionKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_RefSwitchExpressionKernel(GSharpArray<int> a, GSharpArray<int> b, GSharpArray<int> selectors, GSharpArray<int> valuesToAssign){
-int tid = threadIdx.x;
-if(selectors[tid]==1)
+public const string RefSwitchExpressionKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_RefSwitchExpressionKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_selectors, GSharpArray<int> __gsharp_id_3_valuesToAssign){
+int __gsharp_id_4_tid = threadIdx.x;
+if(__gsharp_id_2_selectors[__gsharp_id_4_tid]==1)
 {
-a[tid]=valuesToAssign[tid];
+__gsharp_id_0_a[__gsharp_id_4_tid]=__gsharp_id_3_valuesToAssign[__gsharp_id_4_tid];
 }
 else
 {
-b[tid]=valuesToAssign[tid];
+__gsharp_id_1_b[__gsharp_id_4_tid]=__gsharp_id_3_valuesToAssign[__gsharp_id_4_tid];
 }
 }
 ";
@@ -813,12 +813,12 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string NullCoalescingKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_NullCoalescingKernel(GSharpArray<System_Nullable<int>> nullableInputs, GSharpArray<int> fallbackValues, GSharpArray<int> results){
-int tid = threadIdx.x;
-System_Nullable<int> input = nullableInputs[tid];
-results[tid]=([&]() {
-auto __coalesce_tmp = input;
-return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : fallbackValues[tid];
+public const string NullCoalescingKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_NullCoalescingKernel(GSharpArray<System_Nullable<int>> __gsharp_id_0_nullableInputs, GSharpArray<int> __gsharp_id_1_fallbackValues, GSharpArray<int> __gsharp_id_2_results){
+int __gsharp_id_3_tid = threadIdx.x;
+System_Nullable<int> __gsharp_id_4_input = __gsharp_id_0_nullableInputs[__gsharp_id_3_tid];
+__gsharp_id_2_results[__gsharp_id_3_tid]=([&]() {
+auto __gsharp_coalesce_tmp = __gsharp_id_4_input;
+return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : __gsharp_id_1_fallbackValues[__gsharp_id_3_tid];
 }());
 }
 ";
@@ -1001,13 +1001,13 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel(GSharpArray<System_Nullable<int>> targetArray, GSharpArray<int> sideEffectTracker, GSharpArray<int> values){
-int tid = threadIdx.x;
-int idx = sideEffectTracker[tid];
-sideEffectTracker[tid]=idx+1;
+public const string NullCoalescingAssignmentSideEffectKernel_Source = @"extern ""C"" __global__ void ControlFlowKernels_NullCoalescingAssignmentSideEffectKernel(GSharpArray<System_Nullable<int>> __gsharp_id_0_targetArray, GSharpArray<int> __gsharp_id_1_sideEffectTracker, GSharpArray<int> __gsharp_id_2_values){
+int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_4_idx = __gsharp_id_1_sideEffectTracker[__gsharp_id_3_tid];
+__gsharp_id_1_sideEffectTracker[__gsharp_id_3_tid]=__gsharp_id_4_idx+1;
 ([&]() -> decltype(auto) {
-auto& __gsharp_coalesce_target = targetArray[idx];
-return !__gsharp_coalesce_target.HasValue ? (__gsharp_coalesce_target = values[tid]) : __gsharp_coalesce_target.Value;
+auto& __gsharp_coalesce_target = __gsharp_id_0_targetArray[__gsharp_id_4_idx];
+return !__gsharp_coalesce_target.HasValue ? (__gsharp_coalesce_target = __gsharp_id_2_values[__gsharp_id_3_tid]) : __gsharp_coalesce_target.Value;
 }());
 }
 ";

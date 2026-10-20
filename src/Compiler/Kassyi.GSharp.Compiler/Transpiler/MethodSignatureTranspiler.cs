@@ -128,7 +128,8 @@ internal static class MethodSignatureTranspiler
                 context.Emitter.Writer.Append(" __restrict__");
             }
 
-            context.Emitter.Writer.Append($" {p.Identifier.Text}");
+            context.Emitter.Writer.AppendSpace().AppendCppName(
+                CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
             if (i < parameters.Count - 1)
             {
                 context.Emitter.Writer.Append(", ");

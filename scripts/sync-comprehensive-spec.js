@@ -1,28 +1,28 @@
 const fs = require('fs');
 const path = require('path');
 
-const specFilePath = path.join(__dirname, '..', 'docs', 'spec', 'en', '04_guides', '01_comprehensive_example.md');
-const sourceFile = path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests.Shared', 'TestCases', 'GEN-06_ComprehensiveSpecKernel.cu.cs');
-function findSnapshotFile(filenamePattern) {
-    const candidateDirs = [
-        path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests.Cpu', 'Snapshots'),
-        path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests.Cuda', 'Snapshots'),
-        path.join(__dirname, '..', 'tests', 'Kassyi.GSharp.Tests.Shared', 'Generator', 'Snapshots')
-    ];
+const repoRoot = path.join(__dirname, '..');
+const specFilePath = path.join(repoRoot, 'docs', 'spec', 'en', '02_architecture', '03_comprehensive_example.md');
+const sourceFile = path.join(repoRoot, 'tests', 'Kassyi.GSharp.Tests.Shared', 'TestCases', 'ComprehensiveSpecKernel.cu.cs');
+const snapshotDir = path.join(repoRoot, 'tests', 'Kassyi.GSharp.Tests.Cuda', 'Snapshots');
+const snapshotPrefix = 'Snap.TestComprehensiveSpecKern_';
+const snapshotSuffix = '_Cuda#ComprehensiveSpecKernel.g.verified.cs';
 
-    for (const dir of candidateDirs) {
-        if (fs.existsSync(dir)) {
-            const files = fs.readdirSync(dir);
-            const found = files.find(f => f.includes(filenamePattern));
-            if (found) {
-                return path.join(dir, found);
-            }
-        }
+function findSnapshotFile() {
+    if (!fs.existsSync(snapshotDir)) {
+        return null;
     }
-    return null;
+
+    const found = fs.readdirSync(snapshotDir).find(f => f.startsWith(snapshotPrefix) && f.endsWith(snapshotSuffix));
+    return found ? path.join(snapshotDir, found) : null;
 }
 
-const generatedFile = findSnapshotFile('ComprehensiveSpecKernel_ProcessPhysics_Wrapper.g.verified.cs');
+// Snapshots are written with a BOM and the spec uses CRLF; normalize both inputs before embedding.
+function readNormalized(filePath) {
+    return fs.readFileSync(filePath, 'utf8').replace(/^﻿/, '').replace(/\r\n/g, '\n').trimEnd();
+}
+
+const generatedFile = findSnapshotFile();
 
 console.log("Syncing comprehensive spec...");
 
@@ -31,31 +31,34 @@ if (!fs.existsSync(sourceFile)) {
     process.exit(1);
 }
 
-if (!generatedFile || !fs.existsSync(generatedFile)) {
-    console.error(`Generated file matching 'ComprehensiveSpecKernel_ProcessPhysics_Wrapper.g.verified.cs' not found in test snapshot directories.`);
+if (!generatedFile) {
+    console.error(`Generated file matching '${snapshotPrefix}*${snapshotSuffix}' not found in ${snapshotDir}.`);
     process.exit(1);
 }
 
-const sourceCode = fs.readFileSync(sourceFile, 'utf8').trimEnd();
-const generatedCode = fs.readFileSync(generatedFile, 'utf8').trimEnd();
-let specContent = fs.readFileSync(specFilePath, 'utf8');
+const sourceCode = readNormalized(sourceFile);
+const generatedCode = readNormalized(generatedFile);
+const originalSpec = fs.readFileSync(specFilePath, 'utf8');
+const specNewLine = originalSpec.includes('\r\n') ? '\r\n' : '\n';
+let specContent = originalSpec.replace(/\r\n/g, '\n');
 
 function updateSectionRaw(content, beginMarker, endMarker, language, newCode) {
     const beginIdx = content.indexOf(beginMarker);
     const endIdx = content.indexOf(endMarker);
 
-    if (beginIdx >= 0 && endIdx > beginIdx) {
-        const prefix = content.substring(0, beginIdx + beginMarker.length);
-        const suffix = content.substring(endIdx);
-        const nl = '\n';
-        return prefix + nl + '```' + language + nl + newCode + nl + '```' + nl + suffix;
+    if (beginIdx < 0 || endIdx <= beginIdx) {
+        console.error(`Markers ${beginMarker} / ${endMarker} not found in ${specFilePath}`);
+        process.exit(1);
     }
-    return content;
+
+    const prefix = content.substring(0, beginIdx + beginMarker.length);
+    const suffix = content.substring(endIdx);
+    return prefix + '\n\n```' + language + '\n' + newCode + '\n```\n\n' + suffix;
 }
 
 specContent = updateSectionRaw(specContent, "<!-- BEGIN CSHARP -->", "<!-- END CSHARP -->", "csharp", sourceCode);
-specContent = updateSectionRaw(specContent, "<!-- BEGIN CPP -->", "<!-- END CPP -->", "cpp", generatedCode);
+specContent = updateSectionRaw(specContent, "<!-- BEGIN CPP -->", "<!-- END CPP -->", "csharp", generatedCode);
 
-fs.writeFileSync(specFilePath, specContent, 'utf8');
+fs.writeFileSync(specFilePath, specContent.replace(/\n/g, specNewLine), 'utf8');
 
 console.log("Sync complete!");

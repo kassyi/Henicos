@@ -20,15 +20,15 @@ public partial class GridSyncManagedKernels
 public static partial class AotContexts
 {
 }
-public const string GlobalBarrierKernel_Source = @"extern ""C"" __global__ void GridSyncManagedKernels_GlobalBarrierKernel(GSharpArray<int> buffer){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-int totalThreads = gridDim.x*blockDim.x;
-buffer[tid]=tid+1;
+public const string GlobalBarrierKernel_Source = @"extern ""C"" __global__ void GridSyncManagedKernels_GlobalBarrierKernel(GSharpArray<int> __gsharp_id_0_buffer){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_2_totalThreads = gridDim.x*blockDim.x;
+__gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_1_tid+1;
 cg::this_grid().sync();
-int nextId = (tid+1)%totalThreads;
-int nextVal = buffer[nextId];
+int __gsharp_id_3_nextId = (__gsharp_id_1_tid+1)%__gsharp_id_2_totalThreads;
+int __gsharp_id_4_nextVal = __gsharp_id_0_buffer[__gsharp_id_3_nextId];
 cg::this_grid().sync();
-buffer[tid]=nextVal;
+__gsharp_id_0_buffer[__gsharp_id_1_tid]=__gsharp_id_4_nextVal;
 }
 ";
 public static readonly string GlobalBarrierKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +GlobalBarrierKernel_Source;
@@ -132,34 +132,34 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string GlobalReductionKernel_Source = @"extern ""C"" __global__ void GridSyncManagedKernels_GlobalReductionKernel(GSharpArray<int> input, GSharpArray<int> blockSums, GSharpArray<int> totalSum){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-int myVal = input[tid];
-__shared__ int shared[256];
-int localTid = threadIdx.x;
-shared[localTid]=myVal;
+public const string GlobalReductionKernel_Source = @"extern ""C"" __global__ void GridSyncManagedKernels_GlobalReductionKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_blockSums, GSharpArray<int> __gsharp_id_2_totalSum){
+int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_4_myVal = __gsharp_id_0_input[__gsharp_id_3_tid];
+__shared__ int __gsharp_id_5_shared[256];
+int __gsharp_id_6_localTid = threadIdx.x;
+__gsharp_id_5_shared[__gsharp_id_6_localTid]=__gsharp_id_4_myVal;
 __syncthreads();
-for(int stride = blockDim.x/2;stride>0;stride>>=1)
+for(int __gsharp_id_7_stride = blockDim.x/2;__gsharp_id_7_stride>0;__gsharp_id_7_stride>>=1)
 {
-if(localTid<stride)
+if(__gsharp_id_6_localTid<__gsharp_id_7_stride)
 {
-shared[localTid]+=shared[localTid+stride];
+__gsharp_id_5_shared[__gsharp_id_6_localTid]+=__gsharp_id_5_shared[__gsharp_id_6_localTid+__gsharp_id_7_stride];
 }
 __syncthreads();
 }
-if(localTid==0)
+if(__gsharp_id_6_localTid==0)
 {
-blockSums[blockIdx.x]=shared[0];
+__gsharp_id_1_blockSums[blockIdx.x]=__gsharp_id_5_shared[0];
 }
 cg::this_grid().sync();
-if(blockIdx.x==0&&localTid==0)
+if(blockIdx.x==0&&__gsharp_id_6_localTid==0)
 {
-int sum = 0;
-for(int i = 0;i<gridDim.x;i++)
+int __gsharp_id_8_sum = 0;
+for(int __gsharp_id_9_i = 0;__gsharp_id_9_i<gridDim.x;__gsharp_id_9_i++)
 {
-sum+=blockSums[i];
+__gsharp_id_8_sum+=__gsharp_id_1_blockSums[__gsharp_id_9_i];
 }
-totalSum[0]=sum;
+__gsharp_id_2_totalSum[0]=__gsharp_id_8_sum;
 }
 }
 ";

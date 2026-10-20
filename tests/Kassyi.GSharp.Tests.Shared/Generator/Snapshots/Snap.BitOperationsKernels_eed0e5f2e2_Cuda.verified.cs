@@ -20,10 +20,10 @@ public partial class BitOperationsKernels
 public static partial class AotContexts
 {
 }
-public const string Rotate32Kernel_Source = @"extern ""C"" __global__ void BitOperationsKernels_Rotate32Kernel(GSharpArray<unsigned int> val, GSharpArray<int> shift, GSharpArray<unsigned int> rotLeftRes, GSharpArray<unsigned int> rotRightRes){
-int tid = threadIdx.x;
-rotLeftRes[tid]=__gsharp_rotl32(val[tid],shift[tid]);
-rotRightRes[tid]=__gsharp_rotr32(val[tid],shift[tid]);
+public const string Rotate32Kernel_Source = @"extern ""C"" __global__ void BitOperationsKernels_Rotate32Kernel(GSharpArray<unsigned int> __gsharp_id_0_val, GSharpArray<int> __gsharp_id_1_shift, GSharpArray<unsigned int> __gsharp_id_2_rotLeftRes, GSharpArray<unsigned int> __gsharp_id_3_rotRightRes){
+int __gsharp_id_4_tid = threadIdx.x;
+__gsharp_id_2_rotLeftRes[__gsharp_id_4_tid]=__gsharp_rotl32(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
+__gsharp_id_3_rotRightRes[__gsharp_id_4_tid]=__gsharp_rotr32(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
 }
 ";
 public static readonly string Rotate32Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Rotate32Kernel_Source;
@@ -243,10 +243,10 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string Rotate64Kernel_Source = @"extern ""C"" __global__ void BitOperationsKernels_Rotate64Kernel(GSharpArray<unsigned long long> val, GSharpArray<int> shift, GSharpArray<unsigned long long> rotLeftRes, GSharpArray<unsigned long long> rotRightRes){
-int tid = threadIdx.x;
-rotLeftRes[tid]=__gsharp_rotl64(val[tid],shift[tid]);
-rotRightRes[tid]=__gsharp_rotr64(val[tid],shift[tid]);
+public const string Rotate64Kernel_Source = @"extern ""C"" __global__ void BitOperationsKernels_Rotate64Kernel(GSharpArray<unsigned long long> __gsharp_id_0_val, GSharpArray<int> __gsharp_id_1_shift, GSharpArray<unsigned long long> __gsharp_id_2_rotLeftRes, GSharpArray<unsigned long long> __gsharp_id_3_rotRightRes){
+int __gsharp_id_4_tid = threadIdx.x;
+__gsharp_id_2_rotLeftRes[__gsharp_id_4_tid]=__gsharp_rotl64(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
+__gsharp_id_3_rotRightRes[__gsharp_id_4_tid]=__gsharp_rotr64(__gsharp_id_0_val[__gsharp_id_4_tid],__gsharp_id_1_shift[__gsharp_id_4_tid]);
 }
 ";
 public static readonly string Rotate64Kernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Rotate64Kernel_Source;

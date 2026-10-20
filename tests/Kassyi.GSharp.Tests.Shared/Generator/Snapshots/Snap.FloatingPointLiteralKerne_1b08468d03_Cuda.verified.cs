@@ -20,9 +20,9 @@ public partial class FloatingPointLiteralKernels
 public static partial class AotContexts
 {
 }
-public const string FloatLiteralKernel_Source = @"extern ""C"" __global__ void FloatingPointLiteralKernels_FloatLiteralKernel(GSharpArray<float> values){
-int i = threadIdx.x;
-values[i]=values[i]*2.0f+1.0f+1e1f;
+public const string FloatLiteralKernel_Source = @"extern ""C"" __global__ void FloatingPointLiteralKernels_FloatLiteralKernel(GSharpArray<float> __gsharp_id_0_values){
+int __gsharp_id_1_i = threadIdx.x;
+__gsharp_id_0_values[__gsharp_id_1_i]=__gsharp_id_0_values[__gsharp_id_1_i]*2.0f+1.0f+1e1f;
 }
 ";
 public static readonly string FloatLiteralKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +FloatLiteralKernel_Source;
@@ -128,9 +128,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string DoubleLiteralKernel_Source = @"extern ""C"" __global__ void FloatingPointLiteralKernels_DoubleLiteralKernel(GSharpArray<double> values){
-int i = threadIdx.x;
-values[i]=values[i]*2.0+1.5+1.0;
+public const string DoubleLiteralKernel_Source = @"extern ""C"" __global__ void FloatingPointLiteralKernels_DoubleLiteralKernel(GSharpArray<double> __gsharp_id_0_values){
+int __gsharp_id_1_i = threadIdx.x;
+__gsharp_id_0_values[__gsharp_id_1_i]=__gsharp_id_0_values[__gsharp_id_1_i]*2.0+1.5+1.0;
 }
 ";
 public static readonly string DoubleLiteralKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DoubleLiteralKernel_Source;

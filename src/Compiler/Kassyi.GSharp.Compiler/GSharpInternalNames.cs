@@ -8,6 +8,10 @@ namespace Kassyi.GSharp.Compiler;
 /// </remarks>
 internal static class GSharpInternalNames
 {
+    // Family prefixes for renamed user declarations (see CppNameResolver). No other constant may start with them.
+    public const string RenamedIdentifierPrefix = Naming.GSharpNameEncoding.IdentifierPrefix;
+    public const string RenamedMemberPrefix = Naming.GSharpNameEncoding.MemberPrefix;
+
     // Per-thread state machine context (CPU dialects).
     public const string Context = "__gsharp_ctx";
     public const string State = "__gsharp_state";
@@ -36,4 +40,21 @@ internal static class GSharpInternalNames
     public const string LinearThreadIndex = "__gsharp_linear_tid";
     public const string SharedMemoryBufferPrefix = "__gsharp_smem_buffer_";
     public const string CudaContextScope = "__gsharp_cuda_context_scope";
+    public const string AutoResult = "__gsharp_auto_result";
+
+    // CPU C++ launcher (`__gsharp_launch_*`): launch dimensions, block/thread coordinates and loop state.
+    public const string LaunchGridDimX = "__gsharp_grid_dim_x";
+    public const string LaunchGridDimY = "__gsharp_grid_dim_y";
+    public const string LaunchGridDimZ = "__gsharp_grid_dim_z";
+    public const string LaunchBlockDimX = "__gsharp_block_dim_x";
+    public const string LaunchBlockDimY = "__gsharp_block_dim_y";
+    public const string LaunchBlockDimZ = "__gsharp_block_dim_z";
+    public const string LaunchBlockX = "__gsharp_bx";
+    public const string LaunchBlockY = "__gsharp_by";
+    public const string LaunchBlockZ = "__gsharp_bz";
+    public const string LaunchThreadX = "__gsharp_tx";
+    public const string LaunchThreadY = "__gsharp_ty";
+    public const string LaunchThreadZ = "__gsharp_tz";
+    public const string LaunchContextItem = "__gsharp_launch_ctx";
+    public const string LaunchAnyActive = "__gsharp_any_active";
 }

@@ -22,8 +22,8 @@ public static partial class AotContexts
 }
 public const string BadKernel_Source = @"extern ""C"" __global__ void ErrorSpecKernel_BadKernel(int* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-System_String s = ""hello"";
-System_Object obj = /*unsupported:ObjectCreationExpression*/;
+System_String __gsharp_id_0_s = ""hello"";
+System_Object __gsharp_id_1_obj = /*unsupported:ObjectCreationExpression*/;
 __gsharp_auto_result[__gsharp_global_tid] = 0;
 return;
 }

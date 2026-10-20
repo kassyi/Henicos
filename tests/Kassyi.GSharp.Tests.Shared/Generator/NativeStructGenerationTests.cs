@@ -22,30 +22,30 @@ public class NativeStructGenerationTests
         // 1. Check native struct declaration and layout for ChildStruct where float[] is replaced by GSharpArrayProxy
         Assert.Contains(
             "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]",
-            allCode);
-        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_ChildStruct", allCode);
-        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Values;", allCode);
-        Assert.Contains("int Scale;", allCode);
+            allCode.WithCSharpNames());
+        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_ChildStruct", allCode.WithCSharpNames());
+        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Values;", allCode.WithCSharpNames());
+        Assert.Contains("int Scale;", allCode.WithCSharpNames());
 
         // 2. Check native struct declaration for ParentStruct with nested native struct
-        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_ParentStruct", allCode);
-        Assert.Contains("Kassyi_GSharp_Tests_GeneratorTestCode_ChildStruct Child;", allCode);
-        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ExtraBuffer;", allCode);
+        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_ParentStruct", allCode.WithCSharpNames());
+        Assert.Contains("Kassyi_GSharp_Tests_GeneratorTestCode_ChildStruct Child;", allCode.WithCSharpNames());
+        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ExtraBuffer;", allCode.WithCSharpNames());
 
         // 3. Check native struct declaration for StructWithArrayOfStructs where ChildStruct[] is replaced by GSharpArrayProxy
-        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_StructWithArrayOfStructs", allCode);
-        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Children;", allCode);
+        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_StructWithArrayOfStructs", allCode.WithCSharpNames());
+        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Children;", allCode.WithCSharpNames());
 
         // 4. Verify Marshal and Unmarshal helper methods exist for the structs
-        Assert.Contains("Marshal_ChildStruct", allCode);
-        Assert.Contains("Unmarshal_ChildStruct", allCode);
-        Assert.Contains("Marshal_ParentStruct", allCode);
-        Assert.Contains("Unmarshal_ParentStruct", allCode);
+        Assert.Contains("Marshal_ChildStruct", allCode.WithCSharpNames());
+        Assert.Contains("Unmarshal_ChildStruct", allCode.WithCSharpNames());
+        Assert.Contains("Marshal_ParentStruct", allCode.WithCSharpNames());
+        Assert.Contains("Unmarshal_ParentStruct", allCode.WithCSharpNames());
 
         // 5. Verify packed struct (now emitted explicitly following CUDA ABI rules)
-        Assert.Contains("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 18)]", allCode);
-        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_PackedShadowStruct", allCode);
-        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;", allCode);
-        Assert.Contains("global::System.Byte Flag;", allCode);
+        Assert.Contains("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 18)]", allCode.WithCSharpNames());
+        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_PackedShadowStruct", allCode.WithCSharpNames());
+        Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;", allCode.WithCSharpNames());
+        Assert.Contains("global::System.Byte Flag;", allCode.WithCSharpNames());
     }
 }

@@ -85,11 +85,11 @@ public partial class SwitchExpressionKernels
 public static partial class AotContexts
 {
 }
-public const string SimpleConstantSwitchKernel_Source = @"extern ""C"" __global__ void SwitchExpressionKernels_SimpleConstantSwitchKernel(GSharpArray<int> input, GSharpArray<int> output){
-int tid = threadIdx.x;
-int val = input[tid];
-output[tid]=([&]() {
-switch(val)
+public const string SimpleConstantSwitchKernel_Source = @"extern ""C"" __global__ void SwitchExpressionKernels_SimpleConstantSwitchKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_val = __gsharp_id_0_input[__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
+switch(__gsharp_id_3_val)
 {
 case 1: return 100;
 case 2: return 200;
@@ -240,11 +240,11 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string FloatingPointReturnSwitchKernel_Source = @"extern ""C"" __global__ void SwitchExpressionKernels_FloatingPointReturnSwitchKernel(GSharpArray<int> input, GSharpArray<float> output){
-int tid = threadIdx.x;
-int mode = input[tid];
-output[tid]=([&]() {
-switch(mode)
+public const string FloatingPointReturnSwitchKernel_Source = @"extern ""C"" __global__ void SwitchExpressionKernels_FloatingPointReturnSwitchKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_mode = __gsharp_id_0_input[__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
+switch(__gsharp_id_3_mode)
 {
 case 0: return 0.0f;
 case 1: return 3.14159f;
@@ -395,11 +395,11 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string MultipleArmsBoundarySwitchKernel_Source = @"extern ""C"" __global__ void SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel(GSharpArray<int> input, GSharpArray<int> output){
-int tid = threadIdx.x;
-int val = input[tid];
-output[tid]=([&]() {
-switch(val)
+public const string MultipleArmsBoundarySwitchKernel_Source = @"extern ""C"" __global__ void SwitchExpressionKernels_MultipleArmsBoundarySwitchKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_val = __gsharp_id_0_input[__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
+switch(__gsharp_id_3_val)
 {
 case -2147483648: return 1;
 case -1: return 2;

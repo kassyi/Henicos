@@ -58,18 +58,18 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ bool TrySquare(int input, int* __restrict__  output);
+public const string Source = @"inline __device__ bool TrySquare(int __gsharp_id_0_input, int* __restrict__  __gsharp_id_1_output);
 
-inline __device__ bool TryStep(int input, int* __restrict__  next);
+inline __device__ bool TryStep(int __gsharp_id_0_input, int* __restrict__  __gsharp_id_1_next);
 
-inline __device__ bool TrySquare(int input, int* __restrict__  output){
-(*output)=input*input;
-return input>0;
+inline __device__ bool TrySquare(int __gsharp_id_0_input, int* __restrict__  __gsharp_id_1_output){
+(*__gsharp_id_1_output)=__gsharp_id_0_input*__gsharp_id_0_input;
+return __gsharp_id_0_input>0;
 }
 
-inline __device__ bool TryStep(int input, int* __restrict__  next){
-(*next)=input-1;
-return (*next)>0;
+inline __device__ bool TryStep(int __gsharp_id_0_input, int* __restrict__  __gsharp_id_1_next){
+(*__gsharp_id_1_next)=__gsharp_id_0_input-1;
+return (*__gsharp_id_1_next)>0;
 }
 
 ";
@@ -99,18 +99,18 @@ public partial class InlineOutVarKernels
 public static partial class AotContexts
 {
 }
-public const string HappyPathKernel_Source = @"extern ""C"" __global__ void InlineOutVarKernels_HappyPathKernel(GSharpArray<int> input, GSharpArray<int> output, GSharpArray<int> success){
-int tid = threadIdx.x;
-int res;
-bool ok = TrySquare(input[tid],&res);
-output[tid]=res;
-if(ok)
+public const string HappyPathKernel_Source = @"extern ""C"" __global__ void InlineOutVarKernels_HappyPathKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, GSharpArray<int> __gsharp_id_2_success){
+int __gsharp_id_3_tid = threadIdx.x;
+int __gsharp_id_5_res;
+bool __gsharp_id_4_ok = TrySquare(__gsharp_id_0_input[__gsharp_id_3_tid],&__gsharp_id_5_res);
+__gsharp_id_1_output[__gsharp_id_3_tid]=__gsharp_id_5_res;
+if(__gsharp_id_4_ok)
 {
-success[tid]=1;
+__gsharp_id_2_success[__gsharp_id_3_tid]=1;
 }
 else
 {
-success[tid]=0;
+__gsharp_id_2_success[__gsharp_id_3_tid]=0;
 }
 }
 ";
@@ -293,16 +293,16 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string IfConditionKernel_Source = @"extern ""C"" __global__ void InlineOutVarKernels_IfConditionKernel(GSharpArray<int> input, GSharpArray<int> output){
-int tid = threadIdx.x;
-int val;
-if(TrySquare(input[tid],&val))
+public const string IfConditionKernel_Source = @"extern ""C"" __global__ void InlineOutVarKernels_IfConditionKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_val;
+if(TrySquare(__gsharp_id_0_input[__gsharp_id_2_tid],&__gsharp_id_3_val))
 {
-output[tid]=val+10;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_val+10;
 }
 else
 {
-output[tid]=val-10;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_3_val-10;
 }
 }
 ";
@@ -447,17 +447,17 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string WhileConditionKernel_Source = @"extern ""C"" __global__ void InlineOutVarKernels_WhileConditionKernel(GSharpArray<int> input, GSharpArray<int> output){
-int tid = threadIdx.x;
-int curr = input[tid];
-int sum = 0;
-int nextVal;
-while(TryStep(curr,&nextVal))
+public const string WhileConditionKernel_Source = @"extern ""C"" __global__ void InlineOutVarKernels_WhileConditionKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_curr = __gsharp_id_0_input[__gsharp_id_2_tid];
+int __gsharp_id_4_sum = 0;
+int __gsharp_id_5_nextVal;
+while(TryStep(__gsharp_id_3_curr,&__gsharp_id_5_nextVal))
 {
-sum+=nextVal;
-curr=nextVal;
+__gsharp_id_4_sum+=__gsharp_id_5_nextVal;
+__gsharp_id_3_curr=__gsharp_id_5_nextVal;
 }
-output[tid]=sum;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_4_sum;
 }
 ";
 public static readonly string WhileConditionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WhileConditionKernel_Source;

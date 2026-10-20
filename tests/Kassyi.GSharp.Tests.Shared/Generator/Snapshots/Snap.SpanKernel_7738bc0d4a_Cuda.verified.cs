@@ -83,7 +83,7 @@ public partial class SpanKernel
 public static partial class AotContexts
 {
 }
-public const string Execute_Source = @"extern ""C"" __global__ void SpanKernel_Execute(GSharpArray<int> data){
+public const string Execute_Source = @"extern ""C"" __global__ void SpanKernel_Execute(GSharpArray<int> __gsharp_id_0_data){
 }
 ";
 public static readonly string Execute_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Execute_Source;

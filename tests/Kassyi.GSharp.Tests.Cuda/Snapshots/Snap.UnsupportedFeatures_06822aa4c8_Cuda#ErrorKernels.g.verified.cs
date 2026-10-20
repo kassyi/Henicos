@@ -157,7 +157,7 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, 
 return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
-public const string ManagedParamKernel_Source = @"extern ""C"" __global__ void ErrorKernels_ManagedParamKernel(TestSpace_ManagedClass obj){
+public const string ManagedParamKernel_Source = @"extern ""C"" __global__ void ErrorKernels_ManagedParamKernel(TestSpace_ManagedClass __gsharp_id_0_obj){
 }
 ";
 public static readonly string ManagedParamKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ManagedParamKernel_Source;

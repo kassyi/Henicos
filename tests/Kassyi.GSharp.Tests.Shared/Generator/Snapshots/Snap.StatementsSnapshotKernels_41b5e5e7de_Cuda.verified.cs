@@ -83,50 +83,50 @@ public partial class StatementsSnapshotKernels
 public static partial class AotContexts
 {
 }
-public const string BasicStatementsKernel_Source = @"extern ""C"" __global__ void StatementsSnapshotKernels_BasicStatementsKernel(GSharpArray<int> output, int n){
-int total = 0;
-if(n<=0)
+public const string BasicStatementsKernel_Source = @"extern ""C"" __global__ void StatementsSnapshotKernels_BasicStatementsKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+int __gsharp_id_2_total = 0;
+if(__gsharp_id_1_n<=0)
 {
 return;
 }
 else
 {
-if(n==1)
+if(__gsharp_id_1_n==1)
 {
-output[0]=1;
+__gsharp_id_0_output[0]=1;
 return;
 }
 else
 {
-total+=1;
+__gsharp_id_2_total+=1;
 }
 }
-for(int i = 0;i<n;i++)
+for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<__gsharp_id_1_n;__gsharp_id_3_i++)
 {
-total+=i;
-if(i>100)
+__gsharp_id_2_total+=__gsharp_id_3_i;
+if(__gsharp_id_3_i>100)
 {
 break;
 }
-if(i%2==0)
+if(__gsharp_id_3_i%2==0)
 {
 continue;
 }
 }
-int j = n;
-while(j>0)
+int __gsharp_id_4_j = __gsharp_id_1_n;
+while(__gsharp_id_4_j>0)
 {
-total*=2;
-j--;
+__gsharp_id_2_total*=2;
+__gsharp_id_4_j--;
 }
-int k = 0;
+int __gsharp_id_5_k = 0;
 do
 {
-total-=1;
-k++;
+__gsharp_id_2_total-=1;
+__gsharp_id_5_k++;
 }
-while(k<10);
-output[0]=total;
+while(__gsharp_id_5_k<10);
+__gsharp_id_0_output[0]=__gsharp_id_2_total;
 }
 ";
 public static readonly string BasicStatementsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BasicStatementsKernel_Source;

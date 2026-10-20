@@ -2101,13 +2101,13 @@ public const string ModPowNttMegaKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassy
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext
 {
-GSharpArray<const unsigned int> LeftOperand;
-GSharpArray<const unsigned int> RightOperand;
-GSharpArray<unsigned int> TargetOperand;
-GSharpArray<unsigned int> ResultBuffer;
-GSharpArray<unsigned int> Constant;
-GSharpArray<unsigned int> Constant3;
-GSharpArray<long long> CarryBuffer;
+GSharpArray<const unsigned int> __gsharp_mb_LeftOperand;
+GSharpArray<const unsigned int> __gsharp_mb_RightOperand;
+GSharpArray<unsigned int> __gsharp_mb_TargetOperand;
+GSharpArray<unsigned int> __gsharp_mb_ResultBuffer;
+GSharpArray<unsigned int> __gsharp_mb_Constant;
+GSharpArray<unsigned int> __gsharp_mb_Constant3;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
@@ -2115,16 +2115,16 @@ GSharpArray<long long> CarryBuffer;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext
 {
-int NumberOfWords;
-int NumberOfWordsExtended;
-int Exponent;
-int BitOffset2E1;
-int MarginWords;
-int ActualBits;
-int MarginBits;
-int Iterations;
-int TargetBits;
-int NumBits;
+int __gsharp_mb_NumberOfWords;
+int __gsharp_mb_NumberOfWordsExtended;
+int __gsharp_mb_Exponent;
+int __gsharp_mb_BitOffset2E1;
+int __gsharp_mb_MarginWords;
+int __gsharp_mb_ActualBits;
+int __gsharp_mb_MarginBits;
+int __gsharp_mb_Iterations;
+int __gsharp_mb_TargetBits;
+int __gsharp_mb_NumBits;
 }
 ;
 #endif
@@ -2132,15 +2132,15 @@ int NumBits;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext
 {
-GSharpArray<unsigned int> Buffer1;
-GSharpArray<unsigned int> Buffer2;
-GSharpArray<unsigned int> Buffer3;
-GSharpArray<unsigned int> ValueT;
-GSharpArray<unsigned int> Quotient;
-GSharpArray<unsigned int> Remainder;
-GSharpArray<unsigned int> RemainderMask;
-GSharpArray<unsigned int> TemporaryBuffer;
-GSharpArray<long long> CarryBuffer;
+GSharpArray<unsigned int> __gsharp_mb_Buffer1;
+GSharpArray<unsigned int> __gsharp_mb_Buffer2;
+GSharpArray<unsigned int> __gsharp_mb_Buffer3;
+GSharpArray<unsigned int> __gsharp_mb_ValueT;
+GSharpArray<unsigned int> __gsharp_mb_Quotient;
+GSharpArray<unsigned int> __gsharp_mb_Remainder;
+GSharpArray<unsigned int> __gsharp_mb_RemainderMask;
+GSharpArray<unsigned int> __gsharp_mb_TemporaryBuffer;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
@@ -2148,12 +2148,12 @@ GSharpArray<long long> CarryBuffer;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext
 {
-GSharpArray<const unsigned int> Forward1;
-GSharpArray<const unsigned int> Forward2;
-GSharpArray<const unsigned int> Forward3;
-GSharpArray<const unsigned int> Inverse1;
-GSharpArray<const unsigned int> Inverse2;
-GSharpArray<const unsigned int> Inverse3;
+GSharpArray<const unsigned int> __gsharp_mb_Forward1;
+GSharpArray<const unsigned int> __gsharp_mb_Forward2;
+GSharpArray<const unsigned int> __gsharp_mb_Forward3;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse1;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse2;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse3;
 }
 ;
 #endif
@@ -2161,9 +2161,9 @@ GSharpArray<const unsigned int> Inverse3;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt
 {
-int TransformLength;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext Buffers;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext TwiddleFactors;
+int __gsharp_mb_TransformLength;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext __gsharp_mb_Buffers;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext __gsharp_mb_TwiddleFactors;
 }
 ;
 #endif
@@ -2171,14 +2171,14 @@ Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext TwiddleFacto
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext
 {
-GSharpArray<unsigned int> XSquared;
-GSharpArray<unsigned int> AxSquared;
-GSharpArray<unsigned int> CurrentProduct;
-GSharpArray<unsigned int> Diff;
-GSharpArray<unsigned int> NextXUnshifted;
-GSharpArray<unsigned int> NextXShifted;
-GSharpArray<unsigned int> NextIter;
-GSharpArray<unsigned int> ModulusExpanded;
+GSharpArray<unsigned int> __gsharp_mb_XSquared;
+GSharpArray<unsigned int> __gsharp_mb_AxSquared;
+GSharpArray<unsigned int> __gsharp_mb_CurrentProduct;
+GSharpArray<unsigned int> __gsharp_mb_Diff;
+GSharpArray<unsigned int> __gsharp_mb_NextXUnshifted;
+GSharpArray<unsigned int> __gsharp_mb_NextXShifted;
+GSharpArray<unsigned int> __gsharp_mb_NextIter;
+GSharpArray<unsigned int> __gsharp_mb_ModulusExpanded;
 }
 ;
 #endif
@@ -2186,14 +2186,14 @@ GSharpArray<unsigned int> ModulusExpanded;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext
 {
-GSharpArray<unsigned int> NttBuf1A;
-GSharpArray<unsigned int> NttBuf2A;
-GSharpArray<unsigned int> NttBuf1B;
-GSharpArray<unsigned int> NttBuf2B;
-GSharpArray<unsigned int> TmpBuf;
-GSharpArray<unsigned int> UncarriedLow;
-GSharpArray<unsigned int> UncarriedHigh;
-GSharpArray<unsigned int> BlockCarries;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf1A;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf2A;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf1B;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf2B;
+GSharpArray<unsigned int> __gsharp_mb_TmpBuf;
+GSharpArray<unsigned int> __gsharp_mb_UncarriedLow;
+GSharpArray<unsigned int> __gsharp_mb_UncarriedHigh;
+GSharpArray<unsigned int> __gsharp_mb_BlockCarries;
 }
 ;
 #endif
@@ -2201,8 +2201,8 @@ GSharpArray<unsigned int> BlockCarries;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext Iteration;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext NttScratch;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext __gsharp_mb_Iteration;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext __gsharp_mb_NttScratch;
 }
 ;
 #endif
@@ -2210,11 +2210,11 @@ Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext NttS
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext Operands;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext Dimensions;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt Ntt;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext Workspace;
-GSharpArray<long long> CarryBuffer;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext __gsharp_mb_Operands;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext __gsharp_mb_Dimensions;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt __gsharp_mb_Ntt;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext __gsharp_mb_Workspace;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
@@ -2222,10 +2222,10 @@ GSharpArray<long long> CarryBuffer;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ExponentSliceContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ExponentSliceContext
 {
-GSharpArray<unsigned int> Words;
-int TotalWords;
-int StartWord;
-int EndWord;
+GSharpArray<unsigned int> __gsharp_mb_Words;
+int __gsharp_mb_TotalWords;
+int __gsharp_mb_StartWord;
+int __gsharp_mb_EndWord;
 }
 ;
 #endif
@@ -2233,59 +2233,59 @@ int EndWord;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext Core;
-GSharpArray<unsigned int> ReciprocalMod;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ExponentSliceContext Exponent;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext __gsharp_mb_Core;
+GSharpArray<unsigned int> __gsharp_mb_ReciprocalMod;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ExponentSliceContext __gsharp_mb_Exponent;
 }
 ;
 #endif
-extern ""C"" __global__ void GpuBigIntDivRemKernels_ModPowNttMegaKernel(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext ctx){
-auto core = ctx.Core;
-auto iterScratch = core.Workspace.Iteration;
-auto expSlice = ctx.Exponent;
-int n = core.Dimensions.NumberOfWords;
-int expWords = expSlice.TotalWords;
-int targetBits = core.Dimensions.TargetBits;
-int maxABits = 2*n*32;
-int aActualWords = (maxABits+31)/32;
-int targetWords = (targetBits+31)/32;
-int outWords = aActualWords+targetWords;
-if(expSlice.StartWord==0)
+extern ""C"" __global__ void GpuBigIntDivRemKernels_ModPowNttMegaKernel(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_ModPowNttContext __gsharp_id_0_ctx){
+auto __gsharp_id_1_core = __gsharp_id_0_ctx.__gsharp_mb_Core;
+auto __gsharp_id_2_iterScratch = __gsharp_id_1_core.__gsharp_mb_Workspace.__gsharp_mb_Iteration;
+auto __gsharp_id_3_expSlice = __gsharp_id_0_ctx.__gsharp_mb_Exponent;
+int __gsharp_id_4_n = __gsharp_id_1_core.__gsharp_mb_Dimensions.__gsharp_mb_NumberOfWords;
+int __gsharp_id_5_expWords = __gsharp_id_3_expSlice.__gsharp_mb_TotalWords;
+int __gsharp_id_6_targetBits = __gsharp_id_1_core.__gsharp_mb_Dimensions.__gsharp_mb_TargetBits;
+int __gsharp_id_7_maxABits = 2*__gsharp_id_4_n*32;
+int __gsharp_id_8_aActualWords = (__gsharp_id_7_maxABits+31)/32;
+int __gsharp_id_9_targetWords = (__gsharp_id_6_targetBits+31)/32;
+int __gsharp_id_10_outWords = __gsharp_id_8_aActualWords+__gsharp_id_9_targetWords;
+if(__gsharp_id_3_expSlice.__gsharp_mb_StartWord==0)
 {
-for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < outWords; idx += gridDim.x * blockDim.x)
+for(int __gsharp_id_11_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_11_idx < __gsharp_id_10_outWords; __gsharp_id_11_idx += gridDim.x * blockDim.x)
 {
-if(idx<2*n)
+if(__gsharp_id_11_idx<2*__gsharp_id_4_n)
 {
-iterScratch.AxSquared[idx]=(idx==0?1u:0u);
-iterScratch.XSquared[idx]=(idx<n?core.Operands.TargetOperand[idx]:0u);
+__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_11_idx]=(__gsharp_id_11_idx==0?1u:0u);
+__gsharp_id_2_iterScratch.__gsharp_mb_XSquared[__gsharp_id_11_idx]=(__gsharp_id_11_idx<__gsharp_id_4_n?__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_TargetOperand[__gsharp_id_11_idx]:0u);
 }
-iterScratch.ModulusExpanded[idx]=(idx<n?core.Operands.Constant[idx]:0u);
+__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded[__gsharp_id_11_idx]=(__gsharp_id_11_idx<__gsharp_id_4_n?__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_Constant[__gsharp_id_11_idx]:0u);
 }
 cg::this_grid().sync();
 }
-for(int i = expSlice.StartWord;i<expSlice.EndWord;i++)
+for(int __gsharp_id_12_i = __gsharp_id_3_expSlice.__gsharp_mb_StartWord;__gsharp_id_12_i<__gsharp_id_3_expSlice.__gsharp_mb_EndWord;__gsharp_id_12_i++)
 {
-unsigned int e = expSlice.Words[i];
-if(e==0)
+unsigned int __gsharp_id_13_e = __gsharp_id_3_expSlice.__gsharp_mb_Words[__gsharp_id_12_i];
+if(__gsharp_id_13_e==0)
 {
 }
-for(int bit = 0;bit<32;bit++)
+for(int __gsharp_id_14_bit = 0;__gsharp_id_14_bit<32;__gsharp_id_14_bit++)
 {
-if((e&1)==1)
+if((__gsharp_id_13_e&1)==1)
 {
-ExecuteNttMultiplyMacroModPow(core,iterScratch.AxSquared,iterScratch.XSquared,iterScratch.NextXUnshifted,2*n,2*n,4*n);
-ExecuteBarrettReductionMacro(core,iterScratch.NextXUnshifted,iterScratch.ModulusExpanded,ctx.ReciprocalMod,targetBits,aActualWords,iterScratch.NextXShifted,iterScratch.AxSquared);
+ExecuteNttMultiplyMacroModPow(__gsharp_id_1_core,__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared,__gsharp_id_2_iterScratch.__gsharp_mb_XSquared,__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,2*__gsharp_id_4_n,2*__gsharp_id_4_n,4*__gsharp_id_4_n);
+ExecuteBarrettReductionMacro(__gsharp_id_1_core,__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded,__gsharp_id_0_ctx.__gsharp_mb_ReciprocalMod,__gsharp_id_6_targetBits,__gsharp_id_8_aActualWords,__gsharp_id_2_iterScratch.__gsharp_mb_NextXShifted,__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared);
 }
-ExecuteNttMultiplyMacroModPow(core,iterScratch.XSquared,iterScratch.XSquared,iterScratch.NextXUnshifted,2*n,2*n,4*n);
-ExecuteBarrettReductionMacro(core,iterScratch.NextXUnshifted,iterScratch.ModulusExpanded,ctx.ReciprocalMod,targetBits,aActualWords,iterScratch.NextXShifted,iterScratch.XSquared);
-e>>=1;
+ExecuteNttMultiplyMacroModPow(__gsharp_id_1_core,__gsharp_id_2_iterScratch.__gsharp_mb_XSquared,__gsharp_id_2_iterScratch.__gsharp_mb_XSquared,__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,2*__gsharp_id_4_n,2*__gsharp_id_4_n,4*__gsharp_id_4_n);
+ExecuteBarrettReductionMacro(__gsharp_id_1_core,__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded,__gsharp_id_0_ctx.__gsharp_mb_ReciprocalMod,__gsharp_id_6_targetBits,__gsharp_id_8_aActualWords,__gsharp_id_2_iterScratch.__gsharp_mb_NextXShifted,__gsharp_id_2_iterScratch.__gsharp_mb_XSquared);
+__gsharp_id_13_e>>=1;
 }
 }
-if(expSlice.EndWord==expWords)
+if(__gsharp_id_3_expSlice.__gsharp_mb_EndWord==__gsharp_id_5_expWords)
 {
-for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < n; idx += gridDim.x * blockDim.x)
+for(int __gsharp_id_15_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_15_idx < __gsharp_id_4_n; __gsharp_id_15_idx += gridDim.x * blockDim.x)
 {
-core.Operands.ResultBuffer[idx]=iterScratch.AxSquared[idx];
+__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer[__gsharp_id_15_idx]=__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_15_idx];
 }
 cg::this_grid().sync();
 }
@@ -2434,7 +2434,7 @@ struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext;
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext;
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext;
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext;
-inline __device__ void ExecuteNttMultiplyMacroModPow(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext core, GSharpArray<unsigned int> opA, GSharpArray<unsigned int> opB, GSharpArray<unsigned int> resultDest, int numWordsA, int numWordsB, int numWordsResult);
+inline __device__ void ExecuteNttMultiplyMacroModPow(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_opA, GSharpArray<unsigned int> __gsharp_id_2_opB, GSharpArray<unsigned int> __gsharp_id_3_resultDest, int __gsharp_id_4_numWordsA, int __gsharp_id_5_numWordsB, int __gsharp_id_6_numWordsResult);
 
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext;
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext;
@@ -2445,19 +2445,19 @@ struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext;
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext;
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext;
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext;
-inline __device__ void ExecuteBarrettReductionMacro(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext core, GSharpArray<unsigned int> leftOperand, GSharpArray<unsigned int> rightOperand, GSharpArray<unsigned int> reciprocalOfB, int targetBits, int aActualWords, GSharpArray<unsigned int> quotientBuffer, GSharpArray<unsigned int> remainderBuffer);
+inline __device__ void ExecuteBarrettReductionMacro(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_leftOperand, GSharpArray<unsigned int> __gsharp_id_2_rightOperand, GSharpArray<unsigned int> __gsharp_id_3_reciprocalOfB, int __gsharp_id_4_targetBits, int __gsharp_id_5_aActualWords, GSharpArray<unsigned int> __gsharp_id_6_quotientBuffer, GSharpArray<unsigned int> __gsharp_id_7_remainderBuffer);
 
 #ifndef __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext
 {
-GSharpArray<const unsigned int> LeftOperand;
-GSharpArray<const unsigned int> RightOperand;
-GSharpArray<unsigned int> TargetOperand;
-GSharpArray<unsigned int> ResultBuffer;
-GSharpArray<unsigned int> Constant;
-GSharpArray<unsigned int> Constant3;
-GSharpArray<long long> CarryBuffer;
+GSharpArray<const unsigned int> __gsharp_mb_LeftOperand;
+GSharpArray<const unsigned int> __gsharp_mb_RightOperand;
+GSharpArray<unsigned int> __gsharp_mb_TargetOperand;
+GSharpArray<unsigned int> __gsharp_mb_ResultBuffer;
+GSharpArray<unsigned int> __gsharp_mb_Constant;
+GSharpArray<unsigned int> __gsharp_mb_Constant3;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
@@ -2465,16 +2465,16 @@ GSharpArray<long long> CarryBuffer;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext
 {
-int NumberOfWords;
-int NumberOfWordsExtended;
-int Exponent;
-int BitOffset2E1;
-int MarginWords;
-int ActualBits;
-int MarginBits;
-int Iterations;
-int TargetBits;
-int NumBits;
+int __gsharp_mb_NumberOfWords;
+int __gsharp_mb_NumberOfWordsExtended;
+int __gsharp_mb_Exponent;
+int __gsharp_mb_BitOffset2E1;
+int __gsharp_mb_MarginWords;
+int __gsharp_mb_ActualBits;
+int __gsharp_mb_MarginBits;
+int __gsharp_mb_Iterations;
+int __gsharp_mb_TargetBits;
+int __gsharp_mb_NumBits;
 }
 ;
 #endif
@@ -2482,15 +2482,15 @@ int NumBits;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext
 {
-GSharpArray<unsigned int> Buffer1;
-GSharpArray<unsigned int> Buffer2;
-GSharpArray<unsigned int> Buffer3;
-GSharpArray<unsigned int> ValueT;
-GSharpArray<unsigned int> Quotient;
-GSharpArray<unsigned int> Remainder;
-GSharpArray<unsigned int> RemainderMask;
-GSharpArray<unsigned int> TemporaryBuffer;
-GSharpArray<long long> CarryBuffer;
+GSharpArray<unsigned int> __gsharp_mb_Buffer1;
+GSharpArray<unsigned int> __gsharp_mb_Buffer2;
+GSharpArray<unsigned int> __gsharp_mb_Buffer3;
+GSharpArray<unsigned int> __gsharp_mb_ValueT;
+GSharpArray<unsigned int> __gsharp_mb_Quotient;
+GSharpArray<unsigned int> __gsharp_mb_Remainder;
+GSharpArray<unsigned int> __gsharp_mb_RemainderMask;
+GSharpArray<unsigned int> __gsharp_mb_TemporaryBuffer;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
@@ -2498,12 +2498,12 @@ GSharpArray<long long> CarryBuffer;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext
 {
-GSharpArray<const unsigned int> Forward1;
-GSharpArray<const unsigned int> Forward2;
-GSharpArray<const unsigned int> Forward3;
-GSharpArray<const unsigned int> Inverse1;
-GSharpArray<const unsigned int> Inverse2;
-GSharpArray<const unsigned int> Inverse3;
+GSharpArray<const unsigned int> __gsharp_mb_Forward1;
+GSharpArray<const unsigned int> __gsharp_mb_Forward2;
+GSharpArray<const unsigned int> __gsharp_mb_Forward3;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse1;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse2;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse3;
 }
 ;
 #endif
@@ -2511,9 +2511,9 @@ GSharpArray<const unsigned int> Inverse3;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt
 {
-int TransformLength;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext Buffers;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext TwiddleFactors;
+int __gsharp_mb_TransformLength;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext __gsharp_mb_Buffers;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext __gsharp_mb_TwiddleFactors;
 }
 ;
 #endif
@@ -2521,14 +2521,14 @@ Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext TwiddleFacto
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext
 {
-GSharpArray<unsigned int> XSquared;
-GSharpArray<unsigned int> AxSquared;
-GSharpArray<unsigned int> CurrentProduct;
-GSharpArray<unsigned int> Diff;
-GSharpArray<unsigned int> NextXUnshifted;
-GSharpArray<unsigned int> NextXShifted;
-GSharpArray<unsigned int> NextIter;
-GSharpArray<unsigned int> ModulusExpanded;
+GSharpArray<unsigned int> __gsharp_mb_XSquared;
+GSharpArray<unsigned int> __gsharp_mb_AxSquared;
+GSharpArray<unsigned int> __gsharp_mb_CurrentProduct;
+GSharpArray<unsigned int> __gsharp_mb_Diff;
+GSharpArray<unsigned int> __gsharp_mb_NextXUnshifted;
+GSharpArray<unsigned int> __gsharp_mb_NextXShifted;
+GSharpArray<unsigned int> __gsharp_mb_NextIter;
+GSharpArray<unsigned int> __gsharp_mb_ModulusExpanded;
 }
 ;
 #endif
@@ -2536,14 +2536,14 @@ GSharpArray<unsigned int> ModulusExpanded;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext
 {
-GSharpArray<unsigned int> NttBuf1A;
-GSharpArray<unsigned int> NttBuf2A;
-GSharpArray<unsigned int> NttBuf1B;
-GSharpArray<unsigned int> NttBuf2B;
-GSharpArray<unsigned int> TmpBuf;
-GSharpArray<unsigned int> UncarriedLow;
-GSharpArray<unsigned int> UncarriedHigh;
-GSharpArray<unsigned int> BlockCarries;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf1A;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf2A;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf1B;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf2B;
+GSharpArray<unsigned int> __gsharp_mb_TmpBuf;
+GSharpArray<unsigned int> __gsharp_mb_UncarriedLow;
+GSharpArray<unsigned int> __gsharp_mb_UncarriedHigh;
+GSharpArray<unsigned int> __gsharp_mb_BlockCarries;
 }
 ;
 #endif
@@ -2551,8 +2551,8 @@ GSharpArray<unsigned int> BlockCarries;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext Iteration;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext NttScratch;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext __gsharp_mb_Iteration;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext __gsharp_mb_NttScratch;
 }
 ;
 #endif
@@ -2560,11 +2560,11 @@ Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext NttS
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext Operands;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext Dimensions;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt Ntt;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext Workspace;
-GSharpArray<long long> CarryBuffer;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext __gsharp_mb_Operands;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext __gsharp_mb_Dimensions;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt __gsharp_mb_Ntt;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext __gsharp_mb_Workspace;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
@@ -2572,9 +2572,9 @@ GSharpArray<long long> CarryBuffer;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttGridContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttGridContext
 {
-int M;
-int N1;
-int N2;
+int __gsharp_mb_M;
+int __gsharp_mb_N1;
+int __gsharp_mb_N2;
 }
 ;
 #endif
@@ -2582,62 +2582,62 @@ int N2;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt
 {
-GSharpArray<unsigned int> Buffer1;
-GSharpArray<unsigned int> Buffer2;
-GSharpArray<unsigned int> TemporaryBuffer;
-GSharpArray<const unsigned int> Twiddle1;
-GSharpArray<const unsigned int> Twiddle2;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttGridContext Grid;
+GSharpArray<unsigned int> __gsharp_mb_Buffer1;
+GSharpArray<unsigned int> __gsharp_mb_Buffer2;
+GSharpArray<unsigned int> __gsharp_mb_TemporaryBuffer;
+GSharpArray<const unsigned int> __gsharp_mb_Twiddle1;
+GSharpArray<const unsigned int> __gsharp_mb_Twiddle2;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttGridContext __gsharp_mb_Grid;
 }
 ;
 #endif
-inline __device__ void ExecuteNttMultiplyMacroModPow(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext core, GSharpArray<unsigned int> opA, GSharpArray<unsigned int> opB, GSharpArray<unsigned int> resultDest, int numWordsA, int numWordsB, int numWordsResult){
-auto m = core.Ntt.TransformLength;
-int n2 = 1;
-while(n2*n2<m)
+inline __device__ void ExecuteNttMultiplyMacroModPow(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_opA, GSharpArray<unsigned int> __gsharp_id_2_opB, GSharpArray<unsigned int> __gsharp_id_3_resultDest, int __gsharp_id_4_numWordsA, int __gsharp_id_5_numWordsB, int __gsharp_id_6_numWordsResult){
+auto __gsharp_id_7_m = __gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TransformLength;
+int __gsharp_id_8_n2 = 1;
+while(__gsharp_id_8_n2*__gsharp_id_8_n2<__gsharp_id_7_m)
 {
-n2*=2;
+__gsharp_id_8_n2*=2;
 }
-int n1 = m/n2;
-if(m<=512)
+int __gsharp_id_9_n1 = __gsharp_id_7_m/__gsharp_id_8_n2;
+if(__gsharp_id_7_m<=512)
 {
-n1=m;
-n2=1;
+__gsharp_id_9_n1=__gsharp_id_7_m;
+__gsharp_id_8_n2=1;
 }
-auto nttScratch = core.Workspace.NttScratch;
-DeviceUnpack16(opA,nttScratch.NttBuf1A,nttScratch.NttBuf2A,m,numWordsA,true);
-DeviceUnpack16(opB,nttScratch.NttBuf1B,nttScratch.NttBuf2B,m,numWordsB,true);
+auto __gsharp_id_10_nttScratch = __gsharp_id_0_core.__gsharp_mb_Workspace.__gsharp_mb_NttScratch;
+DeviceUnpack16(__gsharp_id_1_opA,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_id_7_m,__gsharp_id_4_numWordsA,true);
+DeviceUnpack16(__gsharp_id_2_opB,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B,__gsharp_id_7_m,__gsharp_id_5_numWordsB,true);
 cg::this_grid().sync();
-auto baseNtt = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt __gsharp_tmp{}; __gsharp_tmp.TemporaryBuffer = nttScratch.TmpBuf; __gsharp_tmp.Grid = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttGridContext __gsharp_tmp{}; __gsharp_tmp.M = m; __gsharp_tmp.N1 = n1; __gsharp_tmp.N2 = n2; return __gsharp_tmp; }
+auto __gsharp_id_11_baseNtt = ([&]() {
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DualNtt __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_TemporaryBuffer = __gsharp_id_10_nttScratch.__gsharp_mb_TmpBuf; __gsharp_tmp.__gsharp_mb_Grid = ([&]() {
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttGridContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_M = __gsharp_id_7_m; __gsharp_tmp.__gsharp_mb_N1 = __gsharp_id_9_n1; __gsharp_tmp.__gsharp_mb_N2 = __gsharp_id_8_n2; return __gsharp_tmp; }
 ()); return __gsharp_tmp; }
 ());
-auto forwardA = baseNtt;
-forwardA.Buffer1=nttScratch.NttBuf1A;
-forwardA.Buffer2=nttScratch.NttBuf2A;
-forwardA.Twiddle1=core.Ntt.TwiddleFactors.Forward1;
-forwardA.Twiddle2=core.Ntt.TwiddleFactors.Forward2;
-ExecuteDualForwardNtt(forwardA);
-auto forwardB = forwardA;
-forwardB.Buffer1=nttScratch.NttBuf1B;
-forwardB.Buffer2=nttScratch.NttBuf2B;
-ExecuteDualForwardNtt(forwardB);
-ExecuteNttPointwiseMultiply(nttScratch.NttBuf1A,nttScratch.NttBuf2A,nttScratch.NttBuf1B,nttScratch.NttBuf2B,m);
+auto __gsharp_id_12_forwardA = __gsharp_id_11_baseNtt;
+__gsharp_id_12_forwardA.__gsharp_mb_Buffer1=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A;
+__gsharp_id_12_forwardA.__gsharp_mb_Buffer2=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A;
+__gsharp_id_12_forwardA.__gsharp_mb_Twiddle1=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward1;
+__gsharp_id_12_forwardA.__gsharp_mb_Twiddle2=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward2;
+ExecuteDualForwardNtt(__gsharp_id_12_forwardA);
+auto __gsharp_id_13_forwardB = __gsharp_id_12_forwardA;
+__gsharp_id_13_forwardB.__gsharp_mb_Buffer1=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B;
+__gsharp_id_13_forwardB.__gsharp_mb_Buffer2=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B;
+ExecuteDualForwardNtt(__gsharp_id_13_forwardB);
+ExecuteNttPointwiseMultiply(__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B,__gsharp_id_7_m);
 cg::this_grid().sync();
-auto inverseA = baseNtt;
-inverseA.Buffer1=nttScratch.NttBuf1A;
-inverseA.Buffer2=nttScratch.NttBuf2A;
-inverseA.Twiddle1=core.Ntt.TwiddleFactors.Inverse1;
-inverseA.Twiddle2=core.Ntt.TwiddleFactors.Inverse2;
-ExecuteDualInverseNtt(inverseA);
-ExecuteCrtComputeCoefficients(nttScratch.NttBuf1A,nttScratch.NttBuf2A,nttScratch.UncarriedLow,nttScratch.UncarriedHigh,m);
+auto __gsharp_id_14_inverseA = __gsharp_id_11_baseNtt;
+__gsharp_id_14_inverseA.__gsharp_mb_Buffer1=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A;
+__gsharp_id_14_inverseA.__gsharp_mb_Buffer2=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A;
+__gsharp_id_14_inverseA.__gsharp_mb_Twiddle1=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse1;
+__gsharp_id_14_inverseA.__gsharp_mb_Twiddle2=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse2;
+ExecuteDualInverseNtt(__gsharp_id_14_inverseA);
+ExecuteCrtComputeCoefficients(__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedLow,__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedHigh,__gsharp_id_7_m);
 cg::this_grid().sync();
-int chunkSize = blockDim.x;
-int numBlocks = (numWordsResult+chunkSize-1)/chunkSize;
-ExecuteResolveNttCarriesBlocked(nttScratch.UncarriedLow,nttScratch.UncarriedHigh,resultDest,nttScratch.BlockCarries,m,numWordsResult,chunkSize);
+int __gsharp_id_15_chunkSize = blockDim.x;
+int __gsharp_id_16_numBlocks = (__gsharp_id_6_numWordsResult+__gsharp_id_15_chunkSize-1)/__gsharp_id_15_chunkSize;
+ExecuteResolveNttCarriesBlocked(__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedLow,__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedHigh,__gsharp_id_3_resultDest,__gsharp_id_10_nttScratch.__gsharp_mb_BlockCarries,__gsharp_id_7_m,__gsharp_id_6_numWordsResult,__gsharp_id_15_chunkSize);
 cg::this_grid().sync();
-ExecuteResolveNttCarriesApply(resultDest,nttScratch.BlockCarries,numWordsResult,chunkSize,numBlocks);
+ExecuteResolveNttCarriesApply(__gsharp_id_3_resultDest,__gsharp_id_10_nttScratch.__gsharp_mb_BlockCarries,__gsharp_id_6_numWordsResult,__gsharp_id_15_chunkSize,__gsharp_id_16_numBlocks);
 cg::this_grid().sync();
 }
 
@@ -2645,13 +2645,13 @@ cg::this_grid().sync();
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext
 {
-GSharpArray<const unsigned int> LeftOperand;
-GSharpArray<const unsigned int> RightOperand;
-GSharpArray<unsigned int> TargetOperand;
-GSharpArray<unsigned int> ResultBuffer;
-GSharpArray<unsigned int> Constant;
-GSharpArray<unsigned int> Constant3;
-GSharpArray<long long> CarryBuffer;
+GSharpArray<const unsigned int> __gsharp_mb_LeftOperand;
+GSharpArray<const unsigned int> __gsharp_mb_RightOperand;
+GSharpArray<unsigned int> __gsharp_mb_TargetOperand;
+GSharpArray<unsigned int> __gsharp_mb_ResultBuffer;
+GSharpArray<unsigned int> __gsharp_mb_Constant;
+GSharpArray<unsigned int> __gsharp_mb_Constant3;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
@@ -2659,16 +2659,16 @@ GSharpArray<long long> CarryBuffer;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext
 {
-int NumberOfWords;
-int NumberOfWordsExtended;
-int Exponent;
-int BitOffset2E1;
-int MarginWords;
-int ActualBits;
-int MarginBits;
-int Iterations;
-int TargetBits;
-int NumBits;
+int __gsharp_mb_NumberOfWords;
+int __gsharp_mb_NumberOfWordsExtended;
+int __gsharp_mb_Exponent;
+int __gsharp_mb_BitOffset2E1;
+int __gsharp_mb_MarginWords;
+int __gsharp_mb_ActualBits;
+int __gsharp_mb_MarginBits;
+int __gsharp_mb_Iterations;
+int __gsharp_mb_TargetBits;
+int __gsharp_mb_NumBits;
 }
 ;
 #endif
@@ -2676,15 +2676,15 @@ int NumBits;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext
 {
-GSharpArray<unsigned int> Buffer1;
-GSharpArray<unsigned int> Buffer2;
-GSharpArray<unsigned int> Buffer3;
-GSharpArray<unsigned int> ValueT;
-GSharpArray<unsigned int> Quotient;
-GSharpArray<unsigned int> Remainder;
-GSharpArray<unsigned int> RemainderMask;
-GSharpArray<unsigned int> TemporaryBuffer;
-GSharpArray<long long> CarryBuffer;
+GSharpArray<unsigned int> __gsharp_mb_Buffer1;
+GSharpArray<unsigned int> __gsharp_mb_Buffer2;
+GSharpArray<unsigned int> __gsharp_mb_Buffer3;
+GSharpArray<unsigned int> __gsharp_mb_ValueT;
+GSharpArray<unsigned int> __gsharp_mb_Quotient;
+GSharpArray<unsigned int> __gsharp_mb_Remainder;
+GSharpArray<unsigned int> __gsharp_mb_RemainderMask;
+GSharpArray<unsigned int> __gsharp_mb_TemporaryBuffer;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
@@ -2692,12 +2692,12 @@ GSharpArray<long long> CarryBuffer;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext
 {
-GSharpArray<const unsigned int> Forward1;
-GSharpArray<const unsigned int> Forward2;
-GSharpArray<const unsigned int> Forward3;
-GSharpArray<const unsigned int> Inverse1;
-GSharpArray<const unsigned int> Inverse2;
-GSharpArray<const unsigned int> Inverse3;
+GSharpArray<const unsigned int> __gsharp_mb_Forward1;
+GSharpArray<const unsigned int> __gsharp_mb_Forward2;
+GSharpArray<const unsigned int> __gsharp_mb_Forward3;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse1;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse2;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse3;
 }
 ;
 #endif
@@ -2705,9 +2705,9 @@ GSharpArray<const unsigned int> Inverse3;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt
 {
-int TransformLength;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext Buffers;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext TwiddleFactors;
+int __gsharp_mb_TransformLength;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_BufferContext __gsharp_mb_Buffers;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext __gsharp_mb_TwiddleFactors;
 }
 ;
 #endif
@@ -2715,14 +2715,14 @@ Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_TwiddleFactorContext TwiddleFacto
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext
 {
-GSharpArray<unsigned int> XSquared;
-GSharpArray<unsigned int> AxSquared;
-GSharpArray<unsigned int> CurrentProduct;
-GSharpArray<unsigned int> Diff;
-GSharpArray<unsigned int> NextXUnshifted;
-GSharpArray<unsigned int> NextXShifted;
-GSharpArray<unsigned int> NextIter;
-GSharpArray<unsigned int> ModulusExpanded;
+GSharpArray<unsigned int> __gsharp_mb_XSquared;
+GSharpArray<unsigned int> __gsharp_mb_AxSquared;
+GSharpArray<unsigned int> __gsharp_mb_CurrentProduct;
+GSharpArray<unsigned int> __gsharp_mb_Diff;
+GSharpArray<unsigned int> __gsharp_mb_NextXUnshifted;
+GSharpArray<unsigned int> __gsharp_mb_NextXShifted;
+GSharpArray<unsigned int> __gsharp_mb_NextIter;
+GSharpArray<unsigned int> __gsharp_mb_ModulusExpanded;
 }
 ;
 #endif
@@ -2730,14 +2730,14 @@ GSharpArray<unsigned int> ModulusExpanded;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext
 {
-GSharpArray<unsigned int> NttBuf1A;
-GSharpArray<unsigned int> NttBuf2A;
-GSharpArray<unsigned int> NttBuf1B;
-GSharpArray<unsigned int> NttBuf2B;
-GSharpArray<unsigned int> TmpBuf;
-GSharpArray<unsigned int> UncarriedLow;
-GSharpArray<unsigned int> UncarriedHigh;
-GSharpArray<unsigned int> BlockCarries;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf1A;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf2A;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf1B;
+GSharpArray<unsigned int> __gsharp_mb_NttBuf2B;
+GSharpArray<unsigned int> __gsharp_mb_TmpBuf;
+GSharpArray<unsigned int> __gsharp_mb_UncarriedLow;
+GSharpArray<unsigned int> __gsharp_mb_UncarriedHigh;
+GSharpArray<unsigned int> __gsharp_mb_BlockCarries;
 }
 ;
 #endif
@@ -2745,8 +2745,8 @@ GSharpArray<unsigned int> BlockCarries;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext Iteration;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext NttScratch;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_IterationScratchContext __gsharp_mb_Iteration;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext __gsharp_mb_NttScratch;
 }
 ;
 #endif
@@ -2754,11 +2754,11 @@ Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NttConvolutionScratchContext NttS
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext Operands;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext Dimensions;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt Ntt;
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext Workspace;
-GSharpArray<long long> CarryBuffer;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext __gsharp_mb_Operands;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_DimensionContext __gsharp_mb_Dimensions;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_Ntt __gsharp_mb_Ntt;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_WorkspaceStateContext __gsharp_mb_Workspace;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
@@ -2766,71 +2766,71 @@ GSharpArray<long long> CarryBuffer;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext__
 struct Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext
 {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext Operands;
-int NumberOfWords;
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext __gsharp_mb_Operands;
+int __gsharp_mb_NumberOfWords;
 }
 ;
 #endif
-inline __device__ void ExecuteBarrettReductionMacro(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext core, GSharpArray<unsigned int> leftOperand, GSharpArray<unsigned int> rightOperand, GSharpArray<unsigned int> reciprocalOfB, int targetBits, int aActualWords, GSharpArray<unsigned int> quotientBuffer, GSharpArray<unsigned int> remainderBuffer){
-auto nA = aActualWords;
-auto n = core.Dimensions.NumberOfWords;
-auto targetWords = (targetBits+31)/32;
-auto iterScratch = core.Workspace.Iteration;
-ExecuteNttMultiplyMacroModPow(core,leftOperand,reciprocalOfB,iterScratch.CurrentProduct,nA,targetWords,nA+targetWords);
-int wordShift = targetBits/32;
-int bitShift = targetBits%32;
-int destWords = nA;
-for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < destWords; idx += gridDim.x * blockDim.x)
+inline __device__ void ExecuteBarrettReductionMacro(Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_leftOperand, GSharpArray<unsigned int> __gsharp_id_2_rightOperand, GSharpArray<unsigned int> __gsharp_id_3_reciprocalOfB, int __gsharp_id_4_targetBits, int __gsharp_id_5_aActualWords, GSharpArray<unsigned int> __gsharp_id_6_quotientBuffer, GSharpArray<unsigned int> __gsharp_id_7_remainderBuffer){
+auto __gsharp_id_8_nA = __gsharp_id_5_aActualWords;
+auto __gsharp_id_9_n = __gsharp_id_0_core.__gsharp_mb_Dimensions.__gsharp_mb_NumberOfWords;
+auto __gsharp_id_10_targetWords = (__gsharp_id_4_targetBits+31)/32;
+auto __gsharp_id_11_iterScratch = __gsharp_id_0_core.__gsharp_mb_Workspace.__gsharp_mb_Iteration;
+ExecuteNttMultiplyMacroModPow(__gsharp_id_0_core,__gsharp_id_1_leftOperand,__gsharp_id_3_reciprocalOfB,__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct,__gsharp_id_8_nA,__gsharp_id_10_targetWords,__gsharp_id_8_nA+__gsharp_id_10_targetWords);
+int __gsharp_id_12_wordShift = __gsharp_id_4_targetBits/32;
+int __gsharp_id_13_bitShift = __gsharp_id_4_targetBits%32;
+int __gsharp_id_14_destWords = __gsharp_id_8_nA;
+for(int __gsharp_id_15_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_15_idx < __gsharp_id_14_destWords; __gsharp_id_15_idx += gridDim.x * blockDim.x)
 {
-int srcIdx = idx+wordShift;
-unsigned int w0 = ((srcIdx<nA+targetWords)?iterScratch.CurrentProduct[srcIdx]:0u);
-unsigned int w1 = ((srcIdx+1<nA+targetWords)?iterScratch.CurrentProduct[srcIdx+1]:0u);
-unsigned int shiftedValue = (w0>>bitShift)|((bitShift==0?0u:(w1<<(32-bitShift))));
-quotientBuffer[idx]=shiftedValue;
+int __gsharp_id_16_srcIdx = __gsharp_id_15_idx+__gsharp_id_12_wordShift;
+unsigned int __gsharp_id_17_w0 = ((__gsharp_id_16_srcIdx<__gsharp_id_8_nA+__gsharp_id_10_targetWords)?__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct[__gsharp_id_16_srcIdx]:0u);
+unsigned int __gsharp_id_18_w1 = ((__gsharp_id_16_srcIdx+1<__gsharp_id_8_nA+__gsharp_id_10_targetWords)?__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct[__gsharp_id_16_srcIdx+1]:0u);
+unsigned int __gsharp_id_19_shiftedValue = (__gsharp_id_17_w0>>__gsharp_id_13_bitShift)|((__gsharp_id_13_bitShift==0?0u:(__gsharp_id_18_w1<<(32-__gsharp_id_13_bitShift))));
+__gsharp_id_6_quotientBuffer[__gsharp_id_15_idx]=__gsharp_id_19_shiftedValue;
 }
 cg::this_grid().sync();
-ExecuteNttMultiplyMacroModPow(core,quotientBuffer,rightOperand,iterScratch.NextIter,destWords,n,destWords+n);
-int evalWords = aActualWords+1;
-auto subCtx = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext __gsharp_tmp{}; __gsharp_tmp.Operands = ([&]() {
-Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext __gsharp_tmp{}; __gsharp_tmp.CarryBuffer = core.CarryBuffer; return __gsharp_tmp; }
-()); __gsharp_tmp.NumberOfWords = evalWords; return __gsharp_tmp; }
+ExecuteNttMultiplyMacroModPow(__gsharp_id_0_core,__gsharp_id_6_quotientBuffer,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_id_14_destWords,__gsharp_id_9_n,__gsharp_id_14_destWords+__gsharp_id_9_n);
+int __gsharp_id_20_evalWords = __gsharp_id_5_aActualWords+1;
+auto __gsharp_id_21_subCtx = ([&]() {
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_GpuBigIntContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Operands = ([&]() {
+Kassyi_GSharp_Stdlib_GpuMath_BigNum_Algorithms_OperandContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_CarryBuffer = __gsharp_id_0_core.__gsharp_mb_CarryBuffer; return __gsharp_tmp; }
+()); __gsharp_tmp.__gsharp_mb_NumberOfWords = __gsharp_id_20_evalWords; return __gsharp_tmp; }
 ());
-for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < evalWords; idx += gridDim.x * blockDim.x)
+for(int __gsharp_id_22_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_22_idx < __gsharp_id_20_evalWords; __gsharp_id_22_idx += gridDim.x * blockDim.x)
 {
-iterScratch.Diff[idx]=(idx<nA?leftOperand[idx]:0u);
+__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_22_idx]=(__gsharp_id_22_idx<__gsharp_id_8_nA?__gsharp_id_1_leftOperand[__gsharp_id_22_idx]:0u);
 }
 cg::this_grid().sync();
-DeviceAddSubParallel(iterScratch.Diff,iterScratch.NextIter,iterScratch.Diff,evalWords,-1,true);
+DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,-1,true);
 cg::this_grid().sync();
-for(int iter = 0;iter<1000;iter++)
+for(int __gsharp_id_23_iter = 0;__gsharp_id_23_iter<1000;__gsharp_id_23_iter++)
 {
-unsigned int topWord = iterScratch.Diff[evalWords-1];
-bool underflow = (topWord&0x80000000u)!=0;
+unsigned int __gsharp_id_24_topWord = __gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_20_evalWords-1];
+bool __gsharp_id_25_underflow = (__gsharp_id_24_topWord&0x80000000u)!=0;
 cg::this_grid().sync();
-if(underflow)
+if(__gsharp_id_25_underflow)
 {
-DeviceAddSubParallel(iterScratch.Diff,rightOperand,iterScratch.Diff,evalWords,1,true);
+DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,1,true);
 cg::this_grid().sync();
 }
 else
 {
-DeviceAddSubParallel(iterScratch.Diff,rightOperand,iterScratch.Diff,evalWords,-1,true);
+DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,-1,true);
 cg::this_grid().sync();
-unsigned int top2 = iterScratch.Diff[evalWords-1];
-bool underflow2 = (top2&0x80000000u)!=0;
+unsigned int __gsharp_id_26_top2 = __gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_20_evalWords-1];
+bool __gsharp_id_27_underflow2 = (__gsharp_id_26_top2&0x80000000u)!=0;
 cg::this_grid().sync();
-if(underflow2)
+if(__gsharp_id_27_underflow2)
 {
-DeviceAddSubParallel(iterScratch.Diff,rightOperand,iterScratch.Diff,evalWords,1,true);
+DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,1,true);
 cg::this_grid().sync();
 break;
 }
 }
 }
-for(int idx = blockIdx.x * blockDim.x + threadIdx.x; idx < aActualWords; idx += gridDim.x * blockDim.x)
+for(int __gsharp_id_28_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_28_idx < __gsharp_id_5_aActualWords; __gsharp_id_28_idx += gridDim.x * blockDim.x)
 {
-remainderBuffer[idx]=(idx<n?iterScratch.Diff[idx]:0u);
+__gsharp_id_7_remainderBuffer[__gsharp_id_28_idx]=(__gsharp_id_28_idx<__gsharp_id_9_n?__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_28_idx]:0u);
 }
 cg::this_grid().sync();
 }

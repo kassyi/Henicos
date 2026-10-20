@@ -86,23 +86,23 @@ public partial class InvocationAndIntrinsicsKernels
 public static partial class AotContexts
 {
 }
-public const string InterlockedKernel_Source = @"extern ""C"" __global__ void InvocationAndIntrinsicsKernels_InterlockedKernel(GSharpArray<int> intBuf, GSharpArray<unsigned int> uintBuf, GSharpArray<long long> longBuf, GSharpArray<unsigned long long> ulongBuf){
-int tid = threadIdx.x;
-__gsharp_atomicAdd(&intBuf[0],1);
-__gsharp_atomicAdd((unsigned long long*)(&longBuf[0]),2ll);
-if(tid==0)
+public const string InterlockedKernel_Source = @"extern ""C"" __global__ void InvocationAndIntrinsicsKernels_InterlockedKernel(GSharpArray<int> __gsharp_id_0_intBuf, GSharpArray<unsigned int> __gsharp_id_1_uintBuf, GSharpArray<long long> __gsharp_id_2_longBuf, GSharpArray<unsigned long long> __gsharp_id_3_ulongBuf){
+int __gsharp_id_4_tid = threadIdx.x;
+__gsharp_atomicAdd(&__gsharp_id_0_intBuf[0],1);
+__gsharp_atomicAdd((unsigned long long*)(&__gsharp_id_2_longBuf[0]),2ll);
+if(__gsharp_id_4_tid==0)
 {
-atomicExch(&intBuf[1],100);
-atomicExch(&uintBuf[1],200u);
-atomicExch((unsigned long long*)(&longBuf[1]),300ll);
-atomicExch((unsigned long long*)(&ulongBuf[1]),400ull);
+atomicExch(&__gsharp_id_0_intBuf[1],100);
+atomicExch(&__gsharp_id_1_uintBuf[1],200u);
+atomicExch((unsigned long long*)(&__gsharp_id_2_longBuf[1]),300ll);
+atomicExch((unsigned long long*)(&__gsharp_id_3_ulongBuf[1]),400ull);
 }
-if(tid==0)
+if(__gsharp_id_4_tid==0)
 {
-__gsharp_atomicCAS(&intBuf[2],500,0);
-__gsharp_atomicCAS(&uintBuf[2],600u,0u);
-__gsharp_atomicCAS((unsigned long long*)(&longBuf[2]),700ll,0ll);
-__gsharp_atomicCAS((unsigned long long*)(&ulongBuf[2]),800ull,0ull);
+__gsharp_atomicCAS(&__gsharp_id_0_intBuf[2],500,0);
+__gsharp_atomicCAS(&__gsharp_id_1_uintBuf[2],600u,0u);
+__gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_2_longBuf[2]),700ll,0ll);
+__gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_3_ulongBuf[2]),800ull,0ull);
 }
 }
 ";
@@ -327,18 +327,18 @@ public const string InterlockedEdgeCasesKernel_Source = @"#ifndef __GSHARP_STRUC
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct__
 struct Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct
 {
-int ValueI;
-unsigned int ValueU;
-long long ValueL;
+int __gsharp_mb_ValueI;
+unsigned int __gsharp_mb_ValueU;
+long long __gsharp_mb_ValueL;
 }
 ;
 #endif
-extern ""C"" __global__ void InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(GSharpArray<int> array, GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct> structArray){
-int tid = threadIdx.x;
-__gsharp_atomicAdd(&array[tid],10);
-__gsharp_atomicAdd(&structArray[tid].ValueI,1);
-atomicExch(&structArray[tid].ValueU,42u);
-__gsharp_atomicCAS((unsigned long long*)(&structArray[tid].ValueL),99ll,0ll);
+extern ""C"" __global__ void InvocationAndIntrinsicsKernels_InterlockedEdgeCasesKernel(GSharpArray<int> __gsharp_id_0_array, GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_AtomicTestStruct> __gsharp_id_1_structArray){
+int __gsharp_id_2_tid = threadIdx.x;
+__gsharp_atomicAdd(&__gsharp_id_0_array[__gsharp_id_2_tid],10);
+__gsharp_atomicAdd(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueI,1);
+atomicExch(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueU,42u);
+__gsharp_atomicCAS((unsigned long long*)(&__gsharp_id_1_structArray[__gsharp_id_2_tid].__gsharp_mb_ValueL),99ll,0ll);
 }
 ";
 public static readonly string InterlockedEdgeCasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InterlockedEdgeCasesKernel_Source;
@@ -482,28 +482,28 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string MathKernel_Source = @"extern ""C"" __global__ void InvocationAndIntrinsicsKernels_MathKernel(GSharpArray<double> doubleInputs, GSharpArray<double> doubleOutputs, GSharpArray<float> floatInputs, GSharpArray<float> floatOutputs){
-int tid = threadIdx.x;
-double dVal = doubleInputs[tid];
-doubleOutputs[0]=sin(dVal);
-doubleOutputs[1]=cos(dVal);
-doubleOutputs[2]=__gsharp_clamp(dVal,0.0,10.0);
-doubleOutputs[3]=fmax(dVal,5.0);
-doubleOutputs[4]=fmin(dVal,5.0);
-doubleOutputs[5]=fabs(dVal);
-doubleOutputs[6]=exp(dVal);
-doubleOutputs[7]=sqrt(fabs(dVal));
-doubleOutputs[8]=log(fabs(dVal)+1.0);
-float fVal = floatInputs[tid];
-floatOutputs[0]=sinf(fVal);
-floatOutputs[1]=cosf(fVal);
-floatOutputs[2]=__gsharp_clamp(fVal,0.0f,10.0f);
-floatOutputs[3]=fmaxf(fVal,5.0f);
-floatOutputs[4]=fminf(fVal,5.0f);
-floatOutputs[5]=fabsf(fVal);
-floatOutputs[6]=expf(fVal);
-floatOutputs[7]=sqrtf(fabsf(fVal));
-floatOutputs[8]=logf(fabsf(fVal)+1.0f);
+public const string MathKernel_Source = @"extern ""C"" __global__ void InvocationAndIntrinsicsKernels_MathKernel(GSharpArray<double> __gsharp_id_0_doubleInputs, GSharpArray<double> __gsharp_id_1_doubleOutputs, GSharpArray<float> __gsharp_id_2_floatInputs, GSharpArray<float> __gsharp_id_3_floatOutputs){
+int __gsharp_id_4_tid = threadIdx.x;
+double __gsharp_id_5_dVal = __gsharp_id_0_doubleInputs[__gsharp_id_4_tid];
+__gsharp_id_1_doubleOutputs[0]=sin(__gsharp_id_5_dVal);
+__gsharp_id_1_doubleOutputs[1]=cos(__gsharp_id_5_dVal);
+__gsharp_id_1_doubleOutputs[2]=__gsharp_clamp(__gsharp_id_5_dVal,0.0,10.0);
+__gsharp_id_1_doubleOutputs[3]=fmax(__gsharp_id_5_dVal,5.0);
+__gsharp_id_1_doubleOutputs[4]=fmin(__gsharp_id_5_dVal,5.0);
+__gsharp_id_1_doubleOutputs[5]=fabs(__gsharp_id_5_dVal);
+__gsharp_id_1_doubleOutputs[6]=exp(__gsharp_id_5_dVal);
+__gsharp_id_1_doubleOutputs[7]=sqrt(fabs(__gsharp_id_5_dVal));
+__gsharp_id_1_doubleOutputs[8]=log(fabs(__gsharp_id_5_dVal)+1.0);
+float __gsharp_id_6_fVal = __gsharp_id_2_floatInputs[__gsharp_id_4_tid];
+__gsharp_id_3_floatOutputs[0]=sinf(__gsharp_id_6_fVal);
+__gsharp_id_3_floatOutputs[1]=cosf(__gsharp_id_6_fVal);
+__gsharp_id_3_floatOutputs[2]=__gsharp_clamp(__gsharp_id_6_fVal,0.0f,10.0f);
+__gsharp_id_3_floatOutputs[3]=fmaxf(__gsharp_id_6_fVal,5.0f);
+__gsharp_id_3_floatOutputs[4]=fminf(__gsharp_id_6_fVal,5.0f);
+__gsharp_id_3_floatOutputs[5]=fabsf(__gsharp_id_6_fVal);
+__gsharp_id_3_floatOutputs[6]=expf(__gsharp_id_6_fVal);
+__gsharp_id_3_floatOutputs[7]=sqrtf(fabsf(__gsharp_id_6_fVal));
+__gsharp_id_3_floatOutputs[8]=logf(fabsf(__gsharp_id_6_fVal)+1.0f);
 }
 ";
 public static readonly string MathKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MathKernel_Source;
@@ -723,22 +723,22 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string MathEdgeCasesKernel_Source = @"extern ""C"" __global__ void InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(GSharpArray<float> floatSpecialInputs, GSharpArray<float> floatSpecialResults, GSharpArray<double> doubleSpecialInputs, GSharpArray<double> doubleSpecialResults){
-int tid = threadIdx.x;
-float f = floatSpecialInputs[tid];
-floatSpecialResults[0]=fabsf(f);
-floatSpecialResults[1]=fmaxf(f,0.0f);
-floatSpecialResults[2]=fminf(f,0.0f);
-floatSpecialResults[3]=expf(f);
-floatSpecialResults[4]=sqrtf(f);
-floatSpecialResults[5]=logf(f);
-double d = doubleSpecialInputs[tid];
-doubleSpecialResults[0]=fabs(d);
-doubleSpecialResults[1]=fmax(d,0.0);
-doubleSpecialResults[2]=fmin(d,0.0);
-doubleSpecialResults[3]=exp(d);
-doubleSpecialResults[4]=sqrt(d);
-doubleSpecialResults[5]=log(d);
+public const string MathEdgeCasesKernel_Source = @"extern ""C"" __global__ void InvocationAndIntrinsicsKernels_MathEdgeCasesKernel(GSharpArray<float> __gsharp_id_0_floatSpecialInputs, GSharpArray<float> __gsharp_id_1_floatSpecialResults, GSharpArray<double> __gsharp_id_2_doubleSpecialInputs, GSharpArray<double> __gsharp_id_3_doubleSpecialResults){
+int __gsharp_id_4_tid = threadIdx.x;
+float __gsharp_id_5_f = __gsharp_id_0_floatSpecialInputs[__gsharp_id_4_tid];
+__gsharp_id_1_floatSpecialResults[0]=fabsf(__gsharp_id_5_f);
+__gsharp_id_1_floatSpecialResults[1]=fmaxf(__gsharp_id_5_f,0.0f);
+__gsharp_id_1_floatSpecialResults[2]=fminf(__gsharp_id_5_f,0.0f);
+__gsharp_id_1_floatSpecialResults[3]=expf(__gsharp_id_5_f);
+__gsharp_id_1_floatSpecialResults[4]=sqrtf(__gsharp_id_5_f);
+__gsharp_id_1_floatSpecialResults[5]=logf(__gsharp_id_5_f);
+double __gsharp_id_6_d = __gsharp_id_2_doubleSpecialInputs[__gsharp_id_4_tid];
+__gsharp_id_3_doubleSpecialResults[0]=fabs(__gsharp_id_6_d);
+__gsharp_id_3_doubleSpecialResults[1]=fmax(__gsharp_id_6_d,0.0);
+__gsharp_id_3_doubleSpecialResults[2]=fmin(__gsharp_id_6_d,0.0);
+__gsharp_id_3_doubleSpecialResults[3]=exp(__gsharp_id_6_d);
+__gsharp_id_3_doubleSpecialResults[4]=sqrt(__gsharp_id_6_d);
+__gsharp_id_3_doubleSpecialResults[5]=log(__gsharp_id_6_d);
 }
 ";
 public static readonly string MathEdgeCasesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MathEdgeCasesKernel_Source;

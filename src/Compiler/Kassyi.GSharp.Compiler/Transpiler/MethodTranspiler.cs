@@ -195,8 +195,7 @@ public static class MethodTranspiler
                     // Fallback for dynamically generated AST nodes (e.g., warp temporaries)
                     // Since they are not in the semantic model, default to 'int' for C++ (which allows implicit cast).
                     context.Emitter.Writer.Append("int");
-                    context.Emitter.Writer.Append($" {field.Identifier.ValueText};");
-                    context.Emitter.Writer.AppendLine();
+                    WriteContextFieldName(field, ref context);
                     continue;
                 case null:
                     continue;
@@ -204,12 +203,18 @@ public static class MethodTranspiler
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
             context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-            context.Emitter.Writer.Append($" {field.Identifier.ValueText};");
-            context.Emitter.Writer.AppendLine();
+            WriteContextFieldName(field, ref context);
         }
 
         context.Emitter.Writer.AppendLine("};");
         context.Emitter.Writer.AppendLine();
+    }
+
+    private static void WriteContextFieldName(VariableDeclaratorSyntax field, ref TranspileContext context)
+    {
+        context.Emitter.Writer.AppendSpace();
+        CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
+        context.Emitter.Writer.AppendSemiColon().AppendLine();
     }
 
     private static void WriteMethodBody(MethodDeclarationSyntax method, BlockSyntax? loweredBody,

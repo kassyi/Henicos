@@ -20,17 +20,17 @@ public partial class GpuMacroTestKernels
 public static partial class AotContexts
 {
 }
-public const string Kernel_MacroTest_FillAndSingle_Source = @"extern ""C"" __global__ void GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(GSharpArray<unsigned int> outputBuffer, int length, unsigned int fillValue, unsigned int singleValue){
-for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
+public const string Kernel_MacroTest_FillAndSingle_Source = @"extern ""C"" __global__ void GpuMacroTestKernels_Kernel_MacroTest_FillAndSingle(GSharpArray<unsigned int> __gsharp_id_0_outputBuffer, int __gsharp_id_1_length, unsigned int __gsharp_id_2_fillValue, unsigned int __gsharp_id_3_singleValue){
+for(int __gsharp_id_4_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_4_i < __gsharp_id_1_length; __gsharp_id_4_i += gridDim.x * blockDim.x)
 {
-outputBuffer[i]=fillValue;
+__gsharp_id_0_outputBuffer[__gsharp_id_4_i]=__gsharp_id_2_fillValue;
 }
 cg::this_grid().sync();
 if(threadIdx.x == 0 && blockIdx.x == 0)
 {
-if(length>0)
+if(__gsharp_id_1_length>0)
 {
-outputBuffer[0]=singleValue;
+__gsharp_id_0_outputBuffer[0]=__gsharp_id_3_singleValue;
 }
 }
 }

@@ -69,10 +69,10 @@ public class TranspilerIssuesTests : TranspilerTestBase
             nameof(TranspilerIssuesTarget.GeneralTupleSupport), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("auto __gsharp_tuple_0 = y*2;", cudaSource);
-        Assert.Contains("auto __gsharp_tuple_1 = x+3;", cudaSource);
-        Assert.Contains("x = __gsharp_tuple_0;", cudaSource);
-        Assert.Contains("y = __gsharp_tuple_1;", cudaSource);
+        Assert.Contains("auto __gsharp_tuple_0 = y*2;", cudaSource.WithCSharpNames());
+        Assert.Contains("auto __gsharp_tuple_1 = x+3;", cudaSource.WithCSharpNames());
+        Assert.Contains("x = __gsharp_tuple_0;", cudaSource.WithCSharpNames());
+        Assert.Contains("y = __gsharp_tuple_1;", cudaSource.WithCSharpNames());
     }
 
     [Fact]
@@ -83,9 +83,9 @@ public class TranspilerIssuesTests : TranspilerTestBase
             nameof(TranspilerIssuesTarget.LocalFunctionsSupport), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("auto Compute = [&](int val)", cudaSource);
-        Assert.Contains("return val*factor+1;", cudaSource);
-        Assert.Contains("data[0]=Compute(data[0]);", cudaSource);
+        Assert.Contains("auto Compute = [&](int val)", cudaSource.WithCSharpNames());
+        Assert.Contains("return val*factor+1;", cudaSource.WithCSharpNames());
+        Assert.Contains("data[0]=Compute(data[0]);", cudaSource.WithCSharpNames());
     }
 
     [Fact]
@@ -96,8 +96,8 @@ public class TranspilerIssuesTests : TranspilerTestBase
             nameof(TranspilerIssuesTarget.StackAllocFixedArray), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("int fixedBuf[8];", cudaSource);
-        Assert.Contains("fixedBuf[0]+8", cudaSource);
+        Assert.Contains("int fixedBuf[8];", cudaSource.WithCSharpNames());
+        Assert.Contains("fixedBuf[0]+8", cudaSource.WithCSharpNames());
     }
 
     [Fact]
@@ -108,8 +108,8 @@ public class TranspilerIssuesTests : TranspilerTestBase
             nameof(TranspilerIssuesTarget.GenericsConstraintResolution), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("template <typename T>", cudaSource);
-        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Transpiler_GenericBox_IssuesTest", cudaSource);
-        Assert.Contains("Kassyi_GSharp_Tests_Shared_Transpiler_GenericBox_IssuesTest<float> b = boxes[0];", cudaSource);
+        Assert.Contains("template <typename T>", cudaSource.WithCSharpNames());
+        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Transpiler_GenericBox_IssuesTest", cudaSource.WithCSharpNames());
+        Assert.Contains("Kassyi_GSharp_Tests_Shared_Transpiler_GenericBox_IssuesTest<float> b = boxes[0];", cudaSource.WithCSharpNames());
     }
 }

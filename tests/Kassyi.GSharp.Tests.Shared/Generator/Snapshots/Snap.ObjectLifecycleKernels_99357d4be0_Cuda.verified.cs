@@ -58,22 +58,22 @@ namespace Kassyi.GSharp.Generated
 internal static class GSharpSharedCudaDeviceCode
 {
 public const string Source = @"struct Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState;
-inline __device__ Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState TransformState(Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState state, int multiplier);
+inline __device__ Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState TransformState(Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState __gsharp_id_0_state, int __gsharp_id_1_multiplier);
 
 #ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState__
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState__
 struct Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState
 {
-int Id;
-int Value;
-int Status;
+int __gsharp_mb_Id;
+int __gsharp_mb_Value;
+int __gsharp_mb_Status;
 }
 ;
 #endif
-inline __device__ Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState TransformState(Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState state, int multiplier){
-state.Value=state.Value*multiplier;
-state.Status=(state.Value>100?1:0);
-return state;
+inline __device__ Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState TransformState(Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState __gsharp_id_0_state, int __gsharp_id_1_multiplier){
+__gsharp_id_0_state.__gsharp_mb_Value=__gsharp_id_0_state.__gsharp_mb_Value*__gsharp_id_1_multiplier;
+__gsharp_id_0_state.__gsharp_mb_Status=(__gsharp_id_0_state.__gsharp_mb_Value>100?1:0);
+return __gsharp_id_0_state;
 }
 
 ";
@@ -107,18 +107,18 @@ public const string Kernel_LifecycleUpdate_Source = @"#ifndef __GSHARP_STRUCT_Ka
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState__
 struct Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState
 {
-int Id;
-int Value;
-int Status;
+int __gsharp_mb_Id;
+int __gsharp_mb_Value;
+int __gsharp_mb_Status;
 }
 ;
 #endif
-extern ""C"" __global__ void ObjectLifecycleKernels_Kernel_LifecycleUpdate(GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState> states, int length, int multiplier){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid<length)
+extern ""C"" __global__ void ObjectLifecycleKernels_Kernel_LifecycleUpdate(GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState> __gsharp_id_0_states, int __gsharp_id_1_length, int __gsharp_id_2_multiplier){
+int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_3_tid<__gsharp_id_1_length)
 {
-Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState s = states[tid];
-states[tid]=TransformState(s,multiplier);
+Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState __gsharp_id_4_s = __gsharp_id_0_states[__gsharp_id_3_tid];
+__gsharp_id_0_states[__gsharp_id_3_tid]=TransformState(__gsharp_id_4_s,__gsharp_id_2_multiplier);
 }
 }
 ";
@@ -237,21 +237,21 @@ public const string Kernel_FactoryInitialization_Source = @"#ifndef __GSHARP_STR
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState__
 struct Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState
 {
-int Id;
-int Value;
-int Status;
+int __gsharp_mb_Id;
+int __gsharp_mb_Value;
+int __gsharp_mb_Status;
 }
 ;
 #endif
-extern ""C"" __global__ void ObjectLifecycleKernels_Kernel_FactoryInitialization(GSharpArray<int> inputValues, GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState> outputStates, int length){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid<length)
+extern ""C"" __global__ void ObjectLifecycleKernels_Kernel_FactoryInitialization(GSharpArray<int> __gsharp_id_0_inputValues, GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState> __gsharp_id_1_outputStates, int __gsharp_id_2_length){
+int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_3_tid<__gsharp_id_2_length)
 {
-Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState state = {};
-state.Id=tid+1;
-state.Value=inputValues[tid];
-state.Status=(inputValues[tid]<0?-1:((inputValues[tid]==0?0:1)));
-outputStates[tid]=state;
+Kassyi_GSharp_Tests_Shared_Syntax_LifecycleObjectState __gsharp_id_4_state = {};
+__gsharp_id_4_state.__gsharp_mb_Id=__gsharp_id_3_tid+1;
+__gsharp_id_4_state.__gsharp_mb_Value=__gsharp_id_0_inputValues[__gsharp_id_3_tid];
+__gsharp_id_4_state.__gsharp_mb_Status=(__gsharp_id_0_inputValues[__gsharp_id_3_tid]<0?-1:((__gsharp_id_0_inputValues[__gsharp_id_3_tid]==0?0:1)));
+__gsharp_id_1_outputStates[__gsharp_id_3_tid]=__gsharp_id_4_state;
 }
 }
 ";

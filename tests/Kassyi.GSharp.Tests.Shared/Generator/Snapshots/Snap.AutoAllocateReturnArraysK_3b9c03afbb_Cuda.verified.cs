@@ -20,9 +20,9 @@ public partial class AutoAllocateReturnArraysKernels
 public static partial class AotContexts
 {
 }
-public const string NormalReturnKernel_Source = @"extern ""C"" __global__ void AutoAllocateReturnArraysKernels_NormalReturnKernel(int someValue, float* __restrict__ __gsharp_auto_result){
+public const string NormalReturnKernel_Source = @"extern ""C"" __global__ void AutoAllocateReturnArraysKernels_NormalReturnKernel(int __gsharp_id_0_someValue, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-__gsharp_auto_result[__gsharp_global_tid] = someValue*2.0f;
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_someValue*2.0f;
 return;
 }
 ";
@@ -302,17 +302,17 @@ public const string StructReturnKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Runtime_AutoAllocateReturnArraysKernels_TestStruct__
 struct Kassyi_GSharp_Tests_Shared_Runtime_AutoAllocateReturnArraysKernels_TestStruct
 {
-int A;
-float B;
+int __gsharp_mb_A;
+float __gsharp_mb_B;
 }
 ;
 #endif
 extern ""C"" __global__ void AutoAllocateReturnArraysKernels_StructReturnKernel(Kassyi_GSharp_Tests_Shared_Runtime_AutoAllocateReturnArraysKernels_TestStruct* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-Kassyi_GSharp_Tests_Shared_Runtime_AutoAllocateReturnArraysKernels_TestStruct s;
-s.A=threadIdx.x;
-s.B=threadIdx.x*1.5f;
-__gsharp_auto_result[__gsharp_global_tid] = s;
+Kassyi_GSharp_Tests_Shared_Runtime_AutoAllocateReturnArraysKernels_TestStruct __gsharp_id_0_s;
+__gsharp_id_0_s.__gsharp_mb_A=threadIdx.x;
+__gsharp_id_0_s.__gsharp_mb_B=threadIdx.x*1.5f;
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_0_s;
 return;
 }
 ";

@@ -1,6 +1,6 @@
-﻿extern "C" __global__ void StringsAndAttributesTarget_StringInterpolationPrintf(GSharpArray<unsigned int> data){
-unsigned int reg = data[0];
-mov.u32 reg, 42;
+﻿extern "C" __global__ void StringsAndAttributesTarget_StringInterpolationPrintf(GSharpArray<unsigned int> __gsharp_id_0_data){
+unsigned int __gsharp_id_1_reg = __gsharp_id_0_data[0];
+mov.u32 __gsharp_id_1_reg, 42;
 ;
-data[0]=reg;
+__gsharp_id_0_data[0]=__gsharp_id_1_reg;
 }

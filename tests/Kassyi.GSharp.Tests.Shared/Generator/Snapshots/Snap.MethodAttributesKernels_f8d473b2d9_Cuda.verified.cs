@@ -56,16 +56,16 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"__forceinline__ __device__ int InlinedAdd(int a, int b);
+public const string Source = @"__forceinline__ __device__ int InlinedAdd(int __gsharp_id_0_a, int __gsharp_id_1_b);
 
-__forceinline__ __device__ int MultiAttributeMultiply(int a, int b);
+__forceinline__ __device__ int MultiAttributeMultiply(int __gsharp_id_0_a, int __gsharp_id_1_b);
 
-__forceinline__ __device__ int InlinedAdd(int a, int b){
-return a+b;
+__forceinline__ __device__ int InlinedAdd(int __gsharp_id_0_a, int __gsharp_id_1_b){
+return __gsharp_id_0_a+__gsharp_id_1_b;
 }
 
-__forceinline__ __device__ int MultiAttributeMultiply(int a, int b){
-return a*b;
+__forceinline__ __device__ int MultiAttributeMultiply(int __gsharp_id_0_a, int __gsharp_id_1_b){
+return __gsharp_id_0_a*__gsharp_id_1_b;
 }
 
 ";
@@ -95,10 +95,10 @@ public partial class MethodAttributesKernels
 public static partial class AotContexts
 {
 }
-public const string MethodAttributesKernel_Source = @"extern ""C"" __global__ void MethodAttributesKernels_MethodAttributesKernel(GSharpArray<int> input, GSharpArray<int> result){
-int tid = threadIdx.x;
-int sum = InlinedAdd(input[tid],100);
-result[tid]=MultiAttributeMultiply(sum,2);
+public const string MethodAttributesKernel_Source = @"extern ""C"" __global__ void MethodAttributesKernels_MethodAttributesKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_result){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_sum = InlinedAdd(__gsharp_id_0_input[__gsharp_id_2_tid],100);
+__gsharp_id_1_result[__gsharp_id_2_tid]=MultiAttributeMultiply(__gsharp_id_3_sum,2);
 }
 ";
 public static readonly string MethodAttributesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MethodAttributesKernel_Source;

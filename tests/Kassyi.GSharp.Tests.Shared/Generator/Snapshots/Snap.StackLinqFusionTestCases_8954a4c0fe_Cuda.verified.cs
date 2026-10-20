@@ -86,31 +86,31 @@ public partial class StackLinqFusionTestCases
 public static partial class AotContexts
 {
 }
-public const string SimpleWhereSelectSum_Source = @"extern ""C"" __global__ void StackLinqFusionTestCases_SimpleWhereSelectSum(GSharpArray<int> data){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid==0)
+public const string SimpleWhereSelectSum_Source = @"extern ""C"" __global__ void StackLinqFusionTestCases_SimpleWhereSelectSum(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid==0)
 {
-int sum = ([&]() -> auto {
-int __fusion_res = 0;
-int __fusion_length = data.length;
-for (int __i = 0; __i < __fusion_length; __i++)
+int __gsharp_id_2_sum = ([&]() -> auto {
+int __gsharp_fusion_res = 0;
+int __gsharp_fusion_length = __gsharp_id_0_data.length;
+for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
 {
-auto __val_0 = data[__i];
-if (([&](auto x) {
-return x>5;
+auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+if (([&](auto __gsharp_id_3_x) {
+return __gsharp_id_3_x>5;
 }
-)(__val_0))
+)(__gsharp_val_0))
 {
-auto __val_1 = ([&](auto x) {
-return x*2;
+auto __gsharp_val_1 = ([&](auto __gsharp_id_4_x) {
+return __gsharp_id_4_x*2;
 }
-)(__val_0);
-__fusion_res += __val_1;
+)(__gsharp_val_0);
+__gsharp_fusion_res += __gsharp_val_1;
 }
 }
-return __fusion_res;
+return __gsharp_fusion_res;
 }());
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";
@@ -217,33 +217,33 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string MultipleWhere_Source = @"extern ""C"" __global__ void StackLinqFusionTestCases_MultipleWhere(GSharpArray<int> data){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid==0)
+public const string MultipleWhere_Source = @"extern ""C"" __global__ void StackLinqFusionTestCases_MultipleWhere(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid==0)
 {
-int sum = ([&]() -> auto {
-int __fusion_res = 0;
-int __fusion_length = data.length;
-for (int __i = 0; __i < __fusion_length; __i++)
+int __gsharp_id_2_sum = ([&]() -> auto {
+int __gsharp_fusion_res = 0;
+int __gsharp_fusion_length = __gsharp_id_0_data.length;
+for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
 {
-auto __val_0 = data[__i];
-if (([&](auto x) {
-return x>5;
+auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+if (([&](auto __gsharp_id_3_x) {
+return __gsharp_id_3_x>5;
 }
-)(__val_0))
+)(__gsharp_val_0))
 {
-if (([&](auto x) {
-return x%2==0;
+if (([&](auto __gsharp_id_4_x) {
+return __gsharp_id_4_x%2==0;
 }
-)(__val_0))
+)(__gsharp_val_0))
 {
-__fusion_res += __val_0;
+__gsharp_fusion_res += __gsharp_val_0;
 }
 }
 }
-return __fusion_res;
+return __gsharp_fusion_res;
 }());
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";
@@ -350,29 +350,29 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string MultipleSelect_Source = @"extern ""C"" __global__ void StackLinqFusionTestCases_MultipleSelect(GSharpArray<int> data){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid==0)
+public const string MultipleSelect_Source = @"extern ""C"" __global__ void StackLinqFusionTestCases_MultipleSelect(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid==0)
 {
-int sum = ([&]() -> auto {
-int __fusion_res = 0;
-int __fusion_length = data.length;
-for (int __i = 0; __i < __fusion_length; __i++)
+int __gsharp_id_2_sum = ([&]() -> auto {
+int __gsharp_fusion_res = 0;
+int __gsharp_fusion_length = __gsharp_id_0_data.length;
+for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
 {
-auto __val_0 = data[__i];
-auto __val_1 = ([&](auto x) {
-return x*2;
+auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+auto __gsharp_val_1 = ([&](auto __gsharp_id_3_x) {
+return __gsharp_id_3_x*2;
 }
-)(__val_0);
-auto __val_2 = ([&](auto x) {
-return x+1;
+)(__gsharp_val_0);
+auto __gsharp_val_2 = ([&](auto __gsharp_id_4_x) {
+return __gsharp_id_4_x+1;
 }
-)(__val_1);
-__fusion_res += __val_2;
+)(__gsharp_val_1);
+__gsharp_fusion_res += __gsharp_val_2;
 }
-return __fusion_res;
+return __gsharp_fusion_res;
 }());
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";
@@ -479,65 +479,65 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string HellPattern_Source = @"extern ""C"" __global__ void StackLinqFusionTestCases_HellPattern(GSharpArray<int> data){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid==0)
+public const string HellPattern_Source = @"extern ""C"" __global__ void StackLinqFusionTestCases_HellPattern(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid==0)
 {
-int sum = ([&]() -> auto {
-int __stage_2_count = 0;
-int __stage_3_count = 0;
-bool __stage_5_skipping = true;
-int __fusion_res = 0;
-int __fusion_length = data.length;
-for (int __i = 0; __i < __fusion_length; __i++)
+int __gsharp_id_2_sum = ([&]() -> auto {
+int __gsharp_stage_2_count = 0;
+int __gsharp_stage_3_count = 0;
+bool __gsharp_stage_5_skipping = true;
+int __gsharp_fusion_res = 0;
+int __gsharp_fusion_length = __gsharp_id_0_data.length;
+for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
 {
-auto __val_0 = data[__i];
-if (__i >= __fusion_length - (2))
+auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+if (__gsharp_i >= __gsharp_fusion_length - (2))
 {break;
-}if (__i < __fusion_length - (95))
+}if (__gsharp_i < __gsharp_fusion_length - (95))
 {continue;
-}if (__stage_2_count < 3)
-{__stage_2_count++;
+}if (__gsharp_stage_2_count < 3)
+{__gsharp_stage_2_count++;
 continue;
-}if (__stage_3_count >= 90) { break; }
-__stage_3_count++;
-if (([&](auto x) {
-return x%2==0;
+}if (__gsharp_stage_3_count >= 90) { break; }
+__gsharp_stage_3_count++;
+if (([&](auto __gsharp_id_3_x) {
+return __gsharp_id_3_x%2==0;
 }
-)(__val_0))
+)(__gsharp_val_0))
 {
-if (__stage_5_skipping)
-{if (([&](auto x) {
-return x<20;
+if (__gsharp_stage_5_skipping)
+{if (([&](auto __gsharp_id_4_x) {
+return __gsharp_id_4_x<20;
 }
-)(__val_0))
+)(__gsharp_val_0))
 {continue;
-}__stage_5_skipping = false;
-}if (!(([&](auto x) {
-return x<=80;
+}__gsharp_stage_5_skipping = false;
+}if (!(([&](auto __gsharp_id_5_x) {
+return __gsharp_id_5_x<=80;
 }
-)(__val_0)))
+)(__gsharp_val_0)))
 {break;
-}auto __val_1 = ([&](auto x) {
-return x*2;
+}auto __gsharp_val_1 = ([&](auto __gsharp_id_6_x) {
+return __gsharp_id_6_x*2;
 }
-)(__val_0);
-auto __val_2 = ([&](auto x) {
-return x+1;
+)(__gsharp_val_0);
+auto __gsharp_val_2 = ([&](auto __gsharp_id_7_x) {
+return __gsharp_id_7_x+1;
 }
-)(__val_1);
-if (([&](auto x) {
-return x<100;
+)(__gsharp_val_1);
+if (([&](auto __gsharp_id_8_x) {
+return __gsharp_id_8_x<100;
 }
-)(__val_2))
+)(__gsharp_val_2))
 {
-__fusion_res += __val_2;
+__gsharp_fusion_res += __gsharp_val_2;
 }
 }
 }
-return __fusion_res;
+return __gsharp_fusion_res;
 }());
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";

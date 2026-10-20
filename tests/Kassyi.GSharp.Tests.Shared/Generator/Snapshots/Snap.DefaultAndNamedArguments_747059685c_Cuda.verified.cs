@@ -20,12 +20,12 @@ public partial class DefaultAndNamedArgumentsTestCase
 public static partial class AotContexts
 {
 }
-public const string SampleKernel_Source = @"extern ""C"" __global__ void DefaultAndNamedArgumentsTestCase_SampleKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-int r1 = ComputeStep(data[tid],0,1);
-int r2 = ComputeStep(data[tid],5,2);
-int r3 = ComputeStep(data[tid],0,4);
-data[tid]=r1+r2+r3;
+public const string SampleKernel_Source = @"extern ""C"" __global__ void DefaultAndNamedArgumentsTestCase_SampleKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_2_r1 = ComputeStep(__gsharp_id_0_data[__gsharp_id_1_tid],0,1);
+int __gsharp_id_3_r2 = ComputeStep(__gsharp_id_0_data[__gsharp_id_1_tid],5,2);
+int __gsharp_id_4_r3 = ComputeStep(__gsharp_id_0_data[__gsharp_id_1_tid],0,4);
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_r1+__gsharp_id_3_r2+__gsharp_id_4_r3;
 }
 ";
 public static readonly string SampleKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SampleKernel_Source;
@@ -193,10 +193,10 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ int ComputeStep(int input, int offset, int scale);
+public const string Source = @"inline __device__ int ComputeStep(int __gsharp_id_0_input, int __gsharp_id_1_offset, int __gsharp_id_2_scale);
 
-inline __device__ int ComputeStep(int input, int offset, int scale){
-return (input+offset)*scale;
+inline __device__ int ComputeStep(int __gsharp_id_0_input, int __gsharp_id_1_offset, int __gsharp_id_2_scale){
+return (__gsharp_id_0_input+__gsharp_id_1_offset)*__gsharp_id_2_scale;
 }
 
 ";

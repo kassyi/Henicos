@@ -20,26 +20,26 @@ public partial class GpuBigIntKernels
 public static partial class AotContexts
 {
 }
-public const string ChunkAddKernel_Source = @"extern ""C"" __global__ void GpuBigIntKernels_ChunkAddKernel(GSharpArray<unsigned int> dA, GSharpArray<unsigned int> dB, GSharpArray<unsigned int> dResult, GSharpArray<long long> carryBuffer, int numWords, int chunkSize){
-int chunkIdx = blockIdx.x*blockDim.x+threadIdx.x;
-int start = chunkIdx*chunkSize;
-if(start>=numWords)
+public const string ChunkAddKernel_Source = @"extern ""C"" __global__ void GpuBigIntKernels_ChunkAddKernel(GSharpArray<unsigned int> __gsharp_id_0_dA, GSharpArray<unsigned int> __gsharp_id_1_dB, GSharpArray<unsigned int> __gsharp_id_2_dResult, GSharpArray<long long> __gsharp_id_3_carryBuffer, int __gsharp_id_4_numWords, int __gsharp_id_5_chunkSize){
+int __gsharp_id_6_chunkIdx = blockIdx.x*blockDim.x+threadIdx.x;
+int __gsharp_id_7_start = __gsharp_id_6_chunkIdx*__gsharp_id_5_chunkSize;
+if(__gsharp_id_7_start>=__gsharp_id_4_numWords)
 {
 return;
 }
-int end = start+chunkSize;
-if(end>numWords)
+int __gsharp_id_8_end = __gsharp_id_7_start+__gsharp_id_5_chunkSize;
+if(__gsharp_id_8_end>__gsharp_id_4_numWords)
 {
-end=numWords;
+__gsharp_id_8_end=__gsharp_id_4_numWords;
 }
-unsigned long long localCarry = 0;
-for(int i = start;i<end;i++)
+unsigned long long __gsharp_id_9_localCarry = 0;
+for(int __gsharp_id_10_i = __gsharp_id_7_start;__gsharp_id_10_i<__gsharp_id_8_end;__gsharp_id_10_i++)
 {
-unsigned long long current = (unsigned long long)dA[i]+(unsigned long long)dB[i]+localCarry;
-dResult[i]=(unsigned int)(current&0xFFFFFFFF);
-localCarry=current>>32;
+unsigned long long __gsharp_id_11_current = (unsigned long long)__gsharp_id_0_dA[__gsharp_id_10_i]+(unsigned long long)__gsharp_id_1_dB[__gsharp_id_10_i]+__gsharp_id_9_localCarry;
+__gsharp_id_2_dResult[__gsharp_id_10_i]=(unsigned int)(__gsharp_id_11_current&0xFFFFFFFF);
+__gsharp_id_9_localCarry=__gsharp_id_11_current>>32;
 }
-carryBuffer[chunkIdx+1]=(long long)localCarry;
+__gsharp_id_3_carryBuffer[__gsharp_id_6_chunkIdx+1]=(long long)__gsharp_id_9_localCarry;
 }
 ";
 public static readonly string ChunkAddKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ChunkAddKernel_Source;

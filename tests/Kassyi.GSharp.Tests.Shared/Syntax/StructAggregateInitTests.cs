@@ -48,7 +48,7 @@ public partial class StructAggregateInitTests
             RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitStruct));
 
         Assert.Empty(diagnostics);
-        Assert.Matches(MyStructInitRegex(), cudaSource);
+        Assert.Matches(MyStructInitRegex(), cudaSource.WithCSharpNames());
     }
 
     [SkippableFact]
@@ -59,7 +59,7 @@ public partial class StructAggregateInitTests
             RoslynTestUtility.TranspileMethod<TestClass_SYN90>(nameof(TestClass_SYN90.InitNestedStruct));
 
         Assert.Empty(diagnostics);
-        Assert.Matches(NestedStructInitRegex(), cudaSource);
+        Assert.Matches(NestedStructInitRegex(), cudaSource.WithCSharpNames());
     }
 }
 

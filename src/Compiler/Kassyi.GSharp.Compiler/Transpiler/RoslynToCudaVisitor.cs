@@ -215,7 +215,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             Context.Emitter.Writer.AppendKeyword("auto");
         }
 
-        Context.Emitter.Writer.Append($" {node.Identifier.Text}");
+        Context.Emitter.Writer.AppendSpace();
+        CppNameResolver.AppendDeclaredName(node, node.Identifier, ref Context);
     }
 
     /// <summary>
@@ -489,13 +490,17 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 {
                     using (Context.Emitter.Writer.Parentheses())
                     {
-                        Context.Emitter.Writer.Append($"*{node.Identifier.Text}");
+                        Context.Emitter.Writer.Append('*');
+                        CppNameResolver.AppendSymbolName(symbol, ref Context);
                     }
 
                     return;
                 }
             default:
-                Context.Emitter.Writer.Append(node.Identifier.Text);
+                // [WHY] Lowering rewrites hoisted locals into references that carry the declarator's original span.
+                symbol ??= Context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node);
+                Context.Emitter.Writer.AppendCppName(
+                    CppNameResolver.Resolve(symbol, node.Identifier.ValueText, Context.Emitter.Dialect));
                 break;
         }
     }
@@ -596,7 +601,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         => Visit(node.Designation);
 
     public override void VisitSingleVariableDesignation(SingleVariableDesignationSyntax node)
-        => Context.Emitter.Writer.Append(node.Identifier.Text);
+        => CppNameResolver.AppendDeclaredName(node, node.Identifier, ref Context);
 
     public override void VisitCollectionExpression(CollectionExpressionSyntax node) =>
         VisitBracedSeparatedList(node.Elements);

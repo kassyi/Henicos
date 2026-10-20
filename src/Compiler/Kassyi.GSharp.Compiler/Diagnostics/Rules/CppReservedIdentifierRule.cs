@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 /// <remarks>
 /// <list type="bullet">
 ///   <item><description>GSH0057 (permanent): identifiers containing <c>__</c>, reserved for G# internals (<c>__gsharp*</c>) and the C++ implementation.</description></item>
-///   <item><description>GSH0058 (temporary): C++ keywords. Removed once the transpiler renames them automatically (#369).</description></item>
+///   <item><description>GSH0058 (temporary): C++ keywords as method names. Parameters, locals, labels, local functions and struct members are renamed by <see cref="CppNameResolver"/> (#369); method and type names are renamed by #402, which removes this check.</description></item>
 /// </list>
 /// </remarks>
 internal sealed class CppReservedIdentifierRule :
@@ -28,52 +28,54 @@ internal sealed class CppReservedIdentifierRule :
     }
 
     public void Analyze(MethodDeclarationSyntax node, ref ValidationContext context) =>
-        CheckIdentifier(node.Identifier, ref context);
+        CheckIdentifier(node.Identifier, rejectCppKeywords: true, ref context);
 
     public void Analyze(LocalFunctionStatementSyntax node, ref ValidationContext context) =>
-        CheckIdentifier(node.Identifier, ref context);
+        CheckIdentifier(node.Identifier, rejectCppKeywords: false, ref context);
 
     public void Analyze(ParameterSyntax node, ref ValidationContext context)
     {
-        CheckIdentifier(node.Identifier, ref context);
+        CheckIdentifier(node.Identifier, rejectCppKeywords: false, ref context);
         CheckStructMembers(context.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(node)?.Type, node.Identifier,
             ref context);
     }
 
     public void Analyze(VariableDeclaratorSyntax node, ref ValidationContext context)
     {
-        CheckIdentifier(node.Identifier, ref context);
+        CheckIdentifier(node.Identifier, rejectCppKeywords: false, ref context);
         CheckStructMembers(context.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(node)?.Type, node.Identifier,
             ref context);
     }
 
     public void Analyze(SingleVariableDesignationSyntax node, ref ValidationContext context)
     {
-        CheckIdentifier(node.Identifier, ref context);
+        CheckIdentifier(node.Identifier, rejectCppKeywords: false, ref context);
         CheckStructMembers(context.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(node)?.Type, node.Identifier,
             ref context);
     }
 
     public void Analyze(ForEachStatementSyntax node, ref ValidationContext context)
     {
-        CheckIdentifier(node.Identifier, ref context);
+        CheckIdentifier(node.Identifier, rejectCppKeywords: false, ref context);
         CheckStructMembers(context.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(node)?.Type, node.Identifier,
             ref context);
     }
 
-    private static DiagnosticDescriptor? GetViolation(string identifier)
+    private static DiagnosticDescriptor? GetViolation(string identifier, bool rejectCppKeywords)
     {
         if (identifier.Contains("__"))
         {
             return GSharpDiagnostics.DoubleUnderscoreIdentifier;
         }
 
-        return CppNameFormatter.IsReservedCppKeyword(identifier) ? GSharpDiagnostics.CppKeywordIdentifier : null;
+        return rejectCppKeywords && CppNameFormatter.IsReservedCppKeyword(identifier)
+            ? GSharpDiagnostics.CppKeywordIdentifier
+            : null;
     }
 
-    private static void CheckIdentifier(SyntaxToken identifier, ref ValidationContext context)
+    private static void CheckIdentifier(SyntaxToken identifier, bool rejectCppKeywords, ref ValidationContext context)
     {
-        if (GetViolation(identifier.ValueText) is { } descriptor)
+        if (GetViolation(identifier.ValueText, rejectCppKeywords) is { } descriptor)
         {
             context.ReportDiagnostic(descriptor, identifier.GetLocation(), identifier.ValueText);
         }
@@ -141,7 +143,7 @@ internal sealed class CppReservedIdentifierRule :
                 continue;
             }
 
-            descriptor = GetViolation(member.Name);
+            descriptor = GetViolation(member.Name, rejectCppKeywords: false);
             if (descriptor is not null)
             {
                 memberPath = member.Name;

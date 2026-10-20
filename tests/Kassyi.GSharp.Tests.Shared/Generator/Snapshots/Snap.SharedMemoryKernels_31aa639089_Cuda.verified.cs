@@ -83,18 +83,18 @@ public partial class SharedMemoryKernels
 public static partial class AotContexts
 {
 }
-public const string ReverseArrayWithSharedMemoryKernel_Source = @"extern ""C"" __global__ void SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel(GSharpArray<int> input, GSharpArray<int> output, int length){
-int tid = threadIdx.x;
-__shared__ int shared[256];
-if(tid<length)
+public const string ReverseArrayWithSharedMemoryKernel_Source = @"extern ""C"" __global__ void SharedMemoryKernels_ReverseArrayWithSharedMemoryKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, int __gsharp_id_2_length){
+int __gsharp_id_3_tid = threadIdx.x;
+__shared__ int __gsharp_id_4_shared[256];
+if(__gsharp_id_3_tid<__gsharp_id_2_length)
 {
-shared[tid]=input[tid];
+__gsharp_id_4_shared[__gsharp_id_3_tid]=__gsharp_id_0_input[__gsharp_id_3_tid];
 }
 __syncthreads();
-if(tid<length)
+if(__gsharp_id_3_tid<__gsharp_id_2_length)
 {
-int reversedIndex = length-1-tid;
-output[tid]=shared[reversedIndex];
+int __gsharp_id_5_reversedIndex = __gsharp_id_2_length-1-__gsharp_id_3_tid;
+__gsharp_id_1_output[__gsharp_id_3_tid]=__gsharp_id_4_shared[__gsharp_id_5_reversedIndex];
 }
 }
 ";

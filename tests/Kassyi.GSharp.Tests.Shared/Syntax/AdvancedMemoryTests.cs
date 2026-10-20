@@ -58,8 +58,8 @@ public class AdvancedMemoryTests : TranspilerTestBase
             nameof(AdvancedMemoryTarget.UnsafeAsPointer), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("int* ptr = (int*)AsPointer(&data[0]);", cudaSource);
-        Assert.Contains("*ptr=777;", cudaSource);
+        Assert.Contains("int* ptr = (int*)AsPointer(&data[0]);", cudaSource.WithCSharpNames());
+        Assert.Contains("*ptr=777;", cudaSource.WithCSharpNames());
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
             nameof(AdvancedMemoryTarget.MemoryMarshalCast), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("GSharpArray<int> ints = Cast(bytes.AsSpan());", cudaSource);
+        Assert.Contains("GSharpArray<int> ints = Cast(bytes.AsSpan());", cudaSource.WithCSharpNames());
     }
 
     [Fact]
@@ -81,8 +81,8 @@ public class AdvancedMemoryTests : TranspilerTestBase
             nameof(AdvancedMemoryTarget.RefFieldsUpdate), isDevice: true, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Syntax_RefWrapper", cudaSource);
-        Assert.Contains("wrapper.Value=123;", cudaSource);
+        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Syntax_RefWrapper", cudaSource.WithCSharpNames());
+        Assert.Contains("wrapper.Value=123;", cudaSource.WithCSharpNames());
     }
 
     [Fact]
@@ -95,11 +95,11 @@ public class AdvancedMemoryTests : TranspilerTestBase
         Assert.Empty(diagnostics);
         if (IsCudaDialect)
         {
-            Assert.Contains("float4 v = vectors[0];", cudaSource);
+            Assert.Contains("float4 v = vectors[0];", cudaSource.WithCSharpNames());
         }
         else
         {
-            Assert.Contains("Kassyi_GSharp_Core_Float4 v = vectors[0];", cudaSource);
+            Assert.Contains("Kassyi_GSharp_Core_Float4 v = vectors[0];", cudaSource.WithCSharpNames());
         }
     }
 
@@ -111,8 +111,8 @@ public class AdvancedMemoryTests : TranspilerTestBase
             typeof(AdvancedMemoryKernels), nameof(AdvancedMemoryKernels.PointerIncrementKernel), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("ptrS = pSrc;", cudaSource);
-        Assert.Contains("*ptrD++=*ptrS++;", cudaSource);
+        Assert.Contains("ptrS = pSrc;", cudaSource.WithCSharpNames());
+        Assert.Contains("*ptrD++=*ptrS++;", cudaSource.WithCSharpNames());
     }
 
     [Fact]
@@ -123,8 +123,8 @@ public class AdvancedMemoryTests : TranspilerTestBase
             nameof(AdvancedMemoryTarget.FixedSizeBuffers), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Syntax_FixedBufferStruct_AdvMem", cudaSource);
-        Assert.Contains("Data[16];", cudaSource);
+        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Syntax_FixedBufferStruct_AdvMem", cudaSource.WithCSharpNames());
+        Assert.Contains("Data[16];", cudaSource.WithCSharpNames());
     }
 }
 

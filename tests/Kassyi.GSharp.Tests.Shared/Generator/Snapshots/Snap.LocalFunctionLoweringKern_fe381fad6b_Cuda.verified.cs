@@ -87,13 +87,13 @@ public partial class LocalFunctionLoweringKernels
 public static partial class AotContexts
 {
 }
-public const string LocalFunctionVoidKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionVoidKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-auto MultiplyByTwo = [&]() {
-data[tid]=data[tid]*2;
+public const string LocalFunctionVoidKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionVoidKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+auto __gsharp_id_2_MultiplyByTwo = [&]() {
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_0_data[__gsharp_id_1_tid]*2;
 }
 ;
-MultiplyByTwo();
+__gsharp_id_2_MultiplyByTwo();
 }
 ";
 public static readonly string LocalFunctionVoidKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LocalFunctionVoidKernel_Source;
@@ -199,13 +199,13 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string LocalFunctionValueReturnKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(GSharpArray<int> data, int bonus){
-int tid = threadIdx.x;
-auto ComputeTotal = [&](int val) {
-return val*3+bonus;
+public const string LocalFunctionValueReturnKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionValueReturnKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_bonus){
+int __gsharp_id_2_tid = threadIdx.x;
+auto __gsharp_id_3_ComputeTotal = [&](int __gsharp_id_4_val) {
+return __gsharp_id_4_val*3+__gsharp_id_1_bonus;
 }
 ;
-data[tid]=ComputeTotal(data[tid]);
+__gsharp_id_0_data[__gsharp_id_2_tid]=__gsharp_id_3_ComputeTotal(__gsharp_id_0_data[__gsharp_id_2_tid]);
 }
 ";
 public static readonly string LocalFunctionValueReturnKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LocalFunctionValueReturnKernel_Source;
@@ -315,13 +315,13 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string LocalFunctionExpressionBodyKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-auto Square = [&](int x) {
-return x*x;
+public const string LocalFunctionExpressionBodyKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_LocalFunctionExpressionBodyKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+auto __gsharp_id_2_Square = [&](int __gsharp_id_3_x) {
+return __gsharp_id_3_x*__gsharp_id_3_x;
 }
 ;
-data[tid]=Square(data[tid]);
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_Square(__gsharp_id_0_data[__gsharp_id_1_tid]);
 }
 ";
 public static readonly string LocalFunctionExpressionBodyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LocalFunctionExpressionBodyKernel_Source;
@@ -427,18 +427,18 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string NestedLocalFunctionKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_NestedLocalFunctionKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-auto InnerAdd = [&](int a, int b) {
-return a+b;
+public const string NestedLocalFunctionKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_NestedLocalFunctionKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+auto __gsharp_id_2_InnerAdd = [&](int __gsharp_id_3_a, int __gsharp_id_4_b) {
+return __gsharp_id_3_a+__gsharp_id_4_b;
 }
 ;
-auto OuterMultiplyAndAdd = [&](int x) {
-int doubled = x*2;
-return InnerAdd(doubled,10);
+auto __gsharp_id_5_OuterMultiplyAndAdd = [&](int __gsharp_id_6_x) {
+int __gsharp_id_7_doubled = __gsharp_id_6_x*2;
+return __gsharp_id_2_InnerAdd(__gsharp_id_7_doubled,10);
 }
 ;
-data[tid]=OuterMultiplyAndAdd(data[tid]);
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_5_OuterMultiplyAndAdd(__gsharp_id_0_data[__gsharp_id_1_tid]);
 }
 ";
 public static readonly string NestedLocalFunctionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedLocalFunctionKernel_Source;
@@ -544,22 +544,22 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string MultiParamLocalFunctionKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(GSharpArray<int> a, GSharpArray<int> b, GSharpArray<int> result){
-int tid = threadIdx.x;
-auto ClampAdd = [&](int val1, int val2, int minVal, int maxVal) {
-int sum = val1+val2;
-if(sum<minVal)
+public const string MultiParamLocalFunctionKernel_Source = @"extern ""C"" __global__ void LocalFunctionLoweringKernels_MultiParamLocalFunctionKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_result){
+int __gsharp_id_3_tid = threadIdx.x;
+auto __gsharp_id_4_ClampAdd = [&](int __gsharp_id_5_val1, int __gsharp_id_6_val2, int __gsharp_id_7_minVal, int __gsharp_id_8_maxVal) {
+int __gsharp_id_9_sum = __gsharp_id_5_val1+__gsharp_id_6_val2;
+if(__gsharp_id_9_sum<__gsharp_id_7_minVal)
 {
-return minVal;
+return __gsharp_id_7_minVal;
 }
-if(sum>maxVal)
+if(__gsharp_id_9_sum>__gsharp_id_8_maxVal)
 {
-return maxVal;
+return __gsharp_id_8_maxVal;
 }
-return sum;
+return __gsharp_id_9_sum;
 }
 ;
-result[tid]=ClampAdd(a[tid],b[tid],0,100);
+__gsharp_id_2_result[__gsharp_id_3_tid]=__gsharp_id_4_ClampAdd(__gsharp_id_0_a[__gsharp_id_3_tid],__gsharp_id_1_b[__gsharp_id_3_tid],0,100);
 }
 ";
 public static readonly string MultiParamLocalFunctionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MultiParamLocalFunctionKernel_Source;

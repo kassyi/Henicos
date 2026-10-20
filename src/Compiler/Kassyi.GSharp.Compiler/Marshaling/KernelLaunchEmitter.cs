@@ -11,7 +11,7 @@ internal static class KernelLaunchEmitter
         p.Type.IsNullableArrayLike();
 
     internal static string GetValueExpression(IParameterSymbol p) =>
-        p.Type.IsNullableArrayLike() ? $"{p.Name}.GetValueOrDefault()" : p.Name;
+        p.Type.IsNullableArrayLike() ? $"{p.Name.ToCSharpIdentifier()}.GetValueOrDefault()" : p.Name.ToCSharpIdentifier();
 
     internal static string GetLengthExpression(IParameterSymbol p)
     {
@@ -19,7 +19,7 @@ internal static class KernelLaunchEmitter
         var member = marshaled is INamedTypeSymbol { Name: "ArraySegment" } ? "Count" : "Length";
         if (p.Type.IsReferenceType && p.NullableAnnotation == NullableAnnotation.Annotated)
         {
-            return $"({p.Name}?.Length ?? 0)";
+            return $"({p.Name.ToCSharpIdentifier()}?.Length ?? 0)";
         }
 
         return $"{GetValueExpression(p)}.{member}";
@@ -192,17 +192,17 @@ internal static class KernelLaunchEmitter
         {
             var kind = marshaledType.IsArrayLikeType() ? "array" :
                 CudaLayoutRules.IsCustomStruct(marshaledType) ? "struct" : "scalar";
-            writer.AppendLine($"// Marshal device {kind}: {p.Name}");
+            writer.AppendLine($"// Marshal device {kind}: {p.Name.ToCSharpIdentifier()}");
             if (kind == "array")
             {
                 writer.AppendLine($"IntPtr* proxy_{p.Name} = stackalloc IntPtr[2];");
-                writer.AppendLine($"proxy_{p.Name}[0] = {p.Name};");
+                writer.AppendLine($"proxy_{p.Name}[0] = {p.Name.ToCSharpIdentifier()};");
                 writer.AppendLine($"((int*)(proxy_{p.Name} + 1))[0] = 0; // Length is unknown for raw IntPtr");
                 writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{p.Name};");
             }
             else
             {
-                writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name};");
+                writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name.ToCSharpIdentifier()};");
             }
 
             return;
@@ -237,14 +237,14 @@ internal static class KernelLaunchEmitter
         using (writer.Parentheses())
         {
             writer.Append(
-                $"ref {p.Name}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")}, {(isDevicePtr ? "null" : $"{p.Name}_allocatedPtrs")}, hStream");
+                $"ref {p.Name.ToCSharpIdentifier()}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")}, {(isDevicePtr ? "null" : $"{p.Name}_allocatedPtrs")}, hStream");
         }
 
         writer.AppendLine(";");
 
         if (p.RefKind is RefKind.Ref or RefKind.Out)
         {
-            writer.AppendLine($"// Marshal ref/out struct: {p.Name}");
+            writer.AppendLine($"// Marshal ref/out struct: {p.Name.ToCSharpIdentifier()}");
             writer.Append($"int {p.Name}_size = sizeof(");
             writer.AppendAotStructPath(marshaledType);
             writer.AppendLine(");");
@@ -264,7 +264,7 @@ internal static class KernelLaunchEmitter
         }
         else
         {
-            writer.AppendLine($"// Marshal scalar struct: {p.Name}");
+            writer.AppendLine($"// Marshal scalar struct: {p.Name.ToCSharpIdentifier()}");
             writer.AppendLine($"kernelParams[{paramIndex}] = &native_{p.Name};");
         }
     }
@@ -277,7 +277,7 @@ internal static class KernelLaunchEmitter
         var isOutOnly = hasOut && !hasIn;
         var lenExpr = GetLengthExpression(p);
 
-        writer.AppendLine($"// Marshal array: {p.Name}");
+        writer.AppendLine($"// Marshal array: {p.Name.ToCSharpIdentifier()}");
         writer.Append($"int {p.Name}_size = {lenExpr} * sizeof(");
         writer.AppendFullyQualifiedCsharpName(elementType);
         writer.AppendLine(");");
@@ -295,7 +295,7 @@ internal static class KernelLaunchEmitter
 
             if (isOutOnly)
             {
-                writer.AppendLine($"// Skip HtoD copy for [Out] array: {p.Name}");
+                writer.AppendLine($"// Skip HtoD copy for [Out] array: {p.Name.ToCSharpIdentifier()}");
             }
             else
             {
@@ -318,7 +318,7 @@ internal static class KernelLaunchEmitter
 
     private static void WriteRefOrOutScalarMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex)
     {
-        writer.AppendLine($"// Marshal ref/out scalar: {p.Name}");
+        writer.AppendLine($"// Marshal ref/out scalar: {p.Name.ToCSharpIdentifier()}");
         writer.Append($"int {p.Name}_size = sizeof(");
         writer.AppendFullyQualifiedCsharpName(p.Type);
         writer.AppendLine(");");
@@ -330,7 +330,7 @@ internal static class KernelLaunchEmitter
             writer.AppendLine("// Fast zero-allocation copy to device");
             writer.Append("fixed (");
             writer.AppendFullyQualifiedCsharpName(p.Type);
-            writer.AppendLine($"* p_{p.Name}_temp = &{p.Name})");
+            writer.AppendLine($"* p_{p.Name}_temp = &{p.Name.ToCSharpIdentifier()})");
             using (writer.Scope())
             {
                 writer.AppendLine(
@@ -345,8 +345,8 @@ internal static class KernelLaunchEmitter
 
     private static void WriteScalarMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex)
     {
-        writer.AppendLine($"// Marshal scalar: {p.Name}");
-        writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name};");
+        writer.AppendLine($"// Marshal scalar: {p.Name.ToCSharpIdentifier()}");
+        writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name.ToCSharpIdentifier()};");
     }
 
     private static void WriteLaunchKernelCall(SourceWriter writer, IMethodSymbol method)
@@ -442,7 +442,7 @@ internal static class KernelLaunchEmitter
         writer.AppendNestedCppName(marshaledType);
         using (writer.Parentheses())
         {
-            writer.Append($"ref {p.Name}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")}, hStream");
+            writer.Append($"ref {p.Name.ToCSharpIdentifier()}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")}, hStream");
         }
 
         writer.AppendLine(";");
@@ -463,11 +463,11 @@ internal static class KernelLaunchEmitter
 
         if (isInOnly || isReadOnlyArrayLike)
         {
-            writer.AppendLine($"// Skip DtoH copy for [In] array: {p.Name}");
+            writer.AppendLine($"// Skip DtoH copy for [In] array: {p.Name.ToCSharpIdentifier()}");
             return;
         }
 
-        writer.AppendLine($"// Copy back array: {p.Name}");
+        writer.AppendLine($"// Copy back array: {p.Name.ToCSharpIdentifier()}");
         writer.AppendLine($"if ({p.Name}_size > 0 && d_{p.Name} != IntPtr.Zero)");
         using (writer.Scope())
         {
@@ -475,7 +475,7 @@ internal static class KernelLaunchEmitter
             writer.Append("fixed (");
             if (!marshaledType.TryGetArrayLikeElementType(out var elementType))
             {
-                throw new InvalidOperationException($"Parameter '{p.Name}' is not an array-like type.");
+                throw new InvalidOperationException($"Parameter '{p.Name.ToCSharpIdentifier()}' is not an array-like type.");
             }
             writer.AppendFullyQualifiedCsharpName(elementType);
             writer.AppendLine($"* p_{p.Name} = {spanExpr})");
@@ -497,13 +497,13 @@ internal static class KernelLaunchEmitter
 
         if (p.RefKind == RefKind.Out)
         {
-            writer.AppendLine($"{p.Name} = default;");
+            writer.AppendLine($"{p.Name.ToCSharpIdentifier()} = default;");
         }
 
-        writer.AppendLine($"// Fast zero-allocation copy from device for scalar: {p.Name}");
+        writer.AppendLine($"// Fast zero-allocation copy from device for scalar: {p.Name.ToCSharpIdentifier()}");
         writer.Append("fixed (");
         writer.AppendFullyQualifiedCsharpName(p.Type);
-        writer.AppendLine($"* ptr_{p.Name} = &{p.Name})");
+        writer.AppendLine($"* ptr_{p.Name} = &{p.Name.ToCSharpIdentifier()})");
         using (writer.Scope())
         {
             writer.AppendLine(

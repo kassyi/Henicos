@@ -1,9 +1,9 @@
-﻿extern "C" __global__ void SYN_156_LoopUnrollStatements_StatementUnrollFactor(GSharpArray<int> data){
-int sum = 0;
+﻿extern "C" __global__ void SYN_156_LoopUnrollStatements_StatementUnrollFactor(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_sum = 0;
 #pragma unroll 4
-for(int i = 0;i<4;i++)
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
 {
-sum+=(i+1)*10;
+__gsharp_id_1_sum+=(__gsharp_id_2_i+1)*10;
 }
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }

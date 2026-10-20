@@ -20,10 +20,10 @@ public partial class AdvancedMemoryKernels
 public static partial class AotContexts
 {
 }
-public const string FixedBufferKernel_Source = @"extern ""C"" __global__ void AdvancedMemoryKernels_FixedBufferKernel(GSharpArray<unsigned int> data){
-unsigned int* p = &data[0];
+public const string FixedBufferKernel_Source = @"extern ""C"" __global__ void AdvancedMemoryKernels_FixedBufferKernel(GSharpArray<unsigned int> __gsharp_id_0_data){
+unsigned int* __gsharp_id_1_p = &__gsharp_id_0_data[0];
 {
-p[1]=p[0]+10;
+__gsharp_id_1_p[1]=__gsharp_id_1_p[0]+10;
 }
 }
 ";
@@ -130,15 +130,15 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PointerIncrementKernel_Source = @"extern ""C"" __global__ void AdvancedMemoryKernels_PointerIncrementKernel(GSharpArray<unsigned int> src, GSharpArray<unsigned int> dest){
-unsigned int* pSrc = &src[0];
-unsigned int* pDest = &dest[0];
+public const string PointerIncrementKernel_Source = @"extern ""C"" __global__ void AdvancedMemoryKernels_PointerIncrementKernel(GSharpArray<unsigned int> __gsharp_id_0_src, GSharpArray<unsigned int> __gsharp_id_1_dest){
+unsigned int* __gsharp_id_2_pSrc = &__gsharp_id_0_src[0];
+unsigned int* __gsharp_id_3_pDest = &__gsharp_id_1_dest[0];
 {
-unsigned int* ptrS = pSrc;
-unsigned int* ptrD = pDest;
-for(int i = 0;i<3;i++)
+unsigned int* __gsharp_id_4_ptrS = __gsharp_id_2_pSrc;
+unsigned int* __gsharp_id_5_ptrD = __gsharp_id_3_pDest;
+for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<3;__gsharp_id_6_i++)
 {
-*ptrD++=*ptrS++;
+*__gsharp_id_5_ptrD++=*__gsharp_id_4_ptrS++;
 }
 }
 }
@@ -284,15 +284,15 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PointerDecrementKernel_Source = @"extern ""C"" __global__ void AdvancedMemoryKernels_PointerDecrementKernel(GSharpArray<unsigned int> src, GSharpArray<unsigned int> dest){
-unsigned int* pSrc = &src[0];
-unsigned int* pDest = &dest[0];
+public const string PointerDecrementKernel_Source = @"extern ""C"" __global__ void AdvancedMemoryKernels_PointerDecrementKernel(GSharpArray<unsigned int> __gsharp_id_0_src, GSharpArray<unsigned int> __gsharp_id_1_dest){
+unsigned int* __gsharp_id_2_pSrc = &__gsharp_id_0_src[0];
+unsigned int* __gsharp_id_3_pDest = &__gsharp_id_1_dest[0];
 {
-unsigned int* ptrS = pSrc+2;
-unsigned int* ptrD = pDest+2;
-for(int i = 0;i<3;i++)
+unsigned int* __gsharp_id_4_ptrS = __gsharp_id_2_pSrc+2;
+unsigned int* __gsharp_id_5_ptrD = __gsharp_id_3_pDest+2;
+for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<3;__gsharp_id_6_i++)
 {
-*ptrD--=*ptrS--;
+*__gsharp_id_5_ptrD--=*__gsharp_id_4_ptrS--;
 }
 }
 }
@@ -438,15 +438,15 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PointerComplexAssignmentKernel_Source = @"extern ""C"" __global__ void AdvancedMemoryKernels_PointerComplexAssignmentKernel(GSharpArray<unsigned int> idx, GSharpArray<unsigned int> val, GSharpArray<unsigned int> dest){
-unsigned int* pIdx = &idx[0];
-unsigned int* pVal = &val[0];
+public const string PointerComplexAssignmentKernel_Source = @"extern ""C"" __global__ void AdvancedMemoryKernels_PointerComplexAssignmentKernel(GSharpArray<unsigned int> __gsharp_id_0_idx, GSharpArray<unsigned int> __gsharp_id_1_val, GSharpArray<unsigned int> __gsharp_id_2_dest){
+unsigned int* __gsharp_id_3_pIdx = &__gsharp_id_0_idx[0];
+unsigned int* __gsharp_id_4_pVal = &__gsharp_id_1_val[0];
 {
-unsigned int* ptrI = pIdx;
-unsigned int* ptrV = pVal;
-for(int i = 0;i<3;i++)
+unsigned int* __gsharp_id_5_ptrI = __gsharp_id_3_pIdx;
+unsigned int* __gsharp_id_6_ptrV = __gsharp_id_4_pVal;
+for(int __gsharp_id_7_i = 0;__gsharp_id_7_i<3;__gsharp_id_7_i++)
 {
-dest[*ptrI++]=*ptrV+++10u;
+__gsharp_id_2_dest[*__gsharp_id_5_ptrI++]=*__gsharp_id_6_ptrV+++10u;
 }
 }
 }
