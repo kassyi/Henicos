@@ -186,9 +186,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         catch (Exception ex)
         {
             var collector = new DiagnosticCollector();
-#pragma warning disable RS1035
-            File.AppendAllText(@"P:\Projects\Active\Henicos\tmp\gsharp_error.txt", ex + "\n\n");
-#pragma warning restore RS1035
             collector.Report(Diagnostic.Create(
                 GSharpDiagnostics.InternalCompilerError,
                 Location.None,
@@ -248,20 +245,19 @@ public class GpuKernelGenerator : IIncrementalGenerator
         catch (Exception ex)
         {
             var collector = new DiagnosticCollector();
-#pragma warning disable RS1035
-            File.AppendAllText(@"P:\Projects\Active\Henicos\tmp\gsharp_error.txt", ex + "\n\n");
-#pragma warning restore RS1035
             collector.Report(Diagnostic.Create(
                 GSharpDiagnostics.InternalCompilerError,
                 Location.None,
-                ex.Message));
+                ex.ToString()));
+
+            var errorSource = $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n";
 
             return new TranspiledDeviceMethodResult(
                 methodSymbol,
                 methodSymbol.Name,
                 methodSymbol.ContainingType.Name,
                 null,
-                "", "", "", "", new EquatableArray<string>(), collector.GetDiagnostics());
+                "", errorSource, "", errorSource, new EquatableArray<string>(), collector.GetDiagnostics());
         }
     }
 
