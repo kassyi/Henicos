@@ -61,9 +61,27 @@ try {
 }
 ```
 
+### Referencing C# Values
+
+Reference parameters and locals through interpolation holes. The transpiler emits each hole as the expression's generated C++ name.
+
+```csharp
+using Kassyi.GSharp.Core;
+
+// Execution Context: G# Kernel (GPU)
+[GpuKernel]
+public static void StoreKernel(uint[] data)
+{
+    Gpu.InlinePtx($"{data}[0] = 999;"); // ✅ the hole becomes the generated name of 'data'
+    Gpu.InlinePtx("data[0] = 999;");    // ❌ 'data' is not the name of the parameter in the generated code
+}
+```
+
 ## Remarks
 
 This method allows utilizing low-level hardware features not explicitly covered by the G# BCL. Use with extreme caution.
+
+The transpiler renames every parameter, local and struct member in the generated C++ (for example `data` becomes `__gsharp_id_0_data`), so C# names written inside a string literal do not refer to anything. Use interpolation holes for C# values, as shown above. Names that the injected text declares itself (such as `extern __shared__ uint32_t s_mem[];`) are unaffected.
 
 ## See also
 

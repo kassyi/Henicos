@@ -86,6 +86,22 @@ In C++, function call syntax strictly requires arguments to match the declaratio
 3. **Default Constant Synthesis**: If an optional parameter is omitted by the caller (`IParameterSymbol.HasExplicitDefaultValue`), the transpiler synthesizes the compile-time default constant literal directly into the argument list (e.g., `Method(10)` emits `Method(10, 0)`). Default expressions are extracted from the declaring syntax (`ParameterSyntax.Default`) or formatted deterministically from `ExplicitDefaultValue` into C++ literal syntax (with appropriate type suffixes and `nullptr` mapping).
 4. **Variadic `params` Support**: For methods with `params` array arguments, trailing positional arguments are emitted sequentially without loss of caller ordering.
 
+### 1.2.6 Identifier Naming (`CppNameResolver`)
+
+The transpiler derives the C++ name of every user declaration from its symbol rather than copying the C# text. Any legal C# name can therefore be used, including C++ keywords (`register`, `template`), alternative tokens (`and`, `not`), verbatim identifiers (`@class`), CUDA built-ins (`threadIdx`), standard macros (`NULL`), and names the generated code calls itself (`min`).
+
+| Declaration | Generated name |
+| :--- | :--- |
+| Parameter, local, `out var`, `foreach` variable, label, local function, lambda parameter | `__gsharp_id_{ordinal}_{name}`, where `ordinal` is the declaration's position within the containing method |
+| Instance field or property of a struct that G# emits | `__gsharp_mb_{name}` |
+| Method and type names, members of dialect-mapped types (`float4.x`), external names | unchanged |
+
+The ordinal keeps distinct symbols distinct even when lowering flattens their scopes, for example when the CPU dialect hoists locals into the per-thread context struct. [GSH0057](../03_bcl_api/diagnostics/GSH0057.md) rejects `__` in user identifiers, so these names cannot collide with user code. Method and type names are renamed by [#402](https://github.com/kassyi/Henicos/issues/402); until then [GSH0058](../03_bcl_api/diagnostics/GSH0058.md) rejects C++ keywords as GPU method names.
+
+When nvcc or the host C++ compiler fails, the build log adds a line that maps the generated names in its output back to C# names (`__gsharp_id_0_data = data`).
+
+C# names written inside a `Gpu.InlinePtx` string literal are not renamed; reference C# values through interpolation holes instead (see [Gpu.InlinePtx](../03_bcl_api/gpu_class/InlinePtx.md)).
+
 ## 1.3 Output Buffer Contract & Auto-Allocation
 
 Traditionally, standard C# methods can return arbitrary values, while GPU kernels are required to return `void`. G# bridges this gap by offering two approaches to outputting data:
