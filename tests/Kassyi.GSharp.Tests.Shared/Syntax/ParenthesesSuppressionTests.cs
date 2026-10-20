@@ -37,7 +37,7 @@ public partial class ParenthesesSuppressionTests
             RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.CheckCondition));
 
         Assert.Empty(diagnostics);
-        Assert.Matches(IfConditionRegex(), cudaSource);
+        Assert.Matches(IfConditionRegex(), cudaSource.WithCSharpNames());
     }
 
     [SkippableFact]
@@ -48,8 +48,8 @@ public partial class ParenthesesSuppressionTests
             RoslynTestUtility.TranspileMethod<TestClass_SYN91_92>(nameof(TestClass_SYN91_92.ComplexOperators));
 
         Assert.Empty(diagnostics);
-        Assert.Matches(BoolAssignmentRegex(), cudaSource);
-        Assert.Matches(IntAssignmentRegex(), cudaSource);
+        Assert.Matches(BoolAssignmentRegex(), cudaSource.WithCSharpNames());
+        Assert.Matches(IntAssignmentRegex(), cudaSource.WithCSharpNames());
     }
 }
 

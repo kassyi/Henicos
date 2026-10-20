@@ -44,7 +44,7 @@ public partial class RefOutDereferenceTests
             RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ModifyRef));
 
         Assert.Empty(diagnostics);
-        Assert.Matches(SuccessFlagRegex(), cudaSource);
+        Assert.Matches(SuccessFlagRegex(), cudaSource.WithCSharpNames());
     }
 
     [SkippableFact]
@@ -54,11 +54,11 @@ public partial class RefOutDereferenceTests
         var (cudaSourceMember, diagnosticsMember) =
             RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.MemberAccessRef));
         Assert.Empty(diagnosticsMember);
-        Assert.Matches(RefArgFieldRegex(), cudaSourceMember);
+        Assert.Matches(RefArgFieldRegex(), cudaSourceMember.WithCSharpNames());
 
         var (cudaSourceChained, diagnosticsChained) =
             RoslynTestUtility.TranspileMethod<TestClass_GEN17>(nameof(TestClass_GEN17.ChainedRefAssignment));
         Assert.Empty(diagnosticsChained);
-        Assert.Matches(ChainedRefRegex(), cudaSourceChained);
+        Assert.Matches(ChainedRefRegex(), cudaSourceChained.WithCSharpNames());
     }
 }

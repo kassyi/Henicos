@@ -38,9 +38,9 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
             nameof(CollectionsAndMemoryTarget.SpanUsage), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("GSharpArray<int> span = data.AsSpan(2,4);", cudaSource);
-        Assert.Contains("GSharpArray<int> roSpan = data.AsSpan(0,2);", cudaSource);
-        Assert.Contains("span.length", cudaSource);
+        Assert.Contains("GSharpArray<int> span = data.AsSpan(2,4);", cudaSource.WithCSharpNames());
+        Assert.Contains("GSharpArray<int> roSpan = data.AsSpan(0,2);", cudaSource.WithCSharpNames());
+        Assert.Contains("span.length", cudaSource.WithCSharpNames());
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
             nameof(CollectionsAndMemoryTarget.MultidimensionalIndexer), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("output[0]=flatGrid[row*width+col];", cudaSource);
+        Assert.Contains("output[0]=flatGrid[row*width+col];", cudaSource.WithCSharpNames());
     }
 }
 
