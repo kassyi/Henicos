@@ -83,13 +83,13 @@ public partial class LocalFunctionParameterKernels
 public static partial class AotContexts
 {
 }
-public const string ReadOnlyLocalFunctionParameterKernel_Source = @"extern ""C"" __global__ void LocalFunctionParameterKernels_ReadOnlyLocalFunctionParameterKernel(GSharpArray<int> output, GSharpArray<const int> table, const int scale){
-int tid = threadIdx.x;
-auto Lookup = [&](GSharpArray<const int> values, const int factor, int index) {
-return values[index]*factor;
+public const string ReadOnlyLocalFunctionParameterKernel_Source = @"extern ""C"" __global__ void LocalFunctionParameterKernels_ReadOnlyLocalFunctionParameterKernel(GSharpArray<int> __gsharp_id_0_output, GSharpArray<const int> __gsharp_id_1_table, const int __gsharp_id_2_scale){
+int __gsharp_id_3_tid = threadIdx.x;
+auto __gsharp_id_4_Lookup = [&](GSharpArray<const int> __gsharp_id_5_values, const int __gsharp_id_6_factor, int __gsharp_id_7_index) {
+return __gsharp_id_5_values[__gsharp_id_7_index]*__gsharp_id_6_factor;
 }
 ;
-output[tid]=Lookup(table,scale,tid);
+__gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_Lookup(__gsharp_id_1_table,__gsharp_id_2_scale,__gsharp_id_3_tid);
 }
 ";
 public static readonly string ReadOnlyLocalFunctionParameterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReadOnlyLocalFunctionParameterKernel_Source;

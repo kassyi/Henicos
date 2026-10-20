@@ -84,21 +84,21 @@ public partial class NumericsAndHwMathKernels
 public static partial class AotContexts
 {
 }
-public const string BitOperationsTestKernel_Source = @"extern ""C"" __global__ void NumericsAndHwMathKernels_BitOperationsTestKernel(GSharpArray<unsigned int> u32Data, GSharpArray<unsigned long long> u64Data){
-unsigned int u32Val = u32Data[0];
-u32Data[1]=(unsigned int)__gsharp_lzc_32(u32Val);
-u32Data[2]=(unsigned int)__popc((unsigned int)(u32Val));
-u32Data[3]=(unsigned int)__gsharp_tzc_32(u32Val);
-u32Data[4]=(unsigned int)__gsharp_log2_32(u32Val);
-u32Data[5]=__gsharp_rotl32(u32Val,5);
-u32Data[6]=__gsharp_rotr32(u32Val,3);
-unsigned long long u64Val = u64Data[0];
-u64Data[1]=(unsigned long long)__gsharp_lzc_64(u64Val);
-u64Data[2]=(unsigned long long)__popcll((unsigned long long int)(u64Val));
-u64Data[3]=(unsigned long long)__gsharp_tzc_64(u64Val);
-u64Data[4]=(unsigned long long)__gsharp_log2_64(u64Val);
-u64Data[5]=__gsharp_rotl64(u64Val,10);
-u64Data[6]=__gsharp_rotr64(u64Val,7);
+public const string BitOperationsTestKernel_Source = @"extern ""C"" __global__ void NumericsAndHwMathKernels_BitOperationsTestKernel(GSharpArray<unsigned int> __gsharp_id_0_u32Data, GSharpArray<unsigned long long> __gsharp_id_1_u64Data){
+unsigned int __gsharp_id_2_u32Val = __gsharp_id_0_u32Data[0];
+__gsharp_id_0_u32Data[1]=(unsigned int)__gsharp_lzc_32(__gsharp_id_2_u32Val);
+__gsharp_id_0_u32Data[2]=(unsigned int)__popc((unsigned int)(__gsharp_id_2_u32Val));
+__gsharp_id_0_u32Data[3]=(unsigned int)__gsharp_tzc_32(__gsharp_id_2_u32Val);
+__gsharp_id_0_u32Data[4]=(unsigned int)__gsharp_log2_32(__gsharp_id_2_u32Val);
+__gsharp_id_0_u32Data[5]=__gsharp_rotl32(__gsharp_id_2_u32Val,5);
+__gsharp_id_0_u32Data[6]=__gsharp_rotr32(__gsharp_id_2_u32Val,3);
+unsigned long long __gsharp_id_3_u64Val = __gsharp_id_1_u64Data[0];
+__gsharp_id_1_u64Data[1]=(unsigned long long)__gsharp_lzc_64(__gsharp_id_3_u64Val);
+__gsharp_id_1_u64Data[2]=(unsigned long long)__popcll((unsigned long long int)(__gsharp_id_3_u64Val));
+__gsharp_id_1_u64Data[3]=(unsigned long long)__gsharp_tzc_64(__gsharp_id_3_u64Val);
+__gsharp_id_1_u64Data[4]=(unsigned long long)__gsharp_log2_64(__gsharp_id_3_u64Val);
+__gsharp_id_1_u64Data[5]=__gsharp_rotl64(__gsharp_id_3_u64Val,10);
+__gsharp_id_1_u64Data[6]=__gsharp_rotr64(__gsharp_id_3_u64Val,7);
 }
 ";
 public static readonly string BitOperationsTestKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BitOperationsTestKernel_Source;
@@ -242,26 +242,26 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PtxIntrinsicsExpansionKernel_Source = @"extern ""C"" __global__ void NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel(GSharpArray<unsigned int> u32Out, GSharpArray<unsigned long long> u64Out, GSharpArray<int> i32Out){
-unsigned int u32Val = 0x12345678u;
-unsigned long long u64Val = 0x0123456789ABCDEFull;
-u32Out[0]=__gsharp_bfe(u32Val,4,8);
-u64Out[0]=__gsharp_bfe64(u64Val,8,16);
-u32Out[1]=__gsharp_bfi(0xFFu,u32Val,4,8);
-u64Out[1]=__gsharp_bfi64(0xFFFFull,u64Val,8,16);
-u32Out[2]=__gsharp_lop3(u32Val,0x0F0F0F0Fu,0xAAAAAAAAu,0x54);
-u32Out[3]=__gsharp_tzc_32(u32Val);
-u64Out[2]=__gsharp_tzc_64(u64Val);
-u64Out[3]=__brevll(u64Val);
-i32Out[0]=__dp4a(0x01020304,0x05060708,10);
-u32Out[4]=__dp4a(0x01020304u,0x05060708u,10u);
-u32Out[5]=__gsharp_vabsdiff4(0x10203040u,0x01020304u,5u);
-u32Out[6]=__match_any_sync(0xFFFFFFFFu,u32Val);
-int matchPred = 0;
-u32Out[7]=__match_all_sync(0xFFFFFFFFu,u32Val,&matchPred);
+public const string PtxIntrinsicsExpansionKernel_Source = @"extern ""C"" __global__ void NumericsAndHwMathKernels_PtxIntrinsicsExpansionKernel(GSharpArray<unsigned int> __gsharp_id_0_u32Out, GSharpArray<unsigned long long> __gsharp_id_1_u64Out, GSharpArray<int> __gsharp_id_2_i32Out){
+unsigned int __gsharp_id_3_u32Val = 0x12345678u;
+unsigned long long __gsharp_id_4_u64Val = 0x0123456789ABCDEFull;
+__gsharp_id_0_u32Out[0]=__gsharp_bfe(__gsharp_id_3_u32Val,4,8);
+__gsharp_id_1_u64Out[0]=__gsharp_bfe64(__gsharp_id_4_u64Val,8,16);
+__gsharp_id_0_u32Out[1]=__gsharp_bfi(0xFFu,__gsharp_id_3_u32Val,4,8);
+__gsharp_id_1_u64Out[1]=__gsharp_bfi64(0xFFFFull,__gsharp_id_4_u64Val,8,16);
+__gsharp_id_0_u32Out[2]=__gsharp_lop3(__gsharp_id_3_u32Val,0x0F0F0F0Fu,0xAAAAAAAAu,0x54);
+__gsharp_id_0_u32Out[3]=__gsharp_tzc_32(__gsharp_id_3_u32Val);
+__gsharp_id_1_u64Out[2]=__gsharp_tzc_64(__gsharp_id_4_u64Val);
+__gsharp_id_1_u64Out[3]=__brevll(__gsharp_id_4_u64Val);
+__gsharp_id_2_i32Out[0]=__dp4a(0x01020304,0x05060708,10);
+__gsharp_id_0_u32Out[4]=__dp4a(0x01020304u,0x05060708u,10u);
+__gsharp_id_0_u32Out[5]=__gsharp_vabsdiff4(0x10203040u,0x01020304u,5u);
+__gsharp_id_0_u32Out[6]=__match_any_sync(0xFFFFFFFFu,__gsharp_id_3_u32Val);
+int __gsharp_id_5_matchPred = 0;
+__gsharp_id_0_u32Out[7]=__match_all_sync(0xFFFFFFFFu,__gsharp_id_3_u32Val,&__gsharp_id_5_matchPred);
 __nanosleep(10);
 __syncwarp(4294967295u);
-atomicAdd(&u32Out[8],42u);
+atomicAdd(&__gsharp_id_0_u32Out[8],42u);
 }
 ";
 public static readonly string PtxIntrinsicsExpansionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PtxIntrinsicsExpansionKernel_Source;

@@ -87,14 +87,14 @@ public partial class LoopUnrollKernels
 public static partial class AotContexts
 {
 }
-public const string LoopUnrollForKernel_Source = @"extern ""C"" __global__ void LoopUnrollKernels_LoopUnrollForKernel(GSharpArray<int> data){
-int sum = 0;
+public const string LoopUnrollForKernel_Source = @"extern ""C"" __global__ void LoopUnrollKernels_LoopUnrollForKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_sum = 0;
 #pragma unroll
-for(int i = 0;i<4;i++)
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
 {
-sum+=i+1;
+__gsharp_id_1_sum+=__gsharp_id_2_i+1;
 }
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
 ";
 public static readonly string LoopUnrollForKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopUnrollForKernel_Source;
@@ -200,14 +200,14 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string LoopUnrollFactorKernel_Source = @"extern ""C"" __global__ void LoopUnrollKernels_LoopUnrollFactorKernel(GSharpArray<int> data){
-int sum = 0;
+public const string LoopUnrollFactorKernel_Source = @"extern ""C"" __global__ void LoopUnrollKernels_LoopUnrollFactorKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_sum = 0;
 #pragma unroll 4
-for(int i = 0;i<4;i++)
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
 {
-sum+=(i+1)*10;
+__gsharp_id_1_sum+=(__gsharp_id_2_i+1)*10;
 }
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
 ";
 public static readonly string LoopUnrollFactorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopUnrollFactorKernel_Source;
@@ -313,16 +313,16 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string LoopUnrollWhileKernel_Source = @"extern ""C"" __global__ void LoopUnrollKernels_LoopUnrollWhileKernel(GSharpArray<int> data){
-int count = 0;
-int sum = 0;
+public const string LoopUnrollWhileKernel_Source = @"extern ""C"" __global__ void LoopUnrollKernels_LoopUnrollWhileKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_count = 0;
+int __gsharp_id_2_sum = 0;
 #pragma unroll
-while(count<3)
+while(__gsharp_id_1_count<3)
 {
-sum+=5;
-count++;
+__gsharp_id_2_sum+=5;
+__gsharp_id_1_count++;
 }
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 ";
 public static readonly string LoopUnrollWhileKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopUnrollWhileKernel_Source;
@@ -428,17 +428,17 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string LoopUnrollNestedKernel_Source = @"extern ""C"" __global__ void LoopUnrollKernels_LoopUnrollNestedKernel(GSharpArray<int> data){
-int sum = 0;
-for(int i = 0;i<2;i++)
+public const string LoopUnrollNestedKernel_Source = @"extern ""C"" __global__ void LoopUnrollKernels_LoopUnrollNestedKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_sum = 0;
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<2;__gsharp_id_2_i++)
 {
 #pragma unroll
-for(int j = 0;j<3;j++)
+for(int __gsharp_id_3_j = 0;__gsharp_id_3_j<3;__gsharp_id_3_j++)
 {
-sum+=(i+1)*(j+1);
+__gsharp_id_1_sum+=(__gsharp_id_2_i+1)*(__gsharp_id_3_j+1);
 }
 }
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
 ";
 public static readonly string LoopUnrollNestedKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopUnrollNestedKernel_Source;
@@ -544,14 +544,14 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string LoopUnrollSingleStatementKernel_Source = @"extern ""C"" __global__ void LoopUnrollKernels_LoopUnrollSingleStatementKernel(GSharpArray<int> data){
-int sum = 0;
+public const string LoopUnrollSingleStatementKernel_Source = @"extern ""C"" __global__ void LoopUnrollKernels_LoopUnrollSingleStatementKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_sum = 0;
 #pragma unroll
-for(int i = 0;i<4;i++)
+for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
 {
-sum+=2;
+__gsharp_id_1_sum+=2;
 }
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
 ";
 public static readonly string LoopUnrollSingleStatementKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoopUnrollSingleStatementKernel_Source;

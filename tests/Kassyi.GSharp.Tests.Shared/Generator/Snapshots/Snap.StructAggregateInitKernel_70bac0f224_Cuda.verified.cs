@@ -88,16 +88,16 @@ public const string AggregateInitKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassy
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct__
 struct Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct
 {
-int A;
-int B;
+int __gsharp_mb_A;
+int __gsharp_mb_B;
 }
 ;
 #endif
-extern ""C"" __global__ void StructAggregateInitKernels_AggregateInitKernel(GSharpArray<int> output){
-Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct s = ([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct __gsharp_tmp{}; __gsharp_tmp.A = 1; __gsharp_tmp.B = 2; return __gsharp_tmp; }
+extern ""C"" __global__ void StructAggregateInitKernels_AggregateInitKernel(GSharpArray<int> __gsharp_id_0_output){
+Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct __gsharp_id_1_s = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_AggregateStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = 1; __gsharp_tmp.__gsharp_mb_B = 2; return __gsharp_tmp; }
 ());
-output[0]=s.A+s.B;
+__gsharp_id_0_output[0]=__gsharp_id_1_s.__gsharp_mb_A+__gsharp_id_1_s.__gsharp_mb_B;
 }
 ";
 public static readonly string AggregateInitKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AggregateInitKernel_Source;
@@ -207,7 +207,7 @@ public const string DeeplyNestedInitKernel_Source = @"#ifndef __GSHARP_STRUCT_Ka
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct__
 struct Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct
 {
-int X;
+int __gsharp_mb_X;
 }
 ;
 #endif
@@ -215,18 +215,18 @@ int X;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct__
 struct Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct
 {
-Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct B;
-int Y;
+Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct __gsharp_mb_B;
+int __gsharp_mb_Y;
 }
 ;
 #endif
-extern ""C"" __global__ void StructAggregateInitKernels_DeeplyNestedInitKernel(GSharpArray<int> output){
-Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct outer = ([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct __gsharp_tmp{}; __gsharp_tmp.B = ([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct __gsharp_tmp{}; __gsharp_tmp.X = 1; return __gsharp_tmp; }
-()); __gsharp_tmp.Y = 10; return __gsharp_tmp; }
+extern ""C"" __global__ void StructAggregateInitKernels_DeeplyNestedInitKernel(GSharpArray<int> __gsharp_id_0_output){
+Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct __gsharp_id_1_outer = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_OuterStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_B = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_InnerStruct __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X = 1; return __gsharp_tmp; }
+()); __gsharp_tmp.__gsharp_mb_Y = 10; return __gsharp_tmp; }
 ());
-output[0]=outer.B.X+outer.Y;
+__gsharp_id_0_output[0]=__gsharp_id_1_outer.__gsharp_mb_B.__gsharp_mb_X+__gsharp_id_1_outer.__gsharp_mb_Y;
 }
 ";
 public static readonly string DeeplyNestedInitKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DeeplyNestedInitKernel_Source;

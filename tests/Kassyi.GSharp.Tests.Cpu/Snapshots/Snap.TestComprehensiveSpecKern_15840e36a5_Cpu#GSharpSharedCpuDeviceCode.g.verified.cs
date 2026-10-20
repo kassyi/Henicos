@@ -7,26 +7,26 @@ namespace Kassyi.GSharp.Generated
 internal static class GSharpSharedCpuDeviceCode
 {
 public const string Source = @"struct DebugReduc_PhysicsVector;
-__forceinline__ float ComputeMagnitude(DebugReduc_PhysicsVector v);
+__forceinline__ float ComputeMagnitude(DebugReduc_PhysicsVector __gsharp_id_0_v);
 
-__noinline__ bool IsPositive(float value);
+__noinline__ bool IsPositive(float __gsharp_id_0_value);
 
 #ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 #define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 struct DebugReduc_PhysicsVector
 {
-float X;
-float Y;
-float Z;
+float __gsharp_mb_X;
+float __gsharp_mb_Y;
+float __gsharp_mb_Z;
 }
 ;
 #endif
-__forceinline__ float ComputeMagnitude(DebugReduc_PhysicsVector v){
-return (float)sqrt(v.X*v.X+v.Y*v.Y+v.Z*v.Z);
+__forceinline__ float ComputeMagnitude(DebugReduc_PhysicsVector __gsharp_id_0_v){
+return (float)sqrt(__gsharp_id_0_v.__gsharp_mb_X*__gsharp_id_0_v.__gsharp_mb_X+__gsharp_id_0_v.__gsharp_mb_Y*__gsharp_id_0_v.__gsharp_mb_Y+__gsharp_id_0_v.__gsharp_mb_Z*__gsharp_id_0_v.__gsharp_mb_Z);
 }
 
-__noinline__ bool IsPositive(float value){
-return value>0;
+__noinline__ bool IsPositive(float __gsharp_id_0_value){
+return __gsharp_id_0_value>0;
 }
 
 ";

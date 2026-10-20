@@ -1,3 +1,3 @@
-﻿inline __device__ const int& RefReadonlyReturns(int* __restrict__  a, int* __restrict__  b, bool first){
-return ((*(first?&(*a):&(*b))));
+﻿inline __device__ const int& RefReadonlyReturns(int* __restrict__  __gsharp_id_0_a, int* __restrict__  __gsharp_id_1_b, bool __gsharp_id_2_first){
+return ((*(__gsharp_id_2_first?&(*__gsharp_id_0_a):&(*__gsharp_id_1_b))));
 }

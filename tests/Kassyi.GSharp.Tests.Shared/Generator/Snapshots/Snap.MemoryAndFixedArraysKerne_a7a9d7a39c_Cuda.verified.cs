@@ -87,33 +87,33 @@ public const string SharedMemoryStaticKernel_Source = @"#ifndef __GSHARP_STRUCT_
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint__
 struct Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint
 {
-float X;
-float Y;
+float __gsharp_mb_X;
+float __gsharp_mb_Y;
 }
 ;
 #endif
-extern ""C"" __global__ void MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(GSharpArray<int> intOutput, GSharpArray<float> floatOutput, GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint> pointOutput){
-__shared__ int intSmem[256];
-__shared__ float floatSmem[256];
-__shared__ Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint pointSmem[64];
-int tid = threadIdx.x;
-if(tid<256)
+extern ""C"" __global__ void MemoryAndFixedArraysKernels_SharedMemoryStaticKernel(GSharpArray<int> __gsharp_id_0_intOutput, GSharpArray<float> __gsharp_id_1_floatOutput, GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint> __gsharp_id_2_pointOutput){
+__shared__ int __gsharp_id_3_intSmem[256];
+__shared__ float __gsharp_id_4_floatSmem[256];
+__shared__ Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint __gsharp_id_5_pointSmem[64];
+int __gsharp_id_6_tid = threadIdx.x;
+if(__gsharp_id_6_tid<256)
 {
-intSmem[tid]=tid*3;
-floatSmem[tid]=tid*1.5f;
+__gsharp_id_3_intSmem[__gsharp_id_6_tid]=__gsharp_id_6_tid*3;
+__gsharp_id_4_floatSmem[__gsharp_id_6_tid]=__gsharp_id_6_tid*1.5f;
 }
-if(tid<64)
+if(__gsharp_id_6_tid<64)
 {
-pointSmem[tid]=([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint __gsharp_tmp{}; __gsharp_tmp.X = tid*1.0f; __gsharp_tmp.Y = tid*2.0f; return __gsharp_tmp; }
+__gsharp_id_5_pointSmem[__gsharp_id_6_tid]=([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_CustomPoint __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_X = __gsharp_id_6_tid*1.0f; __gsharp_tmp.__gsharp_mb_Y = __gsharp_id_6_tid*2.0f; return __gsharp_tmp; }
 ());
 }
 __syncthreads();
-if(tid==0)
+if(__gsharp_id_6_tid==0)
 {
-intOutput[0]=intSmem[10];
-floatOutput[0]=floatSmem[10];
-pointOutput[0]=pointSmem[5];
+__gsharp_id_0_intOutput[0]=__gsharp_id_3_intSmem[10];
+__gsharp_id_1_floatOutput[0]=__gsharp_id_4_floatSmem[10];
+__gsharp_id_2_pointOutput[0]=__gsharp_id_5_pointSmem[5];
 }
 }
 ";

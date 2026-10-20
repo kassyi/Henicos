@@ -25,12 +25,12 @@ int __gsharp_state = 0;
 __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel* __gsharp_all_contexts = nullptr;
 uint64_t __gsharp_warp_exchange = 0;
 bool __gsharp_yielded_for_grid_sync = false;
-int tid;
-Kassyi_GSharp_Core_SharedMemory<int> sStatic;
-Kassyi_GSharp_Core_SharedMemory<int> sDyn1;
-Kassyi_GSharp_Core_SharedMemory<float> sDyn2;
+int __gsharp_id_2_tid;
+Kassyi_GSharp_Core_SharedMemory<int> __gsharp_id_3_sStatic;
+Kassyi_GSharp_Core_SharedMemory<int> __gsharp_id_4_sDyn1;
+Kassyi_GSharp_Core_SharedMemory<float> __gsharp_id_5_sDyn2;
 };
-extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_SharedMemoryKernel(GSharpArray<int> data, int dynSize, __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_SharedMemoryKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_dynSize, __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 switch(__gsharp_state)
@@ -38,17 +38,17 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->tid=threadIdx.x;
-__gsharp_ctx->sStatic[__gsharp_ctx->tid]=data[__gsharp_ctx->tid];
-__gsharp_ctx->sDyn1[__gsharp_ctx->tid]=data[__gsharp_ctx->tid]*2;
-__gsharp_ctx->sDyn2[__gsharp_ctx->tid]=3.14f;
+__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+__gsharp_ctx->__gsharp_id_3_sStatic[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_2_tid];
+__gsharp_ctx->__gsharp_id_4_sDyn1[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_2_tid]*2;
+__gsharp_ctx->__gsharp_id_5_sDyn2[__gsharp_ctx->__gsharp_id_2_tid]=3.14f;
 __gsharp_state=1;
 return;
 }
 case 1:
 __gsharp_switch_1_state_1:
 {
-data[__gsharp_ctx->tid]=__gsharp_ctx->sStatic[__gsharp_ctx->tid]+__gsharp_ctx->sDyn1[__gsharp_ctx->tid];
+__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_sStatic[__gsharp_ctx->__gsharp_id_2_tid]+__gsharp_ctx->__gsharp_id_4_sDyn1[__gsharp_ctx->__gsharp_id_2_tid];
 __gsharp_state=-1;
 return;
 }
@@ -56,49 +56,49 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_SharedMemoryKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data, int dynSize)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_SharedMemoryKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_dynSize)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
-int32_t __gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
-int32_t bx = __gsharp_block_index % gridDimX;
-int32_t by = (__gsharp_block_index / gridDimX) % gridDimY;
-int32_t bz = __gsharp_block_index / (gridDimX * gridDimY);
+int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
+int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
+int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
 __gsharp_reset_smem();
-std::vector<__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel> __gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-std::vector<int> __gsharp_smem_buffer_sStatic(256);
-std::vector<int> __gsharp_smem_buffer_sDyn1(dynSize);
-std::vector<float> __gsharp_smem_buffer_sDyn2(dynSize);
-for (auto& ctx : __gsharp_contexts) {
-ctx.__gsharp_state = 0;
-ctx.__gsharp_all_contexts = __gsharp_contexts.data();
-ctx.sStatic.data = __gsharp_smem_buffer_sStatic.data();
-ctx.sDyn1.data = __gsharp_smem_buffer_sDyn1.data();
-ctx.sDyn2.data = __gsharp_smem_buffer_sDyn2.data();
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+std::vector<int> __gsharp_smem_buffer___gsharp_id_3_sStatic(256);
+std::vector<int> __gsharp_smem_buffer___gsharp_id_4_sDyn1(__gsharp_id_1_dynSize);
+std::vector<float> __gsharp_smem_buffer___gsharp_id_5_sDyn2(__gsharp_id_1_dynSize);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+__gsharp_launch_ctx.__gsharp_id_3_sStatic.data = __gsharp_smem_buffer___gsharp_id_3_sStatic.data();
+__gsharp_launch_ctx.__gsharp_id_4_sDyn1.data = __gsharp_smem_buffer___gsharp_id_4_sDyn1.data();
+__gsharp_launch_ctx.__gsharp_id_5_sDyn2.data = __gsharp_smem_buffer___gsharp_id_5_sDyn2.data();
 }
-std::atomic<bool> anyActive{true};
-while (anyActive && !__gsharp_launch_error.HasError())
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
-anyActive = false;
-int32_t __gsharp_threads_per_block = (int32_t)(blockDimX * blockDimY * blockDimZ);
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 #pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
 __gsharp_active_error_slot = &__gsharp_launch_error;
-int32_t tx = __gsharp_thread_index % blockDimX;
-int32_t ty = (__gsharp_thread_index / blockDimX) % blockDimY;
-int32_t tz = __gsharp_thread_index / (blockDimX * blockDimY);
-uint32_t __gsharp_ctx_tid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
-anyActive = true;
-__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ConcurrencyAndWarpKernels_SharedMemoryKernel(data, dynSize, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_any_active = true;
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+ConcurrencyAndWarpKernels_SharedMemoryKernel(__gsharp_id_0_data, __gsharp_id_1_dynSize, &__gsharp_contexts[__gsharp_ctx_tid]);
 }
 }
 }
@@ -175,15 +175,15 @@ while (anyGridActive)
 anyGridActive = false;
 for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-int bx = __gsharp_block_index % (int)gridDimX;
-int by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
-int bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 try
 {
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
@@ -197,12 +197,12 @@ anyBlockActive = false;
 bool gridSyncRequested = false;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-int tx = __gsharp_thread_index % (int)blockDimX;
-int ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
-int tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
 int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
@@ -244,10 +244,10 @@ int __gsharp_state = 0;
 __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel* __gsharp_all_contexts = nullptr;
 uint64_t __gsharp_warp_exchange = 0;
 bool __gsharp_yielded_for_grid_sync = false;
-int tid;
-Kassyi_GSharp_Core_SharedMemory<int> sMem;
+int __gsharp_id_2_tid;
+Kassyi_GSharp_Core_SharedMemory<int> __gsharp_id_3_sMem;
 };
-extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(GSharpArray<int> data, int size, __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_size, __gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 switch(__gsharp_state)
@@ -255,10 +255,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->tid=threadIdx.x;
-if(__gsharp_ctx->tid<size)
+__gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
+if(__gsharp_ctx->__gsharp_id_2_tid<__gsharp_id_1_size)
 {
-__gsharp_ctx->sMem[__gsharp_ctx->tid]=data[__gsharp_ctx->tid];
+__gsharp_ctx->__gsharp_id_3_sMem[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_2_tid];
 }
 __gsharp_state=1;
 return;
@@ -266,9 +266,9 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(__gsharp_ctx->tid<size)
+if(__gsharp_ctx->__gsharp_id_2_tid<__gsharp_id_1_size)
 {
-data[__gsharp_ctx->tid]=__gsharp_ctx->sMem[size-1-__gsharp_ctx->tid];
+__gsharp_id_0_data[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_sMem[__gsharp_id_1_size-1-__gsharp_ctx->__gsharp_id_2_tid];
 }
 __gsharp_state=-1;
 return;
@@ -277,45 +277,45 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data, int size)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_size)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
-int32_t __gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
-int32_t bx = __gsharp_block_index % gridDimX;
-int32_t by = (__gsharp_block_index / gridDimX) % gridDimY;
-int32_t bz = __gsharp_block_index / (gridDimX * gridDimY);
+int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
+int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
+int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
 __gsharp_reset_smem();
-std::vector<__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel> __gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-std::vector<int> __gsharp_smem_buffer_sMem(256);
-for (auto& ctx : __gsharp_contexts) {
-ctx.__gsharp_state = 0;
-ctx.__gsharp_all_contexts = __gsharp_contexts.data();
-ctx.sMem.data = __gsharp_smem_buffer_sMem.data();
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_SharedMemoryReverseKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+std::vector<int> __gsharp_smem_buffer___gsharp_id_3_sMem(256);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+__gsharp_launch_ctx.__gsharp_id_3_sMem.data = __gsharp_smem_buffer___gsharp_id_3_sMem.data();
 }
-std::atomic<bool> anyActive{true};
-while (anyActive && !__gsharp_launch_error.HasError())
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
-anyActive = false;
-int32_t __gsharp_threads_per_block = (int32_t)(blockDimX * blockDimY * blockDimZ);
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 #pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
 __gsharp_active_error_slot = &__gsharp_launch_error;
-int32_t tx = __gsharp_thread_index % blockDimX;
-int32_t ty = (__gsharp_thread_index / blockDimX) % blockDimY;
-int32_t tz = __gsharp_thread_index / (blockDimX * blockDimY);
-uint32_t __gsharp_ctx_tid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
-anyActive = true;
-__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(data, size, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_any_active = true;
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(__gsharp_id_0_data, __gsharp_id_1_size, &__gsharp_contexts[__gsharp_ctx_tid]);
 }
 }
 }
@@ -395,15 +395,15 @@ while (anyGridActive)
 anyGridActive = false;
 for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-int bx = __gsharp_block_index % (int)gridDimX;
-int by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
-int bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 try
 {
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
@@ -417,12 +417,12 @@ anyBlockActive = false;
 bool gridSyncRequested = false;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-int tx = __gsharp_thread_index % (int)blockDimX;
-int ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
-int tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
 int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
@@ -464,9 +464,9 @@ int __gsharp_state = 0;
 __gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel* __gsharp_all_contexts = nullptr;
 uint64_t __gsharp_warp_exchange = 0;
 bool __gsharp_yielded_for_grid_sync = false;
-int tid;
+int __gsharp_id_1_tid;
 };
-extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_IntrinsicsKernel(GSharpArray<int> data, __gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_IntrinsicsKernel(GSharpArray<int> __gsharp_id_0_data, __gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 switch(__gsharp_state)
@@ -474,10 +474,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_ctx->tid=threadIdx.x;
-if(__gsharp_ctx->tid<10)
+__gsharp_ctx->__gsharp_id_1_tid=threadIdx.x;
+if(__gsharp_ctx->__gsharp_id_1_tid<10)
 {
-atomicAdd(&data[0],__gsharp_ctx->tid);
+atomicAdd(&__gsharp_id_0_data[0],__gsharp_ctx->__gsharp_id_1_tid);
 }
 __gsharp_state=1;
 return;
@@ -485,9 +485,9 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-if(__gsharp_ctx->tid==0)
+if(__gsharp_ctx->__gsharp_id_1_tid==0)
 {
-data[1]=max(data[0],100);
+__gsharp_id_0_data[1]=max(__gsharp_id_0_data[0],100);
 }
 __gsharp_state=-1;
 return;
@@ -496,43 +496,43 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_IntrinsicsKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_IntrinsicsKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<int> __gsharp_id_0_data)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
-int32_t __gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
-int32_t bx = __gsharp_block_index % gridDimX;
-int32_t by = (__gsharp_block_index / gridDimX) % gridDimY;
-int32_t bz = __gsharp_block_index / (gridDimX * gridDimY);
+int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
+int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
+int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
 __gsharp_reset_smem();
-std::vector<__gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel> __gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (auto& ctx : __gsharp_contexts) {
-ctx.__gsharp_state = 0;
-ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_IntrinsicsKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
 }
-std::atomic<bool> anyActive{true};
-while (anyActive && !__gsharp_launch_error.HasError())
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
-anyActive = false;
-int32_t __gsharp_threads_per_block = (int32_t)(blockDimX * blockDimY * blockDimZ);
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 #pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
 __gsharp_active_error_slot = &__gsharp_launch_error;
-int32_t tx = __gsharp_thread_index % blockDimX;
-int32_t ty = (__gsharp_thread_index / blockDimX) % blockDimY;
-int32_t tz = __gsharp_thread_index / (blockDimX * blockDimY);
-uint32_t __gsharp_ctx_tid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
-anyActive = true;
-__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ConcurrencyAndWarpKernels_IntrinsicsKernel(data, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_any_active = true;
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+ConcurrencyAndWarpKernels_IntrinsicsKernel(__gsharp_id_0_data, &__gsharp_contexts[__gsharp_ctx_tid]);
 }
 }
 }
@@ -612,15 +612,15 @@ while (anyGridActive)
 anyGridActive = false;
 for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-int bx = __gsharp_block_index % (int)gridDimX;
-int by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
-int bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 try
 {
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
@@ -634,12 +634,12 @@ anyBlockActive = false;
 bool gridSyncRequested = false;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-int tx = __gsharp_thread_index % (int)blockDimX;
-int ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
-int tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
 int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
@@ -682,7 +682,7 @@ __gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel* __gsharp_all_c
 uint64_t __gsharp_warp_exchange = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 };
-extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_AtomicAddStressKernel(GSharpArray<int> globalSum, __gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_AtomicAddStressKernel(GSharpArray<int> __gsharp_id_0_globalSum, __gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 switch(__gsharp_state)
@@ -690,7 +690,7 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-atomicAdd(&globalSum[0],1);
+atomicAdd(&__gsharp_id_0_globalSum[0],1);
 __gsharp_state=-1;
 return;
 }
@@ -698,43 +698,43 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_AtomicAddStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<int> globalSum)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_AtomicAddStressKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<int> __gsharp_id_0_globalSum)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
-int32_t __gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
-int32_t bx = __gsharp_block_index % gridDimX;
-int32_t by = (__gsharp_block_index / gridDimX) % gridDimY;
-int32_t bz = __gsharp_block_index / (gridDimX * gridDimY);
+int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
+int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
+int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
 __gsharp_reset_smem();
-std::vector<__gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel> __gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (auto& ctx : __gsharp_contexts) {
-ctx.__gsharp_state = 0;
-ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_AtomicAddStressKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
 }
-std::atomic<bool> anyActive{true};
-while (anyActive && !__gsharp_launch_error.HasError())
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
-anyActive = false;
-int32_t __gsharp_threads_per_block = (int32_t)(blockDimX * blockDimY * blockDimZ);
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 #pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
 __gsharp_active_error_slot = &__gsharp_launch_error;
-int32_t tx = __gsharp_thread_index % blockDimX;
-int32_t ty = (__gsharp_thread_index / blockDimX) % blockDimY;
-int32_t tz = __gsharp_thread_index / (blockDimX * blockDimY);
-uint32_t __gsharp_ctx_tid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
-anyActive = true;
-__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ConcurrencyAndWarpKernels_AtomicAddStressKernel(globalSum, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_any_active = true;
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+ConcurrencyAndWarpKernels_AtomicAddStressKernel(__gsharp_id_0_globalSum, &__gsharp_contexts[__gsharp_ctx_tid]);
 }
 }
 }
@@ -796,15 +796,15 @@ while (anyGridActive)
 anyGridActive = false;
 for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-int bx = __gsharp_block_index % (int)gridDimX;
-int by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
-int bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 try
 {
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
@@ -818,12 +818,12 @@ anyBlockActive = false;
 bool gridSyncRequested = false;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-int tx = __gsharp_thread_index % (int)blockDimX;
-int ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
-int tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
 int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {
@@ -866,7 +866,7 @@ __gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel* __gsharp_all
 uint64_t __gsharp_warp_exchange = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 };
-extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(GSharpArray<unsigned int> globalState, __gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(GSharpArray<unsigned int> __gsharp_id_0_globalState, __gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 switch(__gsharp_state)
@@ -874,12 +874,12 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid<31)
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid<31)
 {
-atomicOr(&globalState[0],(unsigned int)(1<<tid));
+atomicOr(&__gsharp_id_0_globalState[0],(unsigned int)(1<<__gsharp_id_1_tid));
 }
-atomicMax(&globalState[1],(unsigned int)tid);
+atomicMax(&__gsharp_id_0_globalState[1],(unsigned int)__gsharp_id_1_tid);
 __gsharp_state=-1;
 return;
 }
@@ -887,43 +887,43 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(uint32_t gridDimX, uint32_t gridDimY, uint32_t gridDimZ, uint32_t blockDimX, uint32_t blockDimY, uint32_t blockDimZ, GSharpArray<unsigned int> globalState)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<unsigned int> __gsharp_id_0_globalState)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
-int32_t __gsharp_total_blocks = (int32_t)(gridDimX * gridDimY * gridDimZ);
+int32_t __gsharp_total_blocks = (int32_t)(__gsharp_grid_dim_x * __gsharp_grid_dim_y * __gsharp_grid_dim_z);
 #pragma omp parallel for schedule(dynamic)
 for (int32_t __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
-int32_t bx = __gsharp_block_index % gridDimX;
-int32_t by = (__gsharp_block_index / gridDimX) % gridDimY;
-int32_t bz = __gsharp_block_index / (gridDimX * gridDimY);
+int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
+int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
+int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
 __gsharp_reset_smem();
-std::vector<__gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel> __gsharp_contexts(blockDimX * blockDimY * blockDimZ);
-for (auto& ctx : __gsharp_contexts) {
-ctx.__gsharp_state = 0;
-ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+std::vector<__gsharp_context_ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
 }
-std::atomic<bool> anyActive{true};
-while (anyActive && !__gsharp_launch_error.HasError())
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active && !__gsharp_launch_error.HasError())
 {
-anyActive = false;
-int32_t __gsharp_threads_per_block = (int32_t)(blockDimX * blockDimY * blockDimZ);
+__gsharp_any_active = false;
+int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 #pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
 if (__gsharp_launch_error.HasError()) continue;
 __gsharp_active_error_slot = &__gsharp_launch_error;
-int32_t tx = __gsharp_thread_index % blockDimX;
-int32_t ty = (__gsharp_thread_index / blockDimX) % blockDimY;
-int32_t tz = __gsharp_thread_index / (blockDimX * blockDimY);
-uint32_t __gsharp_ctx_tid = tz * blockDimY * blockDimX + ty * blockDimX + tx;
+int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
+int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
+int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
 if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
 {
-anyActive = true;
-__gsharp_set_thread_idx(tx, ty, tz, bx, by, bz, blockDimX, blockDimY, blockDimZ, gridDimX, gridDimY, gridDimZ);
-ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(globalState, &__gsharp_contexts[__gsharp_ctx_tid]);
+__gsharp_any_active = true;
+__gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
+ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(__gsharp_id_0_globalState, &__gsharp_contexts[__gsharp_ctx_tid]);
 }
 }
 }
@@ -992,15 +992,15 @@ while (anyGridActive)
 anyGridActive = false;
 for (int __gsharp_block_index = 0; __gsharp_block_index < __gsharp_total_blocks; __gsharp_block_index++)
 {
-int bx = __gsharp_block_index % (int)gridDimX;
-int by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
-int bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
+int __gsharp_bx = __gsharp_block_index % (int)gridDimX;
+int __gsharp_by = (__gsharp_block_index / (int)gridDimX) % (int)gridDimY;
+int __gsharp_bz = __gsharp_block_index / (int)(gridDimX * gridDimY);
 global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;
 try
 {
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;
-global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = __gsharp_bx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = __gsharp_by;
+global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = __gsharp_bz;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
@@ -1014,12 +1014,12 @@ anyBlockActive = false;
 bool gridSyncRequested = false;
 for (int __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
 {
-int tx = __gsharp_thread_index % (int)blockDimX;
-int ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
-int tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;
+int __gsharp_tx = __gsharp_thread_index % (int)blockDimX;
+int __gsharp_ty = (__gsharp_thread_index / (int)blockDimX) % (int)blockDimY;
+int __gsharp_tz = __gsharp_thread_index / (int)(blockDimX * blockDimY);
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = __gsharp_tx;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = __gsharp_ty;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = __gsharp_tz;
 int __gsharp_linear_tid = __gsharp_block_index * __gsharp_threads_per_block + __gsharp_thread_index;
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 {

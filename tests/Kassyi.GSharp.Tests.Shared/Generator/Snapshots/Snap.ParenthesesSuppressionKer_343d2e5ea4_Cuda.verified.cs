@@ -83,20 +83,20 @@ public partial class ParenthesesSuppressionKernels
 public static partial class AotContexts
 {
 }
-public const string ParenthesesKernel_Source = @"extern ""C"" __global__ void ParenthesesSuppressionKernels_ParenthesesKernel(GSharpArray<int> output, int a, int b, int c){
-if(a<b)
+public const string ParenthesesKernel_Source = @"extern ""C"" __global__ void ParenthesesSuppressionKernels_ParenthesesKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_a, int __gsharp_id_2_b, int __gsharp_id_3_c){
+if(__gsharp_id_1_a<__gsharp_id_2_b)
 {
-output[0]=1;
+__gsharp_id_0_output[0]=1;
 }
 else
 {
-output[0]=0;
+__gsharp_id_0_output[0]=0;
 }
-if((a&b)==c)
+if((__gsharp_id_1_a&__gsharp_id_2_b)==__gsharp_id_3_c)
 {
-output[1]=10;
+__gsharp_id_0_output[1]=10;
 }
-output[2]=a*(b+c);
+__gsharp_id_0_output[2]=__gsharp_id_1_a*(__gsharp_id_2_b+__gsharp_id_3_c);
 }
 ";
 public static readonly string ParenthesesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ParenthesesKernel_Source;

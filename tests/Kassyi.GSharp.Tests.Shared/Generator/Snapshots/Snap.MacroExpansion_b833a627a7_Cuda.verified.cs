@@ -83,15 +83,15 @@ public partial class MacroExpansionKernel
 public static partial class AotContexts
 {
 }
-public const string TestMacroKernel_Source = @"extern ""C"" __global__ void MacroExpansionKernel_TestMacroKernel(GSharpArray<int> data, int length){
-for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < length; i += gridDim.x * blockDim.x)
+public const string TestMacroKernel_Source = @"extern ""C"" __global__ void MacroExpansionKernel_TestMacroKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_length){
+for(int __gsharp_id_2_i = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_2_i < __gsharp_id_1_length; __gsharp_id_2_i += gridDim.x * blockDim.x)
 {
-data[i]=i;
+__gsharp_id_0_data[__gsharp_id_2_i]=__gsharp_id_2_i;
 }
 cg::this_grid().sync();
 if(threadIdx.x == 0 && blockIdx.x == 0)
 {
-data[0]=999;
+__gsharp_id_0_data[0]=999;
 }
 /* inline ptx here */
 ;

@@ -85,13 +85,13 @@ public partial class VectorBuiltinKernels
 public static partial class AotContexts
 {
 }
-public const string Vector2AddKernel_Source = @"extern ""C"" __global__ void VectorBuiltinKernels_Vector2AddKernel(GSharpArray<float2> a, GSharpArray<float2> b, GSharpArray<float2> result, int length){
-auto tid = threadIdx.x+blockIdx.x*blockDim.x;
-if(tid<length)
+public const string Vector2AddKernel_Source = @"extern ""C"" __global__ void VectorBuiltinKernels_Vector2AddKernel(GSharpArray<float2> __gsharp_id_0_a, GSharpArray<float2> __gsharp_id_1_b, GSharpArray<float2> __gsharp_id_2_result, int __gsharp_id_3_length){
+auto __gsharp_id_4_tid = threadIdx.x+blockIdx.x*blockDim.x;
+if(__gsharp_id_4_tid<__gsharp_id_3_length)
 {
-auto va = a[tid];
-auto vb = b[tid];
-result[tid]=float2{(float)(va.x+vb.x), (float)(va.y+vb.y)};
+auto __gsharp_id_5_va = __gsharp_id_0_a[__gsharp_id_4_tid];
+auto __gsharp_id_6_vb = __gsharp_id_1_b[__gsharp_id_4_tid];
+__gsharp_id_2_result[__gsharp_id_4_tid]=float2{(float)(__gsharp_id_5_va.x+__gsharp_id_6_vb.x), (float)(__gsharp_id_5_va.y+__gsharp_id_6_vb.y)};
 }
 }
 ";
@@ -278,13 +278,13 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string Vector3AddKernel_Source = @"extern ""C"" __global__ void VectorBuiltinKernels_Vector3AddKernel(GSharpArray<float3> a, GSharpArray<float3> b, GSharpArray<float3> result, int length){
-auto tid = threadIdx.x+blockIdx.x*blockDim.x;
-if(tid<length)
+public const string Vector3AddKernel_Source = @"extern ""C"" __global__ void VectorBuiltinKernels_Vector3AddKernel(GSharpArray<float3> __gsharp_id_0_a, GSharpArray<float3> __gsharp_id_1_b, GSharpArray<float3> __gsharp_id_2_result, int __gsharp_id_3_length){
+auto __gsharp_id_4_tid = threadIdx.x+blockIdx.x*blockDim.x;
+if(__gsharp_id_4_tid<__gsharp_id_3_length)
 {
-auto va = a[tid];
-auto vb = b[tid];
-result[tid]=float3{(float)(va.x+vb.x), (float)(va.y+vb.y), (float)(va.z+vb.z)};
+auto __gsharp_id_5_va = __gsharp_id_0_a[__gsharp_id_4_tid];
+auto __gsharp_id_6_vb = __gsharp_id_1_b[__gsharp_id_4_tid];
+__gsharp_id_2_result[__gsharp_id_4_tid]=float3{(float)(__gsharp_id_5_va.x+__gsharp_id_6_vb.x), (float)(__gsharp_id_5_va.y+__gsharp_id_6_vb.y), (float)(__gsharp_id_5_va.z+__gsharp_id_6_vb.z)};
 }
 }
 ";
@@ -471,13 +471,13 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string Vector4AddKernel_Source = @"extern ""C"" __global__ void VectorBuiltinKernels_Vector4AddKernel(GSharpArray<float4> a, GSharpArray<float4> b, GSharpArray<float4> result, int length){
-auto tid = threadIdx.x+blockIdx.x*blockDim.x;
-if(tid<length)
+public const string Vector4AddKernel_Source = @"extern ""C"" __global__ void VectorBuiltinKernels_Vector4AddKernel(GSharpArray<float4> __gsharp_id_0_a, GSharpArray<float4> __gsharp_id_1_b, GSharpArray<float4> __gsharp_id_2_result, int __gsharp_id_3_length){
+auto __gsharp_id_4_tid = threadIdx.x+blockIdx.x*blockDim.x;
+if(__gsharp_id_4_tid<__gsharp_id_3_length)
 {
-auto va = a[tid];
-auto vb = b[tid];
-result[tid]=float4{(float)(va.x+vb.x), (float)(va.y+vb.y), (float)(va.z+vb.z), (float)(va.w+vb.w)};
+auto __gsharp_id_5_va = __gsharp_id_0_a[__gsharp_id_4_tid];
+auto __gsharp_id_6_vb = __gsharp_id_1_b[__gsharp_id_4_tid];
+__gsharp_id_2_result[__gsharp_id_4_tid]=float4{(float)(__gsharp_id_5_va.x+__gsharp_id_6_vb.x), (float)(__gsharp_id_5_va.y+__gsharp_id_6_vb.y), (float)(__gsharp_id_5_va.z+__gsharp_id_6_vb.z), (float)(__gsharp_id_5_va.w+__gsharp_id_6_vb.w)};
 }
 }
 ";

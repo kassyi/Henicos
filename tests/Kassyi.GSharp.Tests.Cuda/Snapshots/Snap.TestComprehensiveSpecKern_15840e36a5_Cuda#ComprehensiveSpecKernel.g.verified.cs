@@ -91,9 +91,9 @@ public const string ProcessPhysics_Source = @"#ifndef __GSHARP_STRUCT_DebugReduc
 #define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
 struct DebugReduc_PhysicsVector
 {
-float X;
-float Y;
-float Z;
+float __gsharp_mb_X;
+float __gsharp_mb_Y;
+float __gsharp_mb_Z;
 }
 ;
 #endif
@@ -101,17 +101,17 @@ float Z;
 #define __GSHARP_STRUCT_DebugReduc_SpecTypes__
 struct DebugReduc_SpecTypes
 {
-bool BooleanValue;
-unsigned char ByteValue;
-signed char SByteValue;
-short ShortValue;
-unsigned short UShortValue;
-int IntValue;
-unsigned int UIntValue;
-long long LongValue;
-unsigned long long ULongValue;
-float FloatValue;
-double DoubleValue;
+bool __gsharp_mb_BooleanValue;
+unsigned char __gsharp_mb_ByteValue;
+signed char __gsharp_mb_SByteValue;
+short __gsharp_mb_ShortValue;
+unsigned short __gsharp_mb_UShortValue;
+int __gsharp_mb_IntValue;
+unsigned int __gsharp_mb_UIntValue;
+long long __gsharp_mb_LongValue;
+unsigned long long __gsharp_mb_ULongValue;
+float __gsharp_mb_FloatValue;
+double __gsharp_mb_DoubleValue;
 }
 ;
 #endif
@@ -119,8 +119,8 @@ double DoubleValue;
 #define __GSHARP_STRUCT_DebugReduc_Point__
 struct DebugReduc_Point
 {
-float X;
-float Y;
+float __gsharp_mb_X;
+float __gsharp_mb_Y;
 }
 ;
 #endif
@@ -128,9 +128,9 @@ float Y;
 #define __GSHARP_STRUCT_DebugReduc_NestedPhysicsState__
 struct DebugReduc_NestedPhysicsState
 {
-DebugReduc_PhysicsVector Position;
-DebugReduc_PhysicsVector Velocity;
-unsigned long long StatusFlag;
+DebugReduc_PhysicsVector __gsharp_mb_Position;
+DebugReduc_PhysicsVector __gsharp_mb_Velocity;
+unsigned long long __gsharp_mb_StatusFlag;
 }
 ;
 #endif
@@ -138,18 +138,18 @@ unsigned long long StatusFlag;
 #define __GSHARP_STRUCT_DebugReduc_ComprehensiveSpecKernel_Vector8__
 struct DebugReduc_ComprehensiveSpecKernel_Vector8
 {
-unsigned int _element0[8];
+unsigned int __gsharp_mb__element0[8];
 __device__ inline unsigned int& operator[](int index){
-return _element0[index];
+return __gsharp_mb__element0[index];
 }
 __device__ inline const unsigned int& operator[](int index) const
 {
-return _element0[index];
+return __gsharp_mb__element0[index];
 }
-__device__ inline unsigned int* begin() { return _element0; }
-__device__ inline unsigned int* end() { return _element0 + 8; }
-__device__ inline const unsigned int* begin() const { return _element0; }
-__device__ inline const unsigned int* end() const { return _element0 + 8; }
+__device__ inline unsigned int* begin() { return __gsharp_mb__element0; }
+__device__ inline unsigned int* end() { return __gsharp_mb__element0 + 8; }
+__device__ inline const unsigned int* begin() const { return __gsharp_mb__element0; }
+__device__ inline const unsigned int* end() const { return __gsharp_mb__element0 + 8; }
 __device__ inline int size() const { return 8; }
 }
 ;
@@ -158,124 +158,124 @@ __device__ inline int size() const { return 8; }
 #define __GSHARP_STRUCT_DebugReduc_ComprehensiveSpecKernel_PhysicsState__
 struct DebugReduc_ComprehensiveSpecKernel_PhysicsState
 {
-unsigned int Buffer[16];
-unsigned long long Flags;
+unsigned int __gsharp_mb_Buffer[16];
+unsigned long long __gsharp_mb_Flags;
 }
 ;
 #endif
-extern ""C"" __global__ void ComprehensiveSpecKernel_ProcessPhysics(GSharpArray<DebugReduc_PhysicsVector> particles, float* __restrict__  totalMagnitude, bool* __restrict__  successFlag, DebugReduc_SpecTypes largeStructVal, int particleCount, int unrollFactor){
-(*successFlag)=false;
-float Gravity = 9.8f;
-int tx = threadIdx.x;
-int ty = threadIdx.y;
-int tz = threadIdx.z;
-int bx = blockIdx.x;
-int by = blockIdx.y;
-int bz = blockIdx.z;
-int bdimX = blockDim.x;
-int bdimY = blockDim.y;
-int bdimZ = blockDim.z;
-int gdimX = gridDim.x;
-int gdimY = gridDim.y;
-int gdimZ = gridDim.z;
-int tid = tx+bx*bdimX;
-__shared__ int staticCache[10000];
+extern ""C"" __global__ void ComprehensiveSpecKernel_ProcessPhysics(GSharpArray<DebugReduc_PhysicsVector> __gsharp_id_0_particles, float* __restrict__  __gsharp_id_1_totalMagnitude, bool* __restrict__  __gsharp_id_2_successFlag, DebugReduc_SpecTypes __gsharp_id_3_largeStructVal, int __gsharp_id_4_particleCount, int __gsharp_id_5_unrollFactor){
+(*__gsharp_id_2_successFlag)=false;
+float __gsharp_id_6_Gravity = 9.8f;
+int __gsharp_id_7_tx = threadIdx.x;
+int __gsharp_id_8_ty = threadIdx.y;
+int __gsharp_id_9_tz = threadIdx.z;
+int __gsharp_id_10_bx = blockIdx.x;
+int __gsharp_id_11_by = blockIdx.y;
+int __gsharp_id_12_bz = blockIdx.z;
+int __gsharp_id_13_bdimX = blockDim.x;
+int __gsharp_id_14_bdimY = blockDim.y;
+int __gsharp_id_15_bdimZ = blockDim.z;
+int __gsharp_id_16_gdimX = gridDim.x;
+int __gsharp_id_17_gdimY = gridDim.y;
+int __gsharp_id_18_gdimZ = gridDim.z;
+int __gsharp_id_19_tid = __gsharp_id_7_tx+__gsharp_id_10_bx*__gsharp_id_13_bdimX;
+__shared__ int __gsharp_id_20_staticCache[10000];
 extern __shared__ char __gsharp_dynamic_smem[];
-size_t __smem_offset = 0;
-__smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
-float* dynamicCache = (float*)(__gsharp_dynamic_smem + __smem_offset);
-__smem_offset += (particleCount) * sizeof(float);
-__shared__ int targetTypedCache[256];
-if(tid<particleCount)
+size_t __gsharp_smem_offset = 0;
+__gsharp_smem_offset = (__gsharp_smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
+float* __gsharp_id_21_dynamicCache = (float*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
+__gsharp_smem_offset += (__gsharp_id_4_particleCount) * sizeof(float);
+__shared__ int __gsharp_id_22_targetTypedCache[256];
+if(__gsharp_id_19_tid<__gsharp_id_4_particleCount)
 {
-DebugReduc_PhysicsVector p = particles[tid];
-DebugReduc_SpecTypes types = largeStructVal;
-auto origin = DebugReduc_Point{0, 0};
-auto distance = origin.X+p.X;
-auto nested = ([&]() {
-DebugReduc_NestedPhysicsState __gsharp_tmp{}; __gsharp_tmp.Position = p; __gsharp_tmp.Velocity = p; __gsharp_tmp.StatusFlag = 1; return __gsharp_tmp; }
+DebugReduc_PhysicsVector __gsharp_id_23_p = __gsharp_id_0_particles[__gsharp_id_19_tid];
+DebugReduc_SpecTypes __gsharp_id_24_types = __gsharp_id_3_largeStructVal;
+auto __gsharp_id_25_origin = DebugReduc_Point{0, 0};
+auto __gsharp_id_26_distance = __gsharp_id_25_origin.__gsharp_mb_X+__gsharp_id_23_p.__gsharp_mb_X;
+auto __gsharp_id_27_nested = ([&]() {
+DebugReduc_NestedPhysicsState __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Position = __gsharp_id_23_p; __gsharp_tmp.__gsharp_mb_Velocity = __gsharp_id_23_p; __gsharp_tmp.__gsharp_mb_StatusFlag = 1; return __gsharp_tmp; }
 ());
-float mag = ComputeMagnitude(p);
-mag=(float)fabsf(mag);
-for(int i = 0;i<unrollFactor;i++)
+float __gsharp_id_28_mag = ComputeMagnitude(__gsharp_id_23_p);
+__gsharp_id_28_mag=(float)fabsf(__gsharp_id_28_mag);
+for(int __gsharp_id_29_i = 0;__gsharp_id_29_i<__gsharp_id_5_unrollFactor;__gsharp_id_29_i++)
 {
-if(i==1)
+if(__gsharp_id_29_i==1)
 {
 continue;
 }
-mag=(float)fmaxf(mag,p.X*i+Gravity);
+__gsharp_id_28_mag=(float)fmaxf(__gsharp_id_28_mag,__gsharp_id_23_p.__gsharp_mb_X*__gsharp_id_29_i+__gsharp_id_6_Gravity);
 }
-if(!IsPositive(mag))
+if(!IsPositive(__gsharp_id_28_mag))
 {
-mag=0;
+__gsharp_id_28_mag=0;
 }
-int counter = 0;
-while(counter<2)
+int __gsharp_id_30_counter = 0;
+while(__gsharp_id_30_counter<2)
 {
-mag=(float)fminf(mag,mag+1);
-counter++;
+__gsharp_id_28_mag=(float)fminf(__gsharp_id_28_mag,__gsharp_id_28_mag+1);
+__gsharp_id_30_counter++;
 }
 do
 {
-counter--;
+__gsharp_id_30_counter--;
 }
-while(counter>0);
-switch(tx)
+while(__gsharp_id_30_counter>0);
+switch(__gsharp_id_7_tx)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-mag+=1;
+__gsharp_id_28_mag+=1;
 break;
 }
 default:
 __gsharp_switch_1_state_default:
 {
-mag+=0;
+__gsharp_id_28_mag+=0;
 break;
 }
 }
-staticCache[tx]=tid;
-dynamicCache[tx]=mag;
+__gsharp_id_20_staticCache[__gsharp_id_7_tx]=__gsharp_id_19_tid;
+__gsharp_id_21_dynamicCache[__gsharp_id_7_tx]=__gsharp_id_28_mag;
 __syncthreads();
-if(tx==0)
+if(__gsharp_id_7_tx==0)
 {
-atomicAdd(&(*totalMagnitude),dynamicCache[0]);
-(*successFlag)=true;
+atomicAdd(&(*__gsharp_id_1_totalMagnitude),__gsharp_id_21_dynamicCache[0]);
+(*__gsharp_id_2_successFlag)=true;
 }
-DebugReduc_ComprehensiveSpecKernel_Vector8 inlineVec = DebugReduc_ComprehensiveSpecKernel_Vector8{};
-inlineVec[0]=123;
-inlineVec[1]=456;
+DebugReduc_ComprehensiveSpecKernel_Vector8 __gsharp_id_31_inlineVec = DebugReduc_ComprehensiveSpecKernel_Vector8{};
+__gsharp_id_31_inlineVec[0]=123;
+__gsharp_id_31_inlineVec[1]=456;
 {
-DebugReduc_ComprehensiveSpecKernel_PhysicsState state = DebugReduc_ComprehensiveSpecKernel_PhysicsState{};
-state.Buffer[0]=inlineVec[0];
-state.Buffer[1]=inlineVec[1];
-unsigned long long carry = 0;
-unsigned int sum = __gsharp_add_cc(state.Buffer[0],state.Buffer[1],&carry);
-long long borrow = 0;
-unsigned int diff = __gsharp_sub_cc(sum,state.Buffer[1],&borrow);
-if(sum>diff)
+DebugReduc_ComprehensiveSpecKernel_PhysicsState __gsharp_id_32_state = DebugReduc_ComprehensiveSpecKernel_PhysicsState{};
+__gsharp_id_32_state.__gsharp_mb_Buffer[0]=__gsharp_id_31_inlineVec[0];
+__gsharp_id_32_state.__gsharp_mb_Buffer[1]=__gsharp_id_31_inlineVec[1];
+unsigned long long __gsharp_id_33_carry = 0;
+unsigned int __gsharp_id_34_sum = __gsharp_add_cc(__gsharp_id_32_state.__gsharp_mb_Buffer[0],__gsharp_id_32_state.__gsharp_mb_Buffer[1],&__gsharp_id_33_carry);
+long long __gsharp_id_35_borrow = 0;
+unsigned int __gsharp_id_36_diff = __gsharp_sub_cc(__gsharp_id_34_sum,__gsharp_id_32_state.__gsharp_mb_Buffer[1],&__gsharp_id_35_borrow);
+if(__gsharp_id_34_sum>__gsharp_id_36_diff)
 {
-state.Flags=1;
+__gsharp_id_32_state.__gsharp_mb_Flags=1;
 }
 }
-bool condition1 = tx>0;
-bool condition2 = ty==0;
-if(condition1&&condition2)
+bool __gsharp_id_37_condition1 = __gsharp_id_7_tx>0;
+bool __gsharp_id_38_condition2 = __gsharp_id_8_ty==0;
+if(__gsharp_id_37_condition1&&__gsharp_id_38_condition2)
 {
-int bitwise = (tx<<2)|(ty>>1)^0xFF;
-bitwise&=~1;
+int __gsharp_id_39_bitwise = (__gsharp_id_7_tx<<2)|(__gsharp_id_8_ty>>1)^0xFF;
+__gsharp_id_39_bitwise&=~1;
 }
 else
 {
-if(condition1||!condition2)
+if(__gsharp_id_37_condition1||!__gsharp_id_38_condition2)
 {
-mag+=1.5f;
+__gsharp_id_28_mag+=1.5f;
 }
 }
 /* test ptx inline */
 ;
-if(ty>0)
+if(__gsharp_id_8_ty>0)
 {
 return;
 }
@@ -438,9 +438,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string CooperativePhysicsProcess_Source = @"extern ""C"" __global__ void ComprehensiveSpecKernel_CooperativePhysicsProcess(GSharpArray<int> data){
-int tid = threadIdx.x;
-data[tid]=tid;
+public const string CooperativePhysicsProcess_Source = @"extern ""C"" __global__ void ComprehensiveSpecKernel_CooperativePhysicsProcess(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_1_tid;
 cg::this_grid().sync();
 }
 ";

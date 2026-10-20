@@ -20,8 +20,8 @@ public partial class ContractsAndPtxKernels
 public static partial class AotContexts
 {
 }
-public const string InlinePtxKernel_Source = @"extern ""C"" __global__ void ContractsAndPtxKernels_InlinePtxKernel(GSharpArray<unsigned int> data){
-data[0] = 999;
+public const string InlinePtxKernel_Source = @"extern ""C"" __global__ void ContractsAndPtxKernels_InlinePtxKernel(GSharpArray<unsigned int> __gsharp_id_0_data){
+__gsharp_id_0_data[0] = 999;
 ;
 }
 ";
@@ -128,10 +128,10 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string InlinePtxFollowedByWriteKernel_Source = @"extern ""C"" __global__ void ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel(GSharpArray<unsigned int> data){
-data[0] = 999;
+public const string InlinePtxFollowedByWriteKernel_Source = @"extern ""C"" __global__ void ContractsAndPtxKernels_InlinePtxFollowedByWriteKernel(GSharpArray<unsigned int> __gsharp_id_0_data){
+__gsharp_id_0_data[0] = 999;
 ;
-data[0]=777;
+__gsharp_id_0_data[0]=777;
 }
 ";
 public static readonly string InlinePtxFollowedByWriteKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +InlinePtxFollowedByWriteKernel_Source;

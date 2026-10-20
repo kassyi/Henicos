@@ -20,9 +20,9 @@ public partial class FastMathBoundaryKernels
 public static partial class AotContexts
 {
 }
-public const string Kernel_COR01_FastMath_Exp_Source = @"extern ""C"" __global__ void FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(GSharpArray<float> input, GSharpArray<float> output){
-int tid = threadIdx.x;
-output[tid]=__expf(input[tid]);
+public const string Kernel_COR01_FastMath_Exp_Source = @"extern ""C"" __global__ void FastMathBoundaryKernels_Kernel_COR01_FastMath_Exp(GSharpArray<float> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__expf(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Exp_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_COR01_FastMath_Exp_Source;
@@ -166,9 +166,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string Kernel_COR01_FastMath_Log_Source = @"extern ""C"" __global__ void FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(GSharpArray<float> input, GSharpArray<float> output){
-int tid = threadIdx.x;
-output[tid]=__logf(input[tid]);
+public const string Kernel_COR01_FastMath_Log_Source = @"extern ""C"" __global__ void FastMathBoundaryKernels_Kernel_COR01_FastMath_Log(GSharpArray<float> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__logf(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Log_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_COR01_FastMath_Log_Source;
@@ -312,9 +312,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string Kernel_COR01_FastMath_Sqrt_Source = @"extern ""C"" __global__ void FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(GSharpArray<float> input, GSharpArray<float> output){
-int tid = threadIdx.x;
-output[tid]=__fsqrt_rn(input[tid]);
+public const string Kernel_COR01_FastMath_Sqrt_Source = @"extern ""C"" __global__ void FastMathBoundaryKernels_Kernel_COR01_FastMath_Sqrt(GSharpArray<float> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+__gsharp_id_1_output[__gsharp_id_2_tid]=__fsqrt_rn(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Sqrt_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_COR01_FastMath_Sqrt_Source;
@@ -458,9 +458,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string Kernel_COR01_FastMath_Abs_Source = @"extern ""C"" __global__ void FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(GSharpArray<float> input, GSharpArray<float> output){
-int tid = threadIdx.x;
-output[tid]=fabsf(input[tid]);
+public const string Kernel_COR01_FastMath_Abs_Source = @"extern ""C"" __global__ void FastMathBoundaryKernels_Kernel_COR01_FastMath_Abs(GSharpArray<float> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+__gsharp_id_1_output[__gsharp_id_2_tid]=fabsf(__gsharp_id_0_input[__gsharp_id_2_tid]);
 }
 ";
 public static readonly string Kernel_COR01_FastMath_Abs_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +Kernel_COR01_FastMath_Abs_Source;

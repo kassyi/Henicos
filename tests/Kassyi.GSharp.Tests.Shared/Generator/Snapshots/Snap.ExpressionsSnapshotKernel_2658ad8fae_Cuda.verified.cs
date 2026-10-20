@@ -20,15 +20,15 @@ public partial class ExpressionsSnapshotKernels
 public static partial class AotContexts
 {
 }
-public const string BasicExpressionsKernel_Source = @"extern ""C"" __global__ void ExpressionsSnapshotKernels_BasicExpressionsKernel(GSharpArray<int> output, float fVal, double dVal){
-int a = (int)(fVal+(float)dVal);
-int b = a<<2;
-int c = b^0xFF;
-int refArg = c;
-int outArg;
-HelperMethod(&refArg,&outArg);
-int tidX = threadIdx.x;
-output[tidX]=refArg+outArg;
+public const string BasicExpressionsKernel_Source = @"extern ""C"" __global__ void ExpressionsSnapshotKernels_BasicExpressionsKernel(GSharpArray<int> __gsharp_id_0_output, float __gsharp_id_1_fVal, double __gsharp_id_2_dVal){
+int __gsharp_id_3_a = (int)(__gsharp_id_1_fVal+(float)__gsharp_id_2_dVal);
+int __gsharp_id_4_b = __gsharp_id_3_a<<2;
+int __gsharp_id_5_c = __gsharp_id_4_b^0xFF;
+int __gsharp_id_6_refArg = __gsharp_id_5_c;
+int __gsharp_id_7_outArg;
+HelperMethod(&__gsharp_id_6_refArg,&__gsharp_id_7_outArg);
+int __gsharp_id_8_tidX = threadIdx.x;
+__gsharp_id_0_output[__gsharp_id_8_tidX]=__gsharp_id_6_refArg+__gsharp_id_7_outArg;
 }
 ";
 public static readonly string BasicExpressionsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BasicExpressionsKernel_Source;
@@ -204,11 +204,11 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ void HelperMethod(int* __restrict__  x, int* __restrict__  y);
+public const string Source = @"inline __device__ void HelperMethod(int* __restrict__  __gsharp_id_0_x, int* __restrict__  __gsharp_id_1_y);
 
-inline __device__ void HelperMethod(int* __restrict__  x, int* __restrict__  y){
-(*y)=(*x)*2;
-(*x)+=1;
+inline __device__ void HelperMethod(int* __restrict__  __gsharp_id_0_x, int* __restrict__  __gsharp_id_1_y){
+(*__gsharp_id_1_y)=(*__gsharp_id_0_x)*2;
+(*__gsharp_id_0_x)+=1;
 }
 
 ";

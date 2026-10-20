@@ -94,42 +94,42 @@ float W;
 }
 ;
 #endif
-extern ""C"" __global__ void ReductionKernels_ReductionKernel(GSharpArray<float4> input, GSharpArray<float> output, int n){
-__shared__ float sdata[8];
-auto tid = threadIdx.x;
-auto i = blockIdx.x*(blockDim.x*2)+tid;
-auto sum = 0.0f;
-if(i<n)
+extern ""C"" __global__ void ReductionKernels_ReductionKernel(GSharpArray<float4> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output, int __gsharp_id_2_n){
+__shared__ float __gsharp_id_3_sdata[8];
+auto __gsharp_id_4_tid = threadIdx.x;
+auto __gsharp_id_5_i = blockIdx.x*(blockDim.x*2)+__gsharp_id_4_tid;
+auto __gsharp_id_6_sum = 0.0f;
+if(__gsharp_id_5_i<__gsharp_id_2_n)
 {
-auto v = input[i];
-sum=v.x+v.y+v.z+v.w;
+auto __gsharp_id_7_v = __gsharp_id_0_input[__gsharp_id_5_i];
+__gsharp_id_6_sum=__gsharp_id_7_v.x+__gsharp_id_7_v.y+__gsharp_id_7_v.z+__gsharp_id_7_v.w;
 }
-if(i+blockDim.x<n)
+if(__gsharp_id_5_i+blockDim.x<__gsharp_id_2_n)
 {
-auto v = input[i+blockDim.x];
-sum+=v.x+v.y+v.z+v.w;
+auto __gsharp_id_8_v = __gsharp_id_0_input[__gsharp_id_5_i+blockDim.x];
+__gsharp_id_6_sum+=__gsharp_id_8_v.x+__gsharp_id_8_v.y+__gsharp_id_8_v.z+__gsharp_id_8_v.w;
 }
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,16,32);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,8,32);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,4,32);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,2,32);
-sum+=__shfl_down_sync(0xFFFFFFFF,sum,1,32);
-auto lane = tid%32;
-auto warpId = tid/32;
-if(lane==0)
+__gsharp_id_6_sum+=__shfl_down_sync(0xFFFFFFFF,__gsharp_id_6_sum,16,32);
+__gsharp_id_6_sum+=__shfl_down_sync(0xFFFFFFFF,__gsharp_id_6_sum,8,32);
+__gsharp_id_6_sum+=__shfl_down_sync(0xFFFFFFFF,__gsharp_id_6_sum,4,32);
+__gsharp_id_6_sum+=__shfl_down_sync(0xFFFFFFFF,__gsharp_id_6_sum,2,32);
+__gsharp_id_6_sum+=__shfl_down_sync(0xFFFFFFFF,__gsharp_id_6_sum,1,32);
+auto __gsharp_id_9_lane = __gsharp_id_4_tid%32;
+auto __gsharp_id_10_warpId = __gsharp_id_4_tid/32;
+if(__gsharp_id_9_lane==0)
 {
-sdata[warpId]=sum;
+__gsharp_id_3_sdata[__gsharp_id_10_warpId]=__gsharp_id_6_sum;
 }
 __syncthreads();
-if(warpId==0)
+if(__gsharp_id_10_warpId==0)
 {
-auto val = ((tid<8)?sdata[tid]:0.0f);
-val+=__shfl_down_sync(0xFFFFFFFF,val,4,32);
-val+=__shfl_down_sync(0xFFFFFFFF,val,2,32);
-val+=__shfl_down_sync(0xFFFFFFFF,val,1,32);
-if(tid==0)
+auto __gsharp_id_11_val = ((__gsharp_id_4_tid<8)?__gsharp_id_3_sdata[__gsharp_id_4_tid]:0.0f);
+__gsharp_id_11_val+=__shfl_down_sync(0xFFFFFFFF,__gsharp_id_11_val,4,32);
+__gsharp_id_11_val+=__shfl_down_sync(0xFFFFFFFF,__gsharp_id_11_val,2,32);
+__gsharp_id_11_val+=__shfl_down_sync(0xFFFFFFFF,__gsharp_id_11_val,1,32);
+if(__gsharp_id_4_tid==0)
 {
-output[blockIdx.x]=val;
+__gsharp_id_1_output[blockIdx.x]=__gsharp_id_11_val;
 }
 }
 }

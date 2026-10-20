@@ -83,17 +83,17 @@ public partial class HeavyGpuStressKernels
 public static partial class AotContexts
 {
 }
-public const string MatrixMultiplyStressKernel_Source = @"extern ""C"" __global__ void HeavyGpuStressKernels_MatrixMultiplyStressKernel(GSharpArray<float> a, GSharpArray<float> b, GSharpArray<float> c, int n){
-int row = blockIdx.y*blockDim.y+threadIdx.y;
-int col = blockIdx.x*blockDim.x+threadIdx.x;
-if(row<n&&col<n)
+public const string MatrixMultiplyStressKernel_Source = @"extern ""C"" __global__ void HeavyGpuStressKernels_MatrixMultiplyStressKernel(GSharpArray<float> __gsharp_id_0_a, GSharpArray<float> __gsharp_id_1_b, GSharpArray<float> __gsharp_id_2_c, int __gsharp_id_3_n){
+int __gsharp_id_4_row = blockIdx.y*blockDim.y+threadIdx.y;
+int __gsharp_id_5_col = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_4_row<__gsharp_id_3_n&&__gsharp_id_5_col<__gsharp_id_3_n)
 {
-float sum = 0;
-for(int k = 0;k<n;k++)
+float __gsharp_id_6_sum = 0;
+for(int __gsharp_id_7_k = 0;__gsharp_id_7_k<__gsharp_id_3_n;__gsharp_id_7_k++)
 {
-sum+=a[row*n+k]*b[k*n+col];
+__gsharp_id_6_sum+=__gsharp_id_0_a[__gsharp_id_4_row*__gsharp_id_3_n+__gsharp_id_7_k]*__gsharp_id_1_b[__gsharp_id_7_k*__gsharp_id_3_n+__gsharp_id_5_col];
 }
-c[row*n+col]=sum;
+__gsharp_id_2_c[__gsharp_id_4_row*__gsharp_id_3_n+__gsharp_id_5_col]=__gsharp_id_6_sum;
 }
 }
 ";

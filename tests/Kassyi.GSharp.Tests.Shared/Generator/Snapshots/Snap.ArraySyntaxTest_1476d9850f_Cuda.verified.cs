@@ -21,10 +21,10 @@ public static partial class AotContexts
 {
 }
 public const string ImplicitArrayFormsKernel_Source = @"extern ""C"" __global__ void ArraySyntaxTestKernels_ImplicitArrayFormsKernel(){
-int implicitStackAlloc[3]={ 1, 2, 3 };
-int implicitArray[3]={ 4, 5, 6 };
-int collectionExpr[3]={ 7, 8, 9 };
-int singleStackAlloc[1]={ 42 };
+int __gsharp_id_0_implicitStackAlloc[3]={ 1, 2, 3 };
+int __gsharp_id_1_implicitArray[3]={ 4, 5, 6 };
+int __gsharp_id_2_collectionExpr[3]={ 7, 8, 9 };
+int __gsharp_id_3_singleStackAlloc[1]={ 42 };
 }
 ";
 public static readonly string ImplicitArrayFormsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ImplicitArrayFormsKernel_Source;

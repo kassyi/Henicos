@@ -20,22 +20,22 @@ public partial class ConcurrencyAndWarpKernels
 public static partial class AotContexts
 {
 }
-public const string SharedMemoryKernel_Source = @"extern ""C"" __global__ void ConcurrencyAndWarpKernels_SharedMemoryKernel(GSharpArray<int> data, int dynSize){
-int tid = threadIdx.x;
-__shared__ int sStatic[256];
+public const string SharedMemoryKernel_Source = @"extern ""C"" __global__ void ConcurrencyAndWarpKernels_SharedMemoryKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_dynSize){
+int __gsharp_id_2_tid = threadIdx.x;
+__shared__ int __gsharp_id_3_sStatic[256];
 extern __shared__ char __gsharp_dynamic_smem[];
-size_t __smem_offset = 0;
-__smem_offset = (__smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* sDyn1 = (int*)(__gsharp_dynamic_smem + __smem_offset);
-__smem_offset += (dynSize) * sizeof(int);
-__smem_offset = (__smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
-float* sDyn2 = (float*)(__gsharp_dynamic_smem + __smem_offset);
-__smem_offset += (dynSize) * sizeof(float);
-sStatic[tid]=data[tid];
-sDyn1[tid]=data[tid]*2;
-sDyn2[tid]=3.14f;
+size_t __gsharp_smem_offset = 0;
+__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
+int* __gsharp_id_4_sDyn1 = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
+__gsharp_smem_offset += (__gsharp_id_1_dynSize) * sizeof(int);
+__gsharp_smem_offset = (__gsharp_smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
+float* __gsharp_id_5_sDyn2 = (float*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
+__gsharp_smem_offset += (__gsharp_id_1_dynSize) * sizeof(float);
+__gsharp_id_3_sStatic[__gsharp_id_2_tid]=__gsharp_id_0_data[__gsharp_id_2_tid];
+__gsharp_id_4_sDyn1[__gsharp_id_2_tid]=__gsharp_id_0_data[__gsharp_id_2_tid]*2;
+__gsharp_id_5_sDyn2[__gsharp_id_2_tid]=3.14f;
 __syncthreads();
-data[tid]=sStatic[tid]+sDyn1[tid];
+__gsharp_id_0_data[__gsharp_id_2_tid]=__gsharp_id_3_sStatic[__gsharp_id_2_tid]+__gsharp_id_4_sDyn1[__gsharp_id_2_tid];
 }
 ";
 public static readonly string SharedMemoryKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SharedMemoryKernel_Source;
@@ -145,17 +145,17 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string SharedMemoryReverseKernel_Source = @"extern ""C"" __global__ void ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(GSharpArray<int> data, int size){
-int tid = threadIdx.x;
-__shared__ int sMem[256];
-if(tid<size)
+public const string SharedMemoryReverseKernel_Source = @"extern ""C"" __global__ void ConcurrencyAndWarpKernels_SharedMemoryReverseKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_size){
+int __gsharp_id_2_tid = threadIdx.x;
+__shared__ int __gsharp_id_3_sMem[256];
+if(__gsharp_id_2_tid<__gsharp_id_1_size)
 {
-sMem[tid]=data[tid];
+__gsharp_id_3_sMem[__gsharp_id_2_tid]=__gsharp_id_0_data[__gsharp_id_2_tid];
 }
 __syncthreads();
-if(tid<size)
+if(__gsharp_id_2_tid<__gsharp_id_1_size)
 {
-data[tid]=sMem[size-1-tid];
+__gsharp_id_0_data[__gsharp_id_2_tid]=__gsharp_id_3_sMem[__gsharp_id_1_size-1-__gsharp_id_2_tid];
 }
 }
 ";
@@ -266,16 +266,16 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string IntrinsicsKernel_Source = @"extern ""C"" __global__ void ConcurrencyAndWarpKernels_IntrinsicsKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-if(tid<10)
+public const string IntrinsicsKernel_Source = @"extern ""C"" __global__ void ConcurrencyAndWarpKernels_IntrinsicsKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+if(__gsharp_id_1_tid<10)
 {
-atomicAdd(&data[0],tid);
+atomicAdd(&__gsharp_id_0_data[0],__gsharp_id_1_tid);
 }
 __syncthreads();
-if(tid==0)
+if(__gsharp_id_1_tid==0)
 {
-data[1]=max(data[0],100);
+__gsharp_id_0_data[1]=max(__gsharp_id_0_data[0],100);
 }
 }
 ";
@@ -382,8 +382,8 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string AtomicAddStressKernel_Source = @"extern ""C"" __global__ void ConcurrencyAndWarpKernels_AtomicAddStressKernel(GSharpArray<int> globalSum){
-atomicAdd(&globalSum[0],1);
+public const string AtomicAddStressKernel_Source = @"extern ""C"" __global__ void ConcurrencyAndWarpKernels_AtomicAddStressKernel(GSharpArray<int> __gsharp_id_0_globalSum){
+atomicAdd(&__gsharp_id_0_globalSum[0],1);
 }
 ";
 public static readonly string AtomicAddStressKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AtomicAddStressKernel_Source;
@@ -489,13 +489,13 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string AtomicOrMaxStressKernel_Source = @"extern ""C"" __global__ void ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(GSharpArray<unsigned int> globalState){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid<31)
+public const string AtomicOrMaxStressKernel_Source = @"extern ""C"" __global__ void ConcurrencyAndWarpKernels_AtomicOrMaxStressKernel(GSharpArray<unsigned int> __gsharp_id_0_globalState){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid<31)
 {
-atomicOr(&globalState[0],(unsigned int)(1<<tid));
+atomicOr(&__gsharp_id_0_globalState[0],(unsigned int)(1<<__gsharp_id_1_tid));
 }
-atomicMax(&globalState[1],(unsigned int)tid);
+atomicMax(&__gsharp_id_0_globalState[1],(unsigned int)__gsharp_id_1_tid);
 }
 ";
 public static readonly string AtomicOrMaxStressKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AtomicOrMaxStressKernel_Source;

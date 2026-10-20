@@ -56,91 +56,91 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ unsigned int RotR(unsigned int x, int n);
+public const string Source = @"inline __device__ unsigned int RotR(unsigned int __gsharp_id_0_x, int __gsharp_id_1_n);
 
-inline __device__ unsigned int Ch(unsigned int x, unsigned int y, unsigned int z);
+inline __device__ unsigned int Ch(unsigned int __gsharp_id_0_x, unsigned int __gsharp_id_1_y, unsigned int __gsharp_id_2_z);
 
-inline __device__ unsigned int Maj(unsigned int x, unsigned int y, unsigned int z);
+inline __device__ unsigned int Maj(unsigned int __gsharp_id_0_x, unsigned int __gsharp_id_1_y, unsigned int __gsharp_id_2_z);
 
-inline __device__ unsigned int RoundSigma0(unsigned int x);
+inline __device__ unsigned int RoundSigma0(unsigned int __gsharp_id_0_x);
 
-inline __device__ unsigned int RoundSigma1(unsigned int x);
+inline __device__ unsigned int RoundSigma1(unsigned int __gsharp_id_0_x);
 
-inline __device__ unsigned int MessageSigma0(unsigned int x);
+inline __device__ unsigned int MessageSigma0(unsigned int __gsharp_id_0_x);
 
-inline __device__ unsigned int MessageSigma1(unsigned int x);
+inline __device__ unsigned int MessageSigma1(unsigned int __gsharp_id_0_x);
 
-inline __device__ void ComputeBlock(int tid, GSharpArray<unsigned char> input, GSharpArray<unsigned int> output);
+inline __device__ void ComputeBlock(int __gsharp_id_0_tid, GSharpArray<unsigned char> __gsharp_id_1_input, GSharpArray<unsigned int> __gsharp_id_2_output);
 
-inline __device__ unsigned int RotR(unsigned int x, int n){
-return (x>>n)|(x<<(32-n));
+inline __device__ unsigned int RotR(unsigned int __gsharp_id_0_x, int __gsharp_id_1_n){
+return (__gsharp_id_0_x>>__gsharp_id_1_n)|(__gsharp_id_0_x<<(32-__gsharp_id_1_n));
 }
 
-inline __device__ unsigned int Ch(unsigned int x, unsigned int y, unsigned int z){
-return (x&y)^(~x&z);
+inline __device__ unsigned int Ch(unsigned int __gsharp_id_0_x, unsigned int __gsharp_id_1_y, unsigned int __gsharp_id_2_z){
+return (__gsharp_id_0_x&__gsharp_id_1_y)^(~__gsharp_id_0_x&__gsharp_id_2_z);
 }
 
-inline __device__ unsigned int Maj(unsigned int x, unsigned int y, unsigned int z){
-return (x&y)^(x&z)^(y&z);
+inline __device__ unsigned int Maj(unsigned int __gsharp_id_0_x, unsigned int __gsharp_id_1_y, unsigned int __gsharp_id_2_z){
+return (__gsharp_id_0_x&__gsharp_id_1_y)^(__gsharp_id_0_x&__gsharp_id_2_z)^(__gsharp_id_1_y&__gsharp_id_2_z);
 }
 
-inline __device__ unsigned int RoundSigma0(unsigned int x){
-return RotR(x,2)^RotR(x,13)^RotR(x,22);
+inline __device__ unsigned int RoundSigma0(unsigned int __gsharp_id_0_x){
+return RotR(__gsharp_id_0_x,2)^RotR(__gsharp_id_0_x,13)^RotR(__gsharp_id_0_x,22);
 }
 
-inline __device__ unsigned int RoundSigma1(unsigned int x){
-return RotR(x,6)^RotR(x,11)^RotR(x,25);
+inline __device__ unsigned int RoundSigma1(unsigned int __gsharp_id_0_x){
+return RotR(__gsharp_id_0_x,6)^RotR(__gsharp_id_0_x,11)^RotR(__gsharp_id_0_x,25);
 }
 
-inline __device__ unsigned int MessageSigma0(unsigned int x){
-return RotR(x,7)^RotR(x,18)^(x>>3);
+inline __device__ unsigned int MessageSigma0(unsigned int __gsharp_id_0_x){
+return RotR(__gsharp_id_0_x,7)^RotR(__gsharp_id_0_x,18)^(__gsharp_id_0_x>>3);
 }
 
-inline __device__ unsigned int MessageSigma1(unsigned int x){
-return RotR(x,17)^RotR(x,19)^(x>>10);
+inline __device__ unsigned int MessageSigma1(unsigned int __gsharp_id_0_x){
+return RotR(__gsharp_id_0_x,17)^RotR(__gsharp_id_0_x,19)^(__gsharp_id_0_x>>10);
 }
 
-inline __device__ void ComputeBlock(int tid, GSharpArray<unsigned char> input, GSharpArray<unsigned int> output){
-const unsigned int k[64]={ 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
-unsigned int w[64];
-int offset = tid*64;
-for(int i = 0;i<16;i++)
+inline __device__ void ComputeBlock(int __gsharp_id_0_tid, GSharpArray<unsigned char> __gsharp_id_1_input, GSharpArray<unsigned int> __gsharp_id_2_output){
+const unsigned int __gsharp_id_3_k[64]={ 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
+unsigned int __gsharp_id_4_w[64];
+int __gsharp_id_5_offset = __gsharp_id_0_tid*64;
+for(int __gsharp_id_6_i = 0;__gsharp_id_6_i<16;__gsharp_id_6_i++)
 {
-w[i]=(unsigned int)(input[offset+i*4]<<24)|(unsigned int)(input[offset+i*4+1]<<16)|(unsigned int)(input[offset+i*4+2]<<8)|input[offset+i*4+3];
+__gsharp_id_4_w[__gsharp_id_6_i]=(unsigned int)(__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4]<<24)|(unsigned int)(__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4+1]<<16)|(unsigned int)(__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4+2]<<8)|__gsharp_id_1_input[__gsharp_id_5_offset+__gsharp_id_6_i*4+3];
 }
-for(int i = 16;i<64;i++)
+for(int __gsharp_id_7_i = 16;__gsharp_id_7_i<64;__gsharp_id_7_i++)
 {
-w[i]=MessageSigma1(w[i-2])+w[i-7]+MessageSigma0(w[i-15])+w[i-16];
+__gsharp_id_4_w[__gsharp_id_7_i]=MessageSigma1(__gsharp_id_4_w[__gsharp_id_7_i-2])+__gsharp_id_4_w[__gsharp_id_7_i-7]+MessageSigma0(__gsharp_id_4_w[__gsharp_id_7_i-15])+__gsharp_id_4_w[__gsharp_id_7_i-16];
 }
-unsigned int a = 0x6a09e667;
-unsigned int b = 0xbb67ae85;
-unsigned int c = 0x3c6ef372;
-unsigned int d = 0xa54ff53a;
-unsigned int e = 0x510e527f;
-unsigned int f = 0x9b05688c;
-unsigned int g = 0x1f83d9ab;
-unsigned int h = 0x5be0cd19;
-for(int i = 0;i<64;i++)
+unsigned int __gsharp_id_8_a = 0x6a09e667;
+unsigned int __gsharp_id_9_b = 0xbb67ae85;
+unsigned int __gsharp_id_10_c = 0x3c6ef372;
+unsigned int __gsharp_id_11_d = 0xa54ff53a;
+unsigned int __gsharp_id_12_e = 0x510e527f;
+unsigned int __gsharp_id_13_f = 0x9b05688c;
+unsigned int __gsharp_id_14_g = 0x1f83d9ab;
+unsigned int __gsharp_id_15_h = 0x5be0cd19;
+for(int __gsharp_id_16_i = 0;__gsharp_id_16_i<64;__gsharp_id_16_i++)
 {
-unsigned int t1 = h+RoundSigma1(e)+Ch(e,f,g)+k[i]+w[i];
-unsigned int t2 = RoundSigma0(a)+Maj(a,b,c);
-h=g;
-g=f;
-f=e;
-e=d+t1;
-d=c;
-c=b;
-b=a;
-a=t1+t2;
+unsigned int __gsharp_id_17_t1 = __gsharp_id_15_h+RoundSigma1(__gsharp_id_12_e)+Ch(__gsharp_id_12_e,__gsharp_id_13_f,__gsharp_id_14_g)+__gsharp_id_3_k[__gsharp_id_16_i]+__gsharp_id_4_w[__gsharp_id_16_i];
+unsigned int __gsharp_id_18_t2 = RoundSigma0(__gsharp_id_8_a)+Maj(__gsharp_id_8_a,__gsharp_id_9_b,__gsharp_id_10_c);
+__gsharp_id_15_h=__gsharp_id_14_g;
+__gsharp_id_14_g=__gsharp_id_13_f;
+__gsharp_id_13_f=__gsharp_id_12_e;
+__gsharp_id_12_e=__gsharp_id_11_d+__gsharp_id_17_t1;
+__gsharp_id_11_d=__gsharp_id_10_c;
+__gsharp_id_10_c=__gsharp_id_9_b;
+__gsharp_id_9_b=__gsharp_id_8_a;
+__gsharp_id_8_a=__gsharp_id_17_t1+__gsharp_id_18_t2;
 }
-output[tid*8+0]=a+0x6a09e667;
-output[tid*8+1]=b+0xbb67ae85;
-output[tid*8+2]=c+0x3c6ef372;
-output[tid*8+3]=d+0xa54ff53a;
-output[tid*8+4]=e+0x510e527f;
-output[tid*8+5]=f+0x9b05688c;
-output[tid*8+6]=g+0x1f83d9ab;
-output[tid*8+7]=h+0x5be0cd19;
+__gsharp_id_2_output[__gsharp_id_0_tid*8+0]=__gsharp_id_8_a+0x6a09e667;
+__gsharp_id_2_output[__gsharp_id_0_tid*8+1]=__gsharp_id_9_b+0xbb67ae85;
+__gsharp_id_2_output[__gsharp_id_0_tid*8+2]=__gsharp_id_10_c+0x3c6ef372;
+__gsharp_id_2_output[__gsharp_id_0_tid*8+3]=__gsharp_id_11_d+0xa54ff53a;
+__gsharp_id_2_output[__gsharp_id_0_tid*8+4]=__gsharp_id_12_e+0x510e527f;
+__gsharp_id_2_output[__gsharp_id_0_tid*8+5]=__gsharp_id_13_f+0x9b05688c;
+__gsharp_id_2_output[__gsharp_id_0_tid*8+6]=__gsharp_id_14_g+0x1f83d9ab;
+__gsharp_id_2_output[__gsharp_id_0_tid*8+7]=__gsharp_id_15_h+0x5be0cd19;
 }
 
 ";
@@ -170,10 +170,10 @@ public partial class Sha256Kernels
 public static partial class AotContexts
 {
 }
-public const string Sha256Kernel_Source = @"extern ""C"" __global__ void Sha256Kernels_Sha256Kernel(GSharpArray<unsigned char> input, GSharpArray<unsigned int> output, int numMessages){
-for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < numMessages; tid += gridDim.x * blockDim.x)
+public const string Sha256Kernel_Source = @"extern ""C"" __global__ void Sha256Kernels_Sha256Kernel(GSharpArray<unsigned char> __gsharp_id_0_input, GSharpArray<unsigned int> __gsharp_id_1_output, int __gsharp_id_2_numMessages){
+for(int __gsharp_id_3_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_3_tid < __gsharp_id_2_numMessages; __gsharp_id_3_tid += gridDim.x * blockDim.x)
 {
-ComputeBlock(tid,input,output);
+ComputeBlock(__gsharp_id_3_tid,__gsharp_id_0_input,__gsharp_id_1_output);
 }
 }
 ";

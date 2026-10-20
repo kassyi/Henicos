@@ -88,15 +88,15 @@ public partial class InternalNameCollisionKernels
 public static partial class AotContexts
 {
 }
-public const string ContextFieldNamedLocalsKernel_Source = @"extern ""C"" __global__ void InternalNameCollisionKernels_ContextFieldNamedLocalsKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-int _state = data[tid];
-int _ctx = _state+1;
-int _yieldedForGridSync = _ctx+1;
-int _warpExchange = _yieldedForGridSync+1;
-int _all_contexts = _warpExchange+1;
+public const string ContextFieldNamedLocalsKernel_Source = @"extern ""C"" __global__ void InternalNameCollisionKernels_ContextFieldNamedLocalsKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_2__state = __gsharp_id_0_data[__gsharp_id_1_tid];
+int __gsharp_id_3__ctx = __gsharp_id_2__state+1;
+int __gsharp_id_4__yieldedForGridSync = __gsharp_id_3__ctx+1;
+int __gsharp_id_5__warpExchange = __gsharp_id_4__yieldedForGridSync+1;
+int __gsharp_id_6__all_contexts = __gsharp_id_5__warpExchange+1;
 __syncthreads();
-data[tid]=_state+_ctx+_yieldedForGridSync+_warpExchange+_all_contexts;
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2__state+__gsharp_id_3__ctx+__gsharp_id_4__yieldedForGridSync+__gsharp_id_5__warpExchange+__gsharp_id_6__all_contexts;
 }
 ";
 public static readonly string ContextFieldNamedLocalsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ContextFieldNamedLocalsKernel_Source;
@@ -206,18 +206,18 @@ public const string AggregateTempNamedLocalKernel_Source = @"#ifndef __GSHARP_ST
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_InternalNameCollisionPair__
 struct Kassyi_GSharp_Tests_Shared_Syntax_InternalNameCollisionPair
 {
-int A;
-int B;
+int __gsharp_mb_A;
+int __gsharp_mb_B;
 }
 ;
 #endif
-extern ""C"" __global__ void InternalNameCollisionKernels_AggregateTempNamedLocalKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-int _tmp = data[tid];
-Kassyi_GSharp_Tests_Shared_Syntax_InternalNameCollisionPair pair = ([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_InternalNameCollisionPair __gsharp_tmp{}; __gsharp_tmp.A = _tmp; __gsharp_tmp.B = _tmp+1; return __gsharp_tmp; }
+extern ""C"" __global__ void InternalNameCollisionKernels_AggregateTempNamedLocalKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_2__tmp = __gsharp_id_0_data[__gsharp_id_1_tid];
+Kassyi_GSharp_Tests_Shared_Syntax_InternalNameCollisionPair __gsharp_id_3_pair = ([&]() {
+Kassyi_GSharp_Tests_Shared_Syntax_InternalNameCollisionPair __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_A = __gsharp_id_2__tmp; __gsharp_tmp.__gsharp_mb_B = __gsharp_id_2__tmp+1; return __gsharp_tmp; }
 ());
-data[tid]=pair.A*100+pair.B;
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_3_pair.__gsharp_mb_A*100+__gsharp_id_3_pair.__gsharp_mb_B;
 }
 ";
 public static readonly string AggregateTempNamedLocalKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AggregateTempNamedLocalKernel_Source;
@@ -323,18 +323,18 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string TupleTempNamedLocalsKernel_Source = @"extern ""C"" __global__ void InternalNameCollisionKernels_TupleTempNamedLocalsKernel(GSharpArray<int> first, GSharpArray<int> second){
-int tid = threadIdx.x;
-int _t0 = first[tid];
-int _t1 = second[tid];
+public const string TupleTempNamedLocalsKernel_Source = @"extern ""C"" __global__ void InternalNameCollisionKernels_TupleTempNamedLocalsKernel(GSharpArray<int> __gsharp_id_0_first, GSharpArray<int> __gsharp_id_1_second){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3__t0 = __gsharp_id_0_first[__gsharp_id_2_tid];
+int __gsharp_id_4__t1 = __gsharp_id_1_second[__gsharp_id_2_tid];
 ([&]() {
-auto __gsharp_tuple_0 = _t1;
-auto __gsharp_tuple_1 = _t0;
-_t0 = __gsharp_tuple_0;
-_t1 = __gsharp_tuple_1;
+auto __gsharp_tuple_0 = __gsharp_id_4__t1;
+auto __gsharp_tuple_1 = __gsharp_id_3__t0;
+__gsharp_id_3__t0 = __gsharp_tuple_0;
+__gsharp_id_4__t1 = __gsharp_tuple_1;
 }());
-first[tid]=_t0;
-second[tid]=_t1;
+__gsharp_id_0_first[__gsharp_id_2_tid]=__gsharp_id_3__t0;
+__gsharp_id_1_second[__gsharp_id_2_tid]=__gsharp_id_4__t1;
 }
 ";
 public static readonly string TupleTempNamedLocalsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +TupleTempNamedLocalsKernel_Source;
@@ -478,23 +478,23 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string LoweringLabelNamedLabelsKernel_Source = @"extern ""C"" __global__ void InternalNameCollisionKernels_LoweringLabelNamedLabelsKernel(GSharpArray<int> data, int rounds){
-int tid = threadIdx.x;
-int acc = 0;
-for(int i = 0;i<rounds;i++)
+public const string LoweringLabelNamedLabelsKernel_Source = @"extern ""C"" __global__ void InternalNameCollisionKernels_LoweringLabelNamedLabelsKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_rounds){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_acc = 0;
+for(int __gsharp_id_4_i = 0;__gsharp_id_4_i<__gsharp_id_1_rounds;__gsharp_id_4_i++)
 {
-acc+=data[tid];
+__gsharp_id_3_acc+=__gsharp_id_0_data[__gsharp_id_2_tid];
 __syncthreads();
 }
-if(rounds>0)
+if(__gsharp_id_1_rounds>0)
 {
 __syncthreads();
 }
-goto _ForEnd_0;
-_ForEnd_0:
-goto _BranchEnd_0;
-_BranchEnd_0:
-data[tid]=acc;
+goto __gsharp_id_5__ForEnd_0;
+__gsharp_id_5__ForEnd_0:
+goto __gsharp_id_6__BranchEnd_0;
+__gsharp_id_6__BranchEnd_0:
+__gsharp_id_0_data[__gsharp_id_2_tid]=__gsharp_id_3_acc;
 }
 ";
 public static readonly string LoweringLabelNamedLabelsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LoweringLabelNamedLabelsKernel_Source;
@@ -604,12 +604,12 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string WarpTempNamedLocalKernel_Source = @"extern ""C"" __global__ void InternalNameCollisionKernels_WarpTempNamedLocalKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-int _warpTemp_0 = data[tid];
+public const string WarpTempNamedLocalKernel_Source = @"extern ""C"" __global__ void InternalNameCollisionKernels_WarpTempNamedLocalKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_2__warpTemp_0 = __gsharp_id_0_data[__gsharp_id_1_tid];
 __syncthreads();
-int shifted = __shfl_down_sync(0xffffffffu,_warpTemp_0,1,32);
-data[tid]=_warpTemp_0*1000+shifted;
+int __gsharp_id_3_shifted = __shfl_down_sync(0xffffffffu,__gsharp_id_2__warpTemp_0,1,32);
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2__warpTemp_0*1000+__gsharp_id_3_shifted;
 }
 ";
 public static readonly string WarpTempNamedLocalKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WarpTempNamedLocalKernel_Source;
@@ -715,11 +715,11 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string LauncherLocalNamedParametersKernel_Source = @"extern ""C"" __global__ void InternalNameCollisionKernels_LauncherLocalNamedParametersKernel(GSharpArray<int> data, int _gsharp_contexts, int _gsharp_total_blocks, int _gsharp_threads_per_block, int _gsharp_total_threads, int _gsharp_launch_error, int _b_idx, int _t_idx, int _ctxtid, int _cudaCtxScope){
-int tid = threadIdx.x;
-int sum = _gsharp_contexts+_gsharp_total_blocks+_gsharp_threads_per_block+_gsharp_total_threads+_gsharp_launch_error+_b_idx+_t_idx+_ctxtid+_cudaCtxScope;
+public const string LauncherLocalNamedParametersKernel_Source = @"extern ""C"" __global__ void InternalNameCollisionKernels_LauncherLocalNamedParametersKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1__gsharp_contexts, int __gsharp_id_2__gsharp_total_blocks, int __gsharp_id_3__gsharp_threads_per_block, int __gsharp_id_4__gsharp_total_threads, int __gsharp_id_5__gsharp_launch_error, int __gsharp_id_6__b_idx, int __gsharp_id_7__t_idx, int __gsharp_id_8__ctxtid, int __gsharp_id_9__cudaCtxScope){
+int __gsharp_id_10_tid = threadIdx.x;
+int __gsharp_id_11_sum = __gsharp_id_1__gsharp_contexts+__gsharp_id_2__gsharp_total_blocks+__gsharp_id_3__gsharp_threads_per_block+__gsharp_id_4__gsharp_total_threads+__gsharp_id_5__gsharp_launch_error+__gsharp_id_6__b_idx+__gsharp_id_7__t_idx+__gsharp_id_8__ctxtid+__gsharp_id_9__cudaCtxScope;
 __syncthreads();
-data[tid]=sum;
+__gsharp_id_0_data[__gsharp_id_10_tid]=__gsharp_id_11_sum;
 }
 ";
 public static readonly string LauncherLocalNamedParametersKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +LauncherLocalNamedParametersKernel_Source;

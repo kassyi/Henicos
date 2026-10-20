@@ -20,11 +20,11 @@ public partial class GEN_57_InOutArrayMarshaling
 public static partial class AotContexts
 {
 }
-public const string InOutKernel_Source = @"extern ""C"" __global__ void GEN_57_InOutArrayMarshaling_InOutKernel(GSharpArray<float> data, int n){
-int idx = threadIdx.x+blockIdx.x*blockDim.x;
-if(idx<n)
+public const string InOutKernel_Source = @"extern ""C"" __global__ void GEN_57_InOutArrayMarshaling_InOutKernel(GSharpArray<float> __gsharp_id_0_data, int __gsharp_id_1_n){
+int __gsharp_id_2_idx = threadIdx.x+blockIdx.x*blockDim.x;
+if(__gsharp_id_2_idx<__gsharp_id_1_n)
 {
-data[idx]*=2.0f;
+__gsharp_id_0_data[__gsharp_id_2_idx]*=2.0f;
 }
 }
 ";

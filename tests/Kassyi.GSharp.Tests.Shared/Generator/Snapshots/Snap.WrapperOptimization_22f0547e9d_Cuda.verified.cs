@@ -109,17 +109,17 @@ public const string ComplexSignatureKernel_Source = @"#ifndef __GSHARP_STRUCT_Ka
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct__
 struct Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct
 {
-int A;
-float B;
+int __gsharp_mb_A;
+float __gsharp_mb_B;
 }
 ;
 #endif
-extern ""C"" __global__ void WrapperOptimizationKernels_ComplexSignatureKernel(int* __restrict__  scalarRef, float* __restrict__  scalarOut, GSharpArray<int> arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  structRef, unsigned int constantVal){
-(*scalarOut)=0;
-if((*scalarRef)>constantVal)
+extern ""C"" __global__ void WrapperOptimizationKernels_ComplexSignatureKernel(int* __restrict__  __gsharp_id_0_scalarRef, float* __restrict__  __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, Kassyi_GSharp_Tests_Shared_TestCases_MyCustomStruct* __restrict__  __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal){
+(*__gsharp_id_1_scalarOut)=0;
+if((*__gsharp_id_0_scalarRef)>__gsharp_id_4_constantVal)
 {
-(*scalarOut)=arrayVal[0]+(*structRef).A;
-(*structRef).B=(*scalarOut);
+(*__gsharp_id_1_scalarOut)=__gsharp_id_2_arrayVal[0]+(*__gsharp_id_3_structRef).__gsharp_mb_A;
+(*__gsharp_id_3_structRef).__gsharp_mb_B=(*__gsharp_id_1_scalarOut);
 }
 }
 ";

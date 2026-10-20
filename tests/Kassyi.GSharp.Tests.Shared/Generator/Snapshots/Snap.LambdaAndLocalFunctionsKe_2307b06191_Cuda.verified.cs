@@ -87,13 +87,13 @@ public partial class LambdaAndLocalFunctionsKernels
 public static partial class AotContexts
 {
 }
-public const string NonCapturingLambdaKernel_Source = @"extern ""C"" __global__ void LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-auto doubleValue = [&](int x) {
-return x*2;
+public const string NonCapturingLambdaKernel_Source = @"extern ""C"" __global__ void LambdaAndLocalFunctionsKernels_NonCapturingLambdaKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+auto __gsharp_id_2_doubleValue = [&](int __gsharp_id_3_x) {
+return __gsharp_id_3_x*2;
 }
 ;
-data[tid]=doubleValue(data[tid]);
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_doubleValue(__gsharp_id_0_data[__gsharp_id_1_tid]);
 }
 ";
 public static readonly string NonCapturingLambdaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NonCapturingLambdaKernel_Source;
@@ -199,13 +199,13 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ValueCapturingLambdaKernel_Source = @"extern ""C"" __global__ void LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel(GSharpArray<int> data, int factor){
-int tid = threadIdx.x;
-auto multiply = [&](int x) {
-return x*factor;
+public const string ValueCapturingLambdaKernel_Source = @"extern ""C"" __global__ void LambdaAndLocalFunctionsKernels_ValueCapturingLambdaKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_factor){
+int __gsharp_id_2_tid = threadIdx.x;
+auto __gsharp_id_3_multiply = [&](int __gsharp_id_4_x) {
+return __gsharp_id_4_x*__gsharp_id_1_factor;
 }
 ;
-data[tid]=multiply(data[tid]);
+__gsharp_id_0_data[__gsharp_id_2_tid]=__gsharp_id_3_multiply(__gsharp_id_0_data[__gsharp_id_2_tid]);
 }
 ";
 public static readonly string ValueCapturingLambdaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ValueCapturingLambdaKernel_Source;
@@ -315,13 +315,13 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ImmediatelyEvaluatedLambdaKernel_Source = @"extern ""C"" __global__ void LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-auto LocalAdd = [&](int a, int b) {
-return a+b;
+public const string ImmediatelyEvaluatedLambdaKernel_Source = @"extern ""C"" __global__ void LambdaAndLocalFunctionsKernels_ImmediatelyEvaluatedLambdaKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+auto __gsharp_id_2_LocalAdd = [&](int __gsharp_id_3_a, int __gsharp_id_4_b) {
+return __gsharp_id_3_a+__gsharp_id_4_b;
 }
 ;
-data[tid]=LocalAdd(data[tid],100);
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_2_LocalAdd(__gsharp_id_0_data[__gsharp_id_1_tid],100);
 }
 ";
 public static readonly string ImmediatelyEvaluatedLambdaKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ImmediatelyEvaluatedLambdaKernel_Source;
@@ -427,14 +427,14 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ShadowedVariableCaptureKernel_Source = @"extern ""C"" __global__ void LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-int value = 50;
-auto calc = [&](int value) {
-return value*2;
+public const string ShadowedVariableCaptureKernel_Source = @"extern ""C"" __global__ void LambdaAndLocalFunctionsKernels_ShadowedVariableCaptureKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+int __gsharp_id_2_value = 50;
+auto __gsharp_id_3_calc = [&](int __gsharp_id_4_value) {
+return __gsharp_id_4_value*2;
 }
 ;
-data[tid]=calc(data[tid])+value;
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_3_calc(__gsharp_id_0_data[__gsharp_id_1_tid])+__gsharp_id_2_value;
 }
 ";
 public static readonly string ShadowedVariableCaptureKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ShadowedVariableCaptureKernel_Source;
@@ -540,17 +540,17 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string NestedReturnsKernel_Source = @"extern ""C"" __global__ void LambdaAndLocalFunctionsKernels_NestedReturnsKernel(int someValue, float* __restrict__ __gsharp_auto_result){
+public const string NestedReturnsKernel_Source = @"extern ""C"" __global__ void LambdaAndLocalFunctionsKernels_NestedReturnsKernel(int __gsharp_id_0_someValue, float* __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-auto LocalAdd = [&](float a, float b) {
-return a+b;
+auto __gsharp_id_1_LocalAdd = [&](float __gsharp_id_2_a, float __gsharp_id_3_b) {
+return __gsharp_id_2_a+__gsharp_id_3_b;
 }
 ;
-auto doubleValue = [&](float x) {
-return x*2;
+auto __gsharp_id_4_doubleValue = [&](float __gsharp_id_5_x) {
+return __gsharp_id_5_x*2;
 }
 ;
-__gsharp_auto_result[__gsharp_global_tid] = LocalAdd(someValue,doubleValue(someValue));
+__gsharp_auto_result[__gsharp_global_tid] = __gsharp_id_1_LocalAdd(__gsharp_id_0_someValue,__gsharp_id_4_doubleValue(__gsharp_id_0_someValue));
 return;
 }
 ";

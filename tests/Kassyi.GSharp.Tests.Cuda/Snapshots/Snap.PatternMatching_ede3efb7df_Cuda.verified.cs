@@ -1,8 +1,8 @@
-﻿extern "C" __global__ void ControlFlowKernels_SwitchExpressionKernel(GSharpArray<int> input, GSharpArray<int> output){
-int tid = threadIdx.x;
-int val = input[tid];
-output[tid]=([&]() {
-switch(val)
+﻿extern "C" __global__ void ControlFlowKernels_SwitchExpressionKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_val = __gsharp_id_0_input[__gsharp_id_2_tid];
+__gsharp_id_1_output[__gsharp_id_2_tid]=([&]() {
+switch(__gsharp_id_3_val)
 {
 case 1: return 10;
 case 2: return 20;

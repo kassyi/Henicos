@@ -87,31 +87,31 @@ public partial class StackLinqTestKernel
 public static partial class AotContexts
 {
 }
-public const string RunLinq_Source = @"extern ""C"" __global__ void StackLinqTestKernel_RunLinq(GSharpArray<int> data){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid==0)
+public const string RunLinq_Source = @"extern ""C"" __global__ void StackLinqTestKernel_RunLinq(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid==0)
 {
-int count = ([&]() -> auto {
-int __fusion_res = 0;
-int __fusion_length = data.length;
-for (int __i = 0; __i < __fusion_length; __i++)
+int __gsharp_id_2_count = ([&]() -> auto {
+int __gsharp_fusion_res = 0;
+int __gsharp_fusion_length = __gsharp_id_0_data.length;
+for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
 {
-auto __val_0 = data[__i];
-if (([&](auto x) {
-return x>5;
+auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+if (([&](auto __gsharp_id_3_x) {
+return __gsharp_id_3_x>5;
 }
-)(__val_0))
+)(__gsharp_val_0))
 {
-auto __val_1 = ([&](auto x) {
-return x*2;
+auto __gsharp_val_1 = ([&](auto __gsharp_id_4_x) {
+return __gsharp_id_4_x*2;
 }
-)(__val_0);
-__fusion_res++;
+)(__gsharp_val_0);
+__gsharp_fusion_res++;
 }
 }
-return __fusion_res;
+return __gsharp_fusion_res;
 }());
-data[0]=count;
+__gsharp_id_0_data[0]=__gsharp_id_2_count;
 }
 }
 ";
@@ -218,25 +218,25 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string RunLinqAny_Source = @"extern ""C"" __global__ void StackLinqTestKernel_RunLinqAny(GSharpArray<int> data){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid==0)
+public const string RunLinqAny_Source = @"extern ""C"" __global__ void StackLinqTestKernel_RunLinqAny(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid==0)
 {
-bool hasEven = ([&]() -> auto {
-bool __fusion_res = false;
-int __fusion_length = data.length;
-for (int __i = 0; __i < __fusion_length; __i++)
+bool __gsharp_id_2_hasEven = ([&]() -> auto {
+bool __gsharp_fusion_res = false;
+int __gsharp_fusion_length = __gsharp_id_0_data.length;
+for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
 {
-auto __val_0 = data[__i];
-if (([&](auto x) {
-return x%2==0;
+auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+if (([&](auto __gsharp_id_3_x) {
+return __gsharp_id_3_x%2==0;
 }
-)(__val_0))
-{__fusion_res = true; break;
+)(__gsharp_val_0))
+{__gsharp_fusion_res = true; break;
 }}
-return __fusion_res;
+return __gsharp_fusion_res;
 }());
-data[0]=(hasEven?1:0);
+__gsharp_id_0_data[0]=(__gsharp_id_2_hasEven?1:0);
 }
 }
 ";
@@ -343,25 +343,25 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string RunLinqSum_Source = @"extern ""C"" __global__ void StackLinqTestKernel_RunLinqSum(GSharpArray<int> data){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid==0)
+public const string RunLinqSum_Source = @"extern ""C"" __global__ void StackLinqTestKernel_RunLinqSum(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid==0)
 {
-int sum = ([&]() -> auto {
-int __fusion_res = 0;
-int __fusion_length = data.length;
-for (int __i = 0; __i < __fusion_length; __i++)
+int __gsharp_id_2_sum = ([&]() -> auto {
+int __gsharp_fusion_res = 0;
+int __gsharp_fusion_length = __gsharp_id_0_data.length;
+for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
 {
-auto __val_0 = data[__i];
-auto __val_1 = ([&](auto x) {
-return x*2;
+auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+auto __gsharp_val_1 = ([&](auto __gsharp_id_3_x) {
+return __gsharp_id_3_x*2;
 }
-)(__val_0);
-__fusion_res += __val_1;
+)(__gsharp_val_0);
+__gsharp_fusion_res += __gsharp_val_1;
 }
-return __fusion_res;
+return __gsharp_fusion_res;
 }());
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";
@@ -468,25 +468,25 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string RunLinqFirst_Source = @"extern ""C"" __global__ void StackLinqTestKernel_RunLinqFirst(GSharpArray<int> data){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid==0)
+public const string RunLinqFirst_Source = @"extern ""C"" __global__ void StackLinqTestKernel_RunLinqFirst(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid==0)
 {
-int first = ([&]() -> auto {
-int __fusion_res = {};
-int __fusion_length = data.length;
-for (int __i = 0; __i < __fusion_length; __i++)
+int __gsharp_id_2_first = ([&]() -> auto {
+int __gsharp_fusion_res = {};
+int __gsharp_fusion_length = __gsharp_id_0_data.length;
+for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
 {
-auto __val_0 = data[__i];
-if (([&](auto x) {
-return x>10;
+auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+if (([&](auto __gsharp_id_3_x) {
+return __gsharp_id_3_x>10;
 }
-)(__val_0))
-{__fusion_res = __val_0; break;
+)(__gsharp_val_0))
+{__gsharp_fusion_res = __gsharp_val_0; break;
 }}
-return __fusion_res;
+return __gsharp_fusion_res;
 }());
-data[0]=first;
+__gsharp_id_0_data[0]=__gsharp_id_2_first;
 }
 }
 ";
@@ -593,34 +593,34 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string RunLinqIndexedAndSelectorSum_Source = @"extern ""C"" __global__ void StackLinqTestKernel_RunLinqIndexedAndSelectorSum(GSharpArray<int> data){
-int tid = blockIdx.x*blockDim.x+threadIdx.x;
-if(tid==0)
+public const string RunLinqIndexedAndSelectorSum_Source = @"extern ""C"" __global__ void StackLinqTestKernel_RunLinqIndexedAndSelectorSum(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = blockIdx.x*blockDim.x+threadIdx.x;
+if(__gsharp_id_1_tid==0)
 {
-int sum = ([&]() -> auto {
-int __fusion_res = 0;
-int __fusion_length = data.length;
-for (int __i = 0; __i < __fusion_length; __i++)
+int __gsharp_id_2_sum = ([&]() -> auto {
+int __gsharp_fusion_res = 0;
+int __gsharp_fusion_length = __gsharp_id_0_data.length;
+for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)
 {
-auto __val_0 = data[__i];
-if (([&](auto x, auto i) {
-return x>5&&i%2==0;
+auto __gsharp_val_0 = __gsharp_id_0_data[__gsharp_i];
+if (([&](auto __gsharp_id_3_x, auto __gsharp_id_4_i) {
+return __gsharp_id_3_x>5&&__gsharp_id_4_i%2==0;
 }
-)(__val_0))
+)(__gsharp_val_0))
 {
-auto __val_1 = ([&](auto x, auto i) {
-return x+i;
+auto __gsharp_val_1 = ([&](auto __gsharp_id_5_x, auto __gsharp_id_6_i) {
+return __gsharp_id_5_x+__gsharp_id_6_i;
 }
-)(__val_0);
-__fusion_res += ([&](auto x) {
-return x*3;
+)(__gsharp_val_0);
+__gsharp_fusion_res += ([&](auto __gsharp_id_7_x) {
+return __gsharp_id_7_x*3;
 }
-)(__val_1);
+)(__gsharp_val_1);
 }
 }
-return __fusion_res;
+return __gsharp_fusion_res;
 }());
-data[0]=sum;
+__gsharp_id_0_data[0]=__gsharp_id_2_sum;
 }
 }
 ";

@@ -20,21 +20,21 @@ public partial class AtomicIntrinsicsKernels
 public static partial class AotContexts
 {
 }
-public const string AtomicArithmeticKernel_Source = @"extern ""C"" __global__ void AtomicIntrinsicsKernels_AtomicArithmeticKernel(GSharpArray<int> intState, GSharpArray<unsigned int> uintState, GSharpArray<unsigned long long> ulongState, GSharpArray<float> floatState){
-int tid = threadIdx.x;
-atomicSub(&intState[0],1);
-atomicMin(&intState[1],tid-5);
-atomicAnd(&uintState[0],~(1u<<tid));
-atomicXor(&uintState[1],1u<<tid);
-atomicMin(&uintState[2],(unsigned int)tid);
-atomicMax(&uintState[3],(tid==31?4294967295U:(unsigned int)tid));
-atomicXor(&ulongState[0],1ull<<(tid+32));
-atomicMin(&ulongState[1],(unsigned long long)tid);
-atomicAnd(&ulongState[2],~(1ull<<tid));
-atomicAdd(&floatState[0],0.5f);
-if(tid==0)
+public const string AtomicArithmeticKernel_Source = @"extern ""C"" __global__ void AtomicIntrinsicsKernels_AtomicArithmeticKernel(GSharpArray<int> __gsharp_id_0_intState, GSharpArray<unsigned int> __gsharp_id_1_uintState, GSharpArray<unsigned long long> __gsharp_id_2_ulongState, GSharpArray<float> __gsharp_id_3_floatState){
+int __gsharp_id_4_tid = threadIdx.x;
+atomicSub(&__gsharp_id_0_intState[0],1);
+atomicMin(&__gsharp_id_0_intState[1],__gsharp_id_4_tid-5);
+atomicAnd(&__gsharp_id_1_uintState[0],~(1u<<__gsharp_id_4_tid));
+atomicXor(&__gsharp_id_1_uintState[1],1u<<__gsharp_id_4_tid);
+atomicMin(&__gsharp_id_1_uintState[2],(unsigned int)__gsharp_id_4_tid);
+atomicMax(&__gsharp_id_1_uintState[3],(__gsharp_id_4_tid==31?4294967295U:(unsigned int)__gsharp_id_4_tid));
+atomicXor(&__gsharp_id_2_ulongState[0],1ull<<(__gsharp_id_4_tid+32));
+atomicMin(&__gsharp_id_2_ulongState[1],(unsigned long long)__gsharp_id_4_tid);
+atomicAnd(&__gsharp_id_2_ulongState[2],~(1ull<<__gsharp_id_4_tid));
+atomicAdd(&__gsharp_id_3_floatState[0],0.5f);
+if(__gsharp_id_4_tid==0)
 {
-atomicExch(&floatState[1],3.25f);
+atomicExch(&__gsharp_id_3_floatState[1],3.25f);
 }
 }
 ";
@@ -255,9 +255,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string AtomicIncDecWrapKernel_Source = @"extern ""C"" __global__ void AtomicIntrinsicsKernels_AtomicIncDecWrapKernel(GSharpArray<unsigned int> state, unsigned int limit){
-atomicInc(&state[0],limit);
-atomicDec(&state[1],limit);
+public const string AtomicIncDecWrapKernel_Source = @"extern ""C"" __global__ void AtomicIntrinsicsKernels_AtomicIncDecWrapKernel(GSharpArray<unsigned int> __gsharp_id_0_state, unsigned int __gsharp_id_1_limit){
+atomicInc(&__gsharp_id_0_state[0],__gsharp_id_1_limit);
+atomicDec(&__gsharp_id_0_state[1],__gsharp_id_1_limit);
 }
 ";
 public static readonly string AtomicIncDecWrapKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AtomicIncDecWrapKernel_Source;
@@ -367,8 +367,8 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string AtomicFloatAddStressKernel_Source = @"extern ""C"" __global__ void AtomicIntrinsicsKernels_AtomicFloatAddStressKernel(GSharpArray<float> globalSum){
-atomicAdd(&globalSum[0],1.0f);
+public const string AtomicFloatAddStressKernel_Source = @"extern ""C"" __global__ void AtomicIntrinsicsKernels_AtomicFloatAddStressKernel(GSharpArray<float> __gsharp_id_0_globalSum){
+atomicAdd(&__gsharp_id_0_globalSum[0],1.0f);
 }
 ";
 public static readonly string AtomicFloatAddStressKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AtomicFloatAddStressKernel_Source;
@@ -474,8 +474,8 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string AtomicRefParameterKernel_Source = @"extern ""C"" __global__ void AtomicIntrinsicsKernels_AtomicRefParameterKernel(GSharpArray<int> counter){
-AccumulateThroughRef(&counter[0],threadIdx.x+1);
+public const string AtomicRefParameterKernel_Source = @"extern ""C"" __global__ void AtomicIntrinsicsKernels_AtomicRefParameterKernel(GSharpArray<int> __gsharp_id_0_counter){
+AccumulateThroughRef(&__gsharp_id_0_counter[0],threadIdx.x+1);
 }
 ";
 public static readonly string AtomicRefParameterKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +AtomicRefParameterKernel_Source;
@@ -646,10 +646,10 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ void AccumulateThroughRef(int* __restrict__  counter, int value);
+public const string Source = @"inline __device__ void AccumulateThroughRef(int* __restrict__  __gsharp_id_0_counter, int __gsharp_id_1_value);
 
-inline __device__ void AccumulateThroughRef(int* __restrict__  counter, int value){
-atomicAdd(&(*counter),value);
+inline __device__ void AccumulateThroughRef(int* __restrict__  __gsharp_id_0_counter, int __gsharp_id_1_value){
+atomicAdd(&(*__gsharp_id_0_counter),__gsharp_id_1_value);
 }
 
 ";

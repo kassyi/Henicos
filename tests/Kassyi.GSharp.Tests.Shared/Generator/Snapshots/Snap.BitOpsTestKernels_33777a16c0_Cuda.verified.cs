@@ -20,21 +20,21 @@ public partial class BitOpsTestKernels
 public static partial class AotContexts
 {
 }
-public const string BitOpsKernel_Source = @"extern ""C"" __global__ void BitOpsTestKernels_BitOpsKernel(GSharpArray<unsigned int> u32Data, GSharpArray<unsigned long long> u64Data){
-unsigned int u32Val = u32Data[0];
-u32Data[1]=(unsigned int)__gsharp_lzc_32(u32Val);
-u32Data[2]=(unsigned int)__popc((unsigned int)(u32Val));
-u32Data[3]=(unsigned int)__gsharp_tzc_32(u32Val);
-u32Data[4]=(unsigned int)__gsharp_log2_32(u32Val);
-u32Data[5]=__gsharp_rotl32(u32Val,5);
-u32Data[6]=__gsharp_rotr32(u32Val,3);
-unsigned long long u64Val = u64Data[0];
-u64Data[1]=(unsigned long long)__gsharp_lzc_64(u64Val);
-u64Data[2]=(unsigned long long)__popcll((unsigned long long int)(u64Val));
-u64Data[3]=(unsigned long long)__gsharp_tzc_64(u64Val);
-u64Data[4]=(unsigned long long)__gsharp_log2_64(u64Val);
-u64Data[5]=__gsharp_rotl64(u64Val,10);
-u64Data[6]=__gsharp_rotr64(u64Val,7);
+public const string BitOpsKernel_Source = @"extern ""C"" __global__ void BitOpsTestKernels_BitOpsKernel(GSharpArray<unsigned int> __gsharp_id_0_u32Data, GSharpArray<unsigned long long> __gsharp_id_1_u64Data){
+unsigned int __gsharp_id_2_u32Val = __gsharp_id_0_u32Data[0];
+__gsharp_id_0_u32Data[1]=(unsigned int)__gsharp_lzc_32(__gsharp_id_2_u32Val);
+__gsharp_id_0_u32Data[2]=(unsigned int)__popc((unsigned int)(__gsharp_id_2_u32Val));
+__gsharp_id_0_u32Data[3]=(unsigned int)__gsharp_tzc_32(__gsharp_id_2_u32Val);
+__gsharp_id_0_u32Data[4]=(unsigned int)__gsharp_log2_32(__gsharp_id_2_u32Val);
+__gsharp_id_0_u32Data[5]=__gsharp_rotl32(__gsharp_id_2_u32Val,5);
+__gsharp_id_0_u32Data[6]=__gsharp_rotr32(__gsharp_id_2_u32Val,3);
+unsigned long long __gsharp_id_3_u64Val = __gsharp_id_1_u64Data[0];
+__gsharp_id_1_u64Data[1]=(unsigned long long)__gsharp_lzc_64(__gsharp_id_3_u64Val);
+__gsharp_id_1_u64Data[2]=(unsigned long long)__popcll((unsigned long long int)(__gsharp_id_3_u64Val));
+__gsharp_id_1_u64Data[3]=(unsigned long long)__gsharp_tzc_64(__gsharp_id_3_u64Val);
+__gsharp_id_1_u64Data[4]=(unsigned long long)__gsharp_log2_64(__gsharp_id_3_u64Val);
+__gsharp_id_1_u64Data[5]=__gsharp_rotl64(__gsharp_id_3_u64Val,10);
+__gsharp_id_1_u64Data[6]=__gsharp_rotr64(__gsharp_id_3_u64Val,7);
 }
 ";
 public static readonly string BitOpsKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BitOpsKernel_Source;

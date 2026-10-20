@@ -172,24 +172,24 @@ double Y;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct__
 struct Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct
 {
-unsigned char Field1_Byte;
-float2 Field2_Float2;
-float4 Field3_Float4;
-short Field4_Short;
-double2 Field5_Double2;
+unsigned char __gsharp_mb_Field1_Byte;
+float2 __gsharp_mb_Field2_Float2;
+float4 __gsharp_mb_Field3_Float4;
+short __gsharp_mb_Field4_Short;
+double2 __gsharp_mb_Field5_Double2;
 }
 ;
 #endif
-extern ""C"" __global__ void NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(GSharpArray<int> offsets){
+extern ""C"" __global__ void NestedVectorAlignmentKernels_WriteExpectedOffsetsKernel(GSharpArray<int> __gsharp_id_0_offsets){
 {
-Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct s = {};
-unsigned char* basePtr = (unsigned char*)&s;
-offsets[0]=(int)((unsigned char*)&s.Field1_Byte-basePtr);
-offsets[1]=(int)((unsigned char*)&s.Field2_Float2-basePtr);
-offsets[2]=(int)((unsigned char*)&s.Field3_Float4-basePtr);
-offsets[3]=(int)((unsigned char*)&s.Field4_Short-basePtr);
-offsets[4]=(int)((unsigned char*)&s.Field5_Double2-basePtr);
-offsets[5]=64;
+Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct __gsharp_id_1_s = {};
+unsigned char* __gsharp_id_2_basePtr = (unsigned char*)&__gsharp_id_1_s;
+__gsharp_id_0_offsets[0]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field1_Byte-__gsharp_id_2_basePtr);
+__gsharp_id_0_offsets[1]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field2_Float2-__gsharp_id_2_basePtr);
+__gsharp_id_0_offsets[2]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field3_Float4-__gsharp_id_2_basePtr);
+__gsharp_id_0_offsets[3]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field4_Short-__gsharp_id_2_basePtr);
+__gsharp_id_0_offsets[4]=(int)((unsigned char*)&__gsharp_id_1_s.__gsharp_mb_Field5_Double2-__gsharp_id_2_basePtr);
+__gsharp_id_0_offsets[5]=64;
 }
 }
 ";
@@ -329,17 +329,17 @@ double Y;
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct__
 struct Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct
 {
-unsigned char Field1_Byte;
-float2 Field2_Float2;
-float4 Field3_Float4;
-short Field4_Short;
-double2 Field5_Double2;
+unsigned char __gsharp_mb_Field1_Byte;
+float2 __gsharp_mb_Field2_Float2;
+float4 __gsharp_mb_Field3_Float4;
+short __gsharp_mb_Field4_Short;
+double2 __gsharp_mb_Field5_Double2;
 }
 ;
 #endif
-extern ""C"" __global__ void NestedVectorAlignmentKernels_RoundtripKernel(Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct* __restrict__  data){
-(*data).Field1_Byte=(unsigned char)((*data).Field1_Byte+1-1);
-(*data).Field4_Short=(short)((*data).Field4_Short+1-1);
+extern ""C"" __global__ void NestedVectorAlignmentKernels_RoundtripKernel(Kassyi_GSharp_Tests_Runtime_GEN56_AlignmentTestStruct* __restrict__  __gsharp_id_0_data){
+(*__gsharp_id_0_data).__gsharp_mb_Field1_Byte=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_Field1_Byte+1-1);
+(*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1-1);
 }
 ";
 public static readonly string RoundtripKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +RoundtripKernel_Source;

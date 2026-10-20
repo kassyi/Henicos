@@ -84,20 +84,20 @@ public partial class WarpLevelConcurrencyKernels
 public static partial class AotContexts
 {
 }
-public const string WarpReduceSumKernel_Source = @"extern ""C"" __global__ void WarpLevelConcurrencyKernels_WarpReduceSumKernel(GSharpArray<int> input, GSharpArray<int> output){
-int tid = threadIdx.x;
-int lane = tid%32;
-int warpId = tid/32;
-int val = input[tid];
-unsigned int mask = 0xffffffff;
-val+=__shfl_down_sync(mask,val,16,32);
-val+=__shfl_down_sync(mask,val,8,32);
-val+=__shfl_down_sync(mask,val,4,32);
-val+=__shfl_down_sync(mask,val,2,32);
-val+=__shfl_down_sync(mask,val,1,32);
-if(lane==0)
+public const string WarpReduceSumKernel_Source = @"extern ""C"" __global__ void WarpLevelConcurrencyKernels_WarpReduceSumKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_lane = __gsharp_id_2_tid%32;
+int __gsharp_id_4_warpId = __gsharp_id_2_tid/32;
+int __gsharp_id_5_val = __gsharp_id_0_input[__gsharp_id_2_tid];
+unsigned int __gsharp_id_6_mask = 0xffffffff;
+__gsharp_id_5_val+=__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,16,32);
+__gsharp_id_5_val+=__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,8,32);
+__gsharp_id_5_val+=__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,4,32);
+__gsharp_id_5_val+=__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,2,32);
+__gsharp_id_5_val+=__shfl_down_sync(__gsharp_id_6_mask,__gsharp_id_5_val,1,32);
+if(__gsharp_id_3_lane==0)
 {
-output[warpId]=val;
+__gsharp_id_1_output[__gsharp_id_4_warpId]=__gsharp_id_5_val;
 }
 }
 ";
@@ -242,17 +242,17 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string WarpPrimitivesKernel_Source = @"extern ""C"" __global__ void WarpLevelConcurrencyKernels_WarpPrimitivesKernel(GSharpArray<int> input, GSharpArray<int> output){
-int tid = threadIdx.x;
-unsigned int mask = __activemask();
-int val = input[tid];
-val=__shfl_sync(mask,val,0,32);
-val=(int)__shfl_sync(mask,(unsigned int)val,0,32);
-val=__shfl_down_sync(mask,val,1,32);
-val=(int)__shfl_down_sync(mask,(unsigned int)val,1,32);
-val=__shfl_up_sync(mask,val,1,32);
-val=__shfl_xor_sync(mask,val,1,32);
-output[tid]=val;
+public const string WarpPrimitivesKernel_Source = @"extern ""C"" __global__ void WarpLevelConcurrencyKernels_WarpPrimitivesKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output){
+int __gsharp_id_2_tid = threadIdx.x;
+unsigned int __gsharp_id_3_mask = __activemask();
+int __gsharp_id_4_val = __gsharp_id_0_input[__gsharp_id_2_tid];
+__gsharp_id_4_val=__shfl_sync(__gsharp_id_3_mask,__gsharp_id_4_val,0,32);
+__gsharp_id_4_val=(int)__shfl_sync(__gsharp_id_3_mask,(unsigned int)__gsharp_id_4_val,0,32);
+__gsharp_id_4_val=__shfl_down_sync(__gsharp_id_3_mask,__gsharp_id_4_val,1,32);
+__gsharp_id_4_val=(int)__shfl_down_sync(__gsharp_id_3_mask,(unsigned int)__gsharp_id_4_val,1,32);
+__gsharp_id_4_val=__shfl_up_sync(__gsharp_id_3_mask,__gsharp_id_4_val,1,32);
+__gsharp_id_4_val=__shfl_xor_sync(__gsharp_id_3_mask,__gsharp_id_4_val,1,32);
+__gsharp_id_1_output[__gsharp_id_2_tid]=__gsharp_id_4_val;
 }
 ";
 public static readonly string WarpPrimitivesKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +WarpPrimitivesKernel_Source;

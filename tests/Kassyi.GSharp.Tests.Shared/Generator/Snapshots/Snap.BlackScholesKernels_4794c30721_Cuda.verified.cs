@@ -276,25 +276,25 @@ public const string BlackScholesKernel_Source = @"#ifndef __GSHARP_STRUCT_Henico
 #define __GSHARP_STRUCT_Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_BlackScholesContext__
 struct Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_BlackScholesContext
 {
-GSharpArray<const float> S;
-GSharpArray<const float> X;
-GSharpArray<const float> T;
-float R;
-float V;
-GSharpArray<float> CallResult;
-GSharpArray<float> PutResult;
-int N;
+GSharpArray<const float> __gsharp_mb_S;
+GSharpArray<const float> __gsharp_mb_X;
+GSharpArray<const float> __gsharp_mb_T;
+float __gsharp_mb_R;
+float __gsharp_mb_V;
+GSharpArray<float> __gsharp_mb_CallResult;
+GSharpArray<float> __gsharp_mb_PutResult;
+int __gsharp_mb_N;
 }
 ;
 #endif
-extern ""C"" __global__ void BlackScholesKernels_BlackScholesKernel(Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_BlackScholesContext ctx){
-for(int tid = blockIdx.x * blockDim.x + threadIdx.x; tid < ctx.N; tid += gridDim.x * blockDim.x)
+extern ""C"" __global__ void BlackScholesKernels_BlackScholesKernel(Henicos_Benchmarks_ComputeBenchmarks_BlackScholesKernels_BlackScholesContext __gsharp_id_0_ctx){
+for(int __gsharp_id_1_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_1_tid < __gsharp_id_0_ctx.__gsharp_mb_N; __gsharp_id_1_tid += gridDim.x * blockDim.x)
 {
-float c;
-float p;
-CalculateOptionPrice(ctx.S[tid],ctx.X[tid],ctx.T[tid],ctx.R,ctx.V,&c,&p);
-ctx.CallResult[tid]=c;
-ctx.PutResult[tid]=p;
+float __gsharp_id_2_c;
+float __gsharp_id_3_p;
+CalculateOptionPrice(__gsharp_id_0_ctx.__gsharp_mb_S[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_X[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_T[__gsharp_id_1_tid],__gsharp_id_0_ctx.__gsharp_mb_R,__gsharp_id_0_ctx.__gsharp_mb_V,&__gsharp_id_2_c,&__gsharp_id_3_p);
+__gsharp_id_0_ctx.__gsharp_mb_CallResult[__gsharp_id_1_tid]=__gsharp_id_2_c;
+__gsharp_id_0_ctx.__gsharp_mb_PutResult[__gsharp_id_1_tid]=__gsharp_id_3_p;
 }
 }
 ";
@@ -434,28 +434,28 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ void CalculateOptionPrice(float s, float x, float t, float r, float v, float* __restrict__  callResult, float* __restrict__  putResult);
+public const string Source = @"inline __device__ void CalculateOptionPrice(float __gsharp_id_0_s, float __gsharp_id_1_x, float __gsharp_id_2_t, float __gsharp_id_3_r, float __gsharp_id_4_v, float* __restrict__  __gsharp_id_5_callResult, float* __restrict__  __gsharp_id_6_putResult);
 
-inline __device__ float Cnd(float d);
+inline __device__ float Cnd(float __gsharp_id_0_d);
 
-inline __device__ void CalculateOptionPrice(float s, float x, float t, float r, float v, float* __restrict__  callResult, float* __restrict__  putResult){
-auto d1 = (__logf(s/x)+(r+v*v/2.0f)*t)/(v*__fsqrt_rn(t));
-auto d2 = d1-v*__fsqrt_rn(t);
-auto cndD1 = Cnd(d1);
-auto cndD2 = Cnd(d2);
-auto expRt = __expf(-r*t);
-(*callResult)=s*cndD1-x*expRt*cndD2;
-(*putResult)=x*expRt*(1.0f-cndD2)-s*(1.0f-cndD1);
+inline __device__ void CalculateOptionPrice(float __gsharp_id_0_s, float __gsharp_id_1_x, float __gsharp_id_2_t, float __gsharp_id_3_r, float __gsharp_id_4_v, float* __restrict__  __gsharp_id_5_callResult, float* __restrict__  __gsharp_id_6_putResult){
+auto __gsharp_id_7_d1 = (__logf(__gsharp_id_0_s/__gsharp_id_1_x)+(__gsharp_id_3_r+__gsharp_id_4_v*__gsharp_id_4_v/2.0f)*__gsharp_id_2_t)/(__gsharp_id_4_v*__fsqrt_rn(__gsharp_id_2_t));
+auto __gsharp_id_8_d2 = __gsharp_id_7_d1-__gsharp_id_4_v*__fsqrt_rn(__gsharp_id_2_t);
+auto __gsharp_id_9_cndD1 = Cnd(__gsharp_id_7_d1);
+auto __gsharp_id_10_cndD2 = Cnd(__gsharp_id_8_d2);
+auto __gsharp_id_11_expRt = __expf(-__gsharp_id_3_r*__gsharp_id_2_t);
+(*__gsharp_id_5_callResult)=__gsharp_id_0_s*__gsharp_id_9_cndD1-__gsharp_id_1_x*__gsharp_id_11_expRt*__gsharp_id_10_cndD2;
+(*__gsharp_id_6_putResult)=__gsharp_id_1_x*__gsharp_id_11_expRt*(1.0f-__gsharp_id_10_cndD2)-__gsharp_id_0_s*(1.0f-__gsharp_id_9_cndD1);
 }
 
-inline __device__ float Cnd(float d){
-auto k = 1.0f/(1.0f+0.2316419f*fabsf(d));
-auto cnd = 0.3989422804f*__expf(-0.5f*d*d)*(k*(0.31938153f+k*(-0.356563782f+k*(1.781477937f+k*(-1.821255978f+k*1.330274429f)))));
-if(d>0)
+inline __device__ float Cnd(float __gsharp_id_0_d){
+auto __gsharp_id_1_k = 1.0f/(1.0f+0.2316419f*fabsf(__gsharp_id_0_d));
+auto __gsharp_id_2_cnd = 0.3989422804f*__expf(-0.5f*__gsharp_id_0_d*__gsharp_id_0_d)*(__gsharp_id_1_k*(0.31938153f+__gsharp_id_1_k*(-0.356563782f+__gsharp_id_1_k*(1.781477937f+__gsharp_id_1_k*(-1.821255978f+__gsharp_id_1_k*1.330274429f)))));
+if(__gsharp_id_0_d>0)
 {
-cnd=1.0f-cnd;
+__gsharp_id_2_cnd=1.0f-__gsharp_id_2_cnd;
 }
-return cnd;
+return __gsharp_id_2_cnd;
 }
 
 ";

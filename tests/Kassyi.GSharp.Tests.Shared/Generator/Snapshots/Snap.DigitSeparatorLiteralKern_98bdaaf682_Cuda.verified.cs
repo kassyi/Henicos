@@ -20,14 +20,14 @@ public partial class DigitSeparatorLiteralKernels
 public static partial class AotContexts
 {
 }
-public const string DigitSeparatorKernel_Source = @"extern ""C"" __global__ void DigitSeparatorLiteralKernels_DigitSeparatorKernel(GSharpArray<int> ints, GSharpArray<unsigned int> uints, GSharpArray<long long> longs, GSharpArray<unsigned long long> ulongs, GSharpArray<float> floats, GSharpArray<double> doubles){
-int i = threadIdx.x;
-ints[i]=1000000;
-uints[i]=0xFFFF0000u;
-longs[i]=10000000000ll;
-ulongs[i]=0b10101010ull;
-floats[i]=1000.0f;
-doubles[i]=10.5e10;
+public const string DigitSeparatorKernel_Source = @"extern ""C"" __global__ void DigitSeparatorLiteralKernels_DigitSeparatorKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<unsigned int> __gsharp_id_1_uints, GSharpArray<long long> __gsharp_id_2_longs, GSharpArray<unsigned long long> __gsharp_id_3_ulongs, GSharpArray<float> __gsharp_id_4_floats, GSharpArray<double> __gsharp_id_5_doubles){
+int __gsharp_id_6_i = threadIdx.x;
+__gsharp_id_0_ints[__gsharp_id_6_i]=1000000;
+__gsharp_id_1_uints[__gsharp_id_6_i]=0xFFFF0000u;
+__gsharp_id_2_longs[__gsharp_id_6_i]=10000000000ll;
+__gsharp_id_3_ulongs[__gsharp_id_6_i]=0b10101010ull;
+__gsharp_id_4_floats[__gsharp_id_6_i]=1000.0f;
+__gsharp_id_5_doubles[__gsharp_id_6_i]=10.5e10;
 }
 ";
 public static readonly string DigitSeparatorKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DigitSeparatorKernel_Source;

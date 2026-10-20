@@ -89,34 +89,34 @@ public const string ForeachInlineArrayKernel_Source = @"#ifndef __GSHARP_STRUCT_
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4__
 struct Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4
 {
-int _element0[4];
+int __gsharp_mb__element0[4];
 __device__ inline int& operator[](int index){
-return _element0[index];
+return __gsharp_mb__element0[index];
 }
 __device__ inline const int& operator[](int index) const
 {
-return _element0[index];
+return __gsharp_mb__element0[index];
 }
-__device__ inline int* begin() { return _element0; }
-__device__ inline int* end() { return _element0 + 4; }
-__device__ inline const int* begin() const { return _element0; }
-__device__ inline const int* end() const { return _element0 + 4; }
+__device__ inline int* begin() { return __gsharp_mb__element0; }
+__device__ inline int* end() { return __gsharp_mb__element0 + 4; }
+__device__ inline const int* begin() const { return __gsharp_mb__element0; }
+__device__ inline const int* end() const { return __gsharp_mb__element0 + 4; }
 __device__ inline int size() const { return 4; }
 }
 ;
 #endif
-extern ""C"" __global__ void LoopsAndJumpsKernels_ForeachInlineArrayKernel(GSharpArray<int> output){
-Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4 arr = Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4{};
-arr[0]=10;
-arr[1]=20;
-arr[2]=30;
-arr[3]=40;
-int total = 0;
-for(auto val : arr)
+extern ""C"" __global__ void LoopsAndJumpsKernels_ForeachInlineArrayKernel(GSharpArray<int> __gsharp_id_0_output){
+Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4 __gsharp_id_1_arr = Kassyi_GSharp_Tests_Shared_Syntax_FixedArray4{};
+__gsharp_id_1_arr[0]=10;
+__gsharp_id_1_arr[1]=20;
+__gsharp_id_1_arr[2]=30;
+__gsharp_id_1_arr[3]=40;
+int __gsharp_id_2_total = 0;
+for(auto __gsharp_id_3_val : __gsharp_id_1_arr)
 {
-total+=val;
+__gsharp_id_2_total+=__gsharp_id_3_val;
 }
-output[0]=total;
+__gsharp_id_0_output[0]=__gsharp_id_2_total;
 }
 ";
 public static readonly string ForeachInlineArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ForeachInlineArrayKernel_Source;
@@ -222,14 +222,14 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ForeachCollectionExpressionKernel_Source = @"extern ""C"" __global__ void LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(GSharpArray<int> output){
-const int arr[4]={ 10, 20, 30, 40 };
-int total = 0;
-for(auto val : arr)
+public const string ForeachCollectionExpressionKernel_Source = @"extern ""C"" __global__ void LoopsAndJumpsKernels_ForeachCollectionExpressionKernel(GSharpArray<int> __gsharp_id_0_output){
+const int __gsharp_id_1_arr[4]={ 10, 20, 30, 40 };
+int __gsharp_id_2_total = 0;
+for(auto __gsharp_id_3_val : __gsharp_id_1_arr)
 {
-total+=val;
+__gsharp_id_2_total+=__gsharp_id_3_val;
 }
-output[0]=total;
+__gsharp_id_0_output[0]=__gsharp_id_2_total;
 }
 ";
 public static readonly string ForeachCollectionExpressionKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ForeachCollectionExpressionKernel_Source;
@@ -335,14 +335,14 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ForeachStackAllocKernel_Source = @"extern ""C"" __global__ void LoopsAndJumpsKernels_ForeachStackAllocKernel(GSharpArray<int> output){
-int arr[4]={ 10, 20, 30, 40 };
-int total = 0;
-for(auto val : arr)
+public const string ForeachStackAllocKernel_Source = @"extern ""C"" __global__ void LoopsAndJumpsKernels_ForeachStackAllocKernel(GSharpArray<int> __gsharp_id_0_output){
+int __gsharp_id_1_arr[4]={ 10, 20, 30, 40 };
+int __gsharp_id_2_total = 0;
+for(auto __gsharp_id_3_val : __gsharp_id_1_arr)
 {
-total+=val;
+__gsharp_id_2_total+=__gsharp_id_3_val;
 }
-output[0]=total;
+__gsharp_id_0_output[0]=__gsharp_id_2_total;
 }
 ";
 public static readonly string ForeachStackAllocKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ForeachStackAllocKernel_Source;

@@ -20,16 +20,16 @@ public partial class CoreSyntaxKernels
 public static partial class AotContexts
 {
 }
-public const string ComplexLogicKernel_Source = @"extern ""C"" __global__ void CoreSyntaxKernels_ComplexLogicKernel(GSharpArray<int> a, GSharpArray<int> b, GSharpArray<int> c){
-for(int i = 0;i<5;i++)
+public const string ComplexLogicKernel_Source = @"extern ""C"" __global__ void CoreSyntaxKernels_ComplexLogicKernel(GSharpArray<int> __gsharp_id_0_a, GSharpArray<int> __gsharp_id_1_b, GSharpArray<int> __gsharp_id_2_c){
+for(int __gsharp_id_3_i = 0;__gsharp_id_3_i<5;__gsharp_id_3_i++)
 {
-if(a[0]>10)
+if(__gsharp_id_0_a[0]>10)
 {
-c[0]=c[0]+a[0];
+__gsharp_id_2_c[0]=__gsharp_id_2_c[0]+__gsharp_id_0_a[0];
 }
 else
 {
-c[0]=c[0]+b[0];
+__gsharp_id_2_c[0]=__gsharp_id_2_c[0]+__gsharp_id_1_b[0];
 }
 }
 }
@@ -213,14 +213,14 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string ControlFlowKernel_Source = @"extern ""C"" __global__ void CoreSyntaxKernels_ControlFlowKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-switch(tid)
+public const string ControlFlowKernel_Source = @"extern ""C"" __global__ void CoreSyntaxKernels_ControlFlowKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+switch(__gsharp_id_1_tid)
 {
 case 0:
 __gsharp_switch_1_state_0:
 {
-data[tid]=10;
+__gsharp_id_0_data[__gsharp_id_1_tid]=10;
 break;
 }
 case 1:
@@ -228,30 +228,30 @@ __gsharp_switch_1_state_1:
 case 2:
 __gsharp_switch_1_state_2:
 {
-data[tid]=20;
+__gsharp_id_0_data[__gsharp_id_1_tid]=20;
 break;
 }
 default:
 __gsharp_switch_1_state_default:
 {
-data[tid]=30;
+__gsharp_id_0_data[__gsharp_id_1_tid]=30;
 break;
 }
 }
-int count = 0;
+int __gsharp_id_2_count = 0;
 do
 {
-count=count+1;
+__gsharp_id_2_count=__gsharp_id_2_count+1;
 }
-while(count<3);
-data[tid]=data[tid]+count;
-if(tid==0&&count==3)
+while(__gsharp_id_2_count<3);
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_0_data[__gsharp_id_1_tid]+__gsharp_id_2_count;
+if(__gsharp_id_1_tid==0&&__gsharp_id_2_count==3)
 {
-data[tid]=data[tid]+100;
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_0_data[__gsharp_id_1_tid]+100;
 }
-if(tid==1||tid==2)
+if(__gsharp_id_1_tid==1||__gsharp_id_1_tid==2)
 {
-data[tid]=data[tid]+200;
+__gsharp_id_0_data[__gsharp_id_1_tid]=__gsharp_id_0_data[__gsharp_id_1_tid]+200;
 }
 }
 ";
@@ -362,19 +362,19 @@ public const string StructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi_GShar
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_Vector2__
 struct Kassyi_GSharp_Tests_Shared_Syntax_Vector2
 {
-float X;
-float Y;
+float __gsharp_mb_X;
+float __gsharp_mb_Y;
 }
 ;
 #endif
-extern ""C"" __global__ void CoreSyntaxKernels_StructKernel(GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_Vector2> vectors, int length){
-int tid = threadIdx.x;
-if(tid<length)
+extern ""C"" __global__ void CoreSyntaxKernels_StructKernel(GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_Vector2> __gsharp_id_0_vectors, int __gsharp_id_1_length){
+int __gsharp_id_2_tid = threadIdx.x;
+if(__gsharp_id_2_tid<__gsharp_id_1_length)
 {
-Kassyi_GSharp_Tests_Shared_Syntax_Vector2 v = vectors[tid];
-v.X=v.X*2.0f;
-v.Y=v.Y+1.0f;
-vectors[tid]=v;
+Kassyi_GSharp_Tests_Shared_Syntax_Vector2 __gsharp_id_3_v = __gsharp_id_0_vectors[__gsharp_id_2_tid];
+__gsharp_id_3_v.__gsharp_mb_X=__gsharp_id_3_v.__gsharp_mb_X*2.0f;
+__gsharp_id_3_v.__gsharp_mb_Y=__gsharp_id_3_v.__gsharp_mb_Y+1.0f;
+__gsharp_id_0_vectors[__gsharp_id_2_tid]=__gsharp_id_3_v;
 }
 }
 ";
@@ -489,23 +489,23 @@ public const string PaddedStructKernel_Source = @"#ifndef __GSHARP_STRUCT_Kassyi
 #define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct__
 struct Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct
 {
-unsigned char Flag1;
-double ValueD;
-int ValueI;
-short Flag2;
+unsigned char __gsharp_mb_Flag1;
+double __gsharp_mb_ValueD;
+int __gsharp_mb_ValueI;
+short __gsharp_mb_Flag2;
 }
 ;
 #endif
-extern ""C"" __global__ void CoreSyntaxKernels_PaddedStructKernel(GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct> items, int length){
-int tid = threadIdx.x;
-if(tid<length)
+extern ""C"" __global__ void CoreSyntaxKernels_PaddedStructKernel(GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct> __gsharp_id_0_items, int __gsharp_id_1_length){
+int __gsharp_id_2_tid = threadIdx.x;
+if(__gsharp_id_2_tid<__gsharp_id_1_length)
 {
-Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct item = items[tid];
-item.Flag1=(unsigned char)(item.Flag1+1);
-item.ValueD=item.ValueD*1.5;
-item.ValueI=item.ValueI+100;
-item.Flag2=(short)(item.Flag2-5);
-items[tid]=item;
+Kassyi_GSharp_Tests_Shared_Syntax_MixedPaddingStruct __gsharp_id_3_item = __gsharp_id_0_items[__gsharp_id_2_tid];
+__gsharp_id_3_item.__gsharp_mb_Flag1=(unsigned char)(__gsharp_id_3_item.__gsharp_mb_Flag1+1);
+__gsharp_id_3_item.__gsharp_mb_ValueD=__gsharp_id_3_item.__gsharp_mb_ValueD*1.5;
+__gsharp_id_3_item.__gsharp_mb_ValueI=__gsharp_id_3_item.__gsharp_mb_ValueI+100;
+__gsharp_id_3_item.__gsharp_mb_Flag2=(short)(__gsharp_id_3_item.__gsharp_mb_Flag2-5);
+__gsharp_id_0_items[__gsharp_id_2_tid]=__gsharp_id_3_item;
 }
 }
 ";
@@ -616,9 +616,9 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string DeviceMethodKernel_Source = @"extern ""C"" __global__ void CoreSyntaxKernels_DeviceMethodKernel(GSharpArray<int> data){
-int tid = threadIdx.x;
-data[tid]=MyCustomAdd(data[tid],100);
+public const string DeviceMethodKernel_Source = @"extern ""C"" __global__ void CoreSyntaxKernels_DeviceMethodKernel(GSharpArray<int> __gsharp_id_0_data){
+int __gsharp_id_1_tid = threadIdx.x;
+__gsharp_id_0_data[__gsharp_id_1_tid]=MyCustomAdd(__gsharp_id_0_data[__gsharp_id_1_tid],100);
 }
 ";
 public static readonly string DeviceMethodKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +DeviceMethodKernel_Source;
@@ -790,10 +790,10 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ int MyCustomAdd(int a, int b);
+public const string Source = @"inline __device__ int MyCustomAdd(int __gsharp_id_0_a, int __gsharp_id_1_b);
 
-inline __device__ int MyCustomAdd(int a, int b){
-return a+b;
+inline __device__ int MyCustomAdd(int __gsharp_id_0_a, int __gsharp_id_1_b){
+return __gsharp_id_0_a+__gsharp_id_1_b;
 }
 
 ";

@@ -3,12 +3,12 @@
 template <typename T>
 struct Kassyi_GSharp_Tests_Shared_Syntax_Pair_StringsTest
 {
-int First;
-int Second;
+int __gsharp_mb_First;
+int __gsharp_mb_Second;
 }
 ;
 #endif
-extern "C" __global__ void StringsAndAttributesTarget_GenericStruct(GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_Pair_StringsTest<int>> items, GSharpArray<int> output){
-Kassyi_GSharp_Tests_Shared_Syntax_Pair_StringsTest<int> p = items[0];
-output[0]=p.First+p.Second;
+extern "C" __global__ void StringsAndAttributesTarget_GenericStruct(GSharpArray<Kassyi_GSharp_Tests_Shared_Syntax_Pair_StringsTest<int>> __gsharp_id_0_items, GSharpArray<int> __gsharp_id_1_output){
+Kassyi_GSharp_Tests_Shared_Syntax_Pair_StringsTest<int> __gsharp_id_2_p = __gsharp_id_0_items[0];
+__gsharp_id_1_output[0]=__gsharp_id_2_p.__gsharp_mb_First+__gsharp_id_2_p.__gsharp_mb_Second;
 }
