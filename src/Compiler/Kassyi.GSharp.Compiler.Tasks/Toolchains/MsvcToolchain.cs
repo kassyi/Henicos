@@ -191,6 +191,7 @@ public sealed class MsvcToolchain : INativeToolchain
                 log.LogError(result.StandardError);
             }
 
+            RenamedIdentifierLogger.LogRenamedIdentifiers(log, result.StandardOutput, result.StandardError);
             return false;
         }
         catch (OperationCanceledException)

@@ -436,6 +436,7 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
                 Log.LogError(error);
             }
 
+            RenamedIdentifierLogger.LogRenamedIdentifiers(Log, output, error);
             return false;
         }
         catch (OperationCanceledException)
