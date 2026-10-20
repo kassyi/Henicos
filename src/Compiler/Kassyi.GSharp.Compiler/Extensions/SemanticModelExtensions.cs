@@ -32,6 +32,36 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// Gets the original location for the specified syntax node, or null if unmapped.
+    /// </summary>
+    public static Location? GetOriginalLocation(this SemanticModel semanticModel, SyntaxNode node)
+    {
+        var loc = GetLocationForNode(semanticModel, node);
+        if (loc != null)
+        {
+            return loc;
+        }
+
+        if (node is VariableDeclaratorSyntax { Initializer.Value: { } initValue })
+        {
+            return GetLocationForNode(semanticModel, initValue);
+        }
+
+        return null;
+
+        static Location? GetLocationForNode(SemanticModel model, SyntaxNode n)
+        {
+            if (IsInSameTree(model, n))
+            {
+                return n.GetLocation();
+            }
+
+            var orig = FindOriginalNode(model, n);
+            return orig?.GetLocation();
+        }
+    }
+
+    /// <summary>
     /// Gets the resolved symbol for the specified syntax node, or null if unresolvable.
     /// </summary>
     public static ISymbol? GetSymbol(this SemanticModel semanticModel, SyntaxNode node,

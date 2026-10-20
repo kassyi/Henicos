@@ -401,7 +401,7 @@ public int localTid;
 public int stride;
 }
 public static unsafe void __gsharp_statemachine_GridSyncManagedKernels_GlobalReductionKernel(int[] input, int[] blockSums, int[] totalSum, __gsharp_context_GridSyncManagedKernels_GlobalReductionKernel __gsharp_ctx) {
-        var shared = new SharedMemory<int>(256);
+        global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
@@ -409,7 +409,6 @@ public static unsafe void __gsharp_statemachine_GridSyncManagedKernels_GlobalRed
         {
             __gsharp_ctx.tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
             __gsharp_ctx.myVal = input[__gsharp_ctx.tid];
-            
             __gsharp_ctx.localTid = ThreadIndex.X;
             shared[__gsharp_ctx.localTid] = __gsharp_ctx.myVal;
             __gsharp_ctx.__gsharp_state = 1;

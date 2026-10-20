@@ -185,13 +185,13 @@ public class __gsharp_context_SgemmKernels_SgemmKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
-public dynamic bx;
-public dynamic by;
-public dynamic tx;
-public dynamic ty;
-public dynamic row;
-public dynamic col;
-public dynamic cValue;
+public int bx;
+public int by;
+public int tx;
+public int ty;
+public int row;
+public int col;
+public float cValue;
 public int m;
 public int k;
 }

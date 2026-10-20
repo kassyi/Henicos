@@ -53,15 +53,15 @@ Kassyi_GSharp_Core_SharedMemory<float> __gsharp_id_3_sdata;
 int __gsharp_id_4_tid;
 int __gsharp_id_5_i;
 float __gsharp_id_6_sum;
-int __gsharp_warp_temp_0;
-int __gsharp_warp_temp_1;
-int __gsharp_warp_temp_2;
-int __gsharp_warp_temp_3;
-int __gsharp_warp_temp_4;
+float __gsharp_warp_temp_0;
+float __gsharp_warp_temp_1;
+float __gsharp_warp_temp_2;
+float __gsharp_warp_temp_3;
+float __gsharp_warp_temp_4;
 int __gsharp_id_9_lane;
 int __gsharp_id_10_warpId;
-int __gsharp_warp_temp_5;
-int __gsharp_warp_temp_6;
+float __gsharp_warp_temp_5;
+float __gsharp_warp_temp_6;
 };
 extern ""C"" __declspec(dllexport) void ReductionKernels_ReductionKernel(GSharpArray<Kassyi_GSharp_Core_Float4> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output, int __gsharp_id_2_n, __gsharp_context_ReductionKernels_ReductionKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -236,18 +236,18 @@ public class __gsharp_context_ReductionKernels_ReductionKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
-public dynamic tid;
-public dynamic i;
-public dynamic sum;
-public dynamic __gsharp_warp_temp_0;
-public dynamic __gsharp_warp_temp_1;
-public dynamic __gsharp_warp_temp_2;
-public dynamic __gsharp_warp_temp_3;
-public dynamic __gsharp_warp_temp_4;
-public dynamic lane;
-public dynamic warpId;
-public dynamic __gsharp_warp_temp_5;
-public dynamic __gsharp_warp_temp_6;
+public int tid;
+public int i;
+public float sum;
+public float __gsharp_warp_temp_0;
+public float __gsharp_warp_temp_1;
+public float __gsharp_warp_temp_2;
+public float __gsharp_warp_temp_3;
+public float __gsharp_warp_temp_4;
+public int lane;
+public int warpId;
+public float __gsharp_warp_temp_5;
+public float __gsharp_warp_temp_6;
 }
 public static unsafe void __gsharp_statemachine_ReductionKernels_ReductionKernel(global::Kassyi.GSharp.Core.Float4[] input, float[] output, int n, __gsharp_context_ReductionKernels_ReductionKernel __gsharp_ctx) {
         SharedMemory<float> sdata = new(8);

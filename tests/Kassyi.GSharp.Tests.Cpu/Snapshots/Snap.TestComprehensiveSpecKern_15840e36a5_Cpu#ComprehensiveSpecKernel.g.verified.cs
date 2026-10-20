@@ -406,9 +406,9 @@ public int tid;
 public // 3. Custom Struct extraction & Array pointer dereferencing
             PhysicsVector p;
 public SpecTypes types;
-public dynamic origin;
-public dynamic distance;
-public dynamic nested;
+public global::DebugReduc.Point origin;
+public float distance;
+public global::DebugReduc.NestedPhysicsState nested;
 public // 4. All Math Mappings and Device Method invocation
             float mag;
 public int i;

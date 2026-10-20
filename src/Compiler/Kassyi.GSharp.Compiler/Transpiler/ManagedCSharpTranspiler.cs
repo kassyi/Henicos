@@ -1,3 +1,9 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Kassyi.GSharp.Compiler.Lowering;
 
 #pragma warning disable RS0030 // ManagedCSharpTranspiler is a host-side debug C#-to-C# state machine rewriter
@@ -23,36 +29,38 @@ internal static class ManagedCSharpTranspiler
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
         var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
 
-        var bodySource = RewriteAndNormalizeBody(loweredBody);
-        var (transformedBody, localInits, regularFields) =
-            ProcessContextFields(bodySource, contextFields, semanticModel);
+        var (localInits, regularFields, unhoistedSymbols) =
+            ProcessContextFields(contextFields, semanticModel, methodName);
+
+        var unhoistedBody = (BlockSyntax)new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, methodName).Visit(loweredBody)!;
+        var bodySource = RewriteAndNormalizeBody(unhoistedBody);
 
         using var writer = new SourceWriter();
         EmitContextClass(writer, methodName, regularFields);
-        EmitStateMachineMethod(writer, methodName, methodSymbol, localInits, transformedBody);
+        EmitStateMachineMethod(writer, methodName, methodSymbol, localInits, bodySource);
         return writer.ToString();
     }
 
     private static string RewriteAndNormalizeBody(BlockSyntax loweredBody)
     {
         var rewriter = new ManagedExecutionRewriter();
-        var rewritten = (BlockSyntax)rewriter.Visit(loweredBody);
-        return rewritten.NormalizeWhitespace().ToFullString()
-            .Replace($"{GSharpInternalNames.Context}->", $"{GSharpInternalNames.Context}.");
+        var rewritten = (BlockSyntax)rewriter.Visit(loweredBody)!;
+        return rewritten.NormalizeWhitespace().ToFullString();
     }
 
-    private static (string TransformedBody, string LocalInits, List<(string Type, string Name)> RegularFields)
+    private static (string LocalInits, List<(string Type, string Name)> RegularFields, HashSet<ILocalSymbol> UnhoistedSymbols)
         ProcessContextFields(
-            string bodySource,
             IReadOnlyList<VariableDeclaratorSyntax>? contextFields,
-            SemanticModel semanticModel)
+            SemanticModel semanticModel,
+            string methodName)
     {
         var regularFields = new List<(string Type, string Name)>();
+        var unhoistedSymbols = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
         var localInitBuilder = new StringBuilder();
 
         if (contextFields == null)
         {
-            return (bodySource, string.Empty, regularFields);
+            return (string.Empty, regularFields, unhoistedSymbols);
         }
 
         foreach (var field in contextFields)
@@ -63,14 +71,30 @@ internal static class ManagedCSharpTranspiler
             }
 
             var typeSyntax = declaration.Type;
-            var initString = field.Initializer?.Value.ToFullString() ?? "";
-            var typeString = ResolveFieldType(typeSyntax, initString, semanticModel);
+            var resolvedSymbol = HoistedFieldTypeResolver.Resolve(field, semanticModel, methodName);
+
+            string typeString;
+            if (typeSyntax.IsVar || typeSyntax.ToFullString().Trim() == "var")
+            {
+                typeString = resolvedSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            }
+            else
+            {
+                typeString = typeSyntax.ToFullString().Trim();
+            }
+
             var fieldName = field.Identifier.ValueText.ToCSharpIdentifier();
 
-            if (IsRefStructType(typeString, initString))
+            if (resolvedSymbol.IsRefLikeType)
             {
-                bodySource = UnhoistRefStructField(bodySource, fieldName, typeString, field.Initializer,
-                    localInitBuilder);
+                var localSym = semanticModel.GetDeclaredSymbol<ILocalSymbol>(field);
+                if (localSym != null)
+                {
+                    unhoistedSymbols.Add(localSym);
+                }
+
+                var init = field.Initializer != null ? " " + field.Initializer.ToFullString().TrimStart() : "";
+                localInitBuilder.AppendLine($"        {typeString} {fieldName}{init};");
             }
             else
             {
@@ -78,61 +102,7 @@ internal static class ManagedCSharpTranspiler
             }
         }
 
-        return (bodySource, localInitBuilder.ToString(), regularFields);
-    }
-
-    private static string ResolveFieldType(
-        TypeSyntax typeSyntax,
-        string initString,
-        SemanticModel semanticModel)
-    {
-        var typeString = typeSyntax.ToFullString().Trim();
-        if (!typeSyntax.IsVar && typeString != "var")
-        {
-            return typeString;
-        }
-
-        var resolvedType = typeSyntax.SyntaxTree == semanticModel.SyntaxTree
-            ? semanticModel.GetTypeInfo(typeSyntax).Type
-            : null;
-
-        if (resolvedType != null && resolvedType.TypeKind != TypeKind.Error)
-        {
-            return resolvedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-        }
-
-        // Fallback: If we couldn't resolve the type (e.g., synthesized node) but the initializer looks like a ref struct
-        return initString.Contains(TypeConstants.SharedMemoryType) || initString.Contains(TypeConstants.SpanType)
-            ? "var"
-            : "dynamic";
-    }
-
-    private static bool IsRefStructType(string typeString, string initString) =>
-        typeString.Contains(TypeConstants.SharedMemoryType) || typeString.Contains("Span<") ||
-        initString.Contains(TypeConstants.SharedMemoryType) || initString.Contains(TypeConstants.SpanType);
-
-    private static string UnhoistRefStructField(
-        string bodySource,
-        string fieldName,
-        string typeString,
-        EqualsValueClauseSyntax? initializer,
-        StringBuilder localInitBuilder)
-    {
-        bodySource = bodySource.Replace($"{GSharpInternalNames.Context}.{fieldName}", fieldName);
-
-        var init = initializer != null ? initializer.ToFullString() : "";
-        localInitBuilder.AppendLine(
-            $"        {(typeString == "int" ? "var" : typeString)} {fieldName} {init};");
-
-        if (string.IsNullOrWhiteSpace(init))
-        {
-            return bodySource;
-        }
-
-        bodySource = bodySource.Replace($"{fieldName} {init};", "");
-        bodySource = bodySource.Replace($"{fieldName}{init};", "");
-
-        return bodySource;
+        return (localInitBuilder.ToString(), regularFields, unhoistedSymbols);
     }
 
     private static void EmitContextClass(
@@ -224,9 +194,79 @@ internal static class ManagedCSharpTranspiler
         }
     }
 
+    private sealed class UnhoistRefStructRewriter : CSharpSyntaxRewriter
+    {
+        private readonly HashSet<ILocalSymbol> _unhoistedSymbols;
+        private readonly SemanticModel _semanticModel;
+        private readonly string _kernelName;
+
+        public UnhoistRefStructRewriter(HashSet<ILocalSymbol> unhoistedSymbols, SemanticModel semanticModel, string kernelName)
+        {
+            _unhoistedSymbols = unhoistedSymbols;
+            _semanticModel = semanticModel;
+            _kernelName = kernelName;
+        }
+
+        public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        {
+            var visited = (MemberAccessExpressionSyntax)base.VisitMemberAccessExpression(node)!;
+            if (visited.Kind() == SyntaxKind.PointerMemberAccessExpression &&
+                visited.Expression is IdentifierNameSyntax id &&
+                id.Identifier.Text == GSharpInternalNames.Context)
+            {
+                var sym = _semanticModel.GetSymbol(visited.Name) as ILocalSymbol ?? _semanticModel.GetDeclaredSymbol<ILocalSymbol>(visited.Name);
+                if (sym != null && _unhoistedSymbols.Contains(sym))
+                {
+                    return visited.Name.WithTriviaFrom(visited);
+                }
+            }
+            return visited;
+        }
+
+        public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
+        {
+            if (node.Expression is AssignmentExpressionSyntax assignment &&
+                assignment.Kind() == SyntaxKind.SimpleAssignmentExpression &&
+                assignment.Left is MemberAccessExpressionSyntax memberAccess &&
+                memberAccess.Kind() == SyntaxKind.PointerMemberAccessExpression &&
+                memberAccess.Expression is IdentifierNameSyntax id &&
+                id.Identifier.Text == GSharpInternalNames.Context)
+            {
+                var declaredSym = _semanticModel.GetDeclaredSymbol<ILocalSymbol>(memberAccess.Name);
+                if (declaredSym != null && _unhoistedSymbols.Contains(declaredSym))
+                {
+                    if (node.Parent is BlockSyntax || node.Parent is SwitchSectionSyntax)
+                    {
+                        return null;
+                    }
+
+                    throw new InvalidOperationException(
+                        $"Cannot remove ref-struct initialization statement in kernel '{_kernelName}' for local '{declaredSym.Name}': statement '{node.ToFullString().Trim()}' is not inside a block or switch section.");
+                }
+            }
+
+            return base.VisitExpressionStatement(node);
+        }
+    }
+
     private sealed class ManagedExecutionRewriter : CSharpSyntaxRewriter
     {
         private int _inLambdaOrLocalFuncCount;
+
+        public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
+        {
+            var visited = (MemberAccessExpressionSyntax)base.VisitMemberAccessExpression(node)!;
+            if (visited.Kind() == SyntaxKind.PointerMemberAccessExpression &&
+                visited.Expression is IdentifierNameSyntax id &&
+                id.Identifier.Text == GSharpInternalNames.Context)
+            {
+                return SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    visited.Expression,
+                    visited.Name).WithTriviaFrom(visited);
+            }
+            return visited;
+        }
 
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
         {

@@ -182,24 +182,8 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.YieldedForGridSync} = false;");
         foreach (var field in fields)
         {
-            var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
-            if (typeSyntax == null)
-            {
-                continue;
-            }
-
-            var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(typeSyntax);
-            switch (typeSymbol)
-            {
-                case null when typeSyntax.IsVar:
-                    // Fallback for dynamically generated AST nodes (e.g., warp temporaries)
-                    // Since they are not in the semantic model, default to 'int' for C++ (which allows implicit cast).
-                    context.Emitter.Writer.Append("int");
-                    WriteContextFieldName(field, ref context);
-                    continue;
-                case null:
-                    continue;
-            }
+            // Field types come from HoistedFieldTypeResolver
+            var typeSymbol = HoistedFieldTypeResolver.Resolve(field, context.Query.SemanticModel, methodName);
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
             context.Emitter.Dialect.AppendType(ref context, typeSymbol);
