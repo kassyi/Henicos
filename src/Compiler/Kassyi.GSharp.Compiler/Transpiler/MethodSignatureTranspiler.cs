@@ -58,6 +58,10 @@ internal static class MethodSignatureTranspiler
         }
     }
 
+    private const int KernelParameterSpaceLimitBytes = 4096;
+
+    private const int DevicePointerBytes = 8;
+
     // [WHY] CUDA limits total parameter space for kernel arguments to 4 KB (4096 bytes).
     private static void ReportKernelParameterSpace(IMethodSymbol? methodSymbol, MethodDeclarationSyntax method, bool isDevice, ref TranspileContext context)
     {
@@ -69,38 +73,22 @@ internal static class MethodSignatureTranspiler
         var offset = 0;
         foreach (var parameter in methodSymbol.Parameters)
         {
-            int size;
-            int align;
+            var layout = parameter.RefKind != RefKind.None
+                ? new CudaLayoutRules.CudaLayoutInfo(DevicePointerBytes, DevicePointerBytes)
+                : CudaLayoutRules.GetCudaLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type);
 
-            if (parameter.RefKind != RefKind.None)
-            {
-                size = 8;
-                align = 8;
-            }
-            else if (parameter.Type.UnwrapNullableArrayLike() is { } unwrappedType)
-            {
-                var layout = CudaLayoutRules.GetCudaLayout(unwrappedType);
-                size = layout.Size;
-                align = layout.Alignment;
-            }
-            else
-            {
-                size = 4;
-                align = 4;
-            }
-
-            offset = CudaLayoutRules.AlignUp(offset, align) + size;
+            offset = CudaLayoutRules.AlignUp(offset, layout.Alignment) + layout.Size;
         }
 
         if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
         {
-            offset = CudaLayoutRules.AlignUp(offset, 8) + 8;
+            offset = CudaLayoutRules.AlignUp(offset, DevicePointerBytes) + DevicePointerBytes;
         }
 
-        if (offset > 4096)
+        if (offset > KernelParameterSpaceLimitBytes)
         {
             var kernelName = GetKernelMethodName(method, methodSymbol);
-            context.Reporter.Report(GSharpDiagnostics.KernelParameterSpaceExceeded, method.Identifier.GetLocation(), kernelName, offset, 4096);
+            context.Reporter.Report(GSharpDiagnostics.KernelParameterSpaceExceeded, method.Identifier.GetLocation(), kernelName, offset, KernelParameterSpaceLimitBytes);
         }
     }
 
