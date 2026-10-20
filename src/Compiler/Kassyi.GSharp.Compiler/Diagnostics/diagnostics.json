@@ -539,6 +539,12 @@
     "messageFormat": "The parameters of kernel '{0}' take {1} bytes, which exceeds the {2}-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
+    "name": "UserDefinedOperatorNotSupported",
+    "id": "GSH0062",
+    "title": "User-defined operators are not supported in GPU code",
+    "messageFormat": "The user-defined operator '{0}' of '{1}' is not supported in GPU code. Call a [GpuDeviceFunction] method instead.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
     "isEnabledByDefault": true
   }
 ]
