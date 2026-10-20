@@ -119,11 +119,12 @@
   {
     "name": "LargeStructByValueWarning",
     "id": "GSH0014",
-    "title": "Large struct passed by value",
-    "messageFormat": "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.",
+    "title": "Large struct passed by value (Deprecated)",
+    "messageFormat": "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer. (Deprecated, replaced by GSH0066)",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
-    "isEnabledByDefault": true
+    "isEnabledByDefault": false,
+    "isObsolete": true
   },
   {
     "name": "AutoAllocateReturnInLoopWarning",
@@ -529,6 +530,15 @@
     "messageFormat": "Line {1} of '{0}' is not a valid trusted key: {2}",
     "category": "GSharpCompiler",
     "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "KernelParameterSpaceExceeded",
+    "id": "GSH0066",
+    "title": "Kernel parameters exceed the parameter space limit",
+    "messageFormat": "The parameters of kernel '{0}' take {1} bytes, which exceeds the {2}-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
     "isEnabledByDefault": true
   }
 ]

@@ -4,8 +4,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>Emits CUDA C++ struct definitions, operator overloads, and handles InlineArray structures.</summary>
 internal static class StructTranspiler
 {
-    private const int LargeStructByValueThresholdBytes = 32;
-
     /// <summary>
     /// Recursively registers referenced struct symbols and their field types to ensure necessary forward definitions are emitted.
     /// </summary>
@@ -100,26 +98,6 @@ internal static class StructTranspiler
 
         namedStruct = null;
         return false;
-    }
-
-    /// <summary>
-    /// Checks whether a struct passed by value exceeds the 32-byte threshold and reports a performance warning diagnostic if applicable.
-    /// </summary>
-    public static void CheckLargeStructByValue(ParameterSyntax p, ITypeSymbol? typeSymbol, bool isPointer,
-        ref TranspileContext context)
-    {
-        if (isPointer || typeSymbol is not { TypeKind: TypeKind.Struct } ||
-            typeSymbol.IsArrayLikeType() ||
-            typeSymbol.ContainingNamespace.IsSystemOrNumerics())
-        {
-            return;
-        }
-
-        var size = context.Emitter.Dialect.GetApproximateSize(typeSymbol);
-        if (size >= LargeStructByValueThresholdBytes)
-        {
-            context.Reporter.Report(GSharpDiagnostics.LargeStructByValueWarning, p, p.Identifier.Text, size);
-        }
     }
 
     /// <summary>

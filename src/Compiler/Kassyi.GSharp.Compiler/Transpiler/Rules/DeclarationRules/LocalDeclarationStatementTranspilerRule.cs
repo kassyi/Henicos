@@ -109,7 +109,7 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
     private static void CheckExcessiveSharedMemoryUsage(ExpressionSyntax sizeArg, int elementCount,
         ITypeSymbol typeArg, ref TranspileContext context)
     {
-        var elemSize = context.Emitter.Dialect.GetApproximateSize(typeArg);
+        var elemSize = CudaLayoutRules.GetCudaLayout(typeArg).Size;
         var byteSize = elementCount * elemSize;
         if (byteSize > MaxSharedMemoryWarningBytes)
         {

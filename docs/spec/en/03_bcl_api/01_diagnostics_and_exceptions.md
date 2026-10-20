@@ -39,7 +39,8 @@ During the MSBuild AOT code generation phase, the `Kassyi.Generators.GSharp` Ros
 | [**GSH0011**](diagnostics/GSH0011.md) | Error | **Macro lambda requires a parameter.** Triggered when a `[GpuOperatorMacro]` lambda mapping does not declare expected parameters. |
 | [**GSH0012**](diagnostics/GSH0012.md) | Error | **Macro arguments must be compile-time constants.** Triggered when a macro argument cannot be folded into a constant value during transpilation. |
 | [**GSH0013**](diagnostics/GSH0013.md) | Warning | **Excessive static shared memory.** A `SharedMemory<T>` allocation exceeds 32KB. This can severely reduce SM warp occupancy. |
-| [**GSH0014**](diagnostics/GSH0014.md) | Warning | **Large struct passed by value.** A struct parameter exceeds 32 bytes. Pass it via `ref` or as an array to save limited constant memory space. |
+| [**GSH0014**](diagnostics/GSH0014.md) | Warning | **Large struct passed by value (Deprecated).** A struct parameter exceeds 32 bytes. Pass it via `ref` or as an array to save limited constant memory space. (Deprecated, replaced by GSH0066) |
+| [**GSH0066**](diagnostics/GSH0066.md) | Warning | **Kernel parameter space limit exceeded.** The total size of parameters passed to a kernel exceeds the 4 KB parameter space limit. Pass large structs using an array or buffer. |
 | [**GSH0015**](diagnostics/GSH0015.md) | Warning | **Auto-allocate return in loop.** You called a kernel that returns an array from inside a `for` loop on the host. This allocates a new unmanaged buffer every iteration. |
 | [**GSH0016**](diagnostics/GSH0016.md) | Error | **Unroll factor must be a non-negative compile-time constant.** The argument `factor` of `Gpu.Hint.Unroll` must be a compile-time non-negative integer. |
 | [**GSH0017**](diagnostics/GSH0017.md) | Error | **Unroll hint must precede a loop.** `Gpu.Hint.Unroll` must immediately precede a `for`, `while`, or `do-while` loop. |

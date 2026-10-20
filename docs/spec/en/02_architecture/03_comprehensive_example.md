@@ -99,7 +99,7 @@ public static partial class ComprehensiveSpecKernel
         PhysicsVector[] particles,
         ref float totalMagnitude,
         out bool successFlag,
-        SpecTypes largeStructVal, // Triggers GSH0014 (>= 32 bytes passed by value)
+        SpecTypes largeStructVal, // 48 bytes by value; within the GSH0066 parameter limit.
         int particleCount,
         [Constant] int unrollFactor)
     {
@@ -287,7 +287,6 @@ public static partial class ComprehensiveSpecKernel
 When building this code, MSBuild natively catches the strict constraints via the `Kassyi.Generators.GSharp` analyzers:
 
 ```
-ComprehensiveSpecKernel.cu.cs(79,9): warning GSH0014: The parameter 'largeStructVal' is a struct of size 43 bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer.
 ComprehensiveSpecKernel.cu.cs(107,63): warning GSH0013: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
 ```
 
@@ -887,7 +886,7 @@ This explicit trace proves that:
 
 1. `Constant` uses preprocessor macros.
 2. Custom Structs map flawlessly, and all 11 primitive C# types align to their C++ equivalents.
-3. Diagnostic warnings and errors natively integrate with MSBuild (`GSH0001` - `GSH0004`, `GSH0013` and `GSH0014`) to act as strict guardrails.
+3. Diagnostic warnings and errors natively integrate with MSBuild (`GSH0001` - `GSH0004`, `GSH0013` and `GSH0066`) to act as strict guardrails.
 4. `CastExpression` and `ParenthesizedExpression` AST nodes are properly translated, allowing explicit math method casting like `(float)Math.Sqrt(...)`.
 5. **Control Flow**: Complex `switch` statements, `for`, `while`, and `do-while` loops (including `continue` and `break` jumps) are correctly transpiled and verified by snapshot tests.
 6. **Scalar Marshaling**: `ref` and `out` parameters are properly mapped to pointers in C++, and the C# host launcher utilizes zero-allocation `fixed` pinning to provide seamless bidirectional memory synchronization.
