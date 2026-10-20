@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
 /// <summary>Pooled syntax walker that performs zero-allocation validation of GPU kernel AST nodes.</summary>
@@ -43,6 +42,18 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
     private static readonly ImmutableArray<ISyntaxValidationRule<SingleVariableDesignationSyntax>> s_designationRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<SingleVariableDesignationSyntax>>()
             .ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<BinaryExpressionSyntax>> s_binaryRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<BinaryExpressionSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<AssignmentExpressionSyntax>> s_assignmentRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<AssignmentExpressionSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<PrefixUnaryExpressionSyntax>> s_prefixUnaryRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<PrefixUnaryExpressionSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<PostfixUnaryExpressionSyntax>> s_postfixUnaryRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<PostfixUnaryExpressionSyntax>>().ToImmutableArray();
 
     public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
     {
@@ -133,5 +144,44 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
 
         base.VisitParameter(node);
     }
-}
 
+    public override void VisitBinaryExpression(BinaryExpressionSyntax node)
+    {
+        foreach (var rule in s_binaryRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitBinaryExpression(node);
+    }
+
+    public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)
+    {
+        foreach (var rule in s_assignmentRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitAssignmentExpression(node);
+    }
+
+    public override void VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node)
+    {
+        foreach (var rule in s_prefixUnaryRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitPrefixUnaryExpression(node);
+    }
+
+    public override void VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node)
+    {
+        foreach (var rule in s_postfixUnaryRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitPostfixUnaryExpression(node);
+    }
+}

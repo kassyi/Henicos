@@ -10,7 +10,8 @@ internal static class DiagnosticRuleRegistry
         LinqNotSupportedRule.Instance,
         ManualEnumeratorRule.Instance,
         ParamsModifierNotSupportedRule.Instance,
-        ProhibitedApiRule.Instance
+        ProhibitedApiRule.Instance,
+        UserDefinedOperatorRule.Instance
     );
 
     public static readonly ImmutableArray<DiagnosticDescriptor> AllSupportedDiagnostics = CreateAllSupportedDiagnostics();
