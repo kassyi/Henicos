@@ -70,26 +70,13 @@ internal sealed class UserDefinedOperatorRule :
             return symbol;
         }
 
-        if (semanticModel.GetSafeOperation(node) is IIncrementOrDecrementOperation incDec)
+        return semanticModel.GetSafeOperation(node) switch
         {
-            return incDec.OperatorMethod;
-        }
-
-        if (semanticModel.GetSafeOperation(node) is ICompoundAssignmentOperation compound)
-        {
-            return compound.OperatorMethod;
-        }
-
-        if (semanticModel.GetSafeOperation(node) is IUnaryOperation unary)
-        {
-            return unary.OperatorMethod;
-        }
-
-        if (semanticModel.GetSafeOperation(node) is IBinaryOperation binary)
-        {
-            return binary.OperatorMethod;
-        }
-
-        return null;
+            IIncrementOrDecrementOperation incDec => incDec.OperatorMethod,
+            ICompoundAssignmentOperation compound => compound.OperatorMethod,
+            IUnaryOperation unary => unary.OperatorMethod,
+            IBinaryOperation binary => binary.OperatorMethod,
+            _ => null
+        };
     }
 }
