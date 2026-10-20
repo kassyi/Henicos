@@ -26,11 +26,11 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         {
             using (context.Emitter.Writer.ImmediatelyInvokedLambda())
             {
-                context.Emitter.Writer.Append("auto __coalesce_tmp = ");
+                context.Emitter.Writer.Append("auto __gsharp_coalesce_tmp = ");
                 context.Visitor.Visit(node.Left);
                 context.Emitter.Writer.AppendSemiColonLine();
 
-                context.Emitter.Writer.Append("return __coalesce_tmp.HasValue ? __coalesce_tmp.Value : ");
+                context.Emitter.Writer.Append("return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : ");
                 context.Visitor.Visit(node.Right);
                 context.Emitter.Writer.AppendSemiColonLine();
             }

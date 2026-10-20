@@ -86,13 +86,15 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
 
             if (isVar)
             {
-                context.Emitter.Writer.Append($"auto {v.Identifier.Text}");
+                context.Emitter.Writer.Append("auto");
             }
             else
             {
                 context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-                context.Emitter.Writer.Append($" {v.Identifier.Text}");
             }
+
+            context.Emitter.Writer.AppendSpace();
+            CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
 
             DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
 
@@ -130,8 +132,8 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         return TryWriteFixedSizeArray(variable, elemType, isConst, sizeExpr, "dynamic array size", ref context);
     }
 
-    private static void WriteArrayDeclarationHeader(ITypeSymbol elemType, string identifier, bool isConst,
-        ref TranspileContext context)
+    private static void WriteArrayDeclarationHeader(ITypeSymbol elemType, VariableDeclaratorSyntax variable,
+        bool isConst, ref TranspileContext context)
     {
         if (isConst)
         {
@@ -139,13 +141,14 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
 
         context.Emitter.Dialect.AppendType(ref context, elemType);
-        context.Emitter.Writer.Append($" {identifier}");
+        context.Emitter.Writer.AppendSpace();
+        CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
     }
 
     private static void WriteArrayWithInitializer(VariableDeclaratorSyntax variable, ITypeSymbol elemType, bool isConst,
         int count, SyntaxNode initializerNode, ref TranspileContext context)
     {
-        WriteArrayDeclarationHeader(elemType, variable.Identifier.Text, isConst, ref context);
+        WriteArrayDeclarationHeader(elemType, variable, isConst, ref context);
         using (context.Emitter.Writer.Brackets())
         {
             context.Emitter.Writer.Append(count);
@@ -170,7 +173,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return true;
         }
 
-        WriteArrayDeclarationHeader(elemType, variable.Identifier.Text, isConst, ref context);
+        WriteArrayDeclarationHeader(elemType, variable, isConst, ref context);
         using (context.Emitter.Writer.Brackets())
         {
             context.Visitor.Visit(sizeExpr);

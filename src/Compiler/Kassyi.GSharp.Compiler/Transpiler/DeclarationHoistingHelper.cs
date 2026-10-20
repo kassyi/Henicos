@@ -22,7 +22,9 @@ internal static class DeclarationHoistingHelper
                 {
                     context.Emitter.Writer.Append("auto");
                 }
-                context.Emitter.Writer.AppendLine($" {singleVar.Identifier.Text};");
+                context.Emitter.Writer.AppendSpace();
+                CppNameResolver.AppendDeclaredName(singleVar, singleVar.Identifier, ref context);
+                context.Emitter.Writer.AppendSemiColonLine();
             }
         }
     }

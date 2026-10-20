@@ -93,18 +93,21 @@ internal static class MacroTranspilerHelper
         return false;
     }
 
-    public static string ExtractUnrollLoopParameterName(LambdaExpressionSyntax lambda, bool hasContext)
+    public static string ExtractUnrollLoopParameterName(LambdaExpressionSyntax lambda, bool hasContext) =>
+        ExtractUnrollLoopParameter(lambda, hasContext)?.Identifier.Text ?? string.Empty;
+
+    public static ParameterSyntax? ExtractUnrollLoopParameter(LambdaExpressionSyntax lambda, bool hasContext)
     {
         return lambda switch
         {
-            SimpleLambdaExpressionSyntax simpleLambda => simpleLambda.Parameter.Identifier.Text,
+            SimpleLambdaExpressionSyntax simpleLambda => simpleLambda.Parameter,
             ParenthesizedLambdaExpressionSyntax parenLambda when hasContext &&
                                                                  parenLambda.ParameterList.Parameters.Count == 2 =>
-                parenLambda.ParameterList.Parameters[1].Identifier.Text,
+                parenLambda.ParameterList.Parameters[1],
             ParenthesizedLambdaExpressionSyntax parenLambda when !hasContext &&
                                                                  parenLambda.ParameterList.Parameters.Count == 1 =>
-                parenLambda.ParameterList.Parameters[0].Identifier.Text,
-            _ => string.Empty
+                parenLambda.ParameterList.Parameters[0],
+            _ => null
         };
     }
 

@@ -65,7 +65,7 @@ internal static class ManagedCSharpTranspiler
             var typeSyntax = declaration.Type;
             var initString = field.Initializer?.Value.ToFullString() ?? "";
             var typeString = ResolveFieldType(typeSyntax, initString, semanticModel);
-            var fieldName = field.Identifier.ValueText;
+            var fieldName = field.Identifier.ValueText.ToCSharpIdentifier();
 
             if (IsRefStructType(typeString, initString))
             {
@@ -170,7 +170,7 @@ internal static class ManagedCSharpTranspiler
             {
                 if (p.RefKind == RefKind.Out)
                 {
-                    writer.AppendLine($"        {p.Name} = default;");
+                    writer.AppendLine($"        {p.Name.ToCSharpIdentifier()} = default;");
                 }
             }
         }
@@ -207,7 +207,7 @@ internal static class ManagedCSharpTranspiler
                 RefKind.In => "in ",
                 _ => ""
             };
-            writer.Append($"{refKind}{p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {p.Name}");
+            writer.Append($"{refKind}{p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {p.Name.ToCSharpIdentifier()}");
         }
 
         if (!isFirst)

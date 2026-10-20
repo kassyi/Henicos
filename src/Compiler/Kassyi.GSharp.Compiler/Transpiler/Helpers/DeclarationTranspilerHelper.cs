@@ -31,12 +31,10 @@ internal static class DeclarationTranspilerHelper
             var v = variables[i];
             if (isPointer)
             {
-                context.Emitter.Writer.Append($"*{v.Identifier.Text}");
+                context.Emitter.Writer.Append('*');
             }
-            else
-            {
-                context.Emitter.Writer.Append(v.Identifier.Text);
-            }
+
+            CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
 
             WriteDeclaratorInitializer(v, ref context);
 

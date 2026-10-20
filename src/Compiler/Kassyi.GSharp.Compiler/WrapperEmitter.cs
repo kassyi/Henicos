@@ -305,7 +305,7 @@ internal static class WrapperEmitter
                 }
 
                 var info = GetInteropParameterInfo(p, isDevicePtr);
-                info.WriteTo(writer, p.Name);
+                info.WriteTo(writer, p.Name.ToCSharpIdentifier());
 
                 isFirst = false;
             }
@@ -334,7 +334,7 @@ internal static class WrapperEmitter
                 continue;
             }
 
-            writer.Append(p.Name);
+            writer.Append(p.Name.ToCSharpIdentifier());
             writer.AppendLine(" = default;");
         }
     }
@@ -355,12 +355,12 @@ internal static class WrapperEmitter
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{p.Name} is {{ {lenMember}: 0 }}");
+                    writer.Append($"{p.Name.ToCSharpIdentifier()} is {{ {lenMember}: 0 }}");
                 }
 
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"{p.Name} = null;");
+                    writer.AppendLine($"{p.Name.ToCSharpIdentifier()} = null;");
                 }
             }
             else if (marshaled is IArrayTypeSymbol || marshaled.IsReferenceType)
@@ -368,23 +368,23 @@ internal static class WrapperEmitter
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{p.Name} is null");
+                    writer.Append($"{p.Name.ToCSharpIdentifier()} is null");
                 }
 
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({p.Name}));");
+                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({p.Name.ToCSharpIdentifier()}));");
                 }
 
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{p.Name}.Length == 0");
+                    writer.Append($"{p.Name.ToCSharpIdentifier()}.Length == 0");
                 }
 
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name}));");
+                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name.ToCSharpIdentifier()}));");
                 }
             }
             else if (marshaled is INamedTypeSymbol { Name: "ImmutableArray" })
@@ -392,23 +392,23 @@ internal static class WrapperEmitter
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{p.Name}.IsDefault");
+                    writer.Append($"{p.Name.ToCSharpIdentifier()}.IsDefault");
                 }
 
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({p.Name}));");
+                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({p.Name.ToCSharpIdentifier()}));");
                 }
 
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{p.Name}.Length == 0");
+                    writer.Append($"{p.Name.ToCSharpIdentifier()}.Length == 0");
                 }
 
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name}));");
+                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name.ToCSharpIdentifier()}));");
                 }
             }
             else
@@ -422,7 +422,7 @@ internal static class WrapperEmitter
 
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name}));");
+                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name.ToCSharpIdentifier()}));");
                 }
             }
         }
@@ -557,7 +557,7 @@ internal static class WrapperEmitter
                 if (marshaledType.IsArrayLikeType())
                 {
                     writer.Append("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ");
-                    writer.Append(p.Name);
+                    writer.Append(p.Name.ToCSharpIdentifier());
                 }
                 else
                 {
@@ -568,7 +568,7 @@ internal static class WrapperEmitter
                     }
 
                     writer.AppendSpace();
-                    writer.Append(p.Name);
+                    writer.Append(p.Name.ToCSharpIdentifier());
                 }
             }
 
@@ -622,17 +622,17 @@ internal static class WrapperEmitter
                     $"for (int {GSharpInternalNames.BlockLoopIndex} = 0; {GSharpInternalNames.BlockLoopIndex} < {GSharpInternalNames.TotalBlocks}; {GSharpInternalNames.BlockLoopIndex}++)");
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"int bx = {GSharpInternalNames.BlockLoopIndex} % (int)gridDimX;");
-                    writer.AppendLine($"int by = ({GSharpInternalNames.BlockLoopIndex} / (int)gridDimX) % (int)gridDimY;");
-                    writer.AppendLine($"int bz = {GSharpInternalNames.BlockLoopIndex} / (int)(gridDimX * gridDimY);");
+                    writer.AppendLine($"int {GSharpInternalNames.LaunchBlockX} = {GSharpInternalNames.BlockLoopIndex} % (int)gridDimX;");
+                    writer.AppendLine($"int {GSharpInternalNames.LaunchBlockY} = ({GSharpInternalNames.BlockLoopIndex} / (int)gridDimX) % (int)gridDimY;");
+                    writer.AppendLine($"int {GSharpInternalNames.LaunchBlockZ} = {GSharpInternalNames.BlockLoopIndex} / (int)(gridDimX * gridDimY);");
 
                     writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.IsActive = true;");
                     writer.AppendLine("try");
                     using (writer.Scope())
                     {
-                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = bx;");
-                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = by;");
-                        writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = bz;");
+                        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX = {GSharpInternalNames.LaunchBlockX};");
+                        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxY = {GSharpInternalNames.LaunchBlockY};");
+                        writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxZ = {GSharpInternalNames.LaunchBlockZ};");
                         writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX = (int)blockDimX;");
                         writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimY = (int)blockDimY;");
                         writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;");
@@ -650,14 +650,14 @@ internal static class WrapperEmitter
                             $"for (int {GSharpInternalNames.ThreadLoopIndex} = 0; {GSharpInternalNames.ThreadLoopIndex} < {GSharpInternalNames.ThreadsPerBlock}; {GSharpInternalNames.ThreadLoopIndex}++)");
                         using (writer.Scope())
                         {
-                            writer.AppendLine($"int tx = {GSharpInternalNames.ThreadLoopIndex} % (int)blockDimX;");
+                            writer.AppendLine($"int {GSharpInternalNames.LaunchThreadX} = {GSharpInternalNames.ThreadLoopIndex} % (int)blockDimX;");
                             writer.AppendLine(
-                                $"int ty = ({GSharpInternalNames.ThreadLoopIndex} / (int)blockDimX) % (int)blockDimY;");
+                                $"int {GSharpInternalNames.LaunchThreadY} = ({GSharpInternalNames.ThreadLoopIndex} / (int)blockDimX) % (int)blockDimY;");
                             writer.AppendLine(
-                                $"int tz = {GSharpInternalNames.ThreadLoopIndex} / (int)(blockDimX * blockDimY);");
-                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = tx;");
-                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = ty;");
-                            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = tz;");
+                                $"int {GSharpInternalNames.LaunchThreadZ} = {GSharpInternalNames.ThreadLoopIndex} / (int)(blockDimX * blockDimY);");
+                            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX = {GSharpInternalNames.LaunchThreadX};");
+                            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxY = {GSharpInternalNames.LaunchThreadY};");
+                            writer.AppendLine($"global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxZ = {GSharpInternalNames.LaunchThreadZ};");
 
                             writer.AppendLine(
                                 $"int {GSharpInternalNames.LinearThreadIndex} = {GSharpInternalNames.BlockLoopIndex} * {GSharpInternalNames.ThreadsPerBlock} + {GSharpInternalNames.ThreadLoopIndex};");
@@ -689,7 +689,7 @@ internal static class WrapperEmitter
                                         writer.Append("out ");
                                     }
 
-                                    writer.Append(p.Name);
+                                    writer.Append(p.Name.ToCSharpIdentifier());
                                 }
 
                                 if (!isFirst)
@@ -764,7 +764,7 @@ internal static class WrapperEmitter
             {
                 writer.Append("fixed (");
                 writer.AppendFullyQualifiedCsharpName(p.Type);
-                writer.AppendLine($"* p_{p.Name} = &{p.Name})");
+                writer.AppendLine($"* p_{p.Name} = &{p.Name.ToCSharpIdentifier()})");
                 hasFixed = true;
             }
         }
@@ -819,11 +819,11 @@ internal static class WrapperEmitter
                 else if (p.RefKind is RefKind.Ref or RefKind.Out)
                 {
                     writer.Append("p_");
-                    writer.Append(p.Name);
+                    writer.Append(p.Name.ToCSharpIdentifier());
                 }
                 else
                 {
-                    writer.Append(p.Name);
+                    writer.Append(p.Name.ToCSharpIdentifier());
                 }
             }
 

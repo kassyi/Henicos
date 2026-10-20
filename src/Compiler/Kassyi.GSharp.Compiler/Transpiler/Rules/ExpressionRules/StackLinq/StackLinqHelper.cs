@@ -40,11 +40,11 @@ internal static class StackLinqHelper
             var arg = GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append($"{resultVar} += (");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__val_{valIndex});");
+            context.Emitter.Writer.AppendLine($")(__gsharp_val_{valIndex});");
         }
         else
         {
-            context.Emitter.Writer.AppendLine($"{resultVar} += __val_{valIndex};");
+            context.Emitter.Writer.AppendLine($"{resultVar} += __gsharp_val_{valIndex};");
         }
     }
 }

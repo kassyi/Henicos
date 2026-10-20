@@ -20,6 +20,8 @@
     <!-- Shared with Runtime so build-time (GSH0059) and runtime key validation use one implementation. -->
     <Compile Include="..\..\Shared\Cryptography\Ed25519Field.cs" Link="Cryptography\Ed25519Field.cs" />
     <Compile Include="..\..\Shared\Cryptography\Ed25519PublicKeyValidator.cs" Link="Cryptography\Ed25519PublicKeyValidator.cs" />
+    <!-- Shared with the build tasks, which translate nvcc / host compiler output back to C# names. -->
+    <Compile Include="..\..\Shared\Naming\GSharpNameEncoding.cs" Link="Naming\GSharpNameEncoding.cs" />
   </ItemGroup>
 
   <ItemGroup>

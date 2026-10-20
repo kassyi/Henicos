@@ -3,6 +3,9 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// <summary>Connects all AST lowering passes into a pipeline that transforms standard C# kernel bodies into a flat state machine.</summary>
 public static class AstLoweringPipeline
 {
+    /// <summary>Annotation kind that records the span of the original node a lowered node was derived from.</summary>
+    public const string OriginalSpanAnnotationKind = "GSharpOriginalSpan";
+
     /// <summary>Lowers a kernel block into a flat state machine block and extracts hoisted context fields.</summary>
     public static (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields) Lower(
         BlockSyntax body)
@@ -32,7 +35,7 @@ public static class AstLoweringPipeline
 
             var visited = base.Visit(node)!;
             return visited.WithAdditionalAnnotations(
-                new SyntaxAnnotation("GSharpOriginalSpan", $"{node.SpanStart},{node.Span.Length}"));
+                new SyntaxAnnotation(OriginalSpanAnnotationKind, $"{node.SpanStart},{node.Span.Length}"));
         }
     }
 }

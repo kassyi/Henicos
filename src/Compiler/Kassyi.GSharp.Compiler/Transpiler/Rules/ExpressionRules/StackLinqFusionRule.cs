@@ -144,23 +144,23 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             return;
         }
 
-        const string ResultVar = "__fusion_res";
+        const string ResultVar = "__gsharp_fusion_res";
         var terminalStage = chain.Stages[^1];
 
         using (context.Emitter.Writer.ImmediatelyInvokedLambda("auto"))
         {
             EmitInitializations(in chain, ref context, terminalStrategy, in terminalStage, ResultVar);
 
-            context.Emitter.Writer.Append("int __fusion_length = ");
+            context.Emitter.Writer.Append("int __gsharp_fusion_length = ");
             context.Visitor.Visit(chain.SourceArrayExpression);
             context.Emitter.Writer.AppendLine(".length;");
 
-            context.Emitter.Writer.AppendLine("for (int __i = 0; __i < __fusion_length; __i++)");
+            context.Emitter.Writer.AppendLine("for (int __gsharp_i = 0; __gsharp_i < __gsharp_fusion_length; __gsharp_i++)");
             using (context.Emitter.Writer.Scope())
             {
-                context.Emitter.Writer.Append("auto __val_0 = ");
+                context.Emitter.Writer.Append("auto __gsharp_val_0 = ");
                 context.Visitor.Visit(chain.SourceArrayExpression);
-                context.Emitter.Writer.AppendLine("[__i];");
+                context.Emitter.Writer.AppendLine("[__gsharp_i];");
 
                 var valIndex = 0;
                 var openBraces = 0;
@@ -197,7 +197,7 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
             return;
         }
 
-        const string ResultVar = "__fusion_res";
+        const string ResultVar = "__gsharp_fusion_res";
         var terminalStage = chain.Stages[^1];
 
         using (context.Emitter.Writer.ImmediatelyInvokedLambda("auto"))
@@ -228,19 +228,19 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
     private static void EmitThreadLocalReductionLoop(in StackLinqChain chain, ref TranspileContext context,
         IStackLinqTerminalStrategy terminalStrategy, in LinqStage terminalStage, string resultVar)
     {
-        context.Emitter.Writer.Append("int __fusion_length = ");
+        context.Emitter.Writer.Append("int __gsharp_fusion_length = ");
         context.Visitor.Visit(chain.SourceArrayExpression);
         context.Emitter.Writer.AppendLine(".length;");
 
-        context.Emitter.Writer.AppendLine("int __tid = threadIdx.x + blockIdx.x * blockDim.x;");
-        context.Emitter.Writer.AppendLine("int __stride = blockDim.x * gridDim.x;");
+        context.Emitter.Writer.AppendLine("int __gsharp_tid = threadIdx.x + blockIdx.x * blockDim.x;");
+        context.Emitter.Writer.AppendLine("int __gsharp_stride = blockDim.x * gridDim.x;");
 
-        context.Emitter.Writer.AppendLine("for (int __i = __tid; __i < __fusion_length; __i += __stride)");
+        context.Emitter.Writer.AppendLine("for (int __gsharp_i = __gsharp_tid; __gsharp_i < __gsharp_fusion_length; __gsharp_i += __gsharp_stride)");
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Writer.Append("auto __val_0 = ");
+            context.Emitter.Writer.Append("auto __gsharp_val_0 = ");
             context.Visitor.Visit(chain.SourceArrayExpression);
-            context.Emitter.Writer.AppendLine("[__i];");
+            context.Emitter.Writer.AppendLine("[__gsharp_i];");
 
             var valIndex = 0;
             var openBraces = 0;
@@ -273,29 +273,29 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
     private static void EmitBlockWideReduction(ref TranspileContext context,
         in LinqStage terminalStage, string resultVar)
     {
-        context.Emitter.Writer.AppendLine("unsigned int __mask = 0xffffffff;");
+        context.Emitter.Writer.AppendLine("unsigned int __gsharp_mask = 0xffffffff;");
         EmitWarpShuffleSum(ref context, resultVar);
 
         context.Emitter.Writer.Append("__shared__ ");
         context.Emitter.Dialect.AppendType(ref context, terminalStage.Symbol.ReturnType);
-        context.Emitter.Writer.AppendLine(" __warp_sums[32];");
+        context.Emitter.Writer.AppendLine(" __gsharp_warp_sums[32];");
 
-        context.Emitter.Writer.AppendLine("int __warp_id = threadIdx.x / 32;");
-        context.Emitter.Writer.AppendLine("int __lane_id = threadIdx.x % 32;");
+        context.Emitter.Writer.AppendLine("int __gsharp_warp_id = threadIdx.x / 32;");
+        context.Emitter.Writer.AppendLine("int __gsharp_lane_id = threadIdx.x % 32;");
 
-        context.Emitter.Writer.AppendLine("if (__lane_id == 0)");
+        context.Emitter.Writer.AppendLine("if (__gsharp_lane_id == 0)");
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Writer.AppendLine($"__warp_sums[__warp_id] = {resultVar};");
+            context.Emitter.Writer.AppendLine($"__gsharp_warp_sums[__gsharp_warp_id] = {resultVar};");
         }
 
         context.Emitter.Writer.AppendLine("__syncthreads();");
 
-        context.Emitter.Writer.AppendLine("if (__warp_id == 0)");
+        context.Emitter.Writer.AppendLine("if (__gsharp_warp_id == 0)");
         using (context.Emitter.Writer.Scope())
         {
             context.Emitter.Writer.AppendLine(
-                $"{resultVar} = (__lane_id < (blockDim.x + 31) / 32) ? __warp_sums[__lane_id] : 0;");
+                $"{resultVar} = (__gsharp_lane_id < (blockDim.x + 31) / 32) ? __gsharp_warp_sums[__gsharp_lane_id] : 0;");
             EmitWarpShuffleSum(ref context, resultVar);
         }
     }
@@ -303,10 +303,10 @@ public sealed class StackLinqFusionRule : IInvocationTranspilerRule
     private static void EmitWarpShuffleSum(ref TranspileContext context, string resultVar)
     {
         context.Emitter.Writer.AppendLine("#pragma unroll");
-        context.Emitter.Writer.AppendLine("for (int __offset = 16; __offset > 0; __offset /= 2)");
+        context.Emitter.Writer.AppendLine("for (int __gsharp_offset = 16; __gsharp_offset > 0; __gsharp_offset /= 2)");
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Writer.AppendLine($"{resultVar} += __shfl_down_sync(__mask, {resultVar}, __offset);");
+            context.Emitter.Writer.AppendLine($"{resultVar} += __shfl_down_sync(__gsharp_mask, {resultVar}, __gsharp_offset);");
         }
     }
 }

@@ -73,7 +73,7 @@ internal static class StructMarshalingEmitter
             writer.AppendNestedCppName(member.Type);
             using (writer.Parentheses())
             {
-                writer.Append($"ref host.{member.Name}, ref native.{member.Name}, isDevicePtr, allocatedPtrs, hStream");
+                writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, isDevicePtr, allocatedPtrs, hStream");
             }
 
             writer.AppendLine(";");
@@ -82,16 +82,16 @@ internal static class StructMarshalingEmitter
         {
             if (member.Type.IsReferenceType || member.Type.SpecialType != SpecialType.None)
             {
-                writer.AppendLine($"native.{member.Name} = host.{member.Name};");
+                writer.AppendLine($"native.{member.Name.ToCSharpIdentifier()} = host.{member.Name.ToCSharpIdentifier()};");
             }
             else
             {
-                writer.AppendLine($"fixed (byte* pField = native.{member.Name})");
+                writer.AppendLine($"fixed (byte* pField = native.{member.Name.ToCSharpIdentifier()})");
                 using (writer.Scope())
                 {
                     writer.Append("*((");
                     writer.AppendFullyQualifiedCsharpName(member.Type);
-                    writer.AppendLine($"*)pField) = host.{member.Name};");
+                    writer.AppendLine($"*)pField) = host.{member.Name.ToCSharpIdentifier()};");
                 }
             }
         }
@@ -99,7 +99,7 @@ internal static class StructMarshalingEmitter
 
     private static void WriteMarshalArrayMember(SourceWriter writer, IFieldSymbol member, ITypeSymbol elementType)
     {
-        writer.AppendLine($"if (host.{member.Name} != null)");
+        writer.AppendLine($"if (host.{member.Name.ToCSharpIdentifier()} != null)");
         using (writer.Scope())
         {
             writer.AppendLine("if (isDevicePtr)");
@@ -112,28 +112,28 @@ internal static class StructMarshalingEmitter
             writer.AppendLine("else");
             using (writer.Scope())
             {
-                WriteArrayElementSize(writer, "host.", member.Name, elementType);
+                WriteArrayElementSize(writer, "host.", member.Name.ToCSharpIdentifier(), elementType);
 
                 writer.AppendLine("if (size > 0)");
                 using (writer.Scope())
                 {
                     writer.AppendLine(
-                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.{member.Name}.Data, (IntPtr)size, hStream));");
-                    writer.AppendLine($"allocatedPtrs?.Add(native.{member.Name}.Data);");
+                        $"CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.{member.Name.ToCSharpIdentifier()}.Data, (IntPtr)size, hStream));");
+                    writer.AppendLine($"allocatedPtrs?.Add(native.{member.Name.ToCSharpIdentifier()}.Data);");
 
                     if (CudaLayoutRules.IsCustomStruct(elementType))
                     {
                         writer.Append("var tempArray = new ");
                         writer.AppendAotStructPath(elementType);
-                        writer.AppendLine($"[host.{member.Name}.Length];");
+                        writer.AppendLine($"[host.{member.Name.ToCSharpIdentifier()}.Length];");
 
-                        writer.AppendLine($"for (int i = 0; i < host.{member.Name}.Length; i++)");
+                        writer.AppendLine($"for (int i = 0; i < host.{member.Name.ToCSharpIdentifier()}.Length; i++)");
                         using (writer.Scope())
                         {
                             writer.Append("Marshal_");
                             writer.AppendNestedCppName(elementType);
                             writer.AppendLine(
-                                $"(ref host.{member.Name}[i], ref tempArray[i], false, allocatedPtrs, hStream);");
+                                $"(ref host.{member.Name.ToCSharpIdentifier()}[i], ref tempArray[i], false, allocatedPtrs, hStream);");
                         }
 
                         writer.AppendLine(
@@ -142,7 +142,7 @@ internal static class StructMarshalingEmitter
                         using (writer.Scope())
                         {
                             writer.AppendLine(
-                                $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.{member.Name}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
+                                $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.{member.Name.ToCSharpIdentifier()}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
                         }
 
                         writer.AppendLine("finally");
@@ -154,12 +154,12 @@ internal static class StructMarshalingEmitter
                     else
                     {
                         writer.AppendLine(
-                            $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                            $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name.ToCSharpIdentifier()}, System.Runtime.InteropServices.GCHandleType.Pinned);");
                         writer.AppendLine("try");
                         using (writer.Scope())
                         {
                             writer.AppendLine(
-                                $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.{member.Name}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
+                                $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(native.{member.Name.ToCSharpIdentifier()}.Data, handle.AddrOfPinnedObject(), (IntPtr)size, hStream));");
                         }
 
                         writer.AppendLine("finally");
@@ -170,7 +170,7 @@ internal static class StructMarshalingEmitter
                     }
                 }
 
-                writer.AppendLine($"native.{member.Name}.Length = host.{member.Name}.Length;");
+                writer.AppendLine($"native.{member.Name.ToCSharpIdentifier()}.Length = host.{member.Name.ToCSharpIdentifier()}.Length;");
             }
         }
     }
@@ -215,7 +215,7 @@ internal static class StructMarshalingEmitter
             writer.AppendNestedCppName(member.Type);
             using (writer.Parentheses())
             {
-                writer.Append($"ref host.{member.Name}, ref native.{member.Name}, isDevicePtr, hStream");
+                writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, isDevicePtr, hStream");
             }
 
             writer.AppendLine(";");
@@ -224,14 +224,14 @@ internal static class StructMarshalingEmitter
         {
             if (member.Type.IsReferenceType || member.Type.SpecialType != SpecialType.None)
             {
-                writer.AppendLine($"host.{member.Name} = native.{member.Name};");
+                writer.AppendLine($"host.{member.Name.ToCSharpIdentifier()} = native.{member.Name.ToCSharpIdentifier()};");
             }
             else
             {
-                writer.AppendLine($"fixed (byte* pField = native.{member.Name})");
+                writer.AppendLine($"fixed (byte* pField = native.{member.Name.ToCSharpIdentifier()})");
                 using (writer.Scope())
                 {
-                    writer.Append($"host.{member.Name} = *((");
+                    writer.Append($"host.{member.Name.ToCSharpIdentifier()} = *((");
                     writer.AppendFullyQualifiedCsharpName(member.Type);
                     writer.AppendLine("*)pField);");
                 }
@@ -242,10 +242,10 @@ internal static class StructMarshalingEmitter
     private static void WriteUnmarshalArrayMember(SourceWriter writer, IFieldSymbol member, ITypeSymbol elementType)
     {
         writer.AppendLine(
-            $"if (host.{member.Name} != null && !isDevicePtr && native.{member.Name}.Data != IntPtr.Zero)");
+            $"if (host.{member.Name.ToCSharpIdentifier()} != null && !isDevicePtr && native.{member.Name.ToCSharpIdentifier()}.Data != IntPtr.Zero)");
         using (writer.Scope())
         {
-            WriteArrayElementSize(writer, "host.", member.Name, elementType);
+            WriteArrayElementSize(writer, "host.", member.Name.ToCSharpIdentifier(), elementType);
 
             writer.AppendLine("if (size > 0)");
             using (writer.Scope())
@@ -254,7 +254,7 @@ internal static class StructMarshalingEmitter
                 {
                     writer.Append("var tempArray = new ");
                     writer.AppendAotStructPath(elementType);
-                    writer.AppendLine($"[host.{member.Name}.Length];");
+                    writer.AppendLine($"[host.{member.Name.ToCSharpIdentifier()}.Length];");
 
                     writer.AppendLine(
                         "var handle = System.Runtime.InteropServices.GCHandle.Alloc(tempArray, System.Runtime.InteropServices.GCHandleType.Pinned);");
@@ -262,7 +262,7 @@ internal static class StructMarshalingEmitter
                     using (writer.Scope())
                     {
                         writer.AppendLine(
-                            $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.{member.Name}.Data, (IntPtr)size, hStream));");
+                            $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.{member.Name.ToCSharpIdentifier()}.Data, (IntPtr)size, hStream));");
                     }
 
                     writer.AppendLine("finally");
@@ -271,23 +271,23 @@ internal static class StructMarshalingEmitter
                         writer.AppendLine("handle.Free();");
                     }
 
-                    writer.AppendLine($"for (int i = 0; i < host.{member.Name}.Length; i++)");
+                    writer.AppendLine($"for (int i = 0; i < host.{member.Name.ToCSharpIdentifier()}.Length; i++)");
                     using (writer.Scope())
                     {
                         writer.Append("Unmarshal_");
                         writer.AppendNestedCppName(elementType);
-                        writer.AppendLine($"(ref host.{member.Name}[i], ref tempArray[i], false, hStream);");
+                        writer.AppendLine($"(ref host.{member.Name.ToCSharpIdentifier()}[i], ref tempArray[i], false, hStream);");
                     }
                 }
                 else
                 {
                     writer.AppendLine(
-                        $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                        $"var handle = System.Runtime.InteropServices.GCHandle.Alloc(host.{member.Name.ToCSharpIdentifier()}, System.Runtime.InteropServices.GCHandleType.Pinned);");
                     writer.AppendLine("try");
                     using (writer.Scope())
                     {
                         writer.AppendLine(
-                            $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.{member.Name}.Data, (IntPtr)size, hStream));");
+                            $"CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(handle.AddrOfPinnedObject(), native.{member.Name.ToCSharpIdentifier()}.Data, (IntPtr)size, hStream));");
                     }
 
                     writer.AppendLine("finally");

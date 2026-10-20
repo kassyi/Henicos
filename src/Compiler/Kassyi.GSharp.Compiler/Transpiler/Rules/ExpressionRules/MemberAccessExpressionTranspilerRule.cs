@@ -46,7 +46,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
-        TranspileMemberAccess(node, ref context);
+        TranspileMemberAccess(node, symbol, ref context);
     }
 
     private static bool TryTranspileSpecialArrayMembers(MemberAccessExpressionSyntax node, ref TranspileContext context)
@@ -114,14 +114,28 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         return false;
     }
 
-    private static void TranspileMemberAccess(MemberAccessExpressionSyntax node, ref TranspileContext context)
+    private static void TranspileMemberAccess(MemberAccessExpressionSyntax node, ISymbol? memberSymbol,
+        ref TranspileContext context)
     {
         context.Visitor.Visit(node.Expression);
         context.Emitter.Writer.Append(node.IsKind(SyntaxKind.PointerMemberAccessExpression) ? "->" : ".");
 
-        var memberName = node.Name.Identifier.Text;
+        // [WHY] Members of structs that G# emits are resolved before the dialect mapping, which would otherwise rewrite
+        // a user field named Length or Count as if it were an array length.
+        // The name is resolved first because the access symbol of an invoked delegate is its Invoke method, and lowering
+        // synthesizes context accesses (ctx->local) whose member carries the hoisted local's original span.
+        memberSymbol = context.Query.SemanticModel.GetSymbol(node.Name) ??
+                       context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node.Name) ??
+                       memberSymbol;
+        var memberName = CppNameResolver.Resolve(memberSymbol, node.Name.Identifier.ValueText, context.Emitter.Dialect);
+        if (memberName.Kind != CppNameKind.Verbatim)
+        {
+            context.Emitter.Writer.AppendCppName(memberName);
+            return;
+        }
+
         var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Expression);
-        if (typeSymbol != null && context.Emitter.Dialect.TryMapMemberAccess(typeSymbol, memberName, out var mappedName, out var isMethodCall) && mappedName != null)
+        if (typeSymbol != null && context.Emitter.Dialect.TryMapMemberAccess(typeSymbol, memberName.Name, out var mappedName, out var isMethodCall) && mappedName != null)
         {
             if (isMethodCall)
             {
@@ -134,7 +148,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         }
         else
         {
-            context.Emitter.Writer.Append(memberName);
+            context.Emitter.Writer.AppendCppName(memberName);
         }
     }
 
