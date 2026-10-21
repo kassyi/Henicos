@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Core.Attributes;
+using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers;
 
