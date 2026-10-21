@@ -329,7 +329,7 @@
     "name": "DivergentBarrierProhibited",
     "id": "GSH0037",
     "title": "Divergent barriers are prohibited",
-    "messageFormat": "Gpu.SyncThreads() cannot be placed inside a thread-dependent conditional branch. This causes undefined behavior on the GPU and deadlocks the CPU emulator.",
+    "messageFormat": "Gpu.SyncThreads(), or a call to a device function that reaches it, cannot be placed inside a conditional branch or an operand that only some threads evaluate ('&&', '||', '??', '?:'). This causes undefined behavior on the GPU and deadlocks the CPU emulator.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -567,6 +567,15 @@
     "messageFormat": "The device function '{0}' reaches Gpu.SyncThreads() or a warp shuffle and calls itself directly or through other device functions. The CPU state machine needs a frame of static size for every call.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "SharedMemoryDeclarationsShareLine",
+    "id": "GSH0065",
+    "title": "Shared memory declarations on one line share a buffer in managed execution",
+    "messageFormat": "This SharedMemory<T> declaration is on the same line as another one of '{0}'. Under managed execution a device function without barriers identifies a declaration only by its file, line and method name, so both get the same buffer. Put each declaration on its own line.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
     "isEnabledByDefault": true
   },
   {
