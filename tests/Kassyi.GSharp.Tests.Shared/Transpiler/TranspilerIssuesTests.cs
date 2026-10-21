@@ -109,7 +109,7 @@ public class TranspilerIssuesTests : TranspilerTestBase
 
         Assert.Empty(diagnostics);
         Assert.Contains("template <typename T>", cudaSource.WithCSharpNames());
-        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Transpiler_GenericBox_IssuesTest", cudaSource.WithCSharpNames());
-        Assert.Contains("Kassyi_GSharp_Tests_Shared_Transpiler_GenericBox_IssuesTest<float> b = boxes[0];", cudaSource.WithCSharpNames());
+        Assert.Contains("struct Kassyi.GSharp.Tests.Shared.Transpiler.GenericBox_IssuesTest`1", cudaSource.WithCSharpNames());
+        Assert.Contains("Kassyi.GSharp.Tests.Shared.Transpiler.GenericBox_IssuesTest`1<float> b = boxes[0];", cudaSource.WithCSharpNames());
     }
 }

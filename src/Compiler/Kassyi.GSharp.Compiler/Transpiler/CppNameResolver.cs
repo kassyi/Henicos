@@ -3,14 +3,20 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>Selects how a <see cref="CppName"/> is spelled in emitted C++.</summary>
 internal enum CppNameKind : byte
 {
-    /// <summary>Emitted unchanged: compiler-internal names, external names and global names (renamed by #402).</summary>
+    /// <summary>Emitted unchanged: compiler-internal names, external names and names not yet renamed (#402).</summary>
     Verbatim,
 
     /// <summary>A parameter, local, label or local function: <c>__gsharp_id_{ordinal}_{name}</c>.</summary>
     FunctionScope,
 
     /// <summary>An instance field or property of a struct that G# emits itself: <c>__gsharp_mb_{name}</c>.</summary>
-    Member
+    Member,
+
+    /// <summary>
+    /// A name in the global C++ scope, already complete: <c>__gsharp_ty_</c> / <c>__gsharp_tp_</c> (see
+    /// <see cref="GlobalCppNames"/>).
+    /// </summary>
+    Global
 }
 
 /// <summary>The C++ spelling of a user declaration, produced only by <see cref="CppNameResolver"/>.</summary>
@@ -41,6 +47,8 @@ internal readonly struct CppName
 
     internal static CppName Member(string name) => new(CppNameKind.Member, -1, name);
 
+    internal static CppName Global(string cppName) => new(CppNameKind.Global, -1, cppName);
+
     public override string ToString()
     {
         using var writer = new SourceWriter();
@@ -69,6 +77,9 @@ internal static class CppNameResolver
             CppName.FunctionScope(GetDeclarationOrdinal(symbol), symbol.Name),
         IFieldSymbol { IsStatic: false } or IPropertySymbol { IsStatic: false } when IsEmittedStructMember(symbol, dialect)
             => CppName.Member(symbol.Name),
+        ITypeParameterSymbol parameter => CppName.Global(GlobalCppNames.GetTypeParameterName(parameter)),
+        INamedTypeSymbol type when GlobalCppNames.IsEmittedUserType(type) && !dialect.IsMappedType(type) =>
+            CppName.Global(GlobalCppNames.GetTypeName(type)),
         _ => CppName.Verbatim(fallbackName)
     };
 

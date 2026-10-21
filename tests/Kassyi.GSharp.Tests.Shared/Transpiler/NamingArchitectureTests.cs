@@ -15,8 +15,7 @@ public partial class NamingArchitectureTests
     // Each entry is "{file}:{expression}" and names the issue that owns the remaining verbatim emission.
     private static readonly HashSet<string> s_allowedRawNames = new(StringComparer.Ordinal)
     {
-        // #402: template parameters and global names (entry points, static members) are still emitted verbatim.
-        "StructTranspiler.cs:structSym.TypeParameters[i].Name",
+        // #402: global function names (entry points, static members) are still emitted verbatim.
         "MemberAccessExpressionTranspilerRule.cs:node.Name.Identifier.Text",
         "MethodSignatureTranspiler.cs:methodSymbol.ContainingType.Name",
         "MethodSignatureTranspiler.cs:method.Identifier.Text",
@@ -174,9 +173,10 @@ public partial class NamingArchitectureTests
             foreach (var path in Directory.EnumerateFiles(Path.Combine(compilerRoot, directory), "*.cs",
                          SearchOption.AllDirectories))
             {
-                // CppNameResolver is the naming layer itself; ManagedCSharpTranspiler emits C#, not C++.
+                // The naming layer itself is exempt; ManagedCSharpTranspiler emits C#, not C++.
                 var fileName = Path.GetFileName(path);
-                if (fileName is "CppNameResolver.cs" or "CppNameFormatter.cs" or "ManagedCSharpTranspiler.cs")
+                if (fileName is "CppNameResolver.cs" or "CppNameFormatter.cs" or "GlobalCppNames.cs" or
+                    "ManagedCSharpTranspiler.cs")
                 {
                     continue;
                 }
