@@ -14,12 +14,12 @@ internal static class ManagedCSharpTranspiler
         SemanticModel semanticModel,
         LoweredStateMachine? preLowered = null)
     {
-        if (methodDecl.Body == null)
+        if (!methodDecl.HasBody())
         {
             return string.Empty;
         }
 
-        var lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body, semanticModel);
+        var lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl, semanticModel);
         var loweredBody = lowered.LoweredBody;
         var contextFields = lowered.ContextFields;
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
@@ -51,14 +51,14 @@ internal static class ManagedCSharpTranspiler
     public static string GenerateDeviceFunction(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel)
     {
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        if (methodDecl.Body == null || methodSymbol == null ||
+        if (!methodDecl.HasBody() || methodSymbol == null ||
             !SuspensionAnalysis.IsSuspendingFunction(methodSymbol, semanticModel.Compilation) ||
             SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, semanticModel.Compilation))
         {
             return string.Empty;
         }
 
-        var lowered = AstLoweringPipeline.Lower(methodDecl.Body, semanticModel, methodSymbol);
+        var lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel, methodSymbol);
         var frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, methodSymbol);
         var stateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.KernelStateMachinePrefix, methodSymbol);
         var functionName = methodDecl.Identifier.ValueText;

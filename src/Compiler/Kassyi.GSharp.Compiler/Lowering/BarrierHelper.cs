@@ -40,6 +40,20 @@ internal static class BarrierHelper
     public static bool IsSuspendingCall(InvocationExpressionSyntax inv) =>
         inv.HasAnnotations(AstLoweringPipeline.SuspendingCallAnnotationKind);
 
+    /// <summary>Determines whether the specified invocation calls a device function that may suspend and returns a value.</summary>
+    public static bool IsValueReturningSuspendingCall(InvocationExpressionSyntax inv)
+    {
+        foreach (var annotation in inv.GetAnnotations(AstLoweringPipeline.SuspendingCallAnnotationKind))
+        {
+            if (annotation.Data == AstLoweringPipeline.ValueReturningCallAnnotationData)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Determines whether the specified invocation represents a warp shuffle operation.</summary>
     public static bool IsWarpShuffle(InvocationExpressionSyntax inv)
     {

@@ -22,6 +22,29 @@ public static partial class AotContexts
 }
 public const string ArrayKernel_Source = @"// GSharp Transpilation failed for ArrayKernel. Return type float[] is not supported.";
 public static readonly string ArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ArrayKernel_Source;
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ArrayKernel {
+public int __gsharp_state;
+public uint __gsharp_warp_exchange;
+public bool __gsharp_yielded_for_grid_sync;
+}
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ArrayKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ArrayKernel __gsharp_ctx, ref float[] __gsharp_auto_result) {
+{
+    switch (__gsharp_ctx.__gsharp_state)
+    {
+        case 0:
+        {
+            {
+                __gsharp_auto_result = new float[0];
+                __gsharp_ctx.__gsharp_state = -1;
+                return;
+            }
+
+            __gsharp_ctx.__gsharp_state = -1;
+            return;
+        }
+    }
+}
+}
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ArrayKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single[]* __gsharp_auto_result);
@@ -119,6 +142,29 @@ return __gsharp_auto_result;
 #pragma warning restore CS8500
 public const string StringKernel_Source = @"// GSharp Transpilation failed for StringKernel. Return type string is not supported.";
 public static readonly string StringKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +StringKernel_Source;
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__StringKernel {
+public int __gsharp_state;
+public uint __gsharp_warp_exchange;
+public bool __gsharp_yielded_for_grid_sync;
+}
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__StringKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__StringKernel __gsharp_ctx, ref string __gsharp_auto_result) {
+{
+    switch (__gsharp_ctx.__gsharp_state)
+    {
+        case 0:
+        {
+            {
+                __gsharp_auto_result = "";
+                __gsharp_ctx.__gsharp_state = -1;
+                return;
+            }
+
+            __gsharp_ctx.__gsharp_state = -1;
+            return;
+        }
+    }
+}
+}
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void StringKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.String* __gsharp_auto_result);
@@ -214,10 +260,31 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
-public const string PointerKernel2_Source = @"extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2(float** __restrict__ __gsharp_auto_result){
+public const string PointerKernel2_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2 {
+int __gsharp_state = 0;
+__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2* __gsharp_all_contexts = nullptr;
+uint64_t __gsharp_warp_exchange[2] = {};
+uint32_t __gsharp_warp_shuffle_count = 0;
+bool __gsharp_yielded_for_grid_sync = false;
+};
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2* __gsharp_ctx, float** __restrict__ __gsharp_auto_result){
 unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
 __gsharp_auto_result[__gsharp_global_tid] = nullptr;
+__gsharp_state = -1;return;
+__gsharp_state=-1;
 return;
+}
+}
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
 }
 extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, float** __restrict__ __gsharp_auto_result)
 {
@@ -232,6 +299,15 @@ int32_t __gsharp_bx = __gsharp_block_index % __gsharp_grid_dim_x;
 int32_t __gsharp_by = (__gsharp_block_index / __gsharp_grid_dim_x) % __gsharp_grid_dim_y;
 int32_t __gsharp_bz = __gsharp_block_index / (__gsharp_grid_dim_x * __gsharp_grid_dim_y);
 __gsharp_reset_smem();
+std::vector<__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2> __gsharp_contexts(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
+for (auto& __gsharp_launch_ctx : __gsharp_contexts) {
+__gsharp_launch_ctx.__gsharp_state = 0;
+__gsharp_launch_ctx.__gsharp_all_contexts = __gsharp_contexts.data();
+}
+std::atomic<bool> __gsharp_any_active{true};
+while (__gsharp_any_active && !__gsharp_launch_error.HasError())
+{
+__gsharp_any_active = false;
 int32_t __gsharp_threads_per_block = (int32_t)(__gsharp_block_dim_x * __gsharp_block_dim_y * __gsharp_block_dim_z);
 #pragma omp parallel for schedule(static)
 for (int32_t __gsharp_thread_index = 0; __gsharp_thread_index < __gsharp_threads_per_block; __gsharp_thread_index++)
@@ -241,8 +317,14 @@ __gsharp_active_error_slot = &__gsharp_launch_error;
 int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
 int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
 int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
+uint32_t __gsharp_ctx_tid = __gsharp_tz * __gsharp_block_dim_y * __gsharp_block_dim_x + __gsharp_ty * __gsharp_block_dim_x + __gsharp_tx;
+if (__gsharp_contexts[__gsharp_ctx_tid].__gsharp_state != -1)
+{
+__gsharp_any_active = true;
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2(__gsharp_auto_result);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2(&__gsharp_contexts[__gsharp_ctx_tid], __gsharp_auto_result);
+}
+}
 }
 }
 if (__gsharp_launch_error.HasError()) {
@@ -251,6 +333,29 @@ __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_err
 }
 ";
 public static readonly string PointerKernel2_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +PointerKernel2_Source;
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2 {
+public int __gsharp_state;
+public uint __gsharp_warp_exchange;
+public bool __gsharp_yielded_for_grid_sync;
+}
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__PointerKernel2 __gsharp_ctx, ref float* __gsharp_auto_result) {
+{
+    switch (__gsharp_ctx.__gsharp_state)
+    {
+        case 0:
+        {
+            {
+                __gsharp_auto_result = null;
+                __gsharp_ctx.__gsharp_state = -1;
+                return;
+            }
+
+            __gsharp_ctx.__gsharp_state = -1;
+            return;
+        }
+    }
+}
+}
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void PointerKernel2_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Single** __gsharp_auto_result);
@@ -348,6 +453,29 @@ return __gsharp_auto_result;
 #pragma warning restore CS8500
 public const string ManagedStructKernel_Source = @"// GSharp Transpilation failed for ManagedStructKernel. Return type Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct is not supported.";
 public static readonly string ManagedStructKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ManagedStructKernel_Source;
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ManagedStructKernel {
+public int __gsharp_state;
+public uint __gsharp_warp_exchange;
+public bool __gsharp_yielded_for_grid_sync;
+}
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ManagedStructKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ManagedStructKernel __gsharp_ctx, ref global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct __gsharp_auto_result) {
+{
+    switch (__gsharp_ctx.__gsharp_state)
+    {
+        case 0:
+        {
+            {
+                __gsharp_auto_result = default;
+                __gsharp_ctx.__gsharp_state = -1;
+                return;
+            }
+
+            __gsharp_ctx.__gsharp_state = -1;
+            return;
+        }
+    }
+}
+}
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void ManagedStructKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct* __gsharp_auto_result);
@@ -445,6 +573,29 @@ return __gsharp_auto_result;
 #pragma warning restore CS8500
 public const string SpanKernel_Source = @"// GSharp Transpilation failed for SpanKernel. Return type System.ReadOnlySpan<float> is not supported.";
 public static readonly string SpanKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SpanKernel_Source;
+public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__SpanKernel {
+public int __gsharp_state;
+public uint __gsharp_warp_exchange;
+public bool __gsharp_yielded_for_grid_sync;
+}
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__SpanKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__SpanKernel __gsharp_ctx, ref global::System.ReadOnlySpan<float> __gsharp_auto_result) {
+{
+    switch (__gsharp_ctx.__gsharp_state)
+    {
+        case 0:
+        {
+            {
+                __gsharp_auto_result = default;
+                __gsharp_ctx.__gsharp_state = -1;
+                return;
+            }
+
+            __gsharp_ctx.__gsharp_state = -1;
+            return;
+        }
+    }
+}
+}
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
 private unsafe delegate void SpanKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.ReadOnlySpan<global::System.Single>* __gsharp_auto_result);

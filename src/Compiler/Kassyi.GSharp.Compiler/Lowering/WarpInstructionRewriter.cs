@@ -29,9 +29,10 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
     {
         var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>(statements.Count);
 
-        foreach (var statement in statements)
+        foreach (var original in statements)
         {
             var hoistedAssignments = ImmutableArray.CreateBuilder<StatementSyntax>();
+            var statement = StoreDiscardedResult(original);
 
             // Rewrite the statement and capture any hoisted warp instructions
             var rewrittenStatement = new StatementRewriter(this, statement, hoistedAssignments).Visit(statement) as StatementSyntax
@@ -43,6 +44,14 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
 
         return SyntaxFactory.List(newStatements);
     }
+
+    // [WHY] The state machine of a device function that returns a value always writes the result through a target, so a
+    // call statement that discards the value gets a temporary to write it to.
+    private StatementSyntax StoreDiscardedResult(StatementSyntax statement) =>
+        statement is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax call } &&
+        BarrierHelper.IsValueReturningSuspendingCall(call)
+            ? StatementRewriter.CreateTempDeclaration(GetNextCallTempName(), call.WithoutTrivia()).WithTriviaFrom(statement)
+            : statement;
 
     private string GetNextTempName() => $"{GSharpInternalNames.WarpTempPrefix}{_tempCounter++}";
 
@@ -76,6 +85,20 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
         public override SyntaxNode VisitBlock(BlockSyntax node) => parent.VisitBlock(node);
 
         public override SyntaxNode VisitSwitchSection(SwitchSectionSyntax node) => parent.VisitSwitchSection(node);
+
+        // A loop header is evaluated in every iteration, not once in front of the loop. LoopRewriter flattens a loop whose
+        // header holds a warp primitive, and the second hoisting pass then finds the header in the flat statement list.
+        public override SyntaxNode? VisitWhileStatement(WhileStatementSyntax node) =>
+            node.WithStatement(VisitLoopBody(node.Statement));
+
+        public override SyntaxNode? VisitDoStatement(DoStatementSyntax node) =>
+            node.WithStatement(VisitLoopBody(node.Statement));
+
+        public override SyntaxNode? VisitForStatement(ForStatementSyntax node) =>
+            node.WithStatement(VisitLoopBody(node.Statement));
+
+        private StatementSyntax VisitLoopBody(StatementSyntax body) =>
+            Visit(body) as StatementSyntax ?? throw new InvalidOperationException("Warp instruction hoisting removed a loop body.");
 
         public override SyntaxNode? Visit(SyntaxNode? node)
         {
@@ -185,7 +208,7 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             return argument.WithExpression(SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(argument.Expression));
         }
 
-        private static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value) =>
+        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value) =>
             SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),

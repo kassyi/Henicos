@@ -141,8 +141,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 collector.Report,
                 isDevice: false, cudaDialect, out var requiredIncludesCuda);
 
-            var lowered = methodDeclaration.Body != null
-                ? AstLoweringPipeline.Lower(methodDeclaration.Body, context.SemanticModel)
+            var lowered = methodDeclaration.HasBody()
+                ? AstLoweringPipeline.Lower(methodDeclaration, context.SemanticModel)
                 : null;
 
             var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
@@ -233,12 +233,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var frameName = "";
             var frameDependencies = ImmutableArray.CreateBuilder<string>();
             var managedCSharpSource = "";
-            if (methodDeclaration.Body != null &&
+            if (methodDeclaration.GetBodyNode() is { } body &&
                 SuspensionAnalysis.IsSuspendingFunction(methodSymbol, context.SemanticModel.Compilation) &&
                 !SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, context.SemanticModel.Compilation))
             {
                 frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, methodSymbol);
-                foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(methodDeclaration.Body,
+                foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body,
                              context.SemanticModel.Compilation))
                 {
                     frameDependencies.Add(GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, callee));
