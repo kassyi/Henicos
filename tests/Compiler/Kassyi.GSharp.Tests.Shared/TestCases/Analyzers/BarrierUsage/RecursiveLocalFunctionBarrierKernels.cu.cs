@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
-public static partial class SadPath_GSH0045_RecursiveBarrier
+public static partial class RecursiveLocalFunctionBarrierKernels
 {
     [GpuKernel]
     [SkipSnapshotConsistency("Sad Path")]

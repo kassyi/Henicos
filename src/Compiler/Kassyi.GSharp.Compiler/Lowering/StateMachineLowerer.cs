@@ -1,8 +1,18 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Lowers flat C# AST statements into a switch-based state machine separated by thread barriers.</summary>
-public class StateMachineLowerer
+/// <param name="isDeviceFunction">
+/// Whether the body belongs to a device function. Its end completes the call (a plain <c>return</c>, which the emitters
+/// turn into "reset the frame and report completion") instead of finishing the thread.
+/// </param>
+public class StateMachineLowerer(bool isDeviceFunction = false)
 {
+    private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
+        ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
+
+    /// <summary>The calls that may suspend, in frame index order (see <see cref="LoweredStateMachine.CallSites"/>).</summary>
+    public IReadOnlyList<InvocationExpressionSyntax> CallSites => _callSites.ToImmutable();
+
     /// <summary>Transforms statements into switch sections keyed by state indices across barrier boundaries.</summary>
     public BlockSyntax Lower(BlockSyntax block)
     {
@@ -47,7 +57,13 @@ public class StateMachineLowerer
             var barrierInv = BarrierHelper.GetPhaseBarrierInvocation(stmt);
             if (barrierInv != null)
             {
-                if (BarrierHelper.IsWarpShuffle(barrierInv))
+                if (BarrierHelper.IsSuspendingCall(barrierInv))
+                {
+                    // The call gets a state of its own: every resume runs it again until the callee completes
+                    commitState(state + 1, isBarrier: false);
+                    currentCaseStatements.Add(CreateResumeStatement(stmt, barrierInv, state));
+                }
+                else if (BarrierHelper.IsWarpShuffle(barrierInv))
                 {
                     // 1. Publish val to the context's warp exchange slot (__gsharp_warp_exchange_assign(val))
                     var valArg = barrierInv.ArgumentList.Arguments[1].Expression;
@@ -91,8 +107,17 @@ public class StateMachineLowerer
             }
         }
 
-        // Final state: -1
-        commitState(-1, isBarrier: true);
+        if (isDeviceFunction)
+        {
+            // Falling off the end completes the call
+            currentCaseStatements.Add(SyntaxFactory.ReturnStatement());
+            commitSection();
+        }
+        else
+        {
+            // Final state: -1
+            commitState(-1, isBarrier: true);
+        }
 
         var switchStmt = SyntaxFactory.SwitchStatement(
             SyntaxFactory.IdentifierName(GSharpInternalNames.State),
@@ -116,6 +141,12 @@ public class StateMachineLowerer
                     .WithTrailingTrivia(SyntaxFactory.CarriageReturnLineFeed));
             }
 
+            commitSection();
+            state = nextState;
+        }
+
+        void commitSection()
+        {
             cases.Add(SyntaxFactory.SwitchSection(
                 SyntaxFactory.SingletonList<SwitchLabelSyntax>(SyntaxFactory.CaseSwitchLabel(
                     SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state))
@@ -124,8 +155,45 @@ public class StateMachineLowerer
             ));
 
             currentCaseStatements.Clear();
-            state = nextState;
         }
+    }
+
+    // Emits: if (!__gsharp_resume(<call>, <frame index>[, <result target>])) { __gsharp_state = <resume state>; return; }
+    private StatementSyntax CreateResumeStatement(StatementSyntax statement, InvocationExpressionSyntax call,
+        int resumeState)
+    {
+        var resultTarget = statement switch
+        {
+            ExpressionStatementSyntax { Expression: InvocationExpressionSyntax } => null,
+            ExpressionStatementSyntax
+            {
+                Expression: AssignmentExpressionSyntax { Left: var left } assignment
+            } when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) => left,
+            _ => throw new InvalidOperationException(
+                "A call that may suspend must be lowered to a statement or a simple assignment before state machine lowering.")
+        };
+
+        var frameIndex = _callSites.Count;
+        _callSites.Add(call);
+
+        var arguments = SyntaxFactory.SeparatedList<ArgumentSyntax>()
+            .Add(SyntaxFactory.Argument(call))
+            .Add(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                SyntaxFactory.Literal(frameIndex))));
+        if (resultTarget != null)
+        {
+            arguments = arguments.Add(SyntaxFactory.Argument(resultTarget));
+        }
+
+        var resume = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.IdentifierName(GSharpInternalNames.ResumeCall),
+            SyntaxFactory.ArgumentList(arguments));
+
+        return SyntaxFactory.IfStatement(
+            SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, resume),
+            SyntaxFactory.Block(
+                CreateStateAssignment(resumeState),
+                SyntaxFactory.ReturnStatement().WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn"))));
     }
 
     private static StatementSyntax RewriteGoto(StatementSyntax stmt, Dictionary<string, int> labelStates) =>
@@ -176,7 +244,8 @@ public class StateMachineLowerer
 
         var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>();
         // Arguments are: context, mask, val, delta, width [optional]
-        newArgs = newArgs.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.Context)));
+        // The root context owns the warp exchange, also when the shuffle is in a device function
+        newArgs = newArgs.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.Root)));
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[0]);
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[1]); // pass val for type inference
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[2]);

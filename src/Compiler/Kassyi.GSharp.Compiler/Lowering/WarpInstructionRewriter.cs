@@ -1,6 +1,9 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
-/// <summary>Hoists nested warp-level primitives into standalone variable declarations for state machine compatibility.</summary>
+/// <summary>
+/// Hoists nested warp-level primitives and calls to device functions that may suspend into standalone statements, so that
+/// the state machine can split on them.
+/// </summary>
 public class WarpInstructionRewriter : CSharpSyntaxRewriter
 {
     private int _tempCounter;
@@ -8,31 +11,86 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
     /// <summary>Rewrites expressions containing warp primitives by hoisting them into prior statements.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
 
-    public override SyntaxNode VisitBlock(BlockSyntax node)
-    {
-        var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>(node.Statements.Count);
+    public override SyntaxNode VisitBlock(BlockSyntax node) => node.WithStatements(RewriteStatements(node.Statements));
 
-        foreach (var statement in node.Statements)
+    public override SyntaxNode VisitSwitchSection(SwitchSectionSyntax node)
+    {
+        var statements = RewriteStatements(node.Statements);
+
+        // [WHY] A declaration directly under a case label is skipped by jumps to later labels, which C++ rejects
+        return statements.Count == node.Statements.Count
+            ? node.WithStatements(statements)
+            : node.WithStatements(SyntaxFactory.SingletonList<StatementSyntax>(SyntaxFactory.Block(statements)));
+    }
+
+    // [WHY] A temporary lands right before its statement in the same list, so it stays in the scope of loop variables
+    // and is evaluated on every iteration of the enclosing loop.
+    private SyntaxList<StatementSyntax> RewriteStatements(SyntaxList<StatementSyntax> statements)
+    {
+        var newStatements = ImmutableArray.CreateBuilder<StatementSyntax>(statements.Count);
+
+        foreach (var statement in statements)
         {
             var hoistedAssignments = ImmutableArray.CreateBuilder<StatementSyntax>();
 
             // Rewrite the statement and capture any hoisted warp instructions
-            var rewrittenStatement = new StatementRewriter(this, hoistedAssignments).Visit(statement);
+            var rewrittenStatement = new StatementRewriter(this, statement, hoistedAssignments).Visit(statement) as StatementSyntax
+                                     ?? throw new InvalidOperationException("Warp instruction hoisting removed a statement.");
 
             newStatements.AddRange(hoistedAssignments);
-            newStatements.Add((StatementSyntax)rewrittenStatement);
+            newStatements.Add(rewrittenStatement);
         }
 
-        return node.WithStatements(SyntaxFactory.List(newStatements));
+        return SyntaxFactory.List(newStatements);
     }
 
     private string GetNextTempName() => $"{GSharpInternalNames.WarpTempPrefix}{_tempCounter++}";
 
+    private string GetNextCallTempName() => $"{GSharpInternalNames.CallTempPrefix}{_tempCounter++}";
+
+    private string GetNextArgumentTempName() => $"{GSharpInternalNames.ArgumentTempPrefix}{_tempCounter++}";
+
+    private static bool IsWarpPrimitive(InvocationExpressionSyntax inv) =>
+        BarrierHelper.IsWarpShuffle(inv) || BarrierHelper.IsSuspendingCall(inv);
+
+    private static bool ContainsWarpPrimitive(SyntaxNode node)
+    {
+        foreach (var descendant in node.DescendantNodes())
+        {
+            if (descendant is InvocationExpressionSyntax inv && IsWarpPrimitive(inv))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private class StatementRewriter(
         WarpInstructionRewriter parent,
+        StatementSyntax rootStatement,
         ImmutableArray<StatementSyntax>.Builder hoistedAssignments)
         : CSharpSyntaxRewriter
     {
+        // Nested statement lists hoist into their own scope instead of in front of the root statement
+        public override SyntaxNode VisitBlock(BlockSyntax node) => parent.VisitBlock(node);
+
+        public override SyntaxNode VisitSwitchSection(SwitchSectionSyntax node) => parent.VisitSwitchSection(node);
+
+        public override SyntaxNode? Visit(SyntaxNode? node)
+        {
+            // An embedded statement without braces ('for (...) x += Shuffle(...);') has no list for the temporary
+            if (node is StatementSyntax statement and not BlockSyntax &&
+                statement != rootStatement &&
+                statement.Parent is not (BlockSyntax or SwitchSectionSyntax or LabeledStatementSyntax) &&
+                ContainsWarpPrimitive(statement))
+            {
+                return parent.VisitBlock(SyntaxFactory.Block(statement));
+            }
+
+            return base.Visit(node);
+        }
+
         public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
         {
             // First, visit children to handle nested warp instructions (e.g., WarpShuffle(WarpShuffle(x)))
@@ -42,44 +100,104 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
                 return visited;
             }
 
-            if (IsWarpPrimitive(visitedNode))
+            if (!IsWarpPrimitive(visitedNode))
             {
-                switch (node.Parent)
-                {
-                    // If it's already a statement, no need to hoist (e.g. SyncWarp or a standalone WarpShuffle)
-                    case ExpressionStatementSyntax:
-                    // If it's already perfectly hoisted, skip
-                    case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax vd } when
-                        vd.Identifier.Text.StartsWith(GSharpInternalNames.WarpTempPrefix, StringComparison.Ordinal):
-
-                        return visitedNode;
-                }
-
-                var tempName = parent.GetNextTempName();
-
-                // Create: var <warp temp> = <invocation>;
-                var declaration = SyntaxFactory.LocalDeclarationStatement(
-                    SyntaxFactory.VariableDeclaration(
-                        SyntaxFactory.IdentifierName("var"),
-                        SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.VariableDeclarator(
-                                SyntaxFactory.Identifier(tempName)
-                            ).WithInitializer(
-                                SyntaxFactory.EqualsValueClause(visitedNode)
-                            )
-                        )
-                    )
-                ).NormalizeWhitespace();
-
-                hoistedAssignments.Add(declaration);
-
-                return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(visitedNode);
+                return visitedNode;
             }
 
-            return visitedNode;
+            var isSuspendingCall = BarrierHelper.IsSuspendingCall(visitedNode);
+            if (isSuspendingCall)
+            {
+                visitedNode = SpillArguments(visitedNode);
+            }
+
+            switch (node.Parent)
+            {
+                // If it's already a statement, no need to hoist (e.g. SyncWarp or a standalone WarpShuffle)
+                case ExpressionStatementSyntax:
+                // If it's already perfectly hoisted, skip
+                case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax vd } when
+                    vd.Identifier.Text.StartsWith(GSharpInternalNames.WarpTempPrefix, StringComparison.Ordinal) ||
+                    vd.Identifier.Text.StartsWith(GSharpInternalNames.CallTempPrefix, StringComparison.Ordinal):
+
+                    return visitedNode;
+            }
+
+            var tempName = isSuspendingCall ? parent.GetNextCallTempName() : parent.GetNextTempName();
+
+            // Create: var <temp> = <invocation>;
+            hoistedAssignments.Add(CreateTempDeclaration(tempName, visitedNode));
+
+            return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(visitedNode);
         }
 
-        private static bool IsWarpPrimitive(InvocationExpressionSyntax inv) => BarrierHelper.IsWarpShuffle(inv);
+        // [WHY] A suspended call is executed again on every resume, so each argument must evaluate to the same value: an
+        // argument with side effects or one that reads memory other threads change is evaluated once, before the call.
+        private InvocationExpressionSyntax SpillArguments(InvocationExpressionSyntax call)
+        {
+            var arguments = call.ArgumentList.Arguments;
+            var spilledArguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(arguments.Count);
+            var changed = false;
+            foreach (var argument in arguments)
+            {
+                var spilled = SpillArgument(argument);
+                changed |= spilled != argument;
+                spilledArguments.Add(spilled);
+            }
+
+            return changed
+                ? call.WithArgumentList(call.ArgumentList.WithArguments(
+                    SyntaxFactory.SeparatedList(spilledArguments, arguments.GetSeparators())))
+                : call;
+        }
+
+        private ArgumentSyntax SpillArgument(ArgumentSyntax argument)
+        {
+            if (argument.Expression is DeclarationExpressionSyntax
+                {
+                    Designation: SingleVariableDesignationSyntax designation
+                } declarationExpression)
+            {
+                // 'out int x' declares a local that the callee writes on its last resume, so it is declared before the
+                // call. The declarator and the reference keep the span of the designation, which names the local.
+                var annotations = designation.GetAnnotations(AstLoweringPipeline.OriginalSpanAnnotationKind);
+                var identifier = designation.Identifier.WithoutTrivia();
+                hoistedAssignments.Add(SyntaxFactory.LocalDeclarationStatement(
+                    SyntaxFactory.VariableDeclaration(
+                        declarationExpression.Type.WithoutTrivia(),
+                        SyntaxFactory.SingletonSeparatedList(
+                            SyntaxFactory.VariableDeclarator(identifier).WithAdditionalAnnotations(annotations)))
+                ).NormalizeWhitespace());
+
+                return argument.WithExpression(SyntaxFactory.IdentifierName(identifier)
+                    .WithAdditionalAnnotations(annotations)
+                    .WithTriviaFrom(declarationExpression));
+            }
+
+            if (!argument.RefKindKeyword.IsKind(SyntaxKind.None) ||
+                argument.Expression is IdentifierNameSyntax or LiteralExpressionSyntax)
+            {
+                return argument;
+            }
+
+            var tempName = parent.GetNextArgumentTempName();
+            hoistedAssignments.Add(CreateTempDeclaration(tempName, argument.Expression.WithoutTrivia()));
+            return argument.WithExpression(SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(argument.Expression));
+        }
+
+        private static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value) =>
+            SyntaxFactory.LocalDeclarationStatement(
+                SyntaxFactory.VariableDeclaration(
+                    SyntaxFactory.IdentifierName("var"),
+                    SyntaxFactory.SingletonSeparatedList(
+                        SyntaxFactory.VariableDeclarator(
+                            SyntaxFactory.Identifier(tempName)
+                        ).WithInitializer(
+                            SyntaxFactory.EqualsValueClause(value)
+                        )
+                    )
+                )
+            ).NormalizeWhitespace();
     }
 }
 

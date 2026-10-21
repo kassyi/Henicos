@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
-public static partial class SadPath_GSH0044_InvalidParams
+public static partial class KernelParameterRefStructKernels
 {
     // GSH0044: ref parameter in GpuKernel
     [GpuKernel]

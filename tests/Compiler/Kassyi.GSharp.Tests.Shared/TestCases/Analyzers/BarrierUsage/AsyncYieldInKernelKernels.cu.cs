@@ -4,7 +4,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
-public static partial class SadPath_GSH0046_AsyncYield
+public static partial class AsyncYieldInKernelKernels
 {
     // GSH0046: async kernel is prohibited
     [GpuKernel]

@@ -373,8 +373,8 @@
   {
     "name": "ExternalBarrierCallProhibited",
     "id": "GSH0042",
-    "title": "Gpu.SyncThreads() cannot be called from external helper methods",
-    "messageFormat": "Gpu.SyncThreads() can only be called directly within a [GpuKernel] method or its local functions. Calling it from external methods breaks state machine generation.",
+    "title": "Gpu.SyncThreads() cannot be called from methods that are not GPU code",
+    "messageFormat": "Gpu.SyncThreads() can only be called within a [GpuKernel] or [GpuDeviceFunction] method or their local functions. Other methods are not lowered into the CPU state machine.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -556,6 +556,15 @@
     "id": "GSH0062",
     "title": "User-defined operators are not supported in GPU code",
     "messageFormat": "The user-defined operator '{0}' of '{1}' is not supported in GPU code. Call a [GpuDeviceFunction] method instead.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "RecursiveDeviceFunctionBarrierProhibited",
+    "id": "GSH0063",
+    "title": "Device functions that reach a barrier cannot be recursive",
+    "messageFormat": "The device function '{0}' reaches Gpu.SyncThreads() or a warp shuffle and calls itself directly or through other device functions. The CPU state machine needs a frame of static size for every call.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true

@@ -2,7 +2,7 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics;
 
 /// <summary>
-/// Roslyn analyzer that enforces GPU kernel barrier synchronization and state machine constraints (GSH0037 - GSH0047).
+/// Roslyn analyzer that enforces GPU kernel barrier synchronization and state machine constraints (GSH0037 - GSH0047, GSH0063).
 /// Optimized for minimal AST passes, zero-allocation traversal, and fast-path exits.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -20,7 +20,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             GSharpDiagnostics.KernelParameterRefStructProhibited, // GSH0044
             GSharpDiagnostics.RecursiveBarrierProhibited, // GSH0045
             GSharpDiagnostics.AsyncYieldInKernelProhibited, // GSH0046
-            GSharpDiagnostics.LockStatementInKernelProhibited // GSH0047
+            GSharpDiagnostics.LockStatementInKernelProhibited, // GSH0047
+            GSharpDiagnostics.RecursiveDeviceFunctionBarrierProhibited // GSH0063
         );
 
     public override void Initialize(AnalysisContext context)
@@ -75,7 +76,26 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         var methodDecl = (MethodDeclarationSyntax)context.Node;
         var semanticModel = context.SemanticModel;
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        if (methodSymbol == null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel))
+        if (methodSymbol == null)
+        {
+            return;
+        }
+
+        if (methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction))
+        {
+            // GSH0063: the frame of a recursive barrier-reaching device function would contain itself
+            if (SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, semanticModel.Compilation))
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.RecursiveDeviceFunctionBarrierProhibited,
+                    methodDecl.Identifier.GetLocation(),
+                    methodSymbol.Name);
+            }
+
+            return;
+        }
+
+        if (!methodSymbol.HasAttribute(KnownAttributes.GpuKernel))
         {
             return;
         }

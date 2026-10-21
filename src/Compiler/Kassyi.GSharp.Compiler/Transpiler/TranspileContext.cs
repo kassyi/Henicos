@@ -28,6 +28,9 @@ public struct Emitter(
     public bool HasEmittedDynamicSmemBase;
     public bool SkipLocalsInit;
     public bool IsGpuKernelEntry;
+
+    /// <summary>The body is the state machine of a device function that may suspend (CPU dialects).</summary>
+    public bool IsSuspendingDeviceFunction;
     public bool IsVoidReturn;
     public int CallableDepth;
     public int AutoSyncGridDepth;

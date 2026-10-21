@@ -4,8 +4,8 @@ namespace Kassyi.GSharp.Compiler;
 /// <summary>Identifiers the compiler emits into generated host and device code.</summary>
 /// <remarks>
 /// GSH0057 rejects user identifiers containing <c>__</c>, so names under the <c>__gsharp_</c> prefix cannot collide with
-/// user code. <c>Resources/Prelude/WarpAndHints.hpp</c> spells <see cref="Context"/>, <see cref="WarpExchange"/> and
-/// <see cref="AllContexts"/> literally; <c>PreludeInternalNamesTests</c> keeps the two in sync.
+/// user code. <c>Resources/Prelude/WarpAndHints.hpp</c> spells <see cref="Context"/>, <see cref="WarpExchange"/>,
+/// <see cref="WarpShuffleCount"/>, <see cref="AllContexts"/> and <see cref="Root"/> literally; <c>PreludeInternalNamesTests</c> keeps the two in sync.
 /// </remarks>
 internal static class GSharpInternalNames
 {
@@ -23,7 +23,19 @@ internal static class GSharpInternalNames
     public const string State = "__gsharp_state";
     public const string YieldedForGridSync = "__gsharp_yielded_for_grid_sync";
     public const string WarpExchange = "__gsharp_warp_exchange";
+    public const string WarpShuffleCount = "__gsharp_warp_shuffle_count";
     public const string AllContexts = "__gsharp_all_contexts";
+
+    // Device functions that reach a barrier (CPU dialects). Each one is a state machine with its own frame; the kernel
+    // context is passed down as the root, which owns the warp exchange of the thread.
+    public const string Root = "__gsharp_root";
+    public const string FrameTypePrefix = "__gsharp_frame_";
+    public const string CallFramePrefix = "__gsharp_call_frame_";
+    public const string CopiedParameterPrefix = "__gsharp_in_";
+    public const string SuspendingCallResult = "__gsharp_result";
+
+    /// <summary>Marks a call to a device function that may suspend: <c>__gsharp_resume(call, frameIndex[, result])</c>.</summary>
+    public const string ResumeCall = "__gsharp_resume";
 
     /// <summary>Marks the current thread's state machine as finished.</summary>
     public const string StateTermination = State + " = -1;";
@@ -31,6 +43,8 @@ internal static class GSharpInternalNames
     // Lowering temporaries and labels. Prefixes are followed by a counter or a user-derived name.
     public const string LabelPrefix = "__gsharp_";
     public const string WarpTempPrefix = "__gsharp_warp_temp_";
+    public const string CallTempPrefix = "__gsharp_call_temp_";
+    public const string ArgumentTempPrefix = "__gsharp_arg_temp_";
     public const string AggregateTemp = "__gsharp_tmp";
     public const string TupleTempPrefix = "__gsharp_tuple_";
     public const string CoalesceTarget = "__gsharp_coalesce_target";

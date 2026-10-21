@@ -19,7 +19,9 @@ public partial class PreludeInternalNamesTests
     [Scenario(TestScenario.HappyPath)]
     [InlineData(GSharpInternalNames.Context)]
     [InlineData(GSharpInternalNames.WarpExchange)]
+    [InlineData(GSharpInternalNames.WarpShuffleCount)]
     [InlineData(GSharpInternalNames.AllContexts)]
+    [InlineData(GSharpInternalNames.Root)]
     public void CppPrelude_ReferencesInternalName(string identifier)
     {
         Assert.True(ContainsIdentifier(GSharpPreludeResources.Cpp, identifier),

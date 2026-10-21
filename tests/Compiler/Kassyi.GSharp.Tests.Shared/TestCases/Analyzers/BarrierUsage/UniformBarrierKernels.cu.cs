@@ -3,7 +3,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
-public static partial class HappyPath_UniformBarriers
+public static partial class UniformBarrierKernels
 {
     [GpuKernel]
     public static void FlatBarrierKernel(int[] buffer)

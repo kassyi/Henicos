@@ -41,7 +41,7 @@ public static class MethodTranspiler
     public static string GenerateCudaSource(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
         Action<Diagnostic>? reportDiagnostic, bool isDevice,
         ITranspilerDialect dialect, out HashSet<string> requiredIncludes,
-        (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? preLowered = null)
+        LoweredStateMachine? preLowered = null)
     {
         using var session = TranspilationSession.Begin(methodDecl, semanticModel, reportDiagnostic, dialect);
         if (session.ErrorMessage != null)
@@ -53,14 +53,18 @@ public static class MethodTranspiler
         ref var context = ref session.Context;
         requiredIncludes = context.Emitter.RequiredIncludes;
 
-        IReadOnlyList<VariableDeclaratorSyntax>? contextFields = null;
-        BlockSyntax? loweredBody = null;
+        var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
+        var isSuspendingDevice = isDevice && IsLoweredSuspendingDeviceFunction(methodDecl, methodSymbol, ref context);
+        context.Emitter.IsSuspendingDeviceFunction = isSuspendingDevice;
 
+        LoweredStateMachine? lowered = null;
         if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.Body != null)
         {
-            var tuple = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body);
-            loweredBody = tuple.LoweredBody;
-            contextFields = tuple.ContextFields;
+            lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body, semanticModel);
+        }
+        else if (isSuspendingDevice && methodDecl.Body != null)
+        {
+            lowered = AstLoweringPipeline.Lower(methodDecl.Body, semanticModel, methodSymbol);
         }
 
         using var mainWriter = new SourceWriter();
@@ -68,20 +72,28 @@ public static class MethodTranspiler
 
         context.Emitter.Writer = bodyWriter;
 
-        if (contextFields != null)
+        if (lowered != null)
         {
-            var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-            var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
-                methodDecl, methodSymbol);
-            WriteContextStruct(contextName, methodDecl.Identifier.ValueText, contextFields, ref context);
+            var prefix = isSuspendingDevice ? GSharpInternalNames.FrameTypePrefix : GSharpInternalNames.KernelContextPrefix;
+            var frameName = MethodSignatureTranspiler.GetKernelDerivedName(prefix, methodDecl, methodSymbol);
+            WriteContextStruct(frameName, methodDecl.Identifier.ValueText, lowered, methodSymbol, isSuspendingDevice,
+                ref context);
         }
 
-        MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, contextFields != null, ref context);
-        WriteMethodBody(methodDecl, loweredBody, ref context);
+        if (isSuspendingDevice && lowered != null)
+        {
+            MethodSignatureTranspiler.WriteSuspendingDeviceSignature(methodDecl, lowered.CopiedParameters, ref context);
+        }
+        else
+        {
+            MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, lowered != null, ref context);
+        }
+
+        WriteMethodBody(methodDecl, lowered, ref context);
 
         if (!isDevice && !context.Emitter.Dialect.IsCuda)
         {
-            HostLauncherTranspiler.WriteCpuLauncher(methodDecl, contextFields, ref context);
+            HostLauncherTranspiler.WriteCpuLauncher(methodDecl, lowered?.ContextFields, ref context);
         }
 
         context.Emitter.Writer = mainWriter;
@@ -126,11 +138,13 @@ public static class MethodTranspiler
 
         ref var context = ref session.Context;
 
-        IReadOnlyList<VariableDeclaratorSyntax>? contextFields = null;
+        var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
+        var isSuspendingDevice = isDevice && IsLoweredSuspendingDeviceFunction(methodDecl, methodSymbol, ref context);
+
+        LoweredStateMachine? lowered = null;
         if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.Body != null)
         {
-            var tuple = AstLoweringPipeline.Lower(methodDecl.Body);
-            contextFields = tuple.ContextFields;
+            lowered = AstLoweringPipeline.Lower(methodDecl.Body, semanticModel);
         }
 
         using var mainWriter = new SourceWriter();
@@ -138,15 +152,27 @@ public static class MethodTranspiler
 
         context.Emitter.Writer = sigWriter;
 
-        if (contextFields != null)
+        if (lowered != null)
         {
-            var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
             var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
                 methodDecl, methodSymbol);
-            WriteContextStruct(contextName, methodDecl.Identifier.ValueText, contextFields, ref context);
+            WriteContextStruct(contextName, methodDecl.Identifier.ValueText, lowered, methodSymbol, isFrame: false,
+                ref context);
         }
 
-        MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, contextFields != null, ref context);
+        if (isSuspendingDevice)
+        {
+            // The frame is defined with the body; the declaration only needs its name
+            var frameName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix,
+                methodDecl, methodSymbol);
+            context.Emitter.Writer.AppendLine($"struct {frameName};");
+            MethodSignatureTranspiler.WriteSuspendingDeviceSignature(methodDecl, [], ref context);
+        }
+        else
+        {
+            MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, lowered != null, ref context);
+        }
+
         context.Emitter.Writer.AppendSemiColonLine();
 
         context.Emitter.Writer = mainWriter;
@@ -170,19 +196,53 @@ public static class MethodTranspiler
     public static string GenerateManagedCSharpSource(
         MethodDeclarationSyntax methodDecl,
         SemanticModel semanticModel,
-        (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? preLowered = null) =>
+        LoweredStateMachine? preLowered = null) =>
         ManagedCSharpTranspiler.Generate(methodDecl, semanticModel, preLowered);
 
-    // kernelName is the C# name, used only in internal-error reports.
-    private static void WriteContextStruct(string contextName, string kernelName,
-        IReadOnlyList<VariableDeclaratorSyntax> fields, ref TranspileContext context)
+    /// <summary>
+    /// Transpiles a device function that may suspend into a managed C# state machine and its frame class, or returns an
+    /// empty string for any other device function.
+    /// </summary>
+    public static string GenerateManagedDeviceFunctionSource(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel) =>
+        ManagedCSharpTranspiler.GenerateDeviceFunction(methodDecl, semanticModel);
+
+    /// <summary>
+    /// Whether <paramref name="methodDecl"/> is a device function that the CPU dialects lower into a state machine: one
+    /// that reaches a barrier and is not recursive (GSH0063 rejects that).
+    /// </summary>
+    internal static bool IsLoweredSuspendingDeviceFunction(MethodDeclarationSyntax methodDecl, IMethodSymbol? methodSymbol,
+        ref TranspileContext context) =>
+        !context.Emitter.Dialect.IsCuda && methodDecl.Body != null && methodSymbol != null &&
+        SuspensionAnalysis.IsSuspendingFunction(methodSymbol, context.Query.SemanticModel.Compilation) &&
+        !SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, context.Query.SemanticModel.Compilation);
+
+    // kernelName is the C# name, used only in internal-error reports. A kernel context also holds the warp exchange of the
+    // thread; a device function frame holds its copied parameters instead and reaches the warp exchange through the root.
+    private static void WriteContextStruct(string contextName, string kernelName, LoweredStateMachine lowered,
+        IMethodSymbol? methodSymbol, bool isFrame, ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine($"struct {contextName} {{");
         context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.State} = 0;");
-        context.Emitter.Writer.AppendLine($"{contextName}* {GSharpInternalNames.AllContexts} = nullptr;");
-        context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.WarpExchange} = 0;");
-        context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.YieldedForGridSync} = false;");
-        foreach (var field in fields)
+        if (!isFrame)
+        {
+            context.Emitter.Writer.AppendLine($"{contextName}* {GSharpInternalNames.AllContexts} = nullptr;");
+            // Two exchange slots alternate per shuffle, so a lane that has already published its next shuffle does not
+            // overwrite the value a slower lane is still reading
+            context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.WarpExchange}[2] = {{}};");
+            context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.WarpShuffleCount} = 0;");
+            context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.YieldedForGridSync} = false;");
+        }
+
+        foreach (var parameter in GetCopiedParameters(lowered, methodSymbol))
+        {
+            StructTranspiler.RegisterUsedStructIfApplicable(parameter.Type, ref context);
+            context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+            context.Emitter.Writer.AppendSpace()
+                .AppendCppName(CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect))
+                .AppendSemiColon().AppendLine();
+        }
+
+        foreach (var field in lowered.ContextFields)
         {
             // Field types come from HoistedFieldTypeResolver
             var typeSymbol = HoistedFieldTypeResolver.Resolve(field, context.Query.SemanticModel, kernelName);
@@ -192,8 +252,41 @@ public static class MethodTranspiler
             WriteContextFieldName(field, ref context);
         }
 
+        for (var i = 0; i < lowered.CallSites.Count; i++)
+        {
+            var callee = GetSuspendingCallee(lowered.CallSites[i], ref context);
+            context.Emitter.Writer.AppendLine(
+                $"{GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, callee)} {GSharpInternalNames.CallFramePrefix}{i};");
+        }
+
         context.Emitter.Writer.AppendLine("};");
         context.Emitter.Writer.AppendLine();
+    }
+
+    internal static IMethodSymbol GetSuspendingCallee(InvocationExpressionSyntax callSite, ref TranspileContext context) =>
+        context.Query.SemanticModel.GetSymbol(callSite) as IMethodSymbol
+        ?? throw new InvalidOperationException("A call that may suspend does not resolve to a device function.");
+
+    internal static ImmutableArray<IParameterSymbol> GetCopiedParameters(LoweredStateMachine lowered, IMethodSymbol? methodSymbol)
+    {
+        var parameters = ImmutableArray.CreateBuilder<IParameterSymbol>(lowered.CopiedParameters.Count);
+        if (methodSymbol == null)
+        {
+            return parameters.ToImmutable();
+        }
+
+        foreach (var name in lowered.CopiedParameters)
+        {
+            foreach (var parameter in methodSymbol.Parameters)
+            {
+                if (parameter.Name == name)
+                {
+                    parameters.Add(parameter);
+                }
+            }
+        }
+
+        return parameters.ToImmutable();
     }
 
     private static void WriteContextFieldName(VariableDeclaratorSyntax field, ref TranspileContext context)
@@ -203,7 +296,7 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendSemiColon().AppendLine();
     }
 
-    private static void WriteMethodBody(MethodDeclarationSyntax method, BlockSyntax? loweredBody,
+    private static void WriteMethodBody(MethodDeclarationSyntax method, LoweredStateMachine? lowered,
         ref TranspileContext context)
     {
         using (context.Emitter.Writer.Scope())
@@ -211,6 +304,7 @@ public static class MethodTranspiler
             var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
             var isKernelWithReturn = methodSymbol != null && methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
                                      methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
+            var isFrame = context.Emitter.IsSuspendingDeviceFunction;
 
             if (isKernelWithReturn)
             {
@@ -220,19 +314,36 @@ public static class MethodTranspiler
                     " threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
             }
 
-            if (loweredBody != null)
+            if (lowered != null)
             {
+                // The grid sync flag belongs to the thread, so a device function sets it on the root
+                var gridSyncOwner = isFrame ? GSharpInternalNames.Root : GSharpInternalNames.Context;
                 context.Emitter.Writer.AppendLine(
                     $"#define {GSharpInternalNames.State} {GSharpInternalNames.Context}->{GSharpInternalNames.State}");
                 context.Emitter.Writer.AppendLine(
-                    $"#define {GSharpInternalNames.YieldedForGridSync} {GSharpInternalNames.Context}->{GSharpInternalNames.YieldedForGridSync}");
+                    $"#define {GSharpInternalNames.YieldedForGridSync} {gridSyncOwner}->{GSharpInternalNames.YieldedForGridSync}");
+
+                if (!isFrame)
+                {
+                    // A kernel is the root of its own thread
+                    context.Emitter.Writer.AppendLine($"auto* {GSharpInternalNames.Root} = {GSharpInternalNames.Context};");
+                }
+
+                WriteCopiedParameterInitialization(lowered, methodSymbol, ref context);
+                context.Visitor.Visit(lowered.LoweredBody);
+
+                if (isFrame)
+                {
+                    // Every state returns; this only satisfies the compiler
+                    context.Emitter.Writer.AppendLine("return false;");
+                }
+
+                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.State}");
+                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.YieldedForGridSync}");
+                return;
             }
 
-            if (loweredBody != null)
-            {
-                context.Visitor.Visit(loweredBody);
-            }
-            else if (method.Body != null)
+            if (method.Body != null)
             {
                 context.Visitor.Visit(method.Body);
             }
@@ -253,11 +364,33 @@ public static class MethodTranspiler
                     context.Emitter.Writer.AppendKeyword("return").AppendSemiColonLine();
                 }
             }
+        }
+    }
 
-            if (loweredBody != null)
+    // On the first entry, the parameters the body assigns are copied into the frame; later resumes keep the frame's copy
+    private static void WriteCopiedParameterInitialization(LoweredStateMachine lowered, IMethodSymbol? methodSymbol,
+        ref TranspileContext context)
+    {
+        var parameters = GetCopiedParameters(lowered, methodSymbol);
+        if (parameters.Length == 0)
+        {
+            return;
+        }
+
+        context.Emitter.Writer.AppendKeyword("if");
+        using (context.Emitter.Writer.Parentheses())
+        {
+            context.Emitter.Writer.Append($"{GSharpInternalNames.State}==0");
+        }
+
+        using (context.Emitter.Writer.Scope())
+        {
+            foreach (var parameter in parameters)
             {
-                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.State}");
-                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.YieldedForGridSync}");
+                var name = CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect);
+                context.Emitter.Writer.Append($"{GSharpInternalNames.Context}->").AppendCppName(name)
+                    .Append($"={GSharpInternalNames.CopiedParameterPrefix}").AppendCppName(name)
+                    .AppendSemiColon().AppendLine();
             }
         }
     }

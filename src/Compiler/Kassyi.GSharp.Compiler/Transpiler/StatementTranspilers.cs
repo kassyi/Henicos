@@ -273,6 +273,12 @@ internal static class StatementTranspilers
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
         var isStateMachineReturn = node.HasAnnotations("StateMachineReturn");
+
+        if (context.Emitter is { IsSuspendingDeviceFunction: true, CallableDepth: 0 })
+        {
+            TranspileSuspendingDeviceFunctionReturn(node, isStateMachineReturn, ref context);
+            return;
+        }
         var emitStateTermination = !isStateMachineReturn && !context.Emitter.Dialect.IsCuda
                                    && context.Emitter is { IsGpuKernelEntry: true, CallableDepth: 0 };
 
@@ -312,6 +318,29 @@ internal static class StatementTranspilers
         }
 
         context.Emitter.Writer.AppendKeyword("return;");
+    }
+
+    // A suspension reports "not completed"; a return of the user's code writes the result, resets the frame for the next
+    // call and reports completion.
+    private static void TranspileSuspendingDeviceFunctionReturn(ReturnStatementSyntax node, bool isStateMachineReturn,
+        ref TranspileContext context)
+    {
+        if (isStateMachineReturn)
+        {
+            context.Emitter.Writer.AppendKeyword("return false;");
+            return;
+        }
+
+        if (node.Expression != null)
+        {
+            DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
+            context.Emitter.Writer.Append($"*{GSharpInternalNames.SuspendingCallResult} = ");
+            context.Visitor.Visit(node.Expression);
+            context.Emitter.Writer.AppendSemiColonLine();
+        }
+
+        context.Emitter.Writer.Append($"{GSharpInternalNames.State} = 0;");
+        context.Emitter.Writer.AppendKeyword("return true;");
     }
 }
 

@@ -15,7 +15,8 @@ struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Iteratio
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext;
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext;
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext;
-inline void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_opA, GSharpArray<unsigned int> __gsharp_id_2_opB, GSharpArray<unsigned int> __gsharp_id_3_resultDest, int __gsharp_id_4_numWordsA, int __gsharp_id_5_numWordsB, int __gsharp_id_6_numWordsResult);
+struct __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow;
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_opA, GSharpArray<unsigned int> __gsharp_id_2_opB, GSharpArray<unsigned int> __gsharp_id_3_resultDest, int __gsharp_id_4_numWordsA, int __gsharp_id_5_numWordsB, int __gsharp_id_6_numWordsResult, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow* __gsharp_ctx, TRoot* __gsharp_root);
 
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext;
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContext;
@@ -26,93 +27,9 @@ struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Iteratio
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext;
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext;
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext;
-inline void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_leftOperand, GSharpArray<unsigned int> __gsharp_id_2_rightOperand, GSharpArray<unsigned int> __gsharp_id_3_reciprocalOfB, int __gsharp_id_4_targetBits, int __gsharp_id_5_aActualWords, GSharpArray<unsigned int> __gsharp_id_6_quotientBuffer, GSharpArray<unsigned int> __gsharp_id_7_remainderBuffer);
+struct __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro;
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_leftOperand, GSharpArray<unsigned int> __gsharp_id_2_rightOperand, GSharpArray<unsigned int> __gsharp_id_3_reciprocalOfB, int __gsharp_id_4_targetBits, int __gsharp_id_5_aActualWords, GSharpArray<unsigned int> __gsharp_id_6_quotientBuffer, GSharpArray<unsigned int> __gsharp_id_7_remainderBuffer, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro* __gsharp_ctx, TRoot* __gsharp_root);
 
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
-struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext
-{
-GSharpArray<const unsigned int> __gsharp_mb_LeftOperand;
-GSharpArray<const unsigned int> __gsharp_mb_RightOperand;
-GSharpArray<unsigned int> __gsharp_mb_TargetOperand;
-GSharpArray<unsigned int> __gsharp_mb_ResultBuffer;
-GSharpArray<unsigned int> __gsharp_mb_Constant;
-GSharpArray<unsigned int> __gsharp_mb_Constant3;
-GSharpArray<long long> __gsharp_mb_CarryBuffer;
-}
-;
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContext__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContext__
-struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContext
-{
-int __gsharp_mb_NumberOfWords;
-int __gsharp_mb_NumberOfWordsExtended;
-int __gsharp_mb_Exponent;
-int __gsharp_mb_BitOffset2E1;
-int __gsharp_mb_MarginWords;
-int __gsharp_mb_ActualBits;
-int __gsharp_mb_MarginBits;
-int __gsharp_mb_Iterations;
-int __gsharp_mb_TargetBits;
-int __gsharp_mb_NumBits;
-}
-;
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__BufferContext__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__BufferContext__
-struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__BufferContext
-{
-GSharpArray<unsigned int> __gsharp_mb_Buffer1;
-GSharpArray<unsigned int> __gsharp_mb_Buffer2;
-GSharpArray<unsigned int> __gsharp_mb_Buffer3;
-GSharpArray<unsigned int> __gsharp_mb_ValueT;
-GSharpArray<unsigned int> __gsharp_mb_Quotient;
-GSharpArray<unsigned int> __gsharp_mb_Remainder;
-GSharpArray<unsigned int> __gsharp_mb_RemainderMask;
-GSharpArray<unsigned int> __gsharp_mb_TemporaryBuffer;
-GSharpArray<long long> __gsharp_mb_CarryBuffer;
-}
-;
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__TwiddleFactorContext__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__TwiddleFactorContext__
-struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__TwiddleFactorContext
-{
-GSharpArray<const unsigned int> __gsharp_mb_Forward1;
-GSharpArray<const unsigned int> __gsharp_mb_Forward2;
-GSharpArray<const unsigned int> __gsharp_mb_Forward3;
-GSharpArray<const unsigned int> __gsharp_mb_Inverse1;
-GSharpArray<const unsigned int> __gsharp_mb_Inverse2;
-GSharpArray<const unsigned int> __gsharp_mb_Inverse3;
-}
-;
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt__
-struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt
-{
-int __gsharp_mb_TransformLength;
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__BufferContext __gsharp_mb_Buffers;
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__TwiddleFactorContext __gsharp_mb_TwiddleFactors;
-}
-;
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__IterationScratchContext__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__IterationScratchContext__
-struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__IterationScratchContext
-{
-GSharpArray<unsigned int> __gsharp_mb_XSquared;
-GSharpArray<unsigned int> __gsharp_mb_AxSquared;
-GSharpArray<unsigned int> __gsharp_mb_CurrentProduct;
-GSharpArray<unsigned int> __gsharp_mb_Diff;
-GSharpArray<unsigned int> __gsharp_mb_NextXUnshifted;
-GSharpArray<unsigned int> __gsharp_mb_NextXShifted;
-GSharpArray<unsigned int> __gsharp_mb_NextIter;
-GSharpArray<unsigned int> __gsharp_mb_ModulusExpanded;
-}
-;
-#endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext__
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext
@@ -125,27 +42,6 @@ GSharpArray<unsigned int> __gsharp_mb_TmpBuf;
 GSharpArray<unsigned int> __gsharp_mb_UncarriedLow;
 GSharpArray<unsigned int> __gsharp_mb_UncarriedHigh;
 GSharpArray<unsigned int> __gsharp_mb_BlockCarries;
-}
-;
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext__
-struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext
-{
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__IterationScratchContext __gsharp_mb_Iteration;
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext __gsharp_mb_NttScratch;
-}
-;
-#endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext__
-struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext
-{
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext __gsharp_mb_Operands;
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContext __gsharp_mb_Dimensions;
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt __gsharp_mb_Ntt;
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext __gsharp_mb_Workspace;
-GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
@@ -172,56 +68,6 @@ __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttGridContext 
 }
 ;
 #endif
-inline void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_opA, GSharpArray<unsigned int> __gsharp_id_2_opB, GSharpArray<unsigned int> __gsharp_id_3_resultDest, int __gsharp_id_4_numWordsA, int __gsharp_id_5_numWordsB, int __gsharp_id_6_numWordsResult){
-auto __gsharp_id_7_m = __gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TransformLength;
-int __gsharp_id_8_n2 = 1;
-while(__gsharp_id_8_n2*__gsharp_id_8_n2<__gsharp_id_7_m)
-{
-__gsharp_id_8_n2*=2;
-}
-int __gsharp_id_9_n1 = __gsharp_id_7_m/__gsharp_id_8_n2;
-if(__gsharp_id_7_m<=512)
-{
-__gsharp_id_9_n1=__gsharp_id_7_m;
-__gsharp_id_8_n2=1;
-}
-auto __gsharp_id_10_nttScratch = __gsharp_id_0_core.__gsharp_mb_Workspace.__gsharp_mb_NttScratch;
-DeviceUnpack16(__gsharp_id_1_opA,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_id_7_m,__gsharp_id_4_numWordsA,true);
-DeviceUnpack16(__gsharp_id_2_opB,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B,__gsharp_id_7_m,__gsharp_id_5_numWordsB,true);
-cg::this_grid().sync();
-auto __gsharp_id_11_baseNtt = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DualNtt __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_TemporaryBuffer = __gsharp_id_10_nttScratch.__gsharp_mb_TmpBuf; __gsharp_tmp.__gsharp_mb_Grid = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttGridContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_M = __gsharp_id_7_m; __gsharp_tmp.__gsharp_mb_N1 = __gsharp_id_9_n1; __gsharp_tmp.__gsharp_mb_N2 = __gsharp_id_8_n2; return __gsharp_tmp; }
-()); return __gsharp_tmp; }
-());
-auto __gsharp_id_12_forwardA = __gsharp_id_11_baseNtt;
-__gsharp_id_12_forwardA.__gsharp_mb_Buffer1=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A;
-__gsharp_id_12_forwardA.__gsharp_mb_Buffer2=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A;
-__gsharp_id_12_forwardA.__gsharp_mb_Twiddle1=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward1;
-__gsharp_id_12_forwardA.__gsharp_mb_Twiddle2=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward2;
-ExecuteDualForwardNtt(__gsharp_id_12_forwardA);
-auto __gsharp_id_13_forwardB = __gsharp_id_12_forwardA;
-__gsharp_id_13_forwardB.__gsharp_mb_Buffer1=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B;
-__gsharp_id_13_forwardB.__gsharp_mb_Buffer2=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B;
-ExecuteDualForwardNtt(__gsharp_id_13_forwardB);
-ExecuteNttPointwiseMultiply(__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B,__gsharp_id_7_m);
-cg::this_grid().sync();
-auto __gsharp_id_14_inverseA = __gsharp_id_11_baseNtt;
-__gsharp_id_14_inverseA.__gsharp_mb_Buffer1=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A;
-__gsharp_id_14_inverseA.__gsharp_mb_Buffer2=__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A;
-__gsharp_id_14_inverseA.__gsharp_mb_Twiddle1=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse1;
-__gsharp_id_14_inverseA.__gsharp_mb_Twiddle2=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse2;
-ExecuteDualInverseNtt(__gsharp_id_14_inverseA);
-ExecuteCrtComputeCoefficients(__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedLow,__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedHigh,__gsharp_id_7_m);
-cg::this_grid().sync();
-int __gsharp_id_15_chunkSize = blockDim.x;
-int __gsharp_id_16_numBlocks = (__gsharp_id_6_numWordsResult+__gsharp_id_15_chunkSize-1)/__gsharp_id_15_chunkSize;
-ExecuteResolveNttCarriesBlocked(__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedLow,__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedHigh,__gsharp_id_3_resultDest,__gsharp_id_10_nttScratch.__gsharp_mb_BlockCarries,__gsharp_id_7_m,__gsharp_id_6_numWordsResult,__gsharp_id_15_chunkSize);
-cg::this_grid().sync();
-ExecuteResolveNttCarriesApply(__gsharp_id_3_resultDest,__gsharp_id_10_nttScratch.__gsharp_mb_BlockCarries,__gsharp_id_6_numWordsResult,__gsharp_id_15_chunkSize,__gsharp_id_16_numBlocks);
-cg::this_grid().sync();
-}
-
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext
@@ -307,6 +153,227 @@ GSharpArray<unsigned int> __gsharp_mb_ModulusExpanded;
 }
 ;
 #endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext
+{
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__IterationScratchContext __gsharp_mb_Iteration;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext __gsharp_mb_NttScratch;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext
+{
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext __gsharp_mb_Operands;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContext __gsharp_mb_Dimensions;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt __gsharp_mb_Ntt;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__WorkspaceStateContext __gsharp_mb_Workspace;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
+}
+;
+#endif
+struct __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow {
+int __gsharp_state = 0;
+int __gsharp_id_7_m;
+int __gsharp_id_8_n2;
+int __gsharp_id_9_n1;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext __gsharp_id_10_nttScratch;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DualNtt __gsharp_id_11_baseNtt;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DualNtt __gsharp_id_12_forwardA;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DualNtt __gsharp_id_13_forwardB;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DualNtt __gsharp_id_14_inverseA;
+int __gsharp_id_15_chunkSize;
+int __gsharp_id_16_numBlocks;
+};
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_opA, GSharpArray<unsigned int> __gsharp_id_2_opB, GSharpArray<unsigned int> __gsharp_id_3_resultDest, int __gsharp_id_4_numWordsA, int __gsharp_id_5_numWordsB, int __gsharp_id_6_numWordsResult, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow* __gsharp_ctx, TRoot* __gsharp_root){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
+switch(__gsharp_state)
+{
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_ctx->__gsharp_id_7_m=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TransformLength;
+__gsharp_ctx->__gsharp_id_8_n2=1;
+while(__gsharp_ctx->__gsharp_id_8_n2*__gsharp_ctx->__gsharp_id_8_n2<__gsharp_ctx->__gsharp_id_7_m)
+{
+__gsharp_ctx->__gsharp_id_8_n2*=2;
+}
+__gsharp_ctx->__gsharp_id_9_n1=__gsharp_ctx->__gsharp_id_7_m/__gsharp_ctx->__gsharp_id_8_n2;
+if(__gsharp_ctx->__gsharp_id_7_m<=512)
+{
+__gsharp_ctx->__gsharp_id_9_n1=__gsharp_ctx->__gsharp_id_7_m;
+__gsharp_ctx->__gsharp_id_8_n2=1;
+}
+__gsharp_ctx->__gsharp_id_10_nttScratch=__gsharp_id_0_core.__gsharp_mb_Workspace.__gsharp_mb_NttScratch;
+DeviceUnpack16(__gsharp_id_1_opA,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_ctx->__gsharp_id_7_m,__gsharp_id_4_numWordsA,true);
+DeviceUnpack16(__gsharp_id_2_opB,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B,__gsharp_ctx->__gsharp_id_7_m,__gsharp_id_5_numWordsB,true);
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=1;
+return false;
+}
+case 1:
+__gsharp_switch_1_state_1:
+{
+__gsharp_ctx->__gsharp_id_11_baseNtt=([&]() {
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DualNtt __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_TemporaryBuffer = __gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_TmpBuf; __gsharp_tmp.__gsharp_mb_Grid = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttGridContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_M = __gsharp_ctx->__gsharp_id_7_m; __gsharp_tmp.__gsharp_mb_N1 = __gsharp_ctx->__gsharp_id_9_n1; __gsharp_tmp.__gsharp_mb_N2 = __gsharp_ctx->__gsharp_id_8_n2; return __gsharp_tmp; }
+()); return __gsharp_tmp; }
+());
+__gsharp_ctx->__gsharp_id_12_forwardA=__gsharp_ctx->__gsharp_id_11_baseNtt;
+__gsharp_ctx->__gsharp_id_12_forwardA.__gsharp_mb_Buffer1=__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A;
+__gsharp_ctx->__gsharp_id_12_forwardA.__gsharp_mb_Buffer2=__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A;
+__gsharp_ctx->__gsharp_id_12_forwardA.__gsharp_mb_Twiddle1=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward1;
+__gsharp_ctx->__gsharp_id_12_forwardA.__gsharp_mb_Twiddle2=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Forward2;
+ExecuteDualForwardNtt(__gsharp_ctx->__gsharp_id_12_forwardA);
+__gsharp_ctx->__gsharp_id_13_forwardB=__gsharp_ctx->__gsharp_id_12_forwardA;
+__gsharp_ctx->__gsharp_id_13_forwardB.__gsharp_mb_Buffer1=__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B;
+__gsharp_ctx->__gsharp_id_13_forwardB.__gsharp_mb_Buffer2=__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B;
+ExecuteDualForwardNtt(__gsharp_ctx->__gsharp_id_13_forwardB);
+ExecuteNttPointwiseMultiply(__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1B,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2B,__gsharp_ctx->__gsharp_id_7_m);
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=2;
+return false;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+__gsharp_ctx->__gsharp_id_14_inverseA=__gsharp_ctx->__gsharp_id_11_baseNtt;
+__gsharp_ctx->__gsharp_id_14_inverseA.__gsharp_mb_Buffer1=__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A;
+__gsharp_ctx->__gsharp_id_14_inverseA.__gsharp_mb_Buffer2=__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A;
+__gsharp_ctx->__gsharp_id_14_inverseA.__gsharp_mb_Twiddle1=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse1;
+__gsharp_ctx->__gsharp_id_14_inverseA.__gsharp_mb_Twiddle2=__gsharp_id_0_core.__gsharp_mb_Ntt.__gsharp_mb_TwiddleFactors.__gsharp_mb_Inverse2;
+ExecuteDualInverseNtt(__gsharp_ctx->__gsharp_id_14_inverseA);
+ExecuteCrtComputeCoefficients(__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf1A,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_NttBuf2A,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedLow,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedHigh,__gsharp_ctx->__gsharp_id_7_m);
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=3;
+return false;
+}
+case 3:
+__gsharp_switch_1_state_3:
+{
+__gsharp_ctx->__gsharp_id_15_chunkSize=blockDim.x;
+__gsharp_ctx->__gsharp_id_16_numBlocks=(__gsharp_id_6_numWordsResult+__gsharp_ctx->__gsharp_id_15_chunkSize-1)/__gsharp_ctx->__gsharp_id_15_chunkSize;
+ExecuteResolveNttCarriesBlocked(__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedLow,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_UncarriedHigh,__gsharp_id_3_resultDest,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_BlockCarries,__gsharp_ctx->__gsharp_id_7_m,__gsharp_id_6_numWordsResult,__gsharp_ctx->__gsharp_id_15_chunkSize);
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=4;
+return false;
+}
+case 4:
+__gsharp_switch_1_state_4:
+{
+ExecuteResolveNttCarriesApply(__gsharp_id_3_resultDest,__gsharp_ctx->__gsharp_id_10_nttScratch.__gsharp_mb_BlockCarries,__gsharp_id_6_numWordsResult,__gsharp_ctx->__gsharp_id_15_chunkSize,__gsharp_ctx->__gsharp_id_16_numBlocks);
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=5;
+return false;
+}
+case 5:
+__gsharp_switch_1_state_5:
+{
+__gsharp_state = 0;return true;
+}
+}
+return false;
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
+}
+
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__IterationScratchContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__IterationScratchContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__IterationScratchContext
+{
+GSharpArray<unsigned int> __gsharp_mb_XSquared;
+GSharpArray<unsigned int> __gsharp_mb_AxSquared;
+GSharpArray<unsigned int> __gsharp_mb_CurrentProduct;
+GSharpArray<unsigned int> __gsharp_mb_Diff;
+GSharpArray<unsigned int> __gsharp_mb_NextXUnshifted;
+GSharpArray<unsigned int> __gsharp_mb_NextXShifted;
+GSharpArray<unsigned int> __gsharp_mb_NextIter;
+GSharpArray<unsigned int> __gsharp_mb_ModulusExpanded;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext
+{
+GSharpArray<const unsigned int> __gsharp_mb_LeftOperand;
+GSharpArray<const unsigned int> __gsharp_mb_RightOperand;
+GSharpArray<unsigned int> __gsharp_mb_TargetOperand;
+GSharpArray<unsigned int> __gsharp_mb_ResultBuffer;
+GSharpArray<unsigned int> __gsharp_mb_Constant;
+GSharpArray<unsigned int> __gsharp_mb_Constant3;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext
+{
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext __gsharp_mb_Operands;
+int __gsharp_mb_NumberOfWords;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__DimensionContext
+{
+int __gsharp_mb_NumberOfWords;
+int __gsharp_mb_NumberOfWordsExtended;
+int __gsharp_mb_Exponent;
+int __gsharp_mb_BitOffset2E1;
+int __gsharp_mb_MarginWords;
+int __gsharp_mb_ActualBits;
+int __gsharp_mb_MarginBits;
+int __gsharp_mb_Iterations;
+int __gsharp_mb_TargetBits;
+int __gsharp_mb_NumBits;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__BufferContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__BufferContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__BufferContext
+{
+GSharpArray<unsigned int> __gsharp_mb_Buffer1;
+GSharpArray<unsigned int> __gsharp_mb_Buffer2;
+GSharpArray<unsigned int> __gsharp_mb_Buffer3;
+GSharpArray<unsigned int> __gsharp_mb_ValueT;
+GSharpArray<unsigned int> __gsharp_mb_Quotient;
+GSharpArray<unsigned int> __gsharp_mb_Remainder;
+GSharpArray<unsigned int> __gsharp_mb_RemainderMask;
+GSharpArray<unsigned int> __gsharp_mb_TemporaryBuffer;
+GSharpArray<long long> __gsharp_mb_CarryBuffer;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__TwiddleFactorContext__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__TwiddleFactorContext__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__TwiddleFactorContext
+{
+GSharpArray<const unsigned int> __gsharp_mb_Forward1;
+GSharpArray<const unsigned int> __gsharp_mb_Forward2;
+GSharpArray<const unsigned int> __gsharp_mb_Forward3;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse1;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse2;
+GSharpArray<const unsigned int> __gsharp_mb_Inverse3;
+}
+;
+#endif
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt__
+struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__Ntt
+{
+int __gsharp_mb_TransformLength;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__BufferContext __gsharp_mb_Buffers;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__TwiddleFactorContext __gsharp_mb_TwiddleFactors;
+}
+;
+#endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext__
 struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NttConvolutionScratchContext
@@ -343,80 +410,563 @@ GSharpArray<long long> __gsharp_mb_CarryBuffer;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext__
-struct __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext
+struct __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro {
+int __gsharp_state = 0;
+int __gsharp_id_8_nA;
+int __gsharp_id_9_n;
+int __gsharp_id_10_targetWords;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__IterationScratchContext __gsharp_id_11_iterScratch;
+GSharpArray<unsigned int> __gsharp_arg_temp_0;
+int __gsharp_arg_temp_1;
+int __gsharp_id_12_wordShift;
+int __gsharp_id_13_bitShift;
+int __gsharp_id_14_destWords;
+GSharpArray<unsigned int> __gsharp_arg_temp_2;
+int __gsharp_arg_temp_3;
+int __gsharp_id_20_evalWords;
+__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_id_21_subCtx;
+int __gsharp_id_23_iter;
+unsigned int __gsharp_id_24_topWord;
+bool __gsharp_id_25_underflow;
+unsigned int __gsharp_id_26_top2;
+bool __gsharp_id_27_underflow2;
+__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_0;
+__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_1;
+};
+template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_leftOperand, GSharpArray<unsigned int> __gsharp_id_2_rightOperand, GSharpArray<unsigned int> __gsharp_id_3_reciprocalOfB, int __gsharp_id_4_targetBits, int __gsharp_id_5_aActualWords, GSharpArray<unsigned int> __gsharp_id_6_quotientBuffer, GSharpArray<unsigned int> __gsharp_id_7_remainderBuffer, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro* __gsharp_ctx, TRoot* __gsharp_root){
+#define __gsharp_state __gsharp_ctx->__gsharp_state
+#define __gsharp_yielded_for_grid_sync __gsharp_root->__gsharp_yielded_for_grid_sync
+switch(__gsharp_state)
 {
-__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext __gsharp_mb_Operands;
-int __gsharp_mb_NumberOfWords;
+case 0:
+__gsharp_switch_1_state_0:
+{
+__gsharp_ctx->__gsharp_id_8_nA=__gsharp_id_5_aActualWords;
+__gsharp_ctx->__gsharp_id_9_n=__gsharp_id_0_core.__gsharp_mb_Dimensions.__gsharp_mb_NumberOfWords;
+__gsharp_ctx->__gsharp_id_10_targetWords=(__gsharp_id_4_targetBits+31)/32;
+__gsharp_ctx->__gsharp_id_11_iterScratch=__gsharp_id_0_core.__gsharp_mb_Workspace.__gsharp_mb_Iteration;
+__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct;
+__gsharp_ctx->__gsharp_arg_temp_1=__gsharp_ctx->__gsharp_id_8_nA+__gsharp_ctx->__gsharp_id_10_targetWords;
+goto __gsharp_switch_1_state_1;
 }
-;
-#endif
-inline void __gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext __gsharp_id_0_core, GSharpArray<unsigned int> __gsharp_id_1_leftOperand, GSharpArray<unsigned int> __gsharp_id_2_rightOperand, GSharpArray<unsigned int> __gsharp_id_3_reciprocalOfB, int __gsharp_id_4_targetBits, int __gsharp_id_5_aActualWords, GSharpArray<unsigned int> __gsharp_id_6_quotientBuffer, GSharpArray<unsigned int> __gsharp_id_7_remainderBuffer){
-auto __gsharp_id_8_nA = __gsharp_id_5_aActualWords;
-auto __gsharp_id_9_n = __gsharp_id_0_core.__gsharp_mb_Dimensions.__gsharp_mb_NumberOfWords;
-auto __gsharp_id_10_targetWords = (__gsharp_id_4_targetBits+31)/32;
-auto __gsharp_id_11_iterScratch = __gsharp_id_0_core.__gsharp_mb_Workspace.__gsharp_mb_Iteration;
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_id_0_core,__gsharp_id_1_leftOperand,__gsharp_id_3_reciprocalOfB,__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct,__gsharp_id_8_nA,__gsharp_id_10_targetWords,__gsharp_id_8_nA+__gsharp_id_10_targetWords);
-int __gsharp_id_12_wordShift = __gsharp_id_4_targetBits/32;
-int __gsharp_id_13_bitShift = __gsharp_id_4_targetBits%32;
-int __gsharp_id_14_destWords = __gsharp_id_8_nA;
-for(int __gsharp_id_15_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_15_idx < __gsharp_id_14_destWords; __gsharp_id_15_idx += gridDim.x * blockDim.x)
+case 1:
+__gsharp_switch_1_state_1:
 {
-int __gsharp_id_16_srcIdx = __gsharp_id_15_idx+__gsharp_id_12_wordShift;
-unsigned int __gsharp_id_17_w0 = ((__gsharp_id_16_srcIdx<__gsharp_id_8_nA+__gsharp_id_10_targetWords)?__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct[__gsharp_id_16_srcIdx]:0u);
-unsigned int __gsharp_id_18_w1 = ((__gsharp_id_16_srcIdx+1<__gsharp_id_8_nA+__gsharp_id_10_targetWords)?__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct[__gsharp_id_16_srcIdx+1]:0u);
-unsigned int __gsharp_id_19_shiftedValue = (__gsharp_id_17_w0>>__gsharp_id_13_bitShift)|((__gsharp_id_13_bitShift==0?0u:(__gsharp_id_18_w1<<(32-__gsharp_id_13_bitShift))));
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_id_0_core,__gsharp_id_1_leftOperand,__gsharp_id_3_reciprocalOfB,__gsharp_ctx->__gsharp_arg_temp_0,__gsharp_ctx->__gsharp_id_8_nA,__gsharp_ctx->__gsharp_id_10_targetWords,__gsharp_ctx->__gsharp_arg_temp_1,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+{
+__gsharp_state=1;
+return false;
+}
+__gsharp_ctx->__gsharp_id_12_wordShift=__gsharp_id_4_targetBits/32;
+__gsharp_ctx->__gsharp_id_13_bitShift=__gsharp_id_4_targetBits%32;
+__gsharp_ctx->__gsharp_id_14_destWords=__gsharp_ctx->__gsharp_id_8_nA;
+for(int __gsharp_id_15_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_15_idx < __gsharp_ctx->__gsharp_id_14_destWords; __gsharp_id_15_idx += gridDim.x * blockDim.x)
+{
+int __gsharp_id_16_srcIdx = __gsharp_id_15_idx+__gsharp_ctx->__gsharp_id_12_wordShift;
+unsigned int __gsharp_id_17_w0 = ((__gsharp_id_16_srcIdx<__gsharp_ctx->__gsharp_id_8_nA+__gsharp_ctx->__gsharp_id_10_targetWords)?__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct[__gsharp_id_16_srcIdx]:0u);
+unsigned int __gsharp_id_18_w1 = ((__gsharp_id_16_srcIdx+1<__gsharp_ctx->__gsharp_id_8_nA+__gsharp_ctx->__gsharp_id_10_targetWords)?__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_CurrentProduct[__gsharp_id_16_srcIdx+1]:0u);
+unsigned int __gsharp_id_19_shiftedValue = (__gsharp_id_17_w0>>__gsharp_ctx->__gsharp_id_13_bitShift)|((__gsharp_ctx->__gsharp_id_13_bitShift==0?0u:(__gsharp_id_18_w1<<(32-__gsharp_ctx->__gsharp_id_13_bitShift))));
 __gsharp_id_6_quotientBuffer[__gsharp_id_15_idx]=__gsharp_id_19_shiftedValue;
 }
-cg::this_grid().sync();
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_id_0_core,__gsharp_id_6_quotientBuffer,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_id_14_destWords,__gsharp_id_9_n,__gsharp_id_14_destWords+__gsharp_id_9_n);
-int __gsharp_id_20_evalWords = __gsharp_id_5_aActualWords+1;
-auto __gsharp_id_21_subCtx = ([&]() {
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=2;
+return false;
+}
+case 2:
+__gsharp_switch_1_state_2:
+{
+__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_NextIter;
+__gsharp_ctx->__gsharp_arg_temp_3=__gsharp_ctx->__gsharp_id_14_destWords+__gsharp_ctx->__gsharp_id_9_n;
+goto __gsharp_switch_1_state_3;
+}
+case 3:
+__gsharp_switch_1_state_3:
+{
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_id_0_core,__gsharp_id_6_quotientBuffer,__gsharp_id_2_rightOperand,__gsharp_ctx->__gsharp_arg_temp_2,__gsharp_ctx->__gsharp_id_14_destWords,__gsharp_ctx->__gsharp_id_9_n,__gsharp_ctx->__gsharp_arg_temp_3,&__gsharp_ctx->__gsharp_call_frame_1,__gsharp_root))
+{
+__gsharp_state=3;
+return false;
+}
+__gsharp_ctx->__gsharp_id_20_evalWords=__gsharp_id_5_aActualWords+1;
+__gsharp_ctx->__gsharp_id_21_subCtx=([&]() {
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__GpuBigIntContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Operands = ([&]() {
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__OperandContext __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_CarryBuffer = __gsharp_id_0_core.__gsharp_mb_CarryBuffer; return __gsharp_tmp; }
-()); __gsharp_tmp.__gsharp_mb_NumberOfWords = __gsharp_id_20_evalWords; return __gsharp_tmp; }
+()); __gsharp_tmp.__gsharp_mb_NumberOfWords = __gsharp_ctx->__gsharp_id_20_evalWords; return __gsharp_tmp; }
 ());
-for(int __gsharp_id_22_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_22_idx < __gsharp_id_20_evalWords; __gsharp_id_22_idx += gridDim.x * blockDim.x)
+for(int __gsharp_id_22_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_22_idx < __gsharp_ctx->__gsharp_id_20_evalWords; __gsharp_id_22_idx += gridDim.x * blockDim.x)
 {
-__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_22_idx]=(__gsharp_id_22_idx<__gsharp_id_8_nA?__gsharp_id_1_leftOperand[__gsharp_id_22_idx]:0u);
+__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_22_idx]=(__gsharp_id_22_idx<__gsharp_ctx->__gsharp_id_8_nA?__gsharp_id_1_leftOperand[__gsharp_id_22_idx]:0u);
 }
-cg::this_grid().sync();
-DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,-1,true);
-cg::this_grid().sync();
-for(int __gsharp_id_23_iter = 0;__gsharp_id_23_iter<1000;__gsharp_id_23_iter++)
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=4;
+return false;
+}
+case 4:
+__gsharp_switch_1_state_4:
 {
-unsigned int __gsharp_id_24_topWord = __gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_20_evalWords-1];
-bool __gsharp_id_25_underflow = (__gsharp_id_24_topWord&0x80000000u)!=0;
-cg::this_grid().sync();
-if(__gsharp_id_25_underflow)
+DeviceAddSubParallel(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_NextIter,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_20_evalWords,-1,true);
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=5;
+return false;
+}
+case 5:
+__gsharp_switch_1_state_5:
 {
-DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,1,true);
-cg::this_grid().sync();
+__gsharp_ctx->__gsharp_id_23_iter=0;
+goto __gsharp_switch_1_state_6;
 }
-else
+case 6:
+__gsharp_switch_1_state_6:
 {
-DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,-1,true);
-cg::this_grid().sync();
-unsigned int __gsharp_id_26_top2 = __gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_20_evalWords-1];
-bool __gsharp_id_27_underflow2 = (__gsharp_id_26_top2&0x80000000u)!=0;
-cg::this_grid().sync();
-if(__gsharp_id_27_underflow2)
+if(!(__gsharp_ctx->__gsharp_id_23_iter<1000))
 {
-DeviceAddSubParallel(__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_20_evalWords,1,true);
-cg::this_grid().sync();
-break;
+goto __gsharp_switch_1_state_16;
 }
+__gsharp_ctx->__gsharp_id_24_topWord=__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_ctx->__gsharp_id_20_evalWords-1];
+__gsharp_ctx->__gsharp_id_25_underflow=(__gsharp_ctx->__gsharp_id_24_topWord&0x80000000u)!=0;
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=7;
+return false;
 }
+case 7:
+__gsharp_switch_1_state_7:
+{
+if(!(__gsharp_ctx->__gsharp_id_25_underflow))
+{
+goto __gsharp_switch_1_state_9;
 }
+DeviceAddSubParallel(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_20_evalWords,1,true);
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=8;
+return false;
+}
+case 8:
+__gsharp_switch_1_state_8:
+{
+goto __gsharp_switch_1_state_14;
+goto __gsharp_switch_1_state_9;
+}
+case 9:
+__gsharp_switch_1_state_9:
+{
+DeviceAddSubParallel(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_20_evalWords,-1,true);
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=10;
+return false;
+}
+case 10:
+__gsharp_switch_1_state_10:
+{
+__gsharp_ctx->__gsharp_id_26_top2=__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_ctx->__gsharp_id_20_evalWords-1];
+__gsharp_ctx->__gsharp_id_27_underflow2=(__gsharp_ctx->__gsharp_id_26_top2&0x80000000u)!=0;
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=11;
+return false;
+}
+case 11:
+__gsharp_switch_1_state_11:
+{
+if(!(__gsharp_ctx->__gsharp_id_27_underflow2))
+{
+goto __gsharp_switch_1_state_13;
+}
+DeviceAddSubParallel(__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_id_2_rightOperand,__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff,__gsharp_ctx->__gsharp_id_20_evalWords,1,true);
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=12;
+return false;
+}
+case 12:
+__gsharp_switch_1_state_12:
+{
+goto __gsharp_switch_1_state_16;
+goto __gsharp_switch_1_state_13;
+}
+case 13:
+__gsharp_switch_1_state_13:
+{
+goto __gsharp_switch_1_state_14;
+}
+case 14:
+__gsharp_switch_1_state_14:
+{
+goto __gsharp_switch_1_state_15;
+}
+case 15:
+__gsharp_switch_1_state_15:
+{
+__gsharp_ctx->__gsharp_id_23_iter++;
+goto __gsharp_switch_1_state_6;
+goto __gsharp_switch_1_state_16;
+}
+case 16:
+__gsharp_switch_1_state_16:
+{
 for(int __gsharp_id_28_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_28_idx < __gsharp_id_5_aActualWords; __gsharp_id_28_idx += gridDim.x * blockDim.x)
 {
-__gsharp_id_7_remainderBuffer[__gsharp_id_28_idx]=(__gsharp_id_28_idx<__gsharp_id_9_n?__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_28_idx]:0u);
+__gsharp_id_7_remainderBuffer[__gsharp_id_28_idx]=(__gsharp_id_28_idx<__gsharp_ctx->__gsharp_id_9_n?__gsharp_ctx->__gsharp_id_11_iterScratch.__gsharp_mb_Diff[__gsharp_id_28_idx]:0u);
 }
-cg::this_grid().sync();
+__gsharp_yielded_for_grid_sync=true;
+__gsharp_state=17;
+return false;
+}
+case 17:
+__gsharp_switch_1_state_17:
+{
+__gsharp_state = 0;return true;
+}
+}
+return false;
+#undef __gsharp_state
+#undef __gsharp_yielded_for_grid_sync
 }
 
 ";
+}
+}
+
+
+// File: Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels.DeviceStateMachines.g.cs
+// <auto-generated/>
+#nullable enable
+using System;
+using global::Kassyi.GSharp.Core;
+using static global::Kassyi.GSharp.Core.ManagedGpuContext;
+using global::Kassyi.ZeroAlloc.Linq;
+namespace Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels
+{
+public partial class GpuBigIntDivRemKernels
+{
+public class __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow {
+public int __gsharp_state;
+public uint __gsharp_warp_exchange;
+public bool __gsharp_yielded_for_grid_sync;
+public int m;
+public int n2;
+public int n1;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NttConvolutionScratchContext nttScratch;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DualNtt baseNtt;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DualNtt forwardA;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DualNtt forwardB;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DualNtt inverseA;
+public int chunkSize;
+public int numBlocks;
+}
+public static unsafe bool __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext core, uint[] opA, uint[] opB, uint[] resultDest, int numWordsA, int numWordsB, int numWordsResult, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_ctx) {
+{
+    switch (__gsharp_ctx.__gsharp_state)
+    {
+        case 0:
+        {
+            __gsharp_ctx.m = core.Ntt.TransformLength;
+            __gsharp_ctx.n2 = 1;
+            while (__gsharp_ctx.n2 * __gsharp_ctx.n2 < __gsharp_ctx.m)
+            {
+                __gsharp_ctx.n2 *= 2;
+            }
+
+            __gsharp_ctx.n1 = __gsharp_ctx.m / __gsharp_ctx.n2;
+            if (__gsharp_ctx.m <= 512)
+            {
+                __gsharp_ctx.n1 = __gsharp_ctx.m;
+                __gsharp_ctx.n2 = 1;
+            }
+
+            __gsharp_ctx.nttScratch = core.Workspace.NttScratch;
+            GpuBigIntFermatKernels.DeviceUnpack16(opA, __gsharp_ctx.nttScratch.NttBuf1A, __gsharp_ctx.nttScratch.NttBuf2A, __gsharp_ctx.m, numWordsA, true);
+            GpuBigIntFermatKernels.DeviceUnpack16(opB, __gsharp_ctx.nttScratch.NttBuf1B, __gsharp_ctx.nttScratch.NttBuf2B, __gsharp_ctx.m, numWordsB, true);
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 1;
+            return false;
+        }
+
+        case 1:
+        {
+            __gsharp_ctx.baseNtt = new DualNtt
+            {
+                TemporaryBuffer = __gsharp_ctx.nttScratch.TmpBuf,
+                Grid = new NttGridContext
+                {
+                    M = __gsharp_ctx.m,
+                    N1 = __gsharp_ctx.n1,
+                    N2 = __gsharp_ctx.n2
+                }
+            };
+            __gsharp_ctx.forwardA = __gsharp_ctx.baseNtt;
+            __gsharp_ctx.forwardA.Buffer1 = __gsharp_ctx.nttScratch.NttBuf1A;
+            __gsharp_ctx.forwardA.Buffer2 = __gsharp_ctx.nttScratch.NttBuf2A;
+            __gsharp_ctx.forwardA.Twiddle1 = core.Ntt.TwiddleFactors.Forward1;
+            __gsharp_ctx.forwardA.Twiddle2 = core.Ntt.TwiddleFactors.Forward2;
+            GpuBigIntNttKernels.ExecuteDualForwardNtt(__gsharp_ctx.forwardA);
+            __gsharp_ctx.forwardB = __gsharp_ctx.forwardA;
+            __gsharp_ctx.forwardB.Buffer1 = __gsharp_ctx.nttScratch.NttBuf1B;
+            __gsharp_ctx.forwardB.Buffer2 = __gsharp_ctx.nttScratch.NttBuf2B;
+            GpuBigIntNttKernels.ExecuteDualForwardNtt(__gsharp_ctx.forwardB);
+            GpuBigIntNttKernels.ExecuteNttPointwiseMultiply(__gsharp_ctx.nttScratch.NttBuf1A, __gsharp_ctx.nttScratch.NttBuf2A, __gsharp_ctx.nttScratch.NttBuf1B, __gsharp_ctx.nttScratch.NttBuf2B, __gsharp_ctx.m);
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 2;
+            return false;
+        }
+
+        case 2:
+        {
+            __gsharp_ctx.inverseA = __gsharp_ctx.baseNtt;
+            __gsharp_ctx.inverseA.Buffer1 = __gsharp_ctx.nttScratch.NttBuf1A;
+            __gsharp_ctx.inverseA.Buffer2 = __gsharp_ctx.nttScratch.NttBuf2A;
+            __gsharp_ctx.inverseA.Twiddle1 = core.Ntt.TwiddleFactors.Inverse1;
+            __gsharp_ctx.inverseA.Twiddle2 = core.Ntt.TwiddleFactors.Inverse2;
+            GpuBigIntNttKernels.ExecuteDualInverseNtt(__gsharp_ctx.inverseA);
+            GpuBigIntNttKernels.ExecuteCrtComputeCoefficients(__gsharp_ctx.nttScratch.NttBuf1A, __gsharp_ctx.nttScratch.NttBuf2A, __gsharp_ctx.nttScratch.UncarriedLow, __gsharp_ctx.nttScratch.UncarriedHigh, __gsharp_ctx.m);
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 3;
+            return false;
+        }
+
+        case 3:
+        {
+            __gsharp_ctx.chunkSize = BlockDimension.X;
+            __gsharp_ctx.numBlocks = (numWordsResult + __gsharp_ctx.chunkSize - 1) / __gsharp_ctx.chunkSize;
+            GpuBigIntNttKernels.ExecuteResolveNttCarriesBlocked(__gsharp_ctx.nttScratch.UncarriedLow, __gsharp_ctx.nttScratch.UncarriedHigh, resultDest, __gsharp_ctx.nttScratch.BlockCarries, __gsharp_ctx.m, numWordsResult, __gsharp_ctx.chunkSize);
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 4;
+            return false;
+        }
+
+        case 4:
+        {
+            GpuBigIntNttKernels.ExecuteResolveNttCarriesApply(resultDest, __gsharp_ctx.nttScratch.BlockCarries, numWordsResult, __gsharp_ctx.chunkSize, __gsharp_ctx.numBlocks);
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 5;
+            return false;
+        }
+
+        case 5:
+        {
+            {
+                __gsharp_ctx.__gsharp_state = 0;
+                return true;
+            }
+        }
+    }
+}
+throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
+}
+
+public class __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro {
+public int __gsharp_state;
+public uint __gsharp_warp_exchange;
+public bool __gsharp_yielded_for_grid_sync;
+public int nA;
+public int n;
+public int targetWords;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext iterScratch;
+public uint[] __gsharp_arg_temp_0;
+public int __gsharp_arg_temp_1;
+public int wordShift;
+public int bitShift;
+public int destWords;
+public uint[] __gsharp_arg_temp_2;
+public int __gsharp_arg_temp_3;
+public int evalWords;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.GpuBigIntContext subCtx;
+public int iter;
+public uint topWord;
+public bool underflow;
+public uint top2;
+public bool underflow2;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_0 = new();
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_1 = new();
+}
+public static unsafe bool __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext core, uint[] leftOperand, uint[] rightOperand, uint[] reciprocalOfB, int targetBits, int aActualWords, uint[] quotientBuffer, uint[] remainderBuffer, __gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro __gsharp_ctx) {
+{
+    switch (__gsharp_ctx.__gsharp_state)
+    {
+        case 0:
+        {
+            __gsharp_ctx.nA = aActualWords;
+            __gsharp_ctx.n = core.Dimensions.NumberOfWords;
+            __gsharp_ctx.targetWords = (targetBits + 31) / 32;
+            __gsharp_ctx.iterScratch = core.Workspace.Iteration;
+            __gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.iterScratch.CurrentProduct;
+            __gsharp_ctx.__gsharp_arg_temp_1 = __gsharp_ctx.nA + __gsharp_ctx.targetWords;
+            goto case 1;
+        }
+
+        case 1:
+        {
+            if (!global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(core, leftOperand, reciprocalOfB, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.nA, __gsharp_ctx.targetWords, __gsharp_ctx.__gsharp_arg_temp_1, __gsharp_ctx.__gsharp_call_frame_0))
+            {
+                __gsharp_ctx.__gsharp_state = 1;
+                return false;
+            }
+
+            __gsharp_ctx.wordShift = targetBits / 32;
+            __gsharp_ctx.bitShift = targetBits % 32;
+            __gsharp_ctx.destWords = __gsharp_ctx.nA;
+            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.destWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+            {
+                int srcIdx = idx + __gsharp_ctx.wordShift;
+                uint w0 = (srcIdx < __gsharp_ctx.nA + __gsharp_ctx.targetWords) ? __gsharp_ctx.iterScratch.CurrentProduct[srcIdx] : 0u;
+                uint w1 = (srcIdx + 1 < __gsharp_ctx.nA + __gsharp_ctx.targetWords) ? __gsharp_ctx.iterScratch.CurrentProduct[srcIdx + 1] : 0u;
+                uint shiftedValue = (w0 >> __gsharp_ctx.bitShift) | (__gsharp_ctx.bitShift == 0 ? 0u : (w1 << (32 - __gsharp_ctx.bitShift)));
+                quotientBuffer[idx] = shiftedValue;
+            }
+
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 2;
+            return false;
+        }
+
+        case 2:
+        {
+            __gsharp_ctx.__gsharp_arg_temp_2 = __gsharp_ctx.iterScratch.NextIter;
+            __gsharp_ctx.__gsharp_arg_temp_3 = __gsharp_ctx.destWords + __gsharp_ctx.n;
+            goto case 3;
+        }
+
+        case 3:
+        {
+            if (!global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(core, quotientBuffer, rightOperand, __gsharp_ctx.__gsharp_arg_temp_2, __gsharp_ctx.destWords, __gsharp_ctx.n, __gsharp_ctx.__gsharp_arg_temp_3, __gsharp_ctx.__gsharp_call_frame_1))
+            {
+                __gsharp_ctx.__gsharp_state = 3;
+                return false;
+            }
+
+            __gsharp_ctx.evalWords = aActualWords + 1;
+            __gsharp_ctx.subCtx = new GpuBigIntContext
+            {
+                Operands = new OperandContext
+                {
+                    CarryBuffer = core.CarryBuffer
+                },
+                NumberOfWords = __gsharp_ctx.evalWords
+            };
+            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.evalWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+            {
+                __gsharp_ctx.iterScratch.Diff[idx] = idx < __gsharp_ctx.nA ? leftOperand[idx] : 0u;
+            }
+
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 4;
+            return false;
+        }
+
+        case 4:
+        {
+            GpuBigIntKernels.DeviceAddSubParallel(__gsharp_ctx.iterScratch.Diff, __gsharp_ctx.iterScratch.NextIter, __gsharp_ctx.iterScratch.Diff, __gsharp_ctx.evalWords, -1, true);
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 5;
+            return false;
+        }
+
+        case 5:
+        {
+            __gsharp_ctx.iter = 0;
+            goto case 6;
+        }
+
+        case 6:
+        {
+            if (!(__gsharp_ctx.iter < 1000))
+                goto case 16;
+            __gsharp_ctx.topWord = __gsharp_ctx.iterScratch.Diff[__gsharp_ctx.evalWords - 1];
+            __gsharp_ctx.underflow = (__gsharp_ctx.topWord & 0x80000000u) != 0;
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 7;
+            return false;
+        }
+
+        case 7:
+        {
+            if (!(__gsharp_ctx.underflow))
+                goto case 9;
+            GpuBigIntKernels.DeviceAddSubParallel(__gsharp_ctx.iterScratch.Diff, rightOperand, __gsharp_ctx.iterScratch.Diff, __gsharp_ctx.evalWords, 1, true);
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 8;
+            return false;
+        }
+
+        case 8:
+        {
+            goto case 14;
+            goto case 9;
+        }
+
+        case 9:
+        {
+            // Try subtracting M to see if R >= M
+            GpuBigIntKernels.DeviceAddSubParallel(__gsharp_ctx.iterScratch.Diff, rightOperand, __gsharp_ctx.iterScratch.Diff, __gsharp_ctx.evalWords, -1, true);
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 10;
+            return false;
+        }
+
+        case 10:
+        {
+            __gsharp_ctx.top2 = __gsharp_ctx.iterScratch.Diff[__gsharp_ctx.evalWords - 1];
+            __gsharp_ctx.underflow2 = (__gsharp_ctx.top2 & 0x80000000u) != 0;
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 11;
+            return false;
+        }
+
+        case 11:
+        {
+            if (!(__gsharp_ctx.underflow2))
+                goto case 13;
+            // Was smaller than M, add back and we are done.
+            GpuBigIntKernels.DeviceAddSubParallel(__gsharp_ctx.iterScratch.Diff, rightOperand, __gsharp_ctx.iterScratch.Diff, __gsharp_ctx.evalWords, 1, true);
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 12;
+            return false;
+        }
+
+        case 12:
+        {
+            goto case 16;
+            goto case 13;
+        }
+
+        case 13:
+        {
+            goto case 14;
+        }
+
+        case 14:
+        {
+            goto case 15;
+        }
+
+        case 15:
+        {
+            __gsharp_ctx.iter++;
+            goto case 6;
+            goto case 16;
+        }
+
+        case 16:
+        {
+            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (aActualWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+            {
+                remainderBuffer[idx] = idx < __gsharp_ctx.n ? __gsharp_ctx.iterScratch.Diff[idx] : 0u;
+            }
+
+            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+            __gsharp_ctx.__gsharp_state = 17;
+            return false;
+        }
+
+        case 17:
+        {
+            {
+                __gsharp_ctx.__gsharp_state = 0;
+                return true;
+            }
+        }
+    }
+}
+throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
+}
+
 }
 }
 
@@ -2665,7 +3215,8 @@ __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ExponentSliceCo
 struct __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange = 0;
+uint64_t __gsharp_warp_exchange[2] = {};
+uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__NewtonRaphsonContext __gsharp_id_1_core;
 __gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__IterationScratchContext __gsharp_id_2_iterScratch;
@@ -2678,10 +3229,39 @@ int __gsharp_id_8_aActualWords;
 int __gsharp_id_9_targetWords;
 int __gsharp_id_10_outWords;
 int __gsharp_id_12_i;
+unsigned int __gsharp_id_13_e;
+int __gsharp_id_14_bit;
+GSharpArray<unsigned int> __gsharp_arg_temp_0;
+GSharpArray<unsigned int> __gsharp_arg_temp_1;
+GSharpArray<unsigned int> __gsharp_arg_temp_2;
+int __gsharp_arg_temp_3;
+int __gsharp_arg_temp_4;
+int __gsharp_arg_temp_5;
+GSharpArray<unsigned int> __gsharp_arg_temp_6;
+GSharpArray<unsigned int> __gsharp_arg_temp_7;
+GSharpArray<unsigned int> __gsharp_arg_temp_8;
+GSharpArray<unsigned int> __gsharp_arg_temp_9;
+GSharpArray<unsigned int> __gsharp_arg_temp_10;
+GSharpArray<unsigned int> __gsharp_arg_temp_11;
+GSharpArray<unsigned int> __gsharp_arg_temp_12;
+GSharpArray<unsigned int> __gsharp_arg_temp_13;
+int __gsharp_arg_temp_14;
+int __gsharp_arg_temp_15;
+int __gsharp_arg_temp_16;
+GSharpArray<unsigned int> __gsharp_arg_temp_17;
+GSharpArray<unsigned int> __gsharp_arg_temp_18;
+GSharpArray<unsigned int> __gsharp_arg_temp_19;
+GSharpArray<unsigned int> __gsharp_arg_temp_20;
+GSharpArray<unsigned int> __gsharp_arg_temp_21;
+__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_0;
+__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro __gsharp_call_frame_1;
+__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_2;
+__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro __gsharp_call_frame_3;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel(__gsharp_ty_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Algorithms__ModPowNttContext __gsharp_id_0_ctx, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:
@@ -2722,43 +3302,145 @@ goto __gsharp_switch_1_state_2;
 case 2:
 __gsharp_switch_1_state_2:
 {
-for(int __gsharp_id_12_i = __gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_StartWord;__gsharp_ctx->__gsharp_id_12_i<__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_EndWord;__gsharp_ctx->__gsharp_id_12_i++)
+__gsharp_ctx->__gsharp_id_12_i=__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_StartWord;
+goto __gsharp_switch_1_state_3;
+}
+case 3:
+__gsharp_switch_1_state_3:
 {
-unsigned int __gsharp_id_13_e = __gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_Words[__gsharp_ctx->__gsharp_id_12_i];
-if(__gsharp_id_13_e==0)
+if(!(__gsharp_ctx->__gsharp_id_12_i<__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_EndWord))
+{
+goto __gsharp_switch_1_state_13;
+}
+__gsharp_ctx->__gsharp_id_13_e=__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_Words[__gsharp_ctx->__gsharp_id_12_i];
+if(__gsharp_ctx->__gsharp_id_13_e==0)
 {
 }
-for(int __gsharp_id_14_bit = 0;__gsharp_id_14_bit<32;__gsharp_id_14_bit++)
+__gsharp_ctx->__gsharp_id_14_bit=0;
+goto __gsharp_switch_1_state_4;
+}
+case 4:
+__gsharp_switch_1_state_4:
 {
-if((__gsharp_id_13_e&1)==1)
+if(!(__gsharp_ctx->__gsharp_id_14_bit<32))
 {
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,2*__gsharp_ctx->__gsharp_id_4_n,2*__gsharp_ctx->__gsharp_id_4_n,4*__gsharp_ctx->__gsharp_id_4_n);
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded,__gsharp_id_0_ctx.__gsharp_mb_ReciprocalMod,__gsharp_ctx->__gsharp_id_6_targetBits,__gsharp_ctx->__gsharp_id_8_aActualWords,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXShifted,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared);
+goto __gsharp_switch_1_state_11;
 }
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,2*__gsharp_ctx->__gsharp_id_4_n,2*__gsharp_ctx->__gsharp_id_4_n,4*__gsharp_ctx->__gsharp_id_4_n);
-__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded,__gsharp_id_0_ctx.__gsharp_mb_ReciprocalMod,__gsharp_ctx->__gsharp_id_6_targetBits,__gsharp_ctx->__gsharp_id_8_aActualWords,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXShifted,__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared);
-__gsharp_id_13_e>>=1;
+if(!((__gsharp_ctx->__gsharp_id_13_e&1)==1))
+{
+goto __gsharp_switch_1_state_7;
 }
+__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared;
+__gsharp_ctx->__gsharp_arg_temp_1=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared;
+__gsharp_ctx->__gsharp_arg_temp_2=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted;
+__gsharp_ctx->__gsharp_arg_temp_3=2*__gsharp_ctx->__gsharp_id_4_n;
+__gsharp_ctx->__gsharp_arg_temp_4=2*__gsharp_ctx->__gsharp_id_4_n;
+__gsharp_ctx->__gsharp_arg_temp_5=4*__gsharp_ctx->__gsharp_id_4_n;
+goto __gsharp_switch_1_state_5;
 }
+case 5:
+__gsharp_switch_1_state_5:
+{
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_arg_temp_0,__gsharp_ctx->__gsharp_arg_temp_1,__gsharp_ctx->__gsharp_arg_temp_2,__gsharp_ctx->__gsharp_arg_temp_3,__gsharp_ctx->__gsharp_arg_temp_4,__gsharp_ctx->__gsharp_arg_temp_5,&__gsharp_ctx->__gsharp_call_frame_0,__gsharp_root))
+{
+__gsharp_state=5;
+return;
+}
+__gsharp_ctx->__gsharp_arg_temp_6=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted;
+__gsharp_ctx->__gsharp_arg_temp_7=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded;
+__gsharp_ctx->__gsharp_arg_temp_8=__gsharp_id_0_ctx.__gsharp_mb_ReciprocalMod;
+__gsharp_ctx->__gsharp_arg_temp_9=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXShifted;
+__gsharp_ctx->__gsharp_arg_temp_10=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared;
+goto __gsharp_switch_1_state_6;
+}
+case 6:
+__gsharp_switch_1_state_6:
+{
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_arg_temp_6,__gsharp_ctx->__gsharp_arg_temp_7,__gsharp_ctx->__gsharp_arg_temp_8,__gsharp_ctx->__gsharp_id_6_targetBits,__gsharp_ctx->__gsharp_id_8_aActualWords,__gsharp_ctx->__gsharp_arg_temp_9,__gsharp_ctx->__gsharp_arg_temp_10,&__gsharp_ctx->__gsharp_call_frame_1,__gsharp_root))
+{
+__gsharp_state=6;
+return;
+}
+goto __gsharp_switch_1_state_7;
+}
+case 7:
+__gsharp_switch_1_state_7:
+{
+__gsharp_ctx->__gsharp_arg_temp_11=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared;
+__gsharp_ctx->__gsharp_arg_temp_12=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared;
+__gsharp_ctx->__gsharp_arg_temp_13=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted;
+__gsharp_ctx->__gsharp_arg_temp_14=2*__gsharp_ctx->__gsharp_id_4_n;
+__gsharp_ctx->__gsharp_arg_temp_15=2*__gsharp_ctx->__gsharp_id_4_n;
+__gsharp_ctx->__gsharp_arg_temp_16=4*__gsharp_ctx->__gsharp_id_4_n;
+goto __gsharp_switch_1_state_8;
+}
+case 8:
+__gsharp_switch_1_state_8:
+{
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_arg_temp_11,__gsharp_ctx->__gsharp_arg_temp_12,__gsharp_ctx->__gsharp_arg_temp_13,__gsharp_ctx->__gsharp_arg_temp_14,__gsharp_ctx->__gsharp_arg_temp_15,__gsharp_ctx->__gsharp_arg_temp_16,&__gsharp_ctx->__gsharp_call_frame_2,__gsharp_root))
+{
+__gsharp_state=8;
+return;
+}
+__gsharp_ctx->__gsharp_arg_temp_17=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXUnshifted;
+__gsharp_ctx->__gsharp_arg_temp_18=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_ModulusExpanded;
+__gsharp_ctx->__gsharp_arg_temp_19=__gsharp_id_0_ctx.__gsharp_mb_ReciprocalMod;
+__gsharp_ctx->__gsharp_arg_temp_20=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_NextXShifted;
+__gsharp_ctx->__gsharp_arg_temp_21=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_XSquared;
+goto __gsharp_switch_1_state_9;
+}
+case 9:
+__gsharp_switch_1_state_9:
+{
+if(!__gsharp_fn_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ctx->__gsharp_id_1_core,__gsharp_ctx->__gsharp_arg_temp_17,__gsharp_ctx->__gsharp_arg_temp_18,__gsharp_ctx->__gsharp_arg_temp_19,__gsharp_ctx->__gsharp_id_6_targetBits,__gsharp_ctx->__gsharp_id_8_aActualWords,__gsharp_ctx->__gsharp_arg_temp_20,__gsharp_ctx->__gsharp_arg_temp_21,&__gsharp_ctx->__gsharp_call_frame_3,__gsharp_root))
+{
+__gsharp_state=9;
+return;
+}
+__gsharp_ctx->__gsharp_id_13_e>>=1;
+goto __gsharp_switch_1_state_10;
+}
+case 10:
+__gsharp_switch_1_state_10:
+{
+__gsharp_ctx->__gsharp_id_14_bit++;
+goto __gsharp_switch_1_state_4;
+goto __gsharp_switch_1_state_11;
+}
+case 11:
+__gsharp_switch_1_state_11:
+{
+goto __gsharp_switch_1_state_12;
+}
+case 12:
+__gsharp_switch_1_state_12:
+{
+__gsharp_ctx->__gsharp_id_12_i++;
+goto __gsharp_switch_1_state_3;
+goto __gsharp_switch_1_state_13;
+}
+case 13:
+__gsharp_switch_1_state_13:
+{
 if(!(__gsharp_ctx->__gsharp_id_3_expSlice.__gsharp_mb_EndWord==__gsharp_ctx->__gsharp_id_5_expWords))
 {
-goto __gsharp_switch_1_state_4;
+goto __gsharp_switch_1_state_15;
 }
 for(int __gsharp_id_15_idx = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_15_idx < __gsharp_ctx->__gsharp_id_4_n; __gsharp_id_15_idx += gridDim.x * blockDim.x)
 {
 __gsharp_ctx->__gsharp_id_1_core.__gsharp_mb_Operands.__gsharp_mb_ResultBuffer[__gsharp_id_15_idx]=__gsharp_ctx->__gsharp_id_2_iterScratch.__gsharp_mb_AxSquared[__gsharp_id_15_idx];
 }
 __gsharp_yielded_for_grid_sync=true;
-__gsharp_state=3;
+__gsharp_state=14;
 return;
 }
-case 3:
-__gsharp_switch_1_state_3:
+case 14:
+__gsharp_switch_1_state_14:
 {
-goto __gsharp_switch_1_state_4;
+goto __gsharp_switch_1_state_15;
 }
-case 4:
-__gsharp_switch_1_state_4:
+case 15:
+__gsharp_switch_1_state_15:
 {
 __gsharp_state=-1;
 return;
@@ -2829,6 +3511,34 @@ public int aActualWords;
 public int targetWords;
 public int outWords;
 public int i;
+public uint e;
+public int bit;
+public uint[] __gsharp_arg_temp_0;
+public uint[] __gsharp_arg_temp_1;
+public uint[] __gsharp_arg_temp_2;
+public int __gsharp_arg_temp_3;
+public int __gsharp_arg_temp_4;
+public int __gsharp_arg_temp_5;
+public uint[] __gsharp_arg_temp_6;
+public uint[] __gsharp_arg_temp_7;
+public uint[] __gsharp_arg_temp_8;
+public uint[] __gsharp_arg_temp_9;
+public uint[] __gsharp_arg_temp_10;
+public uint[] __gsharp_arg_temp_11;
+public uint[] __gsharp_arg_temp_12;
+public uint[] __gsharp_arg_temp_13;
+public int __gsharp_arg_temp_14;
+public int __gsharp_arg_temp_15;
+public int __gsharp_arg_temp_16;
+public uint[] __gsharp_arg_temp_17;
+public uint[] __gsharp_arg_temp_18;
+public uint[] __gsharp_arg_temp_19;
+public uint[] __gsharp_arg_temp_20;
+public uint[] __gsharp_arg_temp_21;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_0 = new();
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro __gsharp_call_frame_1 = new();
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow __gsharp_call_frame_2 = new();
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_frame_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro __gsharp_call_frame_3 = new();
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext ctx, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ModPowNttMegaKernel __gsharp_ctx) {
 {
@@ -2871,45 +3581,143 @@ public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath_
 
         case 2:
         {
-            for (int i = __gsharp_ctx.expSlice.StartWord; __gsharp_ctx.i < __gsharp_ctx.expSlice.EndWord; __gsharp_ctx.i++)
+            __gsharp_ctx.i = __gsharp_ctx.expSlice.StartWord;
+            goto case 3;
+        }
+
+        case 3:
+        {
+            if (!(__gsharp_ctx.i < __gsharp_ctx.expSlice.EndWord))
+                goto case 13;
+            __gsharp_ctx.e = __gsharp_ctx.expSlice.Words[__gsharp_ctx.i];
+            if (__gsharp_ctx.e == 0)
             {
-                uint e = __gsharp_ctx.expSlice.Words[__gsharp_ctx.i];
-                if (e == 0)
-                {
-                }
-
-                for (int bit = 0; bit < 32; bit++)
-                {
-                    if ((e & 1) == 1)
-                    {
-                        ExecuteNttMultiplyMacroModPow(__gsharp_ctx.core, __gsharp_ctx.iterScratch.AxSquared, __gsharp_ctx.iterScratch.XSquared, __gsharp_ctx.iterScratch.NextXUnshifted, 2 * __gsharp_ctx.n, 2 * __gsharp_ctx.n, 4 * __gsharp_ctx.n);
-                        ExecuteBarrettReductionMacro(__gsharp_ctx.core, __gsharp_ctx.iterScratch.NextXUnshifted, __gsharp_ctx.iterScratch.ModulusExpanded, ctx.ReciprocalMod, __gsharp_ctx.targetBits, __gsharp_ctx.aActualWords, __gsharp_ctx.iterScratch.NextXShifted, __gsharp_ctx.iterScratch.AxSquared);
-                    }
-
-                    ExecuteNttMultiplyMacroModPow(__gsharp_ctx.core, __gsharp_ctx.iterScratch.XSquared, __gsharp_ctx.iterScratch.XSquared, __gsharp_ctx.iterScratch.NextXUnshifted, 2 * __gsharp_ctx.n, 2 * __gsharp_ctx.n, 4 * __gsharp_ctx.n);
-                    ExecuteBarrettReductionMacro(__gsharp_ctx.core, __gsharp_ctx.iterScratch.NextXUnshifted, __gsharp_ctx.iterScratch.ModulusExpanded, ctx.ReciprocalMod, __gsharp_ctx.targetBits, __gsharp_ctx.aActualWords, __gsharp_ctx.iterScratch.NextXShifted, __gsharp_ctx.iterScratch.XSquared);
-                    e >>= 1;
-                }
             }
 
+            __gsharp_ctx.bit = 0;
+            goto case 4;
+        }
+
+        case 4:
+        {
+            if (!(__gsharp_ctx.bit < 32))
+                goto case 11;
+            if (!((__gsharp_ctx.e & 1) == 1))
+                goto case 7;
+            __gsharp_ctx.__gsharp_arg_temp_0 = __gsharp_ctx.iterScratch.AxSquared;
+            __gsharp_ctx.__gsharp_arg_temp_1 = __gsharp_ctx.iterScratch.XSquared;
+            __gsharp_ctx.__gsharp_arg_temp_2 = __gsharp_ctx.iterScratch.NextXUnshifted;
+            __gsharp_ctx.__gsharp_arg_temp_3 = 2 * __gsharp_ctx.n;
+            __gsharp_ctx.__gsharp_arg_temp_4 = 2 * __gsharp_ctx.n;
+            __gsharp_ctx.__gsharp_arg_temp_5 = 4 * __gsharp_ctx.n;
+            goto case 5;
+        }
+
+        case 5:
+        {
+            if (!global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ctx.core, __gsharp_ctx.__gsharp_arg_temp_0, __gsharp_ctx.__gsharp_arg_temp_1, __gsharp_ctx.__gsharp_arg_temp_2, __gsharp_ctx.__gsharp_arg_temp_3, __gsharp_ctx.__gsharp_arg_temp_4, __gsharp_ctx.__gsharp_arg_temp_5, __gsharp_ctx.__gsharp_call_frame_0))
+            {
+                __gsharp_ctx.__gsharp_state = 5;
+                return;
+            }
+
+            __gsharp_ctx.__gsharp_arg_temp_6 = __gsharp_ctx.iterScratch.NextXUnshifted;
+            __gsharp_ctx.__gsharp_arg_temp_7 = __gsharp_ctx.iterScratch.ModulusExpanded;
+            __gsharp_ctx.__gsharp_arg_temp_8 = ctx.ReciprocalMod;
+            __gsharp_ctx.__gsharp_arg_temp_9 = __gsharp_ctx.iterScratch.NextXShifted;
+            __gsharp_ctx.__gsharp_arg_temp_10 = __gsharp_ctx.iterScratch.AxSquared;
+            goto case 6;
+        }
+
+        case 6:
+        {
+            if (!global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ctx.core, __gsharp_ctx.__gsharp_arg_temp_6, __gsharp_ctx.__gsharp_arg_temp_7, __gsharp_ctx.__gsharp_arg_temp_8, __gsharp_ctx.targetBits, __gsharp_ctx.aActualWords, __gsharp_ctx.__gsharp_arg_temp_9, __gsharp_ctx.__gsharp_arg_temp_10, __gsharp_ctx.__gsharp_call_frame_1))
+            {
+                __gsharp_ctx.__gsharp_state = 6;
+                return;
+            }
+
+            goto case 7;
+        }
+
+        case 7:
+        {
+            __gsharp_ctx.__gsharp_arg_temp_11 = __gsharp_ctx.iterScratch.XSquared;
+            __gsharp_ctx.__gsharp_arg_temp_12 = __gsharp_ctx.iterScratch.XSquared;
+            __gsharp_ctx.__gsharp_arg_temp_13 = __gsharp_ctx.iterScratch.NextXUnshifted;
+            __gsharp_ctx.__gsharp_arg_temp_14 = 2 * __gsharp_ctx.n;
+            __gsharp_ctx.__gsharp_arg_temp_15 = 2 * __gsharp_ctx.n;
+            __gsharp_ctx.__gsharp_arg_temp_16 = 4 * __gsharp_ctx.n;
+            goto case 8;
+        }
+
+        case 8:
+        {
+            if (!global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteNttMultiplyMacroModPow(__gsharp_ctx.core, __gsharp_ctx.__gsharp_arg_temp_11, __gsharp_ctx.__gsharp_arg_temp_12, __gsharp_ctx.__gsharp_arg_temp_13, __gsharp_ctx.__gsharp_arg_temp_14, __gsharp_ctx.__gsharp_arg_temp_15, __gsharp_ctx.__gsharp_arg_temp_16, __gsharp_ctx.__gsharp_call_frame_2))
+            {
+                __gsharp_ctx.__gsharp_state = 8;
+                return;
+            }
+
+            __gsharp_ctx.__gsharp_arg_temp_17 = __gsharp_ctx.iterScratch.NextXUnshifted;
+            __gsharp_ctx.__gsharp_arg_temp_18 = __gsharp_ctx.iterScratch.ModulusExpanded;
+            __gsharp_ctx.__gsharp_arg_temp_19 = ctx.ReciprocalMod;
+            __gsharp_ctx.__gsharp_arg_temp_20 = __gsharp_ctx.iterScratch.NextXShifted;
+            __gsharp_ctx.__gsharp_arg_temp_21 = __gsharp_ctx.iterScratch.XSquared;
+            goto case 9;
+        }
+
+        case 9:
+        {
+            if (!global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Kernels.GpuBigIntDivRemKernels.__gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuBigIntDivRemKernels__ExecuteBarrettReductionMacro(__gsharp_ctx.core, __gsharp_ctx.__gsharp_arg_temp_17, __gsharp_ctx.__gsharp_arg_temp_18, __gsharp_ctx.__gsharp_arg_temp_19, __gsharp_ctx.targetBits, __gsharp_ctx.aActualWords, __gsharp_ctx.__gsharp_arg_temp_20, __gsharp_ctx.__gsharp_arg_temp_21, __gsharp_ctx.__gsharp_call_frame_3))
+            {
+                __gsharp_ctx.__gsharp_state = 9;
+                return;
+            }
+
+            __gsharp_ctx.e >>= 1;
+            goto case 10;
+        }
+
+        case 10:
+        {
+            __gsharp_ctx.bit++;
+            goto case 4;
+            goto case 11;
+        }
+
+        case 11:
+        {
+            goto case 12;
+        }
+
+        case 12:
+        {
+            __gsharp_ctx.i++;
+            goto case 3;
+            goto case 13;
+        }
+
+        case 13:
+        {
             if (!(__gsharp_ctx.expSlice.EndWord == __gsharp_ctx.expWords))
-                goto case 4;
+                goto case 15;
             for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.n); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
             {
                 __gsharp_ctx.core.Operands.ResultBuffer[idx] = __gsharp_ctx.iterScratch.AxSquared[idx];
             }
 
             __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
-            __gsharp_ctx.__gsharp_state = 3;
+            __gsharp_ctx.__gsharp_state = 14;
             return;
         }
 
-        case 3:
+        case 14:
         {
-            goto case 4;
+            goto case 15;
         }
 
-        case 4:
+        case 15:
         {
             __gsharp_ctx.__gsharp_state = -1;
             return;
@@ -2958,6 +3766,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
 bool anyBlockActive = true;
 while (anyBlockActive)
 {
