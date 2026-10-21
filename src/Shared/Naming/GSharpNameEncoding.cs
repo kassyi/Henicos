@@ -29,6 +29,331 @@ internal static class GSharpNameEncoding
     public const string KernelPrefix = "__gsharp_k_";
     public const string TypeParameterPrefix = "__gsharp_tp_";
 
+    public const string SymbolHeaderPrefix = "// gsharp-symbols: ";
+
+    /// <summary>
+    /// Computes the 16-character lowercase hex 64-bit FNV-1a hash of source after normalizing \r\n to \n
+    /// (and stripping a leading // gsharp-symbols: &lt;hash&gt;\n line if present).
+    /// </summary>
+    public static string ComputeSourceHash(string source)
+    {
+        if (source is null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
+        var normalized = source.Replace("\r\n", "\n");
+        if (normalized.StartsWith(SymbolHeaderPrefix, StringComparison.Ordinal))
+        {
+            var eolIndex = normalized.IndexOf('\n');
+            if (eolIndex >= 0)
+            {
+                normalized = normalized.Substring(eolIndex + 1);
+            }
+            else
+            {
+                normalized = string.Empty;
+            }
+        }
+
+        unchecked
+        {
+            var hash = 14695981039346656037UL;
+            foreach (var c in normalized)
+            {
+                hash ^= c;
+                hash *= 1099511628211UL;
+            }
+
+            return hash.ToString("x16");
+        }
+    }
+
+    /// <summary>
+    /// Checks if the first line of sourceText starts with SymbolHeaderPrefix and extracts the trimmed hash.
+    /// </summary>
+    public static bool TryReadSymbolHeaderHash(string sourceText, out string hash)
+    {
+        hash = string.Empty;
+        if (string.IsNullOrEmpty(sourceText))
+        {
+            return false;
+        }
+
+        var line = sourceText;
+        var eolIndex = sourceText.IndexOf('\n');
+        if (eolIndex >= 0)
+        {
+            line = sourceText.Substring(0, eolIndex);
+        }
+
+        line = line.TrimEnd('\r');
+        if (!line.StartsWith(SymbolHeaderPrefix, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        hash = line.Substring(SymbolHeaderPrefix.Length).Trim();
+        return hash.Length > 0;
+    }
+
+    /// <summary>Formats the symbol header line.</summary>
+    public static string FormatSymbolHeaderLine(string hash) => $"{SymbolHeaderPrefix}{hash}";
+
+    /// <summary>
+    /// Builds the symbol file content for sourceBodyWithoutHeader.
+    /// </summary>
+    public static string BuildSymbolFileContent(string sourceBodyWithoutHeader, string dialect, Func<string, string?>? resolveShortened = null)
+    {
+        var hash = ComputeSourceHash(sourceBodyWithoutHeader);
+        var builder = new StringBuilder();
+        builder.Append("{\"gsharp_symbols\":\"").Append(hash).Append("\",\"dialect\":\"").Append(dialect).Append("\"}\n");
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var index = 0;
+
+        while (index < sourceBodyWithoutHeader.Length)
+        {
+            var start = sourceBodyWithoutHeader.IndexOf("__gsharp_", index, StringComparison.Ordinal);
+            if (start < 0)
+            {
+                break;
+            }
+
+            var end = start;
+            while (end < sourceBodyWithoutHeader.Length && IsIdentifierChar(sourceBodyWithoutHeader[end]))
+            {
+                end++;
+            }
+
+            index = end;
+            var startsIdentifier = start == 0 || !IsIdentifierChar(sourceBodyWithoutHeader[start - 1]);
+            if (!startsIdentifier)
+            {
+                continue;
+            }
+
+            var identifier = sourceBodyWithoutHeader.Substring(start, end - start);
+            if (!seen.Add(identifier))
+            {
+                continue;
+            }
+
+            string? csName = null;
+            var full = resolveShortened?.Invoke(identifier);
+            if (full is not null)
+            {
+                TryDecode(full, out csName);
+            }
+
+            if (string.IsNullOrEmpty(csName))
+            {
+                TryDecode(identifier, out csName);
+            }
+
+            if (string.IsNullOrEmpty(csName))
+            {
+                continue;
+            }
+
+            var kind = identifier.StartsWith(IdentifierPrefix, StringComparison.Ordinal) ? "id"
+                : identifier.StartsWith(MemberPrefix, StringComparison.Ordinal) ? "member"
+                : identifier.StartsWith(TypePrefix, StringComparison.Ordinal) ? "type"
+                : identifier.StartsWith(FunctionPrefix, StringComparison.Ordinal) ? "function"
+                : identifier.StartsWith(KernelPrefix, StringComparison.Ordinal) ? "kernel"
+                : identifier.StartsWith(TypeParameterPrefix, StringComparison.Ordinal) ? "typeparam"
+                : "id";
+
+            builder.Append("{\"cpp\":\"")
+                .Append(EscapeJsonString(identifier))
+                .Append("\",\"kind\":\"")
+                .Append(kind)
+                .Append("\",\"cs\":\"")
+                .Append(EscapeJsonString(csName))
+                .Append("\",\"symbols\":\"")
+                .Append(hash)
+                .Append("\",\"dialect\":\"")
+                .Append(dialect)
+                .Append("\"}\n");
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>
+    /// Reads lines from gsymContent and returns cpp -> cs mappings.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> ParseSymbolFile(string gsymContent, string? expectedHash = null)
+    {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (string.IsNullOrEmpty(gsymContent))
+        {
+            return result;
+        }
+
+        var lines = gsymContent.Split('\n');
+        string? headerHash = null;
+
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.Trim();
+            if (line.Length == 0)
+            {
+                continue;
+            }
+
+            if (headerHash is null && TryExtractJsonKeyValue(line, "gsharp_symbols", out var fileHash))
+            {
+                headerHash = fileHash;
+                if (expectedHash is not null && !string.Equals(headerHash, expectedHash, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"Symbol file hash '{headerHash}' does not match source hash '{expectedHash}'.");
+                }
+                continue;
+            }
+
+            if (expectedHash is not null && headerHash is null && TryExtractJsonKeyValue(line, "symbols", out var itemHash))
+            {
+                if (!string.Equals(itemHash, expectedHash, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"Symbol file hash '{itemHash}' does not match source hash '{expectedHash}'.");
+                }
+            }
+
+            if (TryExtractJsonKeyValue(line, "cpp", out var cpp) && TryExtractJsonKeyValue(line, "cs", out var cs))
+            {
+                result[cpp] = cs;
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>Replaces every renamed identifier in <paramref name="text"/> using symbolMap or default rules.</summary>
+    public static string DecodeText(string text, IReadOnlyDictionary<string, string>? symbolMap)
+    {
+        if (symbolMap is null)
+        {
+            return DecodeText(text);
+        }
+
+        var builder = new StringBuilder(text.Length);
+        var copied = 0;
+        var index = 0;
+        while (index < text.Length)
+        {
+            var start = text.IndexOf("__gsharp_", index, StringComparison.Ordinal);
+            if (start < 0)
+            {
+                break;
+            }
+
+            var end = start;
+            while (end < text.Length && IsIdentifierChar(text[end]))
+            {
+                end++;
+            }
+
+            index = end;
+            var startsIdentifier = start == 0 || !IsIdentifierChar(text[start - 1]);
+            if (!startsIdentifier)
+            {
+                continue;
+            }
+
+            var identifier = text.Substring(start, end - start);
+            if (!symbolMap.TryGetValue(identifier, out var mapped) || string.IsNullOrEmpty(mapped))
+            {
+                TryDecode(identifier, out mapped);
+            }
+
+            if (!string.IsNullOrEmpty(mapped))
+            {
+                builder.Append(text, copied, start - copied).Append(mapped);
+                copied = end;
+            }
+        }
+
+        return builder.Append(text, copied, text.Length - copied).ToString();
+    }
+
+    private static string EscapeJsonString(string text)
+    {
+        var sb = new StringBuilder(text.Length);
+        foreach (var c in text)
+        {
+            if (c == '"')
+            {
+                sb.Append("\\\"");
+            }
+            else if (c == '\\')
+            {
+                sb.Append("\\\\");
+            }
+            else if (c == '\n')
+            {
+                sb.Append("\\n");
+            }
+            else if (c == '\r')
+            {
+                sb.Append("\\r");
+            }
+            else if (c == '\t')
+            {
+                sb.Append("\\t");
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+
+        return sb.ToString();
+    }
+
+    private static bool TryExtractJsonKeyValue(string jsonLine, string key, out string value)
+    {
+        value = string.Empty;
+        var keyPattern = "\"" + key + "\":\"";
+        var keyIndex = jsonLine.IndexOf(keyPattern, StringComparison.Ordinal);
+        if (keyIndex < 0)
+        {
+            return false;
+        }
+
+        var valStart = keyIndex + keyPattern.Length;
+        var sb = new StringBuilder();
+        var escaping = false;
+
+        for (var i = valStart; i < jsonLine.Length; i++)
+        {
+            var c = jsonLine[i];
+            if (escaping)
+            {
+                if (c == 'n') sb.Append('\n');
+                else if (c == 'r') sb.Append('\r');
+                else if (c == 't') sb.Append('\t');
+                else sb.Append(c);
+                escaping = false;
+            }
+            else if (c == '\\')
+            {
+                escaping = true;
+            }
+            else if (c == '"')
+            {
+                value = sb.ToString();
+                return true;
+            }
+            else
+            {
+                sb.Append(c);
+            }
+        }
+
+        return false;
+    }
+
 #if GSHARP_COMPILER
     /// <summary>
     /// Encodes a C# path as the body of a global C++ name. The encoding is injective: <see cref="TryDecodePath(string, out GlobalNamePath?)"/> recovers

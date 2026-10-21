@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Models;
+using Kassyi.GSharp.Naming;
 
 namespace Kassyi.GSharp.Compiler;
 
@@ -583,7 +584,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             includesBuilder.AppendLine($"#include {inc}");
         }
-        var fullSource = includesBuilder + preludeSource + commonDeviceSource + allKernelsSource;
+        var bodySource = includesBuilder + preludeSource + commonDeviceSource + allKernelsSource;
+        var sourceHash = GSharpNameEncoding.ComputeSourceHash(bodySource);
+        var fullSource = GSharpNameEncoding.FormatSymbolHeaderLine(sourceHash) + "\n" + bodySource;
+        var dialectName = dialect.IsCuda ? "Cuda" : "Cpu";
+        var gsymContent = GSharpNameEncoding.BuildSymbolFileContent(bodySource, dialectName, static id => GlobalCppNames.TryGetFullName(id, out var full) ? full : null);
+
         var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
         var fileName = $"Kassyi.GSharp.Kernels_{safeAssemblyName}{ext}";
         var safeIntermediateOutputPath = config.IntermediateOutputPath ?? "";
@@ -593,6 +599,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var filePath = Path.Combine(safeIntermediateOutputPath, fileName);
+        var gsymFilePath = filePath + ".gsym.json";
 
 #pragma warning disable RS1035 // Do not do file IO in analyzers
         try
@@ -603,6 +610,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             File.WriteAllText(filePath, fullSource);
+            File.WriteAllText(gsymFilePath, gsymContent);
         }
         catch (Exception ex)
         {

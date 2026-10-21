@@ -27,5 +27,13 @@ This skill is the **procedure**. The binding **rules** live in `.agents/rules/`;
 4. **Report unsupported constructs** via diagnostics (generator-invariants.md §2), never silently.
 5. **Re-run** the relevant test category.
 
+## Symbol File Mapping & Demangling (`*.gsym.json`)
+
+When G# emits physical AOT artifacts (`.g.cu` / `.g.cpp`), it emits a sidecar symbol file (`.g.cu.gsym.json` / `.g.cpp.gsym.json`) using JSON Lines:
+- Line 1: `{"gsharp_symbols":"<hash>","dialect":"<dialect>"}`
+- Entries: `{"cpp":"<identifier>","kind":"<kind>","cs":"<csName>","symbols":"<hash>","dialect":"<dialect>"}`
+
+Line 1 of physical AOT source files contains `// gsharp-symbols: <hash>`. To demangle compiler logs or CUDA errors back to C# symbols, run `just gsharp-demangle <log> [symbols_path]`.
+
 > [!TIP]
 > The rules are not exhaustive. When unsure about supported syntax or design constraints, search `docs/spec/` before assuming.

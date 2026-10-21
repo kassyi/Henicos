@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Kassyi.GSharp.Naming;
 
@@ -17,6 +18,12 @@ internal static class GlobalCppNames
 
     // Shortened name -> full name. Only names over the threshold are recorded, so the table stays small.
     private static readonly ConcurrentDictionary<string, string> s_shortenedNames = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Looks up the unshortened full name for a shortened identifier.
+    /// </summary>
+    public static bool TryGetFullName(string shortenedName, [NotNullWhen(true)] out string? fullName) =>
+        s_shortenedNames.TryGetValue(shortenedName, out fullName);
 
     // [WHY] A type or function is referenced from many sites; its name is derived once per definition symbol. Source
     // symbols are shared by every semantic model of a compilation, and the table drops them with the compilation.
