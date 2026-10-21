@@ -312,7 +312,10 @@ internal static class SymbolExtensions
 
         writer.Append(field.ConstantValue.ToString());
 
-        var suffix = GetLiteralSuffix(field.Type.SpecialType);
+        var specialType = field.Type is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } enumUnderlyingType }
+            ? enumUnderlyingType.SpecialType
+            : field.Type.SpecialType;
+        var suffix = GetLiteralSuffix(specialType);
         if (suffix != null)
         {
             writer.Append(suffix);
