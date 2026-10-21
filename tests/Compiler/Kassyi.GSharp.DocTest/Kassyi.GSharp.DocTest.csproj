@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Core\Kassyi.GSharp.Core\Kassyi.GSharp.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\Kassyi.GSharp.Core\Kassyi.GSharp.Core.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>

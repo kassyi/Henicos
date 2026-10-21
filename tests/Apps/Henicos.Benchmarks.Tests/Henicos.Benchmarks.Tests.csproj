@@ -18,10 +18,10 @@
     <Using Include="Kassyi.GSharp.Tests.Shared.Helpers" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\Kassyi.GSharp.Tests.Shared\Helpers\CudaCapability.cs" Link="Helpers\CudaCapability.cs" />
+    <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Helpers\CudaCapability.cs" Link="Helpers\CudaCapability.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Apps\Henicos.Benchmarks\Henicos.Benchmarks.csproj" />
-    <ProjectReference Include="..\..\src\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
+    <ProjectReference Include="..\..\..\src\Apps\Henicos.Benchmarks\Henicos.Benchmarks.csproj" />
+    <ProjectReference Include="..\..\..\src\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
   </ItemGroup>
 </Project>

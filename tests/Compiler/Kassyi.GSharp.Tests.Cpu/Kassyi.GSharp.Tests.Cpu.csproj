@@ -41,18 +41,18 @@
 
   <Import Project="..\Kassyi.GSharp.Tests.Shared\Kassyi.GSharp.Tests.Shared.projitems" Label="Shared" />
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
-    <ProjectReference Include="..\..\src\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
-    <ProjectReference Include="..\..\src\Stdlib\Kassyi.GSharp.Stdlib.GpuMath\Kassyi.GSharp.Stdlib.GpuMath.csproj" />
-    <ProjectReference Include="..\..\src\ZeroAlloc\Kassyi.ZeroAlloc.Linq\Kassyi.ZeroAlloc.Linq.csproj" />
-    <ProjectReference Include="..\Kassyi.GSharp.Tests.Generators\Kassyi.GSharp.Tests.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\..\src\Compiler\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" />
-    <ProjectReference Include="..\..\src\Apps\Henicos.Benchmarks\Henicos.Benchmarks.csproj" />
+    <ProjectReference Include="..\..\..\src\Runtime\Kassyi.GSharp.Runtime\Kassyi.GSharp.Runtime.csproj" />
+    <ProjectReference Include="..\..\..\src\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="..\..\..\src\Stdlib\Kassyi.GSharp.Stdlib.GpuMath\Kassyi.GSharp.Stdlib.GpuMath.csproj" />
+    <ProjectReference Include="..\..\..\src\ZeroAlloc\Kassyi.ZeroAlloc.Linq\Kassyi.ZeroAlloc.Linq.csproj" />
+    <ProjectReference Include="..\..\Shared\Kassyi.GSharp.Tests.Generators\Kassyi.GSharp.Tests.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\..\src\Compiler\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" />
+    <ProjectReference Include="..\..\..\src\Apps\Henicos.Benchmarks\Henicos.Benchmarks.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
   </ItemGroup>
 
-  <Import Project="..\..\src\Compiler\Kassyi.GSharp.Compiler\build\Kassyi.GSharp.Compiler.targets" />
+  <Import Project="..\..\..\src\Compiler\Kassyi.GSharp.Compiler\build\Kassyi.GSharp.Compiler.targets" />
 </Project>
