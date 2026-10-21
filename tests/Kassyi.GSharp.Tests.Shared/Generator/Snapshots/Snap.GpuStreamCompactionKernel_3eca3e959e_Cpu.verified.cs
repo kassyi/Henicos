@@ -257,13 +257,12 @@ public int d;
 public int d;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[] blockSums, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan __gsharp_ctx) {
-        var sharedMem = new SharedMemory<uint>(2048 + 128);
+        global::Kassyi.GSharp.Core.SharedMemory<uint> sharedMem = new SharedMemory<uint>(2048 + 128);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
         case 0:
         {
-            
             __gsharp_ctx.tid = ThreadIndex.X;
             __gsharp_ctx.bIdx = BlockIndex.X;
             __gsharp_ctx.elementsPerBlock = BlockDimension.X * 2;

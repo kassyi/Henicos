@@ -127,14 +127,13 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel(int[] input, int[] output, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel __gsharp_ctx) {
-        var shared = new SharedMemory<int>(256);
+        global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
         case 0:
         {
             __gsharp_ctx.tid = ThreadIndex.X;
-            
             // Load into shared memory
             if (__gsharp_ctx.tid < length)
             {

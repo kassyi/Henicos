@@ -73,7 +73,7 @@ public static class MethodTranspiler
             var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
             var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
                 methodDecl, methodSymbol);
-            WriteContextStruct(contextName, contextFields, ref context);
+            WriteContextStruct(contextName, methodDecl.Identifier.ValueText, contextFields, ref context);
         }
 
         MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, contextFields != null, ref context);
@@ -143,7 +143,7 @@ public static class MethodTranspiler
             var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
             var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
                 methodDecl, methodSymbol);
-            WriteContextStruct(contextName, contextFields, ref context);
+            WriteContextStruct(contextName, methodDecl.Identifier.ValueText, contextFields, ref context);
         }
 
         MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, contextFields != null, ref context);
@@ -173,8 +173,9 @@ public static class MethodTranspiler
         (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? preLowered = null) =>
         ManagedCSharpTranspiler.Generate(methodDecl, semanticModel, preLowered);
 
-    private static void WriteContextStruct(string contextName, IReadOnlyList<VariableDeclaratorSyntax> fields,
-        ref TranspileContext context)
+    // kernelName is the C# name, used only in internal-error reports.
+    private static void WriteContextStruct(string contextName, string kernelName,
+        IReadOnlyList<VariableDeclaratorSyntax> fields, ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine($"struct {contextName} {{");
         context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.State} = 0;");
@@ -183,24 +184,8 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.YieldedForGridSync} = false;");
         foreach (var field in fields)
         {
-            var typeSyntax = (field.Parent as VariableDeclarationSyntax)?.Type;
-            if (typeSyntax == null)
-            {
-                continue;
-            }
-
-            var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(typeSyntax);
-            switch (typeSymbol)
-            {
-                case null when typeSyntax.IsVar:
-                    // Fallback for dynamically generated AST nodes (e.g., warp temporaries)
-                    // Since they are not in the semantic model, default to 'int' for C++ (which allows implicit cast).
-                    context.Emitter.Writer.Append("int");
-                    WriteContextFieldName(field, ref context);
-                    continue;
-                case null:
-                    continue;
-            }
+            // Field types come from HoistedFieldTypeResolver
+            var typeSymbol = HoistedFieldTypeResolver.Resolve(field, context.Query.SemanticModel, kernelName);
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
             context.Emitter.Dialect.AppendType(ref context, typeSymbol);

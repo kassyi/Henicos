@@ -24,6 +24,7 @@ public partial class NamingArchitectureTests
         "GpuOperatorMacroTranspiler.cs:targetType.Name",
         "MethodSignatureTranspiler.cs:methodSymbol.ContainingType.Name",
         "MethodSignatureTranspiler.cs:methodSymbol.Name",
+        "HoistedFieldTypeResolver.cs:typeParameter.Name",
         // A kernel whose symbol does not resolve; the C# compilation already fails.
         "MethodSignatureTranspiler.cs:method.Identifier.ValueText",
     };

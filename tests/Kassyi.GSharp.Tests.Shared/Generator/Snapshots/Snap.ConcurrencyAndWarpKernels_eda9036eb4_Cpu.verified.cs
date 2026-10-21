@@ -129,9 +129,7 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel(int[] data, int dynSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel __gsharp_ctx) {
-        // Static Shared Memory
         SharedMemory<int> sStatic = new SharedMemory<int>(256);
-        // Dynamic Shared Memory
         SharedMemory<int> sDyn1 = new SharedMemory<int>(dynSize);
         SharedMemory<float> sDyn2 = new SharedMemory<float>(dynSize);
 {
