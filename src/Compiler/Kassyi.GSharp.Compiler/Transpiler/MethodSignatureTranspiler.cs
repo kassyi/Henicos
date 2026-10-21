@@ -13,17 +13,10 @@ internal static class MethodSignatureTranspiler
     /// <summary>
     /// A name that belongs to one kernel: <paramref name="prefix"/> followed by the body of its entry point name.
     /// </summary>
-    public static string GetKernelDerivedName(string prefix, MethodDeclarationSyntax method, IMethodSymbol? methodSymbol)
-    {
-        if (methodSymbol != null)
-        {
-            return GlobalCppNames.GetKernelDerivedName(prefix, methodSymbol);
-        }
-
-        using var writer = new SourceWriter();
-        writer.Append(prefix).Append(method.Identifier.ValueText);
-        return writer.ToString();
-    }
+    public static string GetKernelDerivedName(string prefix, MethodDeclarationSyntax method, IMethodSymbol? methodSymbol) =>
+        methodSymbol != null
+            ? GlobalCppNames.GetKernelDerivedName(prefix, methodSymbol)
+            : prefix + method.Identifier.ValueText;
 
     public static void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice, bool hasContext,
         ref TranspileContext context)

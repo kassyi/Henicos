@@ -35,6 +35,24 @@ public class KernelEntryNameTests : TranspilerTestBase
 
     [SkippableFact]
     [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_SameNamedKernelClassesInDifferentNamespaces_AreDistinct()
+    {
+        var first = new int[ThreadCount];
+        var second = new int[ThreadCount];
+
+        GlobalNames.First.SameNamedKernels.LaunchRunKernel(first, blockDimX: ThreadCount);
+        GlobalNames.Second.SameNamedKernels.LaunchRunKernel(second, blockDimX: ThreadCount);
+
+        for (int i = 0; i < ThreadCount; i++)
+        {
+            Assert.Equal(300 + i, first[i]);
+            Assert.Equal(400 + i, second[i]);
+        }
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_OverloadedKernels_RunTheOverloadThatCsharpSelects()
     {

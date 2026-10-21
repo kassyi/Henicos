@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>
@@ -34,25 +36,13 @@ internal static class KernelHostNames
     /// The suffix of the per-kernel host members: the kernel name, or <c>{name}__o{n}</c> for an overloaded kernel.
     /// GSH0057 rejects <c>__</c> in user identifiers, so the key cannot collide with another kernel's name.
     /// </summary>
-    public static string GetMemberKey(IMethodSymbol kernel)
-    {
-        if (!IsOverloadedKernel(kernel))
-        {
-            return kernel.Name;
-        }
-
-        using var writer = new SourceWriter();
-        writer.Append(kernel.Name).Append("__o").Append(GlobalCppNames.GetOverloadOrdinal(kernel));
-        return writer.ToString();
-    }
+    public static string GetMemberKey(IMethodSymbol kernel) =>
+        IsOverloadedKernel(kernel)
+            ? $"{kernel.Name}__o{GlobalCppNames.GetOverloadOrdinal(kernel).ToString(CultureInfo.InvariantCulture)}"
+            : kernel.Name;
 
     /// <summary>The name of the <c>IntPtr</c> launch wrapper: public for a kernel that is not overloaded, private otherwise.</summary>
-    public static string GetPointerLaunchName(IMethodSymbol kernel)
-    {
-        using var writer = new SourceWriter();
-        writer.Append("Launch").Append(GetMemberKey(kernel)).Append("Ptr");
-        return writer.ToString();
-    }
+    public static string GetPointerLaunchName(IMethodSymbol kernel) => $"Launch{GetMemberKey(kernel)}Ptr";
 
     /// <summary>
     /// Gets the element type <c>T</c> of the <c>GpuBuffer&lt;T&gt;</c> that the typed wrapper takes for a parameter

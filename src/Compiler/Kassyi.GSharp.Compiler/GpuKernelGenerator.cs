@@ -456,7 +456,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var wrapperSource = WrapperEmitter.GenerateKernelExtensions(classSymbol, methodsData, config);
-        context.AddSource(classSymbol.Name + ".g.cs",
+        context.AddSource(GlobalCppNames.GetHintName(classSymbol),
             SourceText.From(wrapperSource, Encoding.UTF8));
     }
 

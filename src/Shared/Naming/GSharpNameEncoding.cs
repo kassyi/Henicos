@@ -1,5 +1,8 @@
 using System.Globalization;
 using System.Text;
+#if GSHARP_COMPILER
+using Kassyi.GSharp.Compiler;
+#endif
 
 namespace Kassyi.GSharp.Naming;
 
@@ -11,7 +14,7 @@ namespace Kassyi.GSharp.Naming;
 /// <list type="bullet">
 ///   <item><description><c>__gsharp_id_{ordinal}_{name}</c>: parameters, locals, labels and local functions. The ordinal is omitted when the declaration could not be located.</description></item>
 ///   <item><description><c>__gsharp_mb_{name}</c>: instance fields and properties of structs that G# emits.</description></item>
-///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by <see cref="Encode"/>: types, device functions and kernel entry points, which share one global C++ scope.</description></item>
+///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by the encoded C# path (<c>Encode</c>): types, device functions and kernel entry points, which share one global C++ scope.</description></item>
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
 /// </list>
 /// GSH0057 rejects <c>__</c> in user identifiers, so a C# name never starts with a digit-and-underscore ordinal and
@@ -26,6 +29,7 @@ internal static class GSharpNameEncoding
     public const string KernelPrefix = "__gsharp_k_";
     public const string TypeParameterPrefix = "__gsharp_tp_";
 
+#if GSHARP_COMPILER
     /// <summary>
     /// Encodes a C# path as the body of a global C++ name. The encoding is injective: <see cref="TryDecodePath(string, out GlobalNamePath?)"/> recovers
     /// the path from the result.
@@ -39,16 +43,124 @@ internal static class GSharpNameEncoding
     ///   <item><description><c>_h</c> is reserved for names that the compiler shortens with a hash; those cannot be decoded.</description></item>
     /// </list>
     /// After a <c>_</c>, the next character always tells a separator, an escape and each marker apart, which is what makes the
-    /// encoding decodable.
+    /// encoding decodable. Only the compiler encodes; the build tasks decode, so the encoder is compiled into the compiler only.
     /// </remarks>
     public static string Encode(GlobalNamePath path)
     {
-        var builder = new StringBuilder();
-        AppendPath(builder, path);
-        return builder.ToString();
+        using var writer = new SourceWriter();
+        AppendEncoded(writer, path);
+        return writer.ToString();
     }
 
-    /// <summary>Decodes a whole string produced by <see cref="Encode"/>.</summary>
+    /// <summary>Appends <see cref="Encode(GlobalNamePath)"/> of <paramref name="path"/> to <paramref name="writer"/>.</summary>
+    public static void AppendEncoded(in SourceWriter writer, GlobalNamePath path)
+    {
+        for (var i = 0; i < path.Segments.Count; i++)
+        {
+            if (i > 0)
+            {
+                writer.Append("__");
+            }
+
+            AppendSegment(writer, path.Segments[i]);
+        }
+
+        foreach (var modifier in path.Modifiers)
+        {
+            if (modifier == 0)
+            {
+                writer.Append("_p");
+            }
+            else
+            {
+                writer.Append("_r").Append(modifier);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns <paramref name="name"/> with <c>_</c> and non-ASCII characters escaped, as described in
+    /// <see cref="Encode(GlobalNamePath)"/>; a name of ASCII letters and digits only is returned as is.
+    /// </summary>
+    public static string EscapeName(string name)
+    {
+        foreach (var c in name)
+        {
+            if (!IsAsciiLetterOrDigit(c))
+            {
+                using var writer = new SourceWriter();
+                AppendEscapedName(writer, name);
+                return writer.ToString();
+            }
+        }
+
+        return name;
+    }
+
+    /// <summary>Appends <paramref name="name"/> escaped as described in <see cref="Encode(GlobalNamePath)"/>.</summary>
+    public static void AppendEscapedName(in SourceWriter writer, string name)
+    {
+        for (var i = 0; i < name.Length; i++)
+        {
+            var c = name[i];
+            if (IsAsciiLetterOrDigit(c))
+            {
+                writer.Append(c);
+            }
+            else if (c == '_')
+            {
+                writer.Append("_u");
+            }
+            else
+            {
+                var codePoint = char.ConvertToUtf32(name, i);
+                if (char.IsHighSurrogate(c))
+                {
+                    i++;
+                }
+
+                writer.Append("_x");
+                for (var shift = 20; shift >= 0; shift -= 4)
+                {
+                    writer.Append("0123456789abcdef"[(codePoint >> shift) & 0xF]);
+                }
+            }
+        }
+    }
+
+    private static void AppendSegment(in SourceWriter writer, GlobalNameSegment segment)
+    {
+        AppendEscapedName(writer, segment.Name);
+        if (segment.TypeArguments.Count > 0)
+        {
+            writer.Append("_g").Append(segment.TypeArguments.Count);
+            foreach (var argument in segment.TypeArguments)
+            {
+                writer.Append("_b");
+                AppendEncoded(writer, argument);
+            }
+
+            writer.Append("_e");
+        }
+
+        if (segment.Arity > 0)
+        {
+            writer.Append("_a").Append(segment.Arity);
+        }
+
+        if (segment.FileId is { } fileId)
+        {
+            writer.Append("_f").Append(fileId);
+        }
+
+        if (segment.OverloadOrdinal >= 0)
+        {
+            writer.Append("_o").Append(segment.OverloadOrdinal);
+        }
+    }
+#endif
+
+    /// <summary>Decodes a whole string produced by <c>Encode</c>.</summary>
     /// <returns><see langword="false"/> if <paramref name="encoded"/> is not exactly one encoded path.</returns>
     public static bool TryDecodePath(string encoded, out GlobalNamePath? path) => TryDecodePath(encoded, 0, out path);
 
@@ -227,92 +339,6 @@ internal static class GSharpNameEncoding
 
         path = null;
         return false;
-    }
-
-    private static void AppendPath(StringBuilder builder, GlobalNamePath path)
-    {
-        for (var i = 0; i < path.Segments.Count; i++)
-        {
-            if (i > 0)
-            {
-                builder.Append("__");
-            }
-
-            AppendSegment(builder, path.Segments[i]);
-        }
-
-        foreach (var modifier in path.Modifiers)
-        {
-            if (modifier == 0)
-            {
-                builder.Append("_p");
-            }
-            else
-            {
-                builder.Append("_r").Append(modifier.ToString(CultureInfo.InvariantCulture));
-            }
-        }
-    }
-
-    private static void AppendSegment(StringBuilder builder, GlobalNameSegment segment)
-    {
-        AppendEscapedName(builder, segment.Name);
-        if (segment.TypeArguments.Count > 0)
-        {
-            builder.Append("_g")
-                .Append(segment.TypeArguments.Count.ToString(CultureInfo.InvariantCulture));
-            foreach (var argument in segment.TypeArguments)
-            {
-                builder.Append("_b");
-                AppendPath(builder, argument);
-            }
-
-            builder.Append("_e");
-        }
-
-        if (segment.Arity > 0)
-        {
-            builder.Append("_a").Append(segment.Arity.ToString(CultureInfo.InvariantCulture));
-        }
-
-        if (segment.FileId is { } fileId)
-        {
-            builder.Append("_f").Append(fileId);
-        }
-
-        if (segment.OverloadOrdinal >= 0)
-        {
-            builder.Append("_o")
-                .Append(segment.OverloadOrdinal.ToString(CultureInfo.InvariantCulture));
-        }
-    }
-
-    /// <summary>Appends a name with <c>_</c> and non-ASCII characters escaped, as described in <see cref="Encode"/>.</summary>
-    internal static void AppendEscapedName(StringBuilder builder, string name)
-    {
-        for (var i = 0; i < name.Length; i++)
-        {
-            var c = name[i];
-            if (IsAsciiLetterOrDigit(c))
-            {
-                builder.Append(c);
-            }
-            else if (c == '_')
-            {
-                builder.Append("_u");
-            }
-            else
-            {
-                var codePoint = char.ConvertToUtf32(name, i);
-                if (char.IsHighSurrogate(c))
-                {
-                    i++;
-                }
-
-                builder.Append("_x")
-                    .Append(codePoint.ToString("x6", CultureInfo.InvariantCulture));
-            }
-        }
     }
 
     private static bool TryParsePath(string s, ref int index, out GlobalNamePath? path)

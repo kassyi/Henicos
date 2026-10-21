@@ -18,6 +18,12 @@ internal static class GlobalCppNames
     // Shortened name -> full name. Only names over the threshold are recorded, so the table stays small.
     private static readonly ConcurrentDictionary<string, string> s_shortenedNames = new(StringComparer.Ordinal);
 
+    // [WHY] A type or function is referenced from many sites; its name is derived once per definition symbol. Source
+    // symbols are shared by every semantic model of a compilation, and the table drops them with the compilation.
+    private static readonly ConditionalWeakTable<ISymbol, string> s_typeNames = new();
+    private static readonly ConditionalWeakTable<ISymbol, string> s_functionNames = new();
+    private static readonly ConditionalWeakTable<ISymbol, string> s_functionPathBodies = new();
+
     /// <summary>
     /// Whether <paramref name="type"/> is a user struct whose definition G# emits itself. Other types
     /// (<c>System_Nullable</c>, shared memory) are defined by the prelude under their legacy spelling.
@@ -30,7 +36,8 @@ internal static class GlobalCppNames
     /// A constructed type has the name of its definition; C++ applies the type arguments as template arguments.
     /// </remarks>
     public static string GetTypeName(INamedTypeSymbol type) =>
-        Shorten(GSharpNameEncoding.TypePrefix, GSharpNameEncoding.Encode(GetTypePath(type)));
+        s_typeNames.GetValue(type.OriginalDefinition, static definition =>
+            Shorten(GSharpNameEncoding.TypePrefix, GSharpNameEncoding.Encode(GetTypePath((INamedTypeSymbol)definition))));
 
     /// <summary>
     /// Returns <c>__gsharp_fn_{type path}__{name}</c> for a device function, with <c>_o{n}</c> when its containing type
@@ -41,7 +48,8 @@ internal static class GlobalCppNames
     /// which differs from C# (an <c>int</c> argument is ambiguous between <c>long</c> and <c>double</c>), never applies.
     /// </remarks>
     public static string GetFunctionName(IMethodSymbol method) =>
-        Shorten(GSharpNameEncoding.FunctionPrefix, GSharpNameEncoding.Encode(GetFunctionPath(method)));
+        s_functionNames.GetValue(GetDefinition(method), static definition =>
+            Shorten(GSharpNameEncoding.FunctionPrefix, GetFunctionPathBody((IMethodSymbol)definition)));
 
     /// <summary>
     /// Returns <c>__gsharp_k_{type path}__{name}</c>, the exported entry point of a kernel, with <c>_o{n}</c> when its
@@ -59,7 +67,11 @@ internal static class GlobalCppNames
     /// kernel: the CPU export, the per-thread context and the managed state machine.
     /// </summary>
     public static string GetKernelDerivedName(string prefix, IMethodSymbol kernel) =>
-        Shorten(prefix, GSharpNameEncoding.Encode(GetFunctionPath(kernel)));
+        Shorten(prefix, GetFunctionPathBody(kernel));
+
+    private static string GetFunctionPathBody(IMethodSymbol method) =>
+        s_functionPathBodies.GetValue(GetDefinition(method), static definition =>
+            GSharpNameEncoding.Encode(GetFunctionPath((IMethodSymbol)definition)));
 
     /// <summary>The C# path of <paramref name="method"/>: the path of its containing type and the method.</summary>
     public static GlobalNamePath GetFunctionPath(IMethodSymbol method)
@@ -120,13 +132,16 @@ internal static class GlobalCppNames
             $"The method '{method.Name}' is not a member of '{method.ContainingType.Name}'.");
     }
 
+    /// <summary>
+    /// Returns the source hint name of the wrapper that the generator adds for a kernel class: the encoded path of the
+    /// class, so that classes with the same name in different namespaces never share a hint name.
+    /// </summary>
+    public static string GetHintName(INamedTypeSymbol kernelClass) =>
+        Shorten(string.Empty, GSharpNameEncoding.Encode(GetTypePath(kernelClass))) + ".g.cs";
+
     /// <summary>Returns <c>__gsharp_tp_{name}</c>.</summary>
-    public static string GetTypeParameterName(ITypeParameterSymbol parameter)
-    {
-        var builder = new StringBuilder(GSharpNameEncoding.TypeParameterPrefix);
-        GSharpNameEncoding.AppendEscapedName(builder, parameter.Name);
-        return builder.ToString();
-    }
+    public static string GetTypeParameterName(ITypeParameterSymbol parameter) =>
+        GSharpNameEncoding.TypeParameterPrefix + GSharpNameEncoding.EscapeName(parameter.Name);
 
     /// <summary>The C# path of the definition of <paramref name="type"/>: namespaces, containing types and the type.</summary>
     public static GlobalNamePath GetTypePath(INamedTypeSymbol type)
@@ -222,7 +237,7 @@ internal static class GlobalCppNames
     /// <exception cref="InvalidOperationException">Two different names shorten to the same name.</exception>
     public static string Shorten(string prefix, string body)
     {
-        var full = new StringBuilder(prefix.Length + body.Length).Append(prefix).Append(body).ToString();
+        var full = prefix + body;
         if (full.Length <= ShortenThreshold)
         {
             return full;

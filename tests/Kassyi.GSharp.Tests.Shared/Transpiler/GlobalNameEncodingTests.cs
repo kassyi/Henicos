@@ -58,6 +58,22 @@ public class GlobalNameEncodingTests
 
     [Theory]
     [Scenario(TestScenario.Boundary)]
+    [InlineData("TKey", "TKey")]
+    [InlineData("T_Item", "T_uItem")]
+    [InlineData("é", "_x0000e9")]
+    public void Test_EscapeName_EscapesOnlyWhenNeeded(string name, string expected)
+    {
+        var escaped = GSharpNameEncoding.EscapeName(name);
+
+        Assert.Equal(expected, escaped);
+        if (name == expected)
+        {
+            Assert.Same(name, escaped);
+        }
+    }
+
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
     [InlineData("é", "_x0000e9")]
     [InlineData("日本", "_x0065e5_x00672c")]
     [InlineData("a\U0001D6D1b", "a_x01d6d1b")]
