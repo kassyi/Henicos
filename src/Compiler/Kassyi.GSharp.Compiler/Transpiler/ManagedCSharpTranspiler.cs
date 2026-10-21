@@ -1,12 +1,13 @@
 using Kassyi.GSharp.Compiler.Lowering;
 
-#pragma warning disable RS0030 // ManagedCSharpTranspiler is a host-side debug C#-to-C# state machine rewriter
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
 /// Transpiles a C# method declaration into a pure C# managed state machine and wrapper for host-side debugging.
 /// </summary>
+/// <remarks>
+/// Types named from symbols go through <see cref="SymbolExtensions.AppendCsharpTypeName"/>; syntax nodes become text only in <see cref="ToSource"/>.
+/// </remarks>
 internal static class ManagedCSharpTranspiler
 {
     public static string Generate(
@@ -36,27 +37,37 @@ internal static class ManagedCSharpTranspiler
         return writer.ToString();
     }
 
+#pragma warning disable RS0030 // Final emission of a node; the text is not parsed, compared, or edited afterwards
+    private static string ToSource(SyntaxNode node) => node.NormalizeWhitespace().ToFullString();
+#pragma warning restore RS0030
+
     private static string RewriteAndNormalizeBody(BlockSyntax loweredBody)
     {
         var rewriter = new ManagedExecutionRewriter();
         var rewritten = rewriter.Visit(loweredBody) as BlockSyntax
                         ?? throw new InvalidOperationException("Managed execution rewriting removed the kernel body.");
-        return rewritten.NormalizeWhitespace().ToFullString();
+        return ToSource(rewritten);
     }
 
-    private static (string LocalInits, List<(string Type, string Name)> RegularFields, HashSet<ILocalSymbol> UnhoistedSymbols)
+    /// <summary>A hoisted context field with the type that <see cref="HoistedFieldTypeResolver"/> resolved for it.</summary>
+    private readonly record struct ContextField(VariableDeclaratorSyntax Declarator, TypeSyntax DeclaredType, ITypeSymbol ResolvedType)
+    {
+        public string Name => Declarator.Identifier.ValueText.ToCSharpIdentifier();
+    }
+
+    private static (ImmutableArray<ContextField> LocalInits, ImmutableArray<ContextField> RegularFields, HashSet<ILocalSymbol> UnhoistedSymbols)
         ProcessContextFields(
             IReadOnlyList<VariableDeclaratorSyntax>? contextFields,
             SemanticModel semanticModel,
             string methodName)
     {
-        var regularFields = new List<(string Type, string Name)>();
+        var regularFields = ImmutableArray.CreateBuilder<ContextField>();
+        var localInits = ImmutableArray.CreateBuilder<ContextField>();
         var unhoistedSymbols = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
-        var localInitBuilder = new StringBuilder();
 
         if (contextFields == null)
         {
-            return (string.Empty, regularFields, unhoistedSymbols);
+            return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedSymbols);
         }
 
         foreach (var field in contextFields)
@@ -66,54 +77,56 @@ internal static class ManagedCSharpTranspiler
                 continue;
             }
 
-            var typeSyntax = declaration.Type;
-            var resolvedSymbol = HoistedFieldTypeResolver.Resolve(field, semanticModel, methodName);
+            var contextField = new ContextField(field, declaration.Type,
+                HoistedFieldTypeResolver.Resolve(field, semanticModel, methodName));
 
-            string typeString;
-            if (typeSyntax.IsVar || typeSyntax.ToFullString().Trim() == "var")
+            if (contextField.ResolvedType.IsRefLikeType)
             {
-                typeString = resolvedSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            }
-            else
-            {
-                typeString = typeSyntax.ToFullString().Trim();
-            }
-
-            var fieldName = field.Identifier.ValueText.ToCSharpIdentifier();
-
-            if (resolvedSymbol.IsRefLikeType)
-            {
-                var localSym = semanticModel.GetDeclaredSymbol<ILocalSymbol>(field);
-                if (localSym != null)
+                if (semanticModel.GetDeclaredSymbol<ILocalSymbol>(field) is { } localSymbol)
                 {
-                    unhoistedSymbols.Add(localSym);
+                    unhoistedSymbols.Add(localSymbol);
                 }
 
-                var init = field.Initializer != null ? " " + field.Initializer.ToFullString().TrimStart() : "";
-                localInitBuilder.AppendLine($"        {typeString} {fieldName}{init};");
+                localInits.Add(contextField);
             }
             else
             {
-                regularFields.Add((typeString, fieldName));
+                regularFields.Add(contextField);
             }
         }
 
-        return (localInitBuilder.ToString(), regularFields, unhoistedSymbols);
+        return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedSymbols);
+    }
+
+    /// <summary>Writes the field type: a written type as written, <c>var</c> as the resolved type.</summary>
+    private static void AppendFieldType(SourceWriter writer, ContextField field)
+    {
+        if (field.DeclaredType.IsVar)
+        {
+            writer.AppendCsharpTypeName(field.ResolvedType);
+        }
+        else
+        {
+            // Without trivia: a comment above the original declaration would otherwise land inside the emitted one
+            writer.Append(ToSource(field.DeclaredType.WithoutTrivia()));
+        }
     }
 
     private static void EmitContextClass(
         SourceWriter writer,
         string methodName,
-        IReadOnlyList<(string Type, string Name)> regularFields)
+        ImmutableArray<ContextField> regularFields)
     {
         writer.AppendLine($"public class __gsharp_context_{methodName} {{");
         writer.AppendLine($"public int {GSharpInternalNames.State};");
         writer.AppendLine($"public uint {GSharpInternalNames.WarpExchange};");
         writer.AppendLine($"public bool {GSharpInternalNames.YieldedForGridSync};");
 
-        foreach (var (type, name) in regularFields)
+        foreach (var field in regularFields)
         {
-            writer.AppendLine($"public {type} {name};");
+            writer.Append("public ");
+            AppendFieldType(writer, field);
+            writer.AppendLine($" {field.Name};");
         }
 
         writer.AppendLine("}");
@@ -124,7 +137,7 @@ internal static class ManagedCSharpTranspiler
         SourceWriter writer,
         string methodName,
         IMethodSymbol? methodSymbol,
-        string localInits,
+        ImmutableArray<ContextField> localInits,
         string bodySource)
     {
         EmitStateMachineSignature(writer, methodName, methodSymbol);
@@ -141,7 +154,19 @@ internal static class ManagedCSharpTranspiler
             }
         }
 
-        writer.Append(localInits);
+        foreach (var localInit in localInits)
+        {
+            writer.Append("        ");
+            AppendFieldType(writer, localInit);
+            writer.Append($" {localInit.Name}");
+            if (localInit.Declarator.Initializer is { } initializer)
+            {
+                writer.Append($" {ToSource(initializer.WithoutTrivia())}");
+            }
+
+            writer.AppendLine(";");
+        }
+
         writer.AppendLine(bodySource);
         writer.AppendLine("}");
     }
@@ -157,36 +182,26 @@ internal static class ManagedCSharpTranspiler
             return;
         }
 
-        var isFirst = true;
         foreach (var p in methodSymbol.Parameters)
         {
-            if (!isFirst)
-            {
-                writer.Append(", ");
-            }
-
-            isFirst = false;
-            var refKind = p.RefKind switch
+            writer.Append(p.RefKind switch
             {
                 RefKind.Ref => "ref ",
                 RefKind.Out => "out ",
                 RefKind.In => "in ",
                 _ => ""
-            };
-            writer.Append($"{refKind}{p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {p.Name.ToCSharpIdentifier()}");
-        }
-
-        if (!isFirst)
-        {
-            writer.Append(", ");
+            });
+            writer.AppendCsharpTypeName(p.Type);
+            writer.Append($" {p.Name.ToCSharpIdentifier()}, ");
         }
 
         writer.Append($"__gsharp_context_{methodName} {GSharpInternalNames.Context}");
 
         if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
         {
-            writer.Append(
-                $", ref {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} __gsharp_auto_result");
+            writer.Append(", ref ");
+            writer.AppendCsharpTypeName(methodSymbol.ReturnType);
+            writer.Append(" __gsharp_auto_result");
         }
     }
 
@@ -230,8 +245,10 @@ internal static class ManagedCSharpTranspiler
                         return null;
                     }
 
+#pragma warning disable RS0030 // Statement text for a human-readable internal-error report only
                     throw new InvalidOperationException(
                         $"Cannot remove ref-struct initialization statement in kernel '{kernelName}' for local '{declaredSymbol.Name}': statement '{node.ToFullString().Trim()}' is not inside a block or switch section.");
+#pragma warning restore RS0030
                 }
             }
 
@@ -381,7 +398,7 @@ internal static class ManagedCSharpTranspiler
                 return base.VisitReturnStatement(node);
             }
 
-            var statements = new List<StatementSyntax>();
+            var statements = ImmutableArray.CreateBuilder<StatementSyntax>(3);
 
             if (node.Expression != null)
             {
@@ -397,7 +414,10 @@ internal static class ManagedCSharpTranspiler
             statements.Add(SyntaxFactory.ExpressionStatement(
                 SyntaxFactory.AssignmentExpression(
                     SyntaxKind.SimpleAssignmentExpression,
-                    SyntaxFactory.ParseExpression($"{GSharpInternalNames.Context}.{GSharpInternalNames.State}"),
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.Context),
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.State)),
                     SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-1))
                 )
             ));

@@ -172,8 +172,7 @@ public int tid;
 public int lane;
 public int warpId;
 public int val;
-public // Warp synchronous reduction
-        uint mask;
+public uint mask;
 public int __gsharp_warp_temp_0;
 public int __gsharp_warp_temp_1;
 public int __gsharp_warp_temp_2;

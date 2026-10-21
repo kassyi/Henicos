@@ -118,9 +118,7 @@ public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public int totalThreads;
-public // Every thread reads the value of the (tid + 1) % totalThreads element
-        // Without SyncGrid, this could read uninitialized data
-        int nextId;
+public int nextId;
 public int nextVal;
 }
 public static unsafe void __gsharp_statemachine_GridSyncManagedKernels_GlobalBarrierKernel(int[] buffer, __gsharp_context_GridSyncManagedKernels_GlobalBarrierKernel __gsharp_ctx) {
@@ -395,8 +393,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
-public // 1. Thread-local sum
-        int myVal;
+public int myVal;
 public int localTid;
 public int stride;
 }

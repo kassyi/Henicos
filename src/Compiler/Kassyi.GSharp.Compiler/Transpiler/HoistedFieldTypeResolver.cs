@@ -1,5 +1,3 @@
-#pragma warning disable RS0030 // ToDisplayString / ToFullString are needed to compose the internal-error report
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -23,6 +21,18 @@ internal static class HoistedFieldTypeResolver
             return type2;
         }
 
+        throw new InvalidOperationException(BuildErrorMessage(field, semanticModel, kernelName, declaredSymbol, type1, type2));
+    }
+
+#pragma warning disable RS0030 // Source and symbol text for a human-readable internal-error report only
+    private static string BuildErrorMessage(
+        VariableDeclaratorSyntax field,
+        SemanticModel semanticModel,
+        string kernelName,
+        ILocalSymbol? declaredSymbol,
+        ITypeSymbol? type1,
+        ITypeSymbol? type2)
+    {
         var fieldName = field.Identifier.ValueText;
         var origLocation = semanticModel.GetOriginalLocation(field);
 
@@ -57,7 +67,7 @@ internal static class HoistedFieldTypeResolver
 
         var reason = DescribeRejection(type1) ?? DescribeRejection(type2) ?? "no lookup produced a type";
 
-        var message =
+        return
             $"G# internal compiler error: cannot determine the type of the hoisted state-machine field '{fieldName}' in kernel '{kernelName}'.\n" +
             $"Original location: {locationText}\n" +
             $"Declared type: {declaredTypeText}\n" +
@@ -66,9 +76,8 @@ internal static class HoistedFieldTypeResolver
             $"Lookup 2, initializer type: {lookup2Text}\n" +
             $"Reason: {reason}\n" +
             "Please report this at https://github.com/kassyi/Henicos/issues and include the kernel source and this message.";
-
-        throw new InvalidOperationException(message);
     }
+#pragma warning restore RS0030
 
     private static bool IsAcceptable([NotNullWhen(true)] ITypeSymbol? type) =>
         type is { TypeKind: not TypeKind.Error } && FindTypeParameter(type) == null;
@@ -86,7 +95,7 @@ internal static class HoistedFieldTypeResolver
         }
 
         return FindTypeParameter(type) is { } typeParameter
-            ? $"the type contains the type parameter '{typeParameter.ToDisplayString()}'; generic kernels are not supported"
+            ? $"the type contains the type parameter '{typeParameter.Name}'; generic kernels are not supported"
             : null;
     }
 
