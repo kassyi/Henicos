@@ -39,10 +39,10 @@ The core translation logic resides in the `RoslynToCudaVisitor` class, inheritin
 
 During AST traversal, if the transpiler encounters a user-defined custom `struct` (whether passed by value, by pointer, or used as an array element), it tracks it in a `_usedStructs` set. Before generating the final C++ method, the transpiler dynamically emits the C++ equivalent of all collected `struct` definitions at the top of the source string to ensure type definitions are valid in CUDA.
 
-To completely prevent "Multiple Definition" conflicts when multiple kernels use identically named structs from different C# namespaces, the transpiler strictly applies **Fully Qualified Name Mangling** (e.g., a C# struct `Math.Vector2` becomes `Math_Vector2` in C++).
+Structs with the same name in different C# namespaces never share a C++ name: the C++ name is derived from the full C# path (e.g., a C# struct `Math.Vector2` becomes `__gsharp_ty_Math__Vector2`; see [1.2.6](#126-identifier-naming-cppnameresolver)).
 
 > [!NOTE]
-> To prevent Multiple Definition errors (e.g., `class has already been defined`) when multiple kernels utilizing the same struct are JIT-compiled together in a shared dynamic source string, the generator automatically wraps every emitted struct definition with a preprocessor header guard (e.g., `#ifndef __GSHARP_STRUCT_Name__`).
+> To prevent Multiple Definition errors (e.g., `class has already been defined`) when multiple kernels utilizing the same struct are JIT-compiled together in a shared dynamic source string, the generator automatically wraps every emitted struct definition with a preprocessor header guard named after the struct's C++ name (e.g., `#ifndef __GSHARP_STRUCT___gsharp_ty_Math__Vector2__`).
 
 ### 1.2.2 Parameter Filtering
 
@@ -94,11 +94,27 @@ The transpiler derives the C++ name of every user declaration from its symbol ra
 | :--- | :--- |
 | Parameter, local, `out var`, `foreach` variable, label, local function, lambda parameter | `__gsharp_id_{ordinal}_{name}`, where `ordinal` is the declaration's position within the containing method |
 | Instance field or property of a struct that G# emits | `__gsharp_mb_{name}` |
-| Method and type names, members of dialect-mapped types (`float4.x`), external names | unchanged |
+| Struct that G# emits | `__gsharp_ty_{path}` |
+| Type parameter | `__gsharp_tp_{name}` |
+| Static `[GpuDeviceFunction]` method | `__gsharp_fn_{path}` |
+| `[GpuKernel]` entry point | `__gsharp_k_{path}`; the CPU dialect also emits `__gsharp_launch_{path}` (exported launcher) and `__gsharp_context_{path}` (per-thread context), and the managed CPU path `__gsharp_statemachine_{path}` |
+| Members of dialect-mapped types (`float4.x`), prelude types, external names | unchanged |
 
-The ordinal keeps distinct symbols distinct even when lowering flattens their scopes, for example when the CPU dialect hoists locals into the per-thread context struct. [GSH0057](../03_bcl_api/diagnostics/GSH0057.md) rejects `__` in user identifiers, so these names cannot collide with user code. Method and type names are renamed by [#402](https://github.com/kassyi/Henicos/issues/402), so a C++ keyword is an ordinary method name ([GSH0058](../03_bcl_api/diagnostics/GSH0058.md) is retired).
+The ordinal keeps distinct symbols distinct even when lowering flattens their scopes, for example when the CPU dialect hoists locals into the per-thread context struct. [GSH0057](../03_bcl_api/diagnostics/GSH0057.md) rejects `__` in user identifiers, so these names cannot collide with user code. Because every name is derived, a C++ keyword is an ordinary method or type name ([GSH0058](../03_bcl_api/diagnostics/GSH0058.md) is retired).
 
-When nvcc or the host C++ compiler fails, the build log adds a line that maps the generated names in its output back to C# names (`__gsharp_id_0_data = data`).
+#### Global names
+
+Types, device functions and kernels share one C++ scope, so their names encode the whole C# path of the declaration, and two different declarations never get the same name:
+
+- The path is the namespaces, the containing types and the declaration itself, joined with `__` (`N1.Outer.Inner` becomes `N1__Outer__Inner`; a device function `Math.Clamp` becomes `__gsharp_fn_Math__Clamp`).
+- Inside one segment, `_` is written as `_u` and any character other than an ASCII letter or digit as `_x` followed by six hexadecimal digits, so `A.B_C` (`A__B_uC`) and `A.B.C` (`A__B__C`) stay apart.
+- A segment may carry markers after the name: `_a{n}` for a generic arity (`G<T>` and `G<T, U>` differ), `_f{n}` for a `file` type (its position among same-named `file` types, ordered by file path), and `_o{n}` for an overloaded method (its position in declaration order among the methods with that name in the type). Each overload therefore has its own C++ name, and the overload that C# selected is the one that runs; C++ overload resolution, which differs from C# (an `int` argument is ambiguous between `long` and `double`), never applies.
+- A constructed generic struct uses the name of its definition; the type arguments become C++ template arguments.
+- A name longer than 200 characters is cut and ends with `_h` and a 10-digit hash of the whole name.
+
+The generated wrapper source of a kernel class is added under the encoded path of the class (`N1__K.g.cs`), so kernel classes with the same name in different namespaces can coexist.
+
+When nvcc or the host C++ compiler fails, the build log adds a line that maps the generated names in its output back to C# names (`__gsharp_id_0_data = data`, `__gsharp_fn_Math__Clamp = Math.Clamp`).
 
 C# names written inside a `Gpu.InlinePtx` string literal are not renamed; reference C# values through interpolation holes instead (see [Gpu.InlinePtx](../03_bcl_api/gpu_class/InlinePtx.md)).
 
@@ -131,6 +147,7 @@ The transpiler strictly adheres to the following naming conventions and rules wh
 
 1. **Partial Class Injection**: The Source Generator enhances the user's kernel class (which must be declared with the `partial` modifier, enforced by `GSH0036`) by emitting additional launcher methods and nested interop contexts directly into `[ContainingType]` (e.g., `MyKernels`).
 2. **Method Prefix**: The generated method name is always `Launch` followed by the original kernel name (e.g., `Launch[KernelName]`). For raw pointer / device-memory dispatch, a companion overload `Launch[KernelName]Ptr` is generated.
+    - **Overloaded kernels**: `Launch[KernelName]` stays a C# overload with the kernel's own parameter types. Because the `IntPtr` form of `Launch[KernelName]Ptr` would erase the element types, an overloaded kernel's public `Launch[KernelName]Ptr` takes each array-like and `ref` / `out` parameter as a typed `GpuBuffer<T>` and forwards to a private `IntPtr` implementation. The other per-kernel host members are keyed `[KernelName]__o{n}`. Overloads that still map to the same wrapper signature (for example `int[]` and `ref int`) are reported as [GSH0061](../03_bcl_api/diagnostics/GSH0061.md).
 3. **Trailing Execution Dimensions and Configuration**: The generator appends eight implicit trailing parameters to every launcher method to control CUDA execution dimensions, dynamic shared memory, and compile-time macro definitions (`gridDimX/Y/Z` and `blockDimX/Y/Z` defaulting to 1, `sharedMemBytes` defaulting to 0, `hStream` defaulting to `default`, and `macros` of type `ReadOnlySpan<KeyValuePair<string, string>>` defaulting to `default`).
 4. **Return Value Array Mapping**: If the kernel returns `void`, the launcher returns `void`. If the kernel returns a value type `T`, the launcher returns an array `T[]` allocated to the size of `gridDim * blockDim`.
 5. **Parameter Default Values Preservation**: If a kernel entry point (`[GpuKernel]`) defines default parameter values (e.g., `int stride = 1`), `WrapperEmitter` preserves those default values in the generated host launcher method signature. Callers on the CPU host can invoke the kernel without providing trailing optional arguments or using C# named arguments directly.
@@ -214,7 +231,7 @@ MyKernels.LaunchProcessPtr(ctx);
 
 ### 1.4.5 CPU Launcher Generation (`WriteCpuLauncher`)
 
-When the transpiler is configured to use the `CpuDialect` (Standard C++), the generator automatically invokes `WriteCpuLauncher`. This process emits a standard `extern "C"` C++ wrapper function (e.g., `__gsharp_launch_KernelName`) that translates the flat GPU grid/block indexing scheme into nested standard C++ `for` loops. This enables the generated native binary to be directly invoked from C# via P/Invoke on CPU-only machines without modifying the host C# API signature.
+When the transpiler is configured to use the `CpuDialect` (Standard C++), the generator automatically invokes `WriteCpuLauncher`. This process emits a standard `extern "C"` C++ wrapper function (e.g., `__gsharp_launch_MyApp__MyKernels__KernelName`) that translates the flat GPU grid/block indexing scheme into nested standard C++ `for` loops. This enables the generated native binary to be directly invoked from C# via P/Invoke on CPU-only machines without modifying the host C# API signature.
 
 > [!NOTE]
 > The CPU compilation task (`CompileCppToNativeTask`) is currently hardcoded for Windows. It strictly requires MSVC (`cl.exe`, `vswhere.exe`) and only outputs Windows `.dll` binaries for x64 and arm64. There is currently no implementation for Linux/macOS `.so` files via GCC/Clang. Furthermore, the build process (`ArtifactHelper.cs`) silently appends a 32-byte SHA256 checksum to the end of every compiled artifact (`.fatbin` and `.dll`) for integrity validation.
@@ -282,6 +299,7 @@ namespace UserNamespace
 
 - **Internal Encapsulation**: For 95% of application developers, `AotContexts` is an internal implementation detail managed entirely by `LaunchMyKernel(...)`.
 - **Advanced Low-Level Interoperability**: For advanced scenarios (e.g., custom C++ Native P/Invoke, direct `cuLaunchKernel` invocations, or explicit zero-copy VRAM buffer allocation), developers can explicitly reference `MyKernels.AotContexts.CustomPoint` to interact directly with memory-aligned native struct representations.
+- **Readable Names**: Unlike the C++ names, `AotContexts` names stay readable: the C# name of the struct without a trailing `Context`, without its namespace and without type arguments. Two different structs used by one kernel class that map to the same name (`N1.Pair` and `N2.Pair`, `FooContext` and `Foo`, `Box<int>` and `Box<long>`) are reported as [GSH0060](../03_bcl_api/diagnostics/GSH0060.md).
 
 ## See also
 
