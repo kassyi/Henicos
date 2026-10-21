@@ -2425,7 +2425,7 @@ public static unsafe void __gsharp_statemachine_GpuBigIntDivRemKernels_ModPowNtt
             __gsharp_ctx.outWords = __gsharp_ctx.aActualWords + __gsharp_ctx.targetWords;
             if (!(__gsharp_ctx.expSlice.StartWord == 0))
                 goto case 2;
-            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx->outWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.outWords); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
             {
                 if (idx < 2 * __gsharp_ctx.n)
                 {
@@ -2471,7 +2471,7 @@ public static unsafe void __gsharp_statemachine_GpuBigIntDivRemKernels_ModPowNtt
 
             if (!(__gsharp_ctx.expSlice.EndWord == __gsharp_ctx.expWords))
                 goto case 4;
-            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx->n); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+            for (int idx = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; idx < (__gsharp_ctx.n); idx += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
             {
                 __gsharp_ctx.core.Operands.ResultBuffer[idx] = __gsharp_ctx.iterScratch.AxSquared[idx];
             }

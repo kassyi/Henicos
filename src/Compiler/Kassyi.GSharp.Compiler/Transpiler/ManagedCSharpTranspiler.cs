@@ -1,9 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Kassyi.GSharp.Compiler.Lowering;
 
 #pragma warning disable RS0030 // ManagedCSharpTranspiler is a host-side debug C#-to-C# state machine rewriter
@@ -32,7 +26,8 @@ internal static class ManagedCSharpTranspiler
         var (localInits, regularFields, unhoistedSymbols) =
             ProcessContextFields(contextFields, semanticModel, methodName);
 
-        var unhoistedBody = (BlockSyntax)new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, methodName).Visit(loweredBody)!;
+        var unhoistedBody = new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, methodName).Visit(loweredBody) as BlockSyntax
+                            ?? throw new InvalidOperationException($"Unhoisting ref-struct fields removed the body of kernel '{methodName}'.");
         var bodySource = RewriteAndNormalizeBody(unhoistedBody);
 
         using var writer = new SourceWriter();
@@ -44,7 +39,8 @@ internal static class ManagedCSharpTranspiler
     private static string RewriteAndNormalizeBody(BlockSyntax loweredBody)
     {
         var rewriter = new ManagedExecutionRewriter();
-        var rewritten = (BlockSyntax)rewriter.Visit(loweredBody)!;
+        var rewritten = rewriter.Visit(loweredBody) as BlockSyntax
+                        ?? throw new InvalidOperationException("Managed execution rewriting removed the kernel body.");
         return rewritten.NormalizeWhitespace().ToFullString();
     }
 
@@ -194,54 +190,48 @@ internal static class ManagedCSharpTranspiler
         }
     }
 
-    private sealed class UnhoistRefStructRewriter : CSharpSyntaxRewriter
+    /// <summary>Matches <c>__gsharp_ctx-&gt;X</c>, the context access that <see cref="ContextHoister"/> emits.</summary>
+    private static bool IsContextPointerAccess(SyntaxNode? node) =>
+        node is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.Text: GSharpInternalNames.Context } } memberAccess &&
+        memberAccess.IsKind(SyntaxKind.PointerMemberAccessExpression);
+
+    private sealed class UnhoistRefStructRewriter(
+        HashSet<ILocalSymbol> unhoistedSymbols,
+        SemanticModel semanticModel,
+        string kernelName) : CSharpSyntaxRewriter
     {
-        private readonly HashSet<ILocalSymbol> _unhoistedSymbols;
-        private readonly SemanticModel _semanticModel;
-        private readonly string _kernelName;
-
-        public UnhoistRefStructRewriter(HashSet<ILocalSymbol> unhoistedSymbols, SemanticModel semanticModel, string kernelName)
-        {
-            _unhoistedSymbols = unhoistedSymbols;
-            _semanticModel = semanticModel;
-            _kernelName = kernelName;
-        }
-
         public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
-            var visited = (MemberAccessExpressionSyntax)base.VisitMemberAccessExpression(node)!;
-            if (visited.Kind() == SyntaxKind.PointerMemberAccessExpression &&
-                visited.Expression is IdentifierNameSyntax id &&
-                id.Identifier.Text == GSharpInternalNames.Context)
+            var visited = base.VisitMemberAccessExpression(node);
+            if (!IsContextPointerAccess(visited) || visited is not MemberAccessExpressionSyntax memberAccess)
             {
-                var sym = _semanticModel.GetSymbol(visited.Name) as ILocalSymbol ?? _semanticModel.GetDeclaredSymbol<ILocalSymbol>(visited.Name);
-                if (sym != null && _unhoistedSymbols.Contains(sym))
-                {
-                    return visited.Name.WithTriviaFrom(visited);
-                }
+                return visited;
             }
-            return visited;
+
+            var symbol = semanticModel.GetSymbol(memberAccess.Name) as ILocalSymbol ??
+                         semanticModel.GetDeclaredSymbol<ILocalSymbol>(memberAccess.Name);
+            return symbol != null && unhoistedSymbols.Contains(symbol)
+                ? memberAccess.Name.WithTriviaFrom(memberAccess)
+                : memberAccess;
         }
 
         public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
         {
-            if (node.Expression is AssignmentExpressionSyntax assignment &&
-                assignment.Kind() == SyntaxKind.SimpleAssignmentExpression &&
-                assignment.Left is MemberAccessExpressionSyntax memberAccess &&
-                memberAccess.Kind() == SyntaxKind.PointerMemberAccessExpression &&
-                memberAccess.Expression is IdentifierNameSyntax id &&
-                id.Identifier.Text == GSharpInternalNames.Context)
+            if (node.Expression is AssignmentExpressionSyntax { Left: MemberAccessExpressionSyntax memberAccess } assignment &&
+                assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) &&
+                IsContextPointerAccess(memberAccess))
             {
-                var declaredSym = _semanticModel.GetDeclaredSymbol<ILocalSymbol>(memberAccess.Name);
-                if (declaredSym != null && _unhoistedSymbols.Contains(declaredSym))
+                // Only the declarator-derived initialization resolves through GetDeclaredSymbol; later user assignments stay
+                var declaredSymbol = semanticModel.GetDeclaredSymbol<ILocalSymbol>(memberAccess.Name);
+                if (declaredSymbol != null && unhoistedSymbols.Contains(declaredSymbol))
                 {
-                    if (node.Parent is BlockSyntax || node.Parent is SwitchSectionSyntax)
+                    if (node.Parent is BlockSyntax or SwitchSectionSyntax)
                     {
                         return null;
                     }
 
                     throw new InvalidOperationException(
-                        $"Cannot remove ref-struct initialization statement in kernel '{_kernelName}' for local '{declaredSym.Name}': statement '{node.ToFullString().Trim()}' is not inside a block or switch section.");
+                        $"Cannot remove ref-struct initialization statement in kernel '{kernelName}' for local '{declaredSymbol.Name}': statement '{node.ToFullString().Trim()}' is not inside a block or switch section.");
                 }
             }
 
@@ -255,17 +245,16 @@ internal static class ManagedCSharpTranspiler
 
         public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
-            var visited = (MemberAccessExpressionSyntax)base.VisitMemberAccessExpression(node)!;
-            if (visited.Kind() == SyntaxKind.PointerMemberAccessExpression &&
-                visited.Expression is IdentifierNameSyntax id &&
-                id.Identifier.Text == GSharpInternalNames.Context)
+            var visited = base.VisitMemberAccessExpression(node);
+            if (!IsContextPointerAccess(visited) || visited is not MemberAccessExpressionSyntax memberAccess)
             {
-                return SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    visited.Expression,
-                    visited.Name).WithTriviaFrom(visited);
+                return visited;
             }
-            return visited;
+
+            return SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                memberAccess.Expression,
+                memberAccess.Name).WithTriviaFrom(memberAccess);
         }
 
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
@@ -350,7 +339,12 @@ internal static class ManagedCSharpTranspiler
                 " global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX");
             var stepExpr = SyntaxFactory.ParseExpression(
                 "global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX");
-            var condition = SyntaxFactory.ParseExpression($"{loopVar} < ({countArg})");
+            // Visit the count so that context accesses in it are rewritten like the rest of the body
+            var countExpr = Visit(countArg) as ExpressionSyntax ?? countArg;
+            var condition = SyntaxFactory.BinaryExpression(
+                SyntaxKind.LessThanExpression,
+                SyntaxFactory.IdentifierName(loopVar),
+                SyntaxFactory.ParenthesizedExpression(countExpr));
 
             var declaration = SyntaxFactory.VariableDeclaration(
                 SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),

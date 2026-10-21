@@ -1,32 +1,24 @@
-using System;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
-#pragma warning disable RS0030
+#pragma warning disable RS0030 // ToDisplayString / ToFullString are needed to compose the internal-error report
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+/// <summary>
+/// Resolves the static type of a hoisted state-machine context field for both the managed C# and the C++ CPU dialects.
+/// </summary>
 internal static class HoistedFieldTypeResolver
 {
     public static ITypeSymbol Resolve(VariableDeclaratorSyntax field, SemanticModel semanticModel, string kernelName)
     {
         var declaredSymbol = semanticModel.GetDeclaredSymbol<ILocalSymbol>(field);
         var type1 = declaredSymbol?.Type;
+        var type2 = field.Initializer != null ? semanticModel.GetTypeSymbol(field.Initializer.Value) : null;
 
-        ITypeSymbol? type2 = null;
-        if (field.Initializer != null)
-        {
-            type2 = semanticModel.GetTypeSymbol(field.Initializer.Value);
-        }
-
-        // Test candidate 1
-        if (type1 != null && IsValidType(type1, out var typeParam1) && type1.TypeKind != TypeKind.Error)
+        if (IsAcceptable(type1))
         {
             return type1;
         }
 
-        // Test candidate 2
-        if (type2 != null && IsValidType(type2, out var typeParam2) && type2.TypeKind != TypeKind.Error)
+        if (IsAcceptable(type2))
         {
             return type2;
         }
@@ -50,7 +42,7 @@ internal static class HoistedFieldTypeResolver
         var lookup1Text = declaredSymbol?.ToDisplayString() ?? "not found";
 
         string lookup2Text;
-        if (field.Initializer == null || type2 == null)
+        if (type2 == null)
         {
             lookup2Text = "<none>";
         }
@@ -63,41 +55,7 @@ internal static class HoistedFieldTypeResolver
             lookup2Text = type2.ToDisplayString();
         }
 
-        string reason;
-        if (type1 != null)
-        {
-            if (type1.TypeKind == TypeKind.Error)
-            {
-                reason = "the type is an error type";
-            }
-            else if (ContainsTypeParameter(type1, out var tp))
-            {
-                reason = $"the type contains the type parameter '{tp!.ToDisplayString()}'; generic kernels are not supported";
-            }
-            else
-            {
-                reason = "no lookup produced a type";
-            }
-        }
-        else if (type2 != null)
-        {
-            if (type2.TypeKind == TypeKind.Error)
-            {
-                reason = "the type is an error type";
-            }
-            else if (ContainsTypeParameter(type2, out var tp))
-            {
-                reason = $"the type contains the type parameter '{tp!.ToDisplayString()}'; generic kernels are not supported";
-            }
-            else
-            {
-                reason = "no lookup produced a type";
-            }
-        }
-        else
-        {
-            reason = "no lookup produced a type";
-        }
+        var reason = DescribeRejection(type1) ?? DescribeRejection(type2) ?? "no lookup produced a type";
 
         var message =
             $"G# internal compiler error: cannot determine the type of the hoisted state-machine field '{fieldName}' in kernel '{kernelName}'.\n" +
@@ -112,52 +70,48 @@ internal static class HoistedFieldTypeResolver
         throw new InvalidOperationException(message);
     }
 
-    private static bool IsValidType(ITypeSymbol type, out ITypeParameterSymbol? typeParam)
-    {
-        return !ContainsTypeParameter(type, out typeParam);
-    }
+    private static bool IsAcceptable([NotNullWhen(true)] ITypeSymbol? type) =>
+        type is { TypeKind: not TypeKind.Error } && FindTypeParameter(type) == null;
 
-    private static bool ContainsTypeParameter(ITypeSymbol? type, out ITypeParameterSymbol? typeParam)
+    private static string? DescribeRejection(ITypeSymbol? type)
     {
         if (type == null)
         {
-            typeParam = null;
-            return false;
+            return null;
         }
 
-        if (type is ITypeParameterSymbol tp)
+        if (type.TypeKind == TypeKind.Error)
         {
-            typeParam = tp;
-            return true;
+            return "the type is an error type";
         }
 
-        if (type is IArrayTypeSymbol arrayType)
-        {
-            return ContainsTypeParameter(arrayType.ElementType, out typeParam);
-        }
+        return FindTypeParameter(type) is { } typeParameter
+            ? $"the type contains the type parameter '{typeParameter.ToDisplayString()}'; generic kernels are not supported"
+            : null;
+    }
 
-        if (type is IPointerTypeSymbol pointerType)
+    private static ITypeParameterSymbol? FindTypeParameter(ITypeSymbol type)
+    {
+        switch (type)
         {
-            return ContainsTypeParameter(pointerType.PointedAtType, out typeParam);
-        }
-
-        if (type is INamedTypeSymbol namedType)
-        {
-            foreach (var arg in namedType.TypeArguments)
-            {
-                if (ContainsTypeParameter(arg, out typeParam))
+            case ITypeParameterSymbol typeParameter:
+                return typeParameter;
+            case IArrayTypeSymbol arrayType:
+                return FindTypeParameter(arrayType.ElementType);
+            case IPointerTypeSymbol pointerType:
+                return FindTypeParameter(pointerType.PointedAtType);
+            case INamedTypeSymbol namedType:
+                foreach (var typeArgument in namedType.TypeArguments)
                 {
-                    return true;
+                    if (FindTypeParameter(typeArgument) is { } found)
+                    {
+                        return found;
+                    }
                 }
-            }
 
-            if (namedType.ContainingType != null)
-            {
-                return ContainsTypeParameter(namedType.ContainingType, out typeParam);
-            }
+                return namedType.ContainingType != null ? FindTypeParameter(namedType.ContainingType) : null;
+            default:
+                return null;
         }
-
-        typeParam = null;
-        return false;
     }
 }
