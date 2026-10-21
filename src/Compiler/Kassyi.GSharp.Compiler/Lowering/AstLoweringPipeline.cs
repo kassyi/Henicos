@@ -51,13 +51,19 @@ public static class AstLoweringPipeline
             ? FindAssignedValueParameters(body, deviceFunction)
             : ImmutableArray<string>.Empty;
 
-        // [WHY] A loop header is evaluated at its own place in every iteration. The first hoisting pass leaves headers
-        // alone; once LoopRewriter has turned them into statements of the flat list, the second pass hoists from there.
+        // [WHY] A loop header is evaluated at its own place in every iteration. The first round leaves headers alone;
+        // once LoopRewriter has turned them into statements of the flat list, the second round lowers them there. Each
+        // pass keeps one instance across both rounds so that temporaries and labels stay unique.
+        var conditionalRewriter = new ConditionalEvaluationRewriter();
         var warpRewriter = new WarpInstructionRewriter();
-        var hoistedBody = warpRewriter.Rewrite(annotatedBody);
-        hoistedBody = new BranchRewriter().Rewrite(hoistedBody);
-        hoistedBody = new LoopRewriter().Rewrite(hoistedBody);
+        var branchRewriter = new BranchRewriter();
+        var hoistedBody = conditionalRewriter.Rewrite(annotatedBody);
         hoistedBody = warpRewriter.Rewrite(hoistedBody);
+        hoistedBody = branchRewriter.Rewrite(hoistedBody);
+        hoistedBody = new LoopRewriter().Rewrite(hoistedBody);
+        hoistedBody = conditionalRewriter.Rewrite(hoistedBody);
+        hoistedBody = warpRewriter.Rewrite(hoistedBody);
+        hoistedBody = branchRewriter.Rewrite(hoistedBody);
 
         var (contextHoistedBody, contextFields) =
             new ContextHoister(copiedParameters, isDeviceFunction: deviceFunction != null).Hoist(hoistedBody);

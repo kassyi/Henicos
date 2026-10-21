@@ -9,6 +9,8 @@ namespace Kassyi.GSharp.Tests.Generators.StateMachines;
 /// </summary>
 public class ConditionalEvaluationTests : StateMachineTestBase
 {
+    private const uint FullMask = 0xFFFFFFFFu;
+
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
@@ -18,7 +20,7 @@ public class ConditionalEvaluationTests : StateMachineTestBase
         int value = 0;
         return VerifyPipelineLower(() =>
         {
-            bool ok = flag && Gpu.WarpShuffle(value, 1) > 0;
+            bool ok = flag && Warp.ShuffleSync(FullMask, value, 1) > 0;
         });
     }
 
@@ -31,7 +33,7 @@ public class ConditionalEvaluationTests : StateMachineTestBase
         int value = 0;
         return VerifyPipelineLower(() =>
         {
-            bool ok = flag || Gpu.WarpShuffle(value, 1) > 0;
+            bool ok = flag || Warp.ShuffleSync(FullMask, value, 1) > 0;
         });
     }
 
@@ -44,7 +46,7 @@ public class ConditionalEvaluationTests : StateMachineTestBase
         int value = 0;
         return VerifyPipelineLower(() =>
         {
-            bool ok = first && (second || Gpu.WarpShuffle(value, 1) > 0);
+            bool ok = first && (second || Warp.ShuffleSync(FullMask, value, 1) > 0);
         });
     }
 
@@ -58,7 +60,7 @@ public class ConditionalEvaluationTests : StateMachineTestBase
         int value = 0;
         return VerifyPipelineLower(() =>
         {
-            bool ok = Gpu.WarpShuffle(value, 1) > 0 && flag;
+            bool ok = Warp.ShuffleSync(FullMask, value, 1) > 0 && flag;
         });
     }
 
@@ -70,7 +72,7 @@ public class ConditionalEvaluationTests : StateMachineTestBase
         int count = 0, limit = 0;
         return VerifyPipelineLower(() =>
         {
-            while (Gpu.WarpShuffle(count, 0) < limit)
+            while (Warp.ShuffleSync(FullMask, count, 0) < limit)
             {
                 count++;
             }
@@ -85,7 +87,7 @@ public class ConditionalEvaluationTests : StateMachineTestBase
         int steps = 0, limit = 0;
         return VerifyPipelineLower(() =>
         {
-            for (int i = 0; i < limit; i = Gpu.WarpShuffle(i + 1, 0))
+            for (int i = 0; i < limit; i = Warp.ShuffleSync(FullMask, i + 1, 0))
             {
                 steps++;
             }
@@ -103,7 +105,7 @@ public class ConditionalEvaluationTests : StateMachineTestBase
             do
             {
                 count++;
-            } while (Gpu.WarpShuffle(count, 0) < limit);
+            } while (Warp.ShuffleSync(FullMask, count, 0) < limit);
         });
     }
 }

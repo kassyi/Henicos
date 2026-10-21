@@ -82,3 +82,9 @@ public static class Gpu
     public static int WarpShuffle(int var, int srcLane) => var;
     public static int WarpReduceSum(int var) => var;
 }
+
+// Mock of the warp intrinsics with the argument layout the state machine lowering expects (mask, value, lane)
+public static class Warp
+{
+    public static int ShuffleSync(uint mask, int value, int srcLane) => value;
+}
