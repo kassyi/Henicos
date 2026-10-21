@@ -60,6 +60,7 @@ float __gsharp_warp_temp_3;
 float __gsharp_warp_temp_4;
 int __gsharp_id_9_lane;
 int __gsharp_id_10_warpId;
+float __gsharp_id_11_val;
 float __gsharp_warp_temp_5;
 float __gsharp_warp_temp_6;
 };
@@ -141,41 +142,47 @@ return;
 case 6:
 __gsharp_switch_1_state_6:
 {
-__gsharp_warp_exchange_assign(__gsharp_id_11_val);
+if(!(__gsharp_ctx->__gsharp_id_10_warpId==0))
+{
+goto __gsharp_switch_1_state_10;
+}
+__gsharp_ctx->__gsharp_id_11_val=((__gsharp_ctx->__gsharp_id_4_tid<8)?__gsharp_ctx->__gsharp_id_3_sdata[__gsharp_ctx->__gsharp_id_4_tid]:0.0f);
+__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_11_val);
 __gsharp_state=7;
 return;
 }
 case 7:
 __gsharp_switch_1_state_7:
 {
-__gsharp_ctx->__gsharp_warp_temp_5=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xFFFFFFFF,__gsharp_id_11_val,4);
-__gsharp_warp_exchange_assign(__gsharp_id_11_val);
+__gsharp_ctx->__gsharp_warp_temp_5=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xFFFFFFFF,__gsharp_ctx->__gsharp_id_11_val,4);
+__gsharp_ctx->__gsharp_id_11_val+=__gsharp_ctx->__gsharp_warp_temp_5;
+__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_11_val);
 __gsharp_state=8;
 return;
 }
 case 8:
 __gsharp_switch_1_state_8:
 {
-__gsharp_ctx->__gsharp_warp_temp_6=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xFFFFFFFF,__gsharp_id_11_val,2);
-__gsharp_warp_exchange_assign(__gsharp_id_11_val);
+__gsharp_ctx->__gsharp_warp_temp_6=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xFFFFFFFF,__gsharp_ctx->__gsharp_id_11_val,2);
+__gsharp_ctx->__gsharp_id_11_val+=__gsharp_ctx->__gsharp_warp_temp_6;
+__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_11_val);
 __gsharp_state=9;
 return;
 }
 case 9:
 __gsharp_switch_1_state_9:
 {
-auto __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xFFFFFFFF,__gsharp_id_11_val,1);
-if(__gsharp_ctx->__gsharp_id_10_warpId==0)
-{
-auto __gsharp_id_11_val = ((__gsharp_ctx->__gsharp_id_4_tid<8)?__gsharp_ctx->__gsharp_id_3_sdata[__gsharp_ctx->__gsharp_id_4_tid]:0.0f);
-__gsharp_id_11_val+=__gsharp_ctx->__gsharp_warp_temp_5;
-__gsharp_id_11_val+=__gsharp_ctx->__gsharp_warp_temp_6;
-__gsharp_id_11_val+=__gsharp_warp_temp_7;
+auto __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xFFFFFFFF,__gsharp_ctx->__gsharp_id_11_val,1);
+__gsharp_ctx->__gsharp_id_11_val+=__gsharp_warp_temp_7;
 if(__gsharp_ctx->__gsharp_id_4_tid==0)
 {
-__gsharp_id_1_output[blockIdx.x]=__gsharp_id_11_val;
+__gsharp_id_1_output[blockIdx.x]=__gsharp_ctx->__gsharp_id_11_val;
 }
+goto __gsharp_switch_1_state_10;
 }
+case 10:
+__gsharp_switch_1_state_10:
+{
 __gsharp_state=-1;
 return;
 }
@@ -246,6 +253,7 @@ public float __gsharp_warp_temp_3;
 public float __gsharp_warp_temp_4;
 public int lane;
 public int warpId;
+public float val;
 public float __gsharp_warp_temp_5;
 public float __gsharp_warp_temp_6;
 }
@@ -329,42 +337,46 @@ public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenc
 
         case 6:
         {
-            __gsharp_warp_exchange_assign(val);
+            if (!(__gsharp_ctx.warpId == 0))
+                goto case 10;
+            __gsharp_ctx.val = (__gsharp_ctx.tid < 8) ? sdata[__gsharp_ctx.tid] : 0.0f;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
             __gsharp_ctx.__gsharp_state = 7;
             return;
         }
 
         case 7:
         {
-            __gsharp_ctx.__gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, val, 4);
-            __gsharp_warp_exchange_assign(val);
+            __gsharp_ctx.__gsharp_warp_temp_5 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.val, 4);
+            __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_5;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
             __gsharp_ctx.__gsharp_state = 8;
             return;
         }
 
         case 8:
         {
-            __gsharp_ctx.__gsharp_warp_temp_6 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, val, 2);
-            __gsharp_warp_exchange_assign(val);
+            __gsharp_ctx.__gsharp_warp_temp_6 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.val, 2);
+            __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_6;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
             __gsharp_ctx.__gsharp_state = 9;
             return;
         }
 
         case 9:
         {
-            var __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, val, 1);
-            if (__gsharp_ctx.warpId == 0)
+            var __gsharp_warp_temp_7 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xFFFFFFFF, __gsharp_ctx.val, 1);
+            __gsharp_ctx.val += __gsharp_warp_temp_7;
+            if (__gsharp_ctx.tid == 0)
             {
-                var val = (__gsharp_ctx.tid < 8) ? sdata[__gsharp_ctx.tid] : 0.0f;
-                val += __gsharp_ctx.__gsharp_warp_temp_5;
-                val += __gsharp_ctx.__gsharp_warp_temp_6;
-                val += __gsharp_warp_temp_7;
-                if (__gsharp_ctx.tid == 0)
-                {
-                    output[BlockIndex.X] = val;
-                }
+                output[BlockIndex.X] = __gsharp_ctx.val;
             }
 
+            goto case 10;
+        }
+
+        case 10:
+        {
             __gsharp_ctx.__gsharp_state = -1;
             return;
         }

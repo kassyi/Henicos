@@ -646,6 +646,11 @@ __gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
 __gsharp_ctx->__gsharp_id_3_lane=__gsharp_ctx->__gsharp_id_2_tid%32;
 __gsharp_ctx->__gsharp_id_4_mask=0xffffffff;
 __gsharp_ctx->__gsharp_id_5_val=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_2_tid];
+if(!(__gsharp_ctx->__gsharp_id_3_lane<16))
+{
+goto __gsharp_switch_1_state_2;
+}
+__gsharp_ctx->__gsharp_id_4_mask=0x0000FFFF;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=1;
 return;
@@ -654,24 +659,28 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 __gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,1,16);
-__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
-__gsharp_state=2;
-return;
+__gsharp_ctx->__gsharp_id_5_val=__gsharp_ctx->__gsharp_warp_temp_0;
+goto __gsharp_switch_1_state_4;
+goto __gsharp_switch_1_state_2;
 }
 case 2:
 __gsharp_switch_1_state_2:
 {
-auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,2,16);
-if(__gsharp_ctx->__gsharp_id_3_lane<16)
-{
-__gsharp_ctx->__gsharp_id_4_mask=0x0000FFFF;
-__gsharp_ctx->__gsharp_id_5_val=__gsharp_ctx->__gsharp_warp_temp_0;
-}
-else
-{
 __gsharp_ctx->__gsharp_id_4_mask=0xFFFF0000;
-__gsharp_ctx->__gsharp_id_5_val=__gsharp_warp_temp_1;
+__gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
+__gsharp_state=3;
+return;
 }
+case 3:
+__gsharp_switch_1_state_3:
+{
+auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,__gsharp_ctx->__gsharp_id_4_mask,__gsharp_ctx->__gsharp_id_5_val,2,16);
+__gsharp_ctx->__gsharp_id_5_val=__gsharp_warp_temp_1;
+goto __gsharp_switch_1_state_4;
+}
+case 4:
+__gsharp_switch_1_state_4:
+{
 __gsharp_id_1_output[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_5_val;
 __gsharp_state=-1;
 return;
@@ -747,6 +756,9 @@ public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__S
             __gsharp_ctx.lane = __gsharp_ctx.tid % 32;
             __gsharp_ctx.mask = 0xffffffff;
             __gsharp_ctx.val = input[__gsharp_ctx.tid];
+            if (!(__gsharp_ctx.lane < 16))
+                goto case 2;
+            __gsharp_ctx.mask = 0x0000FFFF;
             __gsharp_warp_exchange_assign(__gsharp_ctx.val);
             __gsharp_ctx.__gsharp_state = 1;
             return;
@@ -755,25 +767,28 @@ public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__S
         case 1:
         {
             __gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 1, 16);
-            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
-            __gsharp_ctx.__gsharp_state = 2;
-            return;
+            __gsharp_ctx.val = __gsharp_ctx.__gsharp_warp_temp_0;
+            goto case 4;
+            goto case 2;
         }
 
         case 2:
         {
-            var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 2, 16);
-            if (__gsharp_ctx.lane < 16)
-            {
-                __gsharp_ctx.mask = 0x0000FFFF;
-                __gsharp_ctx.val = __gsharp_ctx.__gsharp_warp_temp_0;
-            }
-            else
-            {
-                __gsharp_ctx.mask = 0xFFFF0000;
-                __gsharp_ctx.val = __gsharp_warp_temp_1;
-            }
+            __gsharp_ctx.mask = 0xFFFF0000;
+            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
+            __gsharp_ctx.__gsharp_state = 3;
+            return;
+        }
 
+        case 3:
+        {
+            var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, __gsharp_ctx.mask, __gsharp_ctx.val, 2, 16);
+            __gsharp_ctx.val = __gsharp_warp_temp_1;
+            goto case 4;
+        }
+
+        case 4:
+        {
             output[__gsharp_ctx.tid] = __gsharp_ctx.val;
             __gsharp_ctx.__gsharp_state = -1;
             return;
