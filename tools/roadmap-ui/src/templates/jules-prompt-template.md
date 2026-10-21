@@ -86,7 +86,7 @@ When writing tests, **absolutely do not resort to inline string generator valida
 
 #### Pattern A: Execution-based Tests (Happy Path / Edge Cases Behavior Validation)
 
-Always refer to the existing manual implementations `tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxTests.cs` and `SYN-90-93_CoreSyntaxKernels.cu.cs` in the same directory as a [Few-Shot Sample], and completely mimic their structure.
+Always refer to the existing manual implementations `tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90-93_CoreSyntaxTests.cs` and `SYN-90-93_CoreSyntaxKernels.cu.cs` in the same directory as a [Few-Shot Sample], and completely mimic their structure.
 
 1. **Kernel File (`.cu.cs` / Colocation Convention)**
    Create `XXX_Kernels.cu.cs` in the same folder as the test, writing it as real C# code (annotated with `[GpuKernel]`).

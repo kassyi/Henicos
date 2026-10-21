@@ -17,7 +17,7 @@ description: Google Jules にテストコード (xUnit) の設計と実装を依
 
 ### 入力例
 
-- `/jules tests/Kassyi.Generators.GSharp.Tests/TranspilerTests.cs に、switch式の網羅テストを追加して`
+- `/jules tests/Compiler/Kassyi.GSharp.Tests.Shared/Transpiler/TranspilerTests.cs に、switch式の網羅テストを追加して`
 - `/jules 新しくLehmerのGCDアルゴリズムのヘルパークラスを作るので、その境界値テストを設計して`
 
 ---

@@ -19,7 +19,7 @@ This skill is the **procedure**. The binding **rules** live in `.agents/rules/`;
 ## Procedure: Adding a New Syntax / Operator / Transpiler Feature
 
 1. **Test first.** Create the snapshot test and verify the expected CUDA C++ output *before* implementing emission.
-   1. Add a `.cs` case under `tests/Kassyi.GSharp.Tests/TestCases/`.
+   1. Add a `.cs` case under `tests/Compiler/Kassyi.GSharp.Tests.Shared/TestCases/`.
    2. Add `[InlineData("YourTestCase.cs")]` to `GeneratorSnapshots` in `GEN-08_GeneratorSnapshotTests.cs`.
    3. Run the relevant `just` command (see test-execution.md) and review the `.verified` snapshot.
 2. **Branch by AST lane** to allow parallel work without interference: `Statement`, `Expression`, `Declaration`.

@@ -106,5 +106,5 @@ public class BlackScholesBenchmark : IComputeBenchmark
 
     public IntPtr GetNativeFunction() => NativeKernelInvoker.FunctionBlackScholes;
     public string NativeKernelName => "BlackScholesKernel_Native";
-    public string GSharpKernelName => "BlackScholesKernels_BlackScholesKernel";
+    public string GSharpKernelName => "__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel";
 }

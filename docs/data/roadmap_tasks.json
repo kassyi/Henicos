@@ -21,7 +21,7 @@
     "score": 39,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/GpuKernelAnalyzerTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/GpuKernelAnalyzerTests.cs"
     ],
     "pr": [
       8,
@@ -50,10 +50,10 @@
     "score": 42,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/GpuKernelAnalyzerTests.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/Rules/GSH-01_ForEachNotSupportedRuleTests.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/GpuKernelAnalyzerTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/Rules/GSH-01_ForEachNotSupportedRuleTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
     ],
     "depends_on": [
       "GSH-00"
@@ -85,9 +85,9 @@
     "score": 33,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/GpuKernelAnalyzerTests.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/Rules/GSH-02_LinqNotSupportedRuleTests.cs",
-      "tests/Kassyi.GSharp.Tests/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/GpuKernelAnalyzerTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/Rules/GSH-02_LinqNotSupportedRuleTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
     ],
     "depends_on": [
       "GSH-00",
@@ -122,9 +122,9 @@
     "score": 37,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/GpuKernelAnalyzerTests.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/Rules/GSH-03_ImplicitVarNeedsSuffixRuleTests.cs",
-      "tests/Kassyi.GSharp.Tests/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/GpuKernelAnalyzerTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/Rules/GSH-03_ImplicitVarNeedsSuffixRuleTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
     ],
     "depends_on": [
       "GSH-00",
@@ -156,8 +156,8 @@
     "score": 37,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
-      "tests/Kassyi.GSharp.Tests/Transpiler/GSH-01-05_TranspilerIssuesTests.cs",
-      "tests/Kassyi.GSharp.Tests.Shared/Syntax/SYN-13-14_MemoryAndFixedArraysTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Transpiler/GSH-01-05_TranspilerIssuesTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-13-14_MemoryAndFixedArraysTests.cs"
     ],
     "depends_on": [
       "GSH-00",
@@ -189,7 +189,7 @@
     "score": 21,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
-      "tests/Kassyi.GSharp.Tests/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Transpiler/GSH-01-05_TranspilerIssuesTests.cs"
     ],
     "depends_on": [
       "GSH-00",
@@ -223,7 +223,7 @@
     "score": 27,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
-      "tests/Kassyi.GSharp.Tests/Runtime/GSH-06_GSH-07_RuntimeIssuesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Runtime/GSH-06_GSH-07_RuntimeIssuesTests.cs"
     ],
     "depends_on": [
       "GSH-00",
@@ -259,7 +259,7 @@
     "score": 20,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/GpuKernelAnalyzer.cs",
-      "tests/Kassyi.GSharp.Tests/Runtime/GSH-06_GSH-07_RuntimeIssuesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Runtime/GSH-06_GSH-07_RuntimeIssuesTests.cs"
     ],
     "depends_on": [
       "GSH-00",
@@ -367,7 +367,7 @@
     "score": 45,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-01_SourceGeneratorTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-01_SourceGeneratorTests.cs"
     ],
     "pr": [
       4,
@@ -396,7 +396,7 @@
     "score": 41,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-01_SourceGeneratorTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-01_SourceGeneratorTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -429,7 +429,7 @@
     "score": 30,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Core/GEN-03_GEN-04_LoggerTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Core/GEN-03_GEN-04_LoggerTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -468,7 +468,7 @@
     "score": 30,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Core/GEN-03_GEN-04_LoggerTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Core/GEN-03_GEN-04_LoggerTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -509,8 +509,8 @@
     "score": 20,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-05_GeneratorDiagnosticsTests.cs",
-      "tests/Kassyi.GSharp.Tests/Transpiler/GEN-05_StructTranspilerEdgeCasesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-05_GeneratorDiagnosticsTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Transpiler/GEN-05_StructTranspilerEdgeCasesTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -558,8 +558,8 @@
     "score": 20,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-05_GeneratorDiagnosticsTests.cs",
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-05_GeneratorDiagnosticsTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-08_GeneratorSnapshotTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -606,7 +606,7 @@
     },
     "score": 20,
     "files": [
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-05_GeneratorDiagnosticsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-05_GeneratorDiagnosticsTests.cs"
     ],
     "depends_on": [
       "GEN-05",
@@ -639,7 +639,7 @@
     "score": 16,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-08_GeneratorSnapshotTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -689,7 +689,7 @@
     "score": 16,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-08_GeneratorSnapshotTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -740,7 +740,7 @@
     "score": 30,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Runtime/GEN-10_GEN-11_ArchitectureAndOptimizationTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Runtime/GEN-10_GEN-11_ArchitectureAndOptimizationTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -782,7 +782,7 @@
     "score": 30,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Runtime/GEN-10_GEN-11_ArchitectureAndOptimizationTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Runtime/GEN-10_GEN-11_ArchitectureAndOptimizationTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -825,7 +825,7 @@
     "score": 30,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Runtime/GEN-12_PtxEngineExperimentTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Runtime/GEN-12_PtxEngineExperimentTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -869,8 +869,8 @@
     "score": 35,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GEN-13_GpuMacroTests.cs",
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GEN-13_GpuMacroTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-08_GeneratorSnapshotTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -944,7 +944,7 @@
     "score": 32,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/RoslynToCudaVisitor.cs",
-      "tests/Kassyi.GSharp.Tests/Transpiler/GEN-15_PoolStressTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Transpiler/GEN-15_PoolStressTests.cs"
     ],
     "pr": [
       8,
@@ -1041,8 +1041,8 @@
     "score": 36,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests/Generator/GEN-08_GeneratorSnapshotTests.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/GEN-18_VectorBuiltinTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-08_GeneratorSnapshotTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/GEN-18_VectorBuiltinTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -1123,9 +1123,9 @@
     "score": 36,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/GpuKernelAnalyzerTests.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/GpuKernelAnalyzerTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
       "GSH-00",
@@ -1165,7 +1165,7 @@
     "score": 35,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
       "SYN-01",
@@ -1206,9 +1206,9 @@
     "score": 39,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/SYN-03_InlineOutVarSadPathTests.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-03_InlineOutVarTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/SYN-03_InlineOutVarSadPathTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-03_InlineOutVarTests.cs"
     ],
     "pr": [
       8,
@@ -1238,9 +1238,9 @@
     "score": 38,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/GpuKernelAnalyzerTests.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/GpuKernelAnalyzerTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
       "GSH-00",
@@ -1289,8 +1289,8 @@
     "score": 36,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
       "GSH-01",
@@ -1333,7 +1333,7 @@
     "score": 21,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
       "SYN-01",
@@ -1411,7 +1411,7 @@
     "score": 37,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
       "SYN-03"
@@ -1441,7 +1441,7 @@
     "score": 36,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
       "SYN-03"
@@ -1474,7 +1474,7 @@
     "score": 41,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-01-09_ControlFlowTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-01-09_ControlFlowTests.cs"
     ],
     "depends_on": [
       "SYN-01",
@@ -1521,7 +1521,7 @@
     "score": 29,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -1576,7 +1576,7 @@
     "score": 32,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs",
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/RoslynToCudaVisitor.cs"
     ],
     "depends_on": [
@@ -1636,7 +1636,7 @@
     "score": 37,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-07",
@@ -1669,7 +1669,7 @@
     "score": 34,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -1714,7 +1714,7 @@
     "score": 33,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-07",
@@ -1745,7 +1745,7 @@
     "score": 25,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-11-16_CollectionsAndMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -1802,9 +1802,9 @@
     "score": 38,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/SYN-17_TargetTypedNewSadPathTests.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-17_TargetTypedNewTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/SYN-17_TargetTypedNewSadPathTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-17-24_TypesAndStructsTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-17_TargetTypedNewTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -1851,7 +1851,7 @@
     "score": 33,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
       "SYN-03",
@@ -1882,7 +1882,7 @@
     "score": 30,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -1940,7 +1940,7 @@
     "score": 27,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
       "SYN-03",
@@ -1974,7 +1974,7 @@
     "score": 27,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2035,7 +2035,7 @@
     "score": 33,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2081,7 +2081,7 @@
     "score": 29,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
       "SYN-03",
@@ -2121,7 +2121,7 @@
     "score": 32,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-17-24_TypesAndStructsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-17-24_TypesAndStructsTests.cs"
     ],
     "depends_on": [
       "SYN-03",
@@ -2158,7 +2158,7 @@
     "score": 31,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2218,7 +2218,7 @@
     "score": 24,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2295,7 +2295,7 @@
     "score": 32,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2357,9 +2357,9 @@
     "score": 41,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/MethodTranspiler.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-28_MethodAttributesKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-28_MethodAttributesTests.cs",
-      "tests/Kassyi.GSharp.Tests/TestCases/Analyzers/SYN-28_MethodAttributes.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-28_MethodAttributesKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-28_MethodAttributesTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/TestCases/Analyzers/SYN-28_MethodAttributes.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2408,7 +2408,7 @@
     "score": 35,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2470,7 +2470,7 @@
     "score": 27,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-25-30_StringsAndAttributesTests.cs"
     ],
     "depends_on": [
       "SYN-03",
@@ -2501,7 +2501,7 @@
     "score": 16,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2580,7 +2580,7 @@
     "score": 30,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2642,7 +2642,7 @@
     "score": 24,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-03",
@@ -2681,7 +2681,7 @@
     "score": 29,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2763,7 +2763,7 @@
     "score": 39,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2814,7 +2814,7 @@
     "score": 32,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2879,7 +2879,7 @@
     "score": 31,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2927,7 +2927,7 @@
     "score": 29,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -2992,7 +2992,7 @@
     "score": 32,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3058,7 +3058,7 @@
     "score": 32,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3124,7 +3124,7 @@
     "score": 19,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3191,7 +3191,7 @@
     "score": 26,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3270,7 +3270,7 @@
     "score": 38,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3321,7 +3321,7 @@
     "score": 27,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-39-45_OperatorsAndInterfacesTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3390,7 +3390,7 @@
     "score": 38,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3443,8 +3443,8 @@
     "score": 35,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-46-50_ConcurrencyAndWarpKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3499,7 +3499,7 @@
     "score": 15,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3579,8 +3579,8 @@
     "score": 38,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-46-50_ConcurrencyAndWarpKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3634,7 +3634,7 @@
     "score": 13,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3727,7 +3727,7 @@
     "score": 18,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3807,7 +3807,7 @@
     "score": 21,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3888,7 +3888,7 @@
     "score": 21,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -3970,7 +3970,7 @@
     "score": 26,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4053,7 +4053,7 @@
     "score": 26,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4137,7 +4137,7 @@
     "score": 24,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4223,7 +4223,7 @@
     "score": 30,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-57-63_ModernPatternsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-57-63_ModernPatternsTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4292,7 +4292,7 @@
     "score": 21,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4379,7 +4379,7 @@
     "score": 30,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4449,7 +4449,7 @@
     "score": 21,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4536,7 +4536,7 @@
     "score": 12,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4631,8 +4631,8 @@
     "score": 41,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-46-50_ConcurrencyAndWarpTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4688,7 +4688,7 @@
     "score": 27,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-64-69_NumericsAndHwMathTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4760,7 +4760,7 @@
     "score": 35,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-70-72_LoopsAndJumpsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-70-72_LoopsAndJumpsTests.cs"
     ],
     "depends_on": [
       "SYN-01",
@@ -4790,7 +4790,7 @@
     "score": 19,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-70-72_LoopsAndJumpsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-70-72_LoopsAndJumpsTests.cs"
     ],
     "depends_on": [
       "SYN-01",
@@ -4821,7 +4821,7 @@
     "score": 24,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-70-72_LoopsAndJumpsTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-70-72_LoopsAndJumpsTests.cs"
     ],
     "depends_on": [
       "SYN-01",
@@ -4854,7 +4854,7 @@
     "score": 32,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -4926,7 +4926,7 @@
     "score": 27,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
     "depends_on": [
       "SYN-03",
@@ -4963,7 +4963,7 @@
     "score": 32,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -5037,7 +5037,7 @@
     "score": 30,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -5113,7 +5113,7 @@
     "score": 45,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
     "depends_on": [
       "SYN-07",
@@ -5149,7 +5149,7 @@
     "score": 18,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-73-78_ContractsAndPtxTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -5238,7 +5238,7 @@
     "score": 18,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/DeclarationTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
       "SYN-03",
@@ -5279,7 +5279,7 @@
     "score": 23,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -5368,7 +5368,7 @@
     "score": 24,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -5458,7 +5458,7 @@
     "score": 21,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -5549,7 +5549,7 @@
     "score": 21,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -5647,7 +5647,7 @@
     "score": 21,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
       "SYN-01",
@@ -5683,7 +5683,7 @@
     "score": 18,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -5781,7 +5781,7 @@
     "score": 15,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -5880,7 +5880,7 @@
     "score": 24,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-79-88_MicroModifiersTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-79-88_MicroModifiersTests.cs"
     ],
     "depends_on": [
       "SYN-02",
@@ -5974,9 +5974,9 @@
     "score": 45,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxTests.cs",
-      "tests/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90_StructAggregateInitTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90-93_CoreSyntaxTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90_StructAggregateInitTests.cs"
     ],
     "depends_on": [
       "SYN-07",
@@ -6013,8 +6013,8 @@
     "score": 45,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90-93_CoreSyntaxTests.cs"
     ],
     "depends_on": [
       "SYN-90"
@@ -6047,8 +6047,8 @@
     "score": 45,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90-93_CoreSyntaxTests.cs"
     ],
     "depends_on": [
       "SYN-07",
@@ -6088,8 +6088,8 @@
     "score": 45,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/ExpressionTranspilers.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
-      "tests/Kassyi.GSharp.Tests/Syntax/SYN-90-93_CoreSyntaxTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90-93_CoreSyntaxKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-90-93_CoreSyntaxTests.cs"
     ],
     "depends_on": [
       "SYN-07",
@@ -6168,7 +6168,7 @@
     "score": 28,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-11",
@@ -6256,7 +6256,7 @@
     "score": 29,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs",
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs",
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigInt.cs"
     ],
     "depends_on": [
@@ -6297,7 +6297,7 @@
     "score": 28,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs",
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs",
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigIntMath.cs"
     ],
     "depends_on": [
@@ -6351,7 +6351,7 @@
     "score": 11,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs",
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs",
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigIntMath.cs"
     ],
     "depends_on": [
@@ -6408,7 +6408,7 @@
     "score": 15,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigInt/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-01-25_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-01-25_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6470,7 +6470,7 @@
     "score": 30,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6510,7 +6510,7 @@
     "score": 35,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-30",
@@ -6546,7 +6546,7 @@
     "score": 32,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6587,7 +6587,7 @@
     "score": 30,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6629,7 +6629,7 @@
     "score": 30,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6672,7 +6672,7 @@
     "score": 30,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6716,7 +6716,7 @@
     "score": 26,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt/GpuBigUInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/BigInt/GpuBigIntCoreTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/BigInt/GpuBigIntCoreTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6766,7 +6766,7 @@
     "score": 32,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6858,7 +6858,7 @@
     "score": 28,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6906,7 +6906,7 @@
     "score": 32,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6954,7 +6954,7 @@
     "score": 30,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -6998,7 +6998,7 @@
     "score": 30,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7046,7 +7046,7 @@
     "score": 30,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7096,7 +7096,7 @@
     "score": 30,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7146,7 +7146,7 @@
     "score": 25,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
+      "tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/GBI-03_GpuBigIntTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7198,7 +7198,7 @@
     "score": 20,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/GpuBigIntExprAnalyzerTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/GpuBigIntExprAnalyzerTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7251,7 +7251,7 @@
     "score": 20,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/GpuBigIntExprAnalyzerTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/GpuBigIntExprAnalyzerTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7305,7 +7305,7 @@
     "score": 20,
     "files": [
       "src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/GpuBigInt.cs",
-      "tests/Kassyi.GSharp.Tests/Analyzers/GpuBigIntExprAnalyzerTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/GpuBigIntExprAnalyzerTests.cs"
     ],
     "depends_on": [
       "GBI-01",
@@ -7856,7 +7856,7 @@
     "score": 36,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/GpuKernelGenerator.cs",
-      "tests/Kassyi.GSharp.Tests.Shared/Syntax/SYN-13-14_MemoryAndFixedArraysTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-13-14_MemoryAndFixedArraysTests.cs"
     ],
     "depends_on": [
       "GEN-01",
@@ -7994,7 +7994,7 @@
     "score": 37,
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StructTranspiler.cs",
-      "tests/Kassyi.GSharp.Tests.Shared/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/SYN-31-38_AdvancedMemoryTests.cs"
     ],
     "pr": [
       72
@@ -8665,7 +8665,7 @@
     },
     "score": 30,
     "files": [
-      "tests/Kassyi.GSharp.Tests/Analyzers/GEN-53_GeneratorSadPathTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Analyzers/GEN-53_GeneratorSadPathTests.cs"
     ],
     "pr": [
       4,
@@ -8691,7 +8691,7 @@
     },
     "score": 30,
     "files": [
-      "tests/Kassyi.GSharp.Tests/Helpers/GEN-54_MegaCompilationCacheTests.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Helpers/GEN-54_MegaCompilationCacheTests.cs"
     ],
     "pr": [
       4
@@ -8783,8 +8783,8 @@
     "category": "Generator Infrastructure",
     "files": [
       "src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs",
-      "tests/Kassyi.GSharp.Tests.Shared/Runtime/GEN-56_NestedVectorAlignmentTests.cs",
-      "tests/Kassyi.GSharp.Tests.Shared/Runtime/GEN-56_NestedVectorAlignmentKernels.cu.cs"
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Runtime/GEN-56_NestedVectorAlignmentTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Runtime/GEN-56_NestedVectorAlignmentKernels.cu.cs"
     ],
     "pr": null,
     "title": "Support CUDA-compatible alignment for nested vector types",

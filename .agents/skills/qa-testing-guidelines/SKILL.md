@@ -51,10 +51,10 @@ description: ガイドライン: C#およびGPU向けのテストコードを作
 
 - **直交3軸メタデータ属性（`TestTarget` / `Category` / `Scenario`）の適用**:
     - チケット番号や Feature ID を `[Trait]` として付与しては**いけません**。
-    - テストの分類・フィルタリングには、以下の強い型付け（Enum）属性を使用してください（定義場所: `tests/Kassyi.GSharp.Tests.Common` / 名前空間 `Kassyi.GSharp.Tests.Common`、テストプロジェクト全体でグローバルインポート済み）：
-        - **Axis 1 (実行環境)**: `[TestTarget(ExecutionTarget.GpuExecution)]` / `[TestTarget(ExecutionTarget.CpuExecution)]` (`tests/Kassyi.GSharp.Tests.Common/ExecutionTarget.cs`)
-        - **Axis 2 (機能ドメイン)**: `[Category(TestCategory.Compiler)]` / `[Category(TestCategory.Runtime)]` / `[Category(TestCategory.Syntax)]` / `[Category(TestCategory.Stdlib)]` 等 (`tests/Kassyi.GSharp.Tests.Common/TestCategory.cs`)
-        - **Axis 3 (テストシナリオ)**: `[Scenario(TestScenario.HappyPath)]` / `[Scenario(TestScenario.SadPath)]` / `[Scenario(TestScenario.Boundary)]` (`tests/Kassyi.GSharp.Tests.Common/TestScenario.cs`)
+    - テストの分類・フィルタリングには、以下の強い型付け（Enum）属性を使用してください（定義場所: `tests/Shared/Kassyi.GSharp.Tests.Infrastructure` / 名前空間 `Kassyi.GSharp.Tests.Infrastructure`、テストプロジェクト全体でグローバルインポート済み）：
+        - **Axis 1 (実行環境)**: `[TestTarget(ExecutionTarget.GpuExecution)]` / `[TestTarget(ExecutionTarget.CpuExecution)]` (`tests/Shared/Kassyi.GSharp.Tests.Infrastructure/ExecutionTarget.cs`)
+        - **Axis 2 (機能ドメイン)**: `[Category(TestCategory.Compiler)]` / `[Category(TestCategory.Runtime)]` / `[Category(TestCategory.Syntax)]` / `[Category(TestCategory.Stdlib)]` 等 (`tests/Shared/Kassyi.GSharp.Tests.Infrastructure/TestCategory.cs`)
+        - **Axis 3 (テストシナリオ)**: `[Scenario(TestScenario.HappyPath)]` / `[Scenario(TestScenario.SadPath)]` / `[Scenario(TestScenario.Boundary)]` (`tests/Shared/Kassyi.GSharp.Tests.Infrastructure/TestScenario.cs`)
     ```csharp
     [Theory]
     [Category(TestCategory.Compiler)]
@@ -74,4 +74,4 @@ description: ガイドライン: C#およびGPU向けのテストコードを作
 
 - **静的解析・メタテスト（Analyzer / Generator）: TestCasesへの隔離 (Centralization)**
     - 解析対象の文字列（SyntaxTree）として読み込ませるコードや、意図的にコンパイルエラー・警告を発生させるコード（Sad Path）は、メインのテストアセンブリやビルドツリーを汚染しないよう、必ず **`TestCases/` ディレクトリ配下に隔離（Source Separation）** してください。
-    - 配置先: `tests/Kassyi.GSharp.Tests/TestCases/Analyzers/` 等。
+    - 配置先: `tests/Compiler/Kassyi.GSharp.Tests.Shared/TestCases/Analyzers/` 等。

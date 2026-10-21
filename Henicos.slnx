@@ -15,15 +15,23 @@
   <Folder Name="/src/ZeroAlloc/">
     <Project Path="src/ZeroAlloc/Kassyi.ZeroAlloc.Linq/Kassyi.ZeroAlloc.Linq.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/Kassyi.GSharp.Tests.Infrastructure/Kassyi.GSharp.Tests.Infrastructure.csproj" />
-    <Project Path="tests/Kassyi.GSharp.Tests.Shared/Kassyi.GSharp.Tests.Shared.shproj" />
-    <Project Path="tests/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj" />
-    <Project Path="tests/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj" />
-    <Project Path="tests/Henicos.Benchmarks.Tests/Henicos.Benchmarks.Tests.csproj" />
-    <Project Path="tests/Kassyi.GSharp.Stdlib.GpuMath.Tests/Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj" />
-    <Project Path="tests/Kassyi.GSharp.Tests.Generators/Kassyi.GSharp.Tests.Generators.csproj" />
-    <Project Path="tests/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj" />
-    <Project Path="tests/Kassyi.ZeroAlloc.Linq.Tests/Kassyi.ZeroAlloc.Linq.Tests.csproj" />
+  <Folder Name="/tests/Apps/">
+    <Project Path="tests/Apps/Henicos.Benchmarks.Tests/Henicos.Benchmarks.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Compiler/">
+    <Project Path="tests/Compiler/Kassyi.GSharp.Tests.Shared/Kassyi.GSharp.Tests.Shared.shproj" />
+    <Project Path="tests/Compiler/Kassyi.GSharp.Tests.Cuda/Kassyi.GSharp.Tests.Cuda.csproj" />
+    <Project Path="tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj" />
+    <Project Path="tests/Compiler/Kassyi.GSharp.Tests.Integration/Kassyi.GSharp.Tests.Integration.csproj" />
+  </Folder>
+  <Folder Name="/tests/Shared/">
+    <Project Path="tests/Shared/Kassyi.GSharp.Tests.Infrastructure/Kassyi.GSharp.Tests.Infrastructure.csproj" />
+    <Project Path="tests/Shared/Kassyi.GSharp.Tests.Generators/Kassyi.GSharp.Tests.Generators.csproj" />
+  </Folder>
+  <Folder Name="/tests/Stdlib/">
+    <Project Path="tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/ZeroAlloc/">
+    <Project Path="tests/ZeroAlloc/Kassyi.ZeroAlloc.Linq.Tests/Kassyi.ZeroAlloc.Linq.Tests.csproj" />
   </Folder>
 </Solution>

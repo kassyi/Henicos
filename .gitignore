@@ -127,5 +127,5 @@ dist-ssr/
 # --- END Antigravity global AGENTS MANAGED FILES ---
 
 # DocTest runtime files
-/tests/Kassyi.GSharp.DocTest/Program.cs
-/tests/Kassyi.GSharp.DocTest/*.csproj.user
+/tests/Compiler/Kassyi.GSharp.DocTest/Program.cs
+/tests/Compiler/Kassyi.GSharp.DocTest/*.csproj.user

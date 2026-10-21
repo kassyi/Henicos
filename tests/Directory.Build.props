@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'Kassyi.GSharp.Tests.Infrastructure' and '$(IsRoslynComponent)' != 'true'">
-    <ProjectReference Include="$(MSBuildThisFileDirectory)Kassyi.GSharp.Tests.Infrastructure\Kassyi.GSharp.Tests.Infrastructure.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Shared\Kassyi.GSharp.Tests.Infrastructure\Kassyi.GSharp.Tests.Infrastructure.csproj" />
     <Using Include="Kassyi.GSharp.Tests.Infrastructure" />
     <AssemblyAttribute Include="Xunit.TestCaseOrdererAttribute">
       <_Parameter1>Kassyi.GSharp.Tests.Infrastructure.RandomTestCaseOrderer</_Parameter1>

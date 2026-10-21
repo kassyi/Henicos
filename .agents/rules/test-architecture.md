@@ -124,7 +124,7 @@ public abstract class StateMachineTestBase
 
 ### 3.2. Categorization & Metadata Attributes (3-Axis Model)
 
-- Follow `qa-testing-guidelines` (Definitions in `tests/Kassyi.GSharp.Tests.Common`, globally imported across test assemblies):
+- Follow `qa-testing-guidelines` (Definitions in `tests/Shared/Kassyi.GSharp.Tests.Infrastructure`, globally imported across test assemblies):
     - **Axis 1 (Execution Target)**: `[TestTarget(ExecutionTarget.GpuExecution)]`, `[TestTarget(ExecutionTarget.CpuExecution)]`
     - **Axis 2 (Domain Category)**: `[Category(TestCategory.Compiler)]`, `[Category(TestCategory.Runtime)]`, `[Category(TestCategory.Syntax)]`, `[Category(TestCategory.Stdlib)]`, etc.
     - **Axis 3 (Behavior Scenario)**: `[Scenario(TestScenario.HappyPath)]`, `[Scenario(TestScenario.SadPath)]`, `[Scenario(TestScenario.Boundary)]`
@@ -134,7 +134,7 @@ public abstract class StateMachineTestBase
 
 - **Default Parallelism**: By default, xUnit runs test classes in parallel. Do not interfere with this behavior for pure, stateless tests (e.g., AST logic, mathematical operations).
 - **Global State Sequentialization**: Tests that mutate or depend on global process states (e.g., `NativeLibrary.Load`, `Environment.SetEnvironmentVariable`, `CudaEnvironment` initialization) MUST be isolated to run sequentially to prevent flaky tests and process zombification.
-- **Rule**: Never use magic strings for collection names. Always use the strongly-typed constant from `TestCollections` defined in `Kassyi.GSharp.Tests.Common`.
+- **Rule**: Never use magic strings for collection names. Always use the strongly-typed constant from `TestCollections` defined in `Kassyi.GSharp.Tests.Infrastructure`.
     - **[NG]**: `[Collection("GlobalStateSequential")]` (Prone to AI hallucinations like "Global" or "NonParallel")
     - **[OK]**: `[Collection(TestCollections.GlobalStateSequential)]`
     - **GPU Stream / Gate Contention**: Any test that exercises `CudaStreamGate`, `CudaStreamCompletion`, or concurrent GPU kernel launches MUST be decorated with `[Collection(TestCollections.DeviceExclusive)]` so that randomized test execution (`just test-stability`) does not cause thread-pool or CUDA context starvation.
@@ -151,7 +151,21 @@ public abstract class StateMachineTestBase
 ### 3.5. OS-Separated Build Outputs (`bin/<os>/`, `obj/<os>/`) & Repository Root Discovery
 
 - Build outputs and intermediate files are strictly isolated by host OS (`bin/win/`, `obj/win/` vs `bin/linux/`, `obj/linux/`) via `Directory.Build.props` so Windows and WSL builds/tests can coexist without file locking or artifact pollution.
-- **Rule**: In tests that locate repository files (`src/`, `Henicos.slnx`, YAML definitions) starting from `AppContext.BaseDirectory`, **NEVER** hardcode relative parent depth (e.g., `../../../../`). Always walk up `DirectoryInfo.Parent` until a repository root marker (`Henicos.slnx`, `Directory.Build.props`, or the target `src/` path) is found.
+- **Rule**: In tests that locate repository files (`src/`, `Henicos.slnx`, YAML definitions), **NEVER** hardcode relative parent depth (e.g., `../../../../`) and never write your own root search. Use `RepositoryPaths.Root` / `RepositoryPaths.Combine(...)` from `Kassyi.GSharp.Tests.Infrastructure` (globally imported), which walks up to `Henicos.slnx`.
+
+### 3.7. `tests/` Layout (Category → Project)
+
+`tests/` mirrors `src/`: each test project sits under a category folder, never directly under `tests/`.
+
+| Folder | Projects |
+| ----- | ----- |
+| `tests/Compiler/` | G# end-to-end suites: `Kassyi.GSharp.Tests.Shared` (shared project), `.Cpu`, `.Cuda`, `.Integration`, `Kassyi.GSharp.DocTest` |
+| `tests/Shared/` | Test infrastructure: `Kassyi.GSharp.Tests.Infrastructure`, `Kassyi.GSharp.Tests.Generators` |
+| `tests/Stdlib/` | `Kassyi.GSharp.Stdlib.GpuMath.Tests` |
+| `tests/ZeroAlloc/` | `Kassyi.ZeroAlloc.Linq.Tests` |
+| `tests/Apps/` | `Henicos.Benchmarks.Tests` |
+
+`Directory.Build.props`, `BannedSymbols.txt` and `xunit.runner.json` stay at `tests/`. Add a new test project under the category of the `src/` project it covers, and add it to the matching `/tests/<Category>/` folder in `Henicos.slnx`.
 
 ### 3.6. Cross-Platform `justfile` Recipes
 
