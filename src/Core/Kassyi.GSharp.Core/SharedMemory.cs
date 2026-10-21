@@ -1,3 +1,6 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
 namespace Kassyi.GSharp.Core;
 
 /// <summary>
@@ -19,9 +22,32 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     /// Declares static or dynamic shared memory with the specified element capacity.
     /// </summary>
     /// <param name="size">The number of elements allocated in shared memory.</param>
-    public SharedMemory(int size)
+    /// <param name="callerFilePath">The file of the declaration, filled in by the compiler. Do not pass it.</param>
+    /// <param name="callerLineNumber">The line of the declaration, filled in by the compiler. Do not pass it.</param>
+    /// <param name="callerMemberName">The method of the declaration, filled in by the compiler. Do not pass it.</param>
+    /// <remarks>
+    /// The declaration has one buffer per block, like a CUDA <c>__shared__</c> variable: every call of the declaring
+    /// method, from any call site, gets the same buffer. Under managed execution, code that the G# compiler does not
+    /// rewrite (a device function that never reaches a barrier) identifies the declaration by its file, line and method
+    /// name, the only facts about the caller that C# passes to a constructor. Two declarations of one method, or of
+    /// overloads of one name, on the same line therefore share a buffer.
+    /// </remarks>
+    public SharedMemory(int size, [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = 0,
+        [CallerMemberName] string callerMemberName = "")
+        : this(size, ComputeSiteKey(callerFilePath, callerLineNumber, callerMemberName))
     {
-        _span = ManagedGpuContext.IsActive ? ManagedGpuContext.AllocateSharedMemory<T>(size) : default;
+    }
+
+    /// <summary>
+    /// Declares shared memory for the declaration identified by <paramref name="siteKey"/>. Used by code that the G#
+    /// compiler generates for managed execution.
+    /// </summary>
+    /// <param name="size">The number of elements allocated in shared memory.</param>
+    /// <param name="siteKey">The key the compiler computed for the declaration.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public SharedMemory(int size, ulong siteKey)
+    {
+        _span = ManagedGpuContext.IsActive ? ManagedGpuContext.AllocateSharedMemory<T>(siteKey, size) : default;
     }
 
     /// <summary>
@@ -43,6 +69,30 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
             {
                 GpuOnlyException.Throw();
             }
+        }
+    }
+
+    // FNV-1a 64-bit over the path, the line and the method name; the compiler's keys share the same 64-bit space
+    private static ulong ComputeSiteKey(string filePath, int lineNumber, string memberName)
+    {
+        unchecked
+        {
+            var hash = 14695981039346656037UL;
+            foreach (var c in filePath)
+            {
+                hash ^= c;
+                hash *= 1099511628211UL;
+            }
+
+            hash ^= (uint)lineNumber;
+            hash *= 1099511628211UL;
+            foreach (var c in memberName)
+            {
+                hash ^= c;
+                hash *= 1099511628211UL;
+            }
+
+            return hash;
         }
     }
 }

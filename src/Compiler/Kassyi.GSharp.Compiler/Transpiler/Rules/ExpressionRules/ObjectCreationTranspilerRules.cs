@@ -52,13 +52,14 @@ internal static class ObjectCreationHelper
             }
 
             var typeArg = namedType.TypeArguments[0];
-            var allocId = context.Emitter.SmemAllocCount++;
+            // [WHY] One buffer per declaration per block, like a CUDA __shared__ variable (see SharedMemorySiteKey)
+            var siteKey = SharedMemorySiteKey.ToCppLiteral(SharedMemorySiteKey.Compute(context.Query.SemanticModel, node));
 
             using (context.Emitter.Writer.Braces())
             {
                 context.Emitter.Writer.Append(" (");
                 context.Emitter.Dialect.AppendType(ref context, typeArg);
-                context.Emitter.Writer.Append($"*)__gsharp_allocate_smem({allocId}, ");
+                context.Emitter.Writer.Append($"*)__gsharp_allocate_smem({siteKey}, ");
 
                 using (context.Emitter.Writer.Parentheses())
                 {

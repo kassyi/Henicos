@@ -1,4 +1,5 @@
 using Kassyi.GSharp.Compiler.Models;
+using Kassyi.GSharp.Naming;
 
 namespace Kassyi.GSharp.Compiler;
 
@@ -141,8 +142,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 collector.Report,
                 isDevice: false, cudaDialect, out var requiredIncludesCuda);
 
-            var lowered = methodDeclaration.Body != null
-                ? AstLoweringPipeline.Lower(methodDeclaration.Body, context.SemanticModel)
+            var lowered = methodDeclaration.HasBody()
+                ? AstLoweringPipeline.Lower(methodDeclaration, context.SemanticModel)
                 : null;
 
             var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
@@ -233,12 +234,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var frameName = "";
             var frameDependencies = ImmutableArray.CreateBuilder<string>();
             var managedCSharpSource = "";
-            if (methodDeclaration.Body != null &&
+            if (methodDeclaration.GetBodyNode() is { } body &&
                 SuspensionAnalysis.IsSuspendingFunction(methodSymbol, context.SemanticModel.Compilation) &&
                 !SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, context.SemanticModel.Compilation))
             {
                 frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, methodSymbol);
-                foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(methodDeclaration.Body,
+                foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body,
                              context.SemanticModel.Compilation))
                 {
                     frameDependencies.Add(GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, callee));
@@ -583,7 +584,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             includesBuilder.AppendLine($"#include {inc}");
         }
-        var fullSource = includesBuilder + preludeSource + commonDeviceSource + allKernelsSource;
+        var bodySource = includesBuilder + preludeSource + commonDeviceSource + allKernelsSource;
+        var sourceHash = GSharpNameEncoding.ComputeSourceHash(bodySource);
+        var fullSource = GSharpNameEncoding.FormatSymbolHeaderLine(sourceHash) + "\n" + bodySource;
+        var dialectName = dialect.IsCuda ? "Cuda" : "Cpu";
+        var gsymContent = GSharpNameEncoding.BuildSymbolFileContent(bodySource, dialectName, static id => GlobalCppNames.TryGetFullName(id, out var full) ? full : null);
+
         var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
         var fileName = $"Kassyi.GSharp.Kernels_{safeAssemblyName}{ext}";
         var safeIntermediateOutputPath = config.IntermediateOutputPath ?? "";
@@ -593,6 +599,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var filePath = Path.Combine(safeIntermediateOutputPath, fileName);
+        var gsymFilePath = filePath + ".gsym.json";
 
 #pragma warning disable RS1035 // Do not do file IO in analyzers
         try
@@ -603,6 +610,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             File.WriteAllText(filePath, fullSource);
+            File.WriteAllText(gsymFilePath, gsymContent);
         }
         catch (Exception ex)
         {

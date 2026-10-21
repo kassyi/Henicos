@@ -21,6 +21,11 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return;
         }
 
+        if (typeSymbol is INamedTypeSymbol { TypeKind: TypeKind.Enum, EnumUnderlyingType: { } enumUnderlyingType })
+        {
+            typeSymbol = enumUnderlyingType;
+        }
+
         if (typeSymbol.TryGetArrayLikeElementType(out var elementType))
         {
             context.Emitter.Writer.Append("GSharpArray<");

@@ -65,4 +65,36 @@ public class GSharpNameEncodingTests
     {
         Assert.Equal(string.Empty, GSharpNameEncoding.DescribeRenamedIdentifiers("error C2065: 'x': undeclared"));
     }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_DecodeText_WithSymbolMap_DecodesShortenedAndStandardIdentifiers()
+    {
+        var map = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["__gsharp_ty_VeryLongType_h0123456789"] = "VeryLongType"
+        };
+
+        const string Log = "error: in __gsharp_ty_VeryLongType_h0123456789 and __gsharp_id_0_data";
+        var decoded = GSharpNameEncoding.DecodeText(Log, map);
+
+        Assert.Equal("error: in VeryLongType and data", decoded);
+    }
+
+    [Fact]
+    [Category(TestCategory.Unit)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_ParseSymbolFile_WithMismatchedHash_ThrowsInvalidOperationException()
+    {
+        const string GsymContent = """
+            {"gsharp_symbols":"0123456789abcdef","dialect":"Cuda"}
+            {"cpp":"__gsharp_id_0_data","kind":"id","cs":"data","symbols":"0123456789abcdef","dialect":"Cuda"}
+            """;
+
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            GSharpNameEncoding.ParseSymbolFile(GsymContent, expectedHash: "fedcba9876543210"));
+
+        Assert.Contains("Symbol file hash '0123456789abcdef' does not match source hash 'fedcba9876543210'.", ex.Message);
+    }
 }

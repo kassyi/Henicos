@@ -347,7 +347,7 @@ public float foreachSum;
 public Func<float, float, float> multiplier;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_ctx) {
-        SharedMemory<float> dynamicSharedMem = new SharedMemory<float>(dynamicSharedSize);
+        SharedMemory<float> dynamicSharedMem = new SharedMemory<float>(dynamicSharedSize, 0xf4a8b89f8fdf4f71UL);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
@@ -565,7 +565,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(intInput, floatInput, results, config, globalCounter, count, dynamicSharedSize, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {

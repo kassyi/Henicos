@@ -238,7 +238,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalBarrierKernel(buffer, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -291,7 +290,7 @@ __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_tid=blockIdx.x*blockDim.x+threadIdx.x;
 __gsharp_ctx->__gsharp_id_4_myVal=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_3_tid];
-__gsharp_ctx->__gsharp_id_5_shared={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
+__gsharp_ctx->__gsharp_id_5_shared={ (int*)__gsharp_allocate_smem(0x7b4c93522e9874b8ull, (256) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_6_localTid=threadIdx.x;
 __gsharp_ctx->__gsharp_id_5_shared[__gsharp_ctx->__gsharp_id_6_localTid]=__gsharp_ctx->__gsharp_id_4_myVal;
 __gsharp_state=1;
@@ -416,7 +415,7 @@ public int localTid;
 public int stride;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel(int[] input, int[] blockSums, int[] totalSum, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel __gsharp_ctx) {
-        global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256);
+        global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256, 0x7b4c93522e9874b8UL);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
@@ -573,7 +572,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel(input, blockSums, totalSum, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {

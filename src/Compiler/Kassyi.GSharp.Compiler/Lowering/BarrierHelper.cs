@@ -36,9 +36,34 @@ internal static class BarrierHelper
                (className == TypeConstants.GpuType && name.StartsWith(TypeConstants.WarpType));
     }
 
+    /// <summary>Determines whether the specified invocation is a block barrier (<c>Gpu.SyncThreads()</c> or <c>Gpu.SyncGrid()</c>).</summary>
+    public static bool IsBlockBarrier(InvocationExpressionSyntax inv) => inv.Expression switch
+    {
+        MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: TypeConstants.GpuType } } ma =>
+            IsBlockBarrierName(ma.Name.Identifier.ValueText),
+        IdentifierNameSyntax id => IsBlockBarrierName(id.Identifier.ValueText),
+        _ => false
+    };
+
+    private static bool IsBlockBarrierName(string name) => name is "SyncThreads" or TypeConstants.GpuMacros.SyncGrid;
+
     /// <summary>Determines whether the specified invocation calls a device function that may suspend the calling thread.</summary>
     public static bool IsSuspendingCall(InvocationExpressionSyntax inv) =>
         inv.HasAnnotations(AstLoweringPipeline.SuspendingCallAnnotationKind);
+
+    /// <summary>Determines whether the specified invocation calls a device function that may suspend and returns a value.</summary>
+    public static bool IsValueReturningSuspendingCall(InvocationExpressionSyntax inv)
+    {
+        foreach (var annotation in inv.GetAnnotations(AstLoweringPipeline.SuspendingCallAnnotationKind))
+        {
+            if (annotation.Data == AstLoweringPipeline.ValueReturningCallAnnotationData)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>Determines whether the specified invocation represents a warp shuffle operation.</summary>
     public static bool IsWarpShuffle(InvocationExpressionSyntax inv)

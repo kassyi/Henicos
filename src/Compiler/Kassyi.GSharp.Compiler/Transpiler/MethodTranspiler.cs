@@ -58,13 +58,13 @@ public static class MethodTranspiler
         context.Emitter.IsSuspendingDeviceFunction = isSuspendingDevice;
 
         LoweredStateMachine? lowered = null;
-        if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.Body != null)
+        if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
         {
-            lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body, semanticModel);
+            lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl, semanticModel);
         }
-        else if (isSuspendingDevice && methodDecl.Body != null)
+        else if (isSuspendingDevice)
         {
-            lowered = AstLoweringPipeline.Lower(methodDecl.Body, semanticModel, methodSymbol);
+            lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel, methodSymbol);
         }
 
         using var mainWriter = new SourceWriter();
@@ -142,9 +142,9 @@ public static class MethodTranspiler
         var isSuspendingDevice = isDevice && IsLoweredSuspendingDeviceFunction(methodDecl, methodSymbol, ref context);
 
         LoweredStateMachine? lowered = null;
-        if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.Body != null)
+        if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
         {
-            lowered = AstLoweringPipeline.Lower(methodDecl.Body, semanticModel);
+            lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel);
         }
 
         using var mainWriter = new SourceWriter();
@@ -212,7 +212,7 @@ public static class MethodTranspiler
     /// </summary>
     internal static bool IsLoweredSuspendingDeviceFunction(MethodDeclarationSyntax methodDecl, IMethodSymbol? methodSymbol,
         ref TranspileContext context) =>
-        !context.Emitter.Dialect.IsCuda && methodDecl.Body != null && methodSymbol != null &&
+        !context.Emitter.Dialect.IsCuda && methodDecl.HasBody() && methodSymbol != null &&
         SuspensionAnalysis.IsSuspendingFunction(methodSymbol, context.Query.SemanticModel.Compilation) &&
         !SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, context.Query.SemanticModel.Compilation);
 

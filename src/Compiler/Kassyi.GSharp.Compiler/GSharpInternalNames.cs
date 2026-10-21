@@ -45,6 +45,7 @@ internal static class GSharpInternalNames
     public const string WarpTempPrefix = "__gsharp_warp_temp_";
     public const string CallTempPrefix = "__gsharp_call_temp_";
     public const string ArgumentTempPrefix = "__gsharp_arg_temp_";
+    public const string ConditionTempPrefix = "__gsharp_cond_temp_";
     public const string AggregateTemp = "__gsharp_tmp";
     public const string TupleTempPrefix = "__gsharp_tuple_";
     public const string CoalesceTarget = "__gsharp_coalesce_target";

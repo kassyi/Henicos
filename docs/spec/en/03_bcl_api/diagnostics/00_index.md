@@ -71,6 +71,8 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0061](GSH0061.md) | Error | Kernel overloads cannot be told apart by their launch wrappers |
 | [GSH0062](GSH0062.md) | Error | User-defined operators are not supported in GPU code |
 | [GSH0063](GSH0063.md) | Error | Device functions that reach a barrier cannot be recursive |
+| [GSH0064](GSH0064.md) | Error | A call that suspends at a barrier is not supported in this context |
+| [GSH0065](GSH0065.md) | Warning | Shared memory declarations on one line share a buffer in managed execution |
 | [GSH0066](GSH0066.md) | Warning | Kernel parameters exceed the parameter space limit |
 | [GSH0067](GSH0067.md) | Error | Non-const static fields and properties are not supported in GPU code |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |

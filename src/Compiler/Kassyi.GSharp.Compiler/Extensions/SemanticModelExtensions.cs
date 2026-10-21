@@ -32,6 +32,13 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// Gets the node of the semantic model's tree that the specified node is, or was derived from by lowering, or null if
+    /// unmapped.
+    /// </summary>
+    public static SyntaxNode? GetOriginalNode(this SemanticModel semanticModel, SyntaxNode node) =>
+        IsInSameTree(semanticModel, node) ? node : FindOriginalNode(semanticModel, node);
+
+    /// <summary>
     /// Gets the original location for the specified syntax node, or null if unmapped.
     /// </summary>
     public static Location? GetOriginalLocation(this SemanticModel semanticModel, SyntaxNode node)

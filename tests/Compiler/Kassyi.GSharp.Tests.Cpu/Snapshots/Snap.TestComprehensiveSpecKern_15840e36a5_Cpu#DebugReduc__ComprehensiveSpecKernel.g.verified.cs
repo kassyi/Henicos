@@ -415,9 +415,9 @@ public int counter;
 }
 public static unsafe void __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, out bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics __gsharp_ctx) {
         successFlag = default;
-        SharedMemory<int> staticCache = new SharedMemory<int>(10000);
-        SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
-        SharedMemory<int> targetTypedCache = new(256);
+        SharedMemory<int> staticCache = new SharedMemory<int>(10000, 0xe20e17017ad9529aUL);
+        SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount, 0xe20e18017ad9544dUL);
+        SharedMemory<int> targetTypedCache = new(256, 0xe20e15017ad94f34UL);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
@@ -626,7 +626,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(particles, ref totalMagnitude, out successFlag, largeStructVal, particleCount, unrollFactor, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -832,7 +831,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(data, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {

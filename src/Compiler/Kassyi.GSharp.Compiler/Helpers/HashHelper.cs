@@ -36,6 +36,14 @@ internal static class HashHelper
             throw new ArgumentNullException(nameof(text));
         }
 
+        return ComputeFnv1A64(text).ToString("x16")[..10];
+    }
+
+    /// <summary>
+    /// Computes a stable 64-bit FNV-1a hash of a string, the same in every process and on every machine.
+    /// </summary>
+    public static ulong ComputeFnv1A64(string text)
+    {
         unchecked
         {
             var hash = 14695981039346656037UL;
@@ -45,7 +53,7 @@ internal static class HashHelper
                 hash *= 1099511628211UL;
             }
 
-            return hash.ToString("x16")[..10];
+            return hash;
         }
     }
 
