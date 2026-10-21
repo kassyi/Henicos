@@ -260,14 +260,36 @@ public static class ManagedGpuContext
 
     // Mocks for Warp Shuffle operations in Managed Execution
 
+    private const int MaxThreadsPerBlock = 1024;
+    private const int WarpExchangeSlotSize = 8; // Largest shuffled type (double / ulong)
+
     [ThreadStatic]
     private static byte[]? s_warpExchangeBuffer;
 
+    [ThreadStatic]
+    private static int[]? s_warpShuffleCounts;
+
+    // Two planes alternate per shuffle: a lane that has already published its next shuffle writes the other plane, so it
+    // never overwrites the value a lane scheduled after it in the same phase still has to read.
     private static Span<byte> GetWarpExchangeBuffer()
     {
-        s_warpExchangeBuffer ??= new byte[1024 * 8]; // max 1024 threads per block * 8 bytes (double)
+        s_warpExchangeBuffer ??= new byte[2 * MaxThreadsPerBlock * WarpExchangeSlotSize];
         return s_warpExchangeBuffer;
     }
+
+    private static int[] GetWarpShuffleCounts() => s_warpShuffleCounts ??= new int[MaxThreadsPerBlock];
+
+    private static int GetWarpExchangeOffset(int plane, int linearTid) =>
+        (plane * MaxThreadsPerBlock + linearTid) * WarpExchangeSlotSize;
+
+    /// <summary>Returns the exchange plane of the current shuffle of the calling thread and advances its shuffle count.</summary>
+    private static int TakeWarpExchangePlane(int linearTid) => GetWarpShuffleCounts()[linearTid]++ & 1;
+
+    /// <summary>
+    /// Resets the per-thread shuffle counts at the start of a block, so that every lane begins on the same exchange plane.
+    /// </summary>
+    // ReSharper disable once UnusedMember.Global -- Public API for code generators
+    public static void ResetWarpExchange() => Array.Clear(GetWarpShuffleCounts(), 0, MaxThreadsPerBlock);
 
     /// <summary>
     /// Internal mock for warp exchange assignment. Do not use directly.
@@ -278,7 +300,8 @@ public static class ManagedGpuContext
     public static void __gsharp_warp_exchange_assign<T>(T value) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
-        Unsafe.WriteUnaligned(ref GetWarpExchangeBuffer()[linearTid * 8], value);
+        var plane = GetWarpShuffleCounts()[linearTid] & 1;
+        Unsafe.WriteUnaligned(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, linearTid)], value);
     }
 
     /// <summary>
@@ -297,6 +320,7 @@ public static class ManagedGpuContext
         int width = 32) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        var plane = TakeWarpExchangePlane(linearTid);
         var laneId = linearTid % 32;
         var warpStartTid = linearTid - laneId;
 
@@ -315,7 +339,7 @@ public static class ManagedGpuContext
         }
 
         var targetTid = warpStartTid + globalSrcLane;
-        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
+        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, targetTid)]);
 
     }
 
@@ -335,6 +359,7 @@ public static class ManagedGpuContext
         int width = 32) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        var plane = TakeWarpExchangePlane(linearTid);
         var laneId = linearTid % 32;
         var warpStartTid = linearTid - laneId;
 
@@ -353,7 +378,7 @@ public static class ManagedGpuContext
         }
 
         var targetTid = warpStartTid + globalSrcLane;
-        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
+        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, targetTid)]);
     }
 
     /// <summary>
@@ -372,6 +397,7 @@ public static class ManagedGpuContext
         int width = 32) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        var plane = TakeWarpExchangePlane(linearTid);
         var laneId = linearTid % 32;
         var warpStartTid = linearTid - laneId;
 
@@ -390,7 +416,7 @@ public static class ManagedGpuContext
         }
 
         var targetTid = warpStartTid + globalSrcLane;
-        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
+        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, targetTid)]);
     }
 
     /// <summary>
@@ -409,6 +435,7 @@ public static class ManagedGpuContext
         int width = 32) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
+        var plane = TakeWarpExchangePlane(linearTid);
         var laneId = linearTid % 32;
         var warpStartTid = linearTid - laneId;
 
@@ -427,6 +454,6 @@ public static class ManagedGpuContext
         }
 
         var targetTid = warpStartTid + globalSrcLane;
-        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[targetTid * 8]);
+        return Unsafe.ReadUnaligned<T>(ref GetWarpExchangeBuffer()[GetWarpExchangeOffset(plane, targetTid)]);
     }
 }

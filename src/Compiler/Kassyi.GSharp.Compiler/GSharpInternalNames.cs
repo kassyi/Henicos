@@ -4,8 +4,8 @@ namespace Kassyi.GSharp.Compiler;
 /// <summary>Identifiers the compiler emits into generated host and device code.</summary>
 /// <remarks>
 /// GSH0057 rejects user identifiers containing <c>__</c>, so names under the <c>__gsharp_</c> prefix cannot collide with
-/// user code. <c>Resources/Prelude/WarpAndHints.hpp</c> spells <see cref="Context"/>, <see cref="WarpExchange"/> and
-/// <see cref="AllContexts"/> literally; <c>PreludeInternalNamesTests</c> keeps the two in sync.
+/// user code. <c>Resources/Prelude/WarpAndHints.hpp</c> spells <see cref="Context"/>, <see cref="WarpExchange"/>,
+/// <see cref="WarpShuffleCount"/> and <see cref="AllContexts"/> literally; <c>PreludeInternalNamesTests</c> keeps the two in sync.
 /// </remarks>
 internal static class GSharpInternalNames
 {
@@ -23,6 +23,7 @@ internal static class GSharpInternalNames
     public const string State = "__gsharp_state";
     public const string YieldedForGridSync = "__gsharp_yielded_for_grid_sync";
     public const string WarpExchange = "__gsharp_warp_exchange";
+    public const string WarpShuffleCount = "__gsharp_warp_shuffle_count";
     public const string AllContexts = "__gsharp_all_contexts";
 
     /// <summary>Marks the current thread's state machine as finished.</summary>

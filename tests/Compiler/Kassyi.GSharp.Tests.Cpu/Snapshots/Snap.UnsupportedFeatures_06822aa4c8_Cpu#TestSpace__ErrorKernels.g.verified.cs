@@ -23,7 +23,8 @@ public static partial class AotContexts
 public const string NonVoidReturnKernel_Source = @"struct __gsharp_context_TestSpace__ErrorKernels__NonVoidReturnKernel {
 int __gsharp_state = 0;
 __gsharp_context_TestSpace__ErrorKernels__NonVoidReturnKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange = 0;
+uint64_t __gsharp_warp_exchange[2] = {};
+uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_TestSpace__ErrorKernels__NonVoidReturnKernel(__gsharp_context_TestSpace__ErrorKernels__NonVoidReturnKernel* __gsharp_ctx, int* __restrict__ __gsharp_auto_result){
@@ -158,6 +159,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
 bool anyBlockActive = true;
 while (anyBlockActive)
 {
@@ -211,7 +213,8 @@ return __gsharp_auto_result;
 public const string ManagedParamKernel_Source = @"struct __gsharp_context_TestSpace__ErrorKernels__ManagedParamKernel {
 int __gsharp_state = 0;
 __gsharp_context_TestSpace__ErrorKernels__ManagedParamKernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange = 0;
+uint64_t __gsharp_warp_exchange[2] = {};
+uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_TestSpace__ErrorKernels__ManagedParamKernel(TestSpace_ManagedClass __gsharp_id_0_obj, __gsharp_context_TestSpace__ErrorKernels__ManagedParamKernel* __gsharp_ctx){
@@ -334,6 +337,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
 bool anyBlockActive = true;
 while (anyBlockActive)
 {

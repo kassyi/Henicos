@@ -65,7 +65,8 @@ int __gsharp_mb_Status;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange = 0;
+uint64_t __gsharp_warp_exchange[2] = {};
+uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState> __gsharp_id_0_states, int __gsharp_id_1_length, int __gsharp_id_2_multiplier, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate* __gsharp_ctx){
@@ -207,6 +208,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
 bool anyBlockActive = true;
 while (anyBlockActive)
 {
@@ -269,7 +271,8 @@ int __gsharp_mb_Status;
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange = 0;
+uint64_t __gsharp_warp_exchange[2] = {};
+uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization(GSharpArray<int> __gsharp_id_0_inputValues, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState> __gsharp_id_1_outputStates, int __gsharp_id_2_length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization* __gsharp_ctx){
@@ -423,6 +426,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
 bool anyBlockActive = true;
 while (anyBlockActive)
 {

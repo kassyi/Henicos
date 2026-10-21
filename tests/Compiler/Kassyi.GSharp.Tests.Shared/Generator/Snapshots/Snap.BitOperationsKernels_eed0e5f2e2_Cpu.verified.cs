@@ -36,7 +36,8 @@ public static partial class AotContexts
 public const string Rotate32Kernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange = 0;
+uint64_t __gsharp_warp_exchange[2] = {};
+uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel(GSharpArray<unsigned int> __gsharp_id_0_val, GSharpArray<int> __gsharp_id_1_shift, GSharpArray<unsigned int> __gsharp_id_2_rotLeftRes, GSharpArray<unsigned int> __gsharp_id_3_rotRightRes, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel* __gsharp_ctx){
@@ -189,6 +190,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
 bool anyBlockActive = true;
 while (anyBlockActive)
 {
@@ -244,7 +246,8 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 public const string Rotate64Kernel_Source = @"struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel {
 int __gsharp_state = 0;
 __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel* __gsharp_all_contexts = nullptr;
-uint64_t __gsharp_warp_exchange = 0;
+uint64_t __gsharp_warp_exchange[2] = {};
+uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel(GSharpArray<unsigned long long> __gsharp_id_0_val, GSharpArray<int> __gsharp_id_1_shift, GSharpArray<unsigned long long> __gsharp_id_2_rotLeftRes, GSharpArray<unsigned long long> __gsharp_id_3_rotRightRes, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel* __gsharp_ctx){
@@ -397,6 +400,7 @@ global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimZ = (int)blockDimZ;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX = (int)gridDimX;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimY = (int)gridDimY;
 global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimZ = (int)gridDimZ;
+global::Kassyi.GSharp.Core.ManagedGpuContext.ResetWarpExchange();
 bool anyBlockActive = true;
 while (anyBlockActive)
 {

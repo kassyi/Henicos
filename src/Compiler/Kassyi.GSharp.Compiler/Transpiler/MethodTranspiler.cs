@@ -180,7 +180,10 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendLine($"struct {contextName} {{");
         context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.State} = 0;");
         context.Emitter.Writer.AppendLine($"{contextName}* {GSharpInternalNames.AllContexts} = nullptr;");
-        context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.WarpExchange} = 0;");
+        // Two exchange slots alternate per shuffle, so a lane that has already published its next shuffle does not
+        // overwrite the value a slower lane is still reading
+        context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.WarpExchange}[2] = {{}};");
+        context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.WarpShuffleCount} = 0;");
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.YieldedForGridSync} = false;");
         foreach (var field in fields)
         {
