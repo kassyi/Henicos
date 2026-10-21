@@ -221,7 +221,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__BitOperationsTestKernel(u32Data, u64Data, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -456,7 +455,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__NumericsAndHwMathKernels__PtxIntrinsicsExpansionKernel(u32Out, u64Out, i32Out, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {

@@ -198,8 +198,8 @@ public int m;
 public int k;
 }
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(float[] a, float[] b, float[] c, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel __gsharp_ctx) {
-        SharedMemory<float> As = new(256);
-        SharedMemory<float> Bs = new(256);
+        SharedMemory<float> As = new(256, 0x73f1e09054a8d88dUL);
+        SharedMemory<float> Bs = new(256, 0x73f1df9054a8d6daUL);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
@@ -357,7 +357,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(a, b, c, n, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {

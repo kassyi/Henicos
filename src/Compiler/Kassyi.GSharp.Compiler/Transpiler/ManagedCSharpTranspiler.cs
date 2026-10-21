@@ -14,12 +14,12 @@ internal static class ManagedCSharpTranspiler
         SemanticModel semanticModel,
         LoweredStateMachine? preLowered = null)
     {
-        if (methodDecl.Body == null)
+        if (!methodDecl.HasBody())
         {
             return string.Empty;
         }
 
-        var lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body, semanticModel);
+        var lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl, semanticModel);
         var loweredBody = lowered.LoweredBody;
         var contextFields = lowered.ContextFields;
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
@@ -51,14 +51,14 @@ internal static class ManagedCSharpTranspiler
     public static string GenerateDeviceFunction(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel)
     {
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        if (methodDecl.Body == null || methodSymbol == null ||
+        if (!methodDecl.HasBody() || methodSymbol == null ||
             !SuspensionAnalysis.IsSuspendingFunction(methodSymbol, semanticModel.Compilation) ||
             SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, semanticModel.Compilation))
         {
             return string.Empty;
         }
 
-        var lowered = AstLoweringPipeline.Lower(methodDecl.Body, semanticModel, methodSymbol);
+        var lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel, methodSymbol);
         var frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, methodSymbol);
         var stateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.KernelStateMachinePrefix, methodSymbol);
         var functionName = methodDecl.Identifier.ValueText;
@@ -129,7 +129,8 @@ internal static class ManagedCSharpTranspiler
                     unhoistedSymbols.Add(localSymbol);
                 }
 
-                localInits.Add(contextField);
+                // A ref struct local is declared again on every resume, so its initializer is emitted as is
+                localInits.Add(contextField with { Declarator = AddSharedMemorySiteKeys(field, semanticModel) });
             }
             else
             {
@@ -138,6 +139,42 @@ internal static class ManagedCSharpTranspiler
         }
 
         return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedSymbols);
+    }
+
+    private static TNode AddSharedMemorySiteKeys<TNode>(TNode node, SemanticModel semanticModel) where TNode : SyntaxNode
+    {
+        var creations = ImmutableArray.CreateBuilder<BaseObjectCreationExpressionSyntax>();
+        foreach (var descendant in node.DescendantNodes())
+        {
+            if (descendant is BaseObjectCreationExpressionSyntax creation &&
+                semanticModel.GetTypeSymbol(creation).IsSharedMemoryType())
+            {
+                creations.Add(creation);
+            }
+        }
+
+        return creations.Count == 0
+            ? node
+            : node.ReplaceNodes(creations, (original, rewritten) => AddSharedMemorySiteKey(original, rewritten, semanticModel));
+    }
+
+    // [WHY] new SharedMemory<T>(n) becomes new SharedMemory<T>(n, key): the buffer belongs to the declaration, one per
+    // block, like a CUDA __shared__ variable (see SharedMemorySiteKey). The key is computed from the original node,
+    // whose annotations map it to the source.
+    private static BaseObjectCreationExpressionSyntax AddSharedMemorySiteKey(BaseObjectCreationExpressionSyntax original,
+        BaseObjectCreationExpressionSyntax rewritten, SemanticModel semanticModel)
+    {
+        var key = SharedMemorySiteKey.Compute(semanticModel, original);
+        var keyArgument = SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
+            SyntaxFactory.Literal(SharedMemorySiteKey.ToCSharpLiteral(key), key)));
+        var arguments = rewritten.ArgumentList?.Arguments ?? default;
+        if (arguments.Count == 0)
+        {
+            arguments = arguments.Add(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(
+                SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(1))));
+        }
+
+        return rewritten.WithArgumentList(SyntaxFactory.ArgumentList(arguments.Add(keyArgument)));
     }
 
     /// <summary>Writes the field type: a written type as written, <c>var</c> as the resolved type.</summary>
@@ -245,8 +282,6 @@ internal static class ManagedCSharpTranspiler
         writer.AppendLine(") {");
         if (localInits.Length > 0)
         {
-            // A frame owns the same shared memory slot on every resume, even when called again in the same thread step
-            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();");
             foreach (var localInit in localInits)
             {
                 AppendFieldType(writer, localInit);
@@ -375,6 +410,17 @@ internal static class ManagedCSharpTranspiler
         SemanticModel semanticModel,
         string kernelName) : CSharpSyntaxRewriter
     {
+        public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
+            VisitCreation(node, base.VisitObjectCreationExpression(node));
+
+        public override SyntaxNode? VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
+            VisitCreation(node, base.VisitImplicitObjectCreationExpression(node));
+
+        private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited) =>
+            visited is BaseObjectCreationExpressionSyntax rewritten && semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
+                ? AddSharedMemorySiteKey(node, rewritten, semanticModel)
+                : visited;
+
         public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
             var visited = base.VisitMemberAccessExpression(node);
@@ -461,6 +507,17 @@ internal static class ManagedCSharpTranspiler
                 SyntaxFactory.ParseExpression(GetDeviceFunctionMember(callee, GSharpInternalNames.KernelStateMachinePrefix)),
                 SyntaxFactory.ArgumentList(callArguments));
         }
+
+        public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
+            VisitCreation(node, base.VisitObjectCreationExpression(node));
+
+        public override SyntaxNode? VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
+            VisitCreation(node, base.VisitImplicitObjectCreationExpression(node));
+
+        private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited) =>
+            visited is BaseObjectCreationExpressionSyntax rewritten && semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
+                ? AddSharedMemorySiteKey(node, rewritten, semanticModel)
+                : visited;
 
         public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {

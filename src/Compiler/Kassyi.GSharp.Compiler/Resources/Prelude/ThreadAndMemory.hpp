@@ -22,24 +22,35 @@ inline void __syncthreads() {}
 
 // --- Shared Memory ---
 inline thread_local char __gsharp_dynamic_smem[65536];
-inline thread_local size_t __gsharp_smem_offsets[64];
-inline thread_local bool __gsharp_smem_initialized[64];
+// [WHY] A SharedMemory<T> declaration is one buffer per block, like a CUDA __shared__ variable: every call of a device
+// function, from any call site, gets the same buffer. The compiler identifies each declaration by a site key (a hash of
+// the declaring method and the ordinal of the declaration in it), so buffers do not depend on the order of allocations.
+#define __GSHARP_SMEM_MAX_SITES 64
+inline thread_local unsigned long long __gsharp_smem_keys[__GSHARP_SMEM_MAX_SITES];
+inline thread_local size_t __gsharp_smem_offsets[__GSHARP_SMEM_MAX_SITES];
+inline thread_local int __gsharp_smem_site_count;
 inline thread_local size_t __gsharp_smem_current_base;
 
 inline void __gsharp_reset_smem() {
     __gsharp_smem_current_base = 0;
-    for (int i = 0; i < 64; i++) {
-        __gsharp_smem_initialized[i] = false;
-        __gsharp_smem_offsets[i] = 0;
-    }
+    __gsharp_smem_site_count = 0;
 }
 
-inline void* __gsharp_allocate_smem(int allocId, size_t size, size_t alignment) {
-    if (!__gsharp_smem_initialized[allocId]) {
-        __gsharp_smem_current_base = (__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1);
-        __gsharp_smem_offsets[allocId] = __gsharp_smem_current_base;
-        __gsharp_smem_current_base += size;
-        __gsharp_smem_initialized[allocId] = true;
+inline void* __gsharp_allocate_smem(unsigned long long siteKey, size_t size, size_t alignment) {
+    for (int i = 0; i < __gsharp_smem_site_count; i++) {
+        if (__gsharp_smem_keys[i] == siteKey) {
+            return (void*)(__gsharp_dynamic_smem + __gsharp_smem_offsets[i]);
+        }
     }
-    return (void*)(__gsharp_dynamic_smem + __gsharp_smem_offsets[allocId]);
+    size_t offset = (__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1);
+    if (__gsharp_smem_site_count == __GSHARP_SMEM_MAX_SITES || offset + size > sizeof(__gsharp_dynamic_smem)) {
+        std::fprintf(stderr, "G#: shared memory of the block exceeds %d declarations or %zu bytes\n",
+                     __GSHARP_SMEM_MAX_SITES, sizeof(__gsharp_dynamic_smem));
+        std::abort();
+    }
+    __gsharp_smem_keys[__gsharp_smem_site_count] = siteKey;
+    __gsharp_smem_offsets[__gsharp_smem_site_count] = offset;
+    __gsharp_smem_site_count++;
+    __gsharp_smem_current_base = offset + size;
+    return (void*)(__gsharp_dynamic_smem + offset);
 }

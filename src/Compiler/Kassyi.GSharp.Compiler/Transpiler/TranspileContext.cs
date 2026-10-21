@@ -35,7 +35,6 @@ public struct Emitter(
     public int CallableDepth;
     public int AutoSyncGridDepth;
     public string? LabelSuffix;
-    public int SmemAllocCount;
 
     public int SwitchIdCounter;
     public Stack<int> ActiveSwitchIds = activeSwitchIds;

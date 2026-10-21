@@ -203,7 +203,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__FlatBarrierKernel(buffer, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -445,7 +444,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__LoopBarrierKernel(buffer, steps, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -644,7 +642,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__SafeLocalFunctionBarrierKernel(buffer, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -848,7 +845,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__ScopedSpanBeforeBarrierKernel(buffer, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
@@ -1059,7 +1055,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__UniformBarrierKernels__SafeGotoWithinPhaseKernel(buffer, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
