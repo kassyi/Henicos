@@ -167,14 +167,24 @@ internal static class WrapperEmitter
             // ReSharper disable once PossibleMultipleEnumeration
             foreach (var (method, source, managedCSharpSource) in methods)
             {
+                // GSH0061: the generator reports the overload; its wrappers would duplicate an earlier overload's.
+                if (KernelHostNames.TryFindIndistinguishableOverload(method, out _, out _))
+                {
+                    continue;
+                }
+
                 WriteKernelSource(writer, method, source, config);
 
                 if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
                 {
-                    writer.AppendLine($"private static IntPtr? s_hfunc_{method.Name};");
+                    writer.AppendLine($"private static IntPtr? s_hfunc_{KernelHostNames.GetMemberKey(method)};");
                     WriteWarmupFunctionPointerMethod(writer, method);
                     WriteLaunchMethod(writer, method, false);
                     WriteLaunchMethod(writer, method, true);
+                    if (KernelHostNames.IsOverloadedKernel(method))
+                    {
+                        WriteTypedPointerLaunchMethod(writer, method);
+                    }
                 }
                 else
                 {
@@ -201,14 +211,15 @@ internal static class WrapperEmitter
             return;
         }
 
-        writer.Append($"public const string {method.Name}_Source = @\"");
+        var key = KernelHostNames.GetMemberKey(method);
+        writer.Append($"public const string {key}_Source = @\"");
         writer.AppendVerbatimLiteral(source);
         writer.AppendLine("\";");
         writer.AppendLine(
-            $"public static readonly string {method.Name}_FullSource=" +
+            $"public static readonly string {key}_FullSource=" +
             $"global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}Prelude.Source +" +
             $"global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}DeviceCode.Source +" +
-            $"{method.Name}_Source;");
+            $"{key}_Source;");
         writer.AppendLine();
     }
 
@@ -274,23 +285,20 @@ internal static class WrapperEmitter
     {
         writer.AppendLine("[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"Kassyi.GSharp.Compiler\", \"1.0.0.0\")]");
         writer.AppendLine("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
-        writer.Append("public static unsafe ");
-        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        // An overloaded kernel's IntPtr wrapper is private: callers select the overload through the typed wrapper.
+        writer.Append(isDevicePtr && KernelHostNames.IsOverloadedKernel(method)
+            ? "private static unsafe "
+            : "public static unsafe ");
+        WriteLaunchReturnType(writer, method);
+
+        if (isDevicePtr)
         {
-            writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-            writer.Append("[] ");
+            writer.Append(KernelHostNames.GetPointerLaunchName(method));
         }
         else
         {
-            writer.Append("void ");
-        }
-
-
-        writer.Append("Launch");
-        writer.Append(method.Name);
-        if (isDevicePtr)
-        {
-            writer.Append("Ptr");
+            writer.Append("Launch");
+            writer.Append(method.Name);
         }
 
         using (writer.Parentheses())
@@ -316,12 +324,85 @@ internal static class WrapperEmitter
                 writer.AppendSpace();
             }
 
-            writer.Append(
-                "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1," +
-                "uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, " +
-                "System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default");
+            writer.Append(LaunchOptionParameters);
         }
 
+        writer.AppendLine();
+    }
+
+    private const string LaunchOptionParameters =
+        "uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1," +
+        "uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, " +
+        "System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default";
+
+    private const string LaunchOptionArguments =
+        "gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, sharedMemBytes, hStream, macros";
+
+    private static void WriteLaunchReturnType(SourceWriter writer, IMethodSymbol method)
+    {
+        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            writer.AppendFullyQualifiedCsharpName(method.ReturnType);
+            writer.Append("[] ");
+        }
+        else
+        {
+            writer.Append("void ");
+        }
+    }
+
+    // The public Launch{Name}Ptr of an overloaded kernel: device pointers are typed GpuBuffer<T>, so C# selects the
+    // overload, and the wrapper forwards their device pointers to the private IntPtr implementation.
+    private static void WriteTypedPointerLaunchMethod(SourceWriter writer, IMethodSymbol method)
+    {
+        writer.AppendLine("[global::System.CodeDom.Compiler.GeneratedCodeAttribute(\"Kassyi.GSharp.Compiler\", \"1.0.0.0\")]");
+        writer.AppendLine("[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]");
+        writer.Append("public static unsafe ");
+        WriteLaunchReturnType(writer, method);
+        writer.Append("Launch").Append(method.Name).Append("Ptr");
+        using (writer.Parentheses())
+        {
+            foreach (var p in method.Parameters)
+            {
+                if (KernelHostNames.TryAppendTypedBuffer(writer, p))
+                {
+                    var isOptional = p.HasExplicitDefaultValue;
+                    writer.Append(isOptional ? "? " : " ").Append(p.Name.ToCSharpIdentifier());
+                    if (isOptional)
+                    {
+                        writer.Append(" = null");
+                    }
+                }
+                else
+                {
+                    GetInteropParameterInfo(p, true).WriteTo(writer, p.Name.ToCSharpIdentifier());
+                }
+
+                writer.AppendComma().AppendSpace();
+            }
+
+            writer.Append(LaunchOptionParameters);
+        }
+
+        writer.AppendLine();
+        writer.Append("=> ").Append(KernelHostNames.GetPointerLaunchName(method));
+        using (writer.Parentheses())
+        {
+            foreach (var p in method.Parameters)
+            {
+                writer.Append(p.Name.ToCSharpIdentifier());
+                if (KernelHostNames.TryGetBufferElementType(p, out _))
+                {
+                    writer.Append(p.HasExplicitDefaultValue ? "?.DevicePointer ?? IntPtr.Zero" : ".DevicePointer");
+                }
+
+                writer.AppendComma().AppendSpace();
+            }
+
+            writer.Append(LaunchOptionArguments);
+        }
+
+        writer.AppendSemiColonLine();
         writer.AppendLine();
     }
 
@@ -429,24 +510,21 @@ internal static class WrapperEmitter
     }
 
 
-    private static string GetMangledKernelName(IMethodSymbol method) =>
-        $"{method.ContainingType.Name}_{method.Name}";
-
     private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, IMethodSymbol method)
     {
-        var mangledName = GetMangledKernelName(method);
+        var key = KernelHostNames.GetMemberKey(method);
         writer.AppendLine(
             "/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>");
-        writer.AppendLine($"public static void WarmupFunctionPointer{method.Name}()");
+        writer.AppendLine($"public static void WarmupFunctionPointer{key}()");
         using (writer.Scope())
         {
-            writer.AppendLine($"if (s_hfunc_{method.Name}.HasValue) return;");
+            writer.AppendLine($"if (s_hfunc_{key}.HasValue) return;");
             writer.Append("IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_");
             var assemblyName = IdentifierHelper.ToSafeIdentifier(method.ContainingAssembly.Name);
             writer.Append(assemblyName);
             writer.AppendLine(".GetOrLoadModule();");
             writer.AppendLine(
-                $"s_hfunc_{method.Name} = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, \"{mangledName}\");");
+                $"s_hfunc_{key} = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, \"{GlobalCppNames.GetKernelName(method)}\");");
         }
 
         writer.AppendLine();
@@ -454,8 +532,9 @@ internal static class WrapperEmitter
 
     private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method)
     {
-        writer.AppendLine($"WarmupFunctionPointer{method.Name}();");
-        writer.AppendLine($"IntPtr hfunc = s_hfunc_{method.Name}!.Value;");
+        var key = KernelHostNames.GetMemberKey(method);
+        writer.AppendLine($"WarmupFunctionPointer{key}();");
+        writer.AppendLine($"IntPtr hfunc = s_hfunc_{key}!.Value;");
         writer.AppendLine();
     }
 
@@ -516,6 +595,11 @@ internal static class WrapperEmitter
         foreach (var methodResult in kernelMethods)
         {
             var method = methodResult.MethodSymbol;
+            if (KernelHostNames.TryFindIndistinguishableOverload(method, out _, out _))
+            {
+                continue;
+            }
+
             writer.Append("global::");
             writer.AppendNamespace(method.ContainingNamespace);
             if (!method.ContainingNamespace.IsGlobalNamespace)
@@ -523,7 +607,7 @@ internal static class WrapperEmitter
                 writer.Append('.');
             }
             writer.Append(method.ContainingType.Name);
-            writer.AppendLine($".WarmupFunctionPointer{method.Name}();");
+            writer.AppendLine($".WarmupFunctionPointer{KernelHostNames.GetMemberKey(method)}();");
         }
 
         writer.AppendLine("}}}");
@@ -537,7 +621,7 @@ internal static class WrapperEmitter
         writer.AppendLine(
             "[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]");
         writer.Append("private unsafe delegate void ");
-        writer.Append(method.Name);
+        writer.Append(KernelHostNames.GetMemberKey(method));
         writer.Append("_Delegate");
         using (writer.Parentheses())
         {
@@ -588,7 +672,8 @@ internal static class WrapperEmitter
     private static void WriteManagedExecutionFallback(SourceWriter writer, IMethodSymbol method)
     {
         var safeAssemblyName = IdentifierHelper.ToSafeIdentifier(method.ContainingAssembly.Name);
-        var mangledName = GetMangledKernelName(method);
+        var contextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix, method);
+        var stateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.KernelStateMachinePrefix, method);
 
         writer.AppendLine(
             "var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==" +
@@ -605,9 +690,9 @@ internal static class WrapperEmitter
             writer.AppendLine($"int {GSharpInternalNames.TotalBlocks} = (int)(gridDimX * gridDimY * gridDimZ);");
             writer.AppendLine($"int {GSharpInternalNames.ThreadsPerBlock} = (int)(blockDimX * blockDimY * blockDimZ);");
             writer.AppendLine(
-                $"var {GSharpInternalNames.LaunchContexts} = new __gsharp_context_{mangledName}[{GSharpInternalNames.TotalBlocks} * {GSharpInternalNames.ThreadsPerBlock}];");
+                $"var {GSharpInternalNames.LaunchContexts} = new {contextName}[{GSharpInternalNames.TotalBlocks} * {GSharpInternalNames.ThreadsPerBlock}];");
             writer.AppendLine($"for (int i = 0; i < {GSharpInternalNames.LaunchContexts}.Length; i++) {{");
-            writer.AppendLine($"  {GSharpInternalNames.LaunchContexts}[i] = new __gsharp_context_{mangledName}();");
+            writer.AppendLine($"  {GSharpInternalNames.LaunchContexts}[i] = new {contextName}();");
             writer.AppendLine("}");
 
             writer.AppendLine(
@@ -670,7 +755,7 @@ internal static class WrapperEmitter
                                 writer.AppendLine(
                                     "global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();");
 
-                                writer.Append($"__gsharp_statemachine_{mangledName}(");
+                                writer.Append($"{stateMachineName}(");
                                 bool isFirst = true;
                                 foreach (var p in method.Parameters)
                                 {
@@ -739,10 +824,10 @@ internal static class WrapperEmitter
 
     private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method)
     {
-        var mangledName = GetMangledKernelName(method);
+        var exportName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.KernelLaunchExportPrefix, method);
 
         writer.AppendLine(
-            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{method.Name}_Delegate>(\"__gsharp_launch_{mangledName}\", dllPath);");
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{KernelHostNames.GetMemberKey(method)}_Delegate>(\"{exportName}\", dllPath);");
     }
 
     private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)

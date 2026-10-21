@@ -15,15 +15,17 @@ public partial class NamingArchitectureTests
     // Each entry is "{file}:{expression}" and names the issue that owns the remaining verbatim emission.
     private static readonly HashSet<string> s_allowedRawNames = new(StringComparer.Ordinal)
     {
-        // #402: kernel entry points (step 5) and static members other than device functions are still emitted verbatim.
+        // #402: static members other than device functions are still emitted verbatim.
         "MemberAccessExpressionTranspilerRule.cs:node.Name.Identifier.Text",
-        "MethodSignatureTranspiler.cs:methodSymbol.ContainingType.Name",
-        "MethodSignatureTranspiler.cs:method.Identifier.Text",
         // #411: Gpu.Constant macro names are emitted verbatim until macro injection exists.
         "GpuMacroTranspilerRule.cs:identifier.Identifier.ValueText",
         // Diagnostic and error-comment text, not C++ identifiers.
         "TranspilationSession.cs:methodSymbol.Name",
         "GpuOperatorMacroTranspiler.cs:targetType.Name",
+        "MethodSignatureTranspiler.cs:methodSymbol.ContainingType.Name",
+        "MethodSignatureTranspiler.cs:methodSymbol.Name",
+        // A kernel whose symbol does not resolve; the C# compilation already fails.
+        "MethodSignatureTranspiler.cs:method.Identifier.ValueText",
     };
 
     // C++ / CUDA spellings that legitimately start with "__" and are not compiler-internal names.

@@ -28,8 +28,54 @@ public class GlobalCppNamesTests
                 public static int Pick(long x) => 2;
                 public static int Pick(int x, int y) => 3;
             }
+            public static class K
+            {
+                public static void Run(int[] a) { }
+                public static void Run(float[] a) { }
+                public static void Single(int[] a) { }
+            }
+            public static class Entry_Host { public static void RunKernel(int[] a) { } }
+            public static class Entry { public static void Host_RunKernel(int[] a) { } }
         }
         """;
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_GetKernelName_QualifiesWithContainingType()
+    {
+        Assert.Equal("__gsharp_k_Functions__K__Single", GlobalCppNames.GetKernelName(GetMethods("Functions.K", "Single")[0]));
+    }
+
+    // Kernel entry points used to be {Type}_{Method}, so Entry_Host.RunKernel and Entry.Host_RunKernel shared one name.
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_GetKernelName_PreviouslyCollidingEntryPoints_AreDistinct()
+    {
+        Assert.NotEqual(
+            GlobalCppNames.GetKernelName(GetMethods("Functions.Entry_Host", "RunKernel")[0]),
+            GlobalCppNames.GetKernelName(GetMethods("Functions.Entry", "Host_RunKernel")[0]));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GetKernelName_Overloads_CarryTheDeclarationOrdinal()
+    {
+        var overloads = GetMethods("Functions.K", "Run");
+
+        Assert.Equal("__gsharp_k_Functions__K__Run_o0", GlobalCppNames.GetKernelName(overloads[0]));
+        Assert.Equal("__gsharp_k_Functions__K__Run_o1", GlobalCppNames.GetKernelName(overloads[1]));
+    }
+
+    // The CPU export, the per-thread context and the managed state machine share the body of the entry point name.
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("__gsharp_launch_", "__gsharp_launch_Functions__K__Run_o1")]
+    [InlineData("__gsharp_context_", "__gsharp_context_Functions__K__Run_o1")]
+    [InlineData("__gsharp_statemachine_", "__gsharp_statemachine_Functions__K__Run_o1")]
+    public void Test_GetKernelDerivedName_UsesTheEntryPointBody(string prefix, string expected)
+    {
+        Assert.Equal(expected, GlobalCppNames.GetKernelDerivedName(prefix, GetMethods("Functions.K", "Run")[1]));
+    }
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]

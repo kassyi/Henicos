@@ -20,15 +20,18 @@ internal static class ManagedCSharpTranspiler
 
         var (loweredBody, contextFields) = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body);
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
+        var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
+            methodDecl, methodSymbol);
+        var stateMachineName = MethodSignatureTranspiler.GetKernelDerivedName(
+            GSharpInternalNames.KernelStateMachinePrefix, methodDecl, methodSymbol);
 
         var bodySource = RewriteAndNormalizeBody(loweredBody);
         var (transformedBody, localInits, regularFields) =
             ProcessContextFields(bodySource, contextFields, semanticModel);
 
         using var writer = new SourceWriter();
-        EmitContextClass(writer, methodName, regularFields);
-        EmitStateMachineMethod(writer, methodName, methodSymbol, localInits, transformedBody);
+        EmitContextClass(writer, contextName, regularFields);
+        EmitStateMachineMethod(writer, contextName, stateMachineName, methodSymbol, localInits, transformedBody);
         return writer.ToString();
     }
 
@@ -136,10 +139,10 @@ internal static class ManagedCSharpTranspiler
 
     private static void EmitContextClass(
         SourceWriter writer,
-        string methodName,
+        string contextName,
         IReadOnlyList<(string Type, string Name)> regularFields)
     {
-        writer.AppendLine($"public class __gsharp_context_{methodName} {{");
+        writer.AppendLine($"public class {contextName} {{");
         writer.AppendLine($"public int {GSharpInternalNames.State};");
         writer.AppendLine($"public uint {GSharpInternalNames.WarpExchange};");
         writer.AppendLine($"public bool {GSharpInternalNames.YieldedForGridSync};");
@@ -155,12 +158,13 @@ internal static class ManagedCSharpTranspiler
 
     private static void EmitStateMachineMethod(
         SourceWriter writer,
-        string methodName,
+        string contextName,
+        string stateMachineName,
         IMethodSymbol? methodSymbol,
         string localInits,
         string bodySource)
     {
-        EmitStateMachineSignature(writer, methodName, methodSymbol);
+        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol);
         writer.AppendLine(") {");
 
         if (methodSymbol != null)
@@ -181,10 +185,11 @@ internal static class ManagedCSharpTranspiler
 
     private static void EmitStateMachineSignature(
         SourceWriter writer,
-        string methodName,
+        string contextName,
+        string stateMachineName,
         IMethodSymbol? methodSymbol)
     {
-        writer.Append($"public static unsafe void __gsharp_statemachine_{methodName}(");
+        writer.Append($"public static unsafe void {stateMachineName}(");
         if (methodSymbol == null)
         {
             return;
@@ -214,7 +219,7 @@ internal static class ManagedCSharpTranspiler
             writer.Append(", ");
         }
 
-        writer.Append($"__gsharp_context_{methodName} {GSharpInternalNames.Context}");
+        writer.Append($"{contextName} {GSharpInternalNames.Context}");
 
         if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
         {

@@ -444,6 +444,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(diag.Diagnostic);
             }
 
+            if (KernelHostNames.TryFindIndistinguishableOverload(method.MethodSymbol, out var earlier, out var wrapper))
+            {
+                var location = method.MethodSymbol.Locations.Length > 0 ? method.MethodSymbol.Locations[0] : Location.None;
+                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.IndistinguishableKernelOverloads, location,
+                    KernelHostNames.FormatSignature(earlier), KernelHostNames.FormatSignature(method.MethodSymbol), wrapper));
+            }
+
             var source = isCuda ? method.CudaSource : method.CppSource;
             methodsData.Add((method.MethodSymbol, source, method.ManagedCSharpSource));
         }

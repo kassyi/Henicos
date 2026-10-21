@@ -71,8 +71,9 @@ public static class MethodTranspiler
         if (contextFields != null)
         {
             var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-            var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
-            WriteContextStruct(methodName, contextFields, ref context);
+            var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
+                methodDecl, methodSymbol);
+            WriteContextStruct(contextName, contextFields, ref context);
         }
 
         MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, contextFields != null, ref context);
@@ -140,8 +141,9 @@ public static class MethodTranspiler
         if (contextFields != null)
         {
             var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-            var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
-            WriteContextStruct(methodName, contextFields, ref context);
+            var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
+                methodDecl, methodSymbol);
+            WriteContextStruct(contextName, contextFields, ref context);
         }
 
         MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, contextFields != null, ref context);
@@ -171,12 +173,12 @@ public static class MethodTranspiler
         (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? preLowered = null) =>
         ManagedCSharpTranspiler.Generate(methodDecl, semanticModel, preLowered);
 
-    private static void WriteContextStruct(string methodName, IReadOnlyList<VariableDeclaratorSyntax> fields,
+    private static void WriteContextStruct(string contextName, IReadOnlyList<VariableDeclaratorSyntax> fields,
         ref TranspileContext context)
     {
-        context.Emitter.Writer.AppendLine($"struct __gsharp_context_{methodName} {{");
+        context.Emitter.Writer.AppendLine($"struct {contextName} {{");
         context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.State} = 0;");
-        context.Emitter.Writer.AppendLine($"__gsharp_context_{methodName}* {GSharpInternalNames.AllContexts} = nullptr;");
+        context.Emitter.Writer.AppendLine($"{contextName}* {GSharpInternalNames.AllContexts} = nullptr;");
         context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.WarpExchange} = 0;");
         context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.YieldedForGridSync} = false;");
         foreach (var field in fields)

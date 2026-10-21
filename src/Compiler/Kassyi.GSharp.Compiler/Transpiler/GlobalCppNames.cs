@@ -43,6 +43,24 @@ internal static class GlobalCppNames
     public static string GetFunctionName(IMethodSymbol method) =>
         Shorten(GSharpNameEncoding.FunctionPrefix, GSharpNameEncoding.Encode(GetFunctionPath(method)));
 
+    /// <summary>
+    /// Returns <c>__gsharp_k_{type path}__{name}</c>, the exported entry point of a kernel, with <c>_o{n}</c> when its
+    /// containing type declares more than one method with that name.
+    /// </summary>
+    /// <remarks>
+    /// This is the only source of the entry point name: the C++ definition, the CUDA <c>GetFunction</c> lookup and the
+    /// CPU export lookup all use it, together with <see cref="GetKernelDerivedName"/>.
+    /// </remarks>
+    public static string GetKernelName(IMethodSymbol kernel) =>
+        GetKernelDerivedName(GSharpNameEncoding.KernelPrefix, kernel);
+
+    /// <summary>
+    /// Returns <paramref name="prefix"/> followed by the body of the entry point name, for the names that belong to one
+    /// kernel: the CPU export, the per-thread context and the managed state machine.
+    /// </summary>
+    public static string GetKernelDerivedName(string prefix, IMethodSymbol kernel) =>
+        Shorten(prefix, GSharpNameEncoding.Encode(GetFunctionPath(kernel)));
+
     /// <summary>The C# path of <paramref name="method"/>: the path of its containing type and the method.</summary>
     public static GlobalNamePath GetFunctionPath(IMethodSymbol method)
     {
@@ -65,10 +83,14 @@ internal static class GlobalCppNames
         return definition.PartialDefinitionPart ?? definition;
     }
 
-    // Position among the ordinary methods with the same name in the containing type, in declaration order, or -1 when
-    // the name is not overloaded. Partial types order their parts by file path like file types do.
-    private static int GetOverloadOrdinal(IMethodSymbol method)
+    /// <summary>
+    /// The position of <paramref name="method"/> among the ordinary methods with the same name in its containing type,
+    /// in declaration order, or -1 when the name is not overloaded.
+    /// </summary>
+    /// <remarks>Partial types order their parts by file path like file types do.</remarks>
+    public static int GetOverloadOrdinal(IMethodSymbol method)
     {
+        method = GetDefinition(method);
         var members = method.ContainingType.GetMembers(method.Name);
         var candidates = new ISymbol[members.Length];
         var count = 0;

@@ -13,6 +13,11 @@ internal static class GSharpInternalNames
     public const string RenamedIdentifierPrefix = GSharpNameEncoding.IdentifierPrefix;
     public const string RenamedMemberPrefix = GSharpNameEncoding.MemberPrefix;
 
+    // Names that belong to one kernel, followed by the body of its entry point name (GlobalCppNames.GetKernelDerivedName).
+    public const string KernelLaunchExportPrefix = "__gsharp_launch_";
+    public const string KernelContextPrefix = "__gsharp_context_";
+    public const string KernelStateMachinePrefix = "__gsharp_statemachine_";
+
     // Per-thread state machine context (CPU dialects).
     public const string Context = "__gsharp_ctx";
     public const string State = "__gsharp_state";

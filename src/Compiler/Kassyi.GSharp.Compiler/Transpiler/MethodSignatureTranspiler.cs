@@ -6,8 +6,24 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class MethodSignatureTranspiler
 {
+    /// <summary>The exported entry point of a kernel (see <see cref="GlobalCppNames.GetKernelName"/>).</summary>
     public static string GetKernelMethodName(MethodDeclarationSyntax method, IMethodSymbol? methodSymbol) =>
-        methodSymbol != null ? $"{methodSymbol.ContainingType.Name}_{method.Identifier.Text}" : method.Identifier.Text;
+        methodSymbol != null ? GlobalCppNames.GetKernelName(methodSymbol) : method.Identifier.ValueText;
+
+    /// <summary>
+    /// A name that belongs to one kernel: <paramref name="prefix"/> followed by the body of its entry point name.
+    /// </summary>
+    public static string GetKernelDerivedName(string prefix, MethodDeclarationSyntax method, IMethodSymbol? methodSymbol)
+    {
+        if (methodSymbol != null)
+        {
+            return GlobalCppNames.GetKernelDerivedName(prefix, methodSymbol);
+        }
+
+        using var writer = new SourceWriter();
+        writer.Append(prefix).Append(method.Identifier.ValueText);
+        return writer.ToString();
+    }
 
     public static void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice, bool hasContext,
         ref TranspileContext context)
@@ -42,7 +58,9 @@ internal static class MethodSignatureTranspiler
                     context.Emitter.Writer.Append(", ");
                 }
 
-                context.Emitter.Writer.Append($"__gsharp_context_{methodName}* {GSharpInternalNames.Context}");
+                context.Emitter.Writer
+                    .Append(GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix, method, methodSymbol))
+                    .Append("* ").Append(GSharpInternalNames.Context);
             }
 
             if (isDevice || methodSymbol is null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
@@ -90,7 +108,8 @@ internal static class MethodSignatureTranspiler
 
         if (offset > KernelParameterSpaceLimitBytes)
         {
-            var kernelName = GetKernelMethodName(method, methodSymbol);
+            // The message names the kernel as the user wrote it, not by its entry point.
+            var kernelName = $"{methodSymbol.ContainingType.Name}.{methodSymbol.Name}";
             context.Reporter.Report(GSharpDiagnostics.KernelParameterSpaceExceeded, method.Identifier.GetLocation(), kernelName, offset, KernelParameterSpaceLimitBytes);
         }
     }
