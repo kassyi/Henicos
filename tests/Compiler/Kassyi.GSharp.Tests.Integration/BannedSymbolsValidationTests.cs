@@ -3,22 +3,10 @@ namespace Kassyi.GSharp.Tests.Integration
 {
     public class BannedSymbolsValidationTests
     {
-        private static string GetRepositoryRoot()
-        {
-            var current = new DirectoryInfo(Directory.GetCurrentDirectory());
-            while (current != null)
-            {
-                if (current.GetFiles("Henicos.slnx").Length > 0)
-                    return current.FullName;
-                current = current.Parent;
-            }
-            throw new InvalidOperationException("Repository root not found.");
-        }
-
         [Fact]
         public void BannedSymbols_NoDuplicateDefinitions_ToPreventRS0031()
         {
-            var root = GetRepositoryRoot();
+            var root = RepositoryPaths.Root;
             var rootBannedSymbolsPath = Path.Combine(root, "BannedSymbols.txt");
             
             Assert.True(File.Exists(rootBannedSymbolsPath), "Root BannedSymbols.txt must exist.");

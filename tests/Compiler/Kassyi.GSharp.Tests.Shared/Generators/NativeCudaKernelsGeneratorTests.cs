@@ -27,8 +27,7 @@ public class NativeCudaKernelsGeneratorTests
 
     private FileAdditionalText GetAdditionalText(string relativeFilePath)
     {
-        var basePath = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory,
-            "../../../../../../tests/Kassyi.GSharp.Tests.Shared/TestCases/Generators"));
+        var basePath = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "TestCases", "Generators");
         return new FileAdditionalText(System.IO.Path.Combine(basePath, relativeFilePath));
     }
 

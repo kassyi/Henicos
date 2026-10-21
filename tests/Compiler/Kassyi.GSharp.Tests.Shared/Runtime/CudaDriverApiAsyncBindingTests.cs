@@ -40,8 +40,7 @@ public class CudaDriverApiAsyncBindingTests
     [InlineData("cuStreamGetCtx", 2)]
     public void Test_DriverApiYaml_DeclaresAsyncBinding_ExactlyOnce(string methodName, int parameterCount)
     {
-        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "../../../../../../src/NativeApi", "cuda_driver_api.yml"));
+        var path = RepositoryPaths.Combine("src", "NativeApi", "cuda_driver_api.yml");
         var parsed = NativeApiYamlReader.TryRead(File.ReadAllText(path), out var definition, out var error);
 
         Assert.True(parsed, error is null ? null : $"line {error.Line}: {error.Message}");

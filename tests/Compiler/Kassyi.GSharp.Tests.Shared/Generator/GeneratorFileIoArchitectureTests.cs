@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -12,7 +11,7 @@ public class GeneratorFileIoArchitectureTests
     [Scenario(TestScenario.SadPath)]
     public void Test_CompilerSources_ContainNoAbsolutePathLiterals()
     {
-        var compilerRoot = GetCompilerRoot();
+        var compilerRoot = RepositoryPaths.CompilerProject;
         var violations = new List<string>();
 
         foreach (var path in Directory.EnumerateFiles(compilerRoot, "*.cs", SearchOption.AllDirectories))
@@ -51,7 +50,7 @@ public class GeneratorFileIoArchitectureTests
     [Scenario(TestScenario.SadPath)]
     public void Test_GpuKernelGenerator_CatchBlocksDoNotWriteFiles()
     {
-        var compilerRoot = GetCompilerRoot();
+        var compilerRoot = RepositoryPaths.CompilerProject;
         var generatorPath = Path.Combine(compilerRoot, "GpuKernelGenerator.cs");
         var root = CSharpSyntaxTree.ParseText(File.ReadAllText(generatorPath)).GetRoot();
         var violations = new List<string>();
@@ -100,21 +99,5 @@ public class GeneratorFileIoArchitectureTests
 
         var text = expression.ToString();
         return text == "File" || text == "System.IO.File";
-    }
-
-    private static string GetCompilerRoot([CallerFilePath] string callerFilePath = "")
-    {
-        var dir = new DirectoryInfo(Path.GetDirectoryName(callerFilePath) ?? AppContext.BaseDirectory);
-        while (dir != null && dir.GetFiles("Henicos.slnx").Length == 0)
-        {
-            dir = dir.Parent;
-        }
-
-        if (dir == null)
-        {
-            throw new DirectoryNotFoundException("Could not locate the repository root (Henicos.slnx).");
-        }
-
-        return Path.Combine(dir.FullName, "src", "Compiler", "Kassyi.GSharp.Compiler");
     }
 }

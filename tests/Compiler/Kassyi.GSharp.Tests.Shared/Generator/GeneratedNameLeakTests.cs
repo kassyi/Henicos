@@ -164,7 +164,7 @@ public partial class GeneratedNameLeakTests
             AddGroups(vocabulary, DeclaredTypeOrMacroRegex(), prelude);
         }
 
-        foreach (var yaml in Directory.EnumerateFiles(Path.Combine(GetCompilerRoot(), "Dialects"), "*.yml"))
+        foreach (var yaml in Directory.EnumerateFiles(Path.Combine(RepositoryPaths.CompilerProject, "Dialects"), "*.yml"))
         {
             foreach (Match mapping in YamlMappingValueRegex().Matches(File.ReadAllText(yaml)))
             {
@@ -184,21 +184,5 @@ public partial class GeneratedNameLeakTests
         {
             vocabulary.Add(match.Groups[1].Value);
         }
-    }
-
-    private static string GetCompilerRoot([System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "")
-    {
-        var dir = new DirectoryInfo(Path.GetDirectoryName(callerFilePath) ?? AppContext.BaseDirectory);
-        while (dir != null && dir.GetFiles("Henicos.slnx").Length == 0)
-        {
-            dir = dir.Parent;
-        }
-
-        if (dir == null)
-        {
-            throw new DirectoryNotFoundException("Could not locate the repository root (Henicos.slnx).");
-        }
-
-        return Path.Combine(dir.FullName, "src", "Compiler", "Kassyi.GSharp.Compiler");
     }
 }

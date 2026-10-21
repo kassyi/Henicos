@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.Diagnostics;
@@ -25,9 +24,8 @@ public partial class DiagnosticParityTests : TranspilerTestBase
 
     private static string ReadDiagnosticsJson(out string rootPath)
     {
-        rootPath = GetRepositoryRoot();
-        string jsonPath = Path.Combine(rootPath, "src", "Compiler", "Kassyi.GSharp.Compiler", "Diagnostics",
-            "diagnostics.json");
+        rootPath = RepositoryPaths.Root;
+        string jsonPath = Path.Combine(RepositoryPaths.CompilerProject, "Diagnostics", "diagnostics.json");
         Assert.True(File.Exists(jsonPath), $"diagnostics.json not found at {jsonPath}");
 
         return File.ReadAllText(jsonPath);
@@ -130,8 +128,7 @@ public partial class DiagnosticParityTests : TranspilerTestBase
     [InlineData("Analyzers/UnrollHintSadPath.cs")]
     public async Task AnalyzerAndTranspiler_ReportMatchingDiagnosticIdsSeveritiesAndSpans(string relativeTestCasePath)
     {
-        string rootPath = GetRepositoryRoot();
-        string fullPath = Path.Combine(rootPath, "tests", "Kassyi.GSharp.Tests.Shared", "TestCases", relativeTestCasePath);
+        string fullPath = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "TestCases", relativeTestCasePath);
         string source = await File.ReadAllTextAsync(fullPath);
 
         var analyzerDiagnostics = (await RoslynTestUtility.GetAnalyzerDiagnosticsAsync(source, new GpuKernelAnalyzer()))
@@ -300,17 +297,5 @@ public partial class DiagnosticParityTests : TranspilerTestBase
 
     [GeneratedRegex(@"^[A-Z]{3}\d{4}$")]
     private static partial Regex DiagnosticIdRegex();
-
-    private static string GetRepositoryRoot([CallerFilePath] string callerPath = "")
-    {
-        var dirPath = Path.GetDirectoryName(callerPath) ?? throw new InvalidOperationException($"Invalid caller path: {callerPath}");
-        var dir = new DirectoryInfo(dirPath);
-        while (dir != null && dir.GetFiles("Henicos.slnx").Length == 0)
-        {
-            dir = dir.Parent;
-        }
-
-        return dir?.FullName ?? throw new InvalidOperationException("Failed to resolve repository root directory.");
-    }
 }
 

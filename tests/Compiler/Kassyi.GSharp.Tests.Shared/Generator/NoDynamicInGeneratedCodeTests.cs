@@ -16,8 +16,7 @@ public class NoDynamicInGeneratedCodeTests
     [Scenario(TestScenario.SadPath)]
     public void NoDynamicInVerifiedSnapshots()
     {
-        var repoRoot = FindRepoRoot();
-        var testsDirectory = Path.Combine(repoRoot, "tests");
+        var testsDirectory = RepositoryPaths.Combine("tests");
         var verifiedFiles = Directory.GetFiles(testsDirectory, "*.verified.cs", SearchOption.AllDirectories);
 
         var violations = new List<string>();
@@ -70,20 +69,5 @@ public class NoDynamicInGeneratedCodeTests
     {
         return typeSyntax is IdentifierNameSyntax id && id.Identifier.ValueText == "dynamic"
             || typeSyntax.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>().Any(id => id.Identifier.ValueText == "dynamic");
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "Henicos.slnx")))
-            {
-                return dir.FullName;
-            }
-            dir = dir.Parent;
-        }
-
-        throw new InvalidOperationException("Could not find repository root containing Henicos.slnx");
     }
 }

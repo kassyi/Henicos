@@ -165,8 +165,7 @@ public class NativeApiYamlReaderTests
     [InlineData("curand_api.yml")]
     public void Test_TryRead_BuiltInDefinitions_ParseWithoutErrors(string fileName)
     {
-        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "../../../../../../src/NativeApi", fileName));
+        var path = RepositoryPaths.Combine("src", "NativeApi", fileName);
         var yaml = File.ReadAllText(path);
 
         var success = NativeApiYamlReader.TryRead(yaml, out var definition, out var error);

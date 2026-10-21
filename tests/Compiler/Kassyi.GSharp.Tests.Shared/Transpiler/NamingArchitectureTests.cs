@@ -111,7 +111,7 @@ public partial class NamingArchitectureTests
     [Scenario(TestScenario.SadPath)]
     public void Test_InternalNames_DoNotUseRenamedFamilyPrefixes()
     {
-        var path = Path.Combine(GetCompilerRoot(), "GSharpInternalNames.cs");
+        var path = Path.Combine(RepositoryPaths.CompilerProject, "GSharpInternalNames.cs");
         var root = CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
 
         foreach (var literal in root.DescendantNodes().OfType<LiteralExpressionSyntax>())
@@ -170,7 +170,7 @@ public partial class NamingArchitectureTests
 
     private static IEnumerable<(string FileName, SyntaxNode Root)> ParseEmitterSources()
     {
-        var compilerRoot = GetCompilerRoot();
+        var compilerRoot = RepositoryPaths.CompilerProject;
         foreach (var directory in s_emitterDirectories)
         {
             foreach (var path in Directory.EnumerateFiles(Path.Combine(compilerRoot, directory), "*.cs",
@@ -187,21 +187,5 @@ public partial class NamingArchitectureTests
                 yield return (fileName, CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot());
             }
         }
-    }
-
-    private static string GetCompilerRoot([CallerFilePath] string callerFilePath = "")
-    {
-        var dir = new DirectoryInfo(Path.GetDirectoryName(callerFilePath) ?? AppContext.BaseDirectory);
-        while (dir != null && dir.GetFiles("Henicos.slnx").Length == 0)
-        {
-            dir = dir.Parent;
-        }
-
-        if (dir == null)
-        {
-            throw new DirectoryNotFoundException("Could not locate the repository root (Henicos.slnx).");
-        }
-
-        return Path.Combine(dir.FullName, "src", "Compiler", "Kassyi.GSharp.Compiler");
     }
 }

@@ -17,22 +17,7 @@ public class MSBuildTransitiveCopyTests : IDisposable
         _testRoot = Path.Combine(Path.GetTempPath(), "GSharpIntegrationTests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testRoot);
 
-        _repoRoot = GetRepositoryRoot();
-    }
-
-    private static string GetRepositoryRoot()
-    {
-        var current = new DirectoryInfo(Directory.GetCurrentDirectory());
-        while (current != null)
-        {
-            if (current.GetFiles("Henicos.slnx").Length > 0)
-            {
-                return current.FullName;
-            }
-            current = current.Parent;
-        }
-
-        throw new InvalidOperationException("Repository root containing Henicos.slnx not found.");
+        _repoRoot = RepositoryPaths.Root;
     }
 
     public void Dispose()

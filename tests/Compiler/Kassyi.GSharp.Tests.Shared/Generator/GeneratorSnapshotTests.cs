@@ -39,27 +39,10 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         }
     }
 
-    private static string GetRepositoryRoot([System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "")
-    {
-        var dirPath = Path.GetDirectoryName(callerFilePath) ?? AppContext.BaseDirectory;
-        var dir = new DirectoryInfo(dirPath);
-        while (dir != null)
-        {
-            if (dir.GetFiles("Henicos.slnx").Length > 0)
-            {
-                return dir.FullName;
-            }
-
-            dir = dir.Parent;
-        }
-
-        throw new InvalidOperationException("Repository root containing Henicos.slnx not found.");
-    }
-
     private static string GetSnapshotsDirectory()
     {
-        var rootDir = GetRepositoryRoot();
-        var snapshotDir = Path.Combine(rootDir, "tests", "Kassyi.GSharp.Tests.Shared", "Generator", "Snapshots");
+        var rootDir = RepositoryPaths.Root;
+        var snapshotDir = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Generator", "Snapshots");
         if (!Directory.Exists(snapshotDir))
         {
             Directory.CreateDirectory(snapshotDir);
@@ -221,7 +204,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     [MemberData(nameof(GetSnapshotTestCases))]
     public async Task Test_GeneratorSnapshots(string relativeFilePath)
     {
-        var rootDir = GetRepositoryRoot();
+        var rootDir = RepositoryPaths.Root;
         var sourcePath = Path.Combine(rootDir, relativeFilePath);
         var sourceDir = Path.GetDirectoryName(sourcePath) ?? rootDir;
 
@@ -273,7 +256,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
     [Fact]
     public void TestCasesAndSnapshots_ShouldBeConsistent()
     {
-        var rootDir = GetRepositoryRoot();
+        var rootDir = RepositoryPaths.Root;
         var mandatorySnapshotKernels = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var relativePath in GetSnapshotTestCases())
@@ -284,9 +267,9 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
 
         var snapshotDirs = new[]
         {
-            Path.Combine(rootDir, "tests", "Kassyi.GSharp.Tests.Shared", "Generator", "Snapshots"),
-            Path.Combine(rootDir, "tests", "Kassyi.GSharp.Tests.Cpu", "Snapshots"),
-            Path.Combine(rootDir, "tests", "Kassyi.GSharp.Tests.Cuda", "Snapshots")
+            RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Generator", "Snapshots"),
+            RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Cpu", "Snapshots"),
+            RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Cuda", "Snapshots")
         };
 
         var snapshotFiles = snapshotDirs
