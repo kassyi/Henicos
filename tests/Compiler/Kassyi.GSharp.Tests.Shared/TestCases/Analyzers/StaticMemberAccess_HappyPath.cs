@@ -26,8 +26,8 @@ public static partial class KHappy
         int gdim = GridDimension.X;
         int warpSize = Warp.Size;
         Color c = Color.Green;
-        int nameLen = nameof(CfgHappy.M).Length;
+        string name = nameof(CfgHappy.M);
 
-        a[tid] = CfgHappy.N + (int)c + bid + bdim + gdim + warpSize + nameLen;
+        a[tid] = CfgHappy.N + (int)c + bid + bdim + gdim + warpSize + name.Length;
     }
 }
