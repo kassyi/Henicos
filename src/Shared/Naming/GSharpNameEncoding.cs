@@ -42,30 +42,29 @@ internal static class GSharpNameEncoding
             throw new ArgumentNullException(nameof(source));
         }
 
-        var normalized = source.Replace("\r\n", "\n");
-        if (normalized.StartsWith(SymbolHeaderPrefix, StringComparison.Ordinal))
+        var startIndex = 0;
+        if (source.StartsWith(SymbolHeaderPrefix, StringComparison.Ordinal))
         {
-            var eolIndex = normalized.IndexOf('\n');
-            if (eolIndex >= 0)
-            {
-                normalized = normalized.Substring(eolIndex + 1);
-            }
-            else
-            {
-                normalized = string.Empty;
-            }
+            var eolIndex = source.IndexOf('\n');
+            startIndex = eolIndex >= 0 ? eolIndex + 1 : source.Length;
         }
 
         unchecked
         {
             var hash = 14695981039346656037UL;
-            foreach (var c in normalized)
+            for (var i = startIndex; i < source.Length; i++)
             {
+                var c = source[i];
+                if (c == '\r' && i + 1 < source.Length && source[i + 1] == '\n')
+                {
+                    continue;
+                }
+
                 hash ^= c;
                 hash *= 1099511628211UL;
             }
 
-            return hash.ToString("x16");
+            return hash.ToString("x16", CultureInfo.InvariantCulture);
         }
     }
 
@@ -75,26 +74,32 @@ internal static class GSharpNameEncoding
     public static bool TryReadSymbolHeaderHash(string sourceText, out string hash)
     {
         hash = string.Empty;
-        if (string.IsNullOrEmpty(sourceText))
+        if (string.IsNullOrEmpty(sourceText) || !sourceText.StartsWith(SymbolHeaderPrefix, StringComparison.Ordinal))
         {
             return false;
         }
 
-        var line = sourceText;
         var eolIndex = sourceText.IndexOf('\n');
-        if (eolIndex >= 0)
+        var end = eolIndex >= 0 ? eolIndex : sourceText.Length;
+        var start = SymbolHeaderPrefix.Length;
+
+        while (start < end && char.IsWhiteSpace(sourceText[start]))
         {
-            line = sourceText.Substring(0, eolIndex);
+            start++;
         }
 
-        line = line.TrimEnd('\r');
-        if (!line.StartsWith(SymbolHeaderPrefix, StringComparison.Ordinal))
+        while (end > start && char.IsWhiteSpace(sourceText[end - 1]))
+        {
+            end--;
+        }
+
+        if (end <= start)
         {
             return false;
         }
 
-        hash = line.Substring(SymbolHeaderPrefix.Length).Trim();
-        return hash.Length > 0;
+        hash = new StringBuilder(end - start).Append(sourceText, start, end - start).ToString();
+        return true;
     }
 
     /// <summary>Formats the symbol header line.</summary>
@@ -133,7 +138,7 @@ internal static class GSharpNameEncoding
                 continue;
             }
 
-            var identifier = sourceBodyWithoutHeader.Substring(start, end - start);
+            var identifier = new StringBuilder(end - start).Append(sourceBodyWithoutHeader, start, end - start).ToString();
             if (!seen.Add(identifier))
             {
                 continue;
@@ -146,12 +151,12 @@ internal static class GSharpNameEncoding
                 TryDecode(full, out csName);
             }
 
-            if (string.IsNullOrEmpty(csName))
+            if (csName is null || csName.Length == 0)
             {
                 TryDecode(identifier, out csName);
             }
 
-            if (string.IsNullOrEmpty(csName))
+            if (csName is null || csName.Length == 0)
             {
                 continue;
             }
@@ -191,28 +196,42 @@ internal static class GSharpNameEncoding
             return result;
         }
 
-        var lines = gsymContent.Split('\n');
         string? headerHash = null;
-
-        foreach (var rawLine in lines)
+        var pos = 0;
+        while (pos < gsymContent.Length)
         {
-            var line = rawLine.Trim();
-            if (line.Length == 0)
+            var eol = gsymContent.IndexOf('\n', pos);
+            var lineEnd = eol >= 0 ? eol : gsymContent.Length;
+            var lineStart = pos;
+            pos = eol >= 0 ? eol + 1 : gsymContent.Length;
+
+            while (lineStart < lineEnd && char.IsWhiteSpace(gsymContent[lineStart]))
+            {
+                lineStart++;
+            }
+
+            while (lineEnd > lineStart && char.IsWhiteSpace(gsymContent[lineEnd - 1]))
+            {
+                lineEnd--;
+            }
+
+            if (lineEnd <= lineStart)
             {
                 continue;
             }
 
-            if (headerHash is null && TryExtractJsonKeyValue(line, "gsharp_symbols", out var fileHash))
+            if (headerHash is null && TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "gsharp_symbols", out var fileHash))
             {
                 headerHash = fileHash;
                 if (expectedHash is not null && !string.Equals(headerHash, expectedHash, StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException($"Symbol file hash '{headerHash}' does not match source hash '{expectedHash}'.");
                 }
+
                 continue;
             }
 
-            if (expectedHash is not null && headerHash is null && TryExtractJsonKeyValue(line, "symbols", out var itemHash))
+            if (expectedHash is not null && headerHash is null && TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "symbols", out var itemHash))
             {
                 if (!string.Equals(itemHash, expectedHash, StringComparison.Ordinal))
                 {
@@ -220,7 +239,8 @@ internal static class GSharpNameEncoding
                 }
             }
 
-            if (TryExtractJsonKeyValue(line, "cpp", out var cpp) && TryExtractJsonKeyValue(line, "cs", out var cs))
+            if (TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "cpp", out var cpp) &&
+                TryExtractJsonKeyValue(gsymContent, lineStart, lineEnd, "cs", out var cs))
             {
                 result[cpp] = cs;
             }
@@ -261,13 +281,13 @@ internal static class GSharpNameEncoding
                 continue;
             }
 
-            var identifier = text.Substring(start, end - start);
-            if (!symbolMap.TryGetValue(identifier, out var mapped) || string.IsNullOrEmpty(mapped))
+            var identifier = new StringBuilder(end - start).Append(text, start, end - start).ToString();
+            if (!symbolMap.TryGetValue(identifier, out var mapped) || mapped is null || mapped.Length == 0)
             {
                 TryDecode(identifier, out mapped);
             }
 
-            if (!string.IsNullOrEmpty(mapped))
+            if (mapped is not null && mapped.Length > 0)
             {
                 builder.Append(text, copied, start - copied).Append(mapped);
                 copied = end;
@@ -311,11 +331,11 @@ internal static class GSharpNameEncoding
         return sb.ToString();
     }
 
-    private static bool TryExtractJsonKeyValue(string jsonLine, string key, out string value)
+    private static bool TryExtractJsonKeyValue(string jsonText, int lineStart, int lineEnd, string key, out string value)
     {
         value = string.Empty;
         var keyPattern = "\"" + key + "\":\"";
-        var keyIndex = jsonLine.IndexOf(keyPattern, StringComparison.Ordinal);
+        var keyIndex = jsonText.IndexOf(keyPattern, lineStart, lineEnd - lineStart, StringComparison.Ordinal);
         if (keyIndex < 0)
         {
             return false;
@@ -325,9 +345,9 @@ internal static class GSharpNameEncoding
         var sb = new StringBuilder();
         var escaping = false;
 
-        for (var i = valStart; i < jsonLine.Length; i++)
+        for (var i = valStart; i < lineEnd; i++)
         {
-            var c = jsonLine[i];
+            var c = jsonText[i];
             if (escaping)
             {
                 if (c == 'n') sb.Append('\n');
