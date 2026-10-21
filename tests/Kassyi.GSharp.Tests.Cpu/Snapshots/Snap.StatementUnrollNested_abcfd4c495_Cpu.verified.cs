@@ -1,4 +1,4 @@
-﻿extern "C" __global__ void SYN_156_LoopUnrollStatements_StatementUnrollNested(GSharpArray<int> __gsharp_id_0_data){
+﻿extern "C" __global__ void __gsharp_k_Kassyi__GSharp__Tests__TestCases__Analyzers__SYN_u156_uLoopUnrollStatements__StatementUnrollNested(GSharpArray<int> __gsharp_id_0_data){
 int __gsharp_id_1_sum = 0;
 for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<2;__gsharp_id_2_i++)
 {

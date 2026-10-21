@@ -1,19 +1,19 @@
-﻿#ifndef __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_FileLocalPair_MicroMod__
-#define __GSHARP_STRUCT_Kassyi_GSharp_Tests_Shared_Syntax_FileLocalPair_MicroMod__
-struct Kassyi_GSharp_Tests_Shared_Syntax_FileLocalPair_MicroMod
+﻿#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FileLocalPair_uMicroMod_f0__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FileLocalPair_uMicroMod_f0__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FileLocalPair_uMicroMod_f0
 {
 int __gsharp_mb_Left;
 int __gsharp_mb_Right;
 }
 ;
 #endif
-extern "C" __declspec(dllexport) void MicroModifiersTarget_FileLocalTypes(GSharpArray<int> __gsharp_id_0_output){
-Kassyi_GSharp_Tests_Shared_Syntax_FileLocalPair_MicroMod __gsharp_id_1_p = ([&]() {
-Kassyi_GSharp_Tests_Shared_Syntax_FileLocalPair_MicroMod __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Left = 10; __gsharp_tmp.__gsharp_mb_Right = 20; return __gsharp_tmp; }
+extern "C" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MicroModifiersTarget__FileLocalTypes(GSharpArray<int> __gsharp_id_0_output){
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FileLocalPair_uMicroMod_f0 __gsharp_id_1_p = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FileLocalPair_uMicroMod_f0 __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Left = 10; __gsharp_tmp.__gsharp_mb_Right = 20; return __gsharp_tmp; }
 ());
 __gsharp_id_0_output[0]=__gsharp_id_1_p.__gsharp_mb_Left+__gsharp_id_1_p.__gsharp_mb_Right;
 }
-extern "C" __declspec(dllexport) void __gsharp_launch_MicroModifiersTarget_FileLocalTypes(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<int> __gsharp_id_0_output)
+extern "C" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MicroModifiersTarget__FileLocalTypes(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<int> __gsharp_id_0_output)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
@@ -36,7 +36,7 @@ int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
 int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
 int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-MicroModifiersTarget_FileLocalTypes(__gsharp_id_0_output);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MicroModifiersTarget__FileLocalTypes(__gsharp_id_0_output);
 }
 }
 if (__gsharp_launch_error.HasError()) {

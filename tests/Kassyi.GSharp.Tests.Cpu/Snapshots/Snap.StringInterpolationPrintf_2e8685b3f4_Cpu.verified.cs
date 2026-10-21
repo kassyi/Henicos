@@ -1,10 +1,10 @@
-﻿extern "C" __declspec(dllexport) void StringsAndAttributesTarget_StringInterpolationPrintf(GSharpArray<unsigned int> __gsharp_id_0_data){
+﻿extern "C" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__StringInterpolationPrintf(GSharpArray<unsigned int> __gsharp_id_0_data){
 unsigned int __gsharp_id_1_reg = __gsharp_id_0_data[0];
 __gsharp_unsupported("Gpu.InlinePtx is not supported by the StandardCppDialect dialect");
 ;
 __gsharp_id_0_data[0]=__gsharp_id_1_reg;
 }
-extern "C" __declspec(dllexport) void __gsharp_launch_StringsAndAttributesTarget_StringInterpolationPrintf(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<unsigned int> __gsharp_id_0_data)
+extern "C" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__StringInterpolationPrintf(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<unsigned int> __gsharp_id_0_data)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
@@ -27,7 +27,7 @@ int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
 int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
 int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-StringsAndAttributesTarget_StringInterpolationPrintf(__gsharp_id_0_data);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__StringInterpolationPrintf(__gsharp_id_0_data);
 }
 }
 if (__gsharp_launch_error.HasError()) {

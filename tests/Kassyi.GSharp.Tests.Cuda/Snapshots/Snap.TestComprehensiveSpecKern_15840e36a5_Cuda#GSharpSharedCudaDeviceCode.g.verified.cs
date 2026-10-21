@@ -6,14 +6,14 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"struct DebugReduc_PhysicsVector;
-__forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector __gsharp_id_0_v);
+public const string Source = @"struct __gsharp_ty_DebugReduc__PhysicsVector;
+__forceinline__ __device__ float __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__ComputeMagnitude(__gsharp_ty_DebugReduc__PhysicsVector __gsharp_id_0_v);
 
-__noinline__ __device__ bool IsPositive(float __gsharp_id_0_value);
+__noinline__ __device__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value);
 
-#ifndef __GSHARP_STRUCT_DebugReduc_PhysicsVector__
-#define __GSHARP_STRUCT_DebugReduc_PhysicsVector__
-struct DebugReduc_PhysicsVector
+#ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__PhysicsVector__
+#define __GSHARP_STRUCT___gsharp_ty_DebugReduc__PhysicsVector__
+struct __gsharp_ty_DebugReduc__PhysicsVector
 {
 float __gsharp_mb_X;
 float __gsharp_mb_Y;
@@ -21,11 +21,11 @@ float __gsharp_mb_Z;
 }
 ;
 #endif
-__forceinline__ __device__ float ComputeMagnitude(DebugReduc_PhysicsVector __gsharp_id_0_v){
+__forceinline__ __device__ float __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__ComputeMagnitude(__gsharp_ty_DebugReduc__PhysicsVector __gsharp_id_0_v){
 return (float)sqrt(__gsharp_id_0_v.__gsharp_mb_X*__gsharp_id_0_v.__gsharp_mb_X+__gsharp_id_0_v.__gsharp_mb_Y*__gsharp_id_0_v.__gsharp_mb_Y+__gsharp_id_0_v.__gsharp_mb_Z*__gsharp_id_0_v.__gsharp_mb_Z);
 }
 
-__noinline__ __device__ bool IsPositive(float __gsharp_id_0_value){
+__noinline__ __device__ bool __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__IsPositive(float __gsharp_id_0_value){
 return __gsharp_id_0_value>0;
 }
 
