@@ -22,6 +22,15 @@ internal static class MethodSignatureTranspiler
         ref TranspileContext context)
     {
         var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
+        if (isDevice && methodSymbol is { IsStatic: false } && methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction))
+        {
+            context.Reporter.Report(
+                GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
+                method.Identifier.GetLocation(),
+                methodSymbol.ContainingType.Name,
+                methodSymbol.Name);
+        }
+
         ReportUnsupportedParameterTypes(methodSymbol, ref context);
         ReportKernelParameterSpace(methodSymbol, method, isDevice, ref context);
 
