@@ -80,5 +80,63 @@ public class AotConfigurationTests
             }
         }
     }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_AotConfiguration_EmitsMatchingGsymFileAndSourceHashHeader()
+    {
+        var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
+        try
+        {
+            var sourceCode = """
+                using Kassyi.GSharp.Core;
+                namespace AotTest {
+                    public struct UserDataStruct {
+                        public int FieldA;
+                    }
+
+                    public partial class ExtremelyLongClassNameToTriggerShorteningThresholdInGlobalCppNames_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789 {
+                        [GpuKernel]
+                        public static void ExtremelyLongMethodNameToTriggerShorteningThresholdInGlobalCppNames_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789(UserDataStruct[] data, int paramX) {
+                            var localVal = paramX;
+                        }
+                    }
+                }
+                """;
+
+            var additionalOptions = new Dictionary<string, string>
+            {
+                { "build_property.IntermediateOutputPath", "." },
+                { "build_property.MSBuildProjectDirectory", tempDir }
+            };
+
+            var (_, _, _) = RoslynTestUtility.RunGenerator(sourceCode, "Cuda", additionalOptions);
+
+            var cuArtifact = System.IO.Path.Combine(tempDir, "Kassyi.GSharp.Kernels_MegaTestCompilationBase.g.cu");
+            var gsymArtifact = cuArtifact + ".gsym.json";
+
+            Assert.True(System.IO.File.Exists(cuArtifact), $"Expected cu artifact {cuArtifact} was not generated.");
+            Assert.True(System.IO.File.Exists(gsymArtifact), $"Expected gsym artifact {gsymArtifact} was not generated.");
+
+            var cuContent = System.IO.File.ReadAllText(cuArtifact);
+            var gsymContent = System.IO.File.ReadAllText(gsymArtifact);
+
+            Assert.True(Kassyi.GSharp.Naming.GSharpNameEncoding.TryReadSymbolHeaderHash(cuContent, out var headerHash),
+                "Source header hash not found in .g.cu file.");
+
+            var map = Kassyi.GSharp.Naming.GSharpNameEncoding.ParseSymbolFile(gsymContent, expectedHash: headerHash);
+            Assert.NotEmpty(map);
+
+            Assert.Contains(map.Keys, key => key.Contains("_h"));
+        }
+        finally
+        {
+            if (System.IO.Directory.Exists(tempDir))
+            {
+                System.IO.Directory.Delete(tempDir, true);
+            }
+        }
+    }
 }
 

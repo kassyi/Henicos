@@ -345,6 +345,10 @@ doctest file_path assemblies="":
 rebuild-and-test:
     dotnet build --no-incremental && just test
 
+# Demangle C++ / G# identifiers in a build or execution log file using symbol maps (*.gsym.json)
+gsharp-demangle log_path symbols_path="":
+    pwsh ./scripts/Demangle-GSharpLog.ps1 -LogPath "{{log_path}}" -SymbolsPath "{{symbols_path}}"
+
 # Print a trusted_keys.txt line (`<key>,fnv1a64:<fingerprint>`) for a 64-char hex or 44-char Base64 Ed25519 public key
 [windows]
 trusted-key-line key:
