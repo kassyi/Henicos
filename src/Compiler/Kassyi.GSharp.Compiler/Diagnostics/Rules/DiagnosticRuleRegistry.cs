@@ -11,6 +11,7 @@ internal static class DiagnosticRuleRegistry
         ManualEnumeratorRule.Instance,
         ParamsModifierNotSupportedRule.Instance,
         ProhibitedApiRule.Instance,
+        StaticMemberAccessRule.Instance,
         UserDefinedOperatorRule.Instance
     );
 
