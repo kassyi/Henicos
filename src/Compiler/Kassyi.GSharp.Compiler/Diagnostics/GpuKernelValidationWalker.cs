@@ -30,6 +30,9 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
     private static readonly ImmutableArray<ISyntaxValidationRule<MemberAccessExpressionSyntax>> s_memberAccessRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<MemberAccessExpressionSyntax>>().ToImmutableArray();
 
+    private static readonly ImmutableArray<ISyntaxValidationRule<IdentifierNameSyntax>> s_identifierNameRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<IdentifierNameSyntax>>().ToImmutableArray();
+
     private static readonly ImmutableArray<ISyntaxValidationRule<ParameterSyntax>> s_parameterRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<ParameterSyntax>>().ToImmutableArray();
 
@@ -133,6 +136,16 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         }
 
         base.VisitMemberAccessExpression(node);
+    }
+
+    public override void VisitIdentifierName(IdentifierNameSyntax node)
+    {
+        foreach (var rule in s_identifierNameRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitIdentifierName(node);
     }
 
     public override void VisitParameter(ParameterSyntax node)

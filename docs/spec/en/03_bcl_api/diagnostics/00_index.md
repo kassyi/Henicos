@@ -72,6 +72,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0062](GSH0062.md) | Error | User-defined operators are not supported in GPU code |
 | [GSH0063](GSH0063.md) | Error | Device functions that reach a barrier cannot be recursive |
 | [GSH0066](GSH0066.md) | Warning | Kernel parameters exceed the parameter space limit |
+| [GSH0067](GSH0067.md) | Error | Non-const static fields and properties are not supported in GPU code |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 

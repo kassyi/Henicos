@@ -577,5 +577,14 @@
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "StaticMemberAccessNotSupported",
+    "id": "GSH0067",
+    "title": "Non-const static fields and properties are not supported in GPU code",
+    "messageFormat": "The static member '{0}.{1}' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
   }
 ]
