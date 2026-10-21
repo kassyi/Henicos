@@ -29,7 +29,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_2_tid=threadIdx.x;
-__gsharp_ctx->__gsharp_id_3_shared={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
+__gsharp_ctx->__gsharp_id_3_shared={ (int*)__gsharp_allocate_smem(0x03b69bc16ee586d8ull, (256) * sizeof(int), alignof(int)) };
 __gsharp_ctx->__gsharp_id_3_shared[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_0_value;
 __gsharp_state=1;
 return false;
@@ -147,8 +147,7 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(int value, int length, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange __gsharp_ctx, ref int __gsharp_result) {
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
-SharedMemory<int> shared = new(256);
+SharedMemory<int> shared = new(256, 0x03b69bc16ee586d8UL);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
@@ -525,7 +524,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel(input, output, length, usePrimary, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {

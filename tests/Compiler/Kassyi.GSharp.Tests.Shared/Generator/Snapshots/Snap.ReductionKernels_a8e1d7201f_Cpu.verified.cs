@@ -260,7 +260,7 @@ public float __gsharp_warp_temp_5;
 public float __gsharp_warp_temp_6;
 }
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel(global::Kassyi.GSharp.Core.Float4[] input, float[] output, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel __gsharp_ctx) {
-        SharedMemory<float> sdata = new(8);
+        SharedMemory<float> sdata = new(8, 0x80cb9df64cf94963UL);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
@@ -458,7 +458,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel(input, output, n, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {

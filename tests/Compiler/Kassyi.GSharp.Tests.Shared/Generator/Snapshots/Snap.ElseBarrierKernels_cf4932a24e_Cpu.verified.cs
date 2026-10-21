@@ -139,7 +139,7 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ElseBarrierKernels__ReverseWithElseBarrierKernel(int[] input, int[] output, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ElseBarrierKernels__ReverseWithElseBarrierKernel __gsharp_ctx) {
-        SharedMemory<int> shared = new(256);
+        SharedMemory<int> shared = new(256, 0x800ff4ae45fcc41eUL);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
@@ -247,7 +247,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ElseBarrierKernels__ReverseWithElseBarrierKernel(input, output, length, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {
