@@ -393,7 +393,7 @@ public static class ManagedGpuContext
     /// <param name="width">The logical warp width.</param>
     /// <returns>The shuffled value.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_shuffle_read_xor_sync<TContext, T>(TContext ctx, uint mask, T val, uint delta,
+    public static T __gsharp_warp_shuffle_read_xor_sync<TContext, T>(TContext ctx, uint mask, T val, int delta,
         int width = 32) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
@@ -402,7 +402,7 @@ public static class ManagedGpuContext
         var warpStartTid = linearTid - laneId;
 
         var logicalLane = laneId % width;
-        var targetLogicalLane = logicalLane ^ (int)delta;
+        var targetLogicalLane = logicalLane ^ delta;
 
         if (targetLogicalLane >= width)
         {
@@ -431,7 +431,7 @@ public static class ManagedGpuContext
     /// <param name="width">The logical warp width.</param>
     /// <returns>The shuffled value.</returns>
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static T __gsharp_warp_shuffle_read_sync<TContext, T>(TContext ctx, uint mask, T val, uint srcLane,
+    public static T __gsharp_warp_shuffle_read_sync<TContext, T>(TContext ctx, uint mask, T val, int srcLane,
         int width = 32) where T : unmanaged
     {
         var linearTid = ThreadIdxZ * BlockDimY * BlockDimX + ThreadIdxY * BlockDimX + ThreadIdxX;
@@ -440,7 +440,7 @@ public static class ManagedGpuContext
         var warpStartTid = linearTid - laneId;
 
         var logicalLane = laneId % width;
-        var targetLogicalLane = (int)srcLane;
+        var targetLogicalLane = srcLane;
 
         if (targetLogicalLane >= width)
         {
