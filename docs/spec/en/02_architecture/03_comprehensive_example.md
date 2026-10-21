@@ -298,7 +298,7 @@ The generator emits one C# file per kernel class. The CUDA C++ for each kernel i
 
 Inside the C++, every user identifier is renamed from its symbol: parameters and locals become `__gsharp_id_{n}_{name}`, and fields of structs that G# defines become `__gsharp_mb_{name}`. The renaming keeps C# names that are reserved in C++ or CUDA from breaking the build. See [Identifier Naming](01_aot_transpiler.md#126-identifier-naming-cppnameresolver).
 
-The listing below is the CUDA snapshot of this file (`tests/Kassyi.GSharp.Tests.Cuda/Snapshots/Snap.TestComprehensiveSpecKern_*_Cuda#ComprehensiveSpecKernel.g.verified.cs`). Regenerate §8.1 and §8.3 with `node scripts/sync-comprehensive-spec.js`.
+The listing below is the CUDA snapshot of this file (`tests/Compiler/Kassyi.GSharp.Tests.Cuda/Snapshots/Snap.TestComprehensiveSpecKern_*_Cuda#ComprehensiveSpecKernel.g.verified.cs`). Regenerate §8.1 and §8.3 with `node scripts/sync-comprehensive-spec.js`.
 
 <!-- BEGIN CPP -->
 
@@ -858,7 +858,7 @@ finally
 
 ## 8.4 Sad Path Compilation Errors (Diagnostics)
 
-To ensure that the constraints outlined in [01_language/05_limitations.md](../01_language/05_limitations.md) are strictly enforced, G# includes an exhaustive suite of diagnostic tests (`tests/Kassyi.GSharp.Tests.Shared/Generator/GEN-05-07_GeneratorDiagnosticsTests.cs`).
+To ensure that the constraints outlined in [01_language/05_limitations.md](../01_language/05_limitations.md) are strictly enforced, G# includes an exhaustive suite of diagnostic tests (`tests/Compiler/Kassyi.GSharp.Tests.Shared/Generator/GEN-05-07_GeneratorDiagnosticsTests.cs`).
 
 For example, when attempting to write invalid C# code in a kernel:
 

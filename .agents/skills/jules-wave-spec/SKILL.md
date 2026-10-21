@@ -33,8 +33,8 @@ An issue-specific rule overrides a rule here only when it names that rule explic
   - Do not use `[Trait("Category", ...)]` magic strings, and do not make test classes `partial`.
   - Do not add `using Kassyi.GSharp.Tests.Infrastructure;`. `tests/Directory.Build.props` already imports it globally.
   - Files under `tests/**/TestCases/` are not compiled by the test project, so a broken one does not fail `just test`. Each one is compiled on its own by the test helpers, so it must compile on its own: declare every type it uses inside the same file, and do not reference types from other test case files. Before you push, check each new or changed test case file by compiling it alone (for example with a temporary test that asserts `RoslynTestUtility.GetTestCaseContext(path)` has no compilation errors), and remove that temporary test afterwards.
-- Run the tests with `DiffEngine_Disabled=true dotnet test tests/Kassyi.GSharp.Tests.Cpu`. Approve only the new snapshots that the issue lists; do not approve any other snapshot.
-- CUDA tests cannot run in this environment. Do not edit `tests/Kassyi.GSharp.Tests.Cuda/**`.
+- Run the tests with `DiffEngine_Disabled=true dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu`. Approve only the new snapshots that the issue lists; do not approve any other snapshot.
+- CUDA tests cannot run in this environment. Do not edit `tests/Compiler/Kassyi.GSharp.Tests.Cuda/**`.
 - PR title and every commit message: `<type>(<area>): <summary> (#N)`, where `#N` is **this** issue's number and `<type>` is the one given in the issue-specific steps. Start the PR body with `Closes #N`, using the same issue number (never a pull request number or a Jules task ID), and include the output of the test command.
 - Numbers and facts that you write into documentation (sizes in bytes, limits, counts, which types are affected) must match the code. Check each one against the code before you push; do not copy a figure from the issue without checking it.
 - Review feedback arrives as PR comments that start with `@jules`. Apply every item marked "Required" before you do anything else in the PR.
