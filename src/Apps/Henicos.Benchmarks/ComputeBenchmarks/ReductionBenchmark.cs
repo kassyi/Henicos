@@ -112,5 +112,5 @@ public class ReductionBenchmark : IComputeBenchmark
 
     public IntPtr GetNativeFunction() => NativeKernelInvoker.FunctionReduction;
     public string NativeKernelName => "ReductionKernel_Native";
-    public string GSharpKernelName => "ReductionKernels_ReductionKernel";
+    public string GSharpKernelName => "__gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel";
 }
