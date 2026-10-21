@@ -49,6 +49,7 @@ bool __gsharp_yielded_for_grid_sync = false;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicArithmeticKernel(GSharpArray<int> __gsharp_id_0_intState, GSharpArray<unsigned int> __gsharp_id_1_uintState, GSharpArray<unsigned long long> __gsharp_id_2_ulongState, GSharpArray<float> __gsharp_id_3_floatState, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicArithmeticKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:
@@ -284,6 +285,7 @@ bool __gsharp_yielded_for_grid_sync = false;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicIncDecWrapKernel(GSharpArray<unsigned int> __gsharp_id_0_state, unsigned int __gsharp_id_1_limit, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicIncDecWrapKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:
@@ -471,6 +473,7 @@ bool __gsharp_yielded_for_grid_sync = false;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicFloatAddStressKernel(GSharpArray<float> __gsharp_id_0_globalSum, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicFloatAddStressKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:
@@ -656,6 +659,7 @@ bool __gsharp_yielded_for_grid_sync = false;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicRefParameterKernel(GSharpArray<int> __gsharp_id_0_counter, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AtomicRefParameterKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:

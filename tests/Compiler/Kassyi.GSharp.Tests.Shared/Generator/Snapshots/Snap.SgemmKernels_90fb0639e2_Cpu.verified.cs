@@ -54,6 +54,7 @@ int __gsharp_id_14_k;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(GSharpArray<float> __gsharp_id_0_a, GSharpArray<float> __gsharp_id_1_b, GSharpArray<float> __gsharp_id_2_c, int __gsharp_id_3_n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:

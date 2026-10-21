@@ -44,6 +44,7 @@ unsigned int __gsharp_id_1_sum;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__HoistedVarKernel(GSharpArray<int> __gsharp_id_0_data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__HoistedVarKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:
@@ -254,6 +255,7 @@ float __gsharp_warp_temp_3;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__FloatWarpReductionKernel(GSharpArray<float> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__FloatWarpReductionKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:
@@ -270,7 +272,7 @@ return;
 case 1:
 __gsharp_switch_1_state_1:
 {
-__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,16);
+__gsharp_ctx->__gsharp_warp_temp_0=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,16);
 __gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_0;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=2;
@@ -279,7 +281,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,8);
+__gsharp_ctx->__gsharp_warp_temp_1=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,8);
 __gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_1;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=3;
@@ -288,7 +290,7 @@ return;
 case 3:
 __gsharp_switch_1_state_3:
 {
-__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,4);
+__gsharp_ctx->__gsharp_warp_temp_2=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,4);
 __gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_2;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=4;
@@ -297,7 +299,7 @@ return;
 case 4:
 __gsharp_switch_1_state_4:
 {
-__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,2);
+__gsharp_ctx->__gsharp_warp_temp_3=__gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,2);
 __gsharp_ctx->__gsharp_id_5_val+=__gsharp_ctx->__gsharp_warp_temp_3;
 __gsharp_warp_exchange_assign(__gsharp_ctx->__gsharp_id_5_val);
 __gsharp_state=5;
@@ -306,7 +308,7 @@ return;
 case 5:
 __gsharp_switch_1_state_5:
 {
-auto __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,1);
+auto __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_root,0xffffffff,__gsharp_ctx->__gsharp_id_5_val,1);
 __gsharp_ctx->__gsharp_id_5_val+=__gsharp_warp_temp_4;
 if(__gsharp_ctx->__gsharp_id_3_lane==0)
 {
@@ -570,6 +572,7 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HoistedPoint __gsharp_id_3_p;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__StructVarKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HoistedPoint> __gsharp_id_0_items, GSharpArray<float> __gsharp_id_1_output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__StructVarKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:

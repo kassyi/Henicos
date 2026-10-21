@@ -56,6 +56,7 @@ int __gsharp_id_6_tid;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel(GSharpArray<int> __gsharp_id_0_intOutput, GSharpArray<float> __gsharp_id_1_floatOutput, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint> __gsharp_id_2_pointOutput, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:

@@ -198,6 +198,7 @@ int __gsharp_id_30_counter;
 extern ""C"" __declspec(dllexport) void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles, float* __restrict__  __gsharp_id_1_totalMagnitude, bool* __restrict__  __gsharp_id_2_successFlag, __gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal, int __gsharp_id_4_particleCount, int __gsharp_id_5_unrollFactor, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:
@@ -668,6 +669,7 @@ int __gsharp_id_1_tid;
 extern ""C"" __declspec(dllexport) void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess(GSharpArray<int> __gsharp_id_0_data, __gsharp_context_DebugReduc__ComprehensiveSpecKernel__CooperativePhysicsProcess* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:

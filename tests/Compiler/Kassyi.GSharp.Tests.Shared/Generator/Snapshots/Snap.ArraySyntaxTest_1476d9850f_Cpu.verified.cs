@@ -43,6 +43,7 @@ bool __gsharp_yielded_for_grid_sync = false;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Generator__ArraySyntaxTestKernels__ImplicitArrayFormsKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__Generator__ArraySyntaxTestKernels__ImplicitArrayFormsKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:

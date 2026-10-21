@@ -43,6 +43,7 @@ bool __gsharp_yielded_for_grid_sync = false;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__AllocationTestKernel(int* __restrict__  __gsharp_id_0_ioVal, float* __restrict__  __gsharp_id_1_outVal, GSharpArray<int> __gsharp_id_2_arrayVal, unsigned int __gsharp_id_3_constantVal, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__AllocationTestKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:

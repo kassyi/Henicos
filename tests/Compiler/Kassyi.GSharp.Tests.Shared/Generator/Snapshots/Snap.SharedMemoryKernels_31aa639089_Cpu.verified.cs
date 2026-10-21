@@ -45,6 +45,7 @@ Kassyi_GSharp_Core_SharedMemory<int> __gsharp_id_4_shared;
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, int __gsharp_id_2_length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:

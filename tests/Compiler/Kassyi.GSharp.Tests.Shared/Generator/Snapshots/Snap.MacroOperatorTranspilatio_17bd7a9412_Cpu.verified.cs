@@ -116,6 +116,7 @@ bool __gsharp_yielded_for_grid_sync = false;
 extern ""C"" __declspec(dllexport) void __gsharp_k_TestNamespace__TestKernels__MacroKernel(__gsharp_ty_TestNamespace__DummyContext __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_dA, GSharpArray<unsigned int> __gsharp_id_2_dB, GSharpArray<unsigned int> __gsharp_id_3_dResult, __gsharp_context_TestNamespace__TestKernels__MacroKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
+auto* __gsharp_root = __gsharp_ctx;
 switch(__gsharp_state)
 {
 case 0:

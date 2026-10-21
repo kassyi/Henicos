@@ -369,7 +369,8 @@ inline void __gsharp_warp_exchange_assign_impl(T val, uint64_t* exchange) {
 
 // Shuffle k publishes into slot k % 2. Lanes of a converged warp run the same shuffle sequence and a source lane is at
 // most one shuffle ahead, so it never overwrites the slot a slower lane still has to read.
-#define __gsharp_warp_exchange_assign(val) __gsharp_warp_exchange_assign_impl(val, &__gsharp_ctx->__gsharp_warp_exchange[__gsharp_ctx->__gsharp_warp_shuffle_count & 1u])
+// The root is the kernel context of the thread, also inside a device function's state machine.
+#define __gsharp_warp_exchange_assign(val) __gsharp_warp_exchange_assign_impl(val, &__gsharp_root->__gsharp_warp_exchange[__gsharp_root->__gsharp_warp_shuffle_count & 1u])
 
 template<typename TContext, typename T>
 inline T __gsharp_warp_shuffle_read_down_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
