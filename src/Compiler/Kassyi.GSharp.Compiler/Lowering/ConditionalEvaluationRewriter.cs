@@ -19,7 +19,8 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
     private int _tempCounter;
 
     /// <summary>Rewrites the conditional operators in the block that need it.</summary>
-    public BlockSyntax Rewrite(BlockSyntax block) => (BlockSyntax)Visit(block);
+    public BlockSyntax Rewrite(BlockSyntax block) =>
+        Visit(block) as BlockSyntax ?? throw new InvalidOperationException("Conditional evaluation lowering removed the block.");
 
     public override SyntaxNode VisitBlock(BlockSyntax node) => node.WithStatements(RewriteStatements(node.Statements));
 
