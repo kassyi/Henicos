@@ -197,15 +197,46 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
                     .WithTriviaFrom(declarationExpression));
             }
 
-            if (!argument.RefKindKeyword.IsKind(SyntaxKind.None) ||
-                argument.Expression is IdentifierNameSyntax or LiteralExpressionSyntax)
+            if (!argument.RefKindKeyword.IsKind(SyntaxKind.None))
             {
-                return argument;
+                // The reference itself must stay a variable, so only the indices that select it are evaluated once
+                return argument.Expression is ElementAccessExpressionSyntax elementAccess
+                    ? argument.WithExpression(SpillIndices(elementAccess))
+                    : argument;
             }
 
+            return argument.Expression is IdentifierNameSyntax or LiteralExpressionSyntax
+                ? argument
+                : argument.WithExpression(Spill(argument.Expression));
+        }
+
+        private ElementAccessExpressionSyntax SpillIndices(ElementAccessExpressionSyntax elementAccess)
+        {
+            // Outer indices of a jagged access are evaluated before inner ones, so the receiver is spilled first
+            var receiver = elementAccess.Expression is ElementAccessExpressionSyntax inner
+                ? SpillIndices(inner)
+                : elementAccess.Expression;
+
+            var indices = elementAccess.ArgumentList.Arguments;
+            var spilledIndices = ImmutableArray.CreateBuilder<ArgumentSyntax>(indices.Count);
+            foreach (var index in indices)
+            {
+                spilledIndices.Add(index.Expression is IdentifierNameSyntax or LiteralExpressionSyntax
+                    ? index
+                    : index.WithExpression(Spill(index.Expression)));
+            }
+
+            return elementAccess
+                .WithExpression(receiver)
+                .WithArgumentList(elementAccess.ArgumentList.WithArguments(
+                    SyntaxFactory.SeparatedList(spilledIndices, indices.GetSeparators())));
+        }
+
+        private IdentifierNameSyntax Spill(ExpressionSyntax expression)
+        {
             var tempName = parent.GetNextArgumentTempName();
-            hoistedAssignments.Add(CreateTempDeclaration(tempName, argument.Expression.WithoutTrivia()));
-            return argument.WithExpression(SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(argument.Expression));
+            hoistedAssignments.Add(CreateTempDeclaration(tempName, expression.WithoutTrivia()));
+            return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(expression);
         }
 
         internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value) =>
