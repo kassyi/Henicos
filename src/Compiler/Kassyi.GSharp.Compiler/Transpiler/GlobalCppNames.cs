@@ -4,7 +4,7 @@ using Kassyi.GSharp.Naming;
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
-/// Derives the names that share the global C++ scope (types, template parameters) from their symbols with
+/// Derives the names that share the global C++ scope (types, template parameters, device functions) from their symbols with
 /// <see cref="GSharpNameEncoding.Encode"/>, so that distinct C# paths never share one C++ name.
 /// </summary>
 internal static class GlobalCppNames
@@ -31,6 +31,72 @@ internal static class GlobalCppNames
     /// </remarks>
     public static string GetTypeName(INamedTypeSymbol type) =>
         Shorten(GSharpNameEncoding.TypePrefix, GSharpNameEncoding.Encode(GetTypePath(type)));
+
+    /// <summary>
+    /// Returns <c>__gsharp_fn_{type path}__{name}</c> for a device function, with <c>_o{n}</c> when its containing type
+    /// declares more than one method with that name.
+    /// </summary>
+    /// <remarks>
+    /// Every overload gets its own C++ name, so the call that C# bound is the call that runs; C++ overload resolution,
+    /// which differs from C# (an <c>int</c> argument is ambiguous between <c>long</c> and <c>double</c>), never applies.
+    /// </remarks>
+    public static string GetFunctionName(IMethodSymbol method) =>
+        Shorten(GSharpNameEncoding.FunctionPrefix, GSharpNameEncoding.Encode(GetFunctionPath(method)));
+
+    /// <summary>The C# path of <paramref name="method"/>: the path of its containing type and the method.</summary>
+    public static GlobalNamePath GetFunctionPath(IMethodSymbol method)
+    {
+        var definition = GetDefinition(method);
+        var typePath = GetTypePath(definition.ContainingType);
+        var segments = ImmutableArray.CreateBuilder<GlobalNameSegment>(typePath.Segments.Count + 1);
+        foreach (var segment in typePath.Segments)
+        {
+            segments.Add(segment);
+        }
+
+        segments.Add(new GlobalNameSegment(definition.Name, arity: definition.Arity,
+            overloadOrdinal: GetOverloadOrdinal(definition)));
+        return new GlobalNamePath(segments.MoveToImmutable());
+    }
+
+    private static IMethodSymbol GetDefinition(IMethodSymbol method)
+    {
+        var definition = (method.ReducedFrom ?? method).OriginalDefinition;
+        return definition.PartialDefinitionPart ?? definition;
+    }
+
+    // Position among the ordinary methods with the same name in the containing type, in declaration order, or -1 when
+    // the name is not overloaded. Partial types order their parts by file path like file types do.
+    private static int GetOverloadOrdinal(IMethodSymbol method)
+    {
+        var members = method.ContainingType.GetMembers(method.Name);
+        var candidates = new ISymbol[members.Length];
+        var count = 0;
+        foreach (var member in members)
+        {
+            if (member is IMethodSymbol { MethodKind: MethodKind.Ordinary })
+            {
+                candidates[count++] = member;
+            }
+        }
+
+        if (count <= 1)
+        {
+            return -1;
+        }
+
+        Array.Sort(candidates, 0, count, DeclarationOrderComparer.Instance);
+        for (var i = 0; i < count; i++)
+        {
+            if (SymbolEqualityComparer.Default.Equals(candidates[i], method))
+            {
+                return i;
+            }
+        }
+
+        throw new InvalidOperationException(
+            $"The method '{method.Name}' is not a member of '{method.ContainingType.Name}'.");
+    }
 
     /// <summary>Returns <c>__gsharp_tp_{name}</c>.</summary>
     public static string GetTypeParameterName(ITypeParameterSymbol parameter)
@@ -79,7 +145,7 @@ internal static class GlobalCppNames
             }
         }
 
-        Array.Sort(candidates, 0, count, FileTypeOrderComparer.Instance);
+        Array.Sort<INamedTypeSymbol>(candidates, 0, count, DeclarationOrderComparer.Instance);
         for (var i = 0; i < count; i++)
         {
             if (SymbolEqualityComparer.Default.Equals(candidates[i], type))
@@ -89,14 +155,15 @@ internal static class GlobalCppNames
         }
 
         throw new InvalidOperationException(
-            $"The file type '{type.Name}' in '{FileTypeOrderComparer.GetFirstLocation(type).SourceTree?.FilePath}' is not a member of its containing symbol.");
+            $"The file type '{type.Name}' in '{DeclarationOrderComparer.GetFirstLocation(type).SourceTree?.FilePath}' is not a member of its containing symbol.");
     }
 
-    private sealed class FileTypeOrderComparer : IComparer<INamedTypeSymbol>
+    // Orders declarations by file path, then by position in the file.
+    private sealed class DeclarationOrderComparer : IComparer<ISymbol>
     {
-        public static readonly FileTypeOrderComparer Instance = new();
+        public static readonly DeclarationOrderComparer Instance = new();
 
-        public int Compare(INamedTypeSymbol? x, INamedTypeSymbol? y)
+        public int Compare(ISymbol? x, ISymbol? y)
         {
             var left = GetFirstLocation(x);
             var right = GetFirstLocation(y);
@@ -122,8 +189,8 @@ internal static class GlobalCppNames
 
         private static char Normalize(char c) => c == '\\' ? '/' : c;
 
-        public static Location GetFirstLocation(INamedTypeSymbol? type) =>
-            type is { Locations.Length: > 0 } ? type.Locations[0] : Location.None;
+        public static Location GetFirstLocation(ISymbol? symbol) =>
+            symbol is { Locations.Length: > 0 } ? symbol.Locations[0] : Location.None;
     }
 
     /// <summary>

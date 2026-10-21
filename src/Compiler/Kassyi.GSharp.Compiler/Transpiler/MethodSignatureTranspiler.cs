@@ -25,7 +25,10 @@ internal static class MethodSignatureTranspiler
             WriteKernelMethodPrefix(ref context);
         }
 
-        var methodName = isDevice ? method.Identifier.Text : GetKernelMethodName(method, methodSymbol);
+        var methodName = !isDevice ? GetKernelMethodName(method, methodSymbol)
+            : methodSymbol != null && CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)
+                ? GlobalCppNames.GetFunctionName(methodSymbol)
+                : method.Identifier.Text;
 
         context.Emitter.Writer.Append($" {methodName}");
         using (context.Emitter.Writer.Parentheses())

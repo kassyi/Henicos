@@ -15,7 +15,7 @@ public partial class NamingArchitectureTests
     // Each entry is "{file}:{expression}" and names the issue that owns the remaining verbatim emission.
     private static readonly HashSet<string> s_allowedRawNames = new(StringComparer.Ordinal)
     {
-        // #402: global function names (entry points, static members) are still emitted verbatim.
+        // #402: kernel entry points (step 5) and static members other than device functions are still emitted verbatim.
         "MemberAccessExpressionTranspilerRule.cs:node.Name.Identifier.Text",
         "MethodSignatureTranspiler.cs:methodSymbol.ContainingType.Name",
         "MethodSignatureTranspiler.cs:method.Identifier.Text",

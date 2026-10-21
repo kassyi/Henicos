@@ -52,8 +52,49 @@ public struct Pair<T, U>
     public U Second;
 }
 
+// Device functions with the same name in two types used to form one C++ overload set, so B.Scale(intArg) called
+// A.Scale(int), which C# would never select.
+public static class FirstScaler
+{
+    [GpuDeviceFunction]
+    public static int Scale(int value) => value * 10;
+}
+
+public static class SecondScaler
+{
+    [GpuDeviceFunction]
+    public static int Scale(long value) => (int)value * 100;
+
+    // C# picks Pick(long) for an int argument; C++ finds int -> long and int -> double equally good (ambiguous).
+    [GpuDeviceFunction]
+    public static int Pick(double value) => 1;
+
+    [GpuDeviceFunction]
+    public static int Pick(long value) => 2;
+
+    [GpuDeviceFunction]
+    public static int Twice(int value) => Scale(value) * 2;
+}
+
 public static partial class GlobalNameCollisionKernels
 {
+    // A.Foo(int) and B.Foo(long)
+    [GpuKernel]
+    public static void SameNameDeviceFunctionsKernel(int[] output)
+    {
+        int tid = ThreadIndex.X;
+        int value = tid + 1;
+        output[tid] = FirstScaler.Scale(value) + SecondScaler.Scale(value) + SecondScaler.Twice(value) * 10000;
+    }
+
+    // Overloads within one type are resolved by C#, not by C++.
+    [GpuKernel]
+    public static void OverloadResolutionKernel(int[] output)
+    {
+        int tid = ThreadIndex.X;
+        output[tid] = SecondScaler.Pick(tid) * 10 + SecondScaler.Pick(1.5);
+    }
+
     // A.B.C and A.B_C
     [GpuKernel]
     public static void UnderscoreInNameKernel(int[] output)

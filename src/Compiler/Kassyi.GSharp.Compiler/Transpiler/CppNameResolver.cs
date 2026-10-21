@@ -13,7 +13,7 @@ internal enum CppNameKind : byte
     Member,
 
     /// <summary>
-    /// A name in the global C++ scope, already complete: <c>__gsharp_ty_</c> / <c>__gsharp_tp_</c> (see
+    /// A name in the global C++ scope, already complete: <c>__gsharp_ty_</c> / <c>__gsharp_tp_</c> / <c>__gsharp_fn_</c> (see
     /// <see cref="GlobalCppNames"/>).
     /// </summary>
     Global
@@ -78,6 +78,8 @@ internal static class CppNameResolver
         IFieldSymbol { IsStatic: false } or IPropertySymbol { IsStatic: false } when IsEmittedStructMember(symbol, dialect)
             => CppName.Member(symbol.Name),
         ITypeParameterSymbol parameter => CppName.Global(GlobalCppNames.GetTypeParameterName(parameter)),
+        IMethodSymbol method when IsEmittedDeviceFunction(method, dialect) =>
+            CppName.Global(GlobalCppNames.GetFunctionName(method)),
         INamedTypeSymbol type when GlobalCppNames.IsEmittedUserType(type) && !dialect.IsMappedType(type) =>
             CppName.Global(GlobalCppNames.GetTypeName(type)),
         _ => CppName.Verbatim(fallbackName)
@@ -126,6 +128,15 @@ internal static class CppNameResolver
         writer.Append(name.Name);
         return ref writer;
     }
+
+    /// <summary>
+    /// Whether <paramref name="method"/> is a <c>[GpuDeviceFunction]</c> that G# emits as a global C++ function, rather
+    /// than an intrinsic that the dialect maps to a built-in.
+    /// </summary>
+    public static bool IsEmittedDeviceFunction(IMethodSymbol method, ITranspilerDialect dialect) =>
+        method is { MethodKind: MethodKind.Ordinary, IsStatic: true } &&
+        method.OriginalDefinition.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+        !dialect.TryMapIntrinsic(method, out _);
 
     private static bool IsEmittedStructMember(ISymbol member, ITranspilerDialect dialect) =>
         member.ContainingType is { TypeKind: TypeKind.Struct } type &&

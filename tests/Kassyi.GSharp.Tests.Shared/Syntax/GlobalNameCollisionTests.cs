@@ -58,4 +58,32 @@ public class GlobalNameCollisionTests : TranspilerTestBase
             Assert.Equal(567 + i, output[i]);
         }
     }
+
+    [SkippableFact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_SameNameDeviceFunctionsInDifferentTypes_CallTheBoundFunction()
+    {
+        var output = new int[ThreadCount];
+
+        GlobalNameCollisionKernels.LaunchSameNameDeviceFunctionsKernel(output, blockDimX: ThreadCount);
+
+        for (int i = 0; i < ThreadCount; i++)
+        {
+            int value = i + 1;
+            Assert.Equal(value * 10 + value * 100 + value * 200 * 10000, output[i]);
+        }
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_OverloadsWithinOneType_FollowCsharpOverloadResolution()
+    {
+        var output = new int[ThreadCount];
+
+        GlobalNameCollisionKernels.LaunchOverloadResolutionKernel(output, blockDimX: ThreadCount);
+
+        Assert.All(output, value => Assert.Equal(21, value));
+    }
 }

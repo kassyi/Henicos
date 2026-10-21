@@ -2,7 +2,7 @@ using Kassyi.GSharp.Naming;
 
 namespace Kassyi.GSharp.Tests.Shared.Transpiler;
 
-/// <summary>Verifies that the C++ names of types derive injectively from their symbols.</summary>
+/// <summary>Verifies that the C++ names of types and device functions derive injectively from their symbols.</summary>
 [Category(TestCategory.Compiler)]
 public class GlobalCppNamesTests
 {
@@ -18,7 +18,56 @@ public class GlobalCppNamesTests
         namespace N1 { public struct Outer { public struct Inner { } } }
         namespace N2 { public struct Outer_Inner { } }
         public struct GlobalType { }
+        namespace Functions
+        {
+            public static class A { public static int Foo(int x) => x; }
+            public static class B
+            {
+                public static int Foo(long x) => 0;
+                public static int Pick(double x) => 1;
+                public static int Pick(long x) => 2;
+                public static int Pick(int x, int y) => 3;
+            }
+        }
         """;
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_GetFunctionName_QualifiesWithContainingType()
+    {
+        Assert.Equal("__gsharp_fn_Functions__A__Foo", GlobalCppNames.GetFunctionName(GetMethods("Functions.A", "Foo")[0]));
+    }
+
+    // The #402 report: A.Foo(int) and B.Foo(long) formed one C++ overload set, so B.Foo(intArg) called A.Foo.
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_GetFunctionName_SameNameInDifferentTypes_AreDistinct()
+    {
+        Assert.NotEqual(
+            GlobalCppNames.GetFunctionName(GetMethods("Functions.A", "Foo")[0]),
+            GlobalCppNames.GetFunctionName(GetMethods("Functions.B", "Foo")[0]));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GetFunctionName_Overloads_CarryTheDeclarationOrdinal()
+    {
+        var overloads = GetMethods("Functions.B", "Pick");
+
+        Assert.Equal("__gsharp_fn_Functions__B__Pick_o0", GlobalCppNames.GetFunctionName(overloads[0]));
+        Assert.Equal("__gsharp_fn_Functions__B__Pick_o1", GlobalCppNames.GetFunctionName(overloads[1]));
+        Assert.Equal("__gsharp_fn_Functions__B__Pick_o2", GlobalCppNames.GetFunctionName(overloads[2]));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_GetFunctionName_DecodesBackToTheCsharpPath()
+    {
+        var name = GlobalCppNames.GetFunctionName(GetMethods("Functions.B", "Pick")[1]);
+
+        Assert.True(GSharpNameEncoding.TryDecode(name, out var display));
+        Assert.Equal("Functions.B.Pick#1", display);
+    }
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
@@ -172,6 +221,12 @@ public class GlobalCppNamesTests
             .AddReferences(RoslynTestUtility.BaseReferences)
             .AddSyntaxTrees(files.Select(f =>
                 CSharpSyntaxTree.ParseText(f.Source, new CSharpParseOptions(LanguageVersion.Preview), f.Path)));
+
+    // In declaration order.
+    private static IMethodSymbol[] GetMethods(string typeMetadataName, string name) =>
+        GetType(typeMetadataName).GetMembers(name).OfType<IMethodSymbol>()
+            .OrderBy(m => m.Locations[0].SourceSpan.Start)
+            .ToArray();
 
     private static INamedTypeSymbol GetType(string metadataName) => GetType(CreateCompilation(), metadataName);
 

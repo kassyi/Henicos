@@ -31,7 +31,13 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
         if (memberExprSymbol is ITypeSymbol)
         {
-            // Skip class name for global static methods
+            // A device function carries its containing type in its own global name; other static members drop it.
+            if (symbol is IMethodSymbol method && CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect))
+            {
+                context.Emitter.Writer.AppendCppName(CppNameResolver.Resolve(method, method.Name, context.Emitter.Dialect));
+                return;
+            }
+
             context.Emitter.Writer.Append(node.Name.Identifier.Text);
             return;
         }
