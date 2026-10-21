@@ -6,7 +6,9 @@ namespace Kassyi.GSharp.Compiler.Diagnostics;
 public class GpuKernelAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        DiagnosticRuleRegistry.AllSupportedDiagnostics.Add(GSharpDiagnostics.KernelClassMustBePartial);
+        DiagnosticRuleRegistry.AllSupportedDiagnostics
+            .Add(GSharpDiagnostics.KernelClassMustBePartial)
+            .Add(GSharpDiagnostics.InstanceDeviceFunctionNotSupported);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -31,6 +33,15 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         if (!isGpuKernel)
         {
             return;
+        }
+
+        if (!methodSymbol.IsStatic && methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
+                methodDeclaration.Identifier.GetLocation(),
+                methodSymbol.ContainingType.Name,
+                methodSymbol.Name);
         }
 
         // Check if the containing class is partial

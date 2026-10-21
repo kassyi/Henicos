@@ -577,5 +577,14 @@
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "InstanceDeviceFunctionNotSupported",
+    "id": "GSH0068",
+    "title": "Instance [GpuDeviceFunction] methods are not supported",
+    "messageFormat": "The method '{0}.{1}' is marked with [GpuDeviceFunction] but is an instance method. Mark the method as 'static' and pass the struct as a parameter.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
   }
 ]
