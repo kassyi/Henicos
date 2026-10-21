@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
-public static partial class SadPath_GSH0040_Goto
+public static partial class CrossBarrierGotoKernels
 {
     [GpuKernel]
     [SkipSnapshotConsistency("Sad Path")]

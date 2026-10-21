@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
-public static partial class SadPath_GSH0047_Lock
+public static partial class LockStatementInKernelKernels
 {
     private static readonly object s_gate = new();
 

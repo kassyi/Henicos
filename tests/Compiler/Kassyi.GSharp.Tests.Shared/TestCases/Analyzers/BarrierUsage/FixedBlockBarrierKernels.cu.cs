@@ -2,7 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
-public static partial class SadPath_GSH0043_FixedBlock
+public static partial class FixedBlockBarrierKernels
 {
     [GpuKernel]
     [SkipSnapshotConsistency("Sad Path")]
