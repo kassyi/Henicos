@@ -12,14 +12,16 @@ internal static class ManagedCSharpTranspiler
     public static string Generate(
         MethodDeclarationSyntax methodDecl,
         SemanticModel semanticModel,
-        (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? preLowered = null)
+        LoweredStateMachine? preLowered = null)
     {
         if (methodDecl.Body == null)
         {
             return string.Empty;
         }
 
-        var (loweredBody, contextFields) = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body);
+        var lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body, semanticModel);
+        var loweredBody = lowered.LoweredBody;
+        var contextFields = lowered.ContextFields;
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
         var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
             methodDecl, methodSymbol);
@@ -33,11 +35,46 @@ internal static class ManagedCSharpTranspiler
 
         var unhoistedBody = new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, kernelName).Visit(loweredBody) as BlockSyntax
                             ?? throw new InvalidOperationException($"Unhoisting ref-struct fields removed the body of kernel '{kernelName}'.");
-        var bodySource = RewriteAndNormalizeBody(unhoistedBody);
+        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: false);
 
         using var writer = new SourceWriter();
-        EmitContextClass(writer, contextName, regularFields);
+        EmitContextClass(writer, contextName, regularFields, ImmutableArray<IParameterSymbol>.Empty, lowered.CallSites,
+            semanticModel);
         EmitStateMachineMethod(writer, contextName, stateMachineName, methodSymbol, localInits, bodySource);
+        return writer.ToString();
+    }
+
+    /// <summary>
+    /// Emits the frame class and the state machine of a device function that may suspend. The state machine returns
+    /// whether the call completed; the caller calls it again on every resume until it does.
+    /// </summary>
+    public static string GenerateDeviceFunction(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel)
+    {
+        var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
+        if (methodDecl.Body == null || methodSymbol == null ||
+            !SuspensionAnalysis.IsSuspendingFunction(methodSymbol, semanticModel.Compilation) ||
+            SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, semanticModel.Compilation))
+        {
+            return string.Empty;
+        }
+
+        var lowered = AstLoweringPipeline.Lower(methodDecl.Body, semanticModel, methodSymbol);
+        var frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, methodSymbol);
+        var stateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.KernelStateMachinePrefix, methodSymbol);
+        var functionName = methodDecl.Identifier.ValueText;
+
+        var (localInits, regularFields, unhoistedSymbols) =
+            ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
+        var copiedParameters = MethodTranspiler.GetCopiedParameters(lowered, methodSymbol);
+
+        var unhoistedBody = new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, functionName).Visit(lowered.LoweredBody) as BlockSyntax
+                            ?? throw new InvalidOperationException($"Unhoisting ref-struct fields removed the body of device function '{functionName}'.");
+        var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true);
+
+        using var writer = new SourceWriter();
+        EmitContextClass(writer, frameName, regularFields, copiedParameters, lowered.CallSites, semanticModel);
+        EmitDeviceStateMachineMethod(writer, frameName, stateMachineName, methodSymbol, copiedParameters, localInits,
+            bodySource);
         return writer.ToString();
     }
 
@@ -45,9 +82,10 @@ internal static class ManagedCSharpTranspiler
     private static string ToSource(SyntaxNode node) => node.NormalizeWhitespace().ToFullString();
 #pragma warning restore RS0030
 
-    private static string RewriteAndNormalizeBody(BlockSyntax loweredBody)
+    private static string RewriteAndNormalizeBody(BlockSyntax loweredBody, SemanticModel semanticModel,
+        bool isDeviceFunction)
     {
-        var rewriter = new ManagedExecutionRewriter();
+        var rewriter = new ManagedExecutionRewriter(semanticModel, isDeviceFunction);
         var rewritten = rewriter.Visit(loweredBody) as BlockSyntax
                         ?? throw new InvalidOperationException("Managed execution rewriting removed the kernel body.");
         return ToSource(rewritten);
@@ -119,12 +157,22 @@ internal static class ManagedCSharpTranspiler
     private static void EmitContextClass(
         SourceWriter writer,
         string contextName,
-        ImmutableArray<ContextField> regularFields)
+        ImmutableArray<ContextField> regularFields,
+        ImmutableArray<IParameterSymbol> copiedParameters,
+        IReadOnlyList<InvocationExpressionSyntax> callSites,
+        SemanticModel semanticModel)
     {
         writer.AppendLine($"public class {contextName} {{");
         writer.AppendLine($"public int {GSharpInternalNames.State};");
         writer.AppendLine($"public uint {GSharpInternalNames.WarpExchange};");
         writer.AppendLine($"public bool {GSharpInternalNames.YieldedForGridSync};");
+
+        foreach (var parameter in copiedParameters)
+        {
+            writer.Append("public ");
+            writer.AppendCsharpTypeName(parameter.Type);
+            writer.AppendLine($" {parameter.Name.ToCSharpIdentifier()};");
+        }
 
         foreach (var field in regularFields)
         {
@@ -133,8 +181,114 @@ internal static class ManagedCSharpTranspiler
             writer.AppendLine($" {field.Name};");
         }
 
+        // Each call that may suspend keeps the callee's frame, which is declared in the callee's class
+        for (var i = 0; i < callSites.Count; i++)
+        {
+            var callee = semanticModel.GetSymbol(callSites[i]) as IMethodSymbol
+                         ?? throw new InvalidOperationException("A call that may suspend does not resolve to a device function.");
+            writer.Append("public ");
+            AppendDeviceFunctionMember(writer, callee, GSharpInternalNames.FrameTypePrefix);
+            writer.AppendLine($" {GSharpInternalNames.CallFramePrefix}{i} = new();");
+        }
+
         writer.AppendLine("}");
         writer.AppendLine();
+    }
+
+    /// <summary>Writes the qualified name of a member that G# emits next to <paramref name="function"/>.</summary>
+    private static void AppendDeviceFunctionMember(SourceWriter writer, IMethodSymbol function, string prefix)
+    {
+        writer.AppendFullyQualifiedCsharpName(function.ContainingType);
+        writer.Append($".{GlobalCppNames.GetKernelDerivedName(prefix, function)}");
+    }
+
+    private static string GetDeviceFunctionMember(IMethodSymbol function, string prefix)
+    {
+        using var writer = new SourceWriter();
+        AppendDeviceFunctionMember(writer, function, prefix);
+        return writer.ToString();
+    }
+
+    // Out parameters become ref: a suspended call returns before it assigns them, which C# rejects for out parameters
+    private static void EmitDeviceStateMachineMethod(
+        SourceWriter writer,
+        string frameName,
+        string stateMachineName,
+        IMethodSymbol methodSymbol,
+        ImmutableArray<IParameterSymbol> copiedParameters,
+        ImmutableArray<ContextField> localInits,
+        string bodySource)
+    {
+        writer.Append($"public static unsafe bool {stateMachineName}(");
+        foreach (var p in methodSymbol.Parameters)
+        {
+            writer.Append(p.RefKind switch
+            {
+                RefKind.Ref or RefKind.Out => "ref ",
+                RefKind.In => "in ",
+                _ => ""
+            });
+            writer.AppendCsharpTypeName(p.Type);
+            writer.Append(IsCopied(copiedParameters, p)
+                ? $" {GSharpInternalNames.CopiedParameterPrefix}{p.Name}, "
+                : $" {p.Name.ToCSharpIdentifier()}, ");
+        }
+
+        writer.Append($"{frameName} {GSharpInternalNames.Context}");
+        if (!methodSymbol.ReturnsVoid)
+        {
+            writer.Append(", ref ");
+            writer.AppendCsharpTypeName(methodSymbol.ReturnType);
+            writer.Append($" {GSharpInternalNames.SuspendingCallResult}");
+        }
+
+        writer.AppendLine(") {");
+        if (localInits.Length > 0)
+        {
+            // A frame owns the same shared memory slot on every resume, even when called again in the same thread step
+            writer.AppendLine("global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();");
+            foreach (var localInit in localInits)
+            {
+                AppendFieldType(writer, localInit);
+                writer.Append($" {localInit.Name}");
+                if (localInit.Declarator.Initializer is { } initializer)
+                {
+                    writer.Append($" {ToSource(initializer.WithoutTrivia())}");
+                }
+
+                writer.AppendLine(";");
+            }
+        }
+
+        if (copiedParameters.Length > 0)
+        {
+            writer.AppendLine($"if ({GSharpInternalNames.Context}.{GSharpInternalNames.State} == 0) {{");
+            foreach (var parameter in copiedParameters)
+            {
+                writer.AppendLine(
+                    $"{GSharpInternalNames.Context}.{parameter.Name.ToCSharpIdentifier()} = {GSharpInternalNames.CopiedParameterPrefix}{parameter.Name};");
+            }
+
+            writer.AppendLine("}");
+        }
+
+        writer.AppendLine(bodySource);
+        writer.AppendLine("throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
+        writer.AppendLine("}");
+        writer.AppendLine();
+    }
+
+    private static bool IsCopied(ImmutableArray<IParameterSymbol> copiedParameters, IParameterSymbol parameter)
+    {
+        foreach (var copied in copiedParameters)
+        {
+            if (SymbolEqualityComparer.Default.Equals(copied, parameter))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void EmitStateMachineMethod(
@@ -262,9 +416,51 @@ internal static class ManagedCSharpTranspiler
         }
     }
 
-    private sealed class ManagedExecutionRewriter : CSharpSyntaxRewriter
+    private sealed class ManagedExecutionRewriter(SemanticModel semanticModel, bool isDeviceFunction) : CSharpSyntaxRewriter
     {
         private int _inLambdaOrLocalFuncCount;
+
+        // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args, __gsharp_ctx.__gsharp_call_frame_n[, ref target])
+        public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
+        {
+            if (node.Expression is not IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.ResumeCall })
+            {
+                return base.VisitInvocationExpression(node);
+            }
+
+            var arguments = node.ArgumentList.Arguments;
+            if (arguments[0].Expression is not InvocationExpressionSyntax call ||
+                arguments[1].Expression is not LiteralExpressionSyntax frameIndex ||
+                semanticModel.GetSymbol(call) is not IMethodSymbol callee)
+            {
+                throw new InvalidOperationException("A lowered resume call does not wrap a call to a device function.");
+            }
+
+            var callArguments = SyntaxFactory.SeparatedList<ArgumentSyntax>();
+            foreach (var argument in call.ArgumentList.Arguments)
+            {
+                var visited = Visit(argument) as ArgumentSyntax ?? argument;
+                callArguments = callArguments.Add(visited.RefKindKeyword.IsKind(SyntaxKind.OutKeyword)
+                    ? visited.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword))
+                    : visited);
+            }
+
+            callArguments = callArguments.Add(SyntaxFactory.Argument(SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                SyntaxFactory.IdentifierName(GSharpInternalNames.Context),
+                SyntaxFactory.IdentifierName(GSharpInternalNames.CallFramePrefix + frameIndex.Token.ValueText))));
+
+            if (arguments.Count > 2)
+            {
+                var target = Visit(arguments[2].Expression) as ExpressionSyntax ?? arguments[2].Expression;
+                callArguments = callArguments.Add(SyntaxFactory.Argument(target)
+                    .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword)));
+            }
+
+            return SyntaxFactory.InvocationExpression(
+                SyntaxFactory.ParseExpression(GetDeviceFunctionMember(callee, GSharpInternalNames.KernelStateMachinePrefix)),
+                SyntaxFactory.ArgumentList(callArguments));
+        }
 
         public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
         {
@@ -289,6 +485,8 @@ internal static class ManagedCSharpTranspiler
 
             return node.Identifier.Text switch
             {
+                // The managed shuffle helpers keep the warp exchange themselves; any context will do
+                GSharpInternalNames.Root => SyntaxFactory.IdentifierName(GSharpInternalNames.Context).WithTriviaFrom(node),
                 GSharpInternalNames.State or GSharpInternalNames.WarpExchange or GSharpInternalNames.YieldedForGridSync =>
                     SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                             SyntaxFactory.IdentifierName(GSharpInternalNames.Context), node)
@@ -399,6 +597,11 @@ internal static class ManagedCSharpTranspiler
 
         public override SyntaxNode? VisitReturnStatement(ReturnStatementSyntax node)
         {
+            if (isDeviceFunction && _inLambdaOrLocalFuncCount == 0)
+            {
+                return RewriteDeviceFunctionReturn(node);
+            }
+
             if (_inLambdaOrLocalFuncCount != 0 || node.HasAnnotations("StateMachineReturn"))
             {
                 return base.VisitReturnStatement(node);
@@ -429,6 +632,39 @@ internal static class ManagedCSharpTranspiler
             ));
 
             statements.Add(SyntaxFactory.ReturnStatement());
+
+            return SyntaxFactory.Block(statements).WithTriviaFrom(node);
+        }
+
+        // A suspension reports "not completed"; a return of the user's code writes the result, resets the frame for the
+        // next call and reports completion
+        private SyntaxNode RewriteDeviceFunctionReturn(ReturnStatementSyntax node)
+        {
+            if (node.HasAnnotations("StateMachineReturn"))
+            {
+                return SyntaxFactory.ReturnStatement(SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression))
+                    .WithTriviaFrom(node);
+            }
+
+            var statements = ImmutableArray.CreateBuilder<StatementSyntax>(3);
+            if (node.Expression != null)
+            {
+                statements.Add(SyntaxFactory.ExpressionStatement(
+                    SyntaxFactory.AssignmentExpression(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCallResult),
+                        Visit(node.Expression) as ExpressionSyntax ?? node.Expression)));
+            }
+
+            statements.Add(SyntaxFactory.ExpressionStatement(
+                SyntaxFactory.AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.Context),
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.State)),
+                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0)))));
+            statements.Add(SyntaxFactory.ReturnStatement(SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)));
 
             return SyntaxFactory.Block(statements).WithTriviaFrom(node);
         }

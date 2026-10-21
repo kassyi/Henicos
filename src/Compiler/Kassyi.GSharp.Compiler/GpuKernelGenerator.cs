@@ -141,10 +141,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 collector.Report,
                 isDevice: false, cudaDialect, out var requiredIncludesCuda);
 
-            (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? lowered =
-                methodDeclaration.Body != null
-                    ? AstLoweringPipeline.Lower(methodDeclaration.Body)
-                    : null;
+            var lowered = methodDeclaration.Body != null
+                ? AstLoweringPipeline.Lower(methodDeclaration.Body, context.SemanticModel)
+                : null;
 
             var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
             {
@@ -230,6 +229,25 @@ public class GpuKernelGenerator : IIncrementalGenerator
             {
             }, isDevice: true, cppDialect, out var requiredIncludesCpp);
 
+            // A device function that may suspend has a frame, which embeds the frames of the calls it makes
+            var frameName = "";
+            var frameDependencies = ImmutableArray.CreateBuilder<string>();
+            var managedCSharpSource = "";
+            if (methodDeclaration.Body != null &&
+                SuspensionAnalysis.IsSuspendingFunction(methodSymbol, context.SemanticModel.Compilation) &&
+                !SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, context.SemanticModel.Compilation))
+            {
+                frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, methodSymbol);
+                foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(methodDeclaration.Body,
+                             context.SemanticModel.Compilation))
+                {
+                    frameDependencies.Add(GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, callee));
+                }
+
+                managedCSharpSource =
+                    MethodTranspiler.GenerateManagedDeviceFunctionSource(methodDeclaration, context.SemanticModel);
+            }
+
             return new TranspiledDeviceMethodResult(
                 methodSymbol,
                 methodSymbol.Name,
@@ -240,7 +258,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cppSignature,
                 cppBody,
                 new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                collector.GetDiagnostics());
+                collector.GetDiagnostics(),
+                frameName,
+                new EquatableArray<string>(frameDependencies.ToImmutable()),
+                managedCSharpSource);
         }
         catch (Exception ex)
         {
@@ -350,6 +371,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
             ProcessKernelClass(kvp.Key, kvp.Value, config, context, isCuda);
         }
 
+        if (!isCuda)
+        {
+            EmitManagedDeviceStateMachines(distinctDeviceMethods, context);
+        }
+
         var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
         var safeAssemblyName = IdentifierHelper.ToSafeIdentifier(assemblyName);
         var requiredIncludes = new HashSet<string>();
@@ -429,6 +455,37 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         context.AddSource($"GSharpShared{config.TargetDialect}DeviceCode.g.cs",
             SourceText.From(deviceWriter.ToString(), Encoding.UTF8));
+    }
+
+    // The managed fallback runs the state machines of the device functions that may suspend; they are emitted into the
+    // partial class that declares each function.
+    private static void EmitManagedDeviceStateMachines(IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods,
+        SourceProductionContext context)
+    {
+        var sourcesByClass = new Dictionary<INamedTypeSymbol, ImmutableArray<string>.Builder>(SymbolEqualityComparer.Default);
+        foreach (var method in deviceMethods)
+        {
+            if (method.ManagedCSharpSource.Length == 0)
+            {
+                continue;
+            }
+
+            var classSymbol = method.MethodSymbol.ContainingType;
+            if (!sourcesByClass.TryGetValue(classSymbol, out var sources))
+            {
+                sources = ImmutableArray.CreateBuilder<string>();
+                sourcesByClass[classSymbol] = sources;
+            }
+
+            sources.Add(method.ManagedCSharpSource);
+        }
+
+        foreach (var kvp in sourcesByClass)
+        {
+            var hintName = GlobalCppNames.GetHintName(kvp.Key);
+            context.AddSource(hintName[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
+                SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(kvp.Key, kvp.Value), Encoding.UTF8));
+        }
     }
 
     private static void ProcessKernelClass(INamedTypeSymbol classSymbol, IEnumerable<TranspiledKernelResult> methods,
@@ -584,13 +641,46 @@ public class GpuKernelGenerator : IIncrementalGenerator
             deviceSourceBuilder.AppendLine(isCuda ? method.CudaSignature : method.CppSignature);
         }
 
-        // Pass 2: Method bodies
-        foreach (var method in deviceMethods)
+        // Pass 2: Method bodies. A frame embeds the frames of its calls by value, so callees come first (CPU dialects).
+        var methodsByFrame = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (var i = 0; i < deviceMethods.Count; i++)
         {
-            deviceSourceBuilder.AppendLine(isCuda ? method.CudaBody : method.CppBody);
+            if (deviceMethods[i].FrameName.Length > 0)
+            {
+                methodsByFrame[deviceMethods[i].FrameName] = i;
+            }
+        }
+
+        var emitted = new bool[deviceMethods.Count];
+        for (var i = 0; i < deviceMethods.Count; i++)
+        {
+            AppendBody(i);
         }
 
         return deviceSourceBuilder.ToString();
+
+        void AppendBody(int index)
+        {
+            if (emitted[index])
+            {
+                return;
+            }
+
+            emitted[index] = true;
+            var method = deviceMethods[index];
+            if (!isCuda)
+            {
+                foreach (var dependency in method.FrameDependencies)
+                {
+                    if (methodsByFrame.TryGetValue(dependency, out var dependencyIndex))
+                    {
+                        AppendBody(dependencyIndex);
+                    }
+                }
+            }
+
+            deviceSourceBuilder.AppendLine(isCuda ? method.CudaBody : method.CppBody);
+        }
     }
 
     private static string GetPreludeSource(ITranspilerDialect dialect) =>

@@ -11,7 +11,10 @@ internal readonly struct TranspiledDeviceMethodResult(
     string cppSignature,
     string cppBody,
     EquatableArray<string> requiredIncludes,
-    EquatableArray<EquatableDiagnostic> diagnostics) : IEquatable<TranspiledDeviceMethodResult>
+    EquatableArray<EquatableDiagnostic> diagnostics,
+    string frameName = "",
+    EquatableArray<string> frameDependencies = default,
+    string managedCSharpSource = "") : IEquatable<TranspiledDeviceMethodResult>
 {
     public IMethodSymbol MethodSymbol { get; } = methodSymbol;
     public string MethodName { get; } = methodName;
@@ -24,6 +27,15 @@ internal readonly struct TranspiledDeviceMethodResult(
     public EquatableArray<string> RequiredIncludes { get; } = requiredIncludes;
     public EquatableArray<EquatableDiagnostic> Diagnostics { get; } = diagnostics;
 
+    /// <summary>The C++ frame type of a device function that may suspend, or empty for any other device function.</summary>
+    public string FrameName { get; } = frameName;
+
+    /// <summary>The frame types that this function's frame contains; they are defined before it.</summary>
+    public EquatableArray<string> FrameDependencies { get; } = frameDependencies;
+
+    /// <summary>The managed state machine of a device function that may suspend, or empty.</summary>
+    public string ManagedCSharpSource { get; } = managedCSharpSource;
+
     public bool Equals(TranspiledDeviceMethodResult other)
     {
         return MethodName == other.MethodName &&
@@ -34,13 +46,16 @@ internal readonly struct TranspiledDeviceMethodResult(
                CppSignature == other.CppSignature &&
                CppBody == other.CppBody &&
                RequiredIncludes.Equals(other.RequiredIncludes) &&
-               Diagnostics.Equals(other.Diagnostics);
+               Diagnostics.Equals(other.Diagnostics) &&
+               FrameName == other.FrameName &&
+               FrameDependencies.Equals(other.FrameDependencies) &&
+               ManagedCSharpSource == other.ManagedCSharpSource;
     }
 
     public override bool Equals(object? obj) => obj is TranspiledDeviceMethodResult other && Equals(other);
 
     public override int GetHashCode() => HashHelper.Combine(MethodName, ClassName, Namespace, CudaSignature, CudaBody,
-        CppSignature, CppBody, RequiredIncludes, Diagnostics);
+        CppSignature, CppBody, RequiredIncludes, Diagnostics, FrameName, ManagedCSharpSource);
 
     public static bool operator ==(TranspiledDeviceMethodResult left, TranspiledDeviceMethodResult right) =>
         left.Equals(right);

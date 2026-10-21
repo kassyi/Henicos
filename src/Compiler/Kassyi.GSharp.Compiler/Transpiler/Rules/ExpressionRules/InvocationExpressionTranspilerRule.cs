@@ -27,6 +27,12 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     /// <inheritdoc />
     public override void Transpile(InvocationExpressionSyntax node, ref TranspileContext context)
     {
+        if (node.Expression is IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.ResumeCall })
+        {
+            TranspileResumeCall(node, ref context);
+            return;
+        }
+
         if (context.Query.SemanticModel.GetSymbol(node) is IMethodSymbol symbol)
         {
             if (TryTranspileCustomInvocation(node, symbol, ref context))
@@ -66,6 +72,44 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         using (context.Emitter.Writer.Parentheses())
         {
             TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, ref context);
+        }
+    }
+
+    // __gsharp_resume(Foo(args), n[, target]) becomes Foo(args, &__gsharp_ctx->__gsharp_call_frame_n, __gsharp_root[, &target]):
+    // the callee resumes from its frame and returns whether it completed.
+    private static void TranspileResumeCall(InvocationExpressionSyntax node, ref TranspileContext context)
+    {
+        var arguments = node.ArgumentList.Arguments;
+        if (arguments[0].Expression is not InvocationExpressionSyntax call ||
+            arguments[1].Expression is not LiteralExpressionSyntax frameIndex ||
+            context.Query.SemanticModel.GetSymbol(call) is not IMethodSymbol callee)
+        {
+            throw new InvalidOperationException("A lowered resume call does not wrap a call to a device function.");
+        }
+
+        context.Visitor.Visit(call.Expression);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            TranspileArguments(callee.Parameters, call.ArgumentList.Arguments, ref context);
+            if (callee.Parameters.Length > 0)
+            {
+                context.Emitter.Writer.AppendComma();
+            }
+
+            context.Emitter.Writer.Append(
+                $"&{GSharpInternalNames.Context}->{GSharpInternalNames.CallFramePrefix}{frameIndex.Token.ValueText}");
+            context.Emitter.Writer.AppendComma();
+            context.Emitter.Writer.Append(GSharpInternalNames.Root);
+
+            if (arguments.Count > 2)
+            {
+                context.Emitter.Writer.AppendComma();
+                context.Emitter.Writer.Append("&");
+                using (context.Emitter.Writer.Parentheses())
+                {
+                    context.Visitor.Visit(arguments[2].Expression);
+                }
+            }
         }
     }
 

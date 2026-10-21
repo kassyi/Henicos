@@ -72,6 +72,42 @@ internal static class MethodSignatureTranspiler
         }
     }
 
+    /// <summary>
+    /// Writes the signature of a device function that may suspend (CPU dialects):
+    /// <c>template &lt;typename TRoot&gt; bool f(params, Frame* __gsharp_ctx, TRoot* __gsharp_root[, R* __gsharp_result])</c>.
+    /// It returns whether the call completed; the root is the kernel context that owns the warp exchange.
+    /// </summary>
+    public static void WriteSuspendingDeviceSignature(MethodDeclarationSyntax method,
+        IReadOnlyCollection<string> copiedParameters, ref TranspileContext context)
+    {
+        var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
+        ReportUnsupportedParameterTypes(methodSymbol, ref context);
+
+        var methodName = methodSymbol != null && CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)
+            ? GlobalCppNames.GetFunctionName(methodSymbol)
+            : method.Identifier.Text;
+        context.Emitter.Writer.Append($"template <typename TRoot> {GetInliningKeyword(methodSymbol)} bool {methodName}");
+        using (context.Emitter.Writer.Parentheses())
+        {
+            WriteParameters(method.ParameterList.Parameters, true, ref context, copiedParameters);
+            if (method.ParameterList.Parameters.Count > 0)
+            {
+                context.Emitter.Writer.Append(", ");
+            }
+
+            context.Emitter.Writer
+                .Append(GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, method, methodSymbol))
+                .Append($"* {GSharpInternalNames.Context}, TRoot* {GSharpInternalNames.Root}");
+
+            if (methodSymbol is { ReturnsVoid: false })
+            {
+                context.Emitter.Writer.Append(", ");
+                context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
+                context.Emitter.Writer.Append($"* {GSharpInternalNames.SuspendingCallResult}");
+            }
+        }
+    }
+
     private const int KernelParameterSpaceLimitBytes = 4096;
 
     private const int DevicePointerBytes = 8;
@@ -144,8 +180,14 @@ internal static class MethodSignatureTranspiler
         return context.Emitter.Dialect.AppendParameter(ref context, p, typeSymbol, parameterSymbol);
     }
 
+    /// <param name="parameters">The parameters to write.</param>
+    /// <param name="isDevice">Whether the parameters belong to a device function.</param>
+    /// <param name="context">The transpile context.</param>
+    /// <param name="copiedParameters">
+    /// Parameters that the body reads from its frame; their incoming value gets the <c>__gsharp_in_</c> prefix.
+    /// </param>
     public static void WriteParameters(SeparatedSyntaxList<ParameterSyntax> parameters, bool isDevice,
-        ref TranspileContext context)
+        ref TranspileContext context, IReadOnlyCollection<string>? copiedParameters = null)
     {
         if (parameters.Count == 0)
         {
@@ -176,13 +218,32 @@ internal static class MethodSignatureTranspiler
                 context.Emitter.Writer.Append(" __restrict__");
             }
 
-            context.Emitter.Writer.AppendSpace().AppendCppName(
+            context.Emitter.Writer.AppendSpace();
+            if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
+            {
+                context.Emitter.Writer.Append(GSharpInternalNames.CopiedParameterPrefix);
+            }
+
+            context.Emitter.Writer.AppendCppName(
                 CppNameResolver.Resolve(paramSymbol, p.Identifier.ValueText, context.Emitter.Dialect));
             if (i < parameters.Count - 1)
             {
                 context.Emitter.Writer.Append(", ");
             }
         }
+    }
+
+    private static bool Contains(IReadOnlyCollection<string> names, string name)
+    {
+        foreach (var candidate in names)
+        {
+            if (candidate == name)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)

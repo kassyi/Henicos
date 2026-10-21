@@ -3,9 +3,17 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// <summary>Provides helper methods to detect phase barrier and warp shuffle invocations in Roslyn syntax trees.</summary>
 internal static class BarrierHelper
 {
-    /// <summary>Determines whether the specified invocation represents a thread barrier or warp-level synchronization.</summary>
+    /// <summary>
+    /// Determines whether the specified invocation represents a thread barrier, warp-level synchronization, or a call to a
+    /// device function that reaches one (marked by <see cref="AstLoweringPipeline.SuspendingCallAnnotationKind"/>).
+    /// </summary>
     public static bool IsPhaseBarrier(InvocationExpressionSyntax inv)
     {
+        if (IsSuspendingCall(inv))
+        {
+            return true;
+        }
+
         var name = "";
         var className = "";
         switch (inv.Expression)
@@ -27,6 +35,10 @@ internal static class BarrierHelper
         return (className == TypeConstants.WarpType && name.StartsWith("Shuffle")) ||
                (className == TypeConstants.GpuType && name.StartsWith(TypeConstants.WarpType));
     }
+
+    /// <summary>Determines whether the specified invocation calls a device function that may suspend the calling thread.</summary>
+    public static bool IsSuspendingCall(InvocationExpressionSyntax inv) =>
+        inv.HasAnnotations(AstLoweringPipeline.SuspendingCallAnnotationKind);
 
     /// <summary>Determines whether the specified invocation represents a warp shuffle operation.</summary>
     public static bool IsWarpShuffle(InvocationExpressionSyntax inv)

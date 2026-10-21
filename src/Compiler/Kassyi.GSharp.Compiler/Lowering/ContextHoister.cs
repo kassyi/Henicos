@@ -2,7 +2,13 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Hoists local variables that cross execution barriers into a shared context struct.</summary>
-public class ContextHoister : CSharpSyntaxRewriter
+/// <param name="copiedParameters">Parameters that live in the frame of a device function (see <see cref="LoweredStateMachine.CopiedParameters"/>).</param>
+/// <param name="isDeviceFunction">
+/// Whether the body belongs to a device function. Its shared memory is not set up by the launcher, so the initializer of
+/// a hoisted <c>SharedMemory&lt;T&gt;</c> stays in the body.
+/// </param>
+public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null, bool isDeviceFunction = false)
+    : CSharpSyntaxRewriter
 {
     private readonly HashSet<string> _hoistedVariables = [];
 
@@ -22,6 +28,14 @@ public class ContextHoister : CSharpSyntaxRewriter
             return (block, hoistedDecls);
         }
 
+        if (copiedParameters != null)
+        {
+            foreach (var parameter in copiedParameters)
+            {
+                _hoistedVariables.Add(parameter);
+            }
+        }
+
         var barrierCount = analyzer.BarrierSpans.Count;
         var barrierStarts = new int[barrierCount];
         for (var i = 0; i < barrierCount; i++)
@@ -39,7 +53,11 @@ public class ContextHoister : CSharpSyntaxRewriter
                 Type: GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType }
             };
 
-            if (isSharedMemory)
+            // The result of a call that may suspend is written when the callee completes, after any number of resumes
+            var isSuspendingCallResult = decl.Initializer?.Value is InvocationExpressionSyntax initializerCall &&
+                                         BarrierHelper.IsSuspendingCall(initializerCall);
+
+            if (isSharedMemory || isSuspendingCallResult)
             {
                 _hoistedVariables.Add(decl.Identifier.ValueText);
                 hoistedDecls.Add(decl);
@@ -80,7 +98,7 @@ public class ContextHoister : CSharpSyntaxRewriter
                 var typeSyntax = (variable.Parent as VariableDeclarationSyntax)?.Type;
                 var isSharedMemory = typeSyntax is GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType };
 
-                if (variable.Initializer == null || isSharedMemory)
+                if (variable.Initializer == null || (isSharedMemory && !isDeviceFunction))
                 {
                     continue;
                 }
