@@ -533,6 +533,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "DuplicateAotContextName",
+    "id": "GSH0060",
+    "title": "Two structs share one AotContexts name",
+    "messageFormat": "The structs '{0}' and '{1}' both map to '{2}' in '{3}'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "IndistinguishableKernelOverloads",
     "id": "GSH0061",
     "title": "Kernel overloads cannot be told apart by their launch wrappers",

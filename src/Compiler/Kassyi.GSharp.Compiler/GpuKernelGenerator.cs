@@ -455,11 +455,36 @@ public class GpuKernelGenerator : IIncrementalGenerator
             methodsData.Add((method.MethodSymbol, source, method.ManagedCSharpSource));
         }
 
+        ReportDuplicateAotContextNames(classSymbol, methodsData, context);
+
         var wrapperSource = WrapperEmitter.GenerateKernelExtensions(classSymbol, methodsData, config);
         context.AddSource(GlobalCppNames.GetHintName(classSymbol),
             SourceText.From(wrapperSource, Encoding.UTF8));
     }
 
+
+    // GSH0060: AotContexts drops a trailing "Context", namespaces and type arguments, so different structs can share
+    // one name.
+    private static void ReportDuplicateAotContextNames(INamedTypeSymbol classSymbol,
+        ImmutableArray<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>.Builder methods,
+        SourceProductionContext context)
+    {
+        var duplicates = new List<(INamedTypeSymbol Kept, INamedTypeSymbol Duplicate, string Name)>();
+        StructMarshalingEmitter.CollectUniqueStructs(methods, duplicates);
+        foreach (var (kept, duplicate, name) in duplicates)
+        {
+            var location = duplicate.Locations.Length > 0 ? duplicate.Locations[0] : Location.None;
+            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.DuplicateAotContextName, location,
+                FormatStructName(kept), FormatStructName(duplicate), name, classSymbol.Name));
+        }
+    }
+
+    private static string FormatStructName(INamedTypeSymbol type)
+    {
+        using var writer = new SourceWriter();
+        writer.AppendFullyQualifiedCsharpName(type);
+        return writer.ToString();
+    }
 
     private static bool IsDesignTimeCompilation(Compilation compilation)
     {

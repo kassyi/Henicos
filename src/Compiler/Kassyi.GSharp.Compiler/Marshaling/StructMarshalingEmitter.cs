@@ -4,18 +4,11 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class StructMarshalingEmitter
 {
     /// <summary>Emits marshal and unmarshal routines for all custom structs used in kernel signatures.</summary>
+    /// <remarks>A struct whose <c>AotContexts</c> name is already taken gets no helpers; GSH0060 reports it.</remarks>
     internal static void WriteStructMarshaling(SourceWriter writer,
         IEnumerable<(IMethodSymbol Method, string Source, string ManagedCSharpSource)> methods)
     {
-        var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-        foreach (var (method, _, _) in methods)
-        {
-            foreach (var parameter in method.Parameters)
-            {
-                CudaLayoutRules.CollectStructs(parameter.Type, structTypes);
-            }
-        }
-
+        var structTypes = CollectUniqueStructs(methods, null);
         if (structTypes.Count > 0)
         {
             writer.AppendLine(
@@ -29,6 +22,48 @@ internal static class StructMarshalingEmitter
 
             writer.AppendLine("#pragma warning restore CS8500");
         }
+    }
+
+    /// <summary>
+    /// Collects the custom structs of the kernel signatures, one per <c>AotContexts</c> name. A struct that maps to a
+    /// name that another struct already has is skipped and, when <paramref name="duplicates"/> is given, recorded.
+    /// </summary>
+    /// <remarks>
+    /// Two constructions of one generic struct (<c>Box&lt;int&gt;</c>, <c>Box&lt;long&gt;</c>) are also duplicates:
+    /// the native declaration is not generic, so each construction needs its own layout under the same name.
+    /// </remarks>
+    internal static List<INamedTypeSymbol> CollectUniqueStructs(
+        IEnumerable<(IMethodSymbol Method, string Source, string ManagedCSharpSource)> methods,
+        List<(INamedTypeSymbol Kept, INamedTypeSymbol Duplicate, string Name)>? duplicates)
+    {
+        var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        foreach (var (method, _, _) in methods)
+        {
+            foreach (var parameter in method.Parameters)
+            {
+                CudaLayoutRules.CollectStructs(parameter.Type, structTypes);
+            }
+        }
+
+        var byName = new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
+        var unique = new List<INamedTypeSymbol>(structTypes.Count);
+        foreach (var s in structTypes)
+        {
+            using var nameWriter = new SourceWriter();
+            nameWriter.AppendAotStructPath(s);
+            var name = nameWriter.ToString();
+            if (!byName.TryGetValue(name, out var kept))
+            {
+                byName.Add(name, s);
+                unique.Add(s);
+            }
+            else
+            {
+                duplicates?.Add((kept, s, name));
+            }
+        }
+
+        return unique;
     }
 
     private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s)

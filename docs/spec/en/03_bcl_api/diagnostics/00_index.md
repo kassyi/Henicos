@@ -67,6 +67,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0051](GSH0051.md) | Error | [TakesOwnership] applied to non-IDisposable type |
 | [GSH0052](GSH0052.md) | Error | [TakesOwnership] is only allowed on constructor parameters |
 | [GSH0053](GSH0053.md) | Error | Cannot take ownership of a reference parameter |
+| [GSH0060](GSH0060.md) | Error | Two structs share one AotContexts name |
 | [GSH0061](GSH0061.md) | Error | Kernel overloads cannot be told apart by their launch wrappers |
 | [GSH0062](GSH0062.md) | Error | User-defined operators are not supported in GPU code |
 | [GSH0066](GSH0066.md) | Warning | Kernel parameters exceed the parameter space limit |
