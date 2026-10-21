@@ -14,6 +14,8 @@ internal static class SuspensionAnalysis
     // record a wrong 'false' for the functions inside a cycle.
     private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_suspending = new();
 
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<IMethodSymbol, bool>> s_blockBarrier = new();
+
     /// <summary>Whether <paramref name="method"/> is a device function that reaches a phase barrier.</summary>
     public static bool IsSuspendingFunction(IMethodSymbol method, Compilation compilation)
     {
@@ -26,7 +28,31 @@ internal static class SuspensionAnalysis
         var cache = s_suspending.GetValue(compilation,
             static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
         return cache.GetOrAdd(definition,
-            m => ReachesBarrier(m, compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
+            m => ReachesBarrier(m, BarrierHelper.IsPhaseBarrier, compilation,
+                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
+    }
+
+    /// <summary>
+    /// Whether <paramref name="method"/> is a device function that reaches a block barrier (<c>Gpu.SyncThreads()</c> or
+    /// <c>Gpu.SyncGrid()</c>), directly or through other device functions.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] Every thread of the block must reach a block barrier, so a call to such a function must not sit in a branch
+    /// (GSH0037). A warp shuffle takes the mask of the threads that reach it, so a call that reaches only shuffles may.
+    /// </remarks>
+    public static bool ReachesBlockBarrier(IMethodSymbol method, Compilation compilation)
+    {
+        var definition = method.OriginalDefinition;
+        if (!TryGetDeviceFunctionBody(definition, out _))
+        {
+            return false;
+        }
+
+        var cache = s_blockBarrier.GetValue(compilation,
+            static _ => new ConcurrentDictionary<IMethodSymbol, bool>(SymbolEqualityComparer.Default));
+        return cache.GetOrAdd(definition,
+            m => ReachesBarrier(m, BarrierHelper.IsBlockBarrier, compilation,
+                new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default)));
     }
 
     /// <summary>Whether <paramref name="invocation"/>, a node of the tree of <paramref name="semanticModel"/>, calls a
@@ -62,7 +88,8 @@ internal static class SuspensionAnalysis
         return callees.ToImmutable();
     }
 
-    private static bool ReachesBarrier(IMethodSymbol method, Compilation compilation, HashSet<IMethodSymbol> visited)
+    private static bool ReachesBarrier(IMethodSymbol method, Func<InvocationExpressionSyntax, bool> isBarrier,
+        Compilation compilation, HashSet<IMethodSymbol> visited)
     {
         if (!visited.Add(method) || !TryGetDeviceFunctionBody(method, out var declaration))
         {
@@ -71,7 +98,7 @@ internal static class SuspensionAnalysis
 
         foreach (var node in declaration.DescendantNodes())
         {
-            if (node is InvocationExpressionSyntax invocation && BarrierHelper.IsPhaseBarrier(invocation))
+            if (node is InvocationExpressionSyntax invocation && isBarrier(invocation))
             {
                 return true;
             }
@@ -79,7 +106,7 @@ internal static class SuspensionAnalysis
 
         foreach (var callee in GetDeviceFunctionCallees(declaration, compilation))
         {
-            if (ReachesBarrier(callee, compilation, visited))
+            if (ReachesBarrier(callee, isBarrier, compilation, visited))
             {
                 return true;
             }

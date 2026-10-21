@@ -570,6 +570,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "SuspendingCallInUnsupportedContext",
+    "id": "GSH0064",
+    "title": "A call that suspends at a barrier is not supported in this context",
+    "messageFormat": "The device function '{0}' reaches Gpu.SyncThreads() or a warp shuffle, so it cannot be called {1}. The CPU state machine can resume such a call only in the statements of a kernel or device function body, including the operands of '&&', '||' and '?:'.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "SharedMemoryDeclarationsShareLine",
     "id": "GSH0065",
     "title": "Shared memory declarations on one line share a buffer in managed execution",

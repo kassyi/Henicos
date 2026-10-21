@@ -5,10 +5,17 @@ namespace Kassyi.GSharp.Compiler.Diagnostics;
 /// Encapsulates per-kernel AST scanning and validation state inside a zero-allocation ref struct.
 /// Eliminates parameter bloat across validation steps while ensuring no heap allocations occur during analysis.
 /// </summary>
+/// <remarks>
+/// A call to a device function that reaches a barrier suspends the caller like the barrier itself, so it counts as a
+/// barrier for the cross-barrier rules. The divergence rule (GSH0037) counts only calls that reach a block barrier.
+/// The same rules apply to the body of such a device function (<paramref name="isKernel"/> is false), which is lowered
+/// into a state machine as well; only the kernel signature rules (GSH0044) are left out.
+/// </remarks>
 internal readonly ref struct KernelBarrierValidator(
     SyntaxNodeAnalysisContext context,
     MethodDeclarationSyntax methodDecl,
-    SemanticModel semanticModel)
+    SemanticModel semanticModel,
+    bool isKernel)
 {
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _barriers =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
@@ -24,6 +31,9 @@ internal readonly ref struct KernelBarrierValidator(
 
     private readonly ImmutableArray<LocalFunctionStatementSyntax>.Builder _localFunctionsWithBarrier =
         ImmutableArray.CreateBuilder<LocalFunctionStatementSyntax>();
+
+    // Computed on the first branch around a block barrier
+    private readonly ThreadVarianceAnalysis _variance = new(semanticModel, methodDecl);
 
     public void Analyze()
     {
@@ -67,7 +77,12 @@ internal readonly ref struct KernelBarrierValidator(
             break;
         }
 
-        // GSH0044: ref, out, in, and ref struct parameters on [GpuKernel]
+        // GSH0044: ref, out, in, and ref struct parameters on [GpuKernel]; a device function receives them from its caller
+        if (!isKernel)
+        {
+            return;
+        }
+
         foreach (var param in methodDecl.ParameterList.Parameters)
         {
             var isByRef = false;
@@ -148,7 +163,14 @@ internal readonly ref struct KernelBarrierValidator(
                     if (BarrierUsageAnalyzer.IsSyncThreadsInvocation(inv, semanticModel))
                     {
                         _barriers.Add(inv);
-                        InspectBarrierAncestors(inv);
+                        InspectBarrierAncestors(inv, isBlockBarrier: true);
+                    }
+                    else if (semanticModel.GetSymbol(inv) is IMethodSymbol callee &&
+                             SuspensionAnalysis.IsSuspendingFunction(callee, semanticModel.Compilation))
+                    {
+                        _barriers.Add(inv);
+                        InspectBarrierAncestors(inv,
+                            SuspensionAnalysis.ReachesBlockBarrier(callee, semanticModel.Compilation));
                     }
 
                     break;
@@ -191,22 +213,30 @@ internal readonly ref struct KernelBarrierValidator(
     }
 
     /// <summary>Validates immediate syntactic ancestors of a barrier invocation (GSH0037, GSH0043, GSH0045).</summary>
-    private void InspectBarrierAncestors(InvocationExpressionSyntax barrier)
+    /// <param name="barrier">A block barrier, or a call to a device function that reaches a barrier.</param>
+    /// <param name="isBlockBarrier">Whether every thread of the block has to reach <paramref name="barrier"/> (GSH0037).</param>
+    private void InspectBarrierAncestors(InvocationExpressionSyntax barrier, bool isBlockBarrier)
     {
+        SyntaxNode previous = barrier;
         for (var ancestor = barrier.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
         {
+            var child = previous;
+            previous = ancestor;
+
+            // GSH0037: only the threads for which a thread-variant condition holds reach the barrier
+            if (isBlockBarrier && GetDivergingCondition(ancestor, child) is { } condition && _variance.IsThreadVariant(condition))
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.DivergentBarrierProhibited,
+                    barrier.GetLocation());
+            }
+
             switch (ancestor)
             {
                 // GSH0043: fixed block barrier prohibited
                 case FixedStatementSyntax:
                     context.ReportDiagnostic(
                         GSharpDiagnostics.FixedBlockBarrierProhibited,
-                        barrier.GetLocation());
-                    break;
-                // GSH0037: Divergent barrier in conditional branches
-                case IfStatementSyntax or SwitchStatementSyntax or SwitchSectionSyntax:
-                    context.ReportDiagnostic(
-                        GSharpDiagnostics.DivergentBarrierProhibited,
                         barrier.GetLocation());
                     break;
                 // GSH0045: Queue local function containing barrier for recursion check
@@ -234,6 +264,25 @@ internal readonly ref struct KernelBarrierValidator(
             }
         }
     }
+
+    /// <summary>
+    /// The condition that decides whether <paramref name="child"/> of <paramref name="ancestor"/> runs: a branch, the body
+    /// of a loop, or an operand that is evaluated only for some values of another operand.
+    /// </summary>
+    private static ExpressionSyntax? GetDivergingCondition(SyntaxNode ancestor, SyntaxNode child) => ancestor switch
+    {
+        IfStatementSyntax ifStatement when child != ifStatement.Condition => ifStatement.Condition,
+        SwitchStatementSyntax switchStatement when child != switchStatement.Expression => switchStatement.Expression,
+        WhileStatementSyntax whileStatement when child != whileStatement.Condition => whileStatement.Condition,
+        DoStatementSyntax doStatement when child != doStatement.Condition => doStatement.Condition,
+        ForStatementSyntax { Condition: { } condition } forStatement when child == forStatement.Statement => condition,
+        ForEachStatementSyntax forEach when child == forEach.Statement => forEach.Expression,
+        ConditionalExpressionSyntax conditional when child != conditional.Condition => conditional.Condition,
+        BinaryExpressionSyntax binary when child == binary.Right &&
+                                           binary.IsKind(SyntaxKind.LogicalAndExpression, SyntaxKind.LogicalOrExpression,
+                                               SyntaxKind.CoalesceExpression) => binary.Left,
+        _ => null
+    };
 
     /// <summary>Validates that local functions containing barriers are not recursive (GSH0045).</summary>
     private void ValidateRecursiveLocalFunctions()
