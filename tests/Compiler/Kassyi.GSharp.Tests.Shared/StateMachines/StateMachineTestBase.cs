@@ -52,6 +52,12 @@ public abstract class StateMachineTestBase
         [CallerMemberName] string methodName = "") =>
         VerifyTransformation(action, b => new WarpInstructionRewriter().Rewrite(b), source, methodName);
 
+    // Without a semantic model only barriers and warp primitives written in the block split the state machine
+    protected static Task VerifyPipelineLower(Action action,
+        [CallerArgumentExpression(nameof(action))]
+        string source = "", [CallerMemberName] string methodName = "") =>
+        VerifyTransformation(action, b => AstLoweringPipeline.Lower(b).LoweredBody, source, methodName);
+
     protected static Task VerifyHoist(Action action,
         [CallerArgumentExpression(nameof(action))]
         string source = "", [CallerMemberName] string methodName = "") =>
