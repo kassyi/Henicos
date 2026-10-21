@@ -32,7 +32,7 @@ You **MUST** follow the dedicated rule files for code implementation:
 - [Test Architecture & TDD Methodology](.agents/rules/test-architecture.md): 2-Tier test hierarchy, snapshot testing (`.verified.cs`), and Test-Driven AI Vibe Coding workflow.
 - [Test Execution (`just`)](.agents/rules/test-execution.md): `just` test categories and DiffEngine hang prevention.
 - [Transpiler Emission Rules](.agents/rules/transpiler-emission.md): NO Reflection, `SourceWriter` scoped brackets, dense left-aligned output.
-- [Generator Pipeline Invariants](.agents/rules/generator-invariants.md): `[Constant]` exclusion, diagnostics, struct guards, ref/out, `var` suffix, design-time I/O guard, MSBuild wildcard.
+- [Generator Pipeline Invariants](.agents/rules/generator-invariants.md): `[Constant]` exclusion, diagnostics, struct guards, ref/out, `var` suffix, design-time I/O guard, MSBuild wildcard, symbol file (`*.gsym.json`) and source hash header (`// gsharp-symbols: <hash>`).
 
 ---
 
@@ -44,3 +44,6 @@ You **MUST** load and read the corresponding skill using `view_file` when perfor
 - [QA & Test Coverage Guidelines](.agents/skills/qa-testing-guidelines/SKILL.md): Test scenario matrix (Happy/Boundary/Sad) and snapshot workflows.
 - [Roadmap & Task Management](.agents/skills/roadmap-management/SKILL.md): Updating project roadmaps, tracking technical debt, and progress telemetry.
 - [Jules Wave Execution Rules](.agents/skills/jules-wave-spec/SKILL.md): Rules for issues handed to Google Jules (test first, allowed files, PR naming, stop conditions). Load when writing or reviewing a Jules Wave issue or PR.
+
+### Symbol Mapping & Demangling Tools (`*.gsym.json`)
+G# generates sidecar symbol map files (`*.gsym.json`) next to AOT artifacts (`.g.cu` / `.g.cpp`) in `obj/`. Both the AOT source (line 1 header `// gsharp-symbols: <hash>`) and symbol file record a matching FNV-1a 64 source hash. Run `just gsharp-demangle <log> [symbols_path]` or `pwsh ./scripts/Demangle-GSharpLog.ps1 -LogPath <log>` to translate mangled C++ identifiers back to C# symbols.

@@ -52,7 +52,7 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_3_tid=threadIdx.x;
-__gsharp_ctx->__gsharp_id_4_shared={ (int*)__gsharp_allocate_smem(0, (256) * sizeof(int), alignof(int)) };
+__gsharp_ctx->__gsharp_id_4_shared={ (int*)__gsharp_allocate_smem(0x1fd6d4cf4ba521cfull, (256) * sizeof(int), alignof(int)) };
 if(__gsharp_ctx->__gsharp_id_3_tid<__gsharp_id_2_length)
 {
 __gsharp_ctx->__gsharp_id_4_shared[__gsharp_ctx->__gsharp_id_3_tid]=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_3_tid];
@@ -129,7 +129,7 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel(int[] input, int[] output, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel __gsharp_ctx) {
-        global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256);
+        global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256, 0x1fd6d4cf4ba521cfUL);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
@@ -234,7 +234,6 @@ if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_state != -1)
 anyGridActive = true;
 anyBlockActive = true;
 __gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync = false;
-global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();
 __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel(input, output, length, __gsharp_contexts[__gsharp_linear_tid]);
 if (__gsharp_contexts[__gsharp_linear_tid].__gsharp_yielded_for_grid_sync)
 {

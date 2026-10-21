@@ -797,8 +797,6 @@ internal static class WrapperEmitter
                                 writer.AppendLine("anyGridActive = true;");
                                 writer.AppendLine("anyBlockActive = true;");
                                 writer.AppendLine($"{LinearContext}.{GSharpInternalNames.YieldedForGridSync} = false;");
-                                writer.AppendLine(
-                                    "global::Kassyi.GSharp.Core.ManagedGpuContext.ResetAllocationIndex();");
 
                                 writer.Append($"{stateMachineName}(");
                                 bool isFirst = true;
