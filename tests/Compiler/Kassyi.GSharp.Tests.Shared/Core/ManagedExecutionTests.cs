@@ -105,14 +105,17 @@ public class ManagedExecutionTests : TranspilerTestBase
             ));
 
             ManagedGpuContext.InitializeGrid(1);
-            ManagedGpuContext.ResetAllocationIndex();
 
-            // Test AllocateSharedMemory
-            var span = ManagedGpuContext.AllocateSharedMemory<int>(10);
+            // Test AllocateSharedMemory: the same declaration gets the same buffer, another declaration a separate one
+            var span = ManagedGpuContext.AllocateSharedMemory<int>(1UL, 10);
             Assert.Equal(10, span.Length);
-            
+            span[0] = 42;
+            Assert.Equal(42, ManagedGpuContext.AllocateSharedMemory<int>(1UL, 10)[0]);
+            ManagedGpuContext.AllocateSharedMemory<int>(2UL, 10)[0] = 7;
+            Assert.Equal(42, ManagedGpuContext.AllocateSharedMemory<int>(1UL, 10)[0]);
+
             // Negative case
-            var emptySpan = ManagedGpuContext.AllocateSharedMemory<int>(0);
+            var emptySpan = ManagedGpuContext.AllocateSharedMemory<int>(3UL, 0);
             Assert.Equal(0, emptySpan.Length);
 
             // Test InitializeGrid array resize

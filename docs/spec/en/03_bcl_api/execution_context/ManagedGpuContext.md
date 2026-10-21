@@ -48,8 +48,7 @@ public static class ManagedGpuContext
 | Name | Description |
 | --- | --- |
 | [InitializeGrid(int)](#initializegridint) | Initializes or resets the shared memory arrays for the entire grid execution. |
-| [ResetAllocationIndex()](#resetallocationindex) | Resets the allocation index so the next thread can reuse the same shared memory buffers. |
-| [AllocateSharedMemory\<T\>(int)](#allocatesharedmemorytint) | Allocates a contiguous span of shared memory from the current block's buffer. |
+| [AllocateSharedMemory\<T\>(ulong, int)](#allocatesharedmemorytulong-int) | Returns the shared memory of a `SharedMemory<T>` declaration in the current block. |
 | [SetThreadContext(in GpuThreadContext)](#setthreadcontextin-gputhreadcontext) | Sets the thread coordinates for the current cooperative scheduler step. |
 | [ClearThreadContext()](#clearthreadcontext) | Clears the thread context when execution is completed. |
 
@@ -66,20 +65,12 @@ public static void InitializeGrid(int totalBlocks);
 `totalBlocks` _int_<br>
 The total number of blocks in the grid.
 
-## ResetAllocationIndex()
+## AllocateSharedMemory\<T\>(ulong, int)
 
-Resets the allocation index so the next thread can reuse the same shared memory buffers.
-
-```csharp
-public static void ResetAllocationIndex();
-```
-
-## AllocateSharedMemory\<T\>(int)
-
-Allocates a contiguous span of shared memory from the current block's buffer.
+Returns the shared memory of a [`SharedMemory<T>`](../memory/SharedMemory.md) declaration in the current block, allocating it the first time the declaration is reached in the block.
 
 ```csharp
-public static Span<T> AllocateSharedMemory<T>(int count) where T : unmanaged;
+public static Span<T> AllocateSharedMemory<T>(ulong siteKey, int count) where T : unmanaged;
 ```
 
 #### Type Parameters
@@ -88,6 +79,9 @@ public static Span<T> AllocateSharedMemory<T>(int count) where T : unmanaged;
 The unmanaged element type of the shared memory buffer.
 
 #### Parameters
+
+`siteKey` _ulong_<br>
+The key that identifies the declaration. The G# compiler computes it for generated code.
 
 `count` _int_<br>
 The number of elements to allocate.
@@ -101,6 +95,10 @@ A contiguous `Span<T>` pointing to the allocated shared memory region.
 
 `InvalidOperationException`<br>
 Thrown if the grid shared memory buffers have not been initialized via `InitializeGrid`.
+
+#### Remarks
+
+A CUDA `__shared__` variable has static storage: one buffer per declaration per block, shared by every call of the declaring function and by every thread of the block. The buffer is therefore looked up by the declaration's key, not by the order of allocations, which differs between a caller and the device functions it calls. See [One Buffer per Declaration per Block](../memory/SharedMemory.md#one-buffer-per-declaration-per-block).
 
 ## SetThreadContext(in GpuThreadContext)
 

@@ -104,13 +104,13 @@ public static class ManagedGpuContext
     private static int[]? s_perBlockSharedMemoryOffset;
 
     [ThreadStatic]
-    private static int[]?[]? s_perBlockAllocationOffsets;
+    private static ulong[]?[]? s_perBlockSiteKeys;
 
     [ThreadStatic]
-    private static int[]? s_perBlockMaxAllocationIndex;
+    private static int[]?[]? s_perBlockSiteOffsets;
 
     [ThreadStatic]
-    private static int s_allocationIndex;
+    private static int[]? s_perBlockSiteCount;
 
     private static int LinearBlockId => BlockIdxZ * GridDimY * GridDimX + BlockIdxY * GridDimX + BlockIdxX;
 
@@ -122,13 +122,15 @@ public static class ManagedGpuContext
     {
         if (s_perBlockSharedMemoryBuffer == null ||
             s_perBlockSharedMemoryOffset == null ||
-            s_perBlockAllocationOffsets == null ||
-            s_perBlockMaxAllocationIndex == null)
+            s_perBlockSiteKeys == null ||
+            s_perBlockSiteOffsets == null ||
+            s_perBlockSiteCount == null)
         {
             s_perBlockSharedMemoryBuffer = new byte[]?[totalBlocks];
             s_perBlockSharedMemoryOffset = new int[totalBlocks];
-            s_perBlockAllocationOffsets = new int[]?[totalBlocks];
-            s_perBlockMaxAllocationIndex = new int[totalBlocks];
+            s_perBlockSiteKeys = new ulong[]?[totalBlocks];
+            s_perBlockSiteOffsets = new int[]?[totalBlocks];
+            s_perBlockSiteCount = new int[totalBlocks];
         }
         else
         {
@@ -136,94 +138,84 @@ public static class ManagedGpuContext
             {
                 Array.Resize(ref s_perBlockSharedMemoryBuffer, totalBlocks);
                 Array.Resize(ref s_perBlockSharedMemoryOffset, totalBlocks);
-                Array.Resize(ref s_perBlockAllocationOffsets, totalBlocks);
-                Array.Resize(ref s_perBlockMaxAllocationIndex, totalBlocks);
+                Array.Resize(ref s_perBlockSiteKeys, totalBlocks);
+                Array.Resize(ref s_perBlockSiteOffsets, totalBlocks);
+                Array.Resize(ref s_perBlockSiteCount, totalBlocks);
             }
 
             Array.Clear(s_perBlockSharedMemoryOffset, 0, totalBlocks);
-            Array.Clear(s_perBlockMaxAllocationIndex, 0, totalBlocks);
+            Array.Clear(s_perBlockSiteCount, 0, totalBlocks);
             // We don't need to clear the actual buffers, just the offsets
         }
     }
 
     /// <summary>
-    /// Resets the allocation index so the next thread can reuse the same shared memory buffers.
-    /// </summary>
-    public static void ResetAllocationIndex() => s_allocationIndex = 0;
-
-    /// <summary>
-    /// Allocates a contiguous span of shared memory from the current block's buffer.
+    /// Returns the shared memory of a <see cref="SharedMemory{T}"/> declaration in the current block, allocating it the
+    /// first time the declaration is reached in the block.
     /// </summary>
     /// <typeparam name="T">The unmanaged element type of the shared memory buffer.</typeparam>
+    /// <param name="siteKey">The key that identifies the declaration. The G# compiler computes it for generated code.</param>
     /// <param name="count">The number of elements to allocate.</param>
-    /// <returns>A contiguous <see cref="Span{T}"/> pointing to the allocated shared memory region.</returns>
+    /// <returns>A contiguous <see cref="Span{T}"/> pointing to the shared memory region of the declaration.</returns>
+    /// <remarks>
+    /// [WHY] On the GPU a <c>__shared__</c> variable has static storage: one buffer per declaration per block, shared by
+    /// every call of the function that declares it, from any call site and by every thread of the block. The buffer is
+    /// therefore looked up by the declaration, not by the order of allocations, which differs between a caller and the
+    /// device functions it calls and between threads that take different branches.
+    /// </remarks>
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
-    public static Span<T> AllocateSharedMemory<T>(int count) where T : unmanaged
+    public static Span<T> AllocateSharedMemory<T>(ulong siteKey, int count) where T : unmanaged
     {
         if (count <= 0)
         {
             return [];
         }
 
-        var bytesNeeded = count * Unsafe.SizeOf<T>();
-        var blockId = LinearBlockId;
-
-        if (s_perBlockAllocationOffsets == null ||
-            s_perBlockSharedMemoryBuffer == null ||
-            s_perBlockMaxAllocationIndex == null ||
-            s_perBlockSharedMemoryOffset == null)
+        if (s_perBlockSharedMemoryBuffer == null ||
+            s_perBlockSharedMemoryOffset == null ||
+            s_perBlockSiteKeys == null ||
+            s_perBlockSiteOffsets == null ||
+            s_perBlockSiteCount == null)
         {
             throw new InvalidOperationException("Grid not initialized. Call InitializeGrid first.");
         }
 
-        var allocationOffsets = s_perBlockAllocationOffsets[blockId];
-        if (allocationOffsets == null)
+        var bytesNeeded = count * Unsafe.SizeOf<T>();
+        var blockId = LinearBlockId;
+        var siteKeys = s_perBlockSiteKeys[blockId] ??= new ulong[16];
+        var siteOffsets = s_perBlockSiteOffsets[blockId] ??= new int[16];
+        var siteCount = s_perBlockSiteCount[blockId];
+        var buffer = s_perBlockSharedMemoryBuffer[blockId] ??= [];
+
+        for (var i = 0; i < siteCount; i++)
         {
-            allocationOffsets = [];
-            s_perBlockAllocationOffsets[blockId] = allocationOffsets;
-        }
-
-        var currentIndex = s_allocationIndex++;
-
-        // Ensure buffer exists and is large enough
-
-        var buffer = s_perBlockSharedMemoryBuffer[blockId];
-        if (buffer == null)
-        {
-            buffer = [];
-            s_perBlockSharedMemoryBuffer[blockId] = buffer;
-        }
-
-        if (currentIndex < s_perBlockMaxAllocationIndex[blockId])
-        {
-            // Reuse existing allocation for this index
-            var existingOffset = allocationOffsets[currentIndex];
-            return MemoryMarshal.Cast<byte, T>(buffer.AsSpan(existingOffset, bytesNeeded));
-        }
-
-        if (s_perBlockSharedMemoryOffset[blockId] + bytesNeeded > buffer.Length)
-        {
-            // Expand buffer if necessary
-            Array.Resize(ref s_perBlockSharedMemoryBuffer[blockId],
-                Math.Max(buffer.Length * 2, s_perBlockSharedMemoryOffset[blockId] + bytesNeeded));
-            buffer = s_perBlockSharedMemoryBuffer[blockId];
+            if (siteKeys[i] == siteKey)
+            {
+                return MemoryMarshal.Cast<byte, T>(buffer.AsSpan(siteOffsets[i], bytesNeeded));
+            }
         }
 
         var newOffset = s_perBlockSharedMemoryOffset[blockId];
-        var byteSpan = buffer.AsSpan(newOffset, bytesNeeded);
-        s_perBlockSharedMemoryOffset[blockId] += bytesNeeded;
-
-        if (currentIndex >= allocationOffsets.Length)
+        if (newOffset + bytesNeeded > buffer.Length)
         {
-            Array.Resize(ref s_perBlockAllocationOffsets[blockId], Math.Max(16, allocationOffsets.Length * 2));
-            allocationOffsets = s_perBlockAllocationOffsets[blockId];
+            Array.Resize(ref s_perBlockSharedMemoryBuffer[blockId], Math.Max(buffer.Length * 2, newOffset + bytesNeeded));
+            buffer = s_perBlockSharedMemoryBuffer[blockId] ?? throw new InvalidOperationException("Shared memory buffer was lost while resizing.");
         }
 
-        allocationOffsets?[currentIndex] = newOffset;
-        s_perBlockMaxAllocationIndex[blockId]++;
+        if (siteCount == siteKeys.Length)
+        {
+            Array.Resize(ref siteKeys, siteCount * 2);
+            Array.Resize(ref siteOffsets, siteCount * 2);
+            s_perBlockSiteKeys[blockId] = siteKeys;
+            s_perBlockSiteOffsets[blockId] = siteOffsets;
+        }
 
-        return MemoryMarshal.Cast<byte, T>(byteSpan);
+        siteKeys[siteCount] = siteKey;
+        siteOffsets[siteCount] = newOffset;
+        s_perBlockSiteCount[blockId] = siteCount + 1;
+        s_perBlockSharedMemoryOffset[blockId] = newOffset + bytesNeeded;
 
+        return MemoryMarshal.Cast<byte, T>(buffer.AsSpan(newOffset, bytesNeeded));
     }
 
     /// <summary>

@@ -23,7 +23,7 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
 
 | Name | Description |
 | --- | --- |
-| SharedMemory(int) | Allocates statically-sized shared memory. |
+| SharedMemory(int, string, int) | Allocates statically-sized shared memory. |
 
 ## Properties
 
@@ -31,18 +31,31 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
 | --- | --- |
 | Item[int] | Gets or sets the element at the specified index. |
 
-## SharedMemory(int)
+## SharedMemory(int, string, int)
 
 Declares static or dynamic shared memory with the specified element capacity.
 
 ```csharp
-public SharedMemory(int size);
+public SharedMemory(int size, [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = 0,
+    [CallerMemberName] string callerMemberName = "");
 ```
 
 #### Parameters
 
 `size` _int_<br>
 The number of elements allocated in shared memory.
+
+`callerFilePath` _string_<br>
+The file of the declaration, filled in by the compiler. Do not pass it.
+
+`callerLineNumber` _int_<br>
+The line of the declaration, filled in by the compiler. Do not pass it.
+
+`callerMemberName` _string_<br>
+The method of the declaration, filled in by the compiler. Do not pass it.
+
+> [!NOTE]
+> A second constructor, `SharedMemory(int size, ulong siteKey)`, is hidden from IntelliSense. The G# compiler uses it in the code it generates for managed execution; do not call it directly.
 
 ## Item[int]
 
@@ -95,6 +108,37 @@ try {
 ## Remarks
 
 Maps to `__shared__` memory in CUDA. Shared memory is dramatically faster than global memory and acts as a user-managed L1 cache for the Thread Block.
+
+### One Buffer per Declaration per Block
+
+Each `new SharedMemory<T>(n)` expression in the source is **one buffer per thread block**, exactly like a CUDA `__shared__` variable, which has static storage. This holds in every dialect (CUDA, CPU, managed):
+
+- Every thread of the block that reaches the declaration sees the same buffer.
+- A `[GpuDeviceFunction]` that declares shared memory has **one** buffer for that declaration, however many places call it. Two calls of the function, from the same call site or from different ones, read and write the same memory.
+- Different declarations never share memory, even when a kernel and the device function it calls each declare one.
+
+```csharp
+[GpuDeviceFunction]
+public static int Exchange(int value)
+{
+    var box = new SharedMemory<int>(256);   // one buffer per block for this line, shared by all callers
+    box[ThreadIndex.X] = value;
+    Gpu.SyncThreads();
+    return box[(ThreadIndex.X + 1) % BlockDimension.X];
+}
+
+[GpuKernel]
+public static void ExchangeKernel(int[] data)
+{
+    var tile = new SharedMemory<int>(256);  // a separate buffer: another declaration
+    tile[ThreadIndex.X] = data[ThreadIndex.X];
+    data[ThreadIndex.X] = Exchange(tile[ThreadIndex.X]) + Exchange(1);  // both calls use the buffer of 'box'
+}
+```
+
+**Why it matters.** The CPU and managed dialects allocate shared memory at run time instead of reserving it statically. If they allocated by call site or by the order of allocations, a caller and its callee could receive the same buffer, or a device function called from two places could receive two buffers, and the same kernel would compute different results on the CPU and on the GPU. To keep the CUDA semantics, the compiler gives every declaration a **site key**: the 64-bit FNV-1a hash of the documentation comment ID of the declaring method and the ordinal of the declaration in that method. The CPU and managed runtimes look the block's buffer up by that key.
+
+Managed execution runs a device function that never reaches a barrier as ordinary C#, without the compiler's rewrite. There the constructor identifies the declaration by its file, line and method name (`[CallerFilePath]`, `[CallerLineNumber]`, `[CallerMemberName]`), the only facts about the caller that C# passes to a constructor; it cannot see parameter types or the position within a line. Two `SharedMemory<T>` declarations of one method, or of overloads of one name, written on the same line therefore share a buffer in managed execution. Write each declaration on its own line.
 
 ### CPU Emulation (Testing)
 
