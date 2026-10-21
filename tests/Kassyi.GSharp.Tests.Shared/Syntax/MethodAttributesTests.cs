@@ -9,19 +9,22 @@ public partial class MethodAttributesTests
     private const string ForceinlineModifier = "__forceinline__";
     private const string NoinlineModifier = "__noinline__";
 
-    [GeneratedRegex($@"{ForceinlineDevice}\s+\w+\s+AggressiveInlinedFunc")]
+    // Device functions are emitted under their global name, which ends with the C# method name.
+    private const string FunctionName = @"__gsharp_fn_\w+__";
+
+    [GeneratedRegex($@"{ForceinlineDevice}\s+\w+\s+{FunctionName}AggressiveInlinedFunc\b")]
     private static partial Regex AggressiveInlinedRegex();
 
-    [GeneratedRegex($@"{NoinlineDevice}\s+\w+\s+NoInlinedFunc")]
+    [GeneratedRegex($@"{NoinlineDevice}\s+\w+\s+{FunctionName}NoInlinedFunc\b")]
     private static partial Regex NoInlinedRegex();
 
-    [GeneratedRegex($@"{ForceinlineDevice}\s+\w+\s+MultipleAttributesFunc")]
+    [GeneratedRegex($@"{ForceinlineDevice}\s+\w+\s+{FunctionName}MultipleAttributesFunc\b")]
     private static partial Regex MultipleAttributesRegex();
 
-    [GeneratedRegex($@"{InlineDevice}\s+\w+\s+NoOptimizationFunc")]
+    [GeneratedRegex($@"{InlineDevice}\s+\w+\s+{FunctionName}NoOptimizationFunc\b")]
     private static partial Regex NoOptimizationRegex();
 
-    [GeneratedRegex($@"{InlineDevice}\s+\w+\s+CustomMethod")]
+    [GeneratedRegex($@"{InlineDevice}\s+\w+\s+{FunctionName}CustomMethod\b")]
     private static partial Regex CustomMethodRegex();
 
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileDeviceMethod(string methodName)

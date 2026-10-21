@@ -1,4 +1,4 @@
-﻿extern "C" __declspec(dllexport) void StringsAndAttributesTarget_LoopUnrollAttribute(GSharpArray<int> __gsharp_id_0_output){
+﻿extern "C" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__LoopUnrollAttribute(GSharpArray<int> __gsharp_id_0_output){
 int __gsharp_id_1_acc = 0;
 #pragma unroll 4
 for(int __gsharp_id_2_i = 0;__gsharp_id_2_i<4;__gsharp_id_2_i++)
@@ -7,7 +7,7 @@ __gsharp_id_1_acc+=__gsharp_id_2_i;
 }
 __gsharp_id_0_output[0]=__gsharp_id_1_acc;
 }
-extern "C" __declspec(dllexport) void __gsharp_launch_StringsAndAttributesTarget_LoopUnrollAttribute(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<int> __gsharp_id_0_output)
+extern "C" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__LoopUnrollAttribute(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, GSharpArray<int> __gsharp_id_0_output)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;
@@ -30,7 +30,7 @@ int32_t __gsharp_tx = __gsharp_thread_index % __gsharp_block_dim_x;
 int32_t __gsharp_ty = (__gsharp_thread_index / __gsharp_block_dim_x) % __gsharp_block_dim_y;
 int32_t __gsharp_tz = __gsharp_thread_index / (__gsharp_block_dim_x * __gsharp_block_dim_y);
 __gsharp_set_thread_idx(__gsharp_tx, __gsharp_ty, __gsharp_tz, __gsharp_bx, __gsharp_by, __gsharp_bz, __gsharp_block_dim_x, __gsharp_block_dim_y, __gsharp_block_dim_z, __gsharp_grid_dim_x, __gsharp_grid_dim_y, __gsharp_grid_dim_z);
-StringsAndAttributesTarget_LoopUnrollAttribute(__gsharp_id_0_output);
+__gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StringsAndAttributesTarget__LoopUnrollAttribute(__gsharp_id_0_output);
 }
 }
 if (__gsharp_launch_error.HasError()) {

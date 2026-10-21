@@ -248,7 +248,7 @@ internal static class StructTranspiler
                     context.Emitter.Writer.Append(", ");
                 }
 
-                context.Emitter.Writer.Append("typename ").Append(structSym.TypeParameters[i].Name);
+                context.Emitter.Writer.Append("typename ").AppendFullyQualifiedCppName(structSym.TypeParameters[i]);
             }
 
             context.Emitter.Writer.AppendLine(">");
@@ -257,7 +257,7 @@ internal static class StructTranspiler
 
     private static void WriteStructHeader(ref TranspileContext context, INamedTypeSymbol structSym)
     {
-        var guardName = $"__GSHARP_STRUCT_{structSym.ToSafeCppIdentifier()}__";
+        var guardName = CppNameFormatter.GetIncludeGuardName(structSym);
 
         context.Emitter.Writer.Append("#ifndef ").AppendLine(guardName)
             .Append("#define ").AppendLine(guardName);

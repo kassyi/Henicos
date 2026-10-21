@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Compiler.Lowering;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -22,18 +21,23 @@ internal static class ManagedCSharpTranspiler
 
         var (loweredBody, contextFields) = preLowered ?? AstLoweringPipeline.Lower(methodDecl.Body);
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        var methodName = MethodSignatureTranspiler.GetKernelMethodName(methodDecl, methodSymbol);
+        var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
+            methodDecl, methodSymbol);
+        var stateMachineName = MethodSignatureTranspiler.GetKernelDerivedName(
+            GSharpInternalNames.KernelStateMachinePrefix, methodDecl, methodSymbol);
+        // Internal-error reports name the kernel as the user wrote it.
+        var kernelName = methodDecl.Identifier.ValueText;
 
         var (localInits, regularFields, unhoistedSymbols) =
-            ProcessContextFields(contextFields, semanticModel, methodName);
+            ProcessContextFields(contextFields, semanticModel, kernelName);
 
-        var unhoistedBody = new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, methodName).Visit(loweredBody) as BlockSyntax
-                            ?? throw new InvalidOperationException($"Unhoisting ref-struct fields removed the body of kernel '{methodName}'.");
+        var unhoistedBody = new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, kernelName).Visit(loweredBody) as BlockSyntax
+                            ?? throw new InvalidOperationException($"Unhoisting ref-struct fields removed the body of kernel '{kernelName}'.");
         var bodySource = RewriteAndNormalizeBody(unhoistedBody);
 
         using var writer = new SourceWriter();
-        EmitContextClass(writer, methodName, regularFields);
-        EmitStateMachineMethod(writer, methodName, methodSymbol, localInits, bodySource);
+        EmitContextClass(writer, contextName, regularFields);
+        EmitStateMachineMethod(writer, contextName, stateMachineName, methodSymbol, localInits, bodySource);
         return writer.ToString();
     }
 
@@ -59,7 +63,7 @@ internal static class ManagedCSharpTranspiler
         ProcessContextFields(
             IReadOnlyList<VariableDeclaratorSyntax>? contextFields,
             SemanticModel semanticModel,
-            string methodName)
+            string kernelName)
     {
         var regularFields = ImmutableArray.CreateBuilder<ContextField>();
         var localInits = ImmutableArray.CreateBuilder<ContextField>();
@@ -78,7 +82,7 @@ internal static class ManagedCSharpTranspiler
             }
 
             var contextField = new ContextField(field, declaration.Type,
-                HoistedFieldTypeResolver.Resolve(field, semanticModel, methodName));
+                HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName));
 
             if (contextField.ResolvedType.IsRefLikeType)
             {
@@ -114,10 +118,10 @@ internal static class ManagedCSharpTranspiler
 
     private static void EmitContextClass(
         SourceWriter writer,
-        string methodName,
+        string contextName,
         ImmutableArray<ContextField> regularFields)
     {
-        writer.AppendLine($"public class __gsharp_context_{methodName} {{");
+        writer.AppendLine($"public class {contextName} {{");
         writer.AppendLine($"public int {GSharpInternalNames.State};");
         writer.AppendLine($"public uint {GSharpInternalNames.WarpExchange};");
         writer.AppendLine($"public bool {GSharpInternalNames.YieldedForGridSync};");
@@ -135,12 +139,13 @@ internal static class ManagedCSharpTranspiler
 
     private static void EmitStateMachineMethod(
         SourceWriter writer,
-        string methodName,
+        string contextName,
+        string stateMachineName,
         IMethodSymbol? methodSymbol,
         ImmutableArray<ContextField> localInits,
         string bodySource)
     {
-        EmitStateMachineSignature(writer, methodName, methodSymbol);
+        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol);
         writer.AppendLine(") {");
 
         if (methodSymbol != null)
@@ -173,10 +178,11 @@ internal static class ManagedCSharpTranspiler
 
     private static void EmitStateMachineSignature(
         SourceWriter writer,
-        string methodName,
+        string contextName,
+        string stateMachineName,
         IMethodSymbol? methodSymbol)
     {
-        writer.Append($"public static unsafe void __gsharp_statemachine_{methodName}(");
+        writer.Append($"public static unsafe void {stateMachineName}(");
         if (methodSymbol == null)
         {
             return;
@@ -195,7 +201,7 @@ internal static class ManagedCSharpTranspiler
             writer.Append($" {p.Name.ToCSharpIdentifier()}, ");
         }
 
-        writer.Append($"__gsharp_context_{methodName} {GSharpInternalNames.Context}");
+        writer.Append($"{contextName} {GSharpInternalNames.Context}");
 
         if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
         {

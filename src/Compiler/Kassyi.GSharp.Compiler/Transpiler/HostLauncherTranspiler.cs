@@ -21,7 +21,10 @@ internal static class HostLauncherTranspiler
         context.Emitter.Writer.AppendLine();
         context.Emitter.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
         var methodName = MethodSignatureTranspiler.GetKernelMethodName(method, methodSymbol);
-        context.Emitter.Writer.Append($" __gsharp_launch_{methodName}(");
+        var contextName = MethodSignatureTranspiler.GetKernelDerivedName(KernelContextPrefix, method, methodSymbol);
+        context.Emitter.Writer.AppendSpace()
+            .Append(MethodSignatureTranspiler.GetKernelDerivedName(KernelLaunchExportPrefix, method, methodSymbol))
+            .Append('(');
 
         // Launch dimensions
         context.Emitter.Writer.Append(
@@ -68,7 +71,7 @@ internal static class HostLauncherTranspiler
                 if (hasContext)
                 {
                     context.Emitter.Writer.AppendLine(
-                        $"std::vector<__gsharp_context_{methodName}> {LaunchContexts}({LaunchBlockDimX} * {LaunchBlockDimY} * {LaunchBlockDimZ});");
+                        $"std::vector<{contextName}> {LaunchContexts}({LaunchBlockDimX} * {LaunchBlockDimY} * {LaunchBlockDimZ});");
 
                     if (contextFields != null)
                     {

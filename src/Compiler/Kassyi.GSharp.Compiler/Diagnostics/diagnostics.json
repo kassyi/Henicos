@@ -517,17 +517,36 @@
   {
     "name": "CppKeywordIdentifier",
     "id": "GSH0058",
-    "title": "GPU method name is a C++ keyword (temporary)",
-    "messageFormat": "'{0}' is a keyword in C++/CUDA and cannot be used as a GPU method name yet; rename the method (temporary restriction until method names are renamed automatically, see #402)",
+    "title": "GPU method name is a C++ keyword (Deprecated)",
+    "messageFormat": "'{0}' is a keyword in C++/CUDA and cannot be used as a GPU method name. (Deprecated, method names are renamed automatically)",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
-    "isEnabledByDefault": true
+    "isEnabledByDefault": false,
+    "isObsolete": true
   },
   {
     "name": "MalformedTrustedKey",
     "id": "GSH0059",
     "title": "Malformed trusted key line",
     "messageFormat": "Line {1} of '{0}' is not a valid trusted key: {2}",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "DuplicateAotContextName",
+    "id": "GSH0060",
+    "title": "Two structs share one AotContexts name",
+    "messageFormat": "The structs '{0}' and '{1}' both map to '{2}' in '{3}'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.",
+    "category": "GSharpCompiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "IndistinguishableKernelOverloads",
+    "id": "GSH0061",
+    "title": "Kernel overloads cannot be told apart by their launch wrappers",
+    "messageFormat": "The [GpuKernel] overloads '{0}' and '{1}' produce the same {2} launch wrapper signature. Rename one of the kernels.",
     "category": "GSharpCompiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true

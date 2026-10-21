@@ -6,7 +6,8 @@ const specFilePath = path.join(repoRoot, 'docs', 'spec', 'en', '02_architecture'
 const sourceFile = path.join(repoRoot, 'tests', 'Kassyi.GSharp.Tests.Shared', 'TestCases', 'ComprehensiveSpecKernel.cu.cs');
 const snapshotDir = path.join(repoRoot, 'tests', 'Kassyi.GSharp.Tests.Cuda', 'Snapshots');
 const snapshotPrefix = 'Snap.TestComprehensiveSpecKern_';
-const snapshotSuffix = '_Cuda#ComprehensiveSpecKernel.g.verified.cs';
+// The hint name is the encoded path of the kernel class (DebugReduc.ComprehensiveSpecKernel).
+const snapshotSuffix = '_Cuda#DebugReduc__ComprehensiveSpecKernel.g.verified.cs';
 
 function findSnapshotFile() {
     if (!fs.existsSync(snapshotDir)) {

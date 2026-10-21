@@ -23,17 +23,17 @@ public class NativeStructGenerationTests
         Assert.Contains(
             "[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]",
             allCode.WithCSharpNames());
-        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_ChildStruct", allCode.WithCSharpNames());
+        Assert.Contains("struct Kassyi.GSharp.Tests.GeneratorTestCode.ChildStruct", allCode.WithCSharpNames());
         Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Values;", allCode.WithCSharpNames());
         Assert.Contains("int Scale;", allCode.WithCSharpNames());
 
         // 2. Check native struct declaration for ParentStruct with nested native struct
-        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_ParentStruct", allCode.WithCSharpNames());
-        Assert.Contains("Kassyi_GSharp_Tests_GeneratorTestCode_ChildStruct Child;", allCode.WithCSharpNames());
+        Assert.Contains("struct Kassyi.GSharp.Tests.GeneratorTestCode.ParentStruct", allCode.WithCSharpNames());
+        Assert.Contains("Kassyi.GSharp.Tests.GeneratorTestCode.ChildStruct Child;", allCode.WithCSharpNames());
         Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ExtraBuffer;", allCode.WithCSharpNames());
 
         // 3. Check native struct declaration for StructWithArrayOfStructs where ChildStruct[] is replaced by GSharpArrayProxy
-        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_StructWithArrayOfStructs", allCode.WithCSharpNames());
+        Assert.Contains("struct Kassyi.GSharp.Tests.GeneratorTestCode.StructWithArrayOfStructs", allCode.WithCSharpNames());
         Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Children;", allCode.WithCSharpNames());
 
         // 4. Verify Marshal and Unmarshal helper methods exist for the structs
@@ -44,7 +44,7 @@ public class NativeStructGenerationTests
 
         // 5. Verify packed struct (now emitted explicitly following CUDA ABI rules)
         Assert.Contains("[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 18)]", allCode.WithCSharpNames());
-        Assert.Contains("struct Kassyi_GSharp_Tests_GeneratorTestCode_PackedShadowStruct", allCode.WithCSharpNames());
+        Assert.Contains("struct Kassyi.GSharp.Tests.GeneratorTestCode.PackedShadowStruct", allCode.WithCSharpNames());
         Assert.Contains("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;", allCode.WithCSharpNames());
         Assert.Contains("global::System.Byte Flag;", allCode.WithCSharpNames());
     }

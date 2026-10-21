@@ -33,7 +33,7 @@ public class AotConfigurationTests
 
         // We unified naming, so it should expect GetFunction with mangled name
         Assert.Contains("GetFunction", wrapperSource);
-        Assert.Contains("MyKernel_Run", wrapperSource);
+        Assert.Contains("__gsharp_k_AotTest__MyKernel__Run", wrapperSource);
 
         // Check that it's using the file-based loading approach via ModuleContext
         Assert.Contains("GetOrLoadModule()", wrapperSource);

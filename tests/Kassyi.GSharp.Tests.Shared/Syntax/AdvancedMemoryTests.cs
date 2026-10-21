@@ -81,7 +81,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
             nameof(AdvancedMemoryTarget.RefFieldsUpdate), isDevice: true, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Syntax_RefWrapper", cudaSource.WithCSharpNames());
+        Assert.Contains("struct Kassyi.GSharp.Tests.Shared.Syntax.RefWrapper", cudaSource.WithCSharpNames());
         Assert.Contains("wrapper.Value=123;", cudaSource.WithCSharpNames());
     }
 
@@ -99,7 +99,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
         }
         else
         {
-            Assert.Contains("Kassyi_GSharp_Core_Float4 v = vectors[0];", cudaSource.WithCSharpNames());
+            Assert.Contains("Kassyi.GSharp.Core.Float4 v = vectors[0];", cudaSource.WithCSharpNames());
         }
     }
 
@@ -123,7 +123,7 @@ public class AdvancedMemoryTests : TranspilerTestBase
             nameof(AdvancedMemoryTarget.FixedSizeBuffers), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("struct Kassyi_GSharp_Tests_Shared_Syntax_FixedBufferStruct_AdvMem", cudaSource.WithCSharpNames());
+        Assert.Contains("struct Kassyi.GSharp.Tests.Shared.Syntax.FixedBufferStruct_AdvMem", cudaSource.WithCSharpNames());
         Assert.Contains("Data[16];", cudaSource.WithCSharpNames());
     }
 }

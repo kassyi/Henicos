@@ -1,14 +1,13 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
 
 /// <summary>
-/// Rejects identifiers declared in GPU code that cannot be emitted verbatim into C++/CUDA, including members of custom
-/// structs reachable from a declaration's type.
+/// Rejects identifiers declared in GPU code that contain <c>__</c> (GSH0057), including members of custom structs
+/// reachable from a declaration's type.
 /// </summary>
 /// <remarks>
-/// <list type="bullet">
-///   <item><description>GSH0057 (permanent): identifiers containing <c>__</c>, reserved for G# internals (<c>__gsharp*</c>) and the C++ implementation.</description></item>
-///   <item><description>GSH0058 (temporary): C++ keywords as method names. Parameters, locals, labels, local functions and struct members are renamed by <see cref="CppNameResolver"/> (#369); method and type names are renamed by #402, which removes this check.</description></item>
-/// </list>
+/// The prefix <c>__gsharp</c> and the <c>__</c> separator of global names belong to G#, and the C++ implementation
+/// reserves <c>__</c>. Every other name, C++ keywords included, is derived from its symbol by
+/// <see cref="CppNameResolver"/>, so it needs no check.
 /// </remarks>
 internal sealed class CppReservedIdentifierRule :
     ISyntaxValidationRule<MethodDeclarationSyntax>,
@@ -21,63 +20,54 @@ internal sealed class CppReservedIdentifierRule :
     public static readonly CppReservedIdentifierRule Instance = new();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(GSharpDiagnostics.DoubleUnderscoreIdentifier, GSharpDiagnostics.CppKeywordIdentifier);
+        ImmutableArray.Create(GSharpDiagnostics.DoubleUnderscoreIdentifier);
 
     private CppReservedIdentifierRule()
     {
     }
 
     public void Analyze(MethodDeclarationSyntax node, ref ValidationContext context) =>
-        CheckIdentifier(node.Identifier, rejectCppKeywords: true, ref context);
+        CheckIdentifier(node.Identifier, ref context);
 
     public void Analyze(LocalFunctionStatementSyntax node, ref ValidationContext context) =>
-        CheckIdentifier(node.Identifier, rejectCppKeywords: false, ref context);
+        CheckIdentifier(node.Identifier, ref context);
 
     public void Analyze(ParameterSyntax node, ref ValidationContext context)
     {
-        CheckIdentifier(node.Identifier, rejectCppKeywords: false, ref context);
+        CheckIdentifier(node.Identifier, ref context);
         CheckStructMembers(context.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(node)?.Type, node.Identifier,
             ref context);
     }
 
     public void Analyze(VariableDeclaratorSyntax node, ref ValidationContext context)
     {
-        CheckIdentifier(node.Identifier, rejectCppKeywords: false, ref context);
+        CheckIdentifier(node.Identifier, ref context);
         CheckStructMembers(context.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(node)?.Type, node.Identifier,
             ref context);
     }
 
     public void Analyze(SingleVariableDesignationSyntax node, ref ValidationContext context)
     {
-        CheckIdentifier(node.Identifier, rejectCppKeywords: false, ref context);
+        CheckIdentifier(node.Identifier, ref context);
         CheckStructMembers(context.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(node)?.Type, node.Identifier,
             ref context);
     }
 
     public void Analyze(ForEachStatementSyntax node, ref ValidationContext context)
     {
-        CheckIdentifier(node.Identifier, rejectCppKeywords: false, ref context);
+        CheckIdentifier(node.Identifier, ref context);
         CheckStructMembers(context.SemanticModel.GetDeclaredSymbol<ILocalSymbol>(node)?.Type, node.Identifier,
             ref context);
     }
 
-    private static DiagnosticDescriptor? GetViolation(string identifier, bool rejectCppKeywords)
-    {
-        if (identifier.Contains("__"))
-        {
-            return GSharpDiagnostics.DoubleUnderscoreIdentifier;
-        }
+    private static bool IsReserved(string identifier) => identifier.Contains("__");
 
-        return rejectCppKeywords && CppNameFormatter.IsReservedCppKeyword(identifier)
-            ? GSharpDiagnostics.CppKeywordIdentifier
-            : null;
-    }
-
-    private static void CheckIdentifier(SyntaxToken identifier, bool rejectCppKeywords, ref ValidationContext context)
+    private static void CheckIdentifier(SyntaxToken identifier, ref ValidationContext context)
     {
-        if (GetViolation(identifier.ValueText, rejectCppKeywords) is { } descriptor)
+        if (IsReserved(identifier.ValueText))
         {
-            context.ReportDiagnostic(descriptor, identifier.GetLocation(), identifier.ValueText);
+            context.ReportDiagnostic(GSharpDiagnostics.DoubleUnderscoreIdentifier, identifier.GetLocation(),
+                identifier.ValueText);
         }
     }
 
@@ -89,9 +79,10 @@ internal sealed class CppReservedIdentifierRule :
         }
 
         var structType = UnwrapElementType(type);
-        if (TryFindReservedMember(structType, depth: 0, out var memberPath, out var descriptor))
+        if (TryFindReservedMember(structType, depth: 0, out var memberPath))
         {
-            context.ReportDiagnostic(descriptor, declaration.GetLocation(), $"{structType.Name}.{memberPath}");
+            context.ReportDiagnostic(GSharpDiagnostics.DoubleUnderscoreIdentifier, declaration.GetLocation(),
+                $"{structType.Name}.{memberPath}");
         }
     }
 
@@ -116,14 +107,12 @@ internal sealed class CppReservedIdentifierRule :
 
     // [WHY] Struct definitions are emitted once per kernel and dialect, so reporting at the declaration site that
     // pulls the struct into GPU code avoids duplicate diagnostics and keeps host-only structs unaffected.
-    private static bool TryFindReservedMember(ITypeSymbol type, int depth, [NotNullWhen(true)] out string? memberPath,
-        [NotNullWhen(true)] out DiagnosticDescriptor? descriptor)
+    private static bool TryFindReservedMember(ITypeSymbol type, int depth, [NotNullWhen(true)] out string? memberPath)
     {
         // Value-type fields cannot form cycles; the bound only guards self-referencing array fields.
         const int MaxDepth = 8;
 
         memberPath = null;
-        descriptor = null;
         if (depth > MaxDepth || !CudaLayoutRules.IsCustomStruct(type))
         {
             return false;
@@ -143,14 +132,13 @@ internal sealed class CppReservedIdentifierRule :
                 continue;
             }
 
-            descriptor = GetViolation(member.Name, rejectCppKeywords: false);
-            if (descriptor is not null)
+            if (IsReserved(member.Name))
             {
                 memberPath = member.Name;
                 return true;
             }
 
-            if (TryFindReservedMember(UnwrapElementType(memberType), depth + 1, out var nestedPath, out descriptor))
+            if (TryFindReservedMember(UnwrapElementType(memberType), depth + 1, out var nestedPath))
             {
                 memberPath = $"{member.Name}.{nestedPath}";
                 return true;
