@@ -50,5 +50,5 @@ jobs:
       - name: Run CPU Native Toolchain Execution Tests
         env:
           GSHARP_TEST_NO_CUDA: "1"
-        run: dotnet test tests/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=GpuExecution&Category!=Stress&Category!=Benchmark" --no-build -c Release
+        run: dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --filter "Category=GpuExecution&Category!=Stress&Category!=Benchmark" --no-build -c Release
 

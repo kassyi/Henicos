@@ -214,7 +214,7 @@ test-stability count="10" continue_on_error="false" shuffle="true" seed="" *args
         set +e; \
         if [ "${GSHARP_TEST_NO_CUDA:-}" = "1" ] && [ -z '{{args}}' ]; then \
             dotnet test --no-build --filter "Category!=Stress&Category!=Benchmark&Category!=GpuExecution" >> "$iterLog" 2>&1 \
-            && dotnet test tests/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --no-build --filter "Category=GpuExecution&Category!=Stress&Category!=Benchmark" >> "$iterLog" 2>&1; \
+            && dotnet test tests/Compiler/Kassyi.GSharp.Tests.Cpu/Kassyi.GSharp.Tests.Cpu.csproj --no-build --filter "Category=GpuExecution&Category!=Stress&Category!=Benchmark" >> "$iterLog" 2>&1; \
             exitCode=$?; \
         else \
             dotnet test --no-build --filter "Category!=Stress&Category!=Benchmark" {{args}} >> "$iterLog" 2>&1; \

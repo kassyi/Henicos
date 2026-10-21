@@ -10,8 +10,8 @@ $ErrorActionPreference = "Stop"
 
 # Paths
 $RepoRoot = (Get-Item $PSScriptRoot).Parent.FullName
-$DocTestProj = Join-Path $RepoRoot "tests\Kassyi.GSharp.DocTest\Kassyi.GSharp.DocTest.csproj"
-$ProgramCs = Join-Path $RepoRoot "tests\Kassyi.GSharp.DocTest\Program.cs"
+$DocTestProj = Join-Path $RepoRoot "tests\Compiler\Kassyi.GSharp.DocTest\Kassyi.GSharp.DocTest.csproj"
+$ProgramCs = Join-Path $RepoRoot "tests\Compiler\Kassyi.GSharp.DocTest\Program.cs"
 
 if (-not (Test-Path $FilePath)) {
     Write-Error "Snippet file not found: $FilePath"

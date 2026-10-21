@@ -3,8 +3,8 @@ const path = require('path');
 
 const repoRoot = path.join(__dirname, '..');
 const specFilePath = path.join(repoRoot, 'docs', 'spec', 'en', '02_architecture', '03_comprehensive_example.md');
-const sourceFile = path.join(repoRoot, 'tests', 'Kassyi.GSharp.Tests.Shared', 'TestCases', 'ComprehensiveSpecKernel.cu.cs');
-const snapshotDir = path.join(repoRoot, 'tests', 'Kassyi.GSharp.Tests.Cuda', 'Snapshots');
+const sourceFile = path.join(repoRoot, 'tests', 'Compiler', 'Kassyi.GSharp.Tests.Shared', 'TestCases', 'ComprehensiveSpecKernel.cu.cs');
+const snapshotDir = path.join(repoRoot, 'tests', 'Compiler', 'Kassyi.GSharp.Tests.Cuda', 'Snapshots');
 const snapshotPrefix = 'Snap.TestComprehensiveSpecKern_';
 // The hint name is the encoded path of the kernel class (DebugReduc.ComprehensiveSpecKernel).
 const snapshotSuffix = '_Cuda#DebugReduc__ComprehensiveSpecKernel.g.verified.cs';
