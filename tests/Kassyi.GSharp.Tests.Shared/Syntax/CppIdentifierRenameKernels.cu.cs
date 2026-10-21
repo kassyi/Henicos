@@ -187,4 +187,18 @@ public static partial class CppIdentifierRenameKernels
     register:
         data[ThreadIndex.X] = data[ThreadIndex.X] * rounds;
     }
+
+    // Method names live in the global C++ scope. They are derived from the C# path, so a keyword is an ordinary name.
+    [GpuDeviceFunction]
+    public static int friend(int x) => x + 1;
+
+    [GpuDeviceFunction]
+    public static int @class(int x) => x * 2;
+
+    [GpuKernel]
+    public static void template(int[] data)
+    {
+        int tid = ThreadIndex.X;
+        data[tid] = @class(friend(data[tid]));
+    }
 }

@@ -166,4 +166,19 @@ public class CppIdentifierRenameTests : TranspilerTestBase
             Assert.Equal(Rounds * (i + 1), data[i]);
         }
     }
+
+    [SkippableFact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_KeywordMethodNames_AreCalledAndLaunched()
+    {
+        var data = CreateSequence(1);
+
+        CppIdentifierRenameKernels.Launchtemplate(data, blockDimX: ThreadCount);
+
+        for (int i = 0; i < ThreadCount; i++)
+        {
+            Assert.Equal((i + 2) * 2, data[i]);
+        }
+    }
 }

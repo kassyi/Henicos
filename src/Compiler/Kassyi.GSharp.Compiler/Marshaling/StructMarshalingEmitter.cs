@@ -9,7 +9,7 @@ internal static class StructMarshalingEmitter
         IEnumerable<(IMethodSymbol Method, string Source, string ManagedCSharpSource)> methods)
     {
         var structTypes = CollectUniqueStructs(methods, null);
-        if (structTypes.Count > 0)
+        if (structTypes.Length > 0)
         {
             writer.AppendLine(
                 "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
@@ -32,9 +32,9 @@ internal static class StructMarshalingEmitter
     /// Two constructions of one generic struct (<c>Box&lt;int&gt;</c>, <c>Box&lt;long&gt;</c>) are also duplicates:
     /// the native declaration is not generic, so each construction needs its own layout under the same name.
     /// </remarks>
-    internal static List<INamedTypeSymbol> CollectUniqueStructs(
+    internal static ImmutableArray<INamedTypeSymbol> CollectUniqueStructs(
         IEnumerable<(IMethodSymbol Method, string Source, string ManagedCSharpSource)> methods,
-        List<(INamedTypeSymbol Kept, INamedTypeSymbol Duplicate, string Name)>? duplicates)
+        ImmutableArray<(INamedTypeSymbol Kept, INamedTypeSymbol Duplicate, string Name)>.Builder? duplicates)
     {
         var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         foreach (var (method, _, _) in methods)
@@ -46,7 +46,7 @@ internal static class StructMarshalingEmitter
         }
 
         var byName = new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
-        var unique = new List<INamedTypeSymbol>(structTypes.Count);
+        var unique = ImmutableArray.CreateBuilder<INamedTypeSymbol>(structTypes.Count);
         foreach (var s in structTypes)
         {
             using var nameWriter = new SourceWriter();
@@ -63,7 +63,7 @@ internal static class StructMarshalingEmitter
             }
         }
 
-        return unique;
+        return unique.ToImmutable();
     }
 
     private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s)

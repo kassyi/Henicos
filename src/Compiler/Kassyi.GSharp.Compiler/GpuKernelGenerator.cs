@@ -469,7 +469,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         ImmutableArray<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>.Builder methods,
         SourceProductionContext context)
     {
-        var duplicates = new List<(INamedTypeSymbol Kept, INamedTypeSymbol Duplicate, string Name)>();
+        var duplicates = ImmutableArray.CreateBuilder<(INamedTypeSymbol Kept, INamedTypeSymbol Duplicate, string Name)>();
         StructMarshalingEmitter.CollectUniqueStructs(methods, duplicates);
         foreach (var (kept, duplicate, name) in duplicates)
         {

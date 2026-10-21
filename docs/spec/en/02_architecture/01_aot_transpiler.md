@@ -96,7 +96,7 @@ The transpiler derives the C++ name of every user declaration from its symbol ra
 | Instance field or property of a struct that G# emits | `__gsharp_mb_{name}` |
 | Method and type names, members of dialect-mapped types (`float4.x`), external names | unchanged |
 
-The ordinal keeps distinct symbols distinct even when lowering flattens their scopes, for example when the CPU dialect hoists locals into the per-thread context struct. [GSH0057](../03_bcl_api/diagnostics/GSH0057.md) rejects `__` in user identifiers, so these names cannot collide with user code. Method and type names are renamed by [#402](https://github.com/kassyi/Henicos/issues/402); until then [GSH0058](../03_bcl_api/diagnostics/GSH0058.md) rejects C++ keywords as GPU method names.
+The ordinal keeps distinct symbols distinct even when lowering flattens their scopes, for example when the CPU dialect hoists locals into the per-thread context struct. [GSH0057](../03_bcl_api/diagnostics/GSH0057.md) rejects `__` in user identifiers, so these names cannot collide with user code. Method and type names are renamed by [#402](https://github.com/kassyi/Henicos/issues/402), so a C++ keyword is an ordinary method name ([GSH0058](../03_bcl_api/diagnostics/GSH0058.md) is retired).
 
 When nvcc or the host C++ compiler fails, the build log adds a line that maps the generated names in its output back to C# names (`__gsharp_id_0_data = data`).
 

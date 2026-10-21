@@ -12,7 +12,7 @@ public struct GSH_58_OuterStruct
     public GSH_58_ReservedFieldStruct Inner;
 }
 
-public static partial class GSH_58_CppKeywordIdentifier_SadPath
+public static partial class GSH_58_CppKeywordIdentifier_HappyPath
 {
     [GpuKernel]
     public static void LocalKernel(int[] data)
