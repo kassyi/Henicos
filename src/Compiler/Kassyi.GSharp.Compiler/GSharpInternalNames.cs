@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Naming;
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>Identifiers the compiler emits into generated host and device code.</summary>
@@ -9,8 +10,8 @@ namespace Kassyi.GSharp.Compiler;
 internal static class GSharpInternalNames
 {
     // Family prefixes for renamed user declarations (see CppNameResolver). No other constant may start with them.
-    public const string RenamedIdentifierPrefix = Naming.GSharpNameEncoding.IdentifierPrefix;
-    public const string RenamedMemberPrefix = Naming.GSharpNameEncoding.MemberPrefix;
+    public const string RenamedIdentifierPrefix = GSharpNameEncoding.IdentifierPrefix;
+    public const string RenamedMemberPrefix = GSharpNameEncoding.MemberPrefix;
 
     // Per-thread state machine context (CPU dialects).
     public const string Context = "__gsharp_ctx";

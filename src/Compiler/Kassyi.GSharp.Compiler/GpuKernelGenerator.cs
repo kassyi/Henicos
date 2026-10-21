@@ -143,7 +143,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             (BlockSyntax LoweredBody, IReadOnlyList<VariableDeclaratorSyntax> ContextFields)? lowered =
                 methodDeclaration.Body != null
-                    ? Lowering.AstLoweringPipeline.Lower(methodDeclaration.Body)
+                    ? AstLoweringPipeline.Lower(methodDeclaration.Body)
                     : null;
 
             var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
