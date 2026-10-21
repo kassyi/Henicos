@@ -38,6 +38,16 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 return;
             }
 
+            if ((symbol is IFieldSymbol { IsStatic: true, IsConst: false } || symbol is IPropertySymbol { IsStatic: true }) &&
+                symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() != true)
+            {
+                context.Reporter.Report(
+                    GSharpDiagnostics.StaticMemberAccessNotSupported,
+                    node,
+                    symbol.ContainingType?.Name ?? string.Empty,
+                    symbol.Name);
+            }
+
             context.Emitter.Writer.Append(node.Name.Identifier.Text);
             return;
         }

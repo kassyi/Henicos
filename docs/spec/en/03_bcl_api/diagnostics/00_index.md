@@ -74,6 +74,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0064](GSH0064.md) | Error | A call that suspends at a barrier is not supported in this context |
 | [GSH0065](GSH0065.md) | Warning | Shared memory declarations on one line share a buffer in managed execution |
 | [GSH0066](GSH0066.md) | Warning | Kernel parameters exceed the parameter space limit |
+| [GSH0067](GSH0067.md) | Error | Non-const static fields and properties are not supported in GPU code |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 
