@@ -389,8 +389,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public float Gravity;
-public // 1. All Intrinsics Indexing
-        int tx;
+public int tx;
 public int ty;
 public int tz;
 public int bx;
@@ -403,21 +402,17 @@ public int gdimX;
 public int gdimY;
 public int gdimZ;
 public int tid;
-public // 3. Custom Struct extraction & Array pointer dereferencing
-            PhysicsVector p;
+public PhysicsVector p;
 public SpecTypes types;
-public dynamic origin;
-public dynamic distance;
-public dynamic nested;
-public // 4. All Math Mappings and Device Method invocation
-            float mag;
+public global::DebugReduc.Point origin;
+public float distance;
+public global::DebugReduc.NestedPhysicsState nested;
+public float mag;
 public int i;
-public // 6. Other Loop Syntaxes
-            int counter;
+public int counter;
 }
 public static unsafe void __gsharp_statemachine_ComprehensiveSpecKernel_ProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref float totalMagnitude, out bool successFlag, global::DebugReduc.SpecTypes largeStructVal, int particleCount, int unrollFactor, __gsharp_context_ComprehensiveSpecKernel_ProcessPhysics __gsharp_ctx) {
         successFlag = default;
-        // 2. Shared Memory (Static & Dynamic)
         SharedMemory<int> staticCache = new SharedMemory<int>(10000);
         SharedMemory<float> dynamicCache = new SharedMemory<float>(particleCount);
         SharedMemory<int> targetTypedCache = new(256);

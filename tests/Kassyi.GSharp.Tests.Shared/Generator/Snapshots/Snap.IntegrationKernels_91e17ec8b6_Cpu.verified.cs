@@ -337,22 +337,15 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public bool ok;
-public // Bitwise and Shifts
-            int bitwise;
-public // Math & Hardware Math (SYN-68)
-            float mag;
-public // Inline Array (GEN-30)
-            Tier1FixedArray arr;
-public // SYN-94: ForUnroll
-            float sum;
-public // SYN-70: foreach loop on InlineArray
-            float foreachSum;
-public // SYN-08: Lambda expressions (Expanded to C++ auto lambdas)
-            Func<float, float, float> multiplier;
+public int bitwise;
+public float mag;
+public Tier1FixedArray arr;
+public float sum;
+public float foreachSum;
+public Func<float, float, float> multiplier;
 }
 public static unsafe void __gsharp_statemachine_Tier1IntegrationKernels_AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, __gsharp_context_Tier1IntegrationKernels_AllInOneKernel __gsharp_ctx) {
-        // SYN-47: Dynamic Shared Memory
-            SharedMemory<float> dynamicSharedMem = new SharedMemory<float>(dynamicSharedSize);
+        SharedMemory<float> dynamicSharedMem = new SharedMemory<float>(dynamicSharedSize);
 {
     switch (__gsharp_ctx.__gsharp_state)
     {

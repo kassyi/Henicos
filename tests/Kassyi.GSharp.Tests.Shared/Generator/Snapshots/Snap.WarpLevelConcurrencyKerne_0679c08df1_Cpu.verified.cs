@@ -172,12 +172,11 @@ public int tid;
 public int lane;
 public int warpId;
 public int val;
-public // Warp synchronous reduction
-        uint mask;
-public dynamic __gsharp_warp_temp_0;
-public dynamic __gsharp_warp_temp_1;
-public dynamic __gsharp_warp_temp_2;
-public dynamic __gsharp_warp_temp_3;
+public uint mask;
+public int __gsharp_warp_temp_0;
+public int __gsharp_warp_temp_1;
+public int __gsharp_warp_temp_2;
+public int __gsharp_warp_temp_3;
 }
 public static unsafe void __gsharp_statemachine_WarpLevelConcurrencyKernels_WarpReduceSumKernel(int[] input, int[] output, __gsharp_context_WarpLevelConcurrencyKernels_WarpReduceSumKernel __gsharp_ctx) {
 {
@@ -359,9 +358,9 @@ int __gsharp_id_2_tid;
 unsigned int __gsharp_id_3_mask;
 int __gsharp_id_4_val;
 int __gsharp_warp_temp_0;
-int __gsharp_warp_temp_1;
+unsigned int __gsharp_warp_temp_1;
 int __gsharp_warp_temp_2;
-int __gsharp_warp_temp_3;
+unsigned int __gsharp_warp_temp_3;
 int __gsharp_warp_temp_4;
 };
 extern ""C"" __declspec(dllexport) void WarpLevelConcurrencyKernels_WarpPrimitivesKernel(GSharpArray<int> __gsharp_id_0_input, GSharpArray<int> __gsharp_id_1_output, __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel* __gsharp_ctx){
@@ -491,11 +490,11 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 public uint mask;
 public int val;
-public dynamic __gsharp_warp_temp_0;
-public dynamic __gsharp_warp_temp_1;
-public dynamic __gsharp_warp_temp_2;
-public dynamic __gsharp_warp_temp_3;
-public dynamic __gsharp_warp_temp_4;
+public int __gsharp_warp_temp_0;
+public uint __gsharp_warp_temp_1;
+public int __gsharp_warp_temp_2;
+public uint __gsharp_warp_temp_3;
+public int __gsharp_warp_temp_4;
 }
 public static unsafe void __gsharp_statemachine_WarpLevelConcurrencyKernels_WarpPrimitivesKernel(int[] input, int[] output, __gsharp_context_WarpLevelConcurrencyKernels_WarpPrimitivesKernel __gsharp_ctx) {
 {

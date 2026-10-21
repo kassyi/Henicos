@@ -358,15 +358,48 @@ internal static class SymbolExtensions
 
     /// <summary>
     /// Appends the C# type name to the source writer, using language keywords (e.g. "int", "float[]") for primitives
-    /// and fully-qualified names for complex types.
+    /// and fully-qualified names for complex types. Keywords are also used inside arrays, pointers, nullable value types,
+    /// and type arguments (e.g. "int?[]", "float*", "global::System.Span&lt;int&gt;").
     /// </summary>
     public static ref readonly SourceWriter AppendCsharpTypeName(this in SourceWriter writer, ITypeSymbol type)
     {
-        if (type is IArrayTypeSymbol arrayType)
+        switch (type)
         {
-            writer.AppendCsharpTypeName(arrayType.ElementType);
-            writer.Append("[]");
-            return ref writer;
+            case IArrayTypeSymbol arrayType:
+                writer.AppendCsharpTypeName(arrayType.ElementType);
+                writer.Append('[');
+                for (var i = 0; i < arrayType.Rank - 1; i++)
+                {
+                    writer.Append(',');
+                }
+
+                writer.Append(']');
+                return ref writer;
+            case IPointerTypeSymbol pointerType:
+                writer.AppendCsharpTypeName(pointerType.PointedAtType);
+                writer.Append('*');
+                return ref writer;
+            case INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType:
+                writer.AppendCsharpTypeName(nullableType.TypeArguments[0]);
+                writer.Append('?');
+                return ref writer;
+            case INamedTypeSymbol { TypeArguments.Length: > 0 } genericType:
+                writer.Append("global::");
+                AppendContainingNamespaceOrType(writer, genericType.ContainingSymbol);
+                writer.Append(genericType.Name);
+                writer.Append('<');
+                for (var i = 0; i < genericType.TypeArguments.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        writer.Append(", ");
+                    }
+
+                    writer.AppendCsharpTypeName(genericType.TypeArguments[i]);
+                }
+
+                writer.Append('>');
+                return ref writer;
         }
 
         var keyword = type.SpecialType.GetCsharpKeyword();

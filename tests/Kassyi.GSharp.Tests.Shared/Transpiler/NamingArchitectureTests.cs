@@ -25,6 +25,7 @@ public partial class NamingArchitectureTests
         // Diagnostic and error-comment text, not C++ identifiers.
         "TranspilationSession.cs:methodSymbol.Name",
         "GpuOperatorMacroTranspiler.cs:targetType.Name",
+        "HoistedFieldTypeResolver.cs:typeParameter.Name",
     };
 
     // C++ / CUDA spellings that legitimately start with "__" and are not compiler-internal names.

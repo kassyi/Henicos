@@ -2395,9 +2395,9 @@ public class __gsharp_context_GpuBigIntDivRemKernels_ModPowNttMegaKernel {
 public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
-public dynamic core;
-public dynamic iterScratch;
-public dynamic expSlice;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.NewtonRaphsonContext core;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.IterationScratchContext iterScratch;
+public global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ExponentSliceContext expSlice;
 public int n;
 public int expWords;
 public int targetBits;
