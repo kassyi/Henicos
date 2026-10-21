@@ -154,6 +154,34 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     }
 
     [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_ThreadVariantConditions_ReportGSH0037()
+    {
+        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/ThreadVariantConditionKernels.cu.cs", s_analyzer)
+                                                 .GetDiagnosticsAsync();
+
+        // One report per kernel: a derived local, a conditionally assigned local, a thread-stride loop, the lane id
+        var divergent = 0;
+        foreach (var diagnostic in diagnostics)
+        {
+            if (diagnostic.Id == "GSH0037")
+            {
+                divergent++;
+            }
+        }
+
+        Assert.Equal(4, divergent);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_UniformConditions_HasNoDiagnostics()
+    {
+        await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/UniformConditionBarrierKernels.cu.cs", s_analyzer)
+                               .ReportsNoDiagnosticsAsync();
+    }
+
+    [Fact]
     [Scenario(TestScenario.HappyPath)]
     public async Task Test_DeviceFunctionRefParametersAndWarpOnlyBranch_HasNoDiagnostics()
     {

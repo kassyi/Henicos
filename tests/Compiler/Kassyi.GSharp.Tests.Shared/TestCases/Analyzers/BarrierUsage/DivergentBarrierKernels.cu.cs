@@ -6,9 +6,9 @@ public static partial class DivergentBarrierKernels
 {
     [GpuKernel]
     [SkipSnapshotConsistency("Sad Path")]
-    public static void IfBranchBarrierKernel(Dim3 threadIdx, int[] buffer)
+    public static void IfBranchBarrierKernel(int[] buffer)
     {
-        if (threadIdx.X < 16)
+        if (ThreadIndex.X < 16)
         {
             // GSH0037: Divergent barrier inside if statement
             Gpu.SyncThreads();
@@ -17,9 +17,9 @@ public static partial class DivergentBarrierKernels
 
     [GpuKernel]
     [SkipSnapshotConsistency("Sad Path")]
-    public static void ElseBranchBarrierKernel(int condition, int[] buffer)
+    public static void ElseBranchBarrierKernel(int[] buffer)
     {
-        if (condition > 0)
+        if (buffer[ThreadIndex.X] > 0)
         {
             buffer[0] = 1;
         }
@@ -32,9 +32,9 @@ public static partial class DivergentBarrierKernels
 
     [GpuKernel]
     [SkipSnapshotConsistency("Sad Path")]
-    public static void SwitchBranchBarrierKernel(int mode, int[] buffer)
+    public static void SwitchBranchBarrierKernel(int[] buffer)
     {
-        switch (mode)
+        switch (ThreadIndex.X % 2)
         {
             case 0:
                 // GSH0037: Divergent barrier inside switch case
