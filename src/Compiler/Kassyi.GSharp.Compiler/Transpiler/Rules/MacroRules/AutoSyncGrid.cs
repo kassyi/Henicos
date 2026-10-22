@@ -95,8 +95,7 @@ internal static class AutoSyncGrid
         }
 
         return semanticModel.GetSymbol(invocation) is IMethodSymbol symbol &&
-               GpuMacroClassifier.Classify(symbol) is { Kind: GpuMacroKind.SyncGrid, HasBody: false } &&
-               symbol.ContainingNamespace.IsCoreNamespace();
+               GpuMacroClassifier.Classify(symbol) is { Kind: GpuMacroKind.SyncGrid, HasBody: false };
     }
 
     private static void FlattenInto(
@@ -138,7 +137,6 @@ internal static class AutoSyncGrid
 
         if (semanticModel.GetSymbol(invocation) is not IMethodSymbol symbol ||
             GpuMacroClassifier.Classify(symbol) is not { Kind: GpuMacroKind.SyncGrid, HasBody: true } ||
-            !symbol.ContainingNamespace.IsCoreNamespace() ||
             invocation.ArgumentList.Arguments.Count != 1 ||
             invocation.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax lambda)
         {

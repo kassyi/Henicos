@@ -60,8 +60,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
             // SyncGrid runs its body on one thread only in the form that takes a body
             var isSingleThreadMacro = symbol != null &&
                                       GpuMacroClassifier.Classify(symbol) is
-                                          { Kind: GpuMacroKind.SingleThread } or { Kind: GpuMacroKind.SyncGrid, HasBody: true } &&
-                                      symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() == true;
+                                          { Kind: GpuMacroKind.SingleThread } or { Kind: GpuMacroKind.SyncGrid, HasBody: true };
 
             if (isSingleThreadMacro)
             {

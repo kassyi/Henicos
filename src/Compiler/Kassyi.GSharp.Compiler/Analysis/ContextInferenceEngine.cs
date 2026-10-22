@@ -35,8 +35,7 @@ public static class ContextInferenceEngine
         }
 
         // Direct check: Does the method symbol belong to Gpu.GridStrideLoop or Gpu.SyncGrid?
-        if (GpuMacroClassifier.Classify(methodSymbol).Kind is GpuMacroKind.GridStrideLoop or GpuMacroKind.SyncGrid &&
-            methodSymbol.ContainingType?.ContainingNamespace.IsCoreNamespace() == true)
+        if (GpuMacroClassifier.Classify(methodSymbol).Kind is GpuMacroKind.GridStrideLoop or GpuMacroKind.SyncGrid)
         {
             cache[methodSymbol] = true;
             return true;

@@ -48,4 +48,18 @@ public class GpuKernelAnalyzerTests
         await RoslynTestUtility.TestAnalyzer(testCasePath, s_analyzer)
                                .HasNoErrorsAsync();
     }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_UserDefinedGpuMacros_AreNotValidatedAsGpuMacros()
+    {
+        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/GpuKernel/LookalikeGpuMacros_InGpuKernel.cu.cs", s_analyzer)
+                                                 .GetDiagnosticsAsync();
+
+        Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.MacroArgumentMustBeConstant.Id);
+        Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral.Id);
+        Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.SyncGridRequiresCooperativeKernel.Id);
+        Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant.Id);
+        Assert.DoesNotContain(diagnostics, d => d.Id == GSharpDiagnostics.UnrollHintMustPrecedeLoop.Id);
+    }
 }

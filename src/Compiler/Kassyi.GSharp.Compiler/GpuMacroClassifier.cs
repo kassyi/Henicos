@@ -32,13 +32,19 @@ internal readonly struct GpuMacroCall(GpuMacroKind kind, bool hasContext = false
 }
 
 /// <summary>
-/// Identifies which <c>Gpu</c> macro, and which of its overloads, a method symbol is, so that the transpiler rules and the
-/// analyzers share one definition of the macro signatures.
+/// Identifies which <c>Kassyi.GSharp.Core.Gpu</c> macro, and which of its overloads, a method symbol is, so that the
+/// transpiler rules and the analyzers share one definition of the macro signatures.
 /// </summary>
 internal static class GpuMacroClassifier
 {
     public static GpuMacroCall Classify(IMethodSymbol symbol)
     {
+        // A user's own type that is also named Gpu is not the macro host
+        if (!symbol.ContainingNamespace.IsCoreNamespace())
+        {
+            return default;
+        }
+
         var containingType = symbol.ContainingType;
         if (containingType is { Name: TypeConstants.GpuMacros.Hint, ContainingType.Name: TypeConstants.GpuType })
         {
