@@ -33,6 +33,7 @@ You **MUST** follow the dedicated rule files for code implementation:
 - [Test Execution (`just`)](.agents/rules/test-execution.md): `just` test categories and DiffEngine hang prevention.
 - [Transpiler Emission Rules](.agents/rules/transpiler-emission.md): NO Reflection, `SourceWriter` scoped brackets, dense left-aligned output.
 - [Generator Pipeline Invariants](.agents/rules/generator-invariants.md): `[Constant]` exclusion, diagnostics, struct guards, ref/out, `var` suffix, design-time I/O guard, MSBuild wildcard, symbol file (`*.gsym.json`) and source hash header (`// gsharp-symbols: <hash>`).
+- [Agent Scripts](.agents/rules/agent-scripts.md): agent-run scripts are dependency-free Node `.js` (no `.sh` / `.ps1`); compiler-owned logic goes in a `Kassyi.GSharp.Compiler.Generators` mode; script catalog.
 
 ---
 

@@ -340,7 +340,7 @@ bench-pi-cpu digits="10k" *args="":
 
 # Run a C# code snippet as a DocTest with explicitly defined dependencies
 doctest file_path assemblies="":
-    pwsh ./scripts/Test-DocSnippet.ps1 -FilePath {{file_path}} -Assemblies {{assemblies}}
+    node scripts/test-doc-snippet.js --file-path "{{file_path}}" --assemblies "{{assemblies}}"
 
 rebuild-and-test:
     dotnet build --no-incremental && just test
