@@ -81,15 +81,14 @@ public struct TranspileContext(
     Action<Diagnostic>? reportDiagnostic,
     RoslynToCudaVisitor visitor,
     ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> bclIntrinsicMap,
-    ITranspilerDialect dialect,
-    ITranspilerRuleRegistry ruleRegistry)
+    ITranspilerDialect dialect)
 {
     public Emitter Emitter = new(writer, localVariableOverrides, activeSwitchIds, dialect);
     public Query Query = new(semanticModel, bclIntrinsicMap, usedStructs);
     public Reporter Reporter = new(reportDiagnostic);
 
     public RoslynToCudaVisitor Visitor { get; } = visitor;
-    public ITranspilerRuleRegistry RuleRegistry { get; } = ruleRegistry;
+    internal TranspilerRuleRegistry RuleRegistry => TranspilerRuleRegistry.Default;
 }
 
 /// <summary>

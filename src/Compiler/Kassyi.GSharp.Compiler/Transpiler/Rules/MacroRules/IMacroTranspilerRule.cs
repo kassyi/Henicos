@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Rules;
+namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
 /// <summary>
 /// Defines an internal contract for intercepting and expanding high-level GPU macro invocations within expression statements.

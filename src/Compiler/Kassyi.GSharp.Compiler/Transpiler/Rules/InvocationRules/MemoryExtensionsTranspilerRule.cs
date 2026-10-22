@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
+namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
 {

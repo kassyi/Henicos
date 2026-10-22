@@ -28,7 +28,7 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
         switch (lambdaExpr.Body)
         {
             case BlockSyntax block:
-                var flatStatements = RoslynToCudaVisitor.FlattenStatements(block.Statements, context.Query.SemanticModel);
+                var flatStatements = AutoSyncGrid.Flatten(block.Statements, context.Query.SemanticModel);
                 if (MacroTranspilerHelper.HasExecutableStatements(flatStatements))
                 {
                     EmitSyncGridBody(ref context, flatStatements, expr: null);

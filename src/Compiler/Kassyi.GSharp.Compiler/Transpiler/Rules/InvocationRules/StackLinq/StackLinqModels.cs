@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules.StackLinq;
+namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 
 internal readonly record struct LinqStage(string Name, InvocationExpressionSyntax Invocation, IMethodSymbol Symbol);
 

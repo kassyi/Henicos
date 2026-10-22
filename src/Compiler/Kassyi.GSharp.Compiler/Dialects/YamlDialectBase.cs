@@ -221,14 +221,4 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         return (isRefPointer, isPointerType, isRefPointer);
     }
-
-    public virtual CSharpSyntaxRewriter? GetAstPreProcessor(SemanticModel semanticModel) => null;
-
-    public virtual CSharpSyntaxVisitor<bool> GetInterceptorVisitor(ref TranspileContext context) =>
-        new DefaultInterceptorVisitor();
-
-    private class DefaultInterceptorVisitor : CSharpSyntaxVisitor<bool>
-    {
-        public override bool DefaultVisit(SyntaxNode node) => false;
-    }
 }

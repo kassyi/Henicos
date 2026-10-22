@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Transpiler.Rules;
+namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 /// <summary>
 /// Defines an internal contract for intercepting and transpiling specific method invocation syntax nodes into target dialect expressions.

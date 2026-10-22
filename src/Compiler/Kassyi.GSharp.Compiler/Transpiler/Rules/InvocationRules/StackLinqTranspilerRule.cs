@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
+namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 /// <summary>
 /// Transpiles Kassyi.ZeroAlloc.Linq method invocations into their corresponding C++ Prelude equivalents.
