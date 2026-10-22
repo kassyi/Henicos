@@ -15,9 +15,9 @@ namespace Kassyi.GSharp.Tests.Generators;
 public class TestArchitectureAnalyzer : DiagnosticAnalyzer
 {
 #pragma warning disable RS2008 // Repository-internal analyzer; not shipped, so analyzer release tracking does not apply.
-    // IDs, titles, messages and severities are carried over unchanged from the former diagnostics.json entries.
+    // Titles, messages and severities are carried over unchanged from the former diagnostics.json entries (formerly in the GSH range); IDs use the repository-internal HNT prefix.
     public static readonly DiagnosticDescriptor TestClassMustInheritFromBase = new(
-        id: "GSH0049",
+        id: "HNT0001",
         title: "Test classes must inherit from required base classes",
         messageFormat: "Test class '{0}' contains [Fact] or [Theory] methods but does not inherit from TranspilerTestBase or StateMachineTestBase. This is required by the G# test architecture guidelines.",
         category: "GSharpTestArchitecture",
@@ -25,7 +25,7 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true);
 
     public static readonly DiagnosticDescriptor TestMethodMustHaveCategoryTrait = new(
-        id: "GSH0050",
+        id: "HNT0002",
         title: "Test methods must have a Category trait",
         messageFormat: "Test method '{0}' is missing [Trait(\"Category\", \"...\")]. All tests must be categorized (e.g., Compiler, SadPath, GpuExecution).",
         category: "GSharpTestArchitecture",

@@ -1,1 +1,1 @@
-﻿GSH0050 at (5,16)-(5,26): Test method 'TestMethod' is missing [Trait("Category", "...")]. All tests must be categorized (e.g., Compiler, SadPath, GpuExecution).
+﻿HNT0002 at (5,16)-(5,26): Test method 'TestMethod' is missing [Trait("Category", "...")]. All tests must be categorized (e.g., Compiler, SadPath, GpuExecution).

@@ -62,8 +62,6 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0046](GSH0046.md) | Error | async, await, and yield return are prohibited in GPU kernels |
 | [GSH0047](GSH0047.md) | Error | The lock statement is prohibited in GPU kernels |
 | [GSH0048](GSH0048.md) | Error | Source Generator Internal Error |
-| [GSH0049](GSH0049.md) | Error | Test classes must inherit from required base classes |
-| [GSH0050](GSH0050.md) | Error | Test methods must have a Category trait |
 | [GSH0051](GSH0051.md) | Error | [TakesOwnership] applied to non-IDisposable type |
 | [GSH0052](GSH0052.md) | Error | [TakesOwnership] is only allowed on constructor parameters |
 | [GSH0053](GSH0053.md) | Error | Cannot take ownership of a reference parameter |
