@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Marshaling;
+namespace Kassyi.GSharp.Compiler.Layout;
 
 /// <summary>Computes memory layout and alignment for types according to CUDA ABI rules.</summary>
 internal static class CudaLayoutRules

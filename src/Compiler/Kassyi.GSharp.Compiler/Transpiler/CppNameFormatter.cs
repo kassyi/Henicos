@@ -1,5 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+using Kassyi.GSharp.Compiler.Layout;
+
 /// <summary>
 /// Formats Roslyn symbols and namespaces into safe, collision-free C++ identifiers and fully-qualified names.
 /// </summary>

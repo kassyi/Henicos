@@ -1,6 +1,8 @@
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 
+using Kassyi.GSharp.Compiler.Layout;
+
 /// <summary>
 /// Transpiles C# local declaration statements into target dialect variable definitions,
 /// with special handling for static and dynamic GPU shared memory declarations (<c>SharedMemory&lt;T&gt;</c>).

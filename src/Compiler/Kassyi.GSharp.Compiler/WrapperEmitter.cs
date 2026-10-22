@@ -3,6 +3,8 @@ using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler;
 
+using Kassyi.GSharp.Compiler.Layout;
+
 /// <summary>Generates host-side C# wrapper classes that load and invoke GPU kernels.</summary>
 internal static class WrapperEmitter
 {
