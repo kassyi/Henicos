@@ -4,4 +4,12 @@
     <!-- This must be in .targets because the SDK adds default implicit usings after .props are evaluated. -->
     <Using Remove="System.Linq" />
   </ItemGroup>
+
+  <!-- Package icon for every packable project. In .targets so that IsPackable set by the project is already known. -->
+  <PropertyGroup Condition="'$(IsPackable)' != 'false'">
+    <PackageIcon>gsharp-icon-128.png</PackageIcon>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)assets/branding/icons/gsharp-icon-128.png" Pack="true" PackagePath="" Visible="false" />
+  </ItemGroup>
 </Project>

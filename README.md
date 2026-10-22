@@ -1,5 +1,9 @@
 # G# (GSharp)
 
+<p align="center">
+  <img src="assets/branding/banners/gsharp-hero-banner.svg" alt="G# / GSharp — C# to CUDA C++ AOT Transpiler + High-Performance Math Library" width="100%">
+</p>
+
 **A zero-overhead C#-to-CUDA AOT transpiler. Write bare-metal GPU kernels in standard C#.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![.NET 8.0](https://img.shields.io/badge/.NET-8.0-purple.svg)](https://dotnet.microsoft.com/) [![CUDA](https://img.shields.io/badge/CUDA-12%2B-green.svg)](https://developer.nvidia.com/cuda-toolkit)
