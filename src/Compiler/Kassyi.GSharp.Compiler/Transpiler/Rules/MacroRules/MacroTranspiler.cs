@@ -33,9 +33,15 @@ internal static class MacroTranspiler
             return false;
         }
 
+        var call = GpuMacroClassifier.Classify(symbol);
+        if (call.Kind == GpuMacroKind.None)
+        {
+            return false;
+        }
+
         foreach (var rule in context.RuleRegistry.MacroRules)
         {
-            if (rule.TryTranspile(invocation, statement, symbol, ref context))
+            if (rule.TryTranspile(invocation, statement, call, ref context))
             {
                 return true;
             }

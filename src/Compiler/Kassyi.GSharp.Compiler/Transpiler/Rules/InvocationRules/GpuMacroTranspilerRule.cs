@@ -5,25 +5,24 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 {
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        if (symbol.ContainingType.Name != TypeConstants.GpuType ||
-            !symbol.ContainingNamespace.IsCoreNamespace())
+        if (!symbol.ContainingNamespace.IsCoreNamespace())
         {
             return false;
         }
 
-        if (symbol.Name == TypeConstants.GpuMacros.InlinePtx)
+        switch (GpuMacroClassifier.Classify(symbol).Kind)
         {
-            TranspileInlinePtx(node, ref context);
-            return true;
-        }
+            case GpuMacroKind.InlinePtx:
+                TranspileInlinePtx(node, ref context);
+                return true;
 
-        if (symbol.Name == TypeConstants.GpuMacros.Constant)
-        {
-            TranspileConstant(node, ref context);
-            return true;
-        }
+            case GpuMacroKind.Constant:
+                TranspileConstant(node, ref context);
+                return true;
 
-        return false;
+            default:
+                return false;
+        }
     }
 
     private static void TranspileInlinePtx(InvocationExpressionSyntax node, ref TranspileContext context)

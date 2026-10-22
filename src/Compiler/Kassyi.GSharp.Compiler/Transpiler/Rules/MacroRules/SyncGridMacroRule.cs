@@ -8,11 +8,10 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
     public bool TryTranspile(
         InvocationExpressionSyntax invocation,
         ExpressionStatementSyntax statement,
-        IMethodSymbol symbol,
+        GpuMacroCall call,
         ref TranspileContext context)
     {
-        if (symbol.Name != TypeConstants.GpuMacros.SyncGrid || symbol.ContainingType.Name != TypeConstants.GpuType ||
-            symbol.Parameters.Length != 1)
+        if (call is not { Kind: GpuMacroKind.SyncGrid, HasBody: true })
         {
             return false;
         }

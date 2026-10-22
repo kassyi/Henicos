@@ -8,19 +8,17 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
     public bool TryTranspile(
         InvocationExpressionSyntax invocation,
         ExpressionStatementSyntax statement,
-        IMethodSymbol symbol,
+        GpuMacroCall call,
         ref TranspileContext context)
     {
-        if (symbol.Name != TypeConstants.GpuMacros.GridStrideLoop || symbol.ContainingType.Name != TypeConstants.GpuType)
+        if (call.Kind != GpuMacroKind.GridStrideLoop)
         {
             return false;
         }
 
-        var hasContext = symbol.Parameters.Length == 3;
-        var offset = hasContext ? 1 : 0;
         var args = invocation.ArgumentList.Arguments;
 
-        if (args.Count < offset + 2 || args[offset + 1].Expression is not LambdaExpressionSyntax lambdaExpr)
+        if (args.Count <= call.LambdaArgumentIndex || args[call.LambdaArgumentIndex].Expression is not LambdaExpressionSyntax lambdaExpr)
         {
             return false;
         }
@@ -28,7 +26,7 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
         if (!MacroTranspilerHelper.TryBeginMacroScope(
                 invocation,
                 lambdaExpr,
-                hasContext,
+                call.HasContext,
                 args,
                 ref context,
                 TypeConstants.GpuMacros.GridStrideLoop,
@@ -40,7 +38,7 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
         using var scopeDisposer = macroScope;
 
         // TryBeginMacroScope has already rejected lambdas without a loop parameter.
-        var loopVariable = MacroTranspilerHelper.ExtractUnrollLoopParameter(lambdaExpr, hasContext);
+        var loopVariable = MacroTranspilerHelper.ExtractUnrollLoopParameter(lambdaExpr, call.HasContext);
         if (loopVariable == null)
         {
             return false;
@@ -55,7 +53,7 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
             context.Emitter.Writer.Append(" = blockIdx.x * blockDim.x + threadIdx.x; ");
             CppNameResolver.AppendDeclaredName(loopVariable, loopVariable.Identifier, ref context);
             context.Emitter.Writer.Append(" < ");
-            context.Visitor.Visit(args[offset].Expression);
+            context.Visitor.Visit(args[call.ArgumentOffset].Expression);
             context.Emitter.Writer.Append("; ");
             CppNameResolver.AppendDeclaredName(loopVariable, loopVariable.Identifier, ref context);
             context.Emitter.Writer.Append(" += gridDim.x * blockDim.x");

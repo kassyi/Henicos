@@ -8,19 +8,18 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
     public bool TryTranspile(
         InvocationExpressionSyntax invocation,
         ExpressionStatementSyntax statement,
-        IMethodSymbol symbol,
+        GpuMacroCall call,
         ref TranspileContext context)
     {
-        if (symbol.Name != TypeConstants.GpuMacros.ForUnroll || symbol.ContainingType.Name != TypeConstants.GpuType)
+        if (call.Kind != GpuMacroKind.ForUnroll)
         {
             return false;
         }
 
-        var hasContext = symbol.Parameters.Length == 4;
-        var offset = hasContext ? 1 : 0;
+        var offset = call.ArgumentOffset;
         var args = invocation.ArgumentList.Arguments;
 
-        if (args.Count < offset + 3 || args[offset + 2].Expression is not LambdaExpressionSyntax lambdaExpr)
+        if (args.Count <= call.LambdaArgumentIndex || args[call.LambdaArgumentIndex].Expression is not LambdaExpressionSyntax lambdaExpr)
         {
             return false;
         }
@@ -32,7 +31,7 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
             return false;
         }
 
-        if (!MacroTranspilerHelper.TryBeginMacroScope(invocation, lambdaExpr, hasContext, args, ref context, TypeConstants.GpuMacros.ForUnroll, out var macroScope))
+        if (!MacroTranspilerHelper.TryBeginMacroScope(invocation, lambdaExpr, call.HasContext, args, ref context, TypeConstants.GpuMacros.ForUnroll, out var macroScope))
         {
             return false;
         }

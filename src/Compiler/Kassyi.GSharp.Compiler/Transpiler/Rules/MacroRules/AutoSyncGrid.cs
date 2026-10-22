@@ -94,12 +94,8 @@ internal static class AutoSyncGrid
             return false;
         }
 
-        return semanticModel.GetSymbol(invocation) is IMethodSymbol
-        {
-            Name: TypeConstants.GpuMacros.SyncGrid,
-            ContainingType.Name: TypeConstants.GpuType,
-            Parameters.Length: 0
-        } symbol &&
+        return semanticModel.GetSymbol(invocation) is IMethodSymbol symbol &&
+               GpuMacroClassifier.Classify(symbol) is { Kind: GpuMacroKind.SyncGrid, HasBody: false } &&
                symbol.ContainingNamespace.IsCoreNamespace();
     }
 
@@ -140,13 +136,9 @@ internal static class AutoSyncGrid
             return false;
         }
 
-        if (semanticModel.GetSymbol(invocation) is not IMethodSymbol
-            {
-                Name: TypeConstants.GpuMacros.SyncGrid
-            } symbol ||
-            symbol.ContainingType.Name != TypeConstants.GpuType ||
+        if (semanticModel.GetSymbol(invocation) is not IMethodSymbol symbol ||
+            GpuMacroClassifier.Classify(symbol) is not { Kind: GpuMacroKind.SyncGrid, HasBody: true } ||
             !symbol.ContainingNamespace.IsCoreNamespace() ||
-            symbol.Parameters.Length != 1 ||
             invocation.ArgumentList.Arguments.Count != 1 ||
             invocation.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax lambda)
         {

@@ -57,23 +57,11 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
         {
             var symbol = context.SemanticModel.GetSymbol(node) as IMethodSymbol;
-            var isSingleThreadMacro = false;
-
-            if (symbol != null &&
-                (symbol.Name == TypeConstants.GpuMacros.SingleThread || symbol.Name == TypeConstants.GpuMacros.SyncGrid) &&
-                symbol.ContainingType?.Name == TypeConstants.GpuType &&
-                symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() == true)
-            {
-                // For SyncGrid, it's only a single thread macro if it has arguments (a delegate)
-                if (symbol.Name == TypeConstants.GpuMacros.SyncGrid && node.ArgumentList.Arguments.Count == 0)
-                {
-                    isSingleThreadMacro = false;
-                }
-                else
-                {
-                    isSingleThreadMacro = true;
-                }
-            }
+            // SyncGrid runs its body on one thread only in the form that takes a body
+            var isSingleThreadMacro = symbol != null &&
+                                      GpuMacroClassifier.Classify(symbol) is
+                                          { Kind: GpuMacroKind.SingleThread } or { Kind: GpuMacroKind.SyncGrid, HasBody: true } &&
+                                      symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() == true;
 
             if (isSingleThreadMacro)
             {

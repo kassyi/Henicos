@@ -28,52 +28,30 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
             return;
         }
 
-        var containingType = invocationSymbol.ContainingType;
-        if (containingType is { Name: TypeConstants.GpuMacros.Hint, ContainingType.Name: TypeConstants.GpuMacros.Gpu })
+        var call = GpuMacroClassifier.Classify(invocationSymbol);
+        switch (call.Kind)
         {
-            AnalyzeHintMacro(invocation, invocationSymbol, ref context);
-            return;
-        }
-
-        if (containingType?.Name == TypeConstants.GpuMacros.Gpu)
-        {
-            AnalyzeGpuMacro(invocation, invocationSymbol, ref context);
-        }
-    }
-
-    private void AnalyzeHintMacro(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
-        ref ValidationContext context)
-    {
-        if (invocationSymbol.Name == TypeConstants.GpuMacros.Unroll)
-        {
-            CheckUnrollHint(invocation, ref context);
-        }
-    }
-
-    private void AnalyzeGpuMacro(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
-        ref ValidationContext context)
-    {
-        switch (invocationSymbol.Name)
-        {
-            case TypeConstants.GpuMacros.ForUnroll:
-                CheckForUnroll(invocation, invocationSymbol, ref context);
+            case GpuMacroKind.HintUnroll:
+                CheckUnrollHint(invocation, ref context);
                 break;
 
-            case TypeConstants.GpuMacros.InlinePtx:
+            case GpuMacroKind.ForUnroll:
+                CheckForUnroll(invocation, call, ref context);
+                break;
+
+            case GpuMacroKind.InlinePtx:
                 CheckInlinePtx(invocation, ref context);
                 break;
 
-            case TypeConstants.GpuMacros.SyncGrid:
-                CheckSyncGrid(invocation, invocationSymbol, ref context);
+            case GpuMacroKind.SyncGrid:
+                CheckSyncGrid(invocation, call, ref context);
                 break;
         }
     }
 
-    private void CheckForUnroll(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
-        ref ValidationContext context)
+    private void CheckForUnroll(InvocationExpressionSyntax invocation, GpuMacroCall call, ref ValidationContext context)
     {
-        var hasContext = invocationSymbol.Parameters.Length == 4;
-        var offset = hasContext ? 1 : 0;
+        var offset = call.ArgumentOffset;
         var args = invocation.ArgumentList.Arguments;
         if (args.Count < offset + 2)
         {
@@ -93,10 +71,9 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         }
     }
 
-    private void CheckSyncGrid(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
-        ref ValidationContext context)
+    private void CheckSyncGrid(InvocationExpressionSyntax invocation, GpuMacroCall call, ref ValidationContext context)
     {
-        if (invocationSymbol.Parameters.Length == 1)
+        if (call.HasBody)
         {
             var args = invocation.ArgumentList.Arguments;
             if (args.Count >= 1 && args[0].Expression is not LambdaExpressionSyntax)

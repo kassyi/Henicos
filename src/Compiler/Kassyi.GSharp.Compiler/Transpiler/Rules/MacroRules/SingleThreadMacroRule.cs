@@ -8,10 +8,10 @@ internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
     public bool TryTranspile(
         InvocationExpressionSyntax invocation,
         ExpressionStatementSyntax statement,
-        IMethodSymbol symbol,
+        GpuMacroCall call,
         ref TranspileContext context)
     {
-        if (symbol.Name != TypeConstants.GpuMacros.SingleThread || symbol.ContainingType.Name != TypeConstants.GpuType)
+        if (call.Kind != GpuMacroKind.SingleThread)
         {
             return false;
         }
