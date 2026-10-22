@@ -18,6 +18,7 @@ internal readonly struct TranspiledKernelResult(
     public string? Namespace { get; } = @namespace;
     public string CudaSource { get; } = cudaSource;
     public string CppSource { get; } = cppSource;
+    public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
     public string ManagedCSharpSource { get; } = managedCSharpSource;
     public EquatableArray<string> RequiredIncludes { get; } = requiredIncludes;
     public EquatableArray<EquatableDiagnostic> Diagnostics { get; } = diagnostics;

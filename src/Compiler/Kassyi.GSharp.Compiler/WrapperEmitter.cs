@@ -218,7 +218,7 @@ internal static class WrapperEmitter
 
                 WriteKernelSource(writer, method, source, config);
 
-                if (config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase))
+                if (config.IsCuda)
                 {
                     writer.AppendLine($"private static IntPtr? s_hfunc_{KernelHostNames.GetMemberKey(method)};");
                     WriteWarmupFunctionPointerMethod(writer, method);
@@ -260,8 +260,8 @@ internal static class WrapperEmitter
         writer.AppendLine("\";");
         writer.AppendLine(
             $"public static readonly string {key}_FullSource=" +
-            $"global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}Prelude.Source +" +
-            $"global::Kassyi.GSharp.Generated.GSharpShared{config.TargetDialect}DeviceCode.Source +" +
+            $"global::Kassyi.GSharp.Generated.{config.SharedPreludeClassName}.Source +" +
+            $"global::Kassyi.GSharp.Generated.{config.SharedDeviceCodeClassName}.Source +" +
             $"{key}_Source;");
         writer.AppendLine();
     }

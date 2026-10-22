@@ -24,6 +24,8 @@ internal readonly struct TranspiledDeviceMethodResult(
     public string CudaBody { get; } = cudaBody;
     public string CppSignature { get; } = cppSignature;
     public string CppBody { get; } = cppBody;
+    public string GetSignature(bool isCuda) => isCuda ? CudaSignature : CppSignature;
+    public string GetBody(bool isCuda) => isCuda ? CudaBody : CppBody;
     public EquatableArray<string> RequiredIncludes { get; } = requiredIncludes;
     public EquatableArray<EquatableDiagnostic> Diagnostics { get; } = diagnostics;
 

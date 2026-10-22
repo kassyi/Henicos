@@ -322,8 +322,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return;
         }
 
-        var isCuda = config.TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase);
-        ITranspilerDialect dialect = isCuda ? new GSharpCudaDialect() : new StandardCppDialect();
+        var isCuda = config.IsCuda;
+        var dialect = config.CreateDialect();
 
         var distinctDeviceMethods = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
         var seenDeviceMethods = new HashSet<TranspiledDeviceMethodResult>();
@@ -353,7 +353,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             if (seenKernelMethods.Add(method))
             {
                 distinctKernelMethods.Add(method);
-                var source = isCuda ? method.CudaSource : method.CppSource;
+                var source = method.GetSource(isCuda);
                 allKernelsSource.AppendLine(source);
 
                 if (!methodsByClass.TryGetValue(method.MethodSymbol.ContainingType, out var builder))
@@ -424,7 +424,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         using (preludeWriter.Scope())
         {
             preludeWriter.AppendGeneratedCodeAttributes();
-            preludeWriter.AppendLine($"internal static class GSharpShared{config.TargetDialect}Prelude");
+            preludeWriter.AppendLine($"internal static class {config.SharedPreludeClassName}");
             using (preludeWriter.Scope())
             {
                 preludeWriter.Append("public const string Source = @\"");
@@ -433,7 +433,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
         }
 
-        context.AddSource($"GSharpShared{config.TargetDialect}Prelude.g.cs",
+        context.AddSource($"{config.SharedPreludeClassName}.g.cs",
             SourceText.From(preludeWriter.ToString(), Encoding.UTF8));
 
         using var deviceWriter = new SourceWriter();
@@ -442,7 +442,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         using (deviceWriter.Scope())
         {
             deviceWriter.AppendGeneratedCodeAttributes();
-            deviceWriter.AppendLine($"internal static class GSharpShared{config.TargetDialect}DeviceCode");
+            deviceWriter.AppendLine($"internal static class {config.SharedDeviceCodeClassName}");
             using (deviceWriter.Scope())
             {
                 deviceWriter.Append("public const string Source = @\"");
@@ -451,7 +451,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
         }
 
-        context.AddSource($"GSharpShared{config.TargetDialect}DeviceCode.g.cs",
+        context.AddSource($"{config.SharedDeviceCodeClassName}.g.cs",
             SourceText.From(deviceWriter.ToString(), Encoding.UTF8));
     }
 
@@ -506,7 +506,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     KernelHostNames.FormatSignature(earlier), KernelHostNames.FormatSignature(method.MethodSymbol), wrapper));
             }
 
-            var source = isCuda ? method.CudaSource : method.CppSource;
+            var source = method.GetSource(isCuda);
             methodsData.Add((method.MethodSymbol, source, method.ManagedCSharpSource));
         }
 
@@ -635,7 +635,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 context.ReportDiagnostic(diag.Diagnostic);
             }
 
-            deviceSourceBuilder.AppendLine(isCuda ? method.CudaSignature : method.CppSignature);
+            deviceSourceBuilder.AppendLine(method.GetSignature(isCuda));
         }
 
         // Pass 2: Method bodies. A frame embeds the frames of its calls by value, so callees come first (CPU dialects).
@@ -676,7 +676,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 }
             }
 
-            deviceSourceBuilder.AppendLine(isCuda ? method.CudaBody : method.CppBody);
+            deviceSourceBuilder.AppendLine(method.GetBody(isCuda));
         }
     }
 
