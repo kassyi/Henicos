@@ -4,24 +4,12 @@ namespace Kassyi.GSharp.Compiler.Diagnostics;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public class StackLinqChainAnalyzer : DiagnosticAnalyzer
 {
-    public const string DiagnosticId = "SLQ0001";
     private const int MaxChainDepth = 50;
 
-    private static readonly LocalizableString Title = "StackLinq method chain is too deep";
-    private static readonly LocalizableString MessageFormat = "StackLinq method chain exceeds the maximum allowed depth of {0}. Too many nested operators will cause template instantiation limits and compiler crashes. Consider breaking the query into multiple variables.";
-    private static readonly LocalizableString Description = "Excessive method chaining on StackLinq types can lead to compiler resource exhaustion during C++ transpilation.";
-    private const string Category = "CompilerLimits";
+    public static string DiagnosticId => GSharpDiagnostics.StackLinqChainTooDeep.Id;
 
-    private static readonly DiagnosticDescriptor Rule = new(
-        DiagnosticId,
-        Title,
-        MessageFormat,
-        Category,
-        DiagnosticSeverity.Error,
-        isEnabledByDefault: true,
-        description: Description);
-
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
+        ImmutableArray.Create(GSharpDiagnostics.StackLinqChainTooDeep);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -68,7 +56,7 @@ public class StackLinqChainAnalyzer : DiagnosticAnalyzer
 
         if (depth > MaxChainDepth)
         {
-            context.ReportDiagnostic(Rule, invocation.GetLocation(), MaxChainDepth);
+            context.ReportDiagnostic(GSharpDiagnostics.StackLinqChainTooDeep, invocation.GetLocation(), MaxChainDepth);
         }
     }
 }

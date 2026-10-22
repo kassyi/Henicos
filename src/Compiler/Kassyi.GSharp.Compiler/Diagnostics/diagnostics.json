@@ -1,5 +1,14 @@
 [
   {
+    "name": "AotArtifactWriteFailed",
+    "id": "GSH0000",
+    "title": "AOT Artifact Error",
+    "messageFormat": "Failed to write AOT artifact to '{0}': {1}",
+    "category": "Build",
+    "defaultSeverity": "Info",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "ObjectCreationNotSupported",
     "id": "GSH0001",
     "title": "Object creation not supported in GPU kernels",
@@ -613,5 +622,15 @@
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
+  },
+  {
+    "name": "StackLinqChainTooDeep",
+    "id": "SLQ0001",
+    "title": "StackLinq method chain is too deep",
+    "messageFormat": "StackLinq method chain exceeds the maximum allowed depth of {0}. Too many nested operators will cause template instantiation limits and compiler crashes. Consider breaking the query into multiple variables.",
+    "category": "CompilerLimits",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true,
+    "description": "Excessive method chaining on StackLinq types can lead to compiler resource exhaustion during C++ transpilation."
   }
 ]

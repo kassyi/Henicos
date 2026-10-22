@@ -615,16 +615,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         catch (Exception ex)
         {
             // Ignore IO errors on best-effort basis, but report them as an info diagnostic
-            var diagnosticDescriptor = new DiagnosticDescriptor(
-                "GSH0000",
-                "AOT Artifact Error",
-                "Failed to write AOT artifact to '{0}': {1}",
-                "Build",
-                DiagnosticSeverity.Info,
-                isEnabledByDefault: true);
-
             var diagnostic = Diagnostic.Create(
-                diagnosticDescriptor,
+                GSharpDiagnostics.AotArtifactWriteFailed,
                 Location.None,
                 filePath,
                 ex.Message);

@@ -4,4 +4,3 @@
 
 Rule ID | Category | Severity | Notes
 --------|----------|----------|-------
-SLQ0001 | CompilerLimits | Error | StackLinq method chain is too deep

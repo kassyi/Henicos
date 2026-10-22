@@ -29,7 +29,7 @@ public static class YamlApiGenerator
             {
                 // MSBuild canonical error format so that the failure surfaces in the build output and IDE.
                 throw new InvalidDataException(
-                    $"{path}({error.Line}): error {(error.Kind == NativeApiReadErrorKind.Syntax ? "GSH0054" : "GSH0055")}: {error.Message}");
+                    $"{path}({error.Line}): error {error.DiagnosticId}: {error.Message}");
             }
 
             definitions.Add(definition);
