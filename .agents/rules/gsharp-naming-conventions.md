@@ -7,6 +7,10 @@ All future development and code generation by AI agents must strictly adhere to 
 - In full compliance with the C# Framework Design Guidelines, **the use of snake_case containing underscores (`_`) or prefixes (such as `Kernel_`, `Device_`) is strictly prohibited**.
 - The execution space (Host / Device) must be distinguished exclusively via contextual "suffixes" or structural context.
 
+This rule covers the C# names that users write and the compiler generates for the host. The C++ names emitted into
+generated device code (renamed user identifiers via `CppNameResolver`, compiler-internal `__gsharp_*` names via
+`GSharpInternalNames`) are covered in [helpers.md §3](../skills/gsharp-transpiler-guidelines/references/helpers.md#3-emitting-code).
+
 ## 2. Naming Conventions by Category
 
 ### 1. GPU Kernels (`[GpuKernel]`)
