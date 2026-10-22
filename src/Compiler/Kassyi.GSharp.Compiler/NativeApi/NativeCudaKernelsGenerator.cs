@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler;
+namespace Kassyi.GSharp.Compiler.NativeApi;
 
 [Generator]
 public class NativeCudaKernelsGenerator : IIncrementalGenerator

@@ -1,9 +1,8 @@
-namespace Kassyi.GSharp.Compiler;
+namespace Kassyi.GSharp.Compiler.NativeApi;
 
 using Extensions;
 using Helpers;
 using Models;
-using NativeApi;
 
 /// <summary>
 /// Roslyn source generator that generates boilerplate for invoking CUDA kernels via [CudaImport].

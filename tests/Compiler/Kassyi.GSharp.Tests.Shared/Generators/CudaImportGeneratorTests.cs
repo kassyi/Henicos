@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Compiler.NativeApi;
+
 #nullable enable
 
 namespace Kassyi.GSharp.Tests.Shared.Generators;

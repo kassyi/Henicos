@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.NativeApi;
 using Kassyi.GSharp.Compiler;
 using Kassyi.GSharp.Tests.Infrastructure;
 using Microsoft.CodeAnalysis;

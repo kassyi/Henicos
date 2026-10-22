@@ -1,5 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Models;
-using NativeApi;
+namespace Kassyi.GSharp.Compiler.NativeApi;
 
 /// <summary>
 /// Value model representing a single method decorated with <c>[CudaImport]</c>.
