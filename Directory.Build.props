@@ -16,6 +16,9 @@
     <NoWarn>$(NoWarn);CS0169;CS1591</NoWarn>
     <!-- StyleCop.Analyzers の XML ドキュメント構文解析を有効化 -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- NuGet パッケージのライセンス表示（リポジトリ直下の LICENSE と同じ MIT） -->
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
