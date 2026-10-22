@@ -13,7 +13,7 @@ public static partial class SuspendingCallInLocalFunctionKernels
     {
         buffer[ThreadIndex.X] = BroadcastTwice(buffer[ThreadIndex.X]);
 
-        // GSH0064: a local function body is not part of the kernel state machine
+        // GSH0062: a local function body is not part of the kernel state machine
         static int BroadcastTwice(int value) => Broadcast(Broadcast(value));
     }
 }

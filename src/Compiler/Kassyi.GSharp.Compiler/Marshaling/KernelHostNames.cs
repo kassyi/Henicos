@@ -36,7 +36,7 @@ internal static class KernelHostNames
 
     /// <summary>
     /// The suffix of the per-kernel host members: the kernel name, or <c>{name}__o{n}</c> for an overloaded kernel.
-    /// GSH0057 rejects <c>__</c> in user identifiers, so the key cannot collide with another kernel's name.
+    /// GSH0055 rejects <c>__</c> in user identifiers, so the key cannot collide with another kernel's name.
     /// </summary>
     public static string GetMemberKey(IMethodSymbol kernel) =>
         IsOverloadedKernel(kernel)

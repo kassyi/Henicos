@@ -76,7 +76,7 @@ public static partial class ComprehensiveSpecKernel
         PhysicsVector[] particles,
         ref float totalMagnitude,
         out bool successFlag,
-        SpecTypes largeStructVal, // 48 bytes by value; within the GSH0066 parameter limit.
+        SpecTypes largeStructVal, // 48 bytes by value; within the GSH0064 parameter limit.
         int particleCount,
         [Constant] int unrollFactor)
     {

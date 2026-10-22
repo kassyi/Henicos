@@ -213,7 +213,7 @@ internal static class WrapperEmitter
             // ReSharper disable once PossibleMultipleEnumeration
             foreach (var (method, source, managedCSharpSource) in methods)
             {
-                // GSH0061: the generator reports the overload; its wrappers would duplicate an earlier overload's.
+                // GSH0059: the generator reports the overload; its wrappers would duplicate an earlier overload's.
                 if (KernelHostNames.TryFindIndistinguishableOverload(method, out _, out _))
                 {
                     continue;

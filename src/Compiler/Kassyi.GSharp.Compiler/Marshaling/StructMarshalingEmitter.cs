@@ -6,7 +6,7 @@ using Kassyi.GSharp.Compiler.Layout;
 internal static class StructMarshalingEmitter
 {
     /// <summary>Emits marshal and unmarshal routines for all custom structs used in kernel signatures.</summary>
-    /// <remarks>A struct whose <c>AotContexts</c> name is already taken gets no helpers; GSH0060 reports it.</remarks>
+    /// <remarks>A struct whose <c>AotContexts</c> name is already taken gets no helpers; GSH0058 reports it.</remarks>
     internal static void WriteStructMarshaling(SourceWriter writer,
         IEnumerable<(IMethodSymbol Method, string Source, string ManagedCSharpSource)> methods)
     {

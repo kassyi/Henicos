@@ -3,12 +3,12 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 [Category(TestCategory.Compiler)]
 public class StaticMemberAccessAnalyzerTests : TranspilerTestBase
 {
-    private const string StaticMemberAccessNotSupportedId = "GSH0067";
+    private const string StaticMemberAccessNotSupportedId = "GSH0065";
     private static readonly GpuKernelAnalyzer s_analyzer = new();
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_StaticMemberAccess_ReportsGSH0067ForNonConstStaticFieldsAndProperties()
+    public async Task Test_StaticMemberAccess_ReportsGSH0065ForNonConstStaticFieldsAndProperties()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/StaticMemberAccess_SadPath.cs", s_analyzer)

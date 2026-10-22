@@ -208,7 +208,7 @@ public static class MethodTranspiler
 
     /// <summary>
     /// Whether <paramref name="methodDecl"/> is a device function that the CPU dialects lower into a state machine: one
-    /// that reaches a barrier and is not recursive (GSH0063 rejects that).
+    /// that reaches a barrier and is not recursive (GSH0061 rejects that).
     /// </summary>
     internal static bool IsLoweredSuspendingDeviceFunction(MethodDeclarationSyntax methodDecl, IMethodSymbol? methodSymbol,
         ref TranspileContext context) =>

@@ -208,7 +208,7 @@ public class GlobalNameEncodingTests
             chars[i] = Alphabet[random.Next(Alphabet.Length)];
         }
 
-        // C# identifiers never start with a digit and never contain "__" (GSH0057).
+        // C# identifiers never start with a digit and never contain "__" (GSH0055).
         var name = new string(chars).Replace("__", "_u");
         return char.IsDigit(name[0]) ? "n" + name : name;
     }

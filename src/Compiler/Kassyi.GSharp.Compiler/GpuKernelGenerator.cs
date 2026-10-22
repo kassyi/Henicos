@@ -521,7 +521,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
     }
 
 
-    // GSH0060: AotContexts drops a trailing "Context", namespaces and type arguments, so different structs can share
+    // GSH0058: AotContexts drops a trailing "Context", namespaces and type arguments, so different structs can share
     // one name.
     private static void ReportDuplicateAotContextNames(INamedTypeSymbol classSymbol,
         ImmutableArray<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>.Builder methods,

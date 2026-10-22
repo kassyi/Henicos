@@ -105,7 +105,7 @@ public class TrustedKeysGeneratorTests
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_InvalidBase64_ReportsGSH0059()
+    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_InvalidBase64_ReportsGSH0057()
     {
         const string TrustedKeysContent = """
             # Valid comment
@@ -125,14 +125,14 @@ public class TrustedKeysGeneratorTests
         var runResult = driver.GetRunResult();
 
         var diag = Assert.Single(runResult.Diagnostics);
-        Assert.Equal("GSH0059", diag.Id);
+        Assert.Equal("GSH0057", diag.Id);
         var lineSpan = diag.Location.GetLineSpan();
         Assert.Equal(FilePath, lineSpan.Path);
         Assert.Equal(1, lineSpan.StartLinePosition.Line);
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_Base64WrongLength_ReportsGSH0059()
+    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_Base64WrongLength_ReportsGSH0057()
     {
         const string TrustedKeysContent = "11111111111111111111111=";
 
@@ -148,11 +148,11 @@ public class TrustedKeysGeneratorTests
         var runResult = driver.GetRunResult();
 
         var diag = Assert.Single(runResult.Diagnostics);
-        Assert.Equal("GSH0059", diag.Id);
+        Assert.Equal("GSH0057", diag.Id);
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_InvalidHex_ReportsGSH0059()
+    [Scenario(TestScenario.SadPath)]    public void Test_TrustedKeysGenerator_InvalidHex_ReportsGSH0057()
     {
         const string TrustedKeysContent = """
             d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511
@@ -171,7 +171,7 @@ public class TrustedKeysGeneratorTests
         var runResult = driver.GetRunResult();
 
         Assert.Equal(2, runResult.Diagnostics.Length);
-        Assert.All(runResult.Diagnostics, diag => Assert.Equal("GSH0059", diag.Id));
+        Assert.All(runResult.Diagnostics, diag => Assert.Equal("GSH0057", diag.Id));
         Assert.Equal(0, runResult.Diagnostics[0].Location.GetLineSpan().StartLinePosition.Line);
         Assert.Equal(1, runResult.Diagnostics[1].Location.GetLineSpan().StartLinePosition.Line);
     }
@@ -202,7 +202,7 @@ public class TrustedKeysGeneratorTests
         var runResult = driver.GetRunResult();
 
         var diag = Assert.Single(runResult.Diagnostics);
-        Assert.Equal("GSH0059", diag.Id);
+        Assert.Equal("GSH0057", diag.Id);
         Assert.Equal(4, diag.Location.GetLineSpan().StartLinePosition.Line);
 
         Assert.Single(runResult.GeneratedTrees);
@@ -261,35 +261,35 @@ public class TrustedKeysGeneratorTests
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_WhitespaceInsteadOfComma_ReportsGSH0059()
+    public void Test_TrustedKeysGenerator_WhitespaceInsteadOfComma_ReportsGSH0057()
     {
         // Whitespace is not a valid key/fingerprint separator.
         var diag = Assert.Single(RunDiagnostics(
             "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a  fnv1a64:5553fd74df"));
 
-        Assert.Equal("GSH0059", diag.Id);
+        Assert.Equal("GSH0057", diag.Id);
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_MissingFingerprint_ReportsGSH0059()
+    public void Test_TrustedKeysGenerator_MissingFingerprint_ReportsGSH0057()
     {
         var diag = Assert.Single(RunDiagnostics("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a"));
 
-        Assert.Equal("GSH0059", diag.Id);
+        Assert.Equal("GSH0057", diag.Id);
         Assert.Contains("missing fingerprint", diag.GetMessage());
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_MismatchedFingerprint_ReportsGSH0059WithoutExpectedValue()
+    public void Test_TrustedKeysGenerator_MismatchedFingerprint_ReportsGSH0057WithoutExpectedValue()
     {
         // One hex character of the key differs from the fingerprinted key (typo).
         const string Content = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511b,fnv1a64:5553fd74df";
 
         var diag = Assert.Single(RunDiagnostics(Content));
 
-        Assert.Equal("GSH0059", diag.Id);
+        Assert.Equal("GSH0057", diag.Id);
         var message = diag.GetMessage();
         Assert.Contains("fingerprint mismatch", message);
         // The expected fingerprint must never be printed, otherwise users could paste it without checking the key.
@@ -305,13 +305,13 @@ public class TrustedKeysGeneratorTests
     [InlineData("sha256:5553fd74df")]
     [InlineData("5553fd74df")]
     [Scenario(TestScenario.Boundary)]
-    public void Test_TrustedKeysGenerator_NonCanonicalFingerprintSuffix_ReportsGSH0059(string suffix)
+    public void Test_TrustedKeysGenerator_NonCanonicalFingerprintSuffix_ReportsGSH0057(string suffix)
     {
         var content = "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a," + suffix;
 
         var diag = Assert.Single(RunDiagnostics(content));
 
-        Assert.Equal("GSH0059", diag.Id);
+        Assert.Equal("GSH0057", diag.Id);
     }
 
     [Fact]
@@ -320,7 +320,7 @@ public class TrustedKeysGeneratorTests
     {
         var diag = Assert.Single(RunDiagnostics("d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511g,fnv1a64:5553fd74df"));
 
-        Assert.Equal("GSH0059", diag.Id);
+        Assert.Equal("GSH0057", diag.Id);
         Assert.Contains("invalid character", diag.GetMessage());
     }
 
@@ -346,11 +346,11 @@ public class TrustedKeysGeneratorTests
     [InlineData("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a,fnv1a64:b2fcb037d2")]
     [InlineData("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa,fnv1a64:b3a3b437d3")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_SmallOrderKey_ReportsGSH0059(string line)
+    public void Test_TrustedKeysGenerator_SmallOrderKey_ReportsGSH0057(string line)
     {
         var diag = Assert.Single(RunDiagnostics(line));
 
-        Assert.Equal("GSH0059", diag.Id);
+        Assert.Equal("GSH0057", diag.Id);
         Assert.Contains("small-order Ed25519 public key", diag.GetMessage());
     }
 
@@ -364,11 +364,11 @@ public class TrustedKeysGeneratorTests
     // 0xAB repeated: well-formed but not on the curve
     [InlineData("abababababababababababababababababababababababababababababababab,fnv1a64:544cc8e1f3")]
     [Scenario(TestScenario.SadPath)]
-    public void Test_TrustedKeysGenerator_NotDecompressibleKey_ReportsGSH0059(string line)
+    public void Test_TrustedKeysGenerator_NotDecompressibleKey_ReportsGSH0057(string line)
     {
         var diag = Assert.Single(RunDiagnostics(line));
 
-        Assert.Equal("GSH0059", diag.Id);
+        Assert.Equal("GSH0057", diag.Id);
         Assert.Contains("not a valid Ed25519 public key", diag.GetMessage());
     }
 

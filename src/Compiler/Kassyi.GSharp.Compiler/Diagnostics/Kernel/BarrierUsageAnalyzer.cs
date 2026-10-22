@@ -2,7 +2,7 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
-/// Roslyn analyzer that enforces GPU kernel barrier synchronization and state machine constraints (GSH0037 - GSH0047, GSH0063, GSH0064).
+/// Roslyn analyzer that enforces GPU kernel barrier synchronization and state machine constraints (GSH0037 - GSH0047, GSH0061, GSH0062).
 /// Optimized for minimal AST passes, zero-allocation traversal, and fast-path exits.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -21,8 +21,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             GSharpDiagnostics.RecursiveBarrierProhibited, // GSH0045
             GSharpDiagnostics.AsyncYieldInKernelProhibited, // GSH0046
             GSharpDiagnostics.LockStatementInKernelProhibited, // GSH0047
-            GSharpDiagnostics.RecursiveDeviceFunctionBarrierProhibited, // GSH0063
-            GSharpDiagnostics.SuspendingCallInUnsupportedContext // GSH0064
+            GSharpDiagnostics.RecursiveDeviceFunctionBarrierProhibited, // GSH0061
+            GSharpDiagnostics.SuspendingCallInUnsupportedContext // GSH0062
         );
 
     public override void Initialize(AnalysisContext context)
@@ -85,7 +85,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
         if (methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction))
         {
-            // GSH0063: the frame of a recursive barrier-reaching device function would contain itself
+            // GSH0061: the frame of a recursive barrier-reaching device function would contain itself
             if (SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, semanticModel.Compilation))
             {
                 context.ReportDiagnostic(
@@ -111,7 +111,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: true).Analyze();
     }
 
-    // GSH0064: the state machine splits only the statements of a kernel or device function body, and the operands that
+    // GSH0062: the state machine splits only the statements of a kernel or device function body, and the operands that
     // ConditionalEvaluationRewriter turns into statements. A call that suspends anywhere else cannot be resumed.
     private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
     {

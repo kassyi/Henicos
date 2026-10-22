@@ -129,7 +129,7 @@
     "name": "LargeStructByValueWarning",
     "id": "GSH0014",
     "title": "Large struct passed by value (Deprecated)",
-    "messageFormat": "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer. (Deprecated, replaced by GSH0066)",
+    "messageFormat": "The parameter '{0}' is a struct of size {1} bytes. Passing large structs by value to a GPU kernel can consume excessive constant memory. Consider passing by reference (ref) or using an array pointer. (Deprecated, replaced by GSH0064)",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Warning",
     "isEnabledByDefault": false,
@@ -444,7 +444,7 @@
   },
   {
     "name": "InvalidTakesOwnershipTarget",
-    "id": "GSH0051",
+    "id": "GSH0049",
     "title": "[TakesOwnership] applied to non-IDisposable type",
     "messageFormat": "[TakesOwnership] can only be applied to types that implement IDisposable",
     "category": "GSharpTranspiler",
@@ -453,7 +453,7 @@
   },
   {
     "name": "TakesOwnershipOnlyAllowedOnConstructors",
-    "id": "GSH0052",
+    "id": "GSH0050",
     "title": "[TakesOwnership] is only allowed on constructor parameters",
     "messageFormat": "[TakesOwnership] is only supported on constructor parameters for static lifecycle management",
     "category": "GSharpTranspiler",
@@ -462,7 +462,7 @@
   },
   {
     "name": "TakesOwnershipByRefNotSupported",
-    "id": "GSH0053",
+    "id": "GSH0051",
     "title": "Cannot take ownership of a reference parameter",
     "messageFormat": "Cannot take ownership of a reference parameter (ref, in, out)",
     "category": "GSharpTranspiler",
@@ -471,7 +471,7 @@
   },
   {
     "name": "NativeApiYamlSyntaxError",
-    "id": "GSH0054",
+    "id": "GSH0052",
     "title": "Native API definition is not valid YAML",
     "messageFormat": "Native API definition '{0}' could not be parsed: {1}",
     "category": "GSharpCompiler",
@@ -480,7 +480,7 @@
   },
   {
     "name": "NativeApiSchemaViolation",
-    "id": "GSH0055",
+    "id": "GSH0053",
     "title": "Native API definition violates the schema",
     "messageFormat": "Native API definition '{0}' is invalid: {1}",
     "category": "GSharpCompiler",
@@ -489,7 +489,7 @@
   },
   {
     "name": "InlinePtxNotSupportedByDialect",
-    "id": "GSH0056",
+    "id": "GSH0054",
     "title": "Gpu.InlinePtx is not supported by the target dialect",
     "messageFormat": "Gpu.InlinePtx is not supported by the '{0}' dialect; the call is replaced with a runtime failure",
     "category": "GSharpTranspiler",
@@ -498,7 +498,7 @@
   },
   {
     "name": "DoubleUnderscoreIdentifier",
-    "id": "GSH0057",
+    "id": "GSH0055",
     "title": "Identifier containing '__' is reserved",
     "messageFormat": "'{0}' contains '__', which is reserved for the G# compiler and the C++ implementation; rename it",
     "category": "GSharpTranspiler",
@@ -507,7 +507,7 @@
   },
   {
     "name": "CppKeywordIdentifier",
-    "id": "GSH0058",
+    "id": "GSH0056",
     "title": "GPU method name is a C++ keyword (Deprecated)",
     "messageFormat": "'{0}' is a keyword in C++/CUDA and cannot be used as a GPU method name. (Deprecated, method names are renamed automatically)",
     "category": "GSharpTranspiler",
@@ -517,7 +517,7 @@
   },
   {
     "name": "MalformedTrustedKey",
-    "id": "GSH0059",
+    "id": "GSH0057",
     "title": "Malformed trusted key line",
     "messageFormat": "Line {1} of '{0}' is not a valid trusted key: {2}",
     "category": "GSharpCompiler",
@@ -526,7 +526,7 @@
   },
   {
     "name": "DuplicateAotContextName",
-    "id": "GSH0060",
+    "id": "GSH0058",
     "title": "Two structs share one AotContexts name",
     "messageFormat": "The structs '{0}' and '{1}' both map to '{2}' in '{3}'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.",
     "category": "GSharpCompiler",
@@ -535,7 +535,7 @@
   },
   {
     "name": "IndistinguishableKernelOverloads",
-    "id": "GSH0061",
+    "id": "GSH0059",
     "title": "Kernel overloads cannot be told apart by their launch wrappers",
     "messageFormat": "The [GpuKernel] overloads '{0}' and '{1}' produce the same {2} launch wrapper signature. Rename one of the kernels.",
     "category": "GSharpCompiler",
@@ -544,7 +544,7 @@
   },
   {
     "name": "UserDefinedOperatorNotSupported",
-    "id": "GSH0062",
+    "id": "GSH0060",
     "title": "User-defined operators are not supported in GPU code",
     "messageFormat": "The user-defined operator '{0}' of '{1}' is not supported in GPU code. Call a [GpuDeviceFunction] method instead.",
     "category": "GSharpTranspiler",
@@ -553,7 +553,7 @@
   },
   {
     "name": "RecursiveDeviceFunctionBarrierProhibited",
-    "id": "GSH0063",
+    "id": "GSH0061",
     "title": "Device functions that reach a barrier cannot be recursive",
     "messageFormat": "The device function '{0}' reaches Gpu.SyncThreads() or a warp shuffle and calls itself directly or through other device functions. The CPU state machine needs a frame of static size for every call.",
     "category": "GSharpTranspiler",
@@ -562,7 +562,7 @@
   },
   {
     "name": "SuspendingCallInUnsupportedContext",
-    "id": "GSH0064",
+    "id": "GSH0062",
     "title": "A call that suspends at a barrier is not supported in this context",
     "messageFormat": "The device function '{0}' reaches Gpu.SyncThreads() or a warp shuffle, so it cannot be called {1}. The CPU state machine can resume such a call only in the statements of a kernel or device function body, including the operands of '&&', '||' and '?:'.",
     "category": "GSharpTranspiler",
@@ -571,7 +571,7 @@
   },
   {
     "name": "SharedMemoryDeclarationsShareLine",
-    "id": "GSH0065",
+    "id": "GSH0063",
     "title": "Shared memory declarations on one line share a buffer in managed execution",
     "messageFormat": "This SharedMemory<T> declaration is on the same line as another one of '{0}'. Under managed execution a device function without barriers identifies a declaration only by its file, line and method name, so both get the same buffer. Put each declaration on its own line.",
     "category": "GSharpTranspiler",
@@ -580,7 +580,7 @@
   },
   {
     "name": "KernelParameterSpaceExceeded",
-    "id": "GSH0066",
+    "id": "GSH0064",
     "title": "Kernel parameters exceed the parameter space limit",
     "messageFormat": "The parameters of kernel '{0}' take {1} bytes, which exceeds the {2}-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.",
     "category": "GSharpTranspiler",
@@ -589,7 +589,7 @@
   },
   {
     "name": "StaticMemberAccessNotSupported",
-    "id": "GSH0067",
+    "id": "GSH0065",
     "title": "Non-const static fields and properties are not supported in GPU code",
     "messageFormat": "The static member '{0}.{1}' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.",
     "category": "GSharpTranspiler",
@@ -598,7 +598,7 @@
   },
   {
     "name": "InstanceDeviceFunctionNotSupported",
-    "id": "GSH0068",
+    "id": "GSH0066",
     "title": "Instance [GpuDeviceFunction] methods are not supported",
     "messageFormat": "The method '{0}.{1}' is marked with [GpuDeviceFunction] but is an instance method. Mark the method as 'static' and pass the struct as a parameter.",
     "category": "GSharpTranspiler",

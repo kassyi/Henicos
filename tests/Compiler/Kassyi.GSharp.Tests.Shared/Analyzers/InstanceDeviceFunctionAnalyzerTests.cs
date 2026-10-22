@@ -10,18 +10,18 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 [Category(TestCategory.Compiler)]
 public class InstanceDeviceFunctionAnalyzerTests : TranspilerTestBase
 {
-    private const string GSH0068 = "GSH0068";
+    private const string GSH0066 = "GSH0066";
     private static readonly GpuKernelAnalyzer s_analyzer = new();
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_InstanceDeviceFunction_ReportsGSH0068()
+    public async Task Test_InstanceDeviceFunction_ReportsGSH0066()
     {
         var diagnostics = await RoslynTestUtility
             .TestAnalyzer("Analyzers/InstanceDeviceFunction_SadPath.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
-        var reported = diagnostics.Where(d => d.Id == GSH0068).ToList();
+        var reported = diagnostics.Where(d => d.Id == GSH0066).ToList();
 
         Assert.Equal(2, reported.Count);
         Assert.All(reported, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
@@ -35,7 +35,7 @@ public class InstanceDeviceFunctionAnalyzerTests : TranspilerTestBase
         var transpileDiagnostics = new List<Diagnostic>();
         MethodTranspiler.GenerateCudaSource(methodDecl, model, transpileDiagnostics.Add, isDevice: true, new GSharpCudaDialect(), out _);
 
-        Assert.Contains(transpileDiagnostics, d => d.Id == GSH0068 && d.GetMessage().Contains("'S.Twice'", StringComparison.Ordinal));
+        Assert.Contains(transpileDiagnostics, d => d.Id == GSH0066 && d.GetMessage().Contains("'S.Twice'", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -49,6 +49,6 @@ public class InstanceDeviceFunctionAnalyzerTests : TranspilerTestBase
             .TestAnalyzer("Analyzers/InstanceDeviceFunction_HappyPath.cs", s_analyzer)
             .GetDiagnosticsAsync();
 
-        Assert.DoesNotContain(diagnostics, d => d.Id == GSH0068);
+        Assert.DoesNotContain(diagnostics, d => d.Id == GSH0066);
     }
 }

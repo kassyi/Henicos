@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Host;
 
 /// <summary>
-/// Reports <c>SharedMemory&lt;T&gt;</c> declarations that managed execution cannot tell apart (GSH0065).
+/// Reports <c>SharedMemory&lt;T&gt;</c> declarations that managed execution cannot tell apart (GSH0063).
 /// </summary>
 /// <remarks>
 /// [WHY] A declaration is one buffer per block, looked up by a key of the declaration. Under managed execution a device

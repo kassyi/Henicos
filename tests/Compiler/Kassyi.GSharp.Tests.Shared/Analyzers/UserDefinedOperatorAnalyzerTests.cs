@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 [Category(TestCategory.Compiler)]
 public class UserDefinedOperatorAnalyzerTests : TranspilerTestBase
 {
-    private const string UserDefinedOperatorNotSupportedId = "GSH0062";
+    private const string UserDefinedOperatorNotSupportedId = "GSH0060";
     private static readonly GpuKernelAnalyzer s_analyzer = new();
 
     [Fact]

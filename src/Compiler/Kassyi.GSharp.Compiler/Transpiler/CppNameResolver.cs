@@ -62,7 +62,7 @@ internal readonly struct CppName
 /// no user name can collide with a C++ keyword, a CUDA built-in, a macro or a name that G# emits itself.
 /// </summary>
 /// <remarks>
-/// GSH0057 rejects <c>__</c> in user identifiers, so names under the <c>__gsharp_</c> families cannot be produced by
+/// GSH0055 rejects <c>__</c> in user identifiers, so names under the <c>__gsharp_</c> families cannot be produced by
 /// user code. Function-scope names carry the declaration ordinal so that distinct symbols with the same name stay
 /// distinct even when lowering flattens their scopes.
 /// </remarks>

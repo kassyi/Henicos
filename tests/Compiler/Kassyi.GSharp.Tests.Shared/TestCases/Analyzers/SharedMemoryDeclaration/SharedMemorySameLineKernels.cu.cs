@@ -7,7 +7,7 @@ public static partial class SharedMemorySameLineKernels
     [GpuDeviceFunction]
     public static int SumPair(int value)
     {
-        // GSH0065: under managed execution both declarations get the key of this line and share one buffer
+        // GSH0063: under managed execution both declarations get the key of this line and share one buffer
         var left = new SharedMemory<int>(32); var right = new SharedMemory<int>(32);
         left[ThreadIndex.X] = value;
         right[ThreadIndex.X] = value * 2;

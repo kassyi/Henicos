@@ -133,7 +133,7 @@ CuBlasApi.cublasDestroy_v2(handle);
 ```
 
 > [!NOTE]
-> Fatbins loaded through `moduleName` go through the same signature verification as `[CudaImport]` modules. Schema and syntax errors in a definition are reported as [GSH0054](docs/spec/en/03_bcl_api/diagnostics/GSH0054.md) / [GSH0055](docs/spec/en/03_bcl_api/diagnostics/GSH0055.md) on the offending YAML line.
+> Fatbins loaded through `moduleName` go through the same signature verification as `[CudaImport]` modules. Schema and syntax errors in a definition are reported as [GSH0052](docs/spec/en/03_bcl_api/diagnostics/GSH0052.md) / [GSH0053](docs/spec/en/03_bcl_api/diagnostics/GSH0053.md) on the offending YAML line.
 
 ---
 

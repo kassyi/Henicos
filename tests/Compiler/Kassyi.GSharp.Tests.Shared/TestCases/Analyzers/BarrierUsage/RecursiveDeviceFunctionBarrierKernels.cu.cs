@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
 public static partial class RecursiveDeviceFunctionBarrierKernels
 {
-    // GSH0063: a device function that reaches a barrier calls itself, so its state machine frame has no static size
+    // GSH0061: a device function that reaches a barrier calls itself, so its state machine frame has no static size
     [GpuDeviceFunction]
     public static void DirectlyRecursiveBarrier(int depth)
     {

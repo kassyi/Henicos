@@ -63,7 +63,7 @@ internal static class SuspensionAnalysis
 
     /// <summary>
     /// Whether <paramref name="method"/> reaches a phase barrier and calls itself, directly or through other device
-    /// functions. Its frame would have to contain itself (GSH0063).
+    /// functions. Its frame would have to contain itself (GSH0061).
     /// </summary>
     public static bool IsRecursiveSuspendingFunction(IMethodSymbol method, Compilation compilation)
     {
