@@ -12,6 +12,10 @@ public class DialectTests
 
             Assert.True(result);
             Assert.Equal("int", mappedType);
+
+            Assert.Equal("StandardCppDialect", dialect.Name);
+            Assert.False(dialect.IsCuda);
+            Assert.True(dialect.EmulatesThreadsWithStateMachine());
         }
 
         [Fact]
@@ -20,7 +24,9 @@ public class DialectTests
             var dialect = new GSharpCudaDialect();
             Assert.NotNull(dialect);
 
-            // Check MethodPrefix
-            Assert.Equal("__device__ inline ", dialect.MethodPrefix);
+            // Backend and capabilities come from GSharpCuda.yml
+            Assert.Equal("GSharpCudaDialect", dialect.Name);
+            Assert.True(dialect.IsCuda);
+            Assert.False(dialect.EmulatesThreadsWithStateMachine());
         }
     }

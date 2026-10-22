@@ -279,7 +279,7 @@ internal static class StatementTranspilers
             TranspileSuspendingDeviceFunctionReturn(node, isStateMachineReturn, ref context);
             return;
         }
-        var emitStateTermination = !isStateMachineReturn && !context.Emitter.Dialect.IsCuda
+        var emitStateTermination = !isStateMachineReturn && context.Emitter.Dialect.EmulatesThreadsWithStateMachine()
                                    && context.Emitter is { IsGpuKernelEntry: true, CallableDepth: 0 };
 
         if (node.Expression != null)

@@ -69,34 +69,16 @@ public static class YamlDialectGenerator
         writer.Line($"public class {def.Name}Dialect : {baseClass}");
         using (writer.Scope())
         {
-            // Headers
-            var headers = new HashSet<string>();
-            CollectHeaders(def, definitions, headers);
-            if (headers.Count > 0)
-            {
-                writer.Line("public override IEnumerable<string> RequiredHeaders => new string[]");
-                using (writer.Scope("{", "};"))
-                {
-                    foreach (var h in headers)
-                    {
-                        writer.Line($"\"{h}\",");
-                    }
-                }
-            }
+            writer.Line($"public override string Name => \"{def.Name}Dialect\";");
 
-            // StructPrefix
-            var structPrefix = GetInheritedValue(def, definitions, d => d.StructPrefix);
-            if (structPrefix != null)
+            var backend = GetInheritedValue(def, definitions, d => d.Backend);
+            var isCuda = backend switch
             {
-                writer.Line($"public override string StructPrefix => \"{structPrefix}\";");
-            }
-
-            // MethodPrefix
-            var methodPrefix = GetInheritedValue(def, definitions, d => d.MethodPrefix);
-            if (methodPrefix != null)
-            {
-                writer.Line($"public override string MethodPrefix => \"{methodPrefix}\";");
-            }
+                "Cuda" => true,
+                "Cpp" => false,
+                _ => throw new InvalidOperationException($"Dialect '{def.Name}' must set Backend to Cuda or Cpp (got '{backend}').")
+            };
+            writer.Line($"public override bool IsCuda => {(isCuda ? "true" : "false")};");
 
             // Capabilities
             var capabilities = GetInheritedValue(def, definitions, d => d.Capabilities);
@@ -146,20 +128,6 @@ public static class YamlDialectGenerator
         }
 
         return writer.ToString();
-    }
-
-    private static void CollectHeaders(DialectDefinition def, Dictionary<string, DialectDefinition> definitions,
-        HashSet<string> headers)
-    {
-        if (!string.IsNullOrEmpty(def.Inherits) && definitions.TryGetValue(def.Inherits ?? "", out var parent))
-        {
-            CollectHeaders(parent, definitions, headers);
-        }
-
-        foreach (var h in def.RequiredHeaders)
-        {
-            headers.Add(h);
-        }
     }
 
     // Converts YAML flags such as "HardwareAtomics, SharedMemory" (',' or '|' separated) into a C# flags OR expression.

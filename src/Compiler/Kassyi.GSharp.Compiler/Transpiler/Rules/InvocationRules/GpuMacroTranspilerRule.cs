@@ -29,11 +29,11 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 
         if (!context.Emitter.Dialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly))
         {
-            var dialectName = context.Emitter.Dialect.GetType().Name;
+            var dialectName = context.Emitter.Dialect.Name;
             context.Reporter.Report(GSharpDiagnostics.InlinePtxNotSupportedByDialect, node, dialectName);
             context.Emitter.Writer.Append($"__gsharp_unsupported(\"Gpu.InlinePtx is not supported by the {dialectName} dialect\");");
             context.Emitter.Writer.AppendLine();
-            if (context.Emitter.Dialect.IsCuda || !context.Emitter.IsGpuKernelEntry)
+            if (!context.Emitter.Dialect.EmulatesThreadsWithStateMachine() || !context.Emitter.IsGpuKernelEntry)
             {
                 return;
             }

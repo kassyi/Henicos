@@ -15,17 +15,12 @@ public class DialectDefinition
         get; set;
     }
 
-    /// <summary>Gets or sets the list of C++ headers required by this dialect.</summary>
-    [YamlMember(Alias = "RequiredHeaders")]
-    public List<string> RequiredHeaders { get; set; } = [];
-
-    /// <summary>Gets or sets the struct prefix applied by this dialect.</summary>
-    [YamlMember(Alias = "StructPrefix")]
-    public string StructPrefix { get; set; } = string.Empty;
-
-    /// <summary>Gets or sets the method prefix applied by this dialect.</summary>
-    [YamlMember(Alias = "MethodPrefix")]
-    public string MethodPrefix { get; set; } = string.Empty;
+    /// <summary>Gets or sets the output the dialect emits: <c>Cuda</c> or <c>Cpp</c>. Inherited when omitted.</summary>
+    [YamlMember(Alias = "Backend")]
+    public string? Backend
+    {
+        get; set;
+    }
 
     /// <summary>Gets or sets the dictionary of mapped types.</summary>
     [YamlMember(Alias = "Types")]

@@ -58,7 +58,7 @@ public static class MethodTranspiler
         context.Emitter.IsSuspendingDeviceFunction = isSuspendingDevice;
 
         LoweredStateMachine? lowered = null;
-        if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
+        if (!isDevice && context.Emitter.Dialect.EmulatesThreadsWithStateMachine() && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
         {
             lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl, semanticModel);
         }
@@ -142,7 +142,7 @@ public static class MethodTranspiler
         var isSuspendingDevice = isDevice && IsLoweredSuspendingDeviceFunction(methodDecl, methodSymbol, ref context);
 
         LoweredStateMachine? lowered = null;
-        if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
+        if (!isDevice && context.Emitter.Dialect.EmulatesThreadsWithStateMachine() && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
         {
             lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel);
         }
@@ -212,7 +212,7 @@ public static class MethodTranspiler
     /// </summary>
     internal static bool IsLoweredSuspendingDeviceFunction(MethodDeclarationSyntax methodDecl, IMethodSymbol? methodSymbol,
         ref TranspileContext context) =>
-        !context.Emitter.Dialect.IsCuda && methodDecl.HasBody() && methodSymbol != null &&
+        context.Emitter.Dialect.EmulatesThreadsWithStateMachine() && methodDecl.HasBody() && methodSymbol != null &&
         SuspensionAnalysis.RequiresStateMachine(methodSymbol, context.Query.SemanticModel.Compilation);
 
     // kernelName is the C# name, used only in internal-error reports. A kernel context also holds the warp exchange of the
