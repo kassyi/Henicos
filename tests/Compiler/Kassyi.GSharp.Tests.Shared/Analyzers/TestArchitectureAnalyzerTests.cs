@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Compiler.Diagnostics;
+using Kassyi.GSharp.Tests.Generators;
 using Kassyi.GSharp.Tests.Infrastructure;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
