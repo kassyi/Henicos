@@ -235,8 +235,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var frameDependencies = ImmutableArray.CreateBuilder<string>();
             var managedCSharpSource = "";
             if (methodDeclaration.GetBodyNode() is { } body &&
-                SuspensionAnalysis.IsSuspendingFunction(methodSymbol, context.SemanticModel.Compilation) &&
-                !SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, context.SemanticModel.Compilation))
+                SuspensionAnalysis.RequiresStateMachine(methodSymbol, context.SemanticModel.Compilation))
             {
                 frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, methodSymbol);
                 foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body,

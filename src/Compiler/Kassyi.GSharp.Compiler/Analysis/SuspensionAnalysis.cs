@@ -72,6 +72,13 @@ internal static class SuspensionAnalysis
                CallsReach(definition, definition, compilation, new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
     }
 
+    /// <summary>
+    /// Whether <paramref name="method"/> is a device function that the CPU dialects lower into a state machine: one that
+    /// reaches a phase barrier and is not recursive. A recursive one is rejected (GSH0061), so no state machine is generated for it.
+    /// </summary>
+    public static bool RequiresStateMachine(IMethodSymbol method, Compilation compilation) =>
+        IsSuspendingFunction(method, compilation) && !IsRecursiveSuspendingFunction(method, compilation);
+
     /// <summary>The device functions that reach a phase barrier and are called from <paramref name="body"/>, in call order.</summary>
     public static ImmutableArray<IMethodSymbol> GetSuspendingCallees(SyntaxNode body, Compilation compilation)
     {
