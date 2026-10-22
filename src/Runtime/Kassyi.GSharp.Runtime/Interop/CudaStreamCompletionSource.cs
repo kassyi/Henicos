@@ -51,6 +51,7 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
     private const int NotArmed = int.MinValue;
 
     private static readonly TimeSpan s_watchdogPeriod = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan s_abandonTimeout = TimeSpan.FromSeconds(10);
     private static readonly CudaStreamCompletionSource?[] s_pool = new CudaStreamCompletionSource?[16];
 
     // Armed operations, so that a context about to be destroyed can find the ones still observing it.
@@ -215,18 +216,53 @@ internal sealed class CudaStreamCompletionSource : IValueTaskSource, IDisposable
     /// Returns only after no watchdog is inside a driver call for those operations, so the caller may destroy
     /// <paramref name="context"/> immediately afterwards.
     /// </remarks>
-    internal static void AbandonContext(IntPtr context)
+    /// <exception cref="TimeoutException">
+    /// A watchdog tick did not leave the driver in time. The context must not be destroyed, because destroying it under
+    /// an in-flight tick crashes the process.
+    /// </exception>
+    internal static void AbandonContext(IntPtr context) => AbandonContext(context, s_abandonTimeout);
+
+    /// <inheritdoc cref="AbandonContext(IntPtr)"/>
+    /// <param name="context">The context that is about to be destroyed.</param>
+    /// <param name="timeout">The longest time to wait for an in-flight tick to leave the driver.</param>
+    internal static void AbandonContext(IntPtr context, TimeSpan timeout)
     {
         var spinner = new SpinWait();
+        var start = Stopwatch.GetTimestamp();
         while (TryTakeArmed(context, out var source, out var version))
         {
             if (!source.TryComplete(version, new ObjectDisposedException(
                     "CUDA context", "The CUDA context was destroyed while an operation was awaiting its stream.")))
             {
                 // Another party won and unregisters the entry once its in-flight tick has left the driver.
+                if (Stopwatch.GetElapsedTime(start) > timeout)
+                {
+                    throw new TimeoutException("A stream completion watchdog tick did not leave the CUDA driver; the context was not destroyed.");
+                }
+
                 spinner.SpinOnce();
             }
         }
+    }
+
+    /// <summary>
+    /// Returns the tick barrier of an operation still armed on <paramref name="context"/>, so that tests can simulate an
+    /// in-flight watchdog tick.
+    /// </summary>
+    internal static Lock? FindTickLock(IntPtr context)
+    {
+        lock (s_armedLock)
+        {
+            foreach (var candidate in s_armed)
+            {
+                if (Volatile.Read(ref candidate._context) == context)
+                {
+                    return candidate._tickLock;
+                }
+            }
+        }
+
+        return null;
     }
 
     private static bool TryTakeArmed(IntPtr context, [NotNullWhen(true)] out CudaStreamCompletionSource? source,

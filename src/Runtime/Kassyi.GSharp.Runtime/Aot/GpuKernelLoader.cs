@@ -264,12 +264,16 @@ public static class GpuKernelLoader
     /// </summary>
     /// <param name="context">A context created with <c>cuCtxCreate</c>. It must not be used after this call.</param>
     /// <exception cref="CudaException"><c>cuCtxDestroy</c> failed.</exception>
+    /// <exception cref="TimeoutException">A watchdog tick did not leave the driver in time; the context was not destroyed.</exception>
     /// <remarks>
     /// <para>
     /// <b>[WHY]:</b> <see cref="CudaStreamCompletion.WaitAsync"/> polls the awaited stream from a watchdog timer that makes
     /// the stream's context current. The driver forbids using a context while <c>cuCtxDestroy</c> runs (it drains
     /// outstanding work first), and a destroyed handle crashes the process instead of returning an error. Destroying a
     /// context through this method detaches those waits before the driver call.
+    /// </para>
+    /// <para>
+    /// Destroying a context with <c>cuCtxDestroy</c> directly bypasses this protection while a wait is pending.
     /// </para>
     /// <para>
     /// Awaiters of the faulted waits observe an <see cref="ObjectDisposedException"/>. The GPU work they were waiting for
