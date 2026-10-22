@@ -40,6 +40,6 @@ public class NativeApiIntrinsicsEmitterTests
             error?.Message);
         Assert.Equal(NativeApiBindingKind.Intrinsic, definition.BindingKind);
 
-        return NativeApiEmitter.EmitIntrinsics(definition);
+        return NativeIntrinsicEmitter.EmitIntrinsics(definition);
     }
 }

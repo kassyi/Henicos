@@ -4,8 +4,9 @@ namespace Kassyi.GSharp.Compiler.Generators;
 /// Build-time generator for the built-in native API definitions under <c>src/NativeApi</c>.
 /// </summary>
 /// <remarks>
-/// Shares <see cref="NativeApiYamlReader"/> and <see cref="NativeApiEmitter"/> with the <c>NativeApiGenerator</c>
-/// source generator so that built-in and user-supplied definitions are parsed and emitted identically.
+/// Emits only <see cref="NativeApiBindingKind.Intrinsic"/> definitions (into <c>Kassyi.GSharp.Core</c>). Library and
+/// module definitions are emitted by the <c>NativeApiGenerator</c> source generator into the consuming assembly; here
+/// they are parsed with the shared <see cref="NativeApiYamlReader"/> only, so that broken YAML still fails the build.
 /// </remarks>
 public static class YamlApiGenerator
 {
@@ -37,25 +38,13 @@ public static class YamlApiGenerator
 
         foreach (var def in definitions)
         {
-            string source;
-            string fileName;
-            switch (def.BindingKind)
+            if (def.BindingKind != NativeApiBindingKind.Intrinsic)
             {
-                case NativeApiBindingKind.Library:
-                    source = NativeApiEmitter.EmitLibraryBindings(def);
-                    fileName = $"{def.ClassName}.g.cs";
-                    break;
-                case NativeApiBindingKind.Module:
-                    source = NativeApiEmitter.EmitModuleBindings(def);
-                    fileName = $"{def.ClassName}.g.cs";
-                    break;
-                default:
-                    source = NativeApiEmitter.EmitIntrinsics(def);
-                    fileName = $"{def.ClassName}Intrinsics.g.cs";
-                    break;
+                continue;
             }
 
-            File.WriteAllText(Path.Combine(outputDir, fileName), source, Encoding.UTF8);
+            var source = NativeIntrinsicEmitter.EmitIntrinsics(def);
+            File.WriteAllText(Path.Combine(outputDir, $"{def.ClassName}Intrinsics.g.cs"), source, Encoding.UTF8);
         }
     }
 }

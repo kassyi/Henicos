@@ -79,6 +79,59 @@ public class NativeApiGeneratorTests
     }
 
     [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Test_LibraryDefinition_WithStringMarshallingAndMultilineSummary_GeneratesDllImports()
+    {
+        const string Yaml = """
+            namespace: MyApp.Interop
+            className: Marshalled
+            libraryName: marshalled
+            methods:
+              - name: utf8Open
+                summary: |
+                  Opens a path & returns <handle>.
+                  Second line.
+                stringMarshalling: Utf8
+                returnType: int
+                parameters:
+                  - { name: path, type: string }
+                  - { name: label, type: "string?" }
+                  - { name: flags, type: int }
+              - name: utf16Open
+                stringMarshalling: Utf16
+                returnType: int
+                parameters:
+                  - { name: path, type: string }
+            """;
+
+        var result = RunGenerator(Api("marshalled.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        return VerifyGenerated(result, nameof(Test_LibraryDefinition_WithStringMarshallingAndMultilineSummary_GeneratesDllImports));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public Task Test_ModuleDefinition_WithDefaultValue_GeneratesDefaultedParameters()
+    {
+        const string Yaml = """
+            namespace: MyApp.Native
+            className: DefaultedKernels
+            moduleName: ./native/defaulted.fatbin
+            methods:
+              - name: Scale
+                parameters:
+                  - { name: data, type: "float[]" }
+                  - { name: factor, type: float, defaultValue: 2.0f }
+            """;
+
+        var result = RunGenerator(Api("defaulted.yml", Yaml));
+
+        Assert.Empty(result.Diagnostics);
+        return VerifyGenerated(result, nameof(Test_ModuleDefinition_WithDefaultValue_GeneratesDefaultedParameters));
+    }
+
+    [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_GeneratedSources_CompileWithoutErrors()
     {

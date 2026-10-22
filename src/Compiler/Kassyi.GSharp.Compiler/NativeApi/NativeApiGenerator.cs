@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// <c>&lt;AdditionalFiles Include="*.yml" GSharpApi="true" /&gt;</c>.
 /// </summary>
 /// <remarks>
-/// <para>A definition with <c>libraryName</c> produces <c>[LibraryImport]</c> bindings; one with <c>moduleName</c>
+/// <para>A definition with <c>libraryName</c> produces <c>[DllImport]</c> bindings; one with <c>moduleName</c>
 /// produces launchers for kernels inside a fatbin / cubin / PTX module. Libraries that need probing
 /// (platform candidates or relative paths) are routed through a single generated <c>DllImportResolver</c>.</para>
 /// <para>All definitions are processed together so that duplicate classes can be reported instead of failing on a
@@ -67,11 +67,11 @@ public sealed class NativeApiGenerator : IIncrementalGenerator
             }
 
             var source = definition.BindingKind == NativeApiBindingKind.Library
-                ? NativeApiEmitter.EmitLibraryBindings(definition, useDllImport: true)
-                : NativeApiEmitter.EmitModuleBindings(definition);
+                ? NativeBindingEmitter.EmitLibraryBindings(definition)
+                : NativeBindingEmitter.EmitModuleBindings(definition);
             context.AddSource($"{qualifiedName}.NativeApi.g.cs", source);
 
-            if (NativeApiEmitter.RequiresResolver(definition) &&
+            if (NativeBindingEmitter.RequiresResolver(definition) &&
                 resolvedLibraries.Add(definition.LibraryName ?? string.Empty))
             {
                 resolverDefinitions.Add(definition);
@@ -80,8 +80,8 @@ public sealed class NativeApiGenerator : IIncrementalGenerator
 
         if (resolverDefinitions.Count > 0)
         {
-            context.AddSource($"{NativeApiEmitter.ResolverClassName}.g.cs",
-                NativeApiEmitter.EmitLibraryResolver(resolverDefinitions.ToImmutable()));
+            context.AddSource($"{NativeBindingEmitter.ResolverClassName}.g.cs",
+                NativeBindingEmitter.EmitLibraryResolver(resolverDefinitions.ToImmutable()));
         }
     }
 
