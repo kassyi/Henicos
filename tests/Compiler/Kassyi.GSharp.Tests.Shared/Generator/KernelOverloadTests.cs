@@ -7,36 +7,12 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 [Category(TestCategory.Compiler)]
 public class KernelOverloadTests
 {
-    private const string OverloadedKernels = """
-        using Kassyi.GSharp.Core;
-        namespace OverloadTest
-        {
-            public static partial class K
-            {
-                [GpuKernel]
-                public static void Run(int[] data) { data[ThreadIndex.X] = 1; }
-
-                [GpuKernel]
-                public static void Run(float[] data) { data[ThreadIndex.X] = 2f; }
-            }
-        }
-        """;
+    private static readonly string s_overloadedKernels =
+        RoslynTestUtility.ReadTestCase("Generator/KernelOverload_Overloaded.cu.cs");
 
     // Both overloads take one int buffer in the typed Ptr wrapper.
-    private const string IndistinguishableKernels = """
-        using Kassyi.GSharp.Core;
-        namespace OverloadTest
-        {
-            public static partial class K
-            {
-                [GpuKernel]
-                public static void Run(int[] data) { data[ThreadIndex.X] = 1; }
-
-                [GpuKernel]
-                public static void Run(ref int value) { value = 2; }
-            }
-        }
-        """;
+    private static readonly string s_indistinguishableKernels =
+        RoslynTestUtility.ReadTestCase("Generator/KernelOverload_Indistinguishable.cu.cs");
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
@@ -44,7 +20,7 @@ public class KernelOverloadTests
     [InlineData("Cuda")]
     public void Test_OverloadedKernels_GenerateCompilableWrappers(string dialect)
     {
-        var (_, output, diagnostics) = RoslynTestUtility.RunGenerator(OverloadedKernels, dialect);
+        var (_, output, diagnostics) = RoslynTestUtility.RunGenerator(s_overloadedKernels, dialect);
 
         Assert.DoesNotContain(diagnostics, d => d.Severity == DiagnosticSeverity.Error);
         Assert.DoesNotContain(output.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
@@ -54,7 +30,7 @@ public class KernelOverloadTests
     [Scenario(TestScenario.HappyPath)]
     public void Test_OverloadedKernels_LoadDistinctEntryPoints()
     {
-        var (_, output, _) = RoslynTestUtility.RunGenerator(OverloadedKernels, "Cuda");
+        var (_, output, _) = RoslynTestUtility.RunGenerator(s_overloadedKernels, "Cuda");
         var wrapper = output.SyntaxTrees.Single(t => t.FilePath.EndsWith("K.g.cs", StringComparison.Ordinal)).ToString();
 
         Assert.Contains("\"__gsharp_k_OverloadTest__K__Run_o0\"", wrapper);
@@ -69,7 +45,7 @@ public class KernelOverloadTests
     [InlineData("Cuda")]
     public void Test_IndistinguishableOverloads_ReportGsh0061(string dialect)
     {
-        var (_, output, diagnostics) = RoslynTestUtility.RunGenerator(IndistinguishableKernels, dialect);
+        var (_, output, diagnostics) = RoslynTestUtility.RunGenerator(s_indistinguishableKernels, dialect);
 
         diagnostics.AssertContains(GSharpDiagnostics.IndistinguishableKernelOverloads);
         // The reported overload gets no wrappers, so the generated code itself stays valid.

@@ -9,25 +9,8 @@ public class GeneratorHintNameTests
 {
     // Kernel classes with the same name in two namespaces used to be added twice as "K.g.cs", which made the generator
     // throw (CS8785) and contribute no output at all.
-    private const string SameNamedKernelClasses = """
-        using Kassyi.GSharp.Core;
-        namespace N1
-        {
-            public static partial class K
-            {
-                [GpuKernel]
-                public static void Run(int[] data) { data[ThreadIndex.X] = 1; }
-            }
-        }
-        namespace N2
-        {
-            public static partial class K
-            {
-                [GpuKernel]
-                public static void Run(int[] data) { data[ThreadIndex.X] = 2; }
-            }
-        }
-        """;
+    private static readonly string s_sameNamedKernelClasses =
+        RoslynTestUtility.ReadTestCase("Generator/HintName_SameNamedKernelClasses.cu.cs");
 
     [Theory]
     [Scenario(TestScenario.SadPath)]
@@ -35,7 +18,7 @@ public class GeneratorHintNameTests
     [InlineData("Cuda")]
     public void Test_SameNamedKernelClassesInDifferentNamespaces_GetDistinctHintNames(string dialect)
     {
-        var (driver, output, diagnostics) = RoslynTestUtility.RunGenerator(SameNamedKernelClasses, dialect);
+        var (driver, output, diagnostics) = RoslynTestUtility.RunGenerator(s_sameNamedKernelClasses, dialect);
         var result = driver.GetRunResult().Results.Single();
 
         Assert.Null(result.Exception);
@@ -49,14 +32,7 @@ public class GeneratorHintNameTests
     [Scenario(TestScenario.Boundary)]
     public void Test_KernelClassInGlobalNamespace_UsesItsName()
     {
-        const string source = """
-            using Kassyi.GSharp.Core;
-            public static partial class TopLevel_Kernels
-            {
-                [GpuKernel]
-                public static void Run(int[] data) { data[ThreadIndex.X] = 1; }
-            }
-            """;
+        var source = RoslynTestUtility.ReadTestCase("Generator/HintName_GlobalNamespaceKernelClass.cu.cs");
 
         var (driver, _, _) = RoslynTestUtility.RunGenerator(source, "Cpu");
 
