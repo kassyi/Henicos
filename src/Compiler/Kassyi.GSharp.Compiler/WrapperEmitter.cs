@@ -200,7 +200,7 @@ internal static class WrapperEmitter
         using (writer.Scope())
         {
             writer.AppendGeneratedCodeAttributes();
-            writer.AppendLine("public static partial class AotContexts");
+            writer.AppendLine($"public static partial class {AotHostNames.AotContextsClassName}");
             using (writer.Scope())
             {
                 // ReSharper disable once PossibleMultipleEnumeration
@@ -339,8 +339,7 @@ internal static class WrapperEmitter
         }
         else
         {
-            writer.Append("Launch");
-            writer.Append(method.Name);
+            writer.Append(KernelHostNames.GetLaunchName(method));
         }
 
         using (writer.Parentheses())
@@ -400,7 +399,7 @@ internal static class WrapperEmitter
         writer.AppendGeneratedCodeAttributes();
         writer.Append("public static unsafe ");
         WriteLaunchReturnType(writer, method);
-        writer.Append("Launch").Append(method.Name).Append("Ptr");
+        writer.Append(KernelHostNames.GetTypedPointerLaunchName(method));
         using (writer.Parentheses())
         {
             foreach (var p in method.Parameters)
@@ -560,9 +559,8 @@ internal static class WrapperEmitter
         using (writer.Scope())
         {
             writer.AppendLine($"if (s_hfunc_{key}.HasValue) return;");
-            writer.Append("IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_");
-            var assemblyName = IdentifierHelper.ToSafeIdentifier(method.ContainingAssembly.Name);
-            writer.Append(assemblyName);
+            writer.Append("IntPtr hModule = global::Kassyi.GSharp.Generated.");
+            writer.Append(AotHostNames.GetModuleContextName(method.ContainingAssembly.Name));
             writer.AppendLine(".GetOrLoadModule();");
             writer.AppendLine(
                 $"s_hfunc_{key} = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, \"{GlobalCppNames.GetKernelName(method)}\");");
@@ -582,7 +580,8 @@ internal static class WrapperEmitter
     public static string GenerateModuleContextClass(string assemblyName,
         IEnumerable<TranspiledKernelResult> kernelMethods)
     {
-        var safeAssemblyName = IdentifierHelper.ToSafeIdentifier(assemblyName);
+        var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
+        var moduleContextName = AotHostNames.GetModuleContextName(assemblyName);
 
         var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();
@@ -595,7 +594,7 @@ internal static class WrapperEmitter
             """);
         writer.AppendGeneratedCodeAttributes();
         writer.AppendLine($$"""
-            public static class GSharpModuleContext_{{safeAssemblyName}}
+            public static class {{moduleContextName}}
             {
             private static IntPtr? s_hModule;
             private static readonly object s_lock = new object();
@@ -610,7 +609,7 @@ internal static class WrapperEmitter
             {
             if (s_hModule.HasValue) return s_hModule.Value;
 
-            var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_{{safeAssemblyName}}).Assembly.Location) ??
+            var baseDir = System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location) ??
                 System.AppContext.BaseDirectory;
             var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_{{safeAssemblyName}}.gfatbin");
             if (!System.IO.File.Exists(fatbinPath))
@@ -712,7 +711,7 @@ internal static class WrapperEmitter
 
     private static void WriteManagedExecutionFallback(SourceWriter writer, IMethodSymbol method)
     {
-        var safeAssemblyName = IdentifierHelper.ToSafeIdentifier(method.ContainingAssembly.Name);
+        var safeAssemblyName = AotHostNames.ToSafeIdentifier(method.ContainingAssembly.Name);
         var contextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix, method);
         var stateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.KernelStateMachinePrefix, method);
 

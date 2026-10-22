@@ -70,9 +70,8 @@ internal static class StructMarshalingEmitter
 
     private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s)
     {
-        writer.Append("public static unsafe void");
-        writer.Append(" Marshal_");
-        writer.AppendNestedCppName(s);
+        writer.Append("public static unsafe void ");
+        writer.AppendMarshalMethodName(s);
         using (writer.Parentheses())
         {
             writer.Append("ref ");
@@ -106,8 +105,7 @@ internal static class StructMarshalingEmitter
         }
         else if (CudaLayoutRules.IsCustomStruct(member.Type))
         {
-            writer.Append("Marshal_");
-            writer.AppendNestedCppName(member.Type);
+            writer.AppendMarshalMethodName(member.Type);
             using (writer.Parentheses())
             {
                 writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, isDevicePtr, allocatedPtrs, hStream");
@@ -167,8 +165,7 @@ internal static class StructMarshalingEmitter
                         writer.AppendLine($"for (int i = 0; i < host.{member.Name.ToCSharpIdentifier()}.Length; i++)");
                         using (writer.Scope())
                         {
-                            writer.Append("Marshal_");
-                            writer.AppendNestedCppName(elementType);
+                            writer.AppendMarshalMethodName(elementType);
                             writer.AppendLine(
                                 $"(ref host.{member.Name.ToCSharpIdentifier()}[i], ref tempArray[i], false, allocatedPtrs, hStream);");
                         }
@@ -214,8 +211,8 @@ internal static class StructMarshalingEmitter
 
     private static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s)
     {
-        writer.Append("public static unsafe void Unmarshal_");
-        writer.AppendNestedCppName(s);
+        writer.Append("public static unsafe void ");
+        writer.AppendUnmarshalMethodName(s);
         using (writer.Parentheses())
         {
             writer.Append("ref ");
@@ -248,8 +245,7 @@ internal static class StructMarshalingEmitter
         }
         else if (CudaLayoutRules.IsCustomStruct(member.Type))
         {
-            writer.Append("Unmarshal_");
-            writer.AppendNestedCppName(member.Type);
+            writer.AppendUnmarshalMethodName(member.Type);
             using (writer.Parentheses())
             {
                 writer.Append($"ref host.{member.Name.ToCSharpIdentifier()}, ref native.{member.Name.ToCSharpIdentifier()}, isDevicePtr, hStream");
@@ -311,8 +307,7 @@ internal static class StructMarshalingEmitter
                     writer.AppendLine($"for (int i = 0; i < host.{member.Name.ToCSharpIdentifier()}.Length; i++)");
                     using (writer.Scope())
                     {
-                        writer.Append("Unmarshal_");
-                        writer.AppendNestedCppName(elementType);
+                        writer.AppendUnmarshalMethodName(elementType);
                         writer.AppendLine($"(ref host.{member.Name.ToCSharpIdentifier()}[i], ref tempArray[i], false, hStream);");
                     }
                 }

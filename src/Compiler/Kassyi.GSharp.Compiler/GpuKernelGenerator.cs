@@ -377,7 +377,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
-        var safeAssemblyName = IdentifierHelper.ToSafeIdentifier(assemblyName);
+        var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
         var requiredIncludes = new HashSet<string>();
         foreach (var method in distinctKernelMethods)
         {
@@ -406,7 +406,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var contextSource = WrapperEmitter.GenerateModuleContextClass(assemblyName, distinctKernelMethods);
-        context.AddSource($"GSharpModuleContext_{safeAssemblyName}.g.cs",
+        context.AddSource($"{AotHostNames.GetModuleContextName(assemblyName)}.g.cs",
             SourceText.From(contextSource, Encoding.UTF8));
     }
 
