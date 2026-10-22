@@ -79,7 +79,7 @@ internal static class MethodSignatureTranspiler
             }
 
             context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
-            context.Emitter.Writer.Append("* __restrict__ __gsharp_auto_result");
+            context.Emitter.Writer.Append($"* __restrict__ {GSharpInternalNames.AutoResult}");
         }
     }
 

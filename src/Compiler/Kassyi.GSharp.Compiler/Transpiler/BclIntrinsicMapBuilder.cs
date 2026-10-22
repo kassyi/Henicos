@@ -4,6 +4,18 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>Discovers assembly attributes and builds immutable mappings from BCL methods to CUDA intrinsic functions.</summary>
 internal static class BclIntrinsicMapBuilder
 {
+    // Prelude functions that the BCL bit operation intrinsics map to, for UIntPtr on a 64-bit and a 32-bit platform.
+    private const string RotateLeft64 = "__gsharp_rotate_left_64";
+    private const string RotateLeft32 = "__gsharp_rotate_left_32";
+    private const string RotateRight64 = "__gsharp_rotate_right_64";
+    private const string RotateRight32 = "__gsharp_rotate_right_32";
+    private const string TrailingZeroCount64 = "__gsharp_trailing_zero_count_64";
+    private const string TrailingZeroCount32 = "__gsharp_trailing_zero_count_32";
+    private const string Log2For64 = "__gsharp_log2_64";
+    private const string Log2For32 = "__gsharp_log2_32";
+    private const string LeadingZeroCount64 = "__gsharp_leading_zero_count_64";
+    private const string LeadingZeroCount32 = "__gsharp_leading_zero_count_32";
+
     private static readonly ConditionalWeakTable<Compilation, ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>>
         s_cache =
             new();
@@ -146,11 +158,11 @@ internal static class BclIntrinsicMapBuilder
             {
                 cudaIntrinsicName = cudaIntrinsicName switch
                 {
-                    "__gsharp_rotate_left_64" => "__gsharp_rotate_left_32",
-                    "__gsharp_rotate_right_64" => "__gsharp_rotate_right_32",
-                    "__gsharp_trailing_zero_count_64" => "__gsharp_trailing_zero_count_32",
-                    "__gsharp_log2_64" => "__gsharp_log2_32",
-                    "__gsharp_leading_zero_count_64" => "__gsharp_leading_zero_count_32",
+                    RotateLeft64 => RotateLeft32,
+                    RotateRight64 => RotateRight32,
+                    TrailingZeroCount64 => TrailingZeroCount32,
+                    Log2For64 => Log2For32,
+                    LeadingZeroCount64 => LeadingZeroCount32,
                     "__popcll" => "__popc",
                     _ => cudaIntrinsicName
                 };

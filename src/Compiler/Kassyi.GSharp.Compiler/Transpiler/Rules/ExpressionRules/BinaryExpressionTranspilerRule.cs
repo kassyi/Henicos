@@ -12,6 +12,8 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// </remarks>
 public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<BinaryExpressionSyntax>
 {
+    private const string CoalesceTemp = "__gsharp_coalesce_tmp";
+
     /// <summary>
     /// Gets the singleton instance of the <see cref="BinaryExpressionTranspilerRule"/>.
     /// </summary>
@@ -26,11 +28,11 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         {
             using (context.Emitter.Writer.ImmediatelyInvokedLambda())
             {
-                context.Emitter.Writer.Append("auto __gsharp_coalesce_tmp = ");
+                context.Emitter.Writer.Append($"auto {CoalesceTemp} = ");
                 context.Visitor.Visit(node.Left);
                 context.Emitter.Writer.AppendSemiColonLine();
 
-                context.Emitter.Writer.Append("return __gsharp_coalesce_tmp.HasValue ? __gsharp_coalesce_tmp.Value : ");
+                context.Emitter.Writer.Append($"return {CoalesceTemp}.HasValue ? {CoalesceTemp}.Value : ");
                 context.Visitor.Visit(node.Right);
                 context.Emitter.Writer.AppendSemiColonLine();
             }

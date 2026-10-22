@@ -8,6 +8,10 @@ using static GSharpInternalNames;
 /// </summary>
 internal static class HostLauncherTranspiler
 {
+    private const string HostLastError = "__gsharp_host_last_error";
+    private const string ActiveErrorSlot = "__gsharp_active_error_slot";
+    private const string SetThreadIndex = "__gsharp_set_thread_idx";
+
     public static void WriteCpuLauncher(MethodDeclarationSyntax method,
         IReadOnlyList<VariableDeclaratorSyntax>? contextFields, ref TranspileContext context)
     {
@@ -52,7 +56,7 @@ internal static class HostLauncherTranspiler
 
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Writer.AppendLine("__gsharp_host_last_error.Reset();");
+            context.Emitter.Writer.AppendLine($"{HostLastError}.Reset();");
             context.Emitter.Writer.AppendLine($"GSharpErrorSlot {LaunchError};");
             context.Emitter.Writer.AppendLine(
                 $"int32_t {TotalBlocks} = (int32_t)({LaunchGridDimX} * {LaunchGridDimY} * {LaunchGridDimZ});");
@@ -104,7 +108,7 @@ internal static class HostLauncherTranspiler
 
             context.Emitter.Writer.AppendLine($"if ({LaunchError}.HasError()) {{");
             context.Emitter.Writer.AppendLine(
-                $"__gsharp_host_last_error.Report(static_cast<GSharpErrorCode>({LaunchError}.code.load(std::memory_order_acquire)), {LaunchError}.message);");
+                $"{HostLastError}.Report(static_cast<GSharpErrorCode>({LaunchError}.code.load(std::memory_order_acquire)), {LaunchError}.message);");
             context.Emitter.Writer.AppendLine("}");
         }
     }
@@ -184,7 +188,7 @@ internal static class HostLauncherTranspiler
         using (context.Emitter.Writer.Scope())
         {
             context.Emitter.Writer.AppendLine($"if ({LaunchError}.HasError()) continue;");
-            context.Emitter.Writer.AppendLine($"__gsharp_active_error_slot = &{LaunchError};");
+            context.Emitter.Writer.AppendLine($"{ActiveErrorSlot} = &{LaunchError};");
             context.Emitter.Writer.AppendLine($"int32_t {LaunchThreadX} = {ThreadLoopIndex} % {LaunchBlockDimX};");
             context.Emitter.Writer.AppendLine(
                 $"int32_t {LaunchThreadY} = ({ThreadLoopIndex} / {LaunchBlockDimX}) % {LaunchBlockDimY};");
@@ -206,7 +210,7 @@ internal static class HostLauncherTranspiler
                 }
 
                 context.Emitter.Writer.AppendLine(
-                    $"__gsharp_set_thread_idx({LaunchThreadX}, {LaunchThreadY}, {LaunchThreadZ}, {LaunchBlockX}, {LaunchBlockY}, {LaunchBlockZ}, {LaunchBlockDimX}, {LaunchBlockDimY}, {LaunchBlockDimZ}, {LaunchGridDimX}, {LaunchGridDimY}, {LaunchGridDimZ});");
+                    $"{SetThreadIndex}({LaunchThreadX}, {LaunchThreadY}, {LaunchThreadZ}, {LaunchBlockX}, {LaunchBlockY}, {LaunchBlockZ}, {LaunchBlockDimX}, {LaunchBlockDimY}, {LaunchBlockDimZ}, {LaunchGridDimX}, {LaunchGridDimY}, {LaunchGridDimZ});");
                 context.Emitter.Writer.Append(methodName);
                 using (context.Emitter.Writer.Parentheses())
                 {

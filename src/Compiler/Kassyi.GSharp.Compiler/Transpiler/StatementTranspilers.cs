@@ -230,14 +230,14 @@ internal static class StatementTranspilers
     {
         if (node.IsKind(SyntaxKind.GotoCaseStatement))
         {
-            context.Emitter.Writer.Append($"goto __gsharp_switch_{context.Emitter.CurrentSwitchId}_state_");
+            context.Emitter.Writer.Append($"goto {GSharpInternalNames.SwitchStatePrefix}{context.Emitter.CurrentSwitchId}_state_");
             context.Visitor.Visit(node.Expression);
             context.Emitter.Writer.AppendSemiColonLine();
             return;
         }
         else if (node.IsKind(SyntaxKind.GotoDefaultStatement))
         {
-            context.Emitter.Writer.AppendLine($"goto __gsharp_switch_{context.Emitter.CurrentSwitchId}_state_default;");
+            context.Emitter.Writer.AppendLine($"goto {GSharpInternalNames.SwitchStatePrefix}{context.Emitter.CurrentSwitchId}_state_default;");
             return;
         }
 
@@ -288,7 +288,7 @@ internal static class StatementTranspilers
 
             if (context.Emitter is { IsGpuKernelEntry: true, IsVoidReturn: false, CallableDepth: 0 })
             {
-                context.Emitter.Writer.Append("__gsharp_auto_result[__gsharp_global_tid] = ");
+                context.Emitter.Writer.Append($"{GSharpInternalNames.AutoResult}[{GSharpInternalNames.GlobalThreadIndex}] = ");
                 context.Visitor.Visit(node.Expression);
                 context.Emitter.Writer.AppendSemiColonLine();
 

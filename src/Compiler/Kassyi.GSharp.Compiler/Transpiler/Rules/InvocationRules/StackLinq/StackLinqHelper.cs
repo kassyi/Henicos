@@ -2,6 +2,15 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 
 internal static class StackLinqHelper
 {
+    /// <summary>Prefix of the per-stage element variable, followed by the stage index.</summary>
+    internal const string ValuePrefix = "__gsharp_val_";
+
+    /// <summary>The loop index of a fused pipeline.</summary>
+    internal const string LoopIndex = "__gsharp_i";
+
+    /// <summary>The length of the source array of a fused pipeline.</summary>
+    internal const string FusionLength = "__gsharp_fusion_length";
+
     public static bool IsStackLinqMethod(IMethodSymbol symbol) =>
         symbol.ContainingNamespace is
         {
@@ -40,11 +49,11 @@ internal static class StackLinqHelper
             var arg = GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append($"{resultVar} += (");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__gsharp_val_{valIndex});");
+            context.Emitter.Writer.AppendLine($")({ValuePrefix}{valIndex});");
         }
         else
         {
-            context.Emitter.Writer.AppendLine($"{resultVar} += __gsharp_val_{valIndex};");
+            context.Emitter.Writer.AppendLine($"{resultVar} += {ValuePrefix}{valIndex};");
         }
     }
 }

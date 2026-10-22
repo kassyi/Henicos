@@ -7,6 +7,13 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// </param>
 public class StateMachineLowerer(bool isDeviceFunction = false)
 {
+    private const string WarpExchangeAssign = "__gsharp_warp_exchange_assign";
+    private const string WarpShuffleReadDownSync = "__gsharp_warp_shuffle_read_down_sync";
+    private const string WarpShuffleReadUpSync = "__gsharp_warp_shuffle_read_up_sync";
+    private const string WarpShuffleReadXorSync = "__gsharp_warp_shuffle_read_xor_sync";
+    private const string WarpShuffleReadSync = "__gsharp_warp_shuffle_read_sync";
+    private const string WarpShuffleRead = "__gsharp_warp_shuffle_read";
+
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
 
@@ -69,7 +76,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
                     var valArg = barrierInv.ArgumentList.Arguments[1].Expression;
                     currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
                         SyntaxFactory.InvocationExpression(
-                            SyntaxFactory.IdentifierName("__gsharp_warp_exchange_assign"),
+                            SyntaxFactory.IdentifierName(WarpExchangeAssign),
                             SyntaxFactory.ArgumentList(
                                 SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(valArg)))
                         )
@@ -235,11 +242,11 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
                          "ShuffleDownSync";
         var readMethodName = methodName switch
         {
-            "ShuffleDownSync" => "__gsharp_warp_shuffle_read_down_sync",
-            "ShuffleUpSync" => "__gsharp_warp_shuffle_read_up_sync",
-            "ShuffleXorSync" => "__gsharp_warp_shuffle_read_xor_sync",
-            "ShuffleSync" => "__gsharp_warp_shuffle_read_sync",
-            _ => "__gsharp_warp_shuffle_read"
+            "ShuffleDownSync" => WarpShuffleReadDownSync,
+            "ShuffleUpSync" => WarpShuffleReadUpSync,
+            "ShuffleXorSync" => WarpShuffleReadXorSync,
+            "ShuffleSync" => WarpShuffleReadSync,
+            _ => WarpShuffleRead
         };
 
         var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>();

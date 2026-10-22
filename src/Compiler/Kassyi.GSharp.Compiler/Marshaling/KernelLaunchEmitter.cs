@@ -5,6 +5,9 @@ using Kassyi.GSharp.Compiler.Layout;
 /// <summary>Emits P/Invoke wrapper logic for launching CUDA kernels, including memory allocation, marshaling, and stream synchronization.</summary>
 internal static class KernelLaunchEmitter
 {
+    /// <summary>The device copy of the auto result buffer in the generated launcher.</summary>
+    private const string DeviceAutoResult = "d_" + GSharpInternalNames.AutoResult;
+
     internal static ITypeSymbol GetMarshaledType(IParameterSymbol p) =>
         p.Type.UnwrapNullableArrayLike() ?? p.Type;
 
@@ -79,7 +82,7 @@ internal static class KernelLaunchEmitter
 
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
         {
-            writer.AppendLine("IntPtr d___gsharp_auto_result = IntPtr.Zero;");
+            writer.AppendLine($"IntPtr {DeviceAutoResult} = IntPtr.Zero;");
         }
     }
 
@@ -106,17 +109,17 @@ internal static class KernelLaunchEmitter
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
         {
             writer.AppendLine("// Marshal auto result array");
-            writer.Append("int __gsharp_auto_result_size = __gsharp_auto_result.Length * sizeof(");
+            writer.Append($"int {GSharpInternalNames.AutoResultSize} = {GSharpInternalNames.AutoResult}.Length * sizeof(");
             writer.AppendFullyQualifiedCsharpName(method.ReturnType);
             writer.AppendLine(");");
 
-            writer.AppendLine("if (__gsharp_auto_result_size > 0)");
+            writer.AppendLine($"if ({GSharpInternalNames.AutoResultSize} > 0)");
             using (writer.Scope())
             {
                 writer.AppendLine(
                     "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
-                    "out d___gsharp_auto_result, (IntPtr)__gsharp_auto_result_size, hStream));");
-                writer.AppendLine("kernelParams[" + paramIndex + "] = &d___gsharp_auto_result;");
+                    $"out {DeviceAutoResult}, (IntPtr){GSharpInternalNames.AutoResultSize}, hStream));");
+                writer.AppendLine("kernelParams[" + paramIndex + $"] = &{DeviceAutoResult};");
             }
         }
 
@@ -134,10 +137,10 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        writer.AppendLine("if (__gsharp_auto_result != null && d___gsharp_auto_result != IntPtr.Zero)");
+        writer.AppendLine($"if ({GSharpInternalNames.AutoResult} != null && {DeviceAutoResult} != IntPtr.Zero)");
         using (writer.Scope())
         {
-            writer.Append("int size = __gsharp_auto_result.Length * sizeof(");
+            writer.Append($"int size = {GSharpInternalNames.AutoResult}.Length * sizeof(");
             writer.AppendFullyQualifiedCsharpName(method.ReturnType);
             writer.AppendLine(");");
 
@@ -146,13 +149,13 @@ internal static class KernelLaunchEmitter
             {
                 writer.AppendLine(
                     "var handle = System.Runtime.InteropServices.GCHandle.Alloc(" +
-                    "__gsharp_auto_result, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                    $"{GSharpInternalNames.AutoResult}, System.Runtime.InteropServices.GCHandleType.Pinned);");
                 writer.AppendLine("try");
                 using (writer.Scope())
                 {
                     writer.AppendLine(
                         "CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2(" +
-                        "handle.AddrOfPinnedObject(), d___gsharp_auto_result, (IntPtr)size, hStream));");
+                        $"handle.AddrOfPinnedObject(), {DeviceAutoResult}, (IntPtr)size, hStream));");
                     writer.AppendLine("CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));");
                 }
 
@@ -178,11 +181,11 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        writer.AppendLine("if (d___gsharp_auto_result != IntPtr.Zero)");
+        writer.AppendLine($"if ({DeviceAutoResult} != IntPtr.Zero)");
         using (writer.Scope())
         {
             writer.AppendLine(
-                "CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync(d___gsharp_auto_result, hStream));");
+                $"CudaException.ThrowIfError(CudaDriverApi.cuMemFreeAsync({DeviceAutoResult}, hStream));");
         }
     }
 

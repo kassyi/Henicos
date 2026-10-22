@@ -395,7 +395,7 @@ internal static class ManagedCSharpTranspiler
         {
             writer.Append(", ref ");
             writer.AppendCsharpTypeName(methodSymbol.ReturnType);
-            writer.Append(" __gsharp_auto_result");
+            writer.Append(" " + GSharpInternalNames.AutoResult);
         }
     }
 
@@ -670,7 +670,7 @@ internal static class ManagedCSharpTranspiler
                 statements.Add(SyntaxFactory.ExpressionStatement(
                     SyntaxFactory.AssignmentExpression(
                         SyntaxKind.SimpleAssignmentExpression,
-                        SyntaxFactory.IdentifierName("__gsharp_auto_result"),
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.AutoResult),
                         Visit(node.Expression) as ExpressionSyntax ?? node.Expression
                     )
                 ));

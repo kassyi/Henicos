@@ -8,6 +8,9 @@ using Kassyi.GSharp.Compiler.Layout;
 /// <summary>Generates host-side C# wrapper classes that load and invoke GPU kernels.</summary>
 internal static class WrapperEmitter
 {
+    private const string PinnedAutoResult = "p_" + GSharpInternalNames.AutoResult;
+    private const string TotalThreads = "__gsharp_total_threads";
+
     private const string EmptyArrayMessage = "Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.";
 
     // The managed launcher's context slot for the thread currently being stepped.
@@ -701,7 +704,7 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
                 writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-                writer.Append("* __gsharp_auto_result");
+                writer.Append($"* {GSharpInternalNames.AutoResult}");
             }
         }
 
@@ -824,7 +827,7 @@ internal static class WrapperEmitter
                                 writer.Append(LinearContext);
                                 if (method.ReturnType.SpecialType != SpecialType.System_Void)
                                 {
-                                    writer.Append($", ref __gsharp_auto_result[{GSharpInternalNames.LinearThreadIndex}]");
+                                    writer.Append($", ref {GSharpInternalNames.AutoResult}[{GSharpInternalNames.LinearThreadIndex}]");
                                 }
 
                                 writer.AppendLine(");");
@@ -897,7 +900,7 @@ internal static class WrapperEmitter
         {
             writer.Append("fixed (");
             writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-            writer.AppendLine("* p___gsharp_auto_result = __gsharp_auto_result)");
+            writer.AppendLine($"* {PinnedAutoResult} = {GSharpInternalNames.AutoResult})");
             hasFixed = true;
         }
 
@@ -955,7 +958,7 @@ internal static class WrapperEmitter
             {
                 writer.AppendComma();
                 writer.AppendSpace();
-                writer.Append("p___gsharp_auto_result");
+                writer.Append(PinnedAutoResult);
             }
         }
 
@@ -971,10 +974,10 @@ internal static class WrapperEmitter
                 "if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0)" +
                 " throw new global::System.ArgumentOutOfRangeException(\"Dimensions\", \"Launch dimensions must be greater than 0.\");");
             writer.AppendLine(
-                "uint __gsharp_total_threads; checked { __gsharp_total_threads = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }");
-            writer.Append("var __gsharp_auto_result = new ");
+                $"uint {TotalThreads}; checked {{ {TotalThreads} = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }}");
+            writer.Append($"var {GSharpInternalNames.AutoResult} = new ");
             writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-            writer.AppendLine("[__gsharp_total_threads];");
+            writer.AppendLine($"[{TotalThreads}];");
         }
     }
 
@@ -982,7 +985,7 @@ internal static class WrapperEmitter
     {
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
         {
-            writer.AppendLine("return __gsharp_auto_result;");
+            writer.AppendLine($"return {GSharpInternalNames.AutoResult};");
         }
     }
 }

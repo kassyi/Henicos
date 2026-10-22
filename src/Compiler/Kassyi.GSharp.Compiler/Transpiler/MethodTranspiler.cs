@@ -308,7 +308,7 @@ public static class MethodTranspiler
             if (isKernelWithReturn)
             {
                 context.Emitter.Writer.AppendLine(
-                    "unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
+                    $"unsigned int {GSharpInternalNames.GlobalThreadIndex} = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
                     " * (blockDim.x * blockDim.y * blockDim.z) +" +
                     " threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
             }
@@ -351,7 +351,7 @@ public static class MethodTranspiler
                 if (methodSymbol is { ReturnsVoid: false })
                 {
                     context.Emitter.Writer.Append(isKernelWithReturn
-                        ? "__gsharp_auto_result[__gsharp_global_tid] = "
+                        ? $"{GSharpInternalNames.AutoResult}[{GSharpInternalNames.GlobalThreadIndex}] = "
                         : "return ");
                 }
 

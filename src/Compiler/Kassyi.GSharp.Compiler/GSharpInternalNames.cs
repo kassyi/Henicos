@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Compiler;
 /// GSH0055 rejects user identifiers containing <c>__</c>, so names under the <c>__gsharp_</c> prefix cannot collide with
 /// user code. <c>Resources/Prelude/WarpAndHints.hpp</c> spells <see cref="Context"/>, <see cref="WarpExchange"/>,
 /// <see cref="WarpShuffleCount"/>, <see cref="AllContexts"/> and <see cref="Root"/> literally; <c>PreludeInternalNamesTests</c> keeps the two in sync.
+/// A name that a single emitter uses may stay a constant in that file, but it must not start with <see cref="RenamedIdentifierPrefix"/> or <see cref="RenamedMemberPrefix"/>.
 /// </remarks>
 internal static class GSharpInternalNames
 {
@@ -49,6 +50,7 @@ internal static class GSharpInternalNames
     public const string AggregateTemp = "__gsharp_tmp";
     public const string TupleTempPrefix = "__gsharp_tuple_";
     public const string CoalesceTarget = "__gsharp_coalesce_target";
+    public const string SwitchStatePrefix = "__gsharp_switch_";
 
     // Host launcher locals. Kernel parameters share their scope.
     public const string LaunchContexts = "__gsharp_contexts";
@@ -62,6 +64,10 @@ internal static class GSharpInternalNames
     public const string SharedMemoryBufferPrefix = "__gsharp_smem_buffer_";
     public const string CudaContextScope = "__gsharp_cuda_context_scope";
     public const string AutoResult = "__gsharp_auto_result";
+    public const string AutoResultSize = AutoResult + "_size";
+
+    // Device-side locals of a kernel that returns a value.
+    public const string GlobalThreadIndex = "__gsharp_global_tid";
 
     // CPU C++ launcher (`__gsharp_launch_*`): launch dimensions, block/thread coordinates and loop state.
     public const string LaunchGridDimX = "__gsharp_grid_dim_x";
