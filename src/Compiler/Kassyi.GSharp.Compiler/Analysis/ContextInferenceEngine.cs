@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
+namespace Kassyi.GSharp.Compiler.Analysis;
 
 public static class ContextInferenceEngine
 {

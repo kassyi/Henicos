@@ -8,6 +8,7 @@ global using System.Linq;
 global using Xunit;
 global using Xunit.Abstractions;
 global using Kassyi.GSharp.Compiler;
+global using Kassyi.GSharp.Compiler.Analysis;
 global using Kassyi.GSharp.Compiler.Diagnostics;
 global using Kassyi.GSharp.Compiler.Diagnostics.Host;
 global using Kassyi.GSharp.Compiler.Diagnostics.Kernel;

@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Lowering;
+namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
 /// Finds the <c>[GpuDeviceFunction]</c> methods that reach a phase barrier, directly or through other device functions.

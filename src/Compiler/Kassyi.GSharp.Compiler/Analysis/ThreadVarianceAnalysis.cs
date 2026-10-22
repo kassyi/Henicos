@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
+namespace Kassyi.GSharp.Compiler.Analysis;
 
 /// <summary>
 /// Decides whether an expression of a kernel or device function body may have different values in different threads of

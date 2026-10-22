@@ -10,6 +10,7 @@ global using System.Runtime.CompilerServices;
 global using System.Text;
 global using System.Threading;
 global using System.Threading.Tasks;
+global using Kassyi.GSharp.Compiler.Analysis;
 global using Kassyi.GSharp.Compiler.Diagnostics;
 global using Kassyi.GSharp.Compiler.Diagnostics.Host;
 global using Kassyi.GSharp.Compiler.Diagnostics.Kernel;
