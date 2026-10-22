@@ -1,4 +1,13 @@
 <Solution>
+  <Folder Name="/assets/">
+    <File Path="assets/branding/banners/gsharp-hero-banner-clean.svg" />
+    <File Path="assets/branding/banners/gsharp-hero-banner.svg" />
+    <File Path="assets/branding/icons/gsharp-icon-128.png" />
+    <File Path="assets/branding/icons/gsharp-icon-medium-color.svg" />
+    <File Path="assets/branding/icons/gsharp-icon-medium-mono.svg" />
+    <File Path="assets/branding/icons/gsharp-icon-small-color.svg" />
+    <File Path="assets/branding/icons/gsharp-icon-small-mono.svg" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Apps/Henicos.Benchmarks/Henicos.Benchmarks.csproj" />
     <Project Path="src/Apps/Henicos.Cli/Henicos.Cli.csproj" />
