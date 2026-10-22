@@ -96,21 +96,37 @@ public static class ManagedGpuContext
     [ThreadStatic]
     public static int GridDimZ;
 
-    // Shared memory buffer per thread (each physical thread represents a block during managed execution loop)
+    // One region per shared memory declaration per block. A later declaration never moves an earlier region: threads
+    // keep the span they were handed, so moving a region would leave them writing to a copy nobody else reads. Only the
+    // same declaration reached with a larger count moves its own region (see GrowRegion).
+    // The thread-static state is kept between grids; only the region counts are reset.
     [ThreadStatic]
-    private static byte[]?[]? s_perBlockSharedMemoryBuffer;
+    private static SharedRegion?[]?[]? s_perBlockRegions;
 
     [ThreadStatic]
-    private static int[]? s_perBlockSharedMemoryOffset;
+    private static int[]? s_perBlockRegionCount;
 
-    [ThreadStatic]
-    private static ulong[]?[]? s_perBlockSiteKeys;
+    private sealed class SharedRegion
+    {
+        public ulong SiteKey;
+        public int TypeId;
+        public int ByteLength;
+        public byte[] Bytes = [];
+    }
 
-    [ThreadStatic]
-    private static int[]?[]? s_perBlockSiteOffsets;
+    // CUDA gives every template instantiation of a device function its own __shared__ array, so the element type is part
+    // of the identity of a declaration. The id is assigned once per closed type, without reflection.
+    private static class SharedMemoryTypeIds
+    {
+        private static int s_next;
 
-    [ThreadStatic]
-    private static int[]? s_perBlockSiteCount;
+        public static int Next() => Interlocked.Increment(ref s_next);
+    }
+
+    private static class SharedMemoryTypeId<T> where T : unmanaged
+    {
+        public static readonly int Value = SharedMemoryTypeIds.Next();
+    }
 
     private static int LinearBlockId => BlockIdxZ * GridDimY * GridDimX + BlockIdxY * GridDimX + BlockIdxX;
 
@@ -120,32 +136,21 @@ public static class ManagedGpuContext
     /// <param name="totalBlocks">The total number of blocks in the grid.</param>
     public static void InitializeGrid(int totalBlocks)
     {
-        if (s_perBlockSharedMemoryBuffer == null ||
-            s_perBlockSharedMemoryOffset == null ||
-            s_perBlockSiteKeys == null ||
-            s_perBlockSiteOffsets == null ||
-            s_perBlockSiteCount == null)
+        if (s_perBlockRegions == null || s_perBlockRegionCount == null)
         {
-            s_perBlockSharedMemoryBuffer = new byte[]?[totalBlocks];
-            s_perBlockSharedMemoryOffset = new int[totalBlocks];
-            s_perBlockSiteKeys = new ulong[]?[totalBlocks];
-            s_perBlockSiteOffsets = new int[]?[totalBlocks];
-            s_perBlockSiteCount = new int[totalBlocks];
+            s_perBlockRegions = new SharedRegion?[]?[totalBlocks];
+            s_perBlockRegionCount = new int[totalBlocks];
         }
         else
         {
-            if (s_perBlockSharedMemoryBuffer.Length < totalBlocks)
+            if (s_perBlockRegions.Length < totalBlocks)
             {
-                Array.Resize(ref s_perBlockSharedMemoryBuffer, totalBlocks);
-                Array.Resize(ref s_perBlockSharedMemoryOffset, totalBlocks);
-                Array.Resize(ref s_perBlockSiteKeys, totalBlocks);
-                Array.Resize(ref s_perBlockSiteOffsets, totalBlocks);
-                Array.Resize(ref s_perBlockSiteCount, totalBlocks);
+                Array.Resize(ref s_perBlockRegions, totalBlocks);
+                Array.Resize(ref s_perBlockRegionCount, totalBlocks);
             }
 
-            Array.Clear(s_perBlockSharedMemoryOffset, 0, totalBlocks);
-            Array.Clear(s_perBlockSiteCount, 0, totalBlocks);
-            // We don't need to clear the actual buffers, just the offsets
+            Array.Clear(s_perBlockRegionCount, 0, totalBlocks);
+            // The regions themselves are reused by the next grid, so they are not cleared
         }
     }
 
@@ -157,11 +162,15 @@ public static class ManagedGpuContext
     /// <param name="siteKey">The key that identifies the declaration. The G# compiler computes it for generated code.</param>
     /// <param name="count">The number of elements to allocate.</param>
     /// <returns>A contiguous <see cref="Span{T}"/> pointing to the shared memory region of the declaration.</returns>
+    /// <exception cref="InvalidOperationException">The grid was not initialized.</exception>
     /// <remarks>
     /// [WHY] On the GPU a <c>__shared__</c> variable has static storage: one buffer per declaration per block, shared by
     /// every call of the function that declares it, from any call site and by every thread of the block. The buffer is
-    /// therefore looked up by the declaration, not by the order of allocations, which differs between a caller and the
-    /// device functions it calls and between threads that take different branches.
+    /// therefore looked up by the declaration (its key and element type), not by the order of allocations, which differs
+    /// between a caller and the device functions it calls and between threads that take different branches. A region
+    /// does not move when other declarations are allocated, so the spans of earlier threads stay valid. When the same
+    /// declaration is reached again with a larger <paramref name="count"/> (a device function called with a larger
+    /// dynamic size), its region grows and keeps its contents, as a CUDA launch sized for the largest call would.
     /// </remarks>
     // ReSharper disable once UnusedMember.Global -- Public API for code generators
     public static Span<T> AllocateSharedMemory<T>(ulong siteKey, int count) where T : unmanaged
@@ -171,51 +180,66 @@ public static class ManagedGpuContext
             return [];
         }
 
-        if (s_perBlockSharedMemoryBuffer == null ||
-            s_perBlockSharedMemoryOffset == null ||
-            s_perBlockSiteKeys == null ||
-            s_perBlockSiteOffsets == null ||
-            s_perBlockSiteCount == null)
+        if (s_perBlockRegions == null || s_perBlockRegionCount == null)
         {
             throw new InvalidOperationException("Grid not initialized. Call InitializeGrid first.");
         }
 
-        var bytesNeeded = count * Unsafe.SizeOf<T>();
+        var byteCount = count * Unsafe.SizeOf<T>();
+        var typeId = SharedMemoryTypeId<T>.Value;
         var blockId = LinearBlockId;
-        var siteKeys = s_perBlockSiteKeys[blockId] ??= new ulong[16];
-        var siteOffsets = s_perBlockSiteOffsets[blockId] ??= new int[16];
-        var siteCount = s_perBlockSiteCount[blockId];
-        var buffer = s_perBlockSharedMemoryBuffer[blockId] ??= [];
+        var regions = s_perBlockRegions[blockId] ??= new SharedRegion?[16];
+        var regionCount = s_perBlockRegionCount[blockId];
 
-        for (var i = 0; i < siteCount; i++)
+        for (var i = 0; i < regionCount; i++)
         {
-            if (siteKeys[i] == siteKey)
+            var region = regions[i];
+            if (region == null || region.SiteKey != siteKey || region.TypeId != typeId)
             {
-                return MemoryMarshal.Cast<byte, T>(buffer.AsSpan(siteOffsets[i], bytesNeeded));
+                continue;
             }
+
+            if (byteCount > region.ByteLength)
+            {
+                GrowRegion(region, byteCount);
+            }
+
+            return MemoryMarshal.Cast<byte, T>(region.Bytes.AsSpan(0, byteCount));
         }
 
-        var newOffset = s_perBlockSharedMemoryOffset[blockId];
-        if (newOffset + bytesNeeded > buffer.Length)
+        if (regionCount == regions.Length)
         {
-            Array.Resize(ref s_perBlockSharedMemoryBuffer[blockId], Math.Max(buffer.Length * 2, newOffset + bytesNeeded));
-            buffer = s_perBlockSharedMemoryBuffer[blockId] ?? throw new InvalidOperationException("Shared memory buffer was lost while resizing.");
+            Array.Resize(ref regions, regionCount * 2);
+            s_perBlockRegions[blockId] = regions;
         }
 
-        if (siteCount == siteKeys.Length)
+        var created = regions[regionCount] ??= new SharedRegion();
+        if (created.Bytes.Length < byteCount)
         {
-            Array.Resize(ref siteKeys, siteCount * 2);
-            Array.Resize(ref siteOffsets, siteCount * 2);
-            s_perBlockSiteKeys[blockId] = siteKeys;
-            s_perBlockSiteOffsets[blockId] = siteOffsets;
+            created.Bytes = new byte[byteCount];
         }
 
-        siteKeys[siteCount] = siteKey;
-        siteOffsets[siteCount] = newOffset;
-        s_perBlockSiteCount[blockId] = siteCount + 1;
-        s_perBlockSharedMemoryOffset[blockId] = newOffset + bytesNeeded;
+        created.SiteKey = siteKey;
+        created.TypeId = typeId;
+        created.ByteLength = byteCount;
+        s_perBlockRegionCount[blockId] = regionCount + 1;
 
-        return MemoryMarshal.Cast<byte, T>(buffer.AsSpan(newOffset, bytesNeeded));
+        return MemoryMarshal.Cast<byte, T>(created.Bytes.AsSpan(0, byteCount));
+    }
+
+    // [WHY] The generated code declares a SharedMemory<T> again on every resume and a span cannot live across a barrier
+    // (GSH0039), so a span into the old array is not read once the region moves. A buffer kept from an earlier grid that
+    // already fits is used in place.
+    private static void GrowRegion(SharedRegion region, int byteCount)
+    {
+        if (region.Bytes.Length < byteCount)
+        {
+            var grown = new byte[byteCount];
+            region.Bytes.AsSpan(0, region.ByteLength).CopyTo(grown);
+            region.Bytes = grown;
+        }
+
+        region.ByteLength = byteCount;
     }
 
     /// <summary>

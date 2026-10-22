@@ -98,7 +98,9 @@ Thrown if the grid shared memory buffers have not been initialized via `Initiali
 
 #### Remarks
 
-A CUDA `__shared__` variable has static storage: one buffer per declaration per block, shared by every call of the declaring function and by every thread of the block. The buffer is therefore looked up by the declaration's key, not by the order of allocations, which differs between a caller and the device functions it calls. See [One Buffer per Declaration per Block](../memory/SharedMemory.md#one-buffer-per-declaration-per-block).
+A CUDA `__shared__` variable has static storage: one buffer per declaration per block, shared by every call of the declaring function and by every thread of the block. The buffer is therefore looked up by the declaration's key and element type, not by the order of allocations, which differs between a caller and the device functions it calls. A generic device function instantiated with different element types gets one region per instantiation, as each template instantiation has its own `__shared__` array on CUDA.
+
+A region does not move when other declarations are allocated, so a span handed to one thread stays valid while other threads declare further shared memory. A later request for the same declaration may be smaller (it receives the start of the region) or larger: a larger request, such as a device function called again with a larger dynamic size, grows the region and keeps its contents. Only that declaration's region moves, and generated code declares a `SharedMemory<T>` again after every barrier, so no thread keeps a span into the old storage. See [One Buffer per Declaration per Block](../memory/SharedMemory.md#one-buffer-per-declaration-per-block).
 
 ## SetThreadContext(in GpuThreadContext)
 
