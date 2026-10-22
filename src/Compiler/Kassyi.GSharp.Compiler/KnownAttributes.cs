@@ -2,9 +2,11 @@ namespace Kassyi.GSharp.Compiler;
 
 /// <summary>Defines well-known attribute names and reflection-free inspection helpers used during source generation.</summary>
 /// <seealso cref="TypeConstants"/>
-// ReSharper disable once UnusedMember.Global -- Public constants for compiler internals
-public static class KnownAttributes
+// ReSharper disable once UnusedMember.Global -- Constants kept together for compiler internals
+internal static class KnownAttributes
 {
+    private const string AttributeSuffix = "Attribute";
+
     public const string GpuKernel = nameof(GpuKernel);
     public const string GpuDeviceFunction = nameof(GpuDeviceFunction);
     public const string GpuReadOnly = nameof(GpuReadOnly);
@@ -45,8 +47,23 @@ public static class KnownAttributes
             return true;
         }
 
-        return span.Length == target.Length + 9 &&
+        return span.Length == target.Length + AttributeSuffix.Length &&
                span.StartsWith(target) &&
-               span.EndsWith("Attribute".AsSpan());
+               span.EndsWith(AttributeSuffix.AsSpan());
     }
+
+    /// <summary>
+    /// Whether <paramref name="declaringNamespace"/> is the namespace that declares the attribute known as <paramref name="shortName"/>,
+    /// so that an attribute that only shares the simple name (a user's own <c>GpuKernelAttribute</c>) is not taken for the real one.
+    /// A name that is not a known attribute has no owner and always matches.
+    /// </summary>
+    public static bool IsDeclaredInOwnerNamespace(INamespaceSymbol? declaringNamespace, string shortName) => shortName switch
+    {
+        GpuKernel or GpuDeviceFunction or GpuReadOnly or GpuInline or GpuNoInline or Constant or CudaIntrinsic
+            or CudaIntrinsicPattern or GpuOperatorMacro or GpuResource or TakesOwnership or CudaImport or BclIntrinsicMap =>
+            declaringNamespace.IsCoreNamespace(),
+        MethodImpl or SkipLocalsInit or InlineArray => declaringNamespace.IsSystemRuntimeCompilerServices(),
+        StructLayout or In or Out => declaringNamespace.IsSystemRuntimeInteropServices(),
+        _ => true
+    };
 }

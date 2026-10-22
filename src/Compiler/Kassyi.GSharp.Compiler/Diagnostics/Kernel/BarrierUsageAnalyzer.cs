@@ -220,7 +220,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
         if (semanticModel.GetSymbol(invocation) is IMethodSymbol symbol)
         {
-            return symbol.ContainingType?.Name == TypeConstants.GpuType;
+            return symbol.ContainingType is { Name: TypeConstants.GpuType } gpuType &&
+                   gpuType.ContainingNamespace.IsCoreNamespace();
         }
 
         if (ma.Expression is IdentifierNameSyntax idExpr)

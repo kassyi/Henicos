@@ -31,6 +31,17 @@ internal static class SymbolExtensions
             { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
         };
 
+    public static bool IsSystemRuntimeCompilerServices(this INamespaceSymbol? ns) =>
+        ns is
+        {
+            Name: "CompilerServices",
+            ContainingNamespace:
+            {
+                Name: "Runtime",
+                ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+            }
+        };
+
     public static bool IsSystemRuntimeInteropServices(this INamespaceSymbol? ns) =>
         ns is
         {
@@ -184,7 +195,8 @@ internal static class SymbolExtensions
     /// Zero-allocation inspection using ReadOnlySpan.
     /// </summary>
     public static bool IsAttribute(this AttributeData attr, string shortName) =>
-        KnownAttributes.IsAttributeName(attr.AttributeClass?.Name, shortName);
+        KnownAttributes.IsAttributeName(attr.AttributeClass?.Name, shortName) &&
+        KnownAttributes.IsDeclaredInOwnerNamespace(attr.AttributeClass?.ContainingNamespace, shortName);
 
     /// <summary>
     /// Accurately determines if the attribute is System.Runtime.InteropServices.StructLayoutAttribute.

@@ -84,8 +84,9 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
         if (context.SemanticModel.GetSymbol(invocation) is IMethodSymbol
             {
                 Name: "Malloc",
-                ContainingType: { Name: "Unsafe", ContainingType.Name: TypeConstants.GpuType }
-            })
+                ContainingType: { Name: "Unsafe", ContainingType: { Name: TypeConstants.GpuType } gpuType }
+            } &&
+            gpuType.ContainingNamespace.IsCoreNamespace())
         {
             context.ReportDiagnostic(GSharpDiagnostics.ManualUnmanagedAllocation,
                 invocation.GetLocation());
