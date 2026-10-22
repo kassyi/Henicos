@@ -18,7 +18,7 @@ public static partial class RefReturnArgumentKernels
     [SkipSnapshotConsistency("Sad Path")]
     public static void RefReturnArgumentKernel(int[] buffer)
     {
-        // GSH0064: the reference would be computed again on every resume
+        // GSH0062: the reference would be computed again on every resume
         IncrementAcrossBarrier(ref Select(buffer, ThreadIndex.X));
     }
 }

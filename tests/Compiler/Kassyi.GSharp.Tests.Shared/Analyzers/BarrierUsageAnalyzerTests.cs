@@ -99,18 +99,18 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_DirectlyRecursiveDeviceFunctionBarrier_ReportsGSH0063()
+    public async Task Test_DirectlyRecursiveDeviceFunctionBarrier_ReportsGSH0061()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/RecursiveDeviceFunctionBarrierKernels.cu.cs", s_analyzer)
-                               .ReportsErrorsAsync("GSH0063");
+                               .ReportsErrorsAsync("GSH0061");
     }
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_MutuallyRecursiveDeviceFunctionBarrier_ReportsGSH0063()
+    public async Task Test_MutuallyRecursiveDeviceFunctionBarrier_ReportsGSH0061()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/MutuallyRecursiveDeviceFunctionBarrierKernels.cu.cs", s_analyzer)
-                               .ReportsErrorsAsync("GSH0063");
+                               .ReportsErrorsAsync("GSH0061");
     }
 
     [Fact]
@@ -195,10 +195,10 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     [InlineData("SuspendingCallInLocalFunctionKernels.cu.cs")]
     [InlineData("SuspendingCallInSwitchExpressionKernels.cu.cs")]
     [InlineData("RefReturnArgumentKernels.cu.cs")]
-    public async Task Test_SuspendingCallInUnsupportedContext_ReportsGSH0064(string testCase)
+    public async Task Test_SuspendingCallInUnsupportedContext_ReportsGSH0062(string testCase)
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/" + testCase, s_analyzer)
-                               .ReportsErrorsAsync("GSH0064");
+                               .ReportsErrorsAsync("GSH0062");
     }
 
     [Fact]

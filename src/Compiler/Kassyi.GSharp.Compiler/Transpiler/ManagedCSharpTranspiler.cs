@@ -52,8 +52,7 @@ internal static class ManagedCSharpTranspiler
     {
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
         if (!methodDecl.HasBody() || methodSymbol == null ||
-            !SuspensionAnalysis.IsSuspendingFunction(methodSymbol, semanticModel.Compilation) ||
-            SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, semanticModel.Compilation))
+            !SuspensionAnalysis.RequiresStateMachine(methodSymbol, semanticModel.Compilation))
         {
             return string.Empty;
         }

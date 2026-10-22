@@ -2,6 +2,8 @@ using System.Globalization;
 
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
+using Kassyi.GSharp.Compiler.Layout;
+
 /// <summary>
 /// Names and signatures of the host members that the generator emits for one kernel, so that overloaded kernels get
 /// distinct members and the overload that C# selects is the one that runs.
@@ -15,6 +17,8 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </remarks>
 internal static class KernelHostNames
 {
+    private const string LaunchPrefix = "Launch";
+    private const string PointerSuffix = "Ptr";
     private const string GpuBufferType = "global::Kassyi.GSharp.Runtime.GpuBuffer";
 
     /// <summary>Whether another <c>[GpuKernel]</c> in the containing type has the same name.</summary>
@@ -34,15 +38,21 @@ internal static class KernelHostNames
 
     /// <summary>
     /// The suffix of the per-kernel host members: the kernel name, or <c>{name}__o{n}</c> for an overloaded kernel.
-    /// GSH0057 rejects <c>__</c> in user identifiers, so the key cannot collide with another kernel's name.
+    /// GSH0055 rejects <c>__</c> in user identifiers, so the key cannot collide with another kernel's name.
     /// </summary>
     public static string GetMemberKey(IMethodSymbol kernel) =>
         IsOverloadedKernel(kernel)
             ? $"{kernel.Name}__o{GlobalCppNames.GetOverloadOrdinal(kernel).ToString(CultureInfo.InvariantCulture)}"
             : kernel.Name;
 
+    /// <summary>The name of the managed-array launch wrapper, <c>Launch{Name}</c>.</summary>
+    public static string GetLaunchName(IMethodSymbol kernel) => LaunchPrefix + kernel.Name;
+
+    /// <summary>The name of the public <c>GpuBuffer&lt;T&gt;</c> launch wrapper of an overloaded kernel, <c>Launch{Name}Ptr</c>.</summary>
+    public static string GetTypedPointerLaunchName(IMethodSymbol kernel) => GetLaunchName(kernel) + PointerSuffix;
+
     /// <summary>The name of the <c>IntPtr</c> launch wrapper: public for a kernel that is not overloaded, private otherwise.</summary>
-    public static string GetPointerLaunchName(IMethodSymbol kernel) => $"Launch{GetMemberKey(kernel)}Ptr";
+    public static string GetPointerLaunchName(IMethodSymbol kernel) => LaunchPrefix + GetMemberKey(kernel) + PointerSuffix;
 
     /// <summary>
     /// Gets the element type <c>T</c> of the <c>GpuBuffer&lt;T&gt;</c> that the typed wrapper takes for a parameter
@@ -109,14 +119,14 @@ internal static class KernelHostNames
             if (string.Equals(GetSignatureKey(other, typedPointers: false), managed, StringComparison.Ordinal))
             {
                 earlier = other;
-                wrapperName = "Launch" + kernel.Name;
+                wrapperName = GetLaunchName(kernel);
                 return true;
             }
 
             if (string.Equals(GetSignatureKey(other, typedPointers: true), typed, StringComparison.Ordinal))
             {
                 earlier = other;
-                wrapperName = "Launch" + kernel.Name + "Ptr";
+                wrapperName = GetTypedPointerLaunchName(kernel);
                 return true;
             }
         }

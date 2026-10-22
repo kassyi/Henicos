@@ -48,15 +48,15 @@ Applying `[TakesOwnership]` enforces the following strict compile-time constrain
 
 ### 1. Constructor Parameters Only
 
-The `[TakesOwnership]` attribute is permitted **only** on parameters of instance constructors (including standard constructors and C# 12 Primary Constructors). Applying it to regular member methods, static methods, local functions, lambda expressions, delegates, or property/indexer parameters is prohibited (**GSH0052**). Dynamic mid-stream ownership relays violate static determinism.
+The `[TakesOwnership]` attribute is permitted **only** on parameters of instance constructors (including standard constructors and C# 12 Primary Constructors). Applying it to regular member methods, static methods, local functions, lambda expressions, delegates, or property/indexer parameters is prohibited (**GSH0050**). Dynamic mid-stream ownership relays violate static determinism.
 
 ### 2. Target Type Must Implement `IDisposable`
 
-The parameter type decorated with `[TakesOwnership]` must implement `System.IDisposable` (**GSH0051**). Transferring ownership of non-disposable types (e.g., primitives like `int` or plain data structs) is a semantic contradiction and produces a compile error.
+The parameter type decorated with `[TakesOwnership]` must implement `System.IDisposable` (**GSH0049**). Transferring ownership of non-disposable types (e.g., primitives like `int` or plain data structs) is a semantic contradiction and produces a compile error.
 
 ### 3. No Pass-by-Reference Modifiers (`ref`, `in`, `out`)
 
-A parameter marked with `[TakesOwnership]` cannot declare `ref`, `in`, or `out` modifiers (**GSH0053**). Pass-by-reference binds the parameter to the caller's storage location, conflicting with the move semantics of ownership transfer.
+A parameter marked with `[TakesOwnership]` cannot declare `ref`, `in`, or `out` modifiers (**GSH0051**). Pass-by-reference binds the parameter to the caller's storage location, conflicting with the move semantics of ownership transfer.
 
 ### 4. Receiving Type Must Implement `IDisposable`
 
@@ -78,9 +78,9 @@ The Roslyn Zero-Leak Analyzer (`DisposableOwnershipAnalyzer`) verifies `[TakesOw
 | **[GSH0021](../diagnostics/GSH0021.md)** | Warning | `MissingBaseDisposeCall` | A derived disposable class fails to invoke `base.Dispose(bool)` in its disposal logic. |
 | **[GSH0022](../diagnostics/GSH0022.md)** | Error | `UndisposedOwnedResource` | An owned resource accepted via `[TakesOwnership]` is not disposed within `Dispose()`. |
 | **[GSH0027](../diagnostics/GSH0027.md)** | Error | `DisposingBorrowedResource` | A borrowed parameter (lacking `[TakesOwnership]`) is improperly disposed, causing double-free hazards. |
-| **[GSH0051](../diagnostics/GSH0051.md)** | Error | `InvalidTakesOwnershipTarget` | `[TakesOwnership]` is applied to a parameter whose type does not implement `IDisposable`. |
-| **[GSH0052](../diagnostics/GSH0052.md)** | Error | `TakesOwnershipOnlyAllowedOnConstructors` | `[TakesOwnership]` is applied to a method, lambda, or local function instead of a constructor. |
-| **[GSH0053](../diagnostics/GSH0053.md)** | Error | `TakesOwnershipByRefNotSupported` | `[TakesOwnership]` is applied to a parameter marked with `ref`, `in`, or `out`. |
+| **[GSH0049](../diagnostics/GSH0049.md)** | Error | `InvalidTakesOwnershipTarget` | `[TakesOwnership]` is applied to a parameter whose type does not implement `IDisposable`. |
+| **[GSH0050](../diagnostics/GSH0050.md)** | Error | `TakesOwnershipOnlyAllowedOnConstructors` | `[TakesOwnership]` is applied to a method, lambda, or local function instead of a constructor. |
+| **[GSH0051](../diagnostics/GSH0051.md)** | Error | `TakesOwnershipByRefNotSupported` | `[TakesOwnership]` is applied to a parameter marked with `ref`, `in`, or `out`. |
 
 ---
 
@@ -122,19 +122,19 @@ public sealed class ComputePipeline : IDisposable
 ### 3. Anti-Patterns and Prohibited Usages
 
 ```csharp
-// ❌ Error GSH0051: int does not implement IDisposable
+// ❌ Error GSH0049: int does not implement IDisposable
 public class InvalidTarget([TakesOwnership] int count) : IDisposable
 {
     public void Dispose() { }
 }
 
-// ❌ Error GSH0052: [TakesOwnership] cannot be applied to methods
+// ❌ Error GSH0050: [TakesOwnership] cannot be applied to methods
 public class DynamicService
 {
     public void Consume([TakesOwnership] CudaStream stream) { }
 }
 
-// ❌ Error GSH0053: Cannot take ownership of reference parameter
+// ❌ Error GSH0051: Cannot take ownership of reference parameter
 public class RefScope : IDisposable
 {
     public RefScope(in [TakesOwnership] CudaStream stream) { }
@@ -156,9 +156,9 @@ public class LeakingWrapper([TakesOwnership] CudaStream stream)
 - [GSH0020: Missing IDisposable implementation](../diagnostics/GSH0020.md)
 - [GSH0022: Unsafe field overwrite / Undisposed owned resource](../diagnostics/GSH0022.md)
 - [GSH0027: Disposing borrowed resource](../diagnostics/GSH0027.md)
-- [GSH0051: [TakesOwnership] applied to non-IDisposable type](../diagnostics/GSH0051.md)
-- [GSH0052: [TakesOwnership] is only allowed on constructor parameters](../diagnostics/GSH0052.md)
-- [GSH0053: Cannot take ownership of a reference parameter](../diagnostics/GSH0053.md)
+- [GSH0049: [TakesOwnership] applied to non-IDisposable type](../diagnostics/GSH0049.md)
+- [GSH0050: [TakesOwnership] is only allowed on constructor parameters](../diagnostics/GSH0050.md)
+- [GSH0051: Cannot take ownership of a reference parameter](../diagnostics/GSH0051.md)
 
 ### BCL API > Attributes
 

@@ -11,7 +11,7 @@ public static partial class SuspendingCallInSwitchExpressionKernels
     [SkipSnapshotConsistency("Sad Path")]
     public static void SwitchExpressionKernel(int[] buffer, int mode)
     {
-        // GSH0064: only the selected arm runs, and the arms are not lowered into branches
+        // GSH0062: only the selected arm runs, and the arms are not lowered into branches
         buffer[ThreadIndex.X] = mode switch
         {
             0 => Broadcast(buffer[ThreadIndex.X]),

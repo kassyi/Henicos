@@ -4,8 +4,9 @@ namespace Kassyi.GSharp.Compiler.Generators;
 /// Build-time generator for the built-in native API definitions under <c>src/NativeApi</c>.
 /// </summary>
 /// <remarks>
-/// Shares <see cref="NativeApiYamlReader"/> and <see cref="NativeApiEmitter"/> with the <c>NativeApiGenerator</c>
-/// source generator so that built-in and user-supplied definitions are parsed and emitted identically.
+/// Emits only <see cref="NativeApiBindingKind.Intrinsic"/> definitions (into <c>Kassyi.GSharp.Core</c>). Library and
+/// module definitions are emitted by the <c>NativeApiGenerator</c> source generator into the consuming assembly; here
+/// they are parsed with the shared <see cref="NativeApiYamlReader"/> only, so that broken YAML still fails the build.
 /// </remarks>
 public static class YamlApiGenerator
 {
@@ -29,39 +30,21 @@ public static class YamlApiGenerator
             {
                 // MSBuild canonical error format so that the failure surfaces in the build output and IDE.
                 throw new InvalidDataException(
-                    $"{path}({error.Line}): error {(error.Kind == NativeApiReadErrorKind.Syntax ? "GSH0054" : "GSH0055")}: {error.Message}");
+                    $"{path}({error.Line}): error {error.DiagnosticId}: {error.Message}");
             }
 
             definitions.Add(definition);
         }
 
-        var mappingEntries = ImmutableArray.CreateBuilder<KeyValuePair<string, string>>();
-
         foreach (var def in definitions)
         {
-            string source;
-            string fileName;
-            switch (def.BindingKind)
+            if (def.BindingKind != NativeApiBindingKind.Intrinsic)
             {
-                case NativeApiBindingKind.Library:
-                    source = NativeApiEmitter.EmitLibraryBindings(def);
-                    fileName = $"{def.ClassName}.g.cs";
-                    break;
-                case NativeApiBindingKind.Module:
-                    source = NativeApiEmitter.EmitModuleBindings(def);
-                    fileName = $"{def.ClassName}.g.cs";
-                    break;
-                default:
-                    source = NativeApiEmitter.EmitIntrinsics(def, mappingEntries);
-                    fileName = $"{def.ClassName}Intrinsics.g.cs";
-                    break;
+                continue;
             }
 
-            File.WriteAllText(Path.Combine(outputDir, fileName), source, Encoding.UTF8);
+            var source = NativeIntrinsicEmitter.EmitIntrinsics(def);
+            File.WriteAllText(Path.Combine(outputDir, $"{def.ClassName}Intrinsics.g.cs"), source, Encoding.UTF8);
         }
-
-        // Generate mapping info for compiler
-        var mappingSource = NativeApiEmitter.EmitMappingInfo(mappingEntries);
-        File.WriteAllText(Path.Combine(outputDir, "NativeApiMapper.g.cs"), mappingSource, Encoding.UTF8);
     }
 }

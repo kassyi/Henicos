@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Kassyi.GSharp.Compiler.Diagnostics;
-using Kassyi.GSharp.Compiler.Diagnostics.Rules;
+using Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
 

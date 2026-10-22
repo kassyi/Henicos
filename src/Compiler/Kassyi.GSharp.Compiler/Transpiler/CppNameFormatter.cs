@@ -53,36 +53,6 @@ internal static class CppNameFormatter
         return ref writer;
     }
 
-    public static ref readonly SourceWriter AppendNestedCppName(this in SourceWriter writer, ISymbol symbol)
-    {
-        if (symbol.ContainingType is { } parentType)
-        {
-            writer.AppendNestedCppName(parentType);
-            writer.Append('_');
-        }
-
-        writer.Append(symbol.Name);
-        return ref writer;
-    }
-
-    public static ref readonly SourceWriter AppendAotStructPath(this in SourceWriter writer, ISymbol symbol)
-    {
-        if (symbol.ContainingType is { } parentType && CudaLayoutRules.IsCustomStruct(parentType))
-        {
-            writer.AppendAotStructPath(parentType);
-            writer.Append('.');
-        }
-        else
-        {
-            writer.Append("AotContexts.");
-        }
-
-        writer.Append(TrimContextSuffix(symbol.Name));
-        return ref writer;
-    }
-
-    public static string TrimContextSuffix(string name) => name.EndsWith("Context") ? name[..^7] : name;
-
     /// <summary>
     /// Determines whether <paramref name="identifier"/> is a C++20 keyword or alternative operator token,
     /// which the transpiler cannot emit verbatim as a C++ identifier.

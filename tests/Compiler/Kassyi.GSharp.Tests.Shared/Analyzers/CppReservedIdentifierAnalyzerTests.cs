@@ -2,8 +2,8 @@ namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 public class CppReservedIdentifierAnalyzerTests : TranspilerTestBase
 {
-    private const string DoubleUnderscoreId = "GSH0057";
-    private const string RetiredCppKeywordId = "GSH0058";
+    private const string DoubleUnderscoreId = "GSH0055";
+    private const string RetiredCppKeywordId = "GSH0056";
     private static readonly GpuKernelAnalyzer s_analyzer = new();
 
     [Fact]

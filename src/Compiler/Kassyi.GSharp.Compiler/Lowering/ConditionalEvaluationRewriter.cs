@@ -47,7 +47,7 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
         return base.Visit(node);
     }
 
-    // Lambdas and local functions are not part of the state machine (GSH0064)
+    // Lambdas and local functions are not part of the state machine (GSH0062)
     public override SyntaxNode? VisitParenthesizedLambdaExpression(ParenthesizedLambdaExpressionSyntax node) => node;
 
     public override SyntaxNode? VisitSimpleLambdaExpression(SimpleLambdaExpressionSyntax node) => node;

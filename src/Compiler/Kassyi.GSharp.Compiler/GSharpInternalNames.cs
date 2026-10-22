@@ -3,7 +3,7 @@ namespace Kassyi.GSharp.Compiler;
 
 /// <summary>Identifiers the compiler emits into generated host and device code.</summary>
 /// <remarks>
-/// GSH0057 rejects user identifiers containing <c>__</c>, so names under the <c>__gsharp_</c> prefix cannot collide with
+/// GSH0055 rejects user identifiers containing <c>__</c>, so names under the <c>__gsharp_</c> prefix cannot collide with
 /// user code. <c>Resources/Prelude/WarpAndHints.hpp</c> spells <see cref="Context"/>, <see cref="WarpExchange"/>,
 /// <see cref="WarpShuffleCount"/>, <see cref="AllContexts"/> and <see cref="Root"/> literally; <c>PreludeInternalNamesTests</c> keeps the two in sync.
 /// </remarks>

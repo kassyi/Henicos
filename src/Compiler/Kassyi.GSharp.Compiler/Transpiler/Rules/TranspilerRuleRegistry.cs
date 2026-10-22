@@ -1,13 +1,46 @@
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules;
 using DeclarationRules;
 using ExpressionRules;
+using InvocationRules;
+using MacroRules;
 
 /// <summary>
-/// Provides an O(1) array-based resolution registry for transpiler rules.
+/// The single composition root of the transpiler rules: the <see cref="SyntaxKind"/> table (O(1) array lookup),
+/// the invocation rule chain and the statement-level macro rule chain.
 /// </summary>
-public sealed class TranspilerRuleRegistry : ITranspilerRuleRegistry
+internal sealed class TranspilerRuleRegistry
 {
     private readonly ISyntaxNodeTranspilerRule?[] _rules = new ISyntaxNodeTranspilerRule?[10000];
+
+    /// <summary>
+    /// Gets the registry populated with all default transpiler rules.
+    /// </summary>
+    public static TranspilerRuleRegistry Default { get; } = CreateDefault();
+
+    /// <summary>
+    /// Specialized invocation transpiler rules, evaluated in order before falling back to standard call emission.
+    /// </summary>
+    /// <remarks>BCL intrinsics come first so that an intrinsic mapping always wins over the other rules.</remarks>
+    public ImmutableArray<IInvocationTranspilerRule> InvocationRules { get; } =
+        ImmutableArray.Create<IInvocationTranspilerRule>(
+            new BclIntrinsicTranspilerRule(),
+            new GpuMacroTranspilerRule(),
+            new MemoryExtensionsTranspilerRule(),
+            new StackLinqFusionRule(),
+            new StackLinqTranspilerRule()
+        );
+
+    /// <summary>
+    /// Statement-level GPU macro rules, evaluated in order for invocation expression statements.
+    /// </summary>
+    public ImmutableArray<IMacroTranspilerRule> MacroRules { get; } =
+        ImmutableArray.Create<IMacroTranspilerRule>(
+            new HintUnrollMacroRule(),
+            new ForUnrollMacroRule(),
+            new GridStrideLoopMacroRule(),
+            new SingleThreadMacroRule(),
+            new SyncGridMacroRule()
+        );
 
     /// <summary>
     /// Registers a transpilation rule for a specific syntax kind.
@@ -25,7 +58,9 @@ public sealed class TranspilerRuleRegistry : ITranspilerRuleRegistry
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Gets the registered transpiler rule for the specified syntax kind, if any.
+    /// </summary>
     public ISyntaxNodeTranspilerRule? GetRule(SyntaxKind kind)
     {
         var index = (int)kind;
@@ -33,9 +68,15 @@ public sealed class TranspilerRuleRegistry : ITranspilerRuleRegistry
     }
 
     /// <summary>
+    /// Attempts to expand the expression statement as a GPU macro (see <see cref="MacroTranspiler"/>).
+    /// </summary>
+    public bool TryTranspileMacro(ExpressionStatementSyntax node, ref TranspileContext context) =>
+        MacroTranspiler.TryTranspileMacro(node, ref context);
+
+    /// <summary>
     /// Creates and returns a new registry populated with all default C# syntax transpiler rules.
     /// </summary>
-    public static TranspilerRuleRegistry CreateDefault()
+    private static TranspilerRuleRegistry CreateDefault()
     {
         var registry = new TranspilerRuleRegistry();
 

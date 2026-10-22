@@ -1,5 +1,6 @@
 <!-- BEGIN Antigravity global AGENTS MANAGED -->
 @AGENTS.md
+@.agents/rules/agent-tool-mapping.md
 @.agents/rules/coding-style.md
 @.agents/rules/command-intent.md
 @.agents/rules/generator-invariants.md

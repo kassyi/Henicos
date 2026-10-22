@@ -1,5 +1,5 @@
 using Xunit;
-using Kassyi.GSharp.Compiler.Helpers;
+using Kassyi.GSharp.Compiler.Marshaling;
 
 namespace Kassyi.GSharp.Tests.Shared.Helpers;
 
@@ -13,7 +13,7 @@ public class IdentifierHelperTests
     [Category(TestCategory.Unit)]
     public void ToSafeIdentifier_ReplacesDotsWithUnderscores(string input, string expected)
     {
-        var result = IdentifierHelper.ToSafeIdentifier(input);
+        var result = AotHostNames.ToSafeIdentifier(input);
         Assert.Equal(expected, result);
     }
 }

@@ -12,18 +12,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// </remarks>
 public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<InvocationExpressionSyntax>
 {
-    /// <summary>
-    /// Specialized invocation transpiler rules evaluated before falling back to standard call emission.
-    /// </summary>
-    private static readonly ImmutableArray<IInvocationTranspilerRule> s_invocationRules =
-        ImmutableArray.Create<IInvocationTranspilerRule>(
-            new BclIntrinsicTranspilerRule(),
-            new GpuMacroTranspilerRule(),
-            new MemoryExtensionsTranspilerRule(),
-            new StackLinqFusionRule(),
-            new StackLinqTranspilerRule()
-        );
-
     /// <inheritdoc />
     public override void Transpile(InvocationExpressionSyntax node, ref TranspileContext context)
     {
@@ -52,7 +40,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
-        foreach (var rule in s_invocationRules)
+        foreach (var rule in context.RuleRegistry.InvocationRules)
         {
             if (rule.TryTranspile(node, ref context, symbol))
             {

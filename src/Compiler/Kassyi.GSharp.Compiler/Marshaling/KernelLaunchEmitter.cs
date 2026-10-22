@@ -1,5 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
+using Kassyi.GSharp.Compiler.Layout;
+
 /// <summary>Emits P/Invoke wrapper logic for launching CUDA kernels, including memory allocation, marshaling, and stream synchronization.</summary>
 internal static class KernelLaunchEmitter
 {
@@ -232,8 +234,7 @@ internal static class KernelLaunchEmitter
         var marshaledType = GetMarshaledType(p);
         writer.AppendAotStructPath(marshaledType);
         writer.AppendLine($" native_{p.Name} = default;");
-        writer.Append("AotContexts.Marshal_");
-        writer.AppendNestedCppName(marshaledType);
+        writer.AppendQualifiedMarshalMethodName(marshaledType);
         using (writer.Parentheses())
         {
             writer.Append(
@@ -438,8 +439,7 @@ internal static class KernelLaunchEmitter
         }
 
         var marshaledType = GetMarshaledType(p);
-        writer.Append("AotContexts.Unmarshal_");
-        writer.AppendNestedCppName(marshaledType);
+        writer.AppendQualifiedUnmarshalMethodName(marshaledType);
         using (writer.Parentheses())
         {
             writer.Append($"ref {p.Name.ToCSharpIdentifier()}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")}, hStream");

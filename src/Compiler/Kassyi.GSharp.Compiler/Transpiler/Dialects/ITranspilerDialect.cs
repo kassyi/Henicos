@@ -120,19 +120,5 @@ public interface ITranspilerDialect
     /// <param name="typeSymbol">The type to check.</param>
     /// <returns><see langword="true"/> if the dialect maps the type; otherwise, <see langword="false"/>.</returns>
     bool IsMappedType(ITypeSymbol typeSymbol);
-
-    /// <summary>
-    /// Retrieves an AST rewriter to perform dialect-specific syntax lowering (e.g., desugaring <c>foreach</c> loops into <c>for</c> loops) prior to emission.
-    /// </summary>
-    /// <param name="semanticModel">The semantic model corresponding to the syntax tree being transformed.</param>
-    /// <returns>A configured <see cref="CSharpSyntaxRewriter"/> instance, or <see langword="null"/> if no preprocessing is required.</returns>
-    CSharpSyntaxRewriter? GetAstPreProcessor(SemanticModel semanticModel);
-
-    /// <summary>
-    /// Retrieves a specialized syntax visitor capable of intercepting and custom-transpiling specific syntax nodes.
-    /// </summary>
-    /// <param name="context">The active transpilation context.</param>
-    /// <returns>A visitor returning <see langword="true"/> when a node was handled customly and default transpilation should be skipped.</returns>
-    CSharpSyntaxVisitor<bool> GetInterceptorVisitor(ref TranspileContext context);
 }
 

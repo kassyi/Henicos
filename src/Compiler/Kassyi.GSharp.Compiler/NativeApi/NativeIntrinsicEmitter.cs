@@ -1,0 +1,120 @@
+namespace Kassyi.GSharp.Compiler.NativeApi;
+
+/// <summary>
+/// Produces GPU-only intrinsic stubs from <see cref="NativeApiBindingKind.Intrinsic"/> definitions. Used by the
+/// build-time <c>native-api</c> tool, which writes the stubs into <c>Kassyi.GSharp.Core</c>. Free of I/O.
+/// </summary>
+internal static class NativeIntrinsicEmitter
+{
+    /// <summary>
+    /// Emits GPU-only intrinsic stubs.
+    /// </summary>
+    public static string EmitIntrinsics(NativeApiDefinition def)
+    {
+        using var writer = new SourceWriter();
+        writer.AppendGeneratedFileHeader();
+        writer.Line("using System;");
+        writer.Line();
+        writer.Line($"namespace {def.Namespace};");
+        writer.Line();
+
+        // Group by target class while preserving first-appearance order.
+        var classNames = ImmutableArray.CreateBuilder<string>();
+        foreach (var m in def.Methods)
+        {
+            var className = string.IsNullOrEmpty(m.ClassName) ? def.ClassName : m.ClassName ?? def.ClassName;
+            if (!classNames.Contains(className))
+            {
+                classNames.Add(className);
+            }
+        }
+
+        foreach (var className in classNames)
+        {
+            writer.AppendExcludeFromCodeCoverageAttribute();
+            writer.Line($"public static partial class {className}");
+            using (writer.Scope())
+            {
+                writer.Line("#pragma warning disable IDE0051 // Remove unused private members");
+                writer.Line("// ReSharper disable UnusedMember.Global");
+                writer.Line();
+
+                foreach (var m in def.Methods)
+                {
+                    var methodClass = string.IsNullOrEmpty(m.ClassName) ? def.ClassName : m.ClassName ?? def.ClassName;
+                    if (methodClass != className)
+                    {
+                        continue;
+                    }
+
+                    EmitIntrinsicOverloads(writer, def, m);
+                }
+
+                writer.Line("// ReSharper restore UnusedMember.Global");
+                writer.Line("#pragma warning restore IDE0051");
+            }
+
+            writer.Line();
+        }
+
+        return writer.ToString();
+    }
+
+    private static void EmitIntrinsicOverloads(SourceWriter writer, NativeApiDefinition def, ApiMethodDefinition m)
+    {
+        var types = m.TypeTemplate?.Types ?? ImmutableArray<string>.Empty;
+        if (types.IsEmpty)
+        {
+            types = ImmutableArray.Create(string.Empty);
+        }
+
+        var placeholder = m.TypeTemplate?.Placeholder ?? "T";
+
+        foreach (var t in types)
+        {
+            var returnType = ReplacePlaceholder(m.ReturnType, placeholder, t);
+
+            NativeApiDocumentation.EmitDocumentation(writer, m);
+
+            var nativeName = m.NativeName ?? m.Name;
+            writer.Line($"[Kassyi.GSharp.Core.CudaIntrinsic(\"{nativeName}\")]");
+
+            writer.Append($"public static {returnType} {m.Name}");
+            using (writer.Parentheses())
+            {
+                for (var i = 0; i < m.Parameters.Length; i++)
+                {
+                    var p = m.Parameters[i];
+                    if (i > 0)
+                    {
+                        writer.Append(", ");
+                    }
+
+                    var pType = ReplacePlaceholder(p.Type, placeholder, t);
+                    writer.Append($"{pType} {p.Name}");
+                    if (!string.IsNullOrEmpty(p.DefaultValue))
+                    {
+                        writer.Append($" = {p.DefaultValue}");
+                    }
+                }
+            }
+
+            writer.AppendLine(returnType == "void"
+                ? " => Kassyi.GSharp.Core.GpuOnlyException.Throw();"
+                : $" => Kassyi.GSharp.Core.GpuOnlyException.Throw<{returnType}>();");
+            writer.Line();
+        }
+    }
+
+    private static string ReplacePlaceholder(string template, string placeholder, string replacement)
+    {
+        if (string.IsNullOrEmpty(placeholder) || template.IndexOf(placeholder, StringComparison.Ordinal) < 0)
+        {
+            return template;
+        }
+
+        var sb = new StringBuilder(template);
+        sb.Replace(placeholder, replacement);
+        return sb.ToString();
+    }
+}

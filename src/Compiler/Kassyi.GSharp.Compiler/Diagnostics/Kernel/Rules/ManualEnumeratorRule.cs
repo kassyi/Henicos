@@ -1,0 +1,19 @@
+namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
+
+internal sealed class ManualEnumeratorRule : ISyntaxValidationRule<InvocationExpressionSyntax>
+{
+    public static readonly ManualEnumeratorRule Instance = new();
+    public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(GSharpDiagnostics.ManualEnumeratorNotSupported);
+
+    private ManualEnumeratorRule()
+    {
+    }
+
+    public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)
+    {
+        if (context.SemanticModel.GetSymbol(node) is IMethodSymbol { Name: "GetEnumerator" })
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.ManualEnumeratorNotSupported, node);
+        }
+    }
+}

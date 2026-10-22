@@ -12,7 +12,7 @@ public static partial class SuspendingCallInLambdaKernels
     [SkipSnapshotConsistency("Sad Path")]
     public static void LambdaKernel(int[] buffer)
     {
-        // GSH0064: a lambda body is not part of the kernel state machine
+        // GSH0062: a lambda body is not part of the kernel state machine
         Func<int, int> broadcast = value => Broadcast(value);
         buffer[ThreadIndex.X] = broadcast(buffer[ThreadIndex.X]);
     }

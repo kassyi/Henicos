@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
 public static partial class MutuallyRecursiveDeviceFunctionBarrierKernels
 {
-    // GSH0063: the cycle Ping -> Pong -> Ping reaches a barrier
+    // GSH0061: the cycle Ping -> Pong -> Ping reaches a barrier
     [GpuDeviceFunction]
     public static void Ping(int depth)
     {

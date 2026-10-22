@@ -69,7 +69,7 @@ internal static class MacroTranspilerHelper
             switch (rewrittenBody)
             {
                 case BlockSyntax block:
-                    context.Visitor.VisitBlock(block);
+                    context.Visitor.Visit(block);
                     break;
 
                 case ExpressionSyntax expr:
@@ -125,5 +125,5 @@ internal static class MacroTranspilerHelper
     }
 
     public static void EmitFlattenedSyncGridBlock(IReadOnlyList<CSharpSyntaxNode> flatStatements, ref TranspileContext context) =>
-        context.Visitor.VisitStatementsWithAutoSync(flatStatements);
+        AutoSyncGrid.VisitStatements(flatStatements, ref context);
 }

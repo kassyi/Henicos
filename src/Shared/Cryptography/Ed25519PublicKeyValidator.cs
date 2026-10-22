@@ -13,7 +13,7 @@ internal enum Ed25519PublicKeyStatus
 
 /// <summary>
 /// Validates Ed25519 public keys before they are trusted.
-/// Shared by the trusted keys source generator (GSH0059) and <c>GpuSecurityPolicy.RegisterTrustedKey</c>.
+/// Shared by the trusted keys source generator (GSH0057) and <c>GpuSecurityPolicy.RegisterTrustedKey</c>.
 /// </summary>
 internal static class Ed25519PublicKeyValidator
 {

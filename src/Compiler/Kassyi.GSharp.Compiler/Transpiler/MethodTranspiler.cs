@@ -208,13 +208,12 @@ public static class MethodTranspiler
 
     /// <summary>
     /// Whether <paramref name="methodDecl"/> is a device function that the CPU dialects lower into a state machine: one
-    /// that reaches a barrier and is not recursive (GSH0063 rejects that).
+    /// that reaches a barrier and is not recursive (GSH0061 rejects that).
     /// </summary>
     internal static bool IsLoweredSuspendingDeviceFunction(MethodDeclarationSyntax methodDecl, IMethodSymbol? methodSymbol,
         ref TranspileContext context) =>
         !context.Emitter.Dialect.IsCuda && methodDecl.HasBody() && methodSymbol != null &&
-        SuspensionAnalysis.IsSuspendingFunction(methodSymbol, context.Query.SemanticModel.Compilation) &&
-        !SuspensionAnalysis.IsRecursiveSuspendingFunction(methodSymbol, context.Query.SemanticModel.Compilation);
+        SuspensionAnalysis.RequiresStateMachine(methodSymbol, context.Query.SemanticModel.Compilation);
 
     // kernelName is the C# name, used only in internal-error reports. A kernel context also holds the warp exchange of the
     // thread; a device function frame holds its copied parameters instead and reaches the warp exchange through the root.

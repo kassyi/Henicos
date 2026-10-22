@@ -62,20 +62,18 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0046](GSH0046.md) | Error | async, await, and yield return are prohibited in GPU kernels |
 | [GSH0047](GSH0047.md) | Error | The lock statement is prohibited in GPU kernels |
 | [GSH0048](GSH0048.md) | Error | Source Generator Internal Error |
-| [GSH0049](GSH0049.md) | Error | Test classes must inherit from required base classes |
-| [GSH0050](GSH0050.md) | Error | Test methods must have a Category trait |
-| [GSH0051](GSH0051.md) | Error | [TakesOwnership] applied to non-IDisposable type |
-| [GSH0052](GSH0052.md) | Error | [TakesOwnership] is only allowed on constructor parameters |
-| [GSH0053](GSH0053.md) | Error | Cannot take ownership of a reference parameter |
-| [GSH0060](GSH0060.md) | Error | Two structs share one AotContexts name |
-| [GSH0061](GSH0061.md) | Error | Kernel overloads cannot be told apart by their launch wrappers |
-| [GSH0062](GSH0062.md) | Error | User-defined operators are not supported in GPU code |
-| [GSH0063](GSH0063.md) | Error | Device functions that reach a barrier cannot be recursive |
-| [GSH0064](GSH0064.md) | Error | A call that suspends at a barrier is not supported in this context |
-| [GSH0065](GSH0065.md) | Warning | Shared memory declarations on one line share a buffer in managed execution |
-| [GSH0066](GSH0066.md) | Warning | Kernel parameters exceed the parameter space limit |
-| [GSH0067](GSH0067.md) | Error | Non-const static fields and properties are not supported in GPU code |
-| [GSH0068](GSH0068.md) | Error | Instance [GpuDeviceFunction] methods are not supported |
+| [GSH0049](GSH0049.md) | Error | [TakesOwnership] applied to non-IDisposable type |
+| [GSH0050](GSH0050.md) | Error | [TakesOwnership] is only allowed on constructor parameters |
+| [GSH0051](GSH0051.md) | Error | Cannot take ownership of a reference parameter |
+| [GSH0058](GSH0058.md) | Error | Two structs share one AotContexts name |
+| [GSH0059](GSH0059.md) | Error | Kernel overloads cannot be told apart by their launch wrappers |
+| [GSH0060](GSH0060.md) | Error | User-defined operators are not supported in GPU code |
+| [GSH0061](GSH0061.md) | Error | Device functions that reach a barrier cannot be recursive |
+| [GSH0062](GSH0062.md) | Error | A call that suspends at a barrier is not supported in this context |
+| [GSH0063](GSH0063.md) | Warning | Shared memory declarations on one line share a buffer in managed execution |
+| [GSH0064](GSH0064.md) | Warning | Kernel parameters exceed the parameter space limit |
+| [GSH0065](GSH0065.md) | Error | Non-const static fields and properties are not supported in GPU code |
+| [GSH0066](GSH0066.md) | Error | Instance [GpuDeviceFunction] methods are not supported |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 

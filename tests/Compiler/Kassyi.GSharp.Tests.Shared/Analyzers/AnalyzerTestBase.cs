@@ -27,7 +27,7 @@ public abstract class AnalyzerTestBase
         var diagnostics = await compilationWithAnalyzers.GetAllDiagnosticsAsync();
 
         var analyzerDiagnostics = diagnostics
-            .Where(d => d.Id.StartsWith("GSH") || d.Id.StartsWith("SLQ"))
+            .Where(d => d.Id.StartsWith("GSH") || d.Id.StartsWith("HNT") || d.Id.StartsWith("SLQ"))
             .OrderBy(d => d.Location.SourceSpan.Start)
             .Select(d => $"{d.Id} at {d.Location.GetLineSpan().Span}: {d.GetMessage()}")
             .ToList();

@@ -16,11 +16,11 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
     [Theory]
     [Scenario(TestScenario.SadPath)]
     // 16 (array header) + 4096 = 4112 bytes.
-    [InlineData("OverLimitKernel", "GSH0066", "4112 bytes")]
+    [InlineData("OverLimitKernel", "GSH0064", "4112 bytes")]
     // 1 byte padded to 8, then 4096 = 4104 bytes (the unaligned sum would be 4097).
-    [InlineData("PaddingKernel", "GSH0066", "4104 bytes")]
+    [InlineData("PaddingKernel", "GSH0064", "4104 bytes")]
     // 4096 + hidden result pointer 8 = 4104 bytes.
-    [InlineData("ResultKernel", "GSH0066", "4104 bytes")]
+    [InlineData("ResultKernel", "GSH0064", "4104 bytes")]
     // SharedMemory<double>(5000) = 40000 bytes.
     [InlineData("DoubleSharedKernel", "GSH0013", "40000 bytes")]
     public async Task Test_StructSizeDiagnostics_ReportsOverLimitCase(string methodName, string diagnosticId,
@@ -35,13 +35,13 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
     [Theory]
     [Scenario(TestScenario.Boundary)]
     // Exactly 4096 bytes of kernel parameters.
-    [InlineData("AtLimitKernel", "GSH0066")]
-    // A 48-byte struct by value: the retired GSH0014 warned, GSH0066 does not.
-    [InlineData("SmallStructKernel", "GSH0066")]
+    [InlineData("AtLimitKernel", "GSH0064")]
+    // A 48-byte struct by value: the retired GSH0014 warned, GSH0064 does not.
+    [InlineData("SmallStructKernel", "GSH0064")]
     [InlineData("SmallStructKernel", "GSH0014")]
     // Device functions are not checked; the kernel passes the struct through an array.
-    [InlineData("ReadBlock", "GSH0066")]
-    [InlineData("DeviceCallKernel", "GSH0066")]
+    [InlineData("ReadBlock", "GSH0064")]
+    [InlineData("DeviceCallKernel", "GSH0064")]
     // SharedMemory<double>(4096) = exactly 32768 bytes.
     [InlineData("DoubleAtLimitKernel", "GSH0013")]
     // SharedMemory<byte>(10000) = 10000 bytes (the old 4-byte guess computed 40000).

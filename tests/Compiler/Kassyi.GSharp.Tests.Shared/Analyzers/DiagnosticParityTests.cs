@@ -4,7 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.Diagnostics;
-using Kassyi.GSharp.Compiler.Diagnostics.Rules;
+using Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 using Microsoft.CodeAnalysis;
 using Xunit;
 
@@ -214,14 +214,14 @@ public partial class DiagnosticParityTests : TranspilerTestBase
         const string Json = """
             [
               { "name": "A", "id": "GSH0001", "title": "First" },
-              { "name": "KernelParameterSpaceExceeded", "id": "GSH0066", "title": "B",
-                "name": "UserDefinedOperatorNotSupported", "id": "GSH0062", "title": "C" }
+              { "name": "KernelParameterSpaceExceeded", "id": "GSH0064", "title": "B",
+                "name": "UserDefinedOperatorNotSupported", "id": "GSH0060", "title": "C" }
             ]
             """;
 
         var violations = FindDuplicateKeys(Json);
 
-        Assert.Equal(["GSH0066+GSH0062: name", "GSH0066+GSH0062: id", "GSH0066+GSH0062: title"], violations);
+        Assert.Equal(["GSH0064+GSH0060: name", "GSH0064+GSH0060: id", "GSH0064+GSH0060: title"], violations);
     }
 
     [Fact]
@@ -232,15 +232,15 @@ public partial class DiagnosticParityTests : TranspilerTestBase
             [
               { "id": "GSH0001" },
               { "id": "GSH0003" },
-              { "id": "GSH0066" },
-              { "id": "GSH0062" },
+              { "id": "GSH0064" },
+              { "id": "GSH0060" },
               { "id": "SLQ0001" }
             ]
             """;
 
         var violations = FindOutOfOrderIds(Json);
 
-        Assert.Equal(["GSH0066 is followed by GSH0062"], violations);
+        Assert.Equal(["GSH0064 is followed by GSH0060"], violations);
     }
 
     private static List<string> FindDuplicateKeys(string json)

@@ -1,6 +1,8 @@
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
+using Kassyi.GSharp.Compiler.Layout;
+
 /// <summary>
 /// Provides code emission services for method signatures, parameter qualifiers, and target-specific function prefixes.
 /// </summary>

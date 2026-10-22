@@ -1,4 +1,4 @@
-using Kassyi.GSharp.Compiler.Transpiler.Rules;
+using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
@@ -14,7 +14,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 {
     // [WHY] Pooled visitor instances eliminate heap allocation overhead during large-scale source generation.
     private static readonly ConcurrentBag<RoslynToCudaVisitor> s_pool = [];
-    private static readonly Lazy<ITranspilerRuleRegistry> s_defaultRegistry = new(TranspilerRuleRegistry.CreateDefault);
 
     // [WHY] Reusable collections pooled per visitor instance to ensure zero-allocation during generation.
     private readonly HashSet<INamedTypeSymbol> _usedStructs = new(SymbolEqualityComparer.Default);
@@ -35,7 +34,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// <param name="semanticModel">The Roslyn semantic model bound to the active compilation unit.</param>
     /// <param name="reportDiagnostic">An optional callback delegate to report compiler warnings or errors.</param>
     /// <param name="bclIntrinsicMap">An optional lookup dictionary mapping BCL method symbols to target intrinsics.</param>
-    /// <param name="ruleRegistry">An optional registry providing transpilation rules.</param>
     /// <returns>A pooled and initialized <see cref="RoslynToCudaVisitor"/> instance ready for traversal.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="dialect"/> or <paramref name="semanticModel"/> is <see langword="null"/>.</exception>
     /// <remarks>
@@ -44,8 +42,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public static RoslynToCudaVisitor Rent(
         ITranspilerDialect dialect,
         SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
-        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null,
-        ITranspilerRuleRegistry? ruleRegistry = null)
+        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
     {
         if (dialect is null)
         {
@@ -77,8 +74,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             reportDiagnostic,
             visitor,
             bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
-            dialect,
-            ruleRegistry ?? s_defaultRegistry.Value);
+            dialect);
 
         return visitor;
     }
@@ -102,14 +98,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void Visit(SyntaxNode? node)
     {
         if (node == null)
-        {
-            return;
-        }
-
-        var interceptor = Context.Emitter.Dialect.GetInterceptorVisitor(ref Context);
-        var handledByDialect = interceptor.Visit(node);
-
-        if (handledByDialect)
         {
             return;
         }
@@ -247,8 +235,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         if (Context.Emitter.AutoSyncGridDepth > 0)
         {
-            var flatStatements = FlattenStatements(node.Statements, Context.Query.SemanticModel);
-            VisitStatementsWithAutoSync(flatStatements);
+            AutoSyncGrid.VisitBlock(node, ref Context);
             return;
         }
 
@@ -257,135 +244,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             Visit(statement);
             Context.Emitter.Writer.AppendLine();
         }
-    }
-
-    internal void VisitStatementsWithAutoSync(IReadOnlyList<CSharpSyntaxNode> statements)
-    {
-        for (var i = 0; i < statements.Count; i++)
-        {
-            Visit(statements[i]);
-            Context.Emitter.Writer.AppendLine();
-            if (ShouldInsertAutoSync(statements, i))
-            {
-                Context.Emitter.Writer.AppendLine("cg::this_grid().sync();");
-            }
-        }
-    }
-
-    internal bool ShouldInsertAutoSync(IReadOnlyList<CSharpSyntaxNode> statements, int currentIndex)
-    {
-        if (Context.Emitter.AutoSyncGridDepth <= 0 || currentIndex >= statements.Count - 1)
-        {
-            return false;
-        }
-
-        var current = statements[currentIndex];
-        if (IsEmptyOrSyncGrid(current))
-        {
-            return false;
-        }
-
-        for (var nextIdx = currentIndex + 1; nextIdx < statements.Count; nextIdx++)
-        {
-            var next = statements[nextIdx];
-            if (next is EmptyStatementSyntax)
-            {
-                continue;
-            }
-
-            return !IsParameterlessSyncGrid(next);
-        }
-
-        return false;
-    }
-
-    internal bool IsEmptyOrSyncGrid(CSharpSyntaxNode stmt) =>
-        stmt is EmptyStatementSyntax || IsParameterlessSyncGrid(stmt);
-
-    internal bool IsParameterlessSyncGrid(CSharpSyntaxNode stmt)
-    {
-        var invocation = stmt switch
-        {
-            ExpressionStatementSyntax exprStmt => exprStmt.Expression as InvocationExpressionSyntax,
-            InvocationExpressionSyntax inv => inv,
-            _ => null
-        };
-
-        if (invocation == null)
-        {
-            return false;
-        }
-
-        return Context.Query.SemanticModel.GetSymbol(invocation) is IMethodSymbol
-        {
-            Name: TypeConstants.GpuMacros.SyncGrid,
-            ContainingType.Name: TypeConstants.GpuType,
-            Parameters.Length: 0
-        } symbol &&
-               symbol.ContainingNamespace.IsCoreNamespace();
-    }
-
-    internal static IReadOnlyList<CSharpSyntaxNode> FlattenStatements(
-        IReadOnlyList<StatementSyntax> statements,
-        SemanticModel semanticModel)
-    {
-        var result = ImmutableArray.CreateBuilder<CSharpSyntaxNode>(statements.Count);
-        FlattenInto(statements, semanticModel, result);
-        return result.ToImmutable();
-    }
-
-    private static void FlattenInto(
-        IEnumerable<StatementSyntax> statements,
-        SemanticModel semanticModel,
-        ImmutableArray<CSharpSyntaxNode>.Builder result)
-    {
-        foreach (var stmt in statements)
-        {
-            if (TryGetSyncGridLambdaBody(stmt, semanticModel, out var body))
-            {
-                switch (body)
-                {
-                    case BlockSyntax innerBlock:
-                        FlattenInto(innerBlock.Statements, semanticModel, result);
-                        break;
-                    case ExpressionSyntax innerExpr:
-                        result.Add(innerExpr);
-                        break;
-                }
-            }
-            else
-            {
-                result.Add(stmt);
-            }
-        }
-    }
-
-    internal static bool TryGetSyncGridLambdaBody(
-        StatementSyntax stmt,
-        SemanticModel semanticModel,
-        out CSharpSyntaxNode? body)
-    {
-        body = null;
-        if (stmt is not ExpressionStatementSyntax { Expression: InvocationExpressionSyntax invocation })
-        {
-            return false;
-        }
-
-        if (semanticModel.GetSymbol(invocation) is not IMethodSymbol
-            {
-                Name: TypeConstants.GpuMacros.SyncGrid
-            } symbol ||
-            symbol.ContainingType.Name != TypeConstants.GpuType ||
-            !symbol.ContainingNamespace.IsCoreNamespace() ||
-            symbol.Parameters.Length != 1 ||
-            invocation.ArgumentList.Arguments.Count != 1 ||
-            invocation.ArgumentList.Arguments[0].Expression is not LambdaExpressionSyntax lambda)
-        {
-            return false;
-        }
-
-        body = lambda.Body;
-        return true;
     }
 
     public override void VisitIfStatement(IfStatementSyntax node)
@@ -460,7 +318,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitExpressionStatement(ExpressionStatementSyntax node)
     {
-        if (MacroTranspiler.TryTranspileMacro(node, ref Context))
+        if (Context.RuleRegistry.TryTranspileMacro(node, ref Context))
         {
             return;
         }

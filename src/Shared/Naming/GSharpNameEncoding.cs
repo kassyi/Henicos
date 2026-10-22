@@ -17,7 +17,7 @@ namespace Kassyi.GSharp.Naming;
 ///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by the encoded C# path (<c>Encode</c>): types, device functions and kernel entry points, which share one global C++ scope.</description></item>
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
 /// </list>
-/// GSH0057 rejects <c>__</c> in user identifiers, so a C# name never starts with a digit-and-underscore ordinal and
+/// GSH0055 rejects <c>__</c> in user identifiers, so a C# name never starts with a digit-and-underscore ordinal and
 /// decoding is unambiguous.
 /// </remarks>
 internal static class GSharpNameEncoding
@@ -381,7 +381,7 @@ internal static class GSharpNameEncoding
     /// </summary>
     /// <remarks>
     /// <list type="bullet">
-    ///   <item><description>Segments are joined with <c>__</c>. GSH0057 guarantees that no segment contains <c>__</c>.</description></item>
+    ///   <item><description>Segments are joined with <c>__</c>. GSH0055 guarantees that no segment contains <c>__</c>.</description></item>
     ///   <item><description>Inside a segment, <c>_</c> becomes <c>_u</c> and a character other than an ASCII letter or digit becomes <c>_x</c> followed by its code point as six lowercase hex digits.</description></item>
     ///   <item><description>After the name come, in this order: type arguments <c>_g{count}</c>, each argument as <c>_b{path}</c>, then <c>_e</c>; the definition arity <c>_a{n}</c>; the file identity of a <c>file</c> type <c>_f{hex}</c>; the overload ordinal <c>_o{n}</c>.</description></item>
     ///   <item><description>A path may end with element-type modifiers: <c>_p</c> for a pointer and <c>_r{rank}</c> for an array.</description></item>

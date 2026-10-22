@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Shared with Runtime so build-time (GSH0059) and runtime key validation use one implementation. -->
+    <!-- Shared with Runtime so build-time (GSH0057) and runtime key validation use one implementation. -->
     <Compile Include="..\..\Shared\Cryptography\Ed25519Field.cs" Link="Cryptography\Ed25519Field.cs" />
     <Compile Include="..\..\Shared\Cryptography\Ed25519PublicKeyValidator.cs" Link="Cryptography\Ed25519PublicKeyValidator.cs" />
     <!-- Shared with the build tasks, which translate nvcc / host compiler output back to C# names. -->
@@ -95,31 +95,22 @@
     <Touch Files="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" AlwaysCreate="true" />
   </Target>
 
-  <Target Name="GenerateNativeApi" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)..\..\NativeApi\**\*.yml" Outputs="$(IntermediateOutputPath)GeneratedNativeApi.stamp">
-    <MakeDir Directories="$(IntermediateOutputPath)GeneratedNativeApi" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; native-api &quot;$(MSBuildThisFileDirectory)../../NativeApi&quot; &quot;$(IntermediateOutputPath)GeneratedNativeApi&quot;" />
-    <Touch Files="$(IntermediateOutputPath)GeneratedNativeApi.stamp" AlwaysCreate="true" />
-  </Target>
-
   <Target Name="GeneratePrelude" BeforeTargets="CoreCompile" Inputs="@(PreludeResourceFiles);$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedPrelude.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedPrelude" />
     <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; prelude &quot;$(MSBuildThisFileDirectory)Resources&quot; &quot;$(IntermediateOutputPath)GeneratedPrelude&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedPrelude.stamp" AlwaysCreate="true" />
   </Target>
 
-  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects;GenerateDiagnostics;GenerateNativeApi;GeneratePrelude">
+  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects;GenerateDiagnostics;GeneratePrelude">
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
       <Compile Include="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
-      <Compile Include="$(IntermediateOutputPath)GeneratedNativeApi\NativeApiMapper.g.cs" />
       <Compile Include="$(IntermediateOutputPath)GeneratedPrelude\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
-      <FileWrites Include="$(IntermediateOutputPath)GeneratedNativeApi\NativeApiMapper.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedPrelude\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects.stamp" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" />
-      <FileWrites Include="$(IntermediateOutputPath)GeneratedNativeApi.stamp" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedPrelude.stamp" />
     </ItemGroup>
   </Target>

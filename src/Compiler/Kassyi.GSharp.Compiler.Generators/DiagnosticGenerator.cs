@@ -20,6 +20,9 @@ public sealed class DiagnosticDefinition
     /// <summary>Gets or sets the diagnostic category.</summary>
     public string Category { get; set; } = "";
 
+    /// <summary>Gets or sets the optional long description of the diagnostic.</summary>
+    public string Description { get; set; } = "";
+
     /// <summary>Gets or sets the default severity string.</summary>
     public string DefaultSeverity { get; set; } = "";
 
@@ -112,7 +115,15 @@ public static partial class DiagnosticGenerator
             writer.Line($"messageFormat: \"{Escape(diag.MessageFormat)}\",");
             writer.Line($"category: \"{Escape(diag.Category)}\",");
             writer.Line($"defaultSeverity: DiagnosticSeverity.{diag.DefaultSeverity},");
-            writer.Line($"isEnabledByDefault: {(diag.IsEnabledByDefault ? "true" : "false")}");
+            if (string.IsNullOrEmpty(diag.Description))
+            {
+                writer.Line($"isEnabledByDefault: {(diag.IsEnabledByDefault ? "true" : "false")}");
+            }
+            else
+            {
+                writer.Line($"isEnabledByDefault: {(diag.IsEnabledByDefault ? "true" : "false")},");
+                writer.Line($"description: \"{Escape(diag.Description)}\"");
+            }
         }
 
         writer.Line();
