@@ -62,10 +62,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var isGpuMethod = enclosingMethod.HasAttribute(KnownAttributes.GpuKernel) ||
-                          enclosingMethod.HasAttribute(KnownAttributes.GpuDeviceFunction);
-
-        if (!isGpuMethod)
+        if (!GpuExecutionSpace.IsGpuFunction(enclosingMethod))
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.ExternalBarrierCallProhibited,
@@ -202,8 +199,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             symbol = symbol.ContainingSymbol;
         }
 
-        return symbol is IMethodSymbol method &&
-               (method.HasAttribute(KnownAttributes.GpuKernel) || method.HasAttribute(KnownAttributes.GpuDeviceFunction));
+        return symbol is IMethodSymbol && GpuExecutionSpace.IsGpuFunction(symbol);
     }
 
     internal static bool IsSyncThreadsInvocation(InvocationExpressionSyntax invocation, SemanticModel semanticModel)

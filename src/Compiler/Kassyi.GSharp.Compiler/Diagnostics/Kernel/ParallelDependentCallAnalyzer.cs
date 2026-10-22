@@ -35,10 +35,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         }
 
         // Only analyze GPU kernels or device functions
-        var isGpuMethod = methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
-                          methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction);
-
-        if (!isGpuMethod)
+        if (!GpuExecutionSpace.IsGpuFunction(methodSymbol))
         {
             return;
         }

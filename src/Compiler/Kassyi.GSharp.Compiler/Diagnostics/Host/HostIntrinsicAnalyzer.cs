@@ -27,16 +27,10 @@ public class HostIntrinsicAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var enclosingSymbol = context.SemanticModel.GetEnclosingSymbol(invocation.SpanStart);
-        while (enclosingSymbol != null)
+        if (GpuExecutionSpace.IsWithinGpuFunction(
+                context.SemanticModel.GetEnclosingSymbol(invocation.SpanStart, context.CancellationToken)))
         {
-            var isGpuKernelOrDevice = enclosingSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
-                                      enclosingSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction);
-            if (isGpuKernelOrDevice)
-            {
-                return;
-            }
-            enclosingSymbol = enclosingSymbol.ContainingSymbol;
+            return;
         }
 
         context.ReportDiagnostic(GSharpDiagnostics.HostIntrinsicCallError, invocation, methodSymbol.Name);
