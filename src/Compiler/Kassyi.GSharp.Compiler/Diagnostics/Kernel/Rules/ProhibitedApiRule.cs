@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
 /// Ensures that prohibited APIs (like System.Math, System.Threading.Interlocked) are not used in GPU kernels.

@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis.Operations;
 
-namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
 /// Rejects user-defined operators in GPU code unless mapped via <c>[GpuOperatorMacro]</c>.

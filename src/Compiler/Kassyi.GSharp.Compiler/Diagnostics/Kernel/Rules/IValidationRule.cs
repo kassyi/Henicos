@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 internal interface IValidationRule
 {

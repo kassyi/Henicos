@@ -4,7 +4,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Kassyi.GSharp.Compiler.Diagnostics;
-using Kassyi.GSharp.Compiler.Diagnostics.Rules;
+using Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 using Microsoft.CodeAnalysis;
 using Xunit;
 

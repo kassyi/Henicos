@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Diagnostics;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Host;
 
 internal static class DisposableAnalyzerHelper
 {

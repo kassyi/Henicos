@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>Diagnostic rule that disallows LINQ query expressions in GPU kernels.</summary>
 internal sealed class LinqNotSupportedRule : ISyntaxValidationRule<QueryExpressionSyntax>, ISyntaxValidationRule<InvocationExpressionSyntax>

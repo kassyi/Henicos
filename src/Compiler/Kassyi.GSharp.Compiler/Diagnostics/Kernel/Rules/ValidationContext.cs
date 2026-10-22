@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>Encapsulates semantic and method symbol context for AST validation rules.</summary>
 internal readonly struct ValidationContext(

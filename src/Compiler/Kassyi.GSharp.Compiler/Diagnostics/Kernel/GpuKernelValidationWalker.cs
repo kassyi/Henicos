@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Diagnostics;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>Pooled syntax walker that performs zero-allocation validation of GPU kernel AST nodes.</summary>
 internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidationWalker>

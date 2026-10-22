@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Compiler.Diagnostics.Rules;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>Diagnostic rule that disallows foreach loops in GPU kernels to avoid enumerator allocations.</summary>
 internal sealed class ForEachNotSupportedRule : ISyntaxValidationRule<ForEachStatementSyntax>

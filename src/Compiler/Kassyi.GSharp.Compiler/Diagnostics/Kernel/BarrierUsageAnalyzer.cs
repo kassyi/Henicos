@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Compiler.Diagnostics;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
 /// Roslyn analyzer that enforces GPU kernel barrier synchronization and state machine constraints (GSH0037 - GSH0047, GSH0063, GSH0064).

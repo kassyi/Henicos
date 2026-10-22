@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Compiler.Diagnostics;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Host;
 
 /// <summary>Roslyn analyzer that prohibits direct variable declarations or assignments of GpuBigIntExpr without .Value.</summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

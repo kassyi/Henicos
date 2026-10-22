@@ -1,5 +1,5 @@
 
-namespace Kassyi.GSharp.Compiler.Diagnostics;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>Roslyn analyzer that validates C# syntax rules inside GPU kernel and device methods.</summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]

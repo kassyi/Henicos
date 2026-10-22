@@ -1,4 +1,4 @@
-namespace Kassyi.GSharp.Compiler.Diagnostics;
+namespace Kassyi.GSharp.Compiler.Diagnostics.Host;
 
 /// <summary>
 /// Reports <c>SharedMemory&lt;T&gt;</c> declarations that managed execution cannot tell apart (GSH0065).
