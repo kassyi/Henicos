@@ -474,6 +474,52 @@ public class CudaStreamCompletionTests
         await Task.Delay(WatchdogQuietPeriod);
     }
 
+    [SkippableFact]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task AbandonContext_TickNeverLeavesDriver_ThrowsTimeoutInsteadOfSpinningForever()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        var isolated = IsolatedContext.Create();
+        try
+        {
+            var stream = isolated.Run(static () =>
+            {
+                CudaException.ThrowIfError(CudaDriverApi.cuStreamCreate(out var handle, 1));
+                return handle;
+            });
+
+            using var gate = CudaTestEnvironment.InContext(() => StreamGate.Enqueue(stream, TimeSpan.FromSeconds(5)));
+            using var cts = new CancellationTokenSource();
+            var pending = CudaStreamCompletion.WaitAsync(stream, cts.Token).AsTask();
+
+            var tickLock = CudaStreamCompletionSource.FindTickLock(isolated.Handle)
+                           ?? throw new InvalidOperationException("The wait was not registered as armed.");
+
+            Task cancel;
+            using (tickLock.EnterScope())
+            {
+                // Simulates a tick that is inside the driver: the cancellation wins the arbitration, then waits at the
+                // tick barrier, leaving its entry registered.
+                cancel = Task.Run(cts.Cancel);
+
+                // Gives the canceler time to win the arbitration; its entry stays registered until the barrier is passed.
+                Thread.Sleep(100);
+
+                Assert.Throws<TimeoutException>(
+                    () => CudaStreamCompletionSource.AbandonContext(isolated.Handle, TimeSpan.FromMilliseconds(200)));
+            }
+
+            await cancel.WaitAsync(CompletionTimeout);
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => pending.WaitAsync(CompletionTimeout));
+        }
+        finally
+        {
+            isolated.Dispose();
+        }
+    }
+
     private sealed class ThrowingCompletionHook : IStreamCompletionHook
     {
         public void OnStreamCompleted() => throw new InvalidOperationException("Simulated hook failure.");
@@ -498,6 +544,8 @@ public class CudaStreamCompletionTests
         private IntPtr _handle;
 
         private IsolatedContext(IntPtr handle) => _handle = handle;
+
+        public IntPtr Handle => _handle;
 
         public static IsolatedContext Create() =>
             CudaTestEnvironment.InContext(static () =>
