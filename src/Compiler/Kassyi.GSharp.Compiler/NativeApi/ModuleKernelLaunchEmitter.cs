@@ -29,6 +29,9 @@ internal readonly record struct ModuleKernelLaunchParameter(
 /// </remarks>
 internal static class ModuleKernelLaunchEmitter
 {
+    // The launcher-local struct that packs the kernel arguments for cuLaunchKernel; followed by the method name.
+    private const string NativeContextPrefix = "__gsharp_native_context_";
+
     public static bool IsLaunchParameter(string name) =>
         name is "gridDimX" or "gridDimY" or "gridDimZ"
             or "blockDimX" or "blockDimY" or "blockDimZ"
@@ -48,7 +51,7 @@ internal static class ModuleKernelLaunchEmitter
         ImmutableArray<ModuleKernelLaunchParameter> parameters)
     {
         writer.AppendLine("[StructLayout(LayoutKind.Sequential)]");
-        writer.AppendLine($"private struct __NativeContext_{methodName}");
+        writer.AppendLine($"private struct {NativeContextPrefix}{methodName}");
         using (writer.Scope())
         {
             foreach (var param in parameters)
@@ -163,7 +166,7 @@ internal static class ModuleKernelLaunchEmitter
     private static void EmitContextInitialization(SourceWriter writer, string methodName,
         ImmutableArray<ModuleKernelLaunchParameter> parameters)
     {
-        writer.AppendLine($"var ctx = new __NativeContext_{methodName}");
+        writer.AppendLine($"var ctx = new {NativeContextPrefix}{methodName}");
         using (writer.Scope())
         {
             for (var i = 0; i < parameters.Length; i++)

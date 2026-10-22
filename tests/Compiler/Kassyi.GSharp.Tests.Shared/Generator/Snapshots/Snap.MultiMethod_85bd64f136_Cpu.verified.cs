@@ -32,7 +32,7 @@ kernel,
 CudaException.ThrowIfError(CudaDriverApi.cuCtxSynchronize());
 }
 [StructLayout(LayoutKind.Sequential)]
-private struct __NativeContext_MethodTwo
+private struct __gsharp_native_context_MethodTwo
 {
 public IntPtr output;
 public int count;
@@ -42,7 +42,7 @@ public static partial void MethodTwo(int[] output, int count)
 using var scope = new GpuKernelLoader.CudaContextScope();
 var kernel = GpuKernelLoader.LoadAotKernel(s_fatbin_shared_module.Value, "MethodTwo");
 using var d_output = new GpuBuffer<int>(output.Length);
-var ctx = new __NativeContext_MethodTwo
+var ctx = new __gsharp_native_context_MethodTwo
 {
 output = d_output.DevicePointer,
 count = count

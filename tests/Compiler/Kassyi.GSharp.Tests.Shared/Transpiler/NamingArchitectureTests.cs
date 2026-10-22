@@ -30,7 +30,7 @@ public partial class NamingArchitectureTests
     };
 
     // C++ / CUDA spellings that legitimately start with "__" and are not compiler-internal names.
-    [GeneratedRegex(@"^__(device__|global__|shared__|forceinline__|noinline__|restrict__|declspec|launch_bounds__|syncthreads\w*|syncwarp|shfl\w*|ballot_sync|any_sync|all_sync|activemask|threadfence\w*|popc\w*|clz\w*|ffs\w*|brev\w*|ldg|nanosleep|GSHARP_\w*|NativeContext_\w*)")]
+    [GeneratedRegex(@"^__(device__|global__|shared__|forceinline__|noinline__|restrict__|declspec|launch_bounds__|syncthreads\w*|syncwarp|shfl\w*|ballot_sync|any_sync|all_sync|activemask|threadfence\w*|popc\w*|clz\w*|ffs\w*|brev\w*|ldg|nanosleep|GSHARP_\w*)")]
     private static partial Regex AllowedDoubleUnderscoreRegex();
 
     [GeneratedRegex(@"(?<![A-Za-z0-9_])__[A-Za-z]\w*")]
