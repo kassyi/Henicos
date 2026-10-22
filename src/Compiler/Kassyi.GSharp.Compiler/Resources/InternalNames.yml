@@ -95,3 +95,11 @@ Prelude:
     WarpShuffleReadXorSync: { Value: __gsharp_warp_shuffle_read_xor_sync, Prelude: WarpAndHints.hpp }
     Log2For32: { Value: __gsharp_log2_32, Prelude: MathAndBitOps.hpp }
     Log2For64: { Value: __gsharp_log2_64, Prelude: MathAndBitOps.hpp }
+    RotateLeftFor32: { Value: __gsharp_rotl32, Prelude: MathAndBitOps.hpp }
+    RotateLeftFor64: { Value: __gsharp_rotl64, Prelude: MathAndBitOps.hpp }
+    RotateRightFor32: { Value: __gsharp_rotr32, Prelude: MathAndBitOps.hpp }
+    RotateRightFor64: { Value: __gsharp_rotr64, Prelude: MathAndBitOps.hpp }
+    LeadingZeroCountFor32: { Value: __gsharp_lzc_32, Prelude: MathAndBitOps.hpp }
+    LeadingZeroCountFor64: { Value: __gsharp_lzc_64, Prelude: MathAndBitOps.hpp }
+    TrailingZeroCountFor32: { Value: __gsharp_tzc_32, Prelude: MathAndBitOps.hpp }
+    TrailingZeroCountFor64: { Value: __gsharp_tzc_64, Prelude: MathAndBitOps.hpp }

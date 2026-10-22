@@ -4,16 +4,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// <summary>Discovers assembly attributes and builds immutable mappings from BCL methods to CUDA intrinsic functions.</summary>
 internal static class BclIntrinsicMapBuilder
 {
-    // Prelude functions that the BCL bit operation intrinsics map to, for UIntPtr on a 64-bit and a 32-bit platform.
-    private const string RotateLeft64 = "__gsharp_rotate_left_64";
-    private const string RotateLeft32 = "__gsharp_rotate_left_32";
-    private const string RotateRight64 = "__gsharp_rotate_right_64";
-    private const string RotateRight32 = "__gsharp_rotate_right_32";
-    private const string TrailingZeroCount64 = "__gsharp_trailing_zero_count_64";
-    private const string TrailingZeroCount32 = "__gsharp_trailing_zero_count_32";
-    private const string LeadingZeroCount64 = "__gsharp_leading_zero_count_64";
-    private const string LeadingZeroCount32 = "__gsharp_leading_zero_count_32";
-
     private static readonly ConditionalWeakTable<Compilation, ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>>
         s_cache =
             new();
@@ -154,13 +144,14 @@ internal static class BclIntrinsicMapBuilder
             var is32Bit = compilation.Options.Platform is Platform.X86 or Platform.Arm;
             if (is32Bit)
             {
+                // Core maps the UIntPtr overloads to the 64-bit functions; switch to their 32-bit counterparts.
                 cudaIntrinsicName = cudaIntrinsicName switch
                 {
-                    RotateLeft64 => RotateLeft32,
-                    RotateRight64 => RotateRight32,
-                    TrailingZeroCount64 => TrailingZeroCount32,
+                    GSharpInternalNames.Prelude.RotateLeftFor64 => GSharpInternalNames.Prelude.RotateLeftFor32,
+                    GSharpInternalNames.Prelude.RotateRightFor64 => GSharpInternalNames.Prelude.RotateRightFor32,
+                    GSharpInternalNames.Prelude.TrailingZeroCountFor64 => GSharpInternalNames.Prelude.TrailingZeroCountFor32,
                     GSharpInternalNames.Prelude.Log2For64 => GSharpInternalNames.Prelude.Log2For32,
-                    LeadingZeroCount64 => LeadingZeroCount32,
+                    GSharpInternalNames.Prelude.LeadingZeroCountFor64 => GSharpInternalNames.Prelude.LeadingZeroCountFor32,
                     "__popcll" => "__popc",
                     _ => cudaIntrinsicName
                 };
