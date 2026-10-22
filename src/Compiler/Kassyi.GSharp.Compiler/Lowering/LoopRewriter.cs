@@ -146,9 +146,9 @@ public class LoopRewriter : CSharpSyntaxRewriter
         // [WHY] Centralizing control flow flattening ensures consistent break/continue stack tracking across all loop types.
         var statements = ImmutableArray.CreateBuilder<StatementSyntax>();
         var id = _labelCounter++;
-        var startLabel = $"{GSharpInternalNames.LabelPrefix}{prefix}Start_{id}";
-        var continueLabel = $"{GSharpInternalNames.LabelPrefix}{prefix}Continue_{id}";
-        var endLabel = $"{GSharpInternalNames.LabelPrefix}{prefix}End_{id}";
+        var startLabel = $"{GSharpInternalNames.Lowering.LabelPrefix}{prefix}Start_{id}";
+        var continueLabel = $"{GSharpInternalNames.Lowering.LabelPrefix}{prefix}Continue_{id}";
+        var endLabel = $"{GSharpInternalNames.Lowering.LabelPrefix}{prefix}End_{id}";
 
         if (initializers != null)
         {

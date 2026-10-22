@@ -6,7 +6,7 @@ using Kassyi.GSharp.Compiler.Layout;
 internal static class KernelLaunchEmitter
 {
     /// <summary>The device copy of the auto result buffer in the generated launcher.</summary>
-    private const string DeviceAutoResult = "d_" + GSharpInternalNames.AutoResult;
+    private const string DeviceAutoResult = "d_" + GSharpInternalNames.ReturnValue.Buffer;
 
     internal static ITypeSymbol GetMarshaledType(IParameterSymbol p) =>
         p.Type.UnwrapNullableArrayLike() ?? p.Type;
@@ -109,16 +109,16 @@ internal static class KernelLaunchEmitter
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
         {
             writer.AppendLine("// Marshal auto result array");
-            writer.Append($"int {GSharpInternalNames.AutoResultSize} = {GSharpInternalNames.AutoResult}.Length * sizeof(");
+            writer.Append($"int {GSharpInternalNames.ReturnValue.BufferSize} = {GSharpInternalNames.ReturnValue.Buffer}.Length * sizeof(");
             writer.AppendFullyQualifiedCsharpName(method.ReturnType);
             writer.AppendLine(");");
 
-            writer.AppendLine($"if ({GSharpInternalNames.AutoResultSize} > 0)");
+            writer.AppendLine($"if ({GSharpInternalNames.ReturnValue.BufferSize} > 0)");
             using (writer.Scope())
             {
                 writer.AppendLine(
                     "CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(" +
-                    $"out {DeviceAutoResult}, (IntPtr){GSharpInternalNames.AutoResultSize}, hStream));");
+                    $"out {DeviceAutoResult}, (IntPtr){GSharpInternalNames.ReturnValue.BufferSize}, hStream));");
                 writer.AppendLine("kernelParams[" + paramIndex + $"] = &{DeviceAutoResult};");
             }
         }
@@ -137,10 +137,10 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        writer.AppendLine($"if ({GSharpInternalNames.AutoResult} != null && {DeviceAutoResult} != IntPtr.Zero)");
+        writer.AppendLine($"if ({GSharpInternalNames.ReturnValue.Buffer} != null && {DeviceAutoResult} != IntPtr.Zero)");
         using (writer.Scope())
         {
-            writer.Append($"int size = {GSharpInternalNames.AutoResult}.Length * sizeof(");
+            writer.Append($"int size = {GSharpInternalNames.ReturnValue.Buffer}.Length * sizeof(");
             writer.AppendFullyQualifiedCsharpName(method.ReturnType);
             writer.AppendLine(");");
 
@@ -149,7 +149,7 @@ internal static class KernelLaunchEmitter
             {
                 writer.AppendLine(
                     "var handle = System.Runtime.InteropServices.GCHandle.Alloc(" +
-                    $"{GSharpInternalNames.AutoResult}, System.Runtime.InteropServices.GCHandleType.Pinned);");
+                    $"{GSharpInternalNames.ReturnValue.Buffer}, System.Runtime.InteropServices.GCHandleType.Pinned);");
                 writer.AppendLine("try");
                 using (writer.Scope())
                 {

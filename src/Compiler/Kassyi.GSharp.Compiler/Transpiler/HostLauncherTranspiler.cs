@@ -1,16 +1,18 @@
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
-using static GSharpInternalNames;
+using static GSharpInternalNames.Kernel;
+using static GSharpInternalNames.Launcher;
+using static GSharpInternalNames.ReturnValue;
+using static GSharpInternalNames.StateMachine;
+using static GSharpInternalNames.Prelude;
 
 /// <summary>
 /// Emits CPU / OpenMP multi-threaded execution launchers and shared memory emulation wrappers for host execution.
 /// </summary>
 internal static class HostLauncherTranspiler
 {
-    private const string HostLastError = "__gsharp_host_last_error";
-    private const string ActiveErrorSlot = "__gsharp_active_error_slot";
-    private const string SetThreadIndex = "__gsharp_set_thread_idx";
+    private const string SharedMemoryBufferPrefix = "__gsharp_smem_buffer_";
 
     public static void WriteCpuLauncher(MethodDeclarationSyntax method,
         IReadOnlyList<VariableDeclaratorSyntax>? contextFields, ref TranspileContext context)
@@ -25,16 +27,16 @@ internal static class HostLauncherTranspiler
         context.Emitter.Writer.AppendLine();
         context.Emitter.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
         var methodName = MethodSignatureTranspiler.GetKernelMethodName(method, methodSymbol);
-        var contextName = MethodSignatureTranspiler.GetKernelDerivedName(KernelContextPrefix, method, methodSymbol);
+        var contextName = MethodSignatureTranspiler.GetKernelDerivedName(ContextPrefix, method, methodSymbol);
         context.Emitter.Writer.AppendSpace()
-            .Append(MethodSignatureTranspiler.GetKernelDerivedName(KernelLaunchExportPrefix, method, methodSymbol))
+            .Append(MethodSignatureTranspiler.GetKernelDerivedName(LaunchExportPrefix, method, methodSymbol))
             .Append('(');
 
         // Launch dimensions
         context.Emitter.Writer.Append(
-            $"uint32_t {LaunchGridDimX}, uint32_t {LaunchGridDimY}, uint32_t {LaunchGridDimZ}, ");
+            $"uint32_t {GridDimX}, uint32_t {GridDimY}, uint32_t {GridDimZ}, ");
         context.Emitter.Writer.Append(
-            $"uint32_t {LaunchBlockDimX}, uint32_t {LaunchBlockDimY}, uint32_t {LaunchBlockDimZ}");
+            $"uint32_t {BlockDimX}, uint32_t {BlockDimY}, uint32_t {BlockDimZ}");
 
         if (method.ParameterList.Parameters.Count > 0)
         {
@@ -49,7 +51,7 @@ internal static class HostLauncherTranspiler
         {
             context.Emitter.Writer.Append(", ");
             context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
-            context.Emitter.Writer.Append($"* __restrict__ {AutoResult}");
+            context.Emitter.Writer.Append($"* __restrict__ {Buffer}");
         }
 
         context.Emitter.Writer.AppendLine(")");
@@ -57,34 +59,34 @@ internal static class HostLauncherTranspiler
         using (context.Emitter.Writer.Scope())
         {
             context.Emitter.Writer.AppendLine($"{HostLastError}.Reset();");
-            context.Emitter.Writer.AppendLine($"GSharpErrorSlot {LaunchError};");
+            context.Emitter.Writer.AppendLine($"GSharpErrorSlot {Error};");
             context.Emitter.Writer.AppendLine(
-                $"int32_t {TotalBlocks} = (int32_t)({LaunchGridDimX} * {LaunchGridDimY} * {LaunchGridDimZ});");
+                $"int32_t {TotalBlocks} = (int32_t)({GridDimX} * {GridDimY} * {GridDimZ});");
             context.Emitter.Writer.AppendLine("#pragma omp parallel for schedule(dynamic)");
             context.Emitter.Writer.AppendLine(
                 $"for (int32_t {BlockLoopIndex} = 0; {BlockLoopIndex} < {TotalBlocks}; {BlockLoopIndex}++)");
             using (context.Emitter.Writer.Scope())
             {
-                context.Emitter.Writer.AppendLine($"if ({LaunchError}.HasError()) continue;");
-                context.Emitter.Writer.AppendLine($"int32_t {LaunchBlockX} = {BlockLoopIndex} % {LaunchGridDimX};");
+                context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) continue;");
+                context.Emitter.Writer.AppendLine($"int32_t {BlockX} = {BlockLoopIndex} % {GridDimX};");
                 context.Emitter.Writer.AppendLine(
-                    $"int32_t {LaunchBlockY} = ({BlockLoopIndex} / {LaunchGridDimX}) % {LaunchGridDimY};");
+                    $"int32_t {BlockY} = ({BlockLoopIndex} / {GridDimX}) % {GridDimY};");
                 context.Emitter.Writer.AppendLine(
-                    $"int32_t {LaunchBlockZ} = {BlockLoopIndex} / ({LaunchGridDimX} * {LaunchGridDimY});");
+                    $"int32_t {BlockZ} = {BlockLoopIndex} / ({GridDimX} * {GridDimY});");
                 context.Emitter.Writer.AppendLine("__gsharp_reset_smem();");
                 if (hasContext)
                 {
                     context.Emitter.Writer.AppendLine(
-                        $"std::vector<{contextName}> {LaunchContexts}({LaunchBlockDimX} * {LaunchBlockDimY} * {LaunchBlockDimZ});");
+                        $"std::vector<{contextName}> {Contexts}({BlockDimX} * {BlockDimY} * {BlockDimZ});");
 
                     if (contextFields != null)
                     {
                         WriteSharedMemoryEmulationBuffers(contextFields, ref context);
                     }
 
-                    context.Emitter.Writer.AppendLine($"for (auto& {LaunchContextItem} : {LaunchContexts}) {{");
-                    context.Emitter.Writer.AppendLine($"{LaunchContextItem}.{State} = 0;");
-                    context.Emitter.Writer.AppendLine($"{LaunchContextItem}.{AllContexts} = {LaunchContexts}.data();");
+                    context.Emitter.Writer.AppendLine($"for (auto& {ContextItem} : {Contexts}) {{");
+                    context.Emitter.Writer.AppendLine($"{ContextItem}.{State} = 0;");
+                    context.Emitter.Writer.AppendLine($"{ContextItem}.{AllContexts} = {Contexts}.data();");
 
                     if (contextFields != null)
                     {
@@ -92,11 +94,11 @@ internal static class HostLauncherTranspiler
                     }
 
                     context.Emitter.Writer.AppendLine("}");
-                    context.Emitter.Writer.AppendLine($"std::atomic<bool> {LaunchAnyActive}{{true}};");
-                    context.Emitter.Writer.AppendLine($"while ({LaunchAnyActive} && !{LaunchError}.HasError())");
+                    context.Emitter.Writer.AppendLine($"std::atomic<bool> {AnyActive}{{true}};");
+                    context.Emitter.Writer.AppendLine($"while ({AnyActive} && !{Error}.HasError())");
                     using (context.Emitter.Writer.Scope())
                     {
-                        context.Emitter.Writer.AppendLine($"{LaunchAnyActive} = false;");
+                        context.Emitter.Writer.AppendLine($"{AnyActive} = false;");
                         WriteBlockLoop(method, methodSymbol, methodName, hasContext, ref context);
                     }
                 }
@@ -106,9 +108,9 @@ internal static class HostLauncherTranspiler
                 }
             }
 
-            context.Emitter.Writer.AppendLine($"if ({LaunchError}.HasError()) {{");
+            context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) {{");
             context.Emitter.Writer.AppendLine(
-                $"{HostLastError}.Report(static_cast<GSharpErrorCode>({LaunchError}.code.load(std::memory_order_acquire)), {LaunchError}.message);");
+                $"{HostLastError}.Report(static_cast<GSharpErrorCode>({Error}.code.load(std::memory_order_acquire)), {Error}.message);");
             context.Emitter.Writer.AppendLine("}");
         }
     }
@@ -163,7 +165,7 @@ internal static class HostLauncherTranspiler
                 continue;
             }
 
-            context.Emitter.Writer.Append($"{LaunchContextItem}.");
+            context.Emitter.Writer.Append($"{ContextItem}.");
             CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
             context.Emitter.Writer.Append(".data = ");
             AppendSharedMemoryBufferName(field, ref context);
@@ -181,36 +183,36 @@ internal static class HostLauncherTranspiler
         bool hasContext, ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine(
-            $"int32_t {ThreadsPerBlock} = (int32_t)({LaunchBlockDimX} * {LaunchBlockDimY} * {LaunchBlockDimZ});");
+            $"int32_t {ThreadsPerBlock} = (int32_t)({BlockDimX} * {BlockDimY} * {BlockDimZ});");
         context.Emitter.Writer.AppendLine("#pragma omp parallel for schedule(static)");
         context.Emitter.Writer.AppendLine(
             $"for (int32_t {ThreadLoopIndex} = 0; {ThreadLoopIndex} < {ThreadsPerBlock}; {ThreadLoopIndex}++)");
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Writer.AppendLine($"if ({LaunchError}.HasError()) continue;");
-            context.Emitter.Writer.AppendLine($"{ActiveErrorSlot} = &{LaunchError};");
-            context.Emitter.Writer.AppendLine($"int32_t {LaunchThreadX} = {ThreadLoopIndex} % {LaunchBlockDimX};");
+            context.Emitter.Writer.AppendLine($"if ({Error}.HasError()) continue;");
+            context.Emitter.Writer.AppendLine($"{ActiveErrorSlot} = &{Error};");
+            context.Emitter.Writer.AppendLine($"int32_t {ThreadX} = {ThreadLoopIndex} % {BlockDimX};");
             context.Emitter.Writer.AppendLine(
-                $"int32_t {LaunchThreadY} = ({ThreadLoopIndex} / {LaunchBlockDimX}) % {LaunchBlockDimY};");
+                $"int32_t {ThreadY} = ({ThreadLoopIndex} / {BlockDimX}) % {BlockDimY};");
             context.Emitter.Writer.AppendLine(
-                $"int32_t {LaunchThreadZ} = {ThreadLoopIndex} / ({LaunchBlockDimX} * {LaunchBlockDimY});");
+                $"int32_t {ThreadZ} = {ThreadLoopIndex} / ({BlockDimX} * {BlockDimY});");
             if (hasContext)
             {
                 context.Emitter.Writer.AppendLine(
-                    $"uint32_t {ContextThreadIndex} = {LaunchThreadZ} * {LaunchBlockDimY} * {LaunchBlockDimX} + {LaunchThreadY} * {LaunchBlockDimX} + {LaunchThreadX};");
+                    $"uint32_t {ContextThreadIndex} = {ThreadZ} * {BlockDimY} * {BlockDimX} + {ThreadY} * {BlockDimX} + {ThreadX};");
                 context.Emitter.Writer.AppendLine(
-                    $"if ({LaunchContexts}[{ContextThreadIndex}].{State} != -1)");
+                    $"if ({Contexts}[{ContextThreadIndex}].{State} != -1)");
             }
 
             using (hasContext ? context.Emitter.Writer.Scope() : default)
             {
                 if (hasContext)
                 {
-                    context.Emitter.Writer.AppendLine($"{LaunchAnyActive} = true;");
+                    context.Emitter.Writer.AppendLine($"{AnyActive} = true;");
                 }
 
                 context.Emitter.Writer.AppendLine(
-                    $"{SetThreadIndex}({LaunchThreadX}, {LaunchThreadY}, {LaunchThreadZ}, {LaunchBlockX}, {LaunchBlockY}, {LaunchBlockZ}, {LaunchBlockDimX}, {LaunchBlockDimY}, {LaunchBlockDimZ}, {LaunchGridDimX}, {LaunchGridDimY}, {LaunchGridDimZ});");
+                    $"{SetThreadIndex}({ThreadX}, {ThreadY}, {ThreadZ}, {BlockX}, {BlockY}, {BlockZ}, {BlockDimX}, {BlockDimY}, {BlockDimZ}, {GridDimX}, {GridDimY}, {GridDimZ});");
                 context.Emitter.Writer.Append(methodName);
                 using (context.Emitter.Writer.Parentheses())
                 {
@@ -225,7 +227,7 @@ internal static class HostLauncherTranspiler
                     if (hasContext)
                     {
                         AppendArgumentSeparator(ref isFirst, ref context);
-                        context.Emitter.Writer.Append($"&{LaunchContexts}[{ContextThreadIndex}]");
+                        context.Emitter.Writer.Append($"&{Contexts}[{ContextThreadIndex}]");
                     }
 
                     var isKernelWithReturn = methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
@@ -234,7 +236,7 @@ internal static class HostLauncherTranspiler
                     if (isKernelWithReturn)
                     {
                         AppendArgumentSeparator(ref isFirst, ref context);
-                        context.Emitter.Writer.Append(AutoResult);
+                        context.Emitter.Writer.Append(Buffer);
                     }
                 }
 

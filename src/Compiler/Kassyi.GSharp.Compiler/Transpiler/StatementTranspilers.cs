@@ -230,14 +230,14 @@ internal static class StatementTranspilers
     {
         if (node.IsKind(SyntaxKind.GotoCaseStatement))
         {
-            context.Emitter.Writer.Append($"goto {GSharpInternalNames.SwitchStatePrefix}{context.Emitter.CurrentSwitchId}_state_");
+            context.Emitter.Writer.Append($"goto {GSharpInternalNames.Lowering.SwitchStatePrefix}{context.Emitter.CurrentSwitchId}_state_");
             context.Visitor.Visit(node.Expression);
             context.Emitter.Writer.AppendSemiColonLine();
             return;
         }
         else if (node.IsKind(SyntaxKind.GotoDefaultStatement))
         {
-            context.Emitter.Writer.AppendLine($"goto {GSharpInternalNames.SwitchStatePrefix}{context.Emitter.CurrentSwitchId}_state_default;");
+            context.Emitter.Writer.AppendLine($"goto {GSharpInternalNames.Lowering.SwitchStatePrefix}{context.Emitter.CurrentSwitchId}_state_default;");
             return;
         }
 
@@ -288,13 +288,13 @@ internal static class StatementTranspilers
 
             if (context.Emitter is { IsGpuKernelEntry: true, IsVoidReturn: false, CallableDepth: 0 })
             {
-                context.Emitter.Writer.Append($"{GSharpInternalNames.AutoResult}[{GSharpInternalNames.GlobalThreadIndex}] = ");
+                context.Emitter.Writer.Append($"{GSharpInternalNames.ReturnValue.Buffer}[{GSharpInternalNames.ReturnValue.GlobalThreadIndex}] = ");
                 context.Visitor.Visit(node.Expression);
                 context.Emitter.Writer.AppendSemiColonLine();
 
                 if (emitStateTermination)
                 {
-                    context.Emitter.Writer.Append(GSharpInternalNames.StateTermination);
+                    context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.Termination);
                 }
 
                 context.Emitter.Writer.AppendKeyword("return;");
@@ -303,7 +303,7 @@ internal static class StatementTranspilers
 
             if (emitStateTermination)
             {
-                context.Emitter.Writer.Append(GSharpInternalNames.StateTermination);
+                context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.Termination);
             }
 
             context.Emitter.Writer.Append("return ");
@@ -314,7 +314,7 @@ internal static class StatementTranspilers
 
         if (emitStateTermination)
         {
-            context.Emitter.Writer.Append(GSharpInternalNames.StateTermination);
+            context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.Termination);
         }
 
         context.Emitter.Writer.AppendKeyword("return;");
@@ -334,12 +334,12 @@ internal static class StatementTranspilers
         if (node.Expression != null)
         {
             DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
-            context.Emitter.Writer.Append($"*{GSharpInternalNames.SuspendingCallResult} = ");
+            context.Emitter.Writer.Append($"*{GSharpInternalNames.SuspendingCall.Result} = ");
             context.Visitor.Visit(node.Expression);
             context.Emitter.Writer.AppendSemiColonLine();
         }
 
-        context.Emitter.Writer.Append($"{GSharpInternalNames.State} = 0;");
+        context.Emitter.Writer.Append($"{GSharpInternalNames.StateMachine.State} = 0;");
         context.Emitter.Writer.AppendKeyword("return true;");
     }
 }

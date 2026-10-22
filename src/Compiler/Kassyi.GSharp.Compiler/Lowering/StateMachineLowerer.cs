@@ -7,11 +7,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// </param>
 public class StateMachineLowerer(bool isDeviceFunction = false)
 {
-    private const string WarpExchangeAssign = "__gsharp_warp_exchange_assign";
-    private const string WarpShuffleReadDownSync = "__gsharp_warp_shuffle_read_down_sync";
-    private const string WarpShuffleReadUpSync = "__gsharp_warp_shuffle_read_up_sync";
-    private const string WarpShuffleReadXorSync = "__gsharp_warp_shuffle_read_xor_sync";
-    private const string WarpShuffleReadSync = "__gsharp_warp_shuffle_read_sync";
     private const string WarpShuffleRead = "__gsharp_warp_shuffle_read";
 
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
@@ -76,7 +71,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
                     var valArg = barrierInv.ArgumentList.Arguments[1].Expression;
                     currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
                         SyntaxFactory.InvocationExpression(
-                            SyntaxFactory.IdentifierName(WarpExchangeAssign),
+                            SyntaxFactory.IdentifierName(GSharpInternalNames.Prelude.WarpExchangeAssign),
                             SyntaxFactory.ArgumentList(
                                 SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(valArg)))
                         )
@@ -99,7 +94,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
                         currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
                             SyntaxFactory.AssignmentExpression(
                                 SyntaxKind.SimpleAssignmentExpression,
-                                SyntaxFactory.IdentifierName(GSharpInternalNames.YieldedForGridSync),
+                                SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.YieldedForGridSync),
                                 SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
                             )
                         ));
@@ -127,7 +122,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
         }
 
         var switchStmt = SyntaxFactory.SwitchStatement(
-            SyntaxFactory.IdentifierName(GSharpInternalNames.State),
+            SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State),
             SyntaxFactory.List(cases)
         );
 
@@ -193,7 +188,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
         }
 
         var resume = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.IdentifierName(GSharpInternalNames.ResumeCall),
+            SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.ResumeCall),
             SyntaxFactory.ArgumentList(arguments));
 
         return SyntaxFactory.IfStatement(
@@ -230,7 +225,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
         return SyntaxFactory.ExpressionStatement(
             SyntaxFactory.AssignmentExpression(
                 SyntaxKind.SimpleAssignmentExpression,
-                SyntaxFactory.IdentifierName(GSharpInternalNames.State),
+                SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State),
                 SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(stateValue))
             )
         );
@@ -242,17 +237,17 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
                          "ShuffleDownSync";
         var readMethodName = methodName switch
         {
-            "ShuffleDownSync" => WarpShuffleReadDownSync,
-            "ShuffleUpSync" => WarpShuffleReadUpSync,
-            "ShuffleXorSync" => WarpShuffleReadXorSync,
-            "ShuffleSync" => WarpShuffleReadSync,
+            "ShuffleDownSync" => GSharpInternalNames.Prelude.WarpShuffleReadDownSync,
+            "ShuffleUpSync" => GSharpInternalNames.Prelude.WarpShuffleReadUpSync,
+            "ShuffleXorSync" => GSharpInternalNames.Prelude.WarpShuffleReadXorSync,
+            "ShuffleSync" => GSharpInternalNames.Prelude.WarpShuffleReadSync,
             _ => WarpShuffleRead
         };
 
         var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>();
         // Arguments are: context, mask, val, delta, width [optional]
         // The root context owns the warp exchange, also when the shuffle is in a device function
-        newArgs = newArgs.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.Root)));
+        newArgs = newArgs.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)));
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[0]);
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[1]); // pass val for type inference
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[2]);

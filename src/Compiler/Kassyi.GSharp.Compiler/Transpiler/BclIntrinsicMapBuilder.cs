@@ -11,8 +11,6 @@ internal static class BclIntrinsicMapBuilder
     private const string RotateRight32 = "__gsharp_rotate_right_32";
     private const string TrailingZeroCount64 = "__gsharp_trailing_zero_count_64";
     private const string TrailingZeroCount32 = "__gsharp_trailing_zero_count_32";
-    private const string Log2For64 = "__gsharp_log2_64";
-    private const string Log2For32 = "__gsharp_log2_32";
     private const string LeadingZeroCount64 = "__gsharp_leading_zero_count_64";
     private const string LeadingZeroCount32 = "__gsharp_leading_zero_count_32";
 
@@ -161,7 +159,7 @@ internal static class BclIntrinsicMapBuilder
                     RotateLeft64 => RotateLeft32,
                     RotateRight64 => RotateRight32,
                     TrailingZeroCount64 => TrailingZeroCount32,
-                    Log2For64 => Log2For32,
+                    GSharpInternalNames.Prelude.Log2For64 => GSharpInternalNames.Prelude.Log2For32,
                     LeadingZeroCount64 => LeadingZeroCount32,
                     "__popcll" => "__popc",
                     _ => cudaIntrinsicName

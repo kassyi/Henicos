@@ -90,7 +90,7 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
 
     private (ImmutableArray<StatementSyntax> Prefix, IdentifierNameSyntax Temp) Lower(ExpressionSyntax conditional)
     {
-        var name = $"{GSharpInternalNames.ConditionTempPrefix}{_tempCounter++}";
+        var name = $"{GSharpInternalNames.Lowering.ConditionTempPrefix}{_tempCounter++}";
         var temp = SyntaxFactory.IdentifierName(name);
 
         switch (conditional)

@@ -3,7 +3,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 /// <summary>Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.Constant macro expansions.</summary>
 internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 {
-    private const string Unsupported = "__gsharp_unsupported";
 
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
@@ -33,14 +32,14 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
         {
             var dialectName = context.Emitter.Dialect.Name;
             context.Reporter.Report(GSharpDiagnostics.InlinePtxNotSupportedByDialect, node, dialectName);
-            context.Emitter.Writer.Append($"{Unsupported}(\"Gpu.InlinePtx is not supported by the {dialectName} dialect\");");
+            context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.Unsupported}(\"Gpu.InlinePtx is not supported by the {dialectName} dialect\");");
             context.Emitter.Writer.AppendLine();
             if (!context.Emitter.Dialect.EmulatesThreadsWithStateMachine() || !context.Emitter.IsGpuKernelEntry)
             {
                 return;
             }
 
-            context.Emitter.Writer.AppendLine(GSharpInternalNames.StateTermination);
+            context.Emitter.Writer.AppendLine(GSharpInternalNames.StateMachine.Termination);
             context.Emitter.Writer.AppendLine("return;");
             return;
         }

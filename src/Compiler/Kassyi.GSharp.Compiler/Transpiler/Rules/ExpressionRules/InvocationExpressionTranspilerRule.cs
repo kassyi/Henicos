@@ -15,7 +15,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     /// <inheritdoc />
     public override void Transpile(InvocationExpressionSyntax node, ref TranspileContext context)
     {
-        if (node.Expression is IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.ResumeCall })
+        if (node.Expression is IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall })
         {
             TranspileResumeCall(node, ref context);
             return;
@@ -85,9 +85,9 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             }
 
             context.Emitter.Writer.Append(
-                $"&{GSharpInternalNames.Context}->{GSharpInternalNames.CallFramePrefix}{frameIndex.Token.ValueText}");
+                $"&{GSharpInternalNames.StateMachine.Context}->{GSharpInternalNames.SuspendingCall.CallFramePrefix}{frameIndex.Token.ValueText}");
             context.Emitter.Writer.AppendComma();
-            context.Emitter.Writer.Append(GSharpInternalNames.Root);
+            context.Emitter.Writer.Append(GSharpInternalNames.SuspendingCall.Root);
 
             if (arguments.Count > 2)
             {

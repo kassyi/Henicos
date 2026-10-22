@@ -1,0 +1,97 @@
+# Identifiers the compiler emits into generated host and device code. Each top-level key becomes a nested class of
+# GSharpInternalNames. A name is either `Name: value` or `Name: { Value: value, Prelude: File.hpp }`; Prelude names the
+# Resources/Prelude file that declares the identifier, which the build and PreludeInternalNamesTests check.
+# A name ending in Prefix is followed by a counter or another name, and its value ends in `_`.
+# Only names that something outside one emitter also spells belong here; see the remarks on GSharpInternalNames.
+
+Kernel:
+  Summary: Names that belong to one kernel, followed by the body of its entry point name (GlobalCppNames.GetKernelDerivedName).
+  Names:
+    LaunchExportPrefix: __gsharp_launch_
+    ContextPrefix: __gsharp_context_
+    StateMachinePrefix: __gsharp_statemachine_
+
+StateMachine:
+  Summary: Per-thread state machine context (CPU dialects).
+  Names:
+    Context: { Value: __gsharp_ctx, Prelude: WarpAndHints.hpp }
+    State: __gsharp_state
+    YieldedForGridSync: __gsharp_yielded_for_grid_sync
+    WarpExchange: { Value: __gsharp_warp_exchange, Prelude: WarpAndHints.hpp }
+    WarpShuffleCount: { Value: __gsharp_warp_shuffle_count, Prelude: WarpAndHints.hpp }
+    AllContexts: { Value: __gsharp_all_contexts, Prelude: WarpAndHints.hpp }
+
+SuspendingCall:
+  Summary: >-
+    Device functions that reach a barrier (CPU dialects). Each one is a state machine with its own frame; the kernel
+    context is passed down as the root, which owns the warp exchange of the thread.
+  Names:
+    Root: { Value: __gsharp_root, Prelude: WarpAndHints.hpp }
+    FrameTypePrefix: __gsharp_frame_
+    CallFramePrefix: __gsharp_call_frame_
+    CopiedParameterPrefix: __gsharp_in_
+    Result: __gsharp_result
+    # Marks a call to a device function that may suspend: __gsharp_resume(call, frameIndex[, result]).
+    ResumeCall: __gsharp_resume
+
+Lowering:
+  Summary: Lowering temporaries and labels. Prefixes are followed by a counter or a user-derived name.
+  Names:
+    LabelPrefix: __gsharp_
+    WarpTempPrefix: __gsharp_warp_temp_
+    CallTempPrefix: __gsharp_call_temp_
+    ArgumentTempPrefix: __gsharp_arg_temp_
+    ConditionTempPrefix: __gsharp_cond_temp_
+    AggregateTemp: __gsharp_tmp
+    TupleTempPrefix: __gsharp_tuple_
+    CoalesceTarget: __gsharp_coalesce_target
+    SwitchStatePrefix: __gsharp_switch_
+
+Launcher:
+  Summary: Locals of the CPU C++ launcher and the managed wrappers. Kernel parameters share their scope.
+  Names:
+    Contexts: __gsharp_contexts
+    Error: __gsharp_launch_error
+    TotalBlocks: __gsharp_total_blocks
+    ThreadsPerBlock: __gsharp_threads_per_block
+    BlockLoopIndex: __gsharp_block_index
+    ThreadLoopIndex: __gsharp_thread_index
+    ContextThreadIndex: __gsharp_ctx_tid
+    LinearThreadIndex: __gsharp_linear_tid
+    ContextItem: __gsharp_launch_ctx
+    AnyActive: __gsharp_any_active
+    CudaContextScope: __gsharp_cuda_context_scope
+    GridDimX: __gsharp_grid_dim_x
+    GridDimY: __gsharp_grid_dim_y
+    GridDimZ: __gsharp_grid_dim_z
+    BlockDimX: __gsharp_block_dim_x
+    BlockDimY: __gsharp_block_dim_y
+    BlockDimZ: __gsharp_block_dim_z
+    BlockX: __gsharp_bx
+    BlockY: __gsharp_by
+    BlockZ: __gsharp_bz
+    ThreadX: __gsharp_tx
+    ThreadY: __gsharp_ty
+    ThreadZ: __gsharp_tz
+
+ReturnValue:
+  Summary: The buffer that a kernel returning a value writes into, and the device-side locals that fill it.
+  Names:
+    Buffer: __gsharp_auto_result
+    BufferSize: __gsharp_auto_result_size
+    GlobalThreadIndex: __gsharp_global_tid
+
+Prelude:
+  Summary: Functions and globals that the Prelude declares and the emitters call.
+  Names:
+    HostLastError: { Value: __gsharp_host_last_error, Prelude: ErrorChannel.hpp }
+    ActiveErrorSlot: { Value: __gsharp_active_error_slot, Prelude: ErrorChannel.hpp }
+    Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
+    SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
+    WarpExchangeAssign: { Value: __gsharp_warp_exchange_assign, Prelude: WarpAndHints.hpp }
+    WarpShuffleReadSync: { Value: __gsharp_warp_shuffle_read_sync, Prelude: WarpAndHints.hpp }
+    WarpShuffleReadDownSync: { Value: __gsharp_warp_shuffle_read_down_sync, Prelude: WarpAndHints.hpp }
+    WarpShuffleReadUpSync: { Value: __gsharp_warp_shuffle_read_up_sync, Prelude: WarpAndHints.hpp }
+    WarpShuffleReadXorSync: { Value: __gsharp_warp_shuffle_read_xor_sync, Prelude: WarpAndHints.hpp }
+    Log2For32: { Value: __gsharp_log2_32, Prelude: MathAndBitOps.hpp }
+    Log2For64: { Value: __gsharp_log2_64, Prelude: MathAndBitOps.hpp }

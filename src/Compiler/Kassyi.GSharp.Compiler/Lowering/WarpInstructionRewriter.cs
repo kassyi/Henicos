@@ -53,11 +53,11 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             ? StatementRewriter.CreateTempDeclaration(GetNextCallTempName(), call.WithoutTrivia()).WithTriviaFrom(statement)
             : statement;
 
-    private string GetNextTempName() => $"{GSharpInternalNames.WarpTempPrefix}{_tempCounter++}";
+    private string GetNextTempName() => $"{GSharpInternalNames.Lowering.WarpTempPrefix}{_tempCounter++}";
 
-    private string GetNextCallTempName() => $"{GSharpInternalNames.CallTempPrefix}{_tempCounter++}";
+    private string GetNextCallTempName() => $"{GSharpInternalNames.Lowering.CallTempPrefix}{_tempCounter++}";
 
-    private string GetNextArgumentTempName() => $"{GSharpInternalNames.ArgumentTempPrefix}{_tempCounter++}";
+    private string GetNextArgumentTempName() => $"{GSharpInternalNames.Lowering.ArgumentTempPrefix}{_tempCounter++}";
 
     private static bool IsWarpPrimitive(InvocationExpressionSyntax inv) =>
         BarrierHelper.IsWarpShuffle(inv) || BarrierHelper.IsSuspendingCall(inv);
@@ -140,8 +140,8 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
                 case ExpressionStatementSyntax:
                 // If it's already perfectly hoisted, skip
                 case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax vd } when
-                    vd.Identifier.Text.StartsWith(GSharpInternalNames.WarpTempPrefix, StringComparison.Ordinal) ||
-                    vd.Identifier.Text.StartsWith(GSharpInternalNames.CallTempPrefix, StringComparison.Ordinal):
+                    vd.Identifier.Text.StartsWith(GSharpInternalNames.Lowering.WarpTempPrefix, StringComparison.Ordinal) ||
+                    vd.Identifier.Text.StartsWith(GSharpInternalNames.Lowering.CallTempPrefix, StringComparison.Ordinal):
 
                     return visitedNode;
             }

@@ -111,26 +111,18 @@ public partial class NamingArchitectureTests
     [Scenario(TestScenario.SadPath)]
     public void Test_InternalNames_DoNotUseRenamedFamilyPrefixes()
     {
-        var path = Path.Combine(RepositoryPaths.CompilerProject, "GSharpInternalNames.cs");
-        var root = CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
-
-        foreach (var literal in root.DescendantNodes().OfType<LiteralExpressionSyntax>())
+        foreach (var (path, value, _) in GSharpInternalNames.All)
         {
-            if (!literal.IsKind(SyntaxKind.StringLiteralExpression))
-            {
-                continue;
-            }
-
             Assert.False(
-                literal.Token.ValueText.StartsWith(GSharpInternalNames.RenamedIdentifierPrefix, StringComparison.Ordinal) ||
-                literal.Token.ValueText.StartsWith(GSharpInternalNames.RenamedMemberPrefix, StringComparison.Ordinal),
-                $"'{literal.Token.ValueText}' collides with the renamed user identifier families.");
+                value.StartsWith(GSharpInternalNames.Renamed.IdentifierPrefix, StringComparison.Ordinal) ||
+                value.StartsWith(GSharpInternalNames.Renamed.MemberPrefix, StringComparison.Ordinal),
+                $"{path} = '{value}' collides with the renamed user identifier families.");
         }
 
-        Assert.DoesNotContain(GSharpInternalNames.RenamedIdentifierPrefix, GSharpPreludeResources.Cpp);
-        Assert.DoesNotContain(GSharpInternalNames.RenamedIdentifierPrefix, GSharpPreludeResources.Cuda);
-        Assert.DoesNotContain(GSharpInternalNames.RenamedMemberPrefix, GSharpPreludeResources.Cpp);
-        Assert.DoesNotContain(GSharpInternalNames.RenamedMemberPrefix, GSharpPreludeResources.Cuda);
+        Assert.DoesNotContain(GSharpInternalNames.Renamed.IdentifierPrefix, GSharpPreludeResources.Cpp);
+        Assert.DoesNotContain(GSharpInternalNames.Renamed.IdentifierPrefix, GSharpPreludeResources.Cuda);
+        Assert.DoesNotContain(GSharpInternalNames.Renamed.MemberPrefix, GSharpPreludeResources.Cpp);
+        Assert.DoesNotContain(GSharpInternalNames.Renamed.MemberPrefix, GSharpPreludeResources.Cuda);
     }
 
     [Fact]
@@ -139,15 +131,12 @@ public partial class NamingArchitectureTests
     public void Test_Compiler_DoesNotRespellInternalNames()
     {
         var names = new Dictionary<string, string>(StringComparer.Ordinal);
-        var internalNamesRoot = ParseCompilerSource(Path.Combine(RepositoryPaths.CompilerProject, "GSharpInternalNames.cs"));
-        foreach (var declarator in internalNamesRoot.DescendantNodes().OfType<VariableDeclaratorSyntax>())
+        foreach (var (namePath, value, _) in GSharpInternalNames.All)
         {
-            if (declarator.Initializer?.Value is LiteralExpressionSyntax literal &&
-                literal.IsKind(SyntaxKind.StringLiteralExpression) &&
-                // LabelPrefix is a prefix by design and would match unrelated text.
-                literal.Token.ValueText != GSharpInternalNames.LabelPrefix)
+            // LabelPrefix is a prefix by design and would match unrelated text.
+            if (value != GSharpInternalNames.Lowering.LabelPrefix)
             {
-                names[literal.Token.ValueText] = declarator.Identifier.ValueText;
+                names[value] = namePath;
             }
         }
 
@@ -192,8 +181,8 @@ public partial class NamingArchitectureTests
 
             foreach (var (text, token) in EnumerateStringTexts(root))
             {
-                if (text.StartsWith(GSharpInternalNames.RenamedIdentifierPrefix, StringComparison.Ordinal) ||
-                    text.StartsWith(GSharpInternalNames.RenamedMemberPrefix, StringComparison.Ordinal))
+                if (text.StartsWith(GSharpInternalNames.Renamed.IdentifierPrefix, StringComparison.Ordinal) ||
+                    text.StartsWith(GSharpInternalNames.Renamed.MemberPrefix, StringComparison.Ordinal))
                 {
                     var line = token.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
                     violations.Add($"{Path.GetFileName(path)}:{line}: \"{text}\"");

@@ -28,6 +28,12 @@ public static class Program
             return;
         }
 
+        if (args is ["internal-names", _, _, _, ..])
+        {
+            InternalNamesGenerator.Run(args[1], args[2], args[3]);
+            return;
+        }
+
         // Fallback for backwards compatibility with existing build tasks
         if (args.Length >= 2)
         {
@@ -36,7 +42,7 @@ public static class Program
         else
         {
             Console.WriteLine("Usage: Kassyi.GSharp.Compiler.Generators <mode> <input> <output>");
-            Console.WriteLine("Modes: dialects, diagnostics, native-api, prelude");
+            Console.WriteLine("Modes: dialects, diagnostics, native-api, prelude, internal-names");
         }
     }
 }

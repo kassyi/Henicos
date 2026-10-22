@@ -63,8 +63,8 @@ internal static class MethodSignatureTranspiler
                 }
 
                 context.Emitter.Writer
-                    .Append(GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix, method, methodSymbol))
-                    .Append("* ").Append(GSharpInternalNames.Context);
+                    .Append(GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, method, methodSymbol))
+                    .Append("* ").Append(GSharpInternalNames.StateMachine.Context);
             }
 
             if (isDevice || methodSymbol is null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
@@ -79,7 +79,7 @@ internal static class MethodSignatureTranspiler
             }
 
             context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
-            context.Emitter.Writer.Append($"* __restrict__ {GSharpInternalNames.AutoResult}");
+            context.Emitter.Writer.Append($"* __restrict__ {GSharpInternalNames.ReturnValue.Buffer}");
         }
     }
 
@@ -107,14 +107,14 @@ internal static class MethodSignatureTranspiler
             }
 
             context.Emitter.Writer
-                .Append(GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, method, methodSymbol))
-                .Append($"* {GSharpInternalNames.Context}, TRoot* {GSharpInternalNames.Root}");
+                .Append(GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, method, methodSymbol))
+                .Append($"* {GSharpInternalNames.StateMachine.Context}, TRoot* {GSharpInternalNames.SuspendingCall.Root}");
 
             if (methodSymbol is { ReturnsVoid: false })
             {
                 context.Emitter.Writer.Append(", ");
                 context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
-                context.Emitter.Writer.Append($"* {GSharpInternalNames.SuspendingCallResult}");
+                context.Emitter.Writer.Append($"* {GSharpInternalNames.SuspendingCall.Result}");
             }
         }
     }
@@ -232,7 +232,7 @@ internal static class MethodSignatureTranspiler
             context.Emitter.Writer.AppendSpace();
             if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
             {
-                context.Emitter.Writer.Append(GSharpInternalNames.CopiedParameterPrefix);
+                context.Emitter.Writer.Append(GSharpInternalNames.SuspendingCall.CopiedParameterPrefix);
             }
 
             context.Emitter.Writer.AppendCppName(

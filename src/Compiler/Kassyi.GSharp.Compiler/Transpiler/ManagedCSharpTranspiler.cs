@@ -23,10 +23,10 @@ internal static class ManagedCSharpTranspiler
         var loweredBody = lowered.LoweredBody;
         var contextFields = lowered.ContextFields;
         var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
+        var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix,
             methodDecl, methodSymbol);
         var stateMachineName = MethodSignatureTranspiler.GetKernelDerivedName(
-            GSharpInternalNames.KernelStateMachinePrefix, methodDecl, methodSymbol);
+            GSharpInternalNames.Kernel.StateMachinePrefix, methodDecl, methodSymbol);
         // Internal-error reports name the kernel as the user wrote it.
         var kernelName = methodDecl.Identifier.ValueText;
 
@@ -58,8 +58,8 @@ internal static class ManagedCSharpTranspiler
         }
 
         var lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel, methodSymbol);
-        var frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, methodSymbol);
-        var stateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.KernelStateMachinePrefix, methodSymbol);
+        var frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol);
+        var stateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, methodSymbol);
         var functionName = methodDecl.Identifier.ValueText;
 
         var (localInits, regularFields, unhoistedSymbols) =
@@ -199,9 +199,9 @@ internal static class ManagedCSharpTranspiler
         SemanticModel semanticModel)
     {
         writer.AppendLine($"public class {contextName} {{");
-        writer.AppendLine($"public int {GSharpInternalNames.State};");
-        writer.AppendLine($"public uint {GSharpInternalNames.WarpExchange};");
-        writer.AppendLine($"public bool {GSharpInternalNames.YieldedForGridSync};");
+        writer.AppendLine($"public int {GSharpInternalNames.StateMachine.State};");
+        writer.AppendLine($"public uint {GSharpInternalNames.StateMachine.WarpExchange};");
+        writer.AppendLine($"public bool {GSharpInternalNames.StateMachine.YieldedForGridSync};");
 
         foreach (var parameter in copiedParameters)
         {
@@ -223,8 +223,8 @@ internal static class ManagedCSharpTranspiler
             var callee = semanticModel.GetSymbol(callSites[i]) as IMethodSymbol
                          ?? throw new InvalidOperationException("A call that may suspend does not resolve to a device function.");
             writer.Append("public ");
-            AppendDeviceFunctionMember(writer, callee, GSharpInternalNames.FrameTypePrefix);
-            writer.AppendLine($" {GSharpInternalNames.CallFramePrefix}{i} = new();");
+            AppendDeviceFunctionMember(writer, callee, GSharpInternalNames.SuspendingCall.FrameTypePrefix);
+            writer.AppendLine($" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
         }
 
         writer.AppendLine("}");
@@ -266,16 +266,16 @@ internal static class ManagedCSharpTranspiler
             });
             writer.AppendCsharpTypeName(p.Type);
             writer.Append(IsCopied(copiedParameters, p)
-                ? $" {GSharpInternalNames.CopiedParameterPrefix}{p.Name}, "
+                ? $" {GSharpInternalNames.SuspendingCall.CopiedParameterPrefix}{p.Name}, "
                 : $" {p.Name.ToCSharpIdentifier()}, ");
         }
 
-        writer.Append($"{frameName} {GSharpInternalNames.Context}");
+        writer.Append($"{frameName} {GSharpInternalNames.StateMachine.Context}");
         if (!methodSymbol.ReturnsVoid)
         {
             writer.Append(", ref ");
             writer.AppendCsharpTypeName(methodSymbol.ReturnType);
-            writer.Append($" {GSharpInternalNames.SuspendingCallResult}");
+            writer.Append($" {GSharpInternalNames.SuspendingCall.Result}");
         }
 
         writer.AppendLine(") {");
@@ -296,11 +296,11 @@ internal static class ManagedCSharpTranspiler
 
         if (copiedParameters.Length > 0)
         {
-            writer.AppendLine($"if ({GSharpInternalNames.Context}.{GSharpInternalNames.State} == 0) {{");
+            writer.AppendLine($"if ({GSharpInternalNames.StateMachine.Context}.{GSharpInternalNames.StateMachine.State} == 0) {{");
             foreach (var parameter in copiedParameters)
             {
                 writer.AppendLine(
-                    $"{GSharpInternalNames.Context}.{parameter.Name.ToCSharpIdentifier()} = {GSharpInternalNames.CopiedParameterPrefix}{parameter.Name};");
+                    $"{GSharpInternalNames.StateMachine.Context}.{parameter.Name.ToCSharpIdentifier()} = {GSharpInternalNames.SuspendingCall.CopiedParameterPrefix}{parameter.Name};");
             }
 
             writer.AppendLine("}");
@@ -389,19 +389,19 @@ internal static class ManagedCSharpTranspiler
             writer.Append($" {p.Name.ToCSharpIdentifier()}, ");
         }
 
-        writer.Append($"{contextName} {GSharpInternalNames.Context}");
+        writer.Append($"{contextName} {GSharpInternalNames.StateMachine.Context}");
 
         if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
         {
             writer.Append(", ref ");
             writer.AppendCsharpTypeName(methodSymbol.ReturnType);
-            writer.Append(" " + GSharpInternalNames.AutoResult);
+            writer.Append(" " + GSharpInternalNames.ReturnValue.Buffer);
         }
     }
 
     /// <summary>Matches <c>__gsharp_ctx-&gt;X</c>, the context access that <see cref="ContextHoister"/> emits.</summary>
     private static bool IsContextPointerAccess(SyntaxNode? node) =>
-        node is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.Text: GSharpInternalNames.Context } } memberAccess &&
+        node is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.Text: GSharpInternalNames.StateMachine.Context } } memberAccess &&
         memberAccess.IsKind(SyntaxKind.PointerMemberAccessExpression);
 
     private sealed class UnhoistRefStructRewriter(
@@ -468,7 +468,7 @@ internal static class ManagedCSharpTranspiler
         // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args, __gsharp_ctx.__gsharp_call_frame_n[, ref target])
         public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            if (node.Expression is not IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.ResumeCall })
+            if (node.Expression is not IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall })
             {
                 return base.VisitInvocationExpression(node);
             }
@@ -492,8 +492,8 @@ internal static class ManagedCSharpTranspiler
 
             callArguments = callArguments.Add(SyntaxFactory.Argument(SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.IdentifierName(GSharpInternalNames.Context),
-                SyntaxFactory.IdentifierName(GSharpInternalNames.CallFramePrefix + frameIndex.Token.ValueText))));
+                SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
+                SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.CallFramePrefix + frameIndex.Token.ValueText))));
 
             if (arguments.Count > 2)
             {
@@ -503,7 +503,7 @@ internal static class ManagedCSharpTranspiler
             }
 
             return SyntaxFactory.InvocationExpression(
-                SyntaxFactory.ParseExpression(GetDeviceFunctionMember(callee, GSharpInternalNames.KernelStateMachinePrefix)),
+                SyntaxFactory.ParseExpression(GetDeviceFunctionMember(callee, GSharpInternalNames.Kernel.StateMachinePrefix)),
                 SyntaxFactory.ArgumentList(callArguments));
         }
 
@@ -542,10 +542,10 @@ internal static class ManagedCSharpTranspiler
             return node.Identifier.Text switch
             {
                 // The managed shuffle helpers keep the warp exchange themselves; any context will do
-                GSharpInternalNames.Root => SyntaxFactory.IdentifierName(GSharpInternalNames.Context).WithTriviaFrom(node),
-                GSharpInternalNames.State or GSharpInternalNames.WarpExchange or GSharpInternalNames.YieldedForGridSync =>
+                GSharpInternalNames.SuspendingCall.Root => SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context).WithTriviaFrom(node),
+                GSharpInternalNames.StateMachine.State or GSharpInternalNames.StateMachine.WarpExchange or GSharpInternalNames.StateMachine.YieldedForGridSync =>
                     SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                            SyntaxFactory.IdentifierName(GSharpInternalNames.Context), node)
+                            SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context), node)
                         .WithTriviaFrom(node),
                 TypeConstants.BitOperationsType => SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
                         SyntaxFactory.IdentifierName("System.Numerics"), SyntaxFactory.IdentifierName(TypeConstants.BitOperationsType))
@@ -670,7 +670,7 @@ internal static class ManagedCSharpTranspiler
                 statements.Add(SyntaxFactory.ExpressionStatement(
                     SyntaxFactory.AssignmentExpression(
                         SyntaxKind.SimpleAssignmentExpression,
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.AutoResult),
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.ReturnValue.Buffer),
                         Visit(node.Expression) as ExpressionSyntax ?? node.Expression
                     )
                 ));
@@ -681,8 +681,8 @@ internal static class ManagedCSharpTranspiler
                     SyntaxKind.SimpleAssignmentExpression,
                     SyntaxFactory.MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.Context),
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.State)),
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State)),
                     SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-1))
                 )
             ));
@@ -708,7 +708,7 @@ internal static class ManagedCSharpTranspiler
                 statements.Add(SyntaxFactory.ExpressionStatement(
                     SyntaxFactory.AssignmentExpression(
                         SyntaxKind.SimpleAssignmentExpression,
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCallResult),
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Result),
                         Visit(node.Expression) as ExpressionSyntax ?? node.Expression)));
             }
 
@@ -717,8 +717,8 @@ internal static class ManagedCSharpTranspiler
                     SyntaxKind.SimpleAssignmentExpression,
                     SyntaxFactory.MemberAccessExpression(
                         SyntaxKind.SimpleMemberAccessExpression,
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.Context),
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.State)),
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State)),
                     SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0)))));
             statements.Add(SyntaxFactory.ReturnStatement(SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)));
 

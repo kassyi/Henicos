@@ -113,7 +113,7 @@ internal static class CppNameResolver
         switch (name.Kind)
         {
             case CppNameKind.FunctionScope:
-                writer.Append(GSharpInternalNames.RenamedIdentifierPrefix);
+                writer.Append(GSharpInternalNames.Renamed.IdentifierPrefix);
                 if (name.Ordinal >= 0)
                 {
                     writer.Append(name.Ordinal).Append('_');
@@ -121,7 +121,7 @@ internal static class CppNameResolver
 
                 break;
             case CppNameKind.Member:
-                writer.Append(GSharpInternalNames.RenamedMemberPrefix);
+                writer.Append(GSharpInternalNames.Renamed.MemberPrefix);
                 break;
         }
 

@@ -131,7 +131,7 @@ internal static class ObjectCreationHelper
             using (context.Emitter.Writer.Scope())
             {
                 context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-                context.Emitter.Writer.AppendSpace().Append(GSharpInternalNames.AggregateTemp);
+                context.Emitter.Writer.AppendSpace().Append(GSharpInternalNames.Lowering.AggregateTemp);
                 TranspileArgumentListAsBraces(argumentList, ref context);
 
                 context.Emitter.Writer.AppendSemiColon();
@@ -144,14 +144,14 @@ internal static class ObjectCreationHelper
                         continue;
                     }
 
-                    context.Emitter.Writer.Append($"{GSharpInternalNames.AggregateTemp}.");
+                    context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.AggregateTemp}.");
                     context.Visitor.Visit(assignment.Left);
                     context.Emitter.Writer.Append(" = ");
                     context.Visitor.Visit(assignment.Right);
                     context.Emitter.Writer.Append("; ");
                 }
 
-                context.Emitter.Writer.Append($"return {GSharpInternalNames.AggregateTemp}; ");
+                context.Emitter.Writer.Append($"return {GSharpInternalNames.Lowering.AggregateTemp}; ");
             }
 
             context.Emitter.Writer.AppendParentheses();
