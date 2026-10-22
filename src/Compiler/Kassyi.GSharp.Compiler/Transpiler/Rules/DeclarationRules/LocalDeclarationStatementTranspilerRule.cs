@@ -15,6 +15,9 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
 {
     private const int MaxSharedMemoryWarningBytes = 32768;
 
+    // The running byte offset into the dynamic shared memory buffer; declared and advanced only by this rule.
+    private const string SharedMemoryOffset = "__gsharp_smem_offset";
+
     private readonly struct SharedMemoryAllocation(
         VariableDeclaratorSyntax declarator,
         ExpressionSyntax sizeArgument,
@@ -140,18 +143,18 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             return;
         }
 
-        context.Emitter.Writer.AppendLine("extern __shared__ char __gsharp_dynamic_smem[];");
-        context.Emitter.Writer.AppendLine("size_t __gsharp_smem_offset = 0;");
+        context.Emitter.Writer.AppendLine($"extern __shared__ char {GSharpInternalNames.Prelude.DynamicSharedMemory}[];");
+        context.Emitter.Writer.AppendLine($"size_t {SharedMemoryOffset} = 0;");
         context.Emitter.HasEmittedDynamicSmemBase = true;
     }
 
     private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref TranspileContext context)
     {
         // [WHY] Computes aligned offset: (offset + align - 1) & ~(align - 1) to avoid CUDA unaligned memory access faults.
-        context.Emitter.Writer.Append("__gsharp_smem_offset = ");
+        context.Emitter.Writer.Append($"{SharedMemoryOffset} = ");
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.Writer.Append("__gsharp_smem_offset + ");
+            context.Emitter.Writer.Append($"{SharedMemoryOffset} + ");
             AppendAlignmentMask(typeArg, ref context);
         }
 
@@ -188,10 +191,10 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             context.Emitter.Writer.Append("*");
         }
 
-        context.Emitter.Writer.Append("(__gsharp_dynamic_smem + __gsharp_smem_offset)");
+        context.Emitter.Writer.Append($"({GSharpInternalNames.Prelude.DynamicSharedMemory} + {SharedMemoryOffset})");
 
         context.Emitter.Writer.AppendLine(";");
-        context.Emitter.Writer.Append("__gsharp_smem_offset += ");
+        context.Emitter.Writer.Append($"{SharedMemoryOffset} += ");
         using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(alloc.SizeArgument);

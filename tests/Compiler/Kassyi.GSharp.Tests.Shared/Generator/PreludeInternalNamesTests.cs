@@ -39,6 +39,17 @@ public partial class PreludeInternalNamesTests
             $"No prelude declares '{identifier}' ({path}); update Resources/Prelude or InternalNames.yml.");
     }
 
+    // The runtime cannot see GSharpInternalNames, so it spells the exported error accessor itself.
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void CpuKernelLoader_LoadsThePreludeErrorAccessor()
+    {
+        var loader = File.ReadAllText(RepositoryPaths.Combine("src", "Runtime", "Kassyi.GSharp.Runtime", "Aot", "CpuKernelLoader.cs"));
+
+        Assert.Contains($"\"{GSharpInternalNames.Prelude.ConsumeLastError}\"", loader);
+    }
+
     [Fact]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.SadPath)]

@@ -103,9 +103,9 @@
     <Touch Files="$(IntermediateOutputPath)GeneratedPrelude.stamp" AlwaysCreate="true" />
   </Target>
 
-  <Target Name="GenerateInternalNames" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)Resources\InternalNames.yml;@(PreludeResourceFiles);$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedInternalNames.stamp">
+  <Target Name="GenerateInternalNames" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)Resources\InternalNames.yml;@(PreludeResourceFiles);$(MSBuildThisFileDirectory)..\..\Core\Kassyi.GSharp.Core\ManagedGpuContext.cs;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedInternalNames.stamp">
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedInternalNames" />
-    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; internal-names &quot;$(MSBuildThisFileDirectory)Resources/InternalNames.yml&quot; &quot;$(MSBuildThisFileDirectory)Resources/Prelude&quot; &quot;$(IntermediateOutputPath)GeneratedInternalNames&quot;" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; internal-names &quot;$(MSBuildThisFileDirectory)Resources/InternalNames.yml&quot; &quot;$(MSBuildThisFileDirectory)Resources/Prelude&quot; &quot;$(MSBuildThisFileDirectory)../../Core/Kassyi.GSharp.Core&quot; &quot;$(IntermediateOutputPath)GeneratedInternalNames&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedInternalNames.stamp" AlwaysCreate="true" />
   </Target>
 

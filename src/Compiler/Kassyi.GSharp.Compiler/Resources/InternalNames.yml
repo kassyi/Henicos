@@ -1,6 +1,8 @@
 # Identifiers the compiler emits into generated host and device code. Each top-level key becomes a nested class of
 # GSharpInternalNames. A name is either `Name: value` or `Name: { Value: value, Prelude: File.hpp }`; Prelude names the
-# Resources/Prelude file that declares the identifier, which the build and PreludeInternalNamesTests check.
+# Resources/Prelude file that declares the identifier, which the build and PreludeInternalNamesTests check. A name may
+# also carry `Managed: File.cs`, a Kassyi.GSharp.Core source that declares the same identifier for managed (C#) kernels;
+# the build checks that too.
 # A name ending in Prefix is followed by a counter or another name, and its value ends in `_`.
 # Only names that something outside one emitter also spells belong here; see the remarks on GSharpInternalNames.
 
@@ -82,17 +84,21 @@ ReturnValue:
     GlobalThreadIndex: __gsharp_global_tid
 
 Prelude:
-  Summary: Functions and globals that the Prelude declares and the emitters call.
+  Summary: Functions and globals that the Prelude declares, used by the emitters or by the runtime loader.
   Names:
     HostLastError: { Value: __gsharp_host_last_error, Prelude: ErrorChannel.hpp }
     ActiveErrorSlot: { Value: __gsharp_active_error_slot, Prelude: ErrorChannel.hpp }
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
+    ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }
     SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
-    WarpExchangeAssign: { Value: __gsharp_warp_exchange_assign, Prelude: WarpAndHints.hpp }
-    WarpShuffleReadSync: { Value: __gsharp_warp_shuffle_read_sync, Prelude: WarpAndHints.hpp }
-    WarpShuffleReadDownSync: { Value: __gsharp_warp_shuffle_read_down_sync, Prelude: WarpAndHints.hpp }
-    WarpShuffleReadUpSync: { Value: __gsharp_warp_shuffle_read_up_sync, Prelude: WarpAndHints.hpp }
-    WarpShuffleReadXorSync: { Value: __gsharp_warp_shuffle_read_xor_sync, Prelude: WarpAndHints.hpp }
+    DynamicSharedMemory: { Value: __gsharp_dynamic_smem, Prelude: ThreadAndMemory.hpp }
+    ResetSharedMemory: { Value: __gsharp_reset_smem, Prelude: ThreadAndMemory.hpp }
+    AllocateSharedMemory: { Value: __gsharp_allocate_smem, Prelude: ThreadAndMemory.hpp }
+    WarpExchangeAssign: { Value: __gsharp_warp_exchange_assign, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
+    WarpShuffleReadSync: { Value: __gsharp_warp_shuffle_read_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
+    WarpShuffleReadDownSync: { Value: __gsharp_warp_shuffle_read_down_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
+    WarpShuffleReadUpSync: { Value: __gsharp_warp_shuffle_read_up_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
+    WarpShuffleReadXorSync: { Value: __gsharp_warp_shuffle_read_xor_sync, Prelude: WarpAndHints.hpp, Managed: ManagedGpuContext.cs }
     Log2For32: { Value: __gsharp_log2_32, Prelude: MathAndBitOps.hpp }
     Log2For64: { Value: __gsharp_log2_64, Prelude: MathAndBitOps.hpp }
     RotateLeftFor32: { Value: __gsharp_rotl32, Prelude: MathAndBitOps.hpp }

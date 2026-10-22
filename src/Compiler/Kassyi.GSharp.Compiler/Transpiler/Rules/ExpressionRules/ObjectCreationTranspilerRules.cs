@@ -59,7 +59,7 @@ internal static class ObjectCreationHelper
             {
                 context.Emitter.Writer.Append(" (");
                 context.Emitter.Dialect.AppendType(ref context, typeArg);
-                context.Emitter.Writer.Append($"*)__gsharp_allocate_smem({siteKey}, ");
+                context.Emitter.Writer.Append($"*){GSharpInternalNames.Prelude.AllocateSharedMemory}({siteKey}, ");
 
                 using (context.Emitter.Writer.Parentheses())
                 {

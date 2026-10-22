@@ -73,7 +73,7 @@ internal static class HostLauncherTranspiler
                     $"int32_t {BlockY} = ({BlockLoopIndex} / {GridDimX}) % {GridDimY};");
                 context.Emitter.Writer.AppendLine(
                     $"int32_t {BlockZ} = {BlockLoopIndex} / ({GridDimX} * {GridDimY});");
-                context.Emitter.Writer.AppendLine("__gsharp_reset_smem();");
+                context.Emitter.Writer.AppendLine($"{ResetSharedMemory}();");
                 if (hasContext)
                 {
                     context.Emitter.Writer.AppendLine(

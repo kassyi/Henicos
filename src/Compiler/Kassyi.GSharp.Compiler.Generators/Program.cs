@@ -28,9 +28,9 @@ public static class Program
             return;
         }
 
-        if (args is ["internal-names", _, _, _, ..])
+        if (args is ["internal-names", _, _, _, _, ..])
         {
-            InternalNamesGenerator.Run(args[1], args[2], args[3]);
+            InternalNamesGenerator.Run(args[1], args[2], args[3], args[4]);
             return;
         }
 
