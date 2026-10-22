@@ -35,8 +35,6 @@ public static class YamlApiGenerator
             definitions.Add(definition);
         }
 
-        var mappingEntries = ImmutableArray.CreateBuilder<KeyValuePair<string, string>>();
-
         foreach (var def in definitions)
         {
             string source;
@@ -52,16 +50,12 @@ public static class YamlApiGenerator
                     fileName = $"{def.ClassName}.g.cs";
                     break;
                 default:
-                    source = NativeApiEmitter.EmitIntrinsics(def, mappingEntries);
+                    source = NativeApiEmitter.EmitIntrinsics(def);
                     fileName = $"{def.ClassName}Intrinsics.g.cs";
                     break;
             }
 
             File.WriteAllText(Path.Combine(outputDir, fileName), source, Encoding.UTF8);
         }
-
-        // Generate mapping info for compiler
-        var mappingSource = NativeApiEmitter.EmitMappingInfo(mappingEntries);
-        File.WriteAllText(Path.Combine(outputDir, "NativeApiMapper.g.cs"), mappingSource, Encoding.UTF8);
     }
 }
