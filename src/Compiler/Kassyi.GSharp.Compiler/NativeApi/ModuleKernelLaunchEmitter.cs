@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// <param name="ArrayElementTypeName">The element type when the parameter is a managed array; otherwise <see langword="null"/>.</param>
 /// <param name="CopyIn">Whether the array is copied to the device before the launch.</param>
 /// <param name="CopyOut">Whether the array is copied back to the host after the launch.</param>
-internal readonly record struct KernelLaunchParameter(
+internal readonly record struct ModuleKernelLaunchParameter(
     string Name,
     string TypeName,
     string? ArrayElementTypeName,
@@ -27,7 +27,7 @@ internal readonly record struct KernelLaunchParameter(
 /// configuration and are not passed to the kernel. Managed arrays are staged through <c>GpuBuffer&lt;T&gt;</c>.
 /// When a stream is given, synchronization is scoped to that stream.
 /// </remarks>
-internal static class KernelLaunchEmitter
+internal static class ModuleKernelLaunchEmitter
 {
     public static bool IsLaunchParameter(string name) =>
         name is "gridDimX" or "gridDimY" or "gridDimZ"
@@ -45,7 +45,7 @@ internal static class KernelLaunchEmitter
     }
 
     public static void EmitNativeContextStruct(SourceWriter writer, string methodName,
-        ImmutableArray<KernelLaunchParameter> parameters)
+        ImmutableArray<ModuleKernelLaunchParameter> parameters)
     {
         writer.AppendLine("[StructLayout(LayoutKind.Sequential)]");
         writer.AppendLine($"private struct __NativeContext_{methodName}");
@@ -75,7 +75,7 @@ internal static class KernelLaunchEmitter
         string moduleName,
         string entryPoint,
         string methodName,
-        ImmutableArray<KernelLaunchParameter> parameters,
+        ImmutableArray<ModuleKernelLaunchParameter> parameters,
         bool packContext)
     {
         writer.AppendLine("using var scope = new GpuKernelLoader.CudaContextScope();");
@@ -141,7 +141,7 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void EmitBufferAllocations(SourceWriter writer, ImmutableArray<KernelLaunchParameter> parameters)
+    private static void EmitBufferAllocations(SourceWriter writer, ImmutableArray<ModuleKernelLaunchParameter> parameters)
     {
         foreach (var param in parameters)
         {
@@ -161,7 +161,7 @@ internal static class KernelLaunchEmitter
     }
 
     private static void EmitContextInitialization(SourceWriter writer, string methodName,
-        ImmutableArray<KernelLaunchParameter> parameters)
+        ImmutableArray<ModuleKernelLaunchParameter> parameters)
     {
         writer.AppendLine($"var ctx = new __NativeContext_{methodName}");
         using (writer.Scope())
@@ -203,7 +203,7 @@ internal static class KernelLaunchEmitter
         writer.AppendLine();
     }
 
-    private static void EmitKernelLaunch(SourceWriter writer, ImmutableArray<KernelLaunchParameter> parameters,
+    private static void EmitKernelLaunch(SourceWriter writer, ImmutableArray<ModuleKernelLaunchParameter> parameters,
         bool packContext)
     {
         var kernelArgsCount = 0;
@@ -288,7 +288,7 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void EmitBufferOutputs(SourceWriter writer, ImmutableArray<KernelLaunchParameter> parameters)
+    private static void EmitBufferOutputs(SourceWriter writer, ImmutableArray<ModuleKernelLaunchParameter> parameters)
     {
         foreach (var param in parameters)
         {
@@ -301,7 +301,7 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static bool HasLaunchParameter(ImmutableArray<KernelLaunchParameter> parameters, string name)
+    private static bool HasLaunchParameter(ImmutableArray<ModuleKernelLaunchParameter> parameters, string name)
     {
         foreach (var p in parameters)
         {
@@ -314,7 +314,7 @@ internal static class KernelLaunchEmitter
         return false;
     }
 
-    private static string GetLaunchParamOrValue(ImmutableArray<KernelLaunchParameter> parameters, string name,
+    private static string GetLaunchParamOrValue(ImmutableArray<ModuleKernelLaunchParameter> parameters, string name,
         string defaultValue) =>
         HasLaunchParameter(parameters, name) ? name : defaultValue;
 }

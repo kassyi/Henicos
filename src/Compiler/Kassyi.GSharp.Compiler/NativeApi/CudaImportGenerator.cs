@@ -158,7 +158,7 @@ public class CudaImportGenerator : IIncrementalGenerator
             {
                 if (generatedFatbins.Add(method.ModuleName))
                 {
-                    KernelLaunchEmitter.EmitModuleCacheField(writer, method.ModuleName);
+                    ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, method.ModuleName);
                 }
             }
 
@@ -167,13 +167,13 @@ public class CudaImportGenerator : IIncrementalGenerator
                 var parameters = method.Parameters.AsImmutableArray();
                 if (method.PackContext)
                 {
-                    KernelLaunchEmitter.EmitNativeContextStruct(writer, method.MethodName, parameters);
+                    ModuleKernelLaunchEmitter.EmitNativeContextStruct(writer, method.MethodName, parameters);
                 }
 
                 writer.AppendLine(method.Signature);
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.EmitLaunchBody(writer, method.ModuleName, method.EntryPoint, method.MethodName, parameters, method.PackContext);
+                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, method.ModuleName, method.EntryPoint, method.MethodName, parameters, method.PackContext);
                 }
             }
         }
@@ -376,9 +376,9 @@ public class CudaImportGenerator : IIncrementalGenerator
         };
     }
 
-    private static ImmutableArray<KernelLaunchParameter> CreateLaunchParameters(IMethodSymbol methodSymbol)
+    private static ImmutableArray<ModuleKernelLaunchParameter> CreateLaunchParameters(IMethodSymbol methodSymbol)
     {
-        var builder = ImmutableArray.CreateBuilder<KernelLaunchParameter>(methodSymbol.Parameters.Length);
+        var builder = ImmutableArray.CreateBuilder<ModuleKernelLaunchParameter>(methodSymbol.Parameters.Length);
         foreach (var param in methodSymbol.Parameters)
         {
             using var typeWriter = new SourceWriter();
@@ -394,7 +394,7 @@ public class CudaImportGenerator : IIncrementalGenerator
 
             var hasIn = param.HasAttribute(KnownAttributes.In);
             var hasOut = param.HasAttribute(KnownAttributes.Out);
-            builder.Add(new KernelLaunchParameter(
+            builder.Add(new ModuleKernelLaunchParameter(
                 param.Name,
                 typeWriter.ToString(),
                 elementTypeName,

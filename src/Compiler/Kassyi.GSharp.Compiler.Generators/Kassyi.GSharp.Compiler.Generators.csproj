@@ -24,7 +24,7 @@
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\YamlSubsetParser.cs" Link="NativeApi\YamlSubsetParser.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiYamlReader.cs" Link="NativeApi\NativeApiYamlReader.cs" />
     <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\NativeApiEmitter.cs" Link="NativeApi\NativeApiEmitter.cs" />
-    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\KernelLaunchEmitter.cs" Link="NativeApi\KernelLaunchEmitter.cs" />
+    <Compile Include="..\Kassyi.GSharp.Compiler\NativeApi\ModuleKernelLaunchEmitter.cs" Link="NativeApi\ModuleKernelLaunchEmitter.cs" />
   </ItemGroup>
 
 </Project>

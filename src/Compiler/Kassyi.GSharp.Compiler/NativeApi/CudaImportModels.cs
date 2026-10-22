@@ -21,7 +21,7 @@ internal readonly record struct CudaImportMethodModel(
     string EntryPoint,
     bool PackContext,
     string Signature,
-    EquatableArray<KernelLaunchParameter> Parameters);
+    EquatableArray<ModuleKernelLaunchParameter> Parameters);
 
 /// <summary>
 /// Value model representing a group of <c>[CudaImport]</c> methods in a single class declaration.

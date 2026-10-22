@@ -45,11 +45,11 @@ internal static class NativeApiEmitter
                 EmitDocumentation(writer, m);
 
                 writer.Append("[LibraryImport(");
-                KernelLaunchEmitter.AppendStringLiteral(writer, def.LibraryName ?? string.Empty);
+                ModuleKernelLaunchEmitter.AppendStringLiteral(writer, def.LibraryName ?? string.Empty);
                 if (!string.IsNullOrEmpty(m.EntryPoint))
                 {
                     writer.Append(", EntryPoint = ");
-                    KernelLaunchEmitter.AppendStringLiteral(writer, m.EntryPoint ?? string.Empty);
+                    ModuleKernelLaunchEmitter.AppendStringLiteral(writer, m.EntryPoint ?? string.Empty);
                 }
 
                 if (!string.IsNullOrEmpty(m.StringMarshalling))
@@ -105,9 +105,9 @@ internal static class NativeApiEmitter
 
                 var isUtf8 = m.StringMarshalling == "Utf8";
                 writer.Append("[DllImport(");
-                KernelLaunchEmitter.AppendStringLiteral(writer, def.LibraryName ?? string.Empty);
+                ModuleKernelLaunchEmitter.AppendStringLiteral(writer, def.LibraryName ?? string.Empty);
                 writer.Append(", EntryPoint = ");
-                KernelLaunchEmitter.AppendStringLiteral(writer,
+                ModuleKernelLaunchEmitter.AppendStringLiteral(writer,
                     string.IsNullOrEmpty(m.EntryPoint) ? m.Name : m.EntryPoint ?? m.Name);
                 writer.Append(", ExactSpelling = true");
                 if (m.StringMarshalling == "Utf16")
@@ -257,7 +257,7 @@ internal static class NativeApiEmitter
         writer.AppendLine($"public static partial class {def.ClassName}");
         using (writer.Scope())
         {
-            KernelLaunchEmitter.EmitModuleCacheField(writer, moduleName);
+            ModuleKernelLaunchEmitter.EmitModuleCacheField(writer, moduleName);
 
             foreach (var m in def.Methods)
             {
@@ -284,7 +284,7 @@ internal static class NativeApiEmitter
                 using (writer.Scope())
                 {
                     var entryPoint = string.IsNullOrEmpty(m.EntryPoint) ? m.Name : m.EntryPoint ?? m.Name;
-                    KernelLaunchEmitter.EmitLaunchBody(writer, moduleName, entryPoint, m.Name, parameters,
+                    ModuleKernelLaunchEmitter.EmitLaunchBody(writer, moduleName, entryPoint, m.Name, parameters,
                         packContext: false);
                 }
 
@@ -360,7 +360,7 @@ internal static class NativeApiEmitter
                     foreach (var def in definitions)
                     {
                         writer.Append("case ");
-                        KernelLaunchEmitter.AppendStringLiteral(writer, def.LibraryName ?? string.Empty);
+                        ModuleKernelLaunchEmitter.AppendStringLiteral(writer, def.LibraryName ?? string.Empty);
                         writer.AppendLine(":");
                         writer.AppendLine("return global::Kassyi.GSharp.Runtime.Interop.NativeLibraryProbe.Load(assembly, searchPath,");
                         writer.AppendLine($"OperatingSystem.IsWindows() ? s_candidates{index}Windows : OperatingSystem.IsLinux() ? s_candidates{index}Linux : s_candidates{index}OSX);");
@@ -390,7 +390,7 @@ internal static class NativeApiEmitter
                     writer.Append(", ");
                 }
 
-                KernelLaunchEmitter.AppendStringLiteral(writer, candidate);
+                ModuleKernelLaunchEmitter.AppendStringLiteral(writer, candidate);
                 first = false;
             }
         }
@@ -401,13 +401,13 @@ internal static class NativeApiEmitter
             writer.Append(", ");
         }
 
-        KernelLaunchEmitter.AppendStringLiteral(writer, libraryName ?? string.Empty);
+        ModuleKernelLaunchEmitter.AppendStringLiteral(writer, libraryName ?? string.Empty);
         writer.AppendLine("];");
     }
 
-    private static ImmutableArray<KernelLaunchParameter> CreateLaunchParameters(ApiMethodDefinition method)
+    private static ImmutableArray<ModuleKernelLaunchParameter> CreateLaunchParameters(ApiMethodDefinition method)
     {
-        var builder = ImmutableArray.CreateBuilder<KernelLaunchParameter>(method.Parameters.Length);
+        var builder = ImmutableArray.CreateBuilder<ModuleKernelLaunchParameter>(method.Parameters.Length);
         foreach (var p in method.Parameters)
         {
             var type = p.Type.AsSpan().Trim().ToString();
@@ -417,7 +417,7 @@ internal static class NativeApiEmitter
                 elementType = type.AsSpan(0, type.Length - 2).TrimEnd().ToString();
             }
 
-            builder.Add(new KernelLaunchParameter(p.Name, type, elementType, CopyIn: true, CopyOut: true));
+            builder.Add(new ModuleKernelLaunchParameter(p.Name, type, elementType, CopyIn: true, CopyOut: true));
         }
 
         return builder.MoveToImmutable();
