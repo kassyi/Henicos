@@ -47,3 +47,19 @@ conditional text, generated-file headers) and the name helpers are listed in
 
 1. **Zero indentation**: All generated lines (including `spc.AddSource` outputs) are fully left-aligned.
 2. **No decorative spacing** around operators/symbols (`=`, `,`, `+`). Use `AppendComma()`, `AppendOperator()`, `AppendKeyword()`, etc. Never hardcode spaces in string literals.
+
+## 4. Building Syntax Trees (`SyntaxFactory`)
+
+Rewriters (`Lowering/`, `ManagedCSharpTranspiler`) build C# with nested `SyntaxFactory` calls, which are unreadable without help.
+
+1. **Shape comment**: Above every tree of more than a few calls, write the C# it produces on one line, with placeholders in `<>` (e.g. `// if (!__gsharp_resume(<call>, <frame index>)) { __gsharp_state = <n>; return; }`). Helpers that build a fixed shape carry it above the declaration.
+2. **One argument per line**: If a call does not fit on one line, put each argument on its own line, one level deeper, and close the parenthesis on its own line aligned with the start of the call. Never stack closers (`))))`).
+3. **Name the inner parts**: When nesting goes past about three levels, pull inner nodes into locals (`var label = ...;`) or small helpers (`CreateStateAssignment`) instead of nesting further.
+
+```csharp
+// <target> = <value>;
+private static ExpressionStatementSyntax Assign(IdentifierNameSyntax target, ExpressionSyntax value) =>
+    SyntaxFactory.ExpressionStatement(
+        SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, target, value)
+    );
+```
