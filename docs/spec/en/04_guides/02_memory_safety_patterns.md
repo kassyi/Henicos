@@ -326,8 +326,11 @@ unsafe {
 
 // ⚠️ Warning (GSH0029): Emits a compiler warning: "Manual unmanaged memory allocation detected."
 // Preserves developer freedom for advanced kernel development but requires manual Gpu.Unsafe.Free().
+// Malloc(int size) returns a void*; Free(void* ptr) releases it.
 unsafe {
     void* p = Gpu.Unsafe.Malloc(sz);
+    // ... use p ...
+    Gpu.Unsafe.Free(p);
 }
 ```
 

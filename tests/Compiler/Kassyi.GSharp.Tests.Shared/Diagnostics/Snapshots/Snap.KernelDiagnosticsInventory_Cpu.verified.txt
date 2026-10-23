@@ -83,6 +83,10 @@
 (30,33)-(30,52) GSH0004 analyzer: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.
 (34,39)-(34,49) GSH0004 analyzer: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.
 
+## Diagnostics/UnsafeMallocWarning.cu.cs
+(10,23)-(10,44) GSH0029 analyzer: Manual unmanaged allocation detected (e.g., Gpu.Unsafe.Malloc). Ensure corresponding Free() is called to prevent VRAM leaks.
+(18,28)-(18,48) GSH0029 analyzer: Manual unmanaged allocation detected (e.g., Gpu.Unsafe.Malloc). Ensure corresponding Free() is called to prevent VRAM leaks.
+
 ## Analyzers/StructSizeDiagnostics.cs
 (65,24)-(65,39) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.OverLimitKernel' take 4112 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
 (71,24)-(71,37) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.PaddingKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.

@@ -10,6 +10,7 @@ internal static class DiagnosticRuleRegistry
         KernelSignatureRule.Instance,
         LinqNotSupportedRule.Instance,
         ManualEnumeratorRule.Instance,
+        ManualUnmanagedAllocationRule.Instance,
         ParamsModifierNotSupportedRule.Instance,
         ProhibitedApiRule.Instance,
         SharedMemorySizeRule.Instance,

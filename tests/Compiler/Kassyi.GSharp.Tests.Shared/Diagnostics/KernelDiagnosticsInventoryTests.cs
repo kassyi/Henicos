@@ -43,6 +43,8 @@ public class KernelDiagnosticsInventoryTests
         "Analyzers/UnrollHintSadPath.cs",
         // GSH0004
         "Generator/KernelReturnTypes_SadPath.cs",
+        // GSH0029
+        "Diagnostics/UnsafeMallocWarning.cu.cs",
         // GSH0013, GSH0064
         "Analyzers/StructSizeDiagnostics.cs",
         // GSH0054
