@@ -95,7 +95,7 @@ While .NET Framework Design Guidelines (FDG) generally avoid abbreviations, spec
     ```
   - For detailed architecture, API reference, and benchmarks, see: [StackLinq Architecture & Specification](../../docs/spec/en/03_bcl_api/linq/00_index.md).
   - **In the G# compiler** (`src/Compiler/Kassyi.GSharp.Compiler`, a netstandard2.0 analyzer): use the copy built into the compiler, `Kassyi.ZeroAlloc.Linq.Embedded` (globally imported). `Kassyi.ZeroAlloc.Linq.Export` generates it from the net10.0 sources on every StackLinq build, so only those sources are maintained. It has no span enumerators, `AsParallel` or generic-math `Sum`. Start a query with `.AsStackEnumerable()` on an array, `ImmutableArray<T>`, `IReadOnlyList<T>`, `SyntaxList<T>`, `SeparatedSyntaxList<T>` or `SyntaxTokenList`, and prefer it to a hand-written loop for a query (`Any`, `All`, `Count`, `First`, `Where` / `Select` chains), whether the loop is a `foreach` or an indexed `for`. Use `static` lambdas so that no closure is allocated; when the lambda needs an outer value, pass it through the state overload (`Where`, `Select`, `Count`, `Any`, `All`, `First`, `FirstOrDefault`), as in `.Any(shortName, static (a, name) => a.IsAttribute(name))`. Pass several values as a tuple. The state overloads are host-only; inside a kernel, a lambda reads outer values directly.
-  - **Chain layout**: put every call of the chain on its own line, `.AsStackEnumerable()` included, one level deeper than the source, even when only one operator follows. A long condition then grows downward instead of to the right.
+  - **Chain layout**: put every call of the chain on its own line, `.AsStackEnumerable()` included, one level deeper than the source, even when only one operator follows. A long condition then grows downward instead of to the right. When an argument spans several lines (a multi-line lambda, a nested chain), close the call on its own line, aligned with the `.Operator(` that opened it; never stack closers (`)))`). A call that follows such a closer continues on the closer line (`).AddTo(names);`).
     ```csharp
     bool hasAttribute = symbol.GetAttributes()
         .AsStackEnumerable()
@@ -106,6 +106,20 @@ While .NET Framework Design Guidelines (FDG) generally avoid abbreviations, spec
         .Where(static p => !p.IsConstantParameter())
         .Select(static p => p.Type)
         .Count();
+
+    bool takesOwnership = type.Constructors
+        .AsStackEnumerable()
+        .Any(static ctor => ctor.Parameters
+            .AsStackEnumerable()
+            .Any(HasTakesOwnershipAttribute)
+        );
+
+    type.Constructors
+        .AsStackEnumerable()
+        .SelectMany(static ctor => ctor.Parameters
+            .AsStackEnumerable()
+        ).Select(static p => p.Name)
+        .AddTo(names);
     ```
 - **Prohibited Over-Refactoring (Preserve Imperative Loops)**:
   - **GPU Kernels (`*.cu`, `*.cu.cs`)**: Never use LINQ. Keep imperative `for` loops so AST lowering can map cleanly to native unrolling (`#pragma unroll`).
