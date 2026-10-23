@@ -13,6 +13,22 @@ public class GpuKernelGenerator : IIncrementalGenerator
     /// <summary>The tracking name of the step that transpiles each <c>[GpuDeviceFunction]</c>.</summary>
     public const string DeviceFunctionTrackingName = "GpuDeviceFunction";
 
+    /// <summary>Collects why a transpilation could not emit a construct (<see cref="TranspileFailure"/>), each reason once.</summary>
+    private sealed class FailureCollector
+    {
+        private readonly ImmutableArray<string>.Builder _failures = ImmutableArray.CreateBuilder<string>();
+
+        public void Fail(string reason)
+        {
+            if (!_failures.Contains(reason))
+            {
+                _failures.Add(reason);
+            }
+        }
+
+        public EquatableArray<string> GetFailures() => _failures.ToImmutable().AsEquatableArray();
+    }
+
     private sealed class DiagnosticCollector
     {
         private readonly ImmutableArray<Diagnostic>.Builder _diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
@@ -160,15 +176,17 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             var cudaCollector = new DiagnosticCollector();
             var cppCollector = new DiagnosticCollector();
+            var cudaFailures = new FailureCollector();
+            var cppFailures = new FailureCollector();
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
             var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: true);
 
-            var cudaSource = MethodTranspiler.GenerateCudaSource(in plan, cudaCollector.Report, cudaDialect,
-                out var requiredIncludesCuda);
-            var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppCollector.Report, cppDialect,
-                out var requiredIncludesCpp);
+            var cudaSource = MethodTranspiler.GenerateCudaSource(in plan, cudaCollector.Report, cudaFailures.Fail,
+                cudaDialect, out var requiredIncludesCuda);
+            var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppCollector.Report, cppFailures.Fail,
+                cppDialect, out var requiredIncludesCpp);
             var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
 
             if (!CheckSuppressGs0001(methodDeclaration))
@@ -183,7 +201,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     managedCSharpSource,
                     new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
                     cudaCollector.GetDiagnostics(),
-                    cppCollector.GetDiagnosticsNotIn(cudaCollector)
+                    cppCollector.GetDiagnosticsNotIn(cudaCollector),
+                    cudaFailures.GetFailures(),
+                    cppFailures.GetFailures()
                 );
             }
 
@@ -200,7 +220,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 managedCSharpSource,
                 new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
                 cudaCollector.GetDiagnostics(),
-                cppCollector.GetDiagnosticsNotIn(cudaCollector)
+                cppCollector.GetDiagnosticsNotIn(cudaCollector),
+                cudaFailures.GetFailures(),
+                cppFailures.GetFailures()
             );
         }
         catch (Exception ex)
@@ -218,7 +240,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
                 "", "", $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n",
                 new EquatableArray<string>(), collector.GetDiagnostics(),
-                new EquatableArray<EquatableDiagnostic>());
+                new EquatableArray<EquatableDiagnostic>(), new EquatableArray<string>(), new EquatableArray<string>());
         }
     }
 
@@ -236,18 +258,22 @@ public class GpuKernelGenerator : IIncrementalGenerator
         {
             var cudaCollector = new DiagnosticCollector();
             var cppCollector = new DiagnosticCollector();
+            var cudaFailures = new FailureCollector();
+            var cppFailures = new FailureCollector();
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
             var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: false);
 
-            var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaCollector.Report, cudaDialect);
-            var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppCollector.Report, cppDialect);
+            var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaCollector.Report, cudaFailures.Fail,
+                cudaDialect);
+            var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppCollector.Report, cppFailures.Fail,
+                cppDialect);
 
-            var cudaBody = MethodTranspiler.GenerateCudaSource(in plan, cudaCollector.Report, cudaDialect,
-                out var requiredIncludesCuda);
-            var cppBody = MethodTranspiler.GenerateCudaSource(in plan, cppCollector.Report, cppDialect,
-                out var requiredIncludesCpp);
+            var cudaBody = MethodTranspiler.GenerateCudaSource(in plan, cudaCollector.Report, cudaFailures.Fail,
+                cudaDialect, out var requiredIncludesCuda);
+            var cppBody = MethodTranspiler.GenerateCudaSource(in plan, cppCollector.Report, cppFailures.Fail,
+                cppDialect, out var requiredIncludesCpp);
 
             // A device function that may suspend has a frame, which embeds the frames of the calls it makes
             var frameName = "";
@@ -277,6 +303,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
                 cudaCollector.GetDiagnostics(),
                 cppCollector.GetDiagnosticsNotIn(cudaCollector),
+                cudaFailures.GetFailures(),
+                cppFailures.GetFailures(),
                 frameName,
                 new EquatableArray<string>(frameDependencies.ToImmutable()),
                 managedCSharpSource);
@@ -297,7 +325,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 methodSymbol.ContainingType.Name,
                 null,
                 "", errorSource, "", errorSource, new EquatableArray<string>(), collector.GetDiagnostics(),
-                new EquatableArray<EquatableDiagnostic>());
+                new EquatableArray<EquatableDiagnostic>(), new EquatableArray<string>(), new EquatableArray<string>());
         }
     }
 

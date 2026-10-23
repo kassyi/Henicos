@@ -210,8 +210,9 @@ public class MicroModifiersTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.FunctionPointerCallingConventions), isDevice: false, dialect: CurrentDialect);
 
-        // Host function pointers cannot be dereferenced on the device, so the parameter is rejected.
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "FunctionPointerType");
+        // Host function pointers cannot be dereferenced on the device; the analyzer rejects the parameter
+        // (KernelSignatureDiagnosticsTests), so the transpiler reports nothing.
+        Assert.Empty(diagnostics);
         await Verify(Report(cudaSource, diagnostics));
 
         Assert.Equal(15, InvokeFunctionPointerTarget());

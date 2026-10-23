@@ -87,7 +87,7 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 
 - `context.Emitter.Writer`: the output (`SourceWriter`).
 - `context.Query.SemanticModel`: symbol lookups.
-- `context.Reporter.Report(descriptor, node, args)`: diagnostics.
+- `context.Reporter.Fail(descriptor, node, args)`: records why the output is incomplete; an analyzer reports the diagnostic.
 - `context.Visitor.Visit(child)`: transpile a child node.
 
 | Intent | Use |
@@ -111,9 +111,9 @@ The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressio
 | ----- | ----- | ----- |
 | Define a diagnostic | an entry in `Diagnostics/diagnostics.json` (generates `GSharpDiagnostics`) | `new DiagnosticDescriptor(...)` |
 | Report from an analyzer | `.ReportDiagnostic` (`context.ReportDiagnostic(descriptor, node, args)`) | `Diagnostic.Create(...)` plus `context.ReportDiagnostic` |
-| Report from the transpiler | `context.Reporter.Report` | throwing, or emitting nothing |
+| The transpiler cannot emit a construct | `context.Reporter.Fail`, with the check an analyzer reports from (`GpuCodeConstraints`) | throwing, emitting nothing, or reporting the diagnostic from the transpiler as well |
 | Check a syntax rule inside kernels | implement `ISyntaxValidationRule` and register it in `DiagnosticRuleRegistry` | a new analyzer that walks kernel bodies again |
-| Decide a G# restriction that the analyzer reports and the transpiler must also respect (`Gpu.InlinePtx` text, unroll factor and loop, `Gpu.SyncGrid` body) | `GpuCodeConstraints.IsInlinePtxText`, `GpuCodeConstraints.TryGetUnrollFactor`, `GpuCodeConstraints.GetUnrolledLoop`, `GpuCodeConstraints.TryGetSyncGridBody` | the same condition written again in the rule and in the transpiler |
+| Decide a G# restriction that the analyzer reports and the transpiler must also respect (return type, instance device function, function pointer, `Gpu.InlinePtx` text, unroll factor and loop, `Gpu.SyncGrid` body) | `GpuCodeConstraints.HasSupportedReturnType`, `GpuCodeConstraints.IsInstanceDeviceFunction`, `GpuCodeConstraints.IsFunctionPointer`, `GpuCodeConstraints.IsInlinePtxText`, `GpuCodeConstraints.TryGetUnrollFactor`, `GpuCodeConstraints.GetUnrolledLoop`, `GpuCodeConstraints.TryGetSyncGridBody` | the same condition written again in the rule and in the transpiler |
 | Diagnostic stored in an incremental pipeline model | `.AsEquatable` | a raw `Diagnostic` field |
 
 ## 6. Incremental generator models

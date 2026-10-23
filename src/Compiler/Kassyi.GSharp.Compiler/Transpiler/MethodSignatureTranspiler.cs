@@ -14,17 +14,16 @@ internal static class MethodSignatureTranspiler
         var method = plan.Declaration;
         var methodSymbol = plan.Symbol;
         var isDevice = plan.Kind != MethodEmissionKind.Kernel;
-        if (isDevice && methodSymbol is { IsStatic: false } && methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction))
+        if (isDevice && methodSymbol != null && GpuCodeConstraints.IsInstanceDeviceFunction(methodSymbol))
         {
-            context.Reporter.Report(
+            context.Reporter.Fail(
                 GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
                 method.Identifier.GetLocation(),
                 methodSymbol.ContainingType.Name,
                 methodSymbol.Name);
         }
 
-        ReportUnsupportedParameterTypes(methodSymbol, ref context);
-        ReportKernelParameterSpace(in plan, ref context);
+        FailUnsupportedParameterTypes(methodSymbol, ref context);
 
         string methodName;
         string? contextName = null;
@@ -92,7 +91,7 @@ internal static class MethodSignatureTranspiler
     public static void WriteSuspendingDeviceSignature(MethodDeclarationSyntax method, IMethodSymbol methodSymbol,
         IReadOnlyCollection<string> copiedParameters, ref TranspileContext context)
     {
-        ReportUnsupportedParameterTypes(methodSymbol, ref context);
+        FailUnsupportedParameterTypes(methodSymbol, ref context);
 
         var methodName = CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)
             ? GlobalCppNames.GetFunctionName(methodSymbol)
@@ -119,46 +118,9 @@ internal static class MethodSignatureTranspiler
         }
     }
 
-    private const int KernelParameterSpaceLimitBytes = 4096;
-
-    private const int DevicePointerBytes = 8;
-
-    // [WHY] CUDA limits total parameter space for kernel arguments to 4 KB (4096 bytes).
-    private static void ReportKernelParameterSpace(in MethodEmissionPlan plan, ref TranspileContext context)
-    {
-        if (plan.Kind != MethodEmissionKind.Kernel || !plan.IsGpuKernelEntry || plan.Symbol is not { } methodSymbol)
-        {
-            return;
-        }
-
-        var method = plan.Declaration;
-
-        var offset = 0;
-        foreach (var parameter in methodSymbol.Parameters)
-        {
-            var layout = parameter.RefKind != RefKind.None
-                ? new CudaLayoutRules.CudaLayoutInfo(DevicePointerBytes, DevicePointerBytes)
-                : CudaLayoutRules.GetCudaLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type);
-
-            offset = CudaLayoutRules.AlignUp(offset, layout.Alignment) + layout.Size;
-        }
-
-        if (plan.HasAutoResult)
-        {
-            offset = CudaLayoutRules.AlignUp(offset, DevicePointerBytes) + DevicePointerBytes;
-        }
-
-        if (offset > KernelParameterSpaceLimitBytes)
-        {
-            // The message names the kernel as the user wrote it, not by its entry point.
-            var kernelName = $"{methodSymbol.ContainingType.Name}.{methodSymbol.Name}";
-            context.Reporter.Report(GSharpDiagnostics.KernelParameterSpaceExceeded, method.Identifier.GetLocation(), kernelName, offset, KernelParameterSpaceLimitBytes);
-        }
-    }
-
-    // [WHY] Reported here rather than in WriteParameters, which also runs for the CPU host launcher
-    // and would duplicate the diagnostic for the same parameter.
-    private static void ReportUnsupportedParameterTypes(IMethodSymbol? methodSymbol, ref TranspileContext context)
+    // [WHY] Checked here rather than in WriteParameters, which also runs for the CPU host launcher
+    // and would record the same parameter twice.
+    private static void FailUnsupportedParameterTypes(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         if (methodSymbol is null)
         {
@@ -167,14 +129,14 @@ internal static class MethodSignatureTranspiler
 
         foreach (var parameter in methodSymbol.Parameters)
         {
-            if (parameter.Type is not IFunctionPointerTypeSymbol ||
+            if (!GpuCodeConstraints.IsFunctionPointer(parameter.Type) ||
                 !parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var paramSyntax) ||
                 paramSyntax.Type is not { } typeSyntax)
             {
                 continue;
             }
 
-            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
         }
     }
 

@@ -9,7 +9,7 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
 {
     private const string TestCasePath = "Analyzers/StructSizeDiagnostics.cs";
 
-    // The generator is run once for the whole class; every case reads the diagnostics inside its own method.
+    // The analyzers and the generator run once for the whole class; every case reads the diagnostics inside its own method.
     private static readonly Lazy<Task<(SyntaxTree Tree, ImmutableArray<Diagnostic> Diagnostics)>> s_result =
         new(RunGeneratorAsync);
 
@@ -63,8 +63,8 @@ public class StructSizeDiagnosticsTests : TranspilerTestBase
 
     private static async Task<(SyntaxTree Tree, ImmutableArray<Diagnostic> Diagnostics)> RunGeneratorAsync()
     {
-        var (_, tree, _) = RoslynTestUtility.GetTestCaseContext(TestCasePath);
-        var diagnostics = await RoslynTestUtility.TestGenerator(TestCasePath).GetDiagnosticsAsync();
-        return (tree, diagnostics);
+        var (tree, analyzer, generator) =
+            await KernelDiagnostics.GetDiagnosticsAsync(RoslynTestUtility.ReadTestCase(TestCasePath), "Cpu");
+        return (tree, analyzer.AddRange(generator));
     }
 }

@@ -7,6 +7,7 @@ internal static class DiagnosticRuleRegistry
         ForEachNotSupportedRule.Instance,
         GpuMacroArgumentRule.Instance,
         ImplicitVarNeedsSuffixRule.Instance,
+        KernelSignatureRule.Instance,
         LinqNotSupportedRule.Instance,
         ManualEnumeratorRule.Instance,
         ParamsModifierNotSupportedRule.Instance,

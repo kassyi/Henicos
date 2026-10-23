@@ -26,7 +26,7 @@
 (18,19)-(18,39) GSH0003 generator: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
 (19,9)-(22,10) GSH0003 generator: The syntax 'UncheckedStatement' is not supported in GSharp GPU kernels
 (30,21)-(30,41) GSH0003 generator: The syntax 'WithExpression' is not supported in GSharp GPU kernels
-(35,35)-(35,54) GSH0003 generator: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
+(35,35)-(35,54) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
 (44,9)-(44,28) GSH0003 generator: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
 
 ## Analyzers/DynamicStackAllocSadPath.cs
@@ -67,15 +67,15 @@
 (6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(10,27)-(10,38) GSH0004 generator: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.
-(14,26)-(14,38) GSH0004 generator: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.
-(30,33)-(30,52) GSH0004 generator: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.
-(34,39)-(34,49) GSH0004 generator: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.
+(10,27)-(10,38) GSH0004 analyzer: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.
+(14,26)-(14,38) GSH0004 analyzer: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.
+(30,33)-(30,52) GSH0004 analyzer: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.
+(34,39)-(34,49) GSH0004 analyzer: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.
 
 ## Analyzers/StructSizeDiagnostics.cs
-(65,24)-(65,39) GSH0064 generator: The parameters of kernel 'StructSizeDiagnosticKernels.OverLimitKernel' take 4112 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
-(71,24)-(71,37) GSH0064 generator: The parameters of kernel 'StructSizeDiagnosticKernels.PaddingKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
-(78,23)-(78,35) GSH0064 generator: The parameters of kernel 'StructSizeDiagnosticKernels.ResultKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
+(65,24)-(65,39) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.OverLimitKernel' take 4112 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
+(71,24)-(71,37) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.PaddingKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
+(78,23)-(78,35) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.ResultKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
 (104,63)-(104,67) GSH0013 generator: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
 
 ## Generator/DialectDiagnostics.cu.cs

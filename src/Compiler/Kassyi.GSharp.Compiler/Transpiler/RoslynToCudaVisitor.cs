@@ -35,6 +35,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// <param name="semanticModel">The Roslyn semantic model bound to the active compilation unit.</param>
     /// <param name="reportDiagnostic">An optional callback delegate to report compiler warnings or errors.</param>
     /// <param name="bclIntrinsicMap">An optional lookup dictionary mapping BCL method symbols to target intrinsics.</param>
+    /// <param name="reportFailure">An optional callback that receives why a construct could not be emitted (<see cref="TranspileFailure"/>).</param>
     /// <returns>A pooled and initialized <see cref="RoslynToCudaVisitor"/> instance ready for traversal.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="dialect"/> or <paramref name="semanticModel"/> is <see langword="null"/>.</exception>
     /// <remarks>
@@ -43,7 +44,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public static RoslynToCudaVisitor Rent(
         ITranspilerDialect dialect,
         SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
-        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
+        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null,
+        Action<string>? reportFailure = null)
     {
         if (dialect is null)
         {
@@ -73,6 +75,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             visitor._activeSwitchIds,
             semanticModel,
             reportDiagnostic,
+            reportFailure,
             visitor,
             bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
             dialect);

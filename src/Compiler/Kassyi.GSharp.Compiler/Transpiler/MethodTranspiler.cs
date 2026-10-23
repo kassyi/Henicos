@@ -38,7 +38,7 @@ public static class MethodTranspiler
         Action<Diagnostic>? reportDiagnostic, bool isDevice,
         ITranspilerDialect dialect, out HashSet<string> requiredIncludes) =>
         GenerateCudaSource(MethodEmissionPlan.Create(methodDecl, semanticModel, isKernel: !isDevice), reportDiagnostic,
-            dialect, out requiredIncludes);
+            reportFailure: null, dialect, out requiredIncludes);
 
     /// <summary>
     /// Transpiles the method of <paramref name="plan"/> into a complete target dialect implementation string, including
@@ -46,14 +46,15 @@ public static class MethodTranspiler
     /// </summary>
     /// <param name="plan">The classified and, where needed, lowered method.</param>
     /// <param name="reportDiagnostic">An optional callback delegate to receive emitted compiler diagnostics and warnings.</param>
+    /// <param name="reportFailure">An optional callback that receives why a construct could not be emitted (<see cref="TranspileFailure"/>).</param>
     /// <param name="dialect">The target language dialect to use for code generation.</param>
     /// <param name="requiredIncludes">
     /// When this method returns, contains the set of header include directives required by the emitted code.
     /// </param>
     internal static string GenerateCudaSource(in MethodEmissionPlan plan, Action<Diagnostic>? reportDiagnostic,
-        ITranspilerDialect dialect, out HashSet<string> requiredIncludes)
+        Action<string>? reportFailure, ITranspilerDialect dialect, out HashSet<string> requiredIncludes)
     {
-        using var session = TranspilationSession.Begin(in plan, reportDiagnostic, dialect);
+        using var session = TranspilationSession.Begin(in plan, reportDiagnostic, reportFailure, dialect);
         if (session.ErrorMessage != null)
         {
             requiredIncludes = [];
@@ -117,20 +118,21 @@ public static class MethodTranspiler
     /// </summary>
     /// <param name="plan">The classified device function.</param>
     /// <param name="reportDiagnostic">An optional callback delegate to receive emitted compiler diagnostics and warnings.</param>
+    /// <param name="reportFailure">An optional callback that receives why a construct could not be emitted (<see cref="TranspileFailure"/>).</param>
     /// <param name="dialect">The target language dialect to use for code generation.</param>
     /// <returns>
     /// A string containing the forward declaration statements suitable for header inclusion.
     /// </returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="plan"/> is a kernel, which has no forward declaration.</exception>
     internal static string GenerateCudaSignature(in MethodEmissionPlan plan, Action<Diagnostic>? reportDiagnostic,
-        ITranspilerDialect dialect)
+        Action<string>? reportFailure, ITranspilerDialect dialect)
     {
         if (plan.Kind == MethodEmissionKind.Kernel)
         {
             throw new ArgumentException("Only a device function has a forward declaration.", nameof(plan));
         }
 
-        using var session = TranspilationSession.Begin(in plan, reportDiagnostic, dialect);
+        using var session = TranspilationSession.Begin(in plan, reportDiagnostic, reportFailure, dialect);
         if (session.ErrorMessage != null)
         {
             return session.ErrorMessage;

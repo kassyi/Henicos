@@ -30,12 +30,18 @@ internal readonly ref struct TranspilationSession
     public static TranspilationSession Begin(
         in MethodEmissionPlan plan,
         Action<Diagnostic>? reportDiagnostic,
+        Action<string>? reportFailure,
         ITranspilerDialect dialect)
     {
         var semanticModel = plan.SemanticModel;
         var methodSymbol = plan.Symbol;
-        if (methodSymbol != null && !GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
+        if (methodSymbol != null && !GpuCodeConstraints.HasSupportedReturnType(methodSymbol))
         {
+            reportFailure?.Invoke(TranspileFailure.Format(
+                GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable,
+                methodSymbol.Locations.Length > 0 ? methodSymbol.Locations[0] : Location.None,
+                [methodSymbol.Name, GpuCodeConstraints.FormatReturnType(methodSymbol)]
+            ));
 #pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path).
             var error =
                 $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
@@ -44,7 +50,7 @@ internal readonly ref struct TranspilationSession
         }
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
+        var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap, reportFailure);
         ref var context = ref visitor.Context;
 
         if (methodSymbol != null)

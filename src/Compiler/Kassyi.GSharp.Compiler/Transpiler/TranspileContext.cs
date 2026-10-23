@@ -61,7 +61,7 @@ public readonly struct Query(
     public HashSet<INamedTypeSymbol> UsedStructs { get; } = usedStructs;
 }
 
-public readonly struct Reporter(Action<Diagnostic>? reportDiagnostic, SemanticModel semanticModel)
+public readonly struct Reporter(Action<Diagnostic>? reportDiagnostic, Action<string>? reportFailure, SemanticModel semanticModel)
 {
     public Action<Diagnostic>? ReportDiagnostic { get; } = reportDiagnostic;
 
@@ -71,6 +71,17 @@ public readonly struct Reporter(Action<Diagnostic>? reportDiagnostic, SemanticMo
 
     public void Report(DiagnosticDescriptor descriptor, Location? location, params object?[]? messageArgs) =>
         ReportDiagnostic.ReportDiagnostic(descriptor, location, messageArgs);
+
+    /// <summary>
+    /// Records that the output is incomplete because of a construct the analyzers report with <paramref name="descriptor"/>
+    /// (<see cref="TranspileFailure"/>). A node of a lowered body is placed at its original location.
+    /// </summary>
+    public void Fail(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[]? messageArgs) =>
+        reportFailure?.Invoke(TranspileFailure.Format(descriptor, semanticModel.GetReportLocation(node), messageArgs));
+
+    /// <inheritdoc cref="Fail(DiagnosticDescriptor, SyntaxNode, object?[])"/>
+    public void Fail(DiagnosticDescriptor descriptor, Location? location, params object?[]? messageArgs) =>
+        reportFailure?.Invoke(TranspileFailure.Format(descriptor, location, messageArgs));
 }
 
 public struct TranspileContext(
@@ -80,13 +91,14 @@ public struct TranspileContext(
     Stack<int> activeSwitchIds,
     SemanticModel semanticModel,
     Action<Diagnostic>? reportDiagnostic,
+    Action<string>? reportFailure,
     RoslynToCudaVisitor visitor,
     ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> bclIntrinsicMap,
     ITranspilerDialect dialect)
 {
     public Emitter Emitter = new(writer, localVariableOverrides, activeSwitchIds, dialect);
     public Query Query = new(semanticModel, bclIntrinsicMap, usedStructs);
-    public Reporter Reporter = new(reportDiagnostic, semanticModel);
+    public Reporter Reporter = new(reportDiagnostic, reportFailure, semanticModel);
 
     public RoslynToCudaVisitor Visitor { get; } = visitor;
     internal TranspilerRuleRegistry RuleRegistry => TranspilerRuleRegistry.Default;

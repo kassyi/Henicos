@@ -10,6 +10,26 @@ namespace Kassyi.GSharp.Compiler;
 /// </remarks>
 internal static class GpuCodeConstraints
 {
+    /// <summary>Whether a GPU function returns <see langword="void"/> or an unmanaged type (GSH0004).</summary>
+    public static bool HasSupportedReturnType(IMethodSymbol method) =>
+        method.ReturnType.SpecialType == SpecialType.System_Void || method.ReturnType.IsUnmanagedType;
+
+    /// <summary>The return type of <paramref name="method"/> as the GSH0004 message names it.</summary>
+    public static string FormatReturnType(IMethodSymbol method) =>
+#pragma warning disable RS0030 // Message text only (not a hot path); keeps the C# spelling of the type.
+        method.ReturnType.ToDisplayString();
+#pragma warning restore RS0030
+
+    /// <summary>Whether <paramref name="method"/> is a <c>[GpuDeviceFunction]</c> that is not static (GSH0066).</summary>
+    public static bool IsInstanceDeviceFunction(IMethodSymbol method) =>
+        !method.IsStatic && method.HasAttribute(KnownAttributes.GpuDeviceFunction);
+
+    /// <summary>
+    /// Whether device code cannot hold a value of <paramref name="type"/> because it is a function pointer, which points into
+    /// host code (GSH0003).
+    /// </summary>
+    public static bool IsFunctionPointer(ITypeSymbol? type) => type is IFunctionPointerTypeSymbol;
+
     /// <summary>
     /// Whether the argument of <c>Gpu.InlinePtx</c> is text known at compile time: a constant string or an interpolated
     /// string (GSH0006).
