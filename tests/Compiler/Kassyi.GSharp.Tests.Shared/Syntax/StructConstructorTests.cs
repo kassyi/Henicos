@@ -14,13 +14,14 @@ public class StructConstructorTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public void Test_StructConstructorCall_IsNotEmittedAsAggregateInitialization(string kernel)
     {
-        var (source, diagnostics) = RoslynTestUtility.TranspileMethod(
+        var (source, failures) = RoslynTestUtility.TranspileMethod(
             typeof(StructConstructorKernels), kernel, isDevice: false, dialect: CurrentDialect);
 
         // A constructor body, default value or argument name cannot survive S{a, b}: either the call must be lowered
-        // to something that runs the constructor, or the compiler must report a diagnostic.
+        // to something that runs the constructor, or the compiler must report a diagnostic. The transpiler reports
+        // through its failures, which the analyzer turns into diagnostics (S-46).
         Assert.True(
-            !source.Contains("CtorScaled{") && !source.Contains("CtorScaled {") || diagnostics.Count > 0,
+            !source.Contains("CtorScaled{") && !source.Contains("CtorScaled {") || failures.Count > 0,
             "new CtorScaled(...) became aggregate initialization without a diagnostic.");
     }
 

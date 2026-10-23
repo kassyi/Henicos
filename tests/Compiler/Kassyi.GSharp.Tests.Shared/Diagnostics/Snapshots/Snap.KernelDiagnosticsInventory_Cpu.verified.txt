@@ -33,6 +33,9 @@
 (32,9)-(35,10) GSH0003 analyzer: The syntax 'ForEachVariableStatement' is not supported in GSharp GPU kernels
 (44,23)-(44,30) GSH0003 analyzer: The syntax 'SpreadElement' is not supported in GSharp GPU kernels
 
+## Diagnostics/ComputedPropertyGetterFailure.cu.cs
+(11,25)-(11,39) GSH0003 analyzer: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
+
 ## Analyzers/DynamicStackAllocSadPath.cs
 (6,21)-(6,55) GSH0036 analyzer: The class 'SYN13_DynamicStackAllocSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (13,43)-(13,54) GSH0003 analyzer: The syntax 'dynamic array size' is not supported in GSharp GPU kernels
