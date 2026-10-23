@@ -188,16 +188,20 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             {
                 // 'out int x' declares a local that the callee writes on its last resume, so it is declared before the
                 // call. The declarator and the reference keep the span of the designation, which names the local.
-                var annotations = designation.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind);
+                var annotations = ImmutableArray.CreateRange(
+                    designation.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
+                );
                 var identifier = designation.Identifier.WithoutTrivia();
-                hoistedAssignments.Add(SyntaxFactory.LocalDeclarationStatement(
-                    SyntaxFactory.VariableDeclaration(
-                        declarationExpression.Type.WithoutTrivia(),
-                        SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.VariableDeclarator(identifier).WithAdditionalAnnotations(annotations)
+                // <type> x;
+                var declarator = SyntaxFactory.VariableDeclarator(identifier).WithAdditionalAnnotations(annotations);
+                hoistedAssignments.Add(
+                    SyntaxFactory.LocalDeclarationStatement(
+                        SyntaxFactory.VariableDeclaration(
+                            declarationExpression.Type.WithoutTrivia(),
+                            SyntaxFactory.SingletonSeparatedList(declarator)
                         )
-                    )
-                ).NormalizeWhitespace());
+                    ).NormalizeWhitespace()
+                );
 
                 return argument.WithExpression(SyntaxFactory.IdentifierName(identifier)
                     .WithAdditionalAnnotations(annotations)
@@ -246,20 +250,18 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(expression);
         }
 
-        internal static LocalDeclarationStatementSyntax
-            CreateTempDeclaration(string tempName, ExpressionSyntax value) =>
-            SyntaxFactory.LocalDeclarationStatement(
+        // var <tempName> = <value>;
+        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value)
+        {
+            var declarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(tempName))
+                .WithInitializer(SyntaxFactory.EqualsValueClause(value));
+            return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),
-                    SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.VariableDeclarator(
-                            SyntaxFactory.Identifier(tempName)
-                        ).WithInitializer(
-                            SyntaxFactory.EqualsValueClause(value)
-                        )
-                    )
+                    SyntaxFactory.SingletonSeparatedList(declarator)
                 )
             ).NormalizeWhitespace();
+        }
     }
 }
 

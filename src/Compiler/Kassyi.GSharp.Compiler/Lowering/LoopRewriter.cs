@@ -161,9 +161,11 @@ public class LoopRewriter : CSharpSyntaxRewriter
 
         if (!isPostCondition && condition != null)
         {
+            // if (!(<condition>)) goto <end label>;
             var notCondition = SyntaxFactory.PrefixUnaryExpression(
                 SyntaxKind.LogicalNotExpression,
-                SyntaxFactory.ParenthesizedExpression((ExpressionSyntax)Visit(condition)));
+                SyntaxFactory.ParenthesizedExpression((ExpressionSyntax)Visit(condition))
+            );
             var gotoEnd = SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(endLabel));
             statements.Add(SyntaxFactory.IfStatement(notCondition, gotoEnd));
         }

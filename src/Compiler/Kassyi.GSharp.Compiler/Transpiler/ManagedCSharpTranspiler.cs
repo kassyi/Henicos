@@ -32,8 +32,10 @@ internal static class ManagedCSharpTranspiler
         var (localInits, regularFields, unhoistedSymbols) =
             ProcessContextFields(contextFields, semanticModel, kernelName);
 
-        var unhoistedBody = new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, kernelName).Visit(loweredBody) as BlockSyntax
-                            ?? throw new InvalidOperationException($"Unhoisting ref-struct fields removed the body of kernel '{kernelName}'.");
+        var unhoistedBody =
+            new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, kernelName).Visit(loweredBody) as BlockSyntax
+            ?? throw new InvalidOperationException(
+                $"Unhoisting ref-struct fields removed the body of kernel '{kernelName}'.");
         var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: false);
 
         using var writer = new SourceWriter();
@@ -57,16 +59,21 @@ internal static class ManagedCSharpTranspiler
         }
 
         var lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel, methodSymbol);
-        var frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol);
-        var stateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, methodSymbol);
+        var frameName =
+            GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol);
+        var stateMachineName =
+            GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, methodSymbol);
         var functionName = methodDecl.Identifier.ValueText;
 
         var (localInits, regularFields, unhoistedSymbols) =
             ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
         var copiedParameters = MethodTranspiler.GetCopiedParameters(lowered, methodSymbol);
 
-        var unhoistedBody = new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, functionName).Visit(lowered.LoweredBody) as BlockSyntax
-                            ?? throw new InvalidOperationException($"Unhoisting ref-struct fields removed the body of device function '{functionName}'.");
+        var unhoistedBody =
+            new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, functionName).Visit(lowered.LoweredBody) as
+                BlockSyntax
+            ?? throw new InvalidOperationException(
+                $"Unhoisting ref-struct fields removed the body of device function '{functionName}'.");
         var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true);
 
         using var writer = new SourceWriter();
@@ -90,12 +97,16 @@ internal static class ManagedCSharpTranspiler
     }
 
     /// <summary>A hoisted context field with the type that <see cref="HoistedFieldTypeResolver"/> resolved for it.</summary>
-    private readonly record struct ContextField(VariableDeclaratorSyntax Declarator, TypeSyntax DeclaredType, ITypeSymbol ResolvedType)
+    private readonly record struct ContextField(
+        VariableDeclaratorSyntax Declarator,
+        TypeSyntax DeclaredType,
+        ITypeSymbol ResolvedType)
     {
         public string Name => Declarator.Identifier.ValueText.ToCSharpIdentifier();
     }
 
-    private static (ImmutableArray<ContextField> LocalInits, ImmutableArray<ContextField> RegularFields, HashSet<ILocalSymbol> UnhoistedSymbols)
+    private static (ImmutableArray<ContextField> LocalInits, ImmutableArray<ContextField> RegularFields,
+        HashSet<ILocalSymbol> UnhoistedSymbols)
         ProcessContextFields(
             IReadOnlyList<VariableDeclaratorSyntax>? contextFields,
             SemanticModel semanticModel,
@@ -139,7 +150,8 @@ internal static class ManagedCSharpTranspiler
         return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedSymbols);
     }
 
-    private static TNode AddSharedMemorySiteKeys<TNode>(TNode node, SemanticModel semanticModel) where TNode : SyntaxNode
+    private static TNode AddSharedMemorySiteKeys<TNode>(TNode node, SemanticModel semanticModel)
+        where TNode : SyntaxNode
     {
         var creations = ImmutableArray.CreateBuilder<BaseObjectCreationExpressionSyntax>();
         foreach (var descendant in node.DescendantNodes())
@@ -153,13 +165,15 @@ internal static class ManagedCSharpTranspiler
 
         return creations.Count == 0
             ? node
-            : node.ReplaceNodes(creations, (original, rewritten) => AddSharedMemorySiteKey(original, rewritten, semanticModel));
+            : node.ReplaceNodes(creations,
+                (original, rewritten) => AddSharedMemorySiteKey(original, rewritten, semanticModel));
     }
 
     // [WHY] new SharedMemory<T>(n) becomes new SharedMemory<T>(n, key): the buffer belongs to the declaration, one per
     // block, like a CUDA __shared__ variable (see SharedMemorySiteKey). The key is computed from the original node,
     // whose annotations map it to the source.
-    private static BaseObjectCreationExpressionSyntax AddSharedMemorySiteKey(BaseObjectCreationExpressionSyntax original,
+    private static BaseObjectCreationExpressionSyntax AddSharedMemorySiteKey(
+        BaseObjectCreationExpressionSyntax original,
         BaseObjectCreationExpressionSyntax rewritten, SemanticModel semanticModel)
     {
         var key = SharedMemorySiteKey.Compute(semanticModel, original);
@@ -220,7 +234,8 @@ internal static class ManagedCSharpTranspiler
         for (var i = 0; i < callSites.Count; i++)
         {
             var callee = semanticModel.GetSymbol(callSites[i]) as IMethodSymbol
-                         ?? throw new InvalidOperationException("A call that may suspend does not resolve to a device function.");
+                         ?? throw new InvalidOperationException(
+                             "A call that may suspend does not resolve to a device function.");
             writer.Append("public ");
             AppendDeviceFunctionMember(writer, callee, GSharpInternalNames.SuspendingCall.FrameTypePrefix);
             writer.AppendLine($" {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i} = new();");
@@ -295,7 +310,8 @@ internal static class ManagedCSharpTranspiler
 
         if (copiedParameters.Length > 0)
         {
-            writer.AppendLine($"if ({GSharpInternalNames.StateMachine.Context}.{GSharpInternalNames.StateMachine.State} == 0) {{");
+            writer.AppendLine(
+                $"if ({GSharpInternalNames.StateMachine.Context}.{GSharpInternalNames.StateMachine.State} == 0) {{");
             foreach (var parameter in copiedParameters)
             {
                 writer.AppendLine(
@@ -306,7 +322,8 @@ internal static class ManagedCSharpTranspiler
         }
 
         writer.AppendLine(bodySource);
-        writer.AppendLine("throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
+        writer.AppendLine(
+            "throw new global::System.InvalidOperationException(\"The device function state machine reached an unknown state.\");");
         writer.AppendLine("}");
         writer.AppendLine();
     }
@@ -400,7 +417,10 @@ internal static class ManagedCSharpTranspiler
 
     /// <summary>Matches <c>__gsharp_ctx-&gt;X</c>, the context access that <see cref="ContextHoister"/> emits.</summary>
     private static bool IsContextPointerAccess(SyntaxNode? node) =>
-        node is MemberAccessExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.Text: GSharpInternalNames.StateMachine.Context } } memberAccess &&
+        node is MemberAccessExpressionSyntax
+        {
+            Expression: IdentifierNameSyntax { Identifier.Text: GSharpInternalNames.StateMachine.Context }
+        } memberAccess &&
         memberAccess.IsKind(SyntaxKind.PointerMemberAccessExpression);
 
     private sealed class UnhoistRefStructRewriter(
@@ -411,11 +431,13 @@ internal static class ManagedCSharpTranspiler
         public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
             VisitCreation(node, base.VisitObjectCreationExpression(node));
 
-        public override SyntaxNode? VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
+        public override SyntaxNode?
+            VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
             VisitCreation(node, base.VisitImplicitObjectCreationExpression(node));
 
         private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited) =>
-            visited is BaseObjectCreationExpressionSyntax rewritten && semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
+            visited is BaseObjectCreationExpressionSyntax rewritten &&
+            semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
                 ? AddSharedMemorySiteKey(node, rewritten, semanticModel)
                 : visited;
 
@@ -436,7 +458,10 @@ internal static class ManagedCSharpTranspiler
 
         public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
         {
-            if (node.Expression is AssignmentExpressionSyntax { Left: MemberAccessExpressionSyntax memberAccess } assignment &&
+            if (node.Expression is AssignmentExpressionSyntax
+                {
+                    Left: MemberAccessExpressionSyntax memberAccess
+                } assignment &&
                 assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) &&
                 IsContextPointerAccess(memberAccess))
             {
@@ -460,14 +485,18 @@ internal static class ManagedCSharpTranspiler
         }
     }
 
-    private sealed class ManagedExecutionRewriter(SemanticModel semanticModel, bool isDeviceFunction) : CSharpSyntaxRewriter
+    private sealed class ManagedExecutionRewriter(SemanticModel semanticModel, bool isDeviceFunction)
+        : CSharpSyntaxRewriter
     {
         private int _inLambdaOrLocalFuncCount;
 
         // __gsharp_resume(Foo(args), n[, target]) becomes Class.__gsharp_statemachine_Foo(args, __gsharp_ctx.__gsharp_call_frame_n[, ref target])
         public override SyntaxNode? VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            if (node.Expression is not IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall })
+            if (node.Expression is not IdentifierNameSyntax
+                {
+                    Identifier.ValueText: GSharpInternalNames.SuspendingCall.ResumeCall
+                })
             {
                 return base.VisitInvocationExpression(node);
             }
@@ -489,31 +518,43 @@ internal static class ManagedCSharpTranspiler
                     : visited);
             }
 
-            callArguments = callArguments.Add(SyntaxFactory.Argument(SyntaxFactory.MemberAccessExpression(
+            // __gsharp_ctx.__gsharp_call_frame_<frame index>
+            var frameName = GSharpInternalNames.SuspendingCall.CallFramePrefix + frameIndex.Token.ValueText;
+            var frame = SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,
                 SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
-                SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.CallFramePrefix + frameIndex.Token.ValueText))));
+                SyntaxFactory.IdentifierName(frameName)
+            );
+            callArguments = callArguments.Add(SyntaxFactory.Argument(frame));
 
-            if (arguments.Count > 2)
+            if (arguments.Count <= 2)
             {
-                var target = Visit(arguments[2].Expression) as ExpressionSyntax ?? arguments[2].Expression;
-                callArguments = callArguments.Add(SyntaxFactory.Argument(target)
-                    .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword)));
+                return SyntaxFactory.InvocationExpression(
+                    SyntaxFactory.ParseExpression(GetDeviceFunctionMember(callee,
+                        GSharpInternalNames.Kernel.StateMachinePrefix)),
+                    SyntaxFactory.ArgumentList(callArguments));
             }
 
+            var target = Visit(arguments[2].Expression) as ExpressionSyntax ?? arguments[2].Expression;
+            callArguments = callArguments.Add(SyntaxFactory.Argument(target)
+                .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword)));
+
             return SyntaxFactory.InvocationExpression(
-                SyntaxFactory.ParseExpression(GetDeviceFunctionMember(callee, GSharpInternalNames.Kernel.StateMachinePrefix)),
+                SyntaxFactory.ParseExpression(GetDeviceFunctionMember(callee,
+                    GSharpInternalNames.Kernel.StateMachinePrefix)),
                 SyntaxFactory.ArgumentList(callArguments));
         }
 
         public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
             VisitCreation(node, base.VisitObjectCreationExpression(node));
 
-        public override SyntaxNode? VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
+        public override SyntaxNode?
+            VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
             VisitCreation(node, base.VisitImplicitObjectCreationExpression(node));
 
         private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited) =>
-            visited is BaseObjectCreationExpressionSyntax rewritten && semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
+            visited is BaseObjectCreationExpressionSyntax rewritten &&
+            semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
                 ? AddSharedMemorySiteKey(node, rewritten, semanticModel)
                 : visited;
 
@@ -541,14 +582,24 @@ internal static class ManagedCSharpTranspiler
             return node.Identifier.Text switch
             {
                 // The managed shuffle helpers keep the warp exchange themselves; any context will do
-                GSharpInternalNames.SuspendingCall.Root => SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context).WithTriviaFrom(node),
-                GSharpInternalNames.StateMachine.State or GSharpInternalNames.StateMachine.WarpExchange or GSharpInternalNames.StateMachine.YieldedForGridSync =>
-                    SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                            SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context), node)
-                        .WithTriviaFrom(node),
-                TypeConstants.BitOperationsType => SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression,
-                        SyntaxFactory.IdentifierName("System.Numerics"), SyntaxFactory.IdentifierName(TypeConstants.BitOperationsType))
-                    .WithTriviaFrom(node),
+                GSharpInternalNames.SuspendingCall.Root =>
+                    SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context).WithTriviaFrom(node),
+                // __gsharp_ctx.<name>
+                GSharpInternalNames.StateMachine.State
+                    or GSharpInternalNames.StateMachine.WarpExchange
+                    or GSharpInternalNames.StateMachine.YieldedForGridSync =>
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
+                        node
+                    ).WithTriviaFrom(node),
+                // System.Numerics.BitOperations
+                TypeConstants.BitOperationsType =>
+                    SyntaxFactory.MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        SyntaxFactory.IdentifierName("System.Numerics"),
+                        SyntaxFactory.IdentifierName(TypeConstants.BitOperationsType)
+                    ).WithTriviaFrom(node),
                 _ => base.VisitIdentifierName(node)
             };
         }
@@ -617,10 +668,13 @@ internal static class ManagedCSharpTranspiler
                 "global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX");
             // Visit the count so that context accesses in it are rewritten like the rest of the body
             var countExpr = Visit(countArg) as ExpressionSyntax ?? countArg;
+
+            // for (int i = <start>; i < (<count>); i += <step>) <body>
             var condition = SyntaxFactory.BinaryExpression(
                 SyntaxKind.LessThanExpression,
                 SyntaxFactory.IdentifierName(loopVar),
-                SyntaxFactory.ParenthesizedExpression(countExpr));
+                SyntaxFactory.ParenthesizedExpression(countExpr)
+            );
 
             var declaration = SyntaxFactory.VariableDeclaration(
                 SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword)),
@@ -657,35 +711,26 @@ internal static class ManagedCSharpTranspiler
                 return RewriteDeviceFunctionReturn(node);
             }
 
-            if (_inLambdaOrLocalFuncCount != 0 || node.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind))
+            if (_inLambdaOrLocalFuncCount != 0 ||
+                node.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind))
             {
                 return base.VisitReturnStatement(node);
             }
 
             var statements = ImmutableArray.CreateBuilder<StatementSyntax>(3);
 
+            // { [__gsharp_auto_result = <value>;] __gsharp_ctx.__gsharp_state = -1; return; }
             if (node.Expression != null)
             {
-                statements.Add(SyntaxFactory.ExpressionStatement(
-                    SyntaxFactory.AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
+                statements.Add(
+                    CreateAssignment(
                         SyntaxFactory.IdentifierName(GSharpInternalNames.ReturnValue.Buffer),
                         Visit(node.Expression) as ExpressionSyntax ?? node.Expression
                     )
-                ));
+                );
             }
 
-            statements.Add(SyntaxFactory.ExpressionStatement(
-                SyntaxFactory.AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    SyntaxFactory.MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State)),
-                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(-1))
-                )
-            ));
-
+            statements.Add(CreateContextStateAssignment(-1));
             statements.Add(SyntaxFactory.ReturnStatement());
 
             return SyntaxFactory.Block(statements).WithTriviaFrom(node);
@@ -697,31 +742,45 @@ internal static class ManagedCSharpTranspiler
         {
             if (node.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind))
             {
+                // return false;
                 return SyntaxFactory.ReturnStatement(SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression))
                     .WithTriviaFrom(node);
             }
 
+            // { [__gsharp_result = <value>;] __gsharp_ctx.__gsharp_state = 0; return true; }
             var statements = ImmutableArray.CreateBuilder<StatementSyntax>(3);
             if (node.Expression != null)
             {
-                statements.Add(SyntaxFactory.ExpressionStatement(
-                    SyntaxFactory.AssignmentExpression(
-                        SyntaxKind.SimpleAssignmentExpression,
+                statements.Add(
+                    CreateAssignment(
                         SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Result),
-                        Visit(node.Expression) as ExpressionSyntax ?? node.Expression)));
+                        Visit(node.Expression) as ExpressionSyntax ?? node.Expression
+                    )
+                );
             }
 
-            statements.Add(SyntaxFactory.ExpressionStatement(
-                SyntaxFactory.AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    SyntaxFactory.MemberAccessExpression(
-                        SyntaxKind.SimpleMemberAccessExpression,
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
-                        SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State)),
-                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(0)))));
-            statements.Add(SyntaxFactory.ReturnStatement(SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)));
+            statements.Add(CreateContextStateAssignment(0));
+            statements.Add(
+                SyntaxFactory.ReturnStatement(SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)));
 
             return SyntaxFactory.Block(statements).WithTriviaFrom(node);
         }
+
+        // <target> = <value>;
+        private static ExpressionStatementSyntax CreateAssignment(ExpressionSyntax target, ExpressionSyntax value) =>
+            SyntaxFactory.ExpressionStatement(
+                SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, target, value)
+            );
+
+        // __gsharp_ctx.__gsharp_state = <state>;
+        private static ExpressionStatementSyntax CreateContextStateAssignment(int state) =>
+            CreateAssignment(
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
+                    SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State)
+                ),
+                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state))
+            );
     }
 }

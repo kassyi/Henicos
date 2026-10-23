@@ -103,26 +103,26 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
                 ExpressionSyntax guard = binary.IsKind(SyntaxKind.LogicalAndExpression)
                     ? temp
                     : SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, temp);
-                return (ImmutableArray.Create<StatementSyntax>(
+                var statements = ImmutableArray.Create<StatementSyntax>(
                     CreateTempDeclaration(name, binary.Left.WithoutTrivia()),
                     SyntaxFactory.IfStatement(guard, SyntaxFactory.Block(Assign(temp, binary.Right)))
-                ), temp);
+                );
+                return (statements, temp);
             }
             case ConditionalExpressionSyntax ternary:
             {
                 // var t = default; if (c) { t = whenTrue; } else { t = whenFalse; }
                 var typedDefault = SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression)
-                    .WithAdditionalAnnotations(ternary.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
-                    );
-                return (ImmutableArray.Create<StatementSyntax>(
-                        CreateTempDeclaration(name, typedDefault),
-                        SyntaxFactory.IfStatement(
-                            ternary.Condition.WithoutTrivia(),
-                            SyntaxFactory.Block(Assign(temp, ternary.WhenTrue)),
-                            SyntaxFactory.ElseClause(SyntaxFactory.Block(Assign(temp, ternary.WhenFalse)))
-                        )
+                    .WithAdditionalAnnotations(ternary.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+                var statements = ImmutableArray.Create<StatementSyntax>(
+                    CreateTempDeclaration(name, typedDefault),
+                    SyntaxFactory.IfStatement(
+                        ternary.Condition.WithoutTrivia(),
+                        SyntaxFactory.Block(Assign(temp, ternary.WhenTrue)),
+                        SyntaxFactory.ElseClause(SyntaxFactory.Block(Assign(temp, ternary.WhenFalse)))
                     )
-                    , temp);
+                );
+                return (statements, temp);
             }
             default:
                 throw new InvalidOperationException(
@@ -179,10 +179,13 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
         return false;
     }
 
+    // <target> = <value>;
     private static ExpressionStatementSyntax Assign(IdentifierNameSyntax target, ExpressionSyntax value) =>
-        SyntaxFactory.ExpressionStatement(SyntaxFactory.AssignmentExpression(
-            SyntaxKind.SimpleAssignmentExpression, target, value.WithoutTrivia()));
+        SyntaxFactory.ExpressionStatement(
+            SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, target, value.WithoutTrivia())
+        );
 
+    // var <name> = <value>;
     private static LocalDeclarationStatementSyntax CreateTempDeclaration(string name, ExpressionSyntax value) =>
         SyntaxFactory.LocalDeclarationStatement(
             SyntaxFactory.VariableDeclaration(
