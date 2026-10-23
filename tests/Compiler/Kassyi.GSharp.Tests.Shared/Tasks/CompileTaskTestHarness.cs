@@ -18,7 +18,9 @@ internal class MockBuildEngine : IBuildEngine
     public string ProjectFileOfTaskNode => "";
 
     public List<string> LoggedErrors { get; } = new();
+    public List<string> LoggedErrorCodes { get; } = new();
     public List<string> LoggedWarnings { get; } = new();
+    public List<string> LoggedWarningCodes { get; } = new();
     public List<string> LoggedMessages { get; } = new();
 
     public virtual bool BuildProjectFile(string projectFileName, string[] targetNames,
@@ -31,7 +33,7 @@ internal class MockBuildEngine : IBuildEngine
     public virtual void LogErrorEvent(BuildErrorEventArgs e)
     {
         if (e.Message != null) LoggedErrors.Add(e.Message);
-        Console.WriteLine($"ERROR: {e.Message}");
+        if (e.Code != null) LoggedErrorCodes.Add(e.Code);
     }
 
     public virtual void LogMessageEvent(BuildMessageEventArgs e)
@@ -42,7 +44,7 @@ internal class MockBuildEngine : IBuildEngine
     public virtual void LogWarningEvent(BuildWarningEventArgs e)
     {
         if (e.Message != null) LoggedWarnings.Add(e.Message);
-        Console.WriteLine($"WARN: {e.Message}");
+        if (e.Code != null) LoggedWarningCodes.Add(e.Code);
     }
 }
 

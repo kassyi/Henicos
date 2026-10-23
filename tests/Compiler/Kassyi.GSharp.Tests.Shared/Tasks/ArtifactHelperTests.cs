@@ -142,44 +142,4 @@ public class ArtifactHelperTests
             }
         }
     }
-
-    private sealed class MockBuildEngine : IBuildEngine
-    {
-        public bool ContinueOnError => false;
-        public int LineNumberOfTaskNode => 0;
-        public int ColumnNumberOfTaskNode => 0;
-        public string ProjectFileOfTaskNode => string.Empty;
-        public List<string> LoggedWarnings { get; } = [];
-        public List<string> LoggedWarningCodes { get; } = [];
-        public List<string> LoggedErrors { get; } = [];
-        public List<string> LoggedErrorCodes { get; } = [];
-
-        public bool BuildProjectFile(string projectFileName, string[] targetNames, IDictionary globalProperties, IDictionary targetOutputs) => true;
-        public void LogCustomEvent(CustomBuildEventArgs e) { }
-        public void LogErrorEvent(BuildErrorEventArgs e)
-        {
-            if (e.Message != null)
-            {
-                LoggedErrors.Add(e.Message);
-            }
-
-            if (e.Code != null)
-            {
-                LoggedErrorCodes.Add(e.Code);
-            }
-        }
-        public void LogMessageEvent(BuildMessageEventArgs e) { }
-        public void LogWarningEvent(BuildWarningEventArgs e)
-        {
-            if (e.Message != null)
-            {
-                LoggedWarnings.Add(e.Message);
-            }
-
-            if (e.Code != null)
-            {
-                LoggedWarningCodes.Add(e.Code);
-            }
-        }
-    }
 }
