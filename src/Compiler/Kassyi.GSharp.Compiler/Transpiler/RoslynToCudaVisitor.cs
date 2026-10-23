@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
@@ -372,6 +373,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
                 Context.Emitter.Writer.AppendCppName(
                     CppNameResolver.Resolve(symbol, node.Identifier.ValueText, Context.Emitter.Dialect));
+                ComputedPropertyGetterCall.AppendCallIfGetter(symbol, ref Context);
                 break;
         }
     }

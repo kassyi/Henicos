@@ -27,7 +27,8 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | Is it `SharedMemory<T>` / `System.Numerics.Vector*`? | `.IsSharedMemoryType`, `.IsSystemNumericsVector` | `Name == "SharedMemory"` |
 | Is this a user struct that G# defines on the device? | `GlobalCppNames.IsEmittedUserType` (definition), `GlobalCppNames.IsEncodedUserType` (references, gives way to the dialect type map) | `TypeKind == Struct && !IsSystemOrNumerics() && !IsSharedMemoryType()` spelled out |
 | Does a struct need a native shadow struct on the host? | `CudaLayoutRules.IsCustomStruct` (a different classification: also leaves out array-like and Core types) | reusing the device predicate |
-| Members that make up a struct's native layout (used struct discovery, device definition, shadow struct, marshaling, `CudaLayoutRules`) | `StructAbiMembers.Get` (a `foreach` over `StructAbiMember`: `Symbol`, `Name`, `Type`, `ElementCount`, `Kind`; allocates nothing; its remarks list where the host and the device still disagree) | `GetMembers()` plus `is IFieldSymbol { IsStatic: false }` |
+| Members that make up a struct's native layout (used struct discovery, device definition, shadow struct, marshaling, `CudaLayoutRules`) | `StructAbiMembers.Get` (a `foreach` over `StructAbiMember`: `Symbol`, `Name`, `Type`, `ElementCount`, `Kind`; allocates nothing) | `GetMembers()` plus `is IFieldSymbol { IsStatic: false }` |
+| Is this a computed property (no backing field, `get` only), which the device emits as a getter member function? | `StructAbiMembers.IsComputedProperty` | a search of `GetMembers()` for a field whose `AssociatedSymbol` is the property |
 | Native offsets of a struct's fields (`[StructLayout(Pack = n)]` applied) | `CudaLayoutRules.GetFieldLayouts`; the size and alignment of a whole type: `CudaLayoutRules.GetCudaLayout` | an `AlignUp` loop over the fields |
 | `[StructLayout(Pack = n)]` | `.TryGetStructLayoutPack` | reading `NamedArguments` by hand |
 | First declaring syntax of a symbol | `.TryGetDeclaringSyntax` | `DeclaringSyntaxReferences[0].GetSyntax()` |
@@ -97,6 +98,7 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 | Map a BCL method to a CUDA / C++ function | the dialect YAML under `Dialects/`, not a new rule |
 | Branch on the target (CUDA or not, threads run as state machines) | `ITranspilerDialect.IsCuda`, `.EmulatesThreadsWithStateMachine` (from the YAML `Backend` and capabilities), not `dialect is ...` or a name comparison |
 | Pass a `ref` / `out` argument | `RefSyntaxHelper.TranspileAsByRefArgument` |
+| Read a computed property of a struct that G# emits (`s.Sum` → `s.__gsharp_mb_Sum()`) | write the member name as usual, then `ComputedPropertyGetterCall.AppendCallIfGetter` |
 | Transpile a lambda body inline | `LambdaTranspilerHelper.TranspileLambdaBody` |
 | Enter or suppress automatic grid sync (`Gpu.SyncGrid` bodies, single-thread regions) | `AutoSyncGrid.Enter`, `AutoSyncGrid.Suppress`, `AutoSyncGrid.Restore` in `try` / `finally`; `AutoSyncGrid.IsActive` to read it. Never write `Emitter.AutoSyncGridDepth` directly |
 | Null test of an array-like value, `??`, `??=` | `NullRepresentation.IsArrayNullComparable`, `NullRepresentation.AppendArrayNullTest`, `NullRepresentation.AppendCoalesce`, `NullRepresentation.AppendCoalesceAssignment` |

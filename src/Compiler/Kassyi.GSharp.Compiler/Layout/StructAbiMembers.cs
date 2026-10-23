@@ -40,19 +40,33 @@ internal readonly record struct StructAbiMember(
 /// <remarks>
 /// The set holds instance fields, auto-properties (through the backing field, under the property name), <c>fixed</c>
 /// buffers and the element of an <c>[InlineArray(N)]</c> struct, in declaration order, each with its element count.
-/// The device definition declares a computed property as a member too (pinned by <c>StructAbiTests</c>), which the host
-/// does not have, so it is listed only when <c>includeComputedProperties</c> is set. The layout, the shadow struct and
-/// the marshaling size a member as element layout times <see cref="StructAbiMember.ElementCount"/> and copy an
-/// <c>[InlineArray(N)]</c> struct or a <c>fixed</c> buffer as one block. A computed property is a device member without a
-/// host counterpart (pinned by <c>StructAbiTests</c>).
+/// The layout, the shadow struct and the marshaling size a member as element layout times
+/// <see cref="StructAbiMember.ElementCount"/> and copy an <c>[InlineArray(N)]</c> struct or a <c>fixed</c> buffer as one
+/// block. A property without a backing field has no storage on either side and is listed only when
+/// <c>includeComputedProperties</c> is set; the device definition emits a <see cref="IsComputedProperty">computed
+/// property</see> as a getter member function instead (pinned by <c>StructAbiTests</c>).
 /// </remarks>
 internal static class StructAbiMembers
 {
     /// <summary>The members of <paramref name="structType"/> in declaration order.</summary>
     /// <param name="structType">The struct.</param>
-    /// <param name="includeComputedProperties">Also list the properties that have no backing field (the device declares them).</param>
+    /// <param name="includeComputedProperties">Also list the properties that have no backing field (the device emits them as getters).</param>
     public static MemberSet Get(INamedTypeSymbol structType, bool includeComputedProperties = false) =>
         new(structType, includeComputedProperties);
+
+    /// <summary>
+    /// Whether <paramref name="property"/> is a computed property: an instance property without a backing field that has
+    /// only a <c>get</c> accessor (<c>=&gt; expr</c>, <c>get =&gt; expr</c> or <c>get { ... }</c>). The device reads it
+    /// through a getter member function of the struct.
+    /// </summary>
+    public static bool IsComputedProperty(IPropertySymbol property) =>
+        property is { IsStatic: false, IsIndexer: false, IsImplicitlyDeclared: false, GetMethod: not null, SetMethod: null } &&
+        !HasBackingField(property.ContainingType.GetMembers(), property);
+
+    private static bool HasBackingField(ImmutableArray<ISymbol> members, IPropertySymbol property) =>
+        members
+            .AsStackEnumerable()
+            .Any(property, static (member, p) => member is IFieldSymbol field && field.AssociatedSymbol.IsEqualTo(p));
 
     /// <summary>A <c>foreach</c>-able view of the members that allocates nothing.</summary>
     internal readonly struct MemberSet(INamedTypeSymbol structType, bool includeComputedProperties)
@@ -93,7 +107,7 @@ internal static class StructAbiMembers
                     }
                 }
                 else if (_includeComputedProperties && member is IPropertySymbol { IsStatic: false, IsImplicitlyDeclared: false } property &&
-                         !HasBackingField(property))
+                         !HasBackingField(_members, property))
                 {
                     Current = new StructAbiMember(property, property.Name, property.Type, 1,
                         StructAbiMemberKind.ComputedProperty);
@@ -135,19 +149,6 @@ internal static class StructAbiMembers
 
             member = new StructAbiMember(field, field.Name, field.Type, 1, StructAbiMemberKind.Field);
             return true;
-        }
-
-        private readonly bool HasBackingField(IPropertySymbol property)
-        {
-            foreach (var member in _members)
-            {
-                if (member is IFieldSymbol field && SymbolEqualityComparer.Default.Equals(field.AssociatedSymbol, property))
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
     }
 }

@@ -2776,11 +2776,19 @@ public const string MeasureComputedPropertyKernel_Source = @"#ifndef __GSHARP_ST
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct
 {
 unsigned char __gsharp_mb_A;
-int __gsharp_mb_Sum;
 int __gsharp_mb_C;
-int __gsharp_mb_Twice;
-int __gsharp_mb_Product;
-int __gsharp_mb_Difference;
+__device__ inline int __gsharp_mb_Sum() const {
+return __gsharp_mb_A+1;
+}
+__device__ inline int __gsharp_mb_Twice() const {
+return __gsharp_mb_Sum()*2;
+}
+__device__ inline int __gsharp_mb_Product() const {
+return __gsharp_mb_A*__gsharp_mb_C;
+}
+__device__ inline int __gsharp_mb_Difference() const {
+return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+}
 }
 ;
 #endif
@@ -2987,11 +2995,19 @@ public const string RoundtripComputedPropertyKernel_Source = @"#ifndef __GSHARP_
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct
 {
 unsigned char __gsharp_mb_A;
-int __gsharp_mb_Sum;
 int __gsharp_mb_C;
-int __gsharp_mb_Twice;
-int __gsharp_mb_Product;
-int __gsharp_mb_Difference;
+__device__ inline int __gsharp_mb_Sum() const {
+return __gsharp_mb_A+1;
+}
+__device__ inline int __gsharp_mb_Twice() const {
+return __gsharp_mb_Sum()*2;
+}
+__device__ inline int __gsharp_mb_Product() const {
+return __gsharp_mb_A*__gsharp_mb_C;
+}
+__device__ inline int __gsharp_mb_Difference() const {
+return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+}
 }
 ;
 #endif
@@ -3180,11 +3196,19 @@ public const string ReadComputedPropertyKernel_Source = @"#ifndef __GSHARP_STRUC
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct
 {
 unsigned char __gsharp_mb_A;
-int __gsharp_mb_Sum;
 int __gsharp_mb_C;
-int __gsharp_mb_Twice;
-int __gsharp_mb_Product;
-int __gsharp_mb_Difference;
+__device__ inline int __gsharp_mb_Sum() const {
+return __gsharp_mb_A+1;
+}
+__device__ inline int __gsharp_mb_Twice() const {
+return __gsharp_mb_Sum()*2;
+}
+__device__ inline int __gsharp_mb_Product() const {
+return __gsharp_mb_A*__gsharp_mb_C;
+}
+__device__ inline int __gsharp_mb_Difference() const {
+return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+}
 }
 ;
 #endif
@@ -3207,10 +3231,10 @@ __gsharp_switch_1_state_0:
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct __gsharp_id_1_s = {};
 __gsharp_id_1_s.__gsharp_mb_A=4;
 __gsharp_id_1_s.__gsharp_mb_C=7;
-__gsharp_id_0_result[0]=__gsharp_id_1_s.__gsharp_mb_Sum;
-__gsharp_id_0_result[1]=__gsharp_id_1_s.__gsharp_mb_Twice;
-__gsharp_id_0_result[2]=__gsharp_id_1_s.__gsharp_mb_Product;
-__gsharp_id_0_result[3]=__gsharp_id_1_s.__gsharp_mb_Difference;
+__gsharp_id_0_result[0]=__gsharp_id_1_s.__gsharp_mb_Sum();
+__gsharp_id_0_result[1]=__gsharp_id_1_s.__gsharp_mb_Twice();
+__gsharp_id_0_result[2]=__gsharp_id_1_s.__gsharp_mb_Product();
+__gsharp_id_0_result[3]=__gsharp_id_1_s.__gsharp_mb_Difference();
 __gsharp_state=-1;
 return;
 }
@@ -3391,11 +3415,19 @@ public const string ReadComputedPropertyThroughRefKernel_Source = @"#ifndef __GS
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct
 {
 unsigned char __gsharp_mb_A;
-int __gsharp_mb_Sum;
 int __gsharp_mb_C;
-int __gsharp_mb_Twice;
-int __gsharp_mb_Product;
-int __gsharp_mb_Difference;
+__device__ inline int __gsharp_mb_Sum() const {
+return __gsharp_mb_A+1;
+}
+__device__ inline int __gsharp_mb_Twice() const {
+return __gsharp_mb_Sum()*2;
+}
+__device__ inline int __gsharp_mb_Product() const {
+return __gsharp_mb_A*__gsharp_mb_C;
+}
+__device__ inline int __gsharp_mb_Difference() const {
+return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+}
 }
 ;
 #endif
@@ -3415,10 +3447,10 @@ switch(__gsharp_state)
 case 0:
 __gsharp_switch_1_state_0:
 {
-__gsharp_id_1_result[0]=(*__gsharp_id_0_data).__gsharp_mb_Sum;
-__gsharp_id_1_result[1]=(*__gsharp_id_0_data).__gsharp_mb_Twice;
-__gsharp_id_1_result[2]=(*__gsharp_id_0_data).__gsharp_mb_Product;
-__gsharp_id_1_result[3]=(*__gsharp_id_0_data).__gsharp_mb_Difference;
+__gsharp_id_1_result[0]=(*__gsharp_id_0_data).__gsharp_mb_Sum();
+__gsharp_id_1_result[1]=(*__gsharp_id_0_data).__gsharp_mb_Twice();
+__gsharp_id_1_result[2]=(*__gsharp_id_0_data).__gsharp_mb_Product();
+__gsharp_id_1_result[3]=(*__gsharp_id_0_data).__gsharp_mb_Difference();
 __gsharp_state=-1;
 return;
 }

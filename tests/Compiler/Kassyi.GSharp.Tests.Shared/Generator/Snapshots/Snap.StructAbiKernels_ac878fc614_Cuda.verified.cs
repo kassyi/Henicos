@@ -1765,11 +1765,19 @@ public const string MeasureComputedPropertyKernel_Source = @"#ifndef __GSHARP_ST
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct
 {
 unsigned char __gsharp_mb_A;
-int __gsharp_mb_Sum;
 int __gsharp_mb_C;
-int __gsharp_mb_Twice;
-int __gsharp_mb_Product;
-int __gsharp_mb_Difference;
+__device__ inline int __gsharp_mb_Sum() const {
+return __gsharp_mb_A+1;
+}
+__device__ inline int __gsharp_mb_Twice() const {
+return __gsharp_mb_Sum()*2;
+}
+__device__ inline int __gsharp_mb_Product() const {
+return __gsharp_mb_A*__gsharp_mb_C;
+}
+__device__ inline int __gsharp_mb_Difference() const {
+return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+}
 }
 ;
 #endif
@@ -1890,11 +1898,19 @@ public const string RoundtripComputedPropertyKernel_Source = @"#ifndef __GSHARP_
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct
 {
 unsigned char __gsharp_mb_A;
-int __gsharp_mb_Sum;
 int __gsharp_mb_C;
-int __gsharp_mb_Twice;
-int __gsharp_mb_Product;
-int __gsharp_mb_Difference;
+__device__ inline int __gsharp_mb_Sum() const {
+return __gsharp_mb_A+1;
+}
+__device__ inline int __gsharp_mb_Twice() const {
+return __gsharp_mb_Sum()*2;
+}
+__device__ inline int __gsharp_mb_Product() const {
+return __gsharp_mb_A*__gsharp_mb_C;
+}
+__device__ inline int __gsharp_mb_Difference() const {
+return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+}
 }
 ;
 #endif
@@ -1991,11 +2007,19 @@ public const string ReadComputedPropertyKernel_Source = @"#ifndef __GSHARP_STRUC
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct
 {
 unsigned char __gsharp_mb_A;
-int __gsharp_mb_Sum;
 int __gsharp_mb_C;
-int __gsharp_mb_Twice;
-int __gsharp_mb_Product;
-int __gsharp_mb_Difference;
+__device__ inline int __gsharp_mb_Sum() const {
+return __gsharp_mb_A+1;
+}
+__device__ inline int __gsharp_mb_Twice() const {
+return __gsharp_mb_Sum()*2;
+}
+__device__ inline int __gsharp_mb_Product() const {
+return __gsharp_mb_A*__gsharp_mb_C;
+}
+__device__ inline int __gsharp_mb_Difference() const {
+return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+}
 }
 ;
 #endif
@@ -2003,10 +2027,10 @@ extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__Str
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct __gsharp_id_1_s = {};
 __gsharp_id_1_s.__gsharp_mb_A=4;
 __gsharp_id_1_s.__gsharp_mb_C=7;
-__gsharp_id_0_result[0]=__gsharp_id_1_s.__gsharp_mb_Sum;
-__gsharp_id_0_result[1]=__gsharp_id_1_s.__gsharp_mb_Twice;
-__gsharp_id_0_result[2]=__gsharp_id_1_s.__gsharp_mb_Product;
-__gsharp_id_0_result[3]=__gsharp_id_1_s.__gsharp_mb_Difference;
+__gsharp_id_0_result[0]=__gsharp_id_1_s.__gsharp_mb_Sum();
+__gsharp_id_0_result[1]=__gsharp_id_1_s.__gsharp_mb_Twice();
+__gsharp_id_0_result[2]=__gsharp_id_1_s.__gsharp_mb_Product();
+__gsharp_id_0_result[3]=__gsharp_id_1_s.__gsharp_mb_Difference();
 }
 ";
 public static readonly string ReadComputedPropertyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReadComputedPropertyKernel_Source;
@@ -2117,19 +2141,27 @@ public const string ReadComputedPropertyThroughRefKernel_Source = @"#ifndef __GS
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct
 {
 unsigned char __gsharp_mb_A;
-int __gsharp_mb_Sum;
 int __gsharp_mb_C;
-int __gsharp_mb_Twice;
-int __gsharp_mb_Product;
-int __gsharp_mb_Difference;
+__device__ inline int __gsharp_mb_Sum() const {
+return __gsharp_mb_A+1;
+}
+__device__ inline int __gsharp_mb_Twice() const {
+return __gsharp_mb_Sum()*2;
+}
+__device__ inline int __gsharp_mb_Product() const {
+return __gsharp_mb_A*__gsharp_mb_C;
+}
+__device__ inline int __gsharp_mb_Difference() const {
+return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
+}
 }
 ;
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__ReadComputedPropertyThroughRefKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct* __restrict__  __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_result){
-__gsharp_id_1_result[0]=(*__gsharp_id_0_data).__gsharp_mb_Sum;
-__gsharp_id_1_result[1]=(*__gsharp_id_0_data).__gsharp_mb_Twice;
-__gsharp_id_1_result[2]=(*__gsharp_id_0_data).__gsharp_mb_Product;
-__gsharp_id_1_result[3]=(*__gsharp_id_0_data).__gsharp_mb_Difference;
+__gsharp_id_1_result[0]=(*__gsharp_id_0_data).__gsharp_mb_Sum();
+__gsharp_id_1_result[1]=(*__gsharp_id_0_data).__gsharp_mb_Twice();
+__gsharp_id_1_result[2]=(*__gsharp_id_0_data).__gsharp_mb_Product();
+__gsharp_id_1_result[3]=(*__gsharp_id_0_data).__gsharp_mb_Difference();
 }
 ";
 public static readonly string ReadComputedPropertyThroughRefKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ReadComputedPropertyThroughRefKernel_Source;

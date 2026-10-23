@@ -205,8 +205,7 @@ internal static class StructTranspiler
 
         using (context.Emitter.Writer.Scope())
         {
-            // [WHY] The device still declares a computed property as a member, so it takes part here although the host layout does not (pinned by StructAbiTests).
-            foreach (var member in StructAbiMembers.Get(structSym, includeComputedProperties: true))
+            foreach (var member in StructAbiMembers.Get(structSym))
             {
                 WriteStructMember(ref context, member);
             }
@@ -216,6 +215,10 @@ internal static class StructTranspiler
                 if (member is IMethodSymbol { MethodKind: MethodKind.Conversion, Name: "op_Implicit" } conv)
                 {
                     WriteImplicitConversionOperator(structSym, ref context, conv);
+                }
+                else if (member is IPropertySymbol property && StructAbiMembers.IsComputedProperty(property))
+                {
+                    WriteComputedPropertyGetter(property, ref context);
                 }
             }
         }
@@ -306,6 +309,63 @@ internal static class StructTranspiler
                 context.Emitter.Writer.AppendLine(";");
             }
         }
+    }
+
+    // __device__ inline <type> <property name>() const { <getter body> }
+    // [WHY] The getter keeps the C++ name of the property (CppNameResolver), so the implicit `A` and `Sum` in a getter body
+    // resolve to the members of the struct, and a read elsewhere only appends the call (ComputedPropertyGetterCall).
+    private static void WriteComputedPropertyGetter(IPropertySymbol property, ref TranspileContext context)
+    {
+        // A struct from metadata or from another compilation has no getter body to bind here.
+        var compilation = context.Query.SemanticModel.Compilation;
+        if (!property.TryGetDeclaringSyntax<PropertyDeclarationSyntax>(out var declaration) ||
+            !compilation.ContainsSyntaxTree(declaration.SyntaxTree) ||
+            !TryGetGetterBody(declaration, out var block, out var expression))
+        {
+            return;
+        }
+
+        context.Emitter.Writer.Append("__device__ inline ");
+        context.Emitter.Dialect.AppendType(ref context, property.Type);
+        context.Emitter.Writer.Append(' ')
+            .AppendCppName(CppNameResolver.Resolve(property, property.Name, context.Emitter.Dialect))
+            .Append("() const ");
+
+        // [WHY] The struct may be declared in another file than the kernel, so its body is bound with a model of its own tree.
+        var query = context.Query;
+        var reporter = context.Reporter;
+        var model = compilation.GetSemanticModel(declaration.SyntaxTree);
+        context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
+        context.Reporter = new Reporter(reporter.ReportDiagnostic, model);
+
+        try
+        {
+            LambdaTranspilerHelper.TranspileLambdaBody(ref context, block, expression);
+        }
+        finally
+        {
+            context.Query = query;
+            context.Reporter = reporter;
+        }
+    }
+
+    // The body of `=> expr`, `get => expr` or `get { ... }`
+    private static bool TryGetGetterBody(PropertyDeclarationSyntax declaration, out BlockSyntax? block,
+        out ExpressionSyntax? expression)
+    {
+        block = null;
+        expression = declaration.ExpressionBody?.Expression;
+        if (expression != null || declaration.AccessorList is not { } accessorList)
+        {
+            return expression != null;
+        }
+
+        var getter = accessorList.Accessors
+            .AsStackEnumerable()
+            .FirstOrDefault(static accessor => accessor.IsKind(SyntaxKind.GetAccessorDeclaration));
+        block = getter?.Body;
+        expression = getter?.ExpressionBody?.Expression;
+        return block != null || expression != null;
     }
 
     private static string GetMemberName(ISymbol member, ref TranspileContext context) =>
