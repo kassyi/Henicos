@@ -13,13 +13,12 @@ public class UnsupportedSyntaxKindDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_CheckedUncheckedAndWith_ReportGsh0003AtTheNode(string dialect)
+    public async Task Test_CheckedAndUnchecked_ReportGsh0003AtTheNode(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
 
-        Assert.Equal([(Analyzer, 18, 19, 18, 39)], diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'CheckedExpression'"));
-        Assert.Equal([(Analyzer, 19, 9, 22, 10)], diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'UncheckedStatement'"));
-        Assert.Equal([(Analyzer, 30, 21, 30, 41)], diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'WithExpression'"));
+        Assert.Equal([(Analyzer, 12, 19, 12, 39)], diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'CheckedExpression'"));
+        Assert.Equal([(Analyzer, 13, 9, 16, 10)], diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'UncheckedStatement'"));
     }
 
     [Theory]

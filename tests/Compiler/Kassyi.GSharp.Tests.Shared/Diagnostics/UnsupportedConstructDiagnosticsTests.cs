@@ -43,7 +43,7 @@ public class UnsupportedConstructDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.StringNotSupported.Id));
     }
 
-    // Line 53 is 'var text = "abc";'
+    // Line 38 is 'var text = "abc";'
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -52,7 +52,7 @@ public class UnsupportedConstructDiagnosticsTests
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
 
-        Assert.Equal([(Analyzer, 53, 9, 53, 12)], diagnostics.Ranges(GSharpDiagnostics.StringNotSupported.Id));
+        Assert.Equal([(Analyzer, 38, 9, 38, 12)], diagnostics.Ranges(GSharpDiagnostics.StringNotSupported.Id));
     }
 
     // default(string) on line 13 and the type argument on line 14; the lambda parameter and the local function's return

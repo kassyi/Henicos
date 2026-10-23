@@ -24,6 +24,8 @@ public class KernelDiagnosticsInventoryTests
         // GSH0002 (implicitly typed variable), GSH0003 (syntax without a rule, function pointer parameter and variable)
         "Diagnostics/UnsupportedSyntaxNodes.cu.cs",
         "Diagnostics/UnsupportedSyntaxKinds.cu.cs",
+        // GSH0003 (with on a class, with assigning a member the device cannot assign)
+        "Diagnostics/WithExpressionUnsupported.cu.cs",
         // GSH0003 in the getter of a computed property (#471)
         "Diagnostics/ComputedPropertyGetterFailure.cu.cs",
         // GSH0003 (dynamic array size)

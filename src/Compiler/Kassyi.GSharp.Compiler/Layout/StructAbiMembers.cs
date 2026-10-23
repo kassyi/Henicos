@@ -63,6 +63,10 @@ internal static class StructAbiMembers
         property is { IsStatic: false, IsIndexer: false, IsImplicitlyDeclared: false, GetMethod: not null, SetMethod: null } &&
         !HasBackingField(property.ContainingType.GetMembers(), property);
 
+    /// <summary>Whether <paramref name="property"/> is an auto-property, which the device stores as a field.</summary>
+    public static bool IsAutoProperty(IPropertySymbol property) =>
+        HasBackingField(property.ContainingType.GetMembers(), property);
+
     private static bool HasBackingField(ImmutableArray<ISymbol> members, IPropertySymbol property) =>
         members
             .AsStackEnumerable()

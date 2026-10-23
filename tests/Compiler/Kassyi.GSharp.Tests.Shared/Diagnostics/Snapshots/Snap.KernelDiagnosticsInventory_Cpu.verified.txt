@@ -19,12 +19,11 @@
 (29,30)-(29,63) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
 
 ## Diagnostics/UnsupportedSyntaxNodes.cu.cs
-(18,19)-(18,39) GSH0003 analyzer: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
-(19,9)-(22,10) GSH0003 analyzer: The syntax 'UncheckedStatement' is not supported in GSharp GPU kernels
-(30,21)-(30,41) GSH0003 analyzer: The syntax 'WithExpression' is not supported in GSharp GPU kernels
-(35,35)-(35,54) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
-(44,9)-(44,28) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
-(53,9)-(53,12) GSH0002 analyzer: The string type is not supported in GPU kernels
+(12,19)-(12,39) GSH0003 analyzer: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
+(13,9)-(16,10) GSH0003 analyzer: The syntax 'UncheckedStatement' is not supported in GSharp GPU kernels
+(20,35)-(20,54) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
+(29,9)-(29,28) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
+(38,9)-(38,12) GSH0002 analyzer: The string type is not supported in GPU kernels
 
 ## Diagnostics/UnsupportedSyntaxKinds.cu.cs
 (13,26)-(13,28) GSH0003 analyzer: The syntax 'IndexExpression' is not supported in GSharp GPU kernels
@@ -32,6 +31,11 @@
 (22,13)-(22,19) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
 (32,9)-(35,10) GSH0003 analyzer: The syntax 'ForEachVariableStatement' is not supported in GSharp GPU kernels
 (44,23)-(44,30) GSH0003 analyzer: The syntax 'SpreadElement' is not supported in GSharp GPU kernels
+
+## Diagnostics/WithExpressionUnsupported.cu.cs
+(33,20)-(33,41) GSH0003 analyzer: The syntax 'with expression on a reference type (heap allocation)' is not supported in GSharp GPU kernels
+(42,45)-(42,50) GSH0003 analyzer: The syntax 'with expression assigning the property 'Value', whose accessor has a body' is not supported in GSharp GPU kernels
+(51,44)-(51,49) GSH0003 analyzer: The syntax 'with expression assigning the [GpuReadOnly] member 'Fixed'' is not supported in GSharp GPU kernels
 
 ## Diagnostics/ComputedPropertyGetterFailure.cu.cs
 (11,25)-(11,39) GSH0003 analyzer: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels

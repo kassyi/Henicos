@@ -51,11 +51,11 @@ public class KernelSignatureDiagnosticsTests
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
 
-        // A parameter (line 35) and a variable (line 44, UnsupportedConstructRule)
+        // A parameter (line 20) and a variable (line 29, UnsupportedConstructRule)
         Assert.Equal(
             [
-                (Analyzer, 35, 35, 35, 54),
-                (Analyzer, 44, 9, 44, 28)
+                (Analyzer, 20, 35, 20, 54),
+                (Analyzer, 29, 9, 29, 28)
             ],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'FunctionPointerType'"));
     }
