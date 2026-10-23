@@ -20,7 +20,7 @@ public class LoopsAndJumpsTests : TranspilerTestBase
             nameof(LoopsAndJumpsTarget.SwitchGotoCase), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
     }
 
     [Theory]
@@ -45,7 +45,7 @@ public class LoopsAndJumpsTests : TranspilerTestBase
             nameof(LoopsAndJumpsTarget.NamedBreakGoto), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
     }
 
     [Theory]

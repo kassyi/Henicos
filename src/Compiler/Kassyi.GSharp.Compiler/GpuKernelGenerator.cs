@@ -13,7 +13,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
     /// <summary>The tracking name of the step that transpiles each <c>[GpuDeviceFunction]</c>.</summary>
     public const string DeviceFunctionTrackingName = "GpuDeviceFunction";
 
-    /// <summary>Collects why a transpilation could not emit a construct (<see cref="TranspileFailure"/>), each reason once.</summary>
+    /// <summary>
+    /// Collects what one dialect's transpilation could not emit (<see cref="TranspileFailure"/>), each reason once, and
+    /// states the reasons in place of that dialect's output.
+    /// </summary>
     private sealed class FailureCollector
     {
         private readonly ImmutableArray<string>.Builder _failures = ImmutableArray.CreateBuilder<string>();
@@ -28,52 +31,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
         }
 
-        public EquatableArray<string> GetFailures() => _failures.ToImmutable().AsEquatableArray();
-    }
-
-    private sealed class DiagnosticCollector
-    {
-        private readonly ImmutableArray<Diagnostic>.Builder _diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
-
-        public EquatableArray<EquatableDiagnostic> GetDiagnostics()
-        {
-            var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>(_diagnostics.Count);
-            _diagnostics
-                .AsStackEnumerable()
-                .Select(static d => d.AsEquatable())
-                .AddTo(builder);
-
-            return builder.MoveToImmutable().AsEquatableArray();
-        }
-
-        /// <summary>The diagnostics that <paramref name="other"/> has not collected (same ID at the same location).</summary>
-        /// <remarks>
-        /// Diagnostics without a location (<see cref="Location.None"/>) match by ID alone; see
-        /// <see cref="SemanticModelExtensions.GetReportLocation"/> for when a lowered node has none.
-        /// </remarks>
-        public EquatableArray<EquatableDiagnostic> GetDiagnosticsNotIn(DiagnosticCollector other)
-        {
-            var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>();
-            _diagnostics
-                .AsStackEnumerable()
-                .Where(other, static (d, collector) => !collector.Contains(d))
-                .Select(static d => d.AsEquatable())
-                .AddTo(builder);
-
-            return builder.ToImmutable().AsEquatableArray();
-        }
-
-        public void Report(Diagnostic d)
-        {
-            if (!Contains(d))
-            {
-                _diagnostics.Add(d);
-            }
-        }
-
-        private bool Contains(Diagnostic d) => _diagnostics
-            .AsStackEnumerable()
-            .Any(d, static (existing, reported) => existing.Id == reported.Id && existing.Location == reported.Location);
+        /// <summary>
+        /// <paramref name="source"/> when nothing failed; otherwise one <c>#error</c> per reason, so that a failure the
+        /// analyzer misses still stops the native build. The analyzer reports the same failures as diagnostics.
+        /// </summary>
+        public string Apply(string source) =>
+            _failures.Count == 0 ? source : NativeModuleAssembler.FormatTranspileFailures(_failures);
     }
 
     private static bool CheckSuppressGs0001(MethodDeclarationSyntax methodDeclaration)
@@ -182,10 +145,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: true);
 
-            var cudaSource = MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
-                out var requiredIncludesCuda);
-            var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
-                out var requiredIncludesCpp);
+            var cudaSource = cudaFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
+                out var requiredIncludesCuda));
+            var cppSource = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
+                out var requiredIncludesCpp));
             var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
 
             if (!CheckSuppressGs0001(methodDeclaration))
@@ -198,11 +161,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     cudaSource,
                     cppSource,
                     managedCSharpSource,
-                    new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                    new EquatableArray<EquatableDiagnostic>(),
-                    new EquatableArray<EquatableDiagnostic>(),
-                    cudaFailures.GetFailures(),
-                    cppFailures.GetFailures()
+                    ToIncludes(requiredIncludesCuda),
+                    ToIncludes(requiredIncludesCpp),
+                    ""
                 );
             }
 
@@ -217,29 +178,20 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cudaSource,
                 cppSource,
                 managedCSharpSource,
-                new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                new EquatableArray<EquatableDiagnostic>(),
-                new EquatableArray<EquatableDiagnostic>(),
-                cudaFailures.GetFailures(),
-                cppFailures.GetFailures()
+                ToIncludes(requiredIncludesCuda),
+                ToIncludes(requiredIncludesCpp),
+                ""
             );
         }
         catch (Exception ex)
         {
-            var collector = new DiagnosticCollector();
-            collector.Report(Diagnostic.Create(
-                GSharpDiagnostics.InternalCompilerError,
-                Location.None,
-                ex.ToString()));
-
             return new TranspiledKernelResult(
                 methodSymbol,
                 methodSymbol.Name,
                 methodSymbol.ContainingType.Name,
                 methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
                 "", "", $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n",
-                new EquatableArray<string>(), collector.GetDiagnostics(),
-                new EquatableArray<EquatableDiagnostic>(), new EquatableArray<string>(), new EquatableArray<string>());
+                new EquatableArray<string>(), new EquatableArray<string>(), ex.ToString());
         }
     }
 
@@ -265,10 +217,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaFailures.Fail, cudaDialect);
             var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppFailures.Fail, cppDialect);
 
-            var cudaBody = MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
-                out var requiredIncludesCuda);
-            var cppBody = MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
-                out var requiredIncludesCpp);
+            var cudaBody = cudaFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
+                out var requiredIncludesCuda));
+            var cppBody = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
+                out var requiredIncludesCpp));
 
             // A device function that may suspend has a frame, which embeds the frames of the calls it makes
             var frameName = "";
@@ -295,23 +247,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cudaBody,
                 cppSignature,
                 cppBody,
-                new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                new EquatableArray<EquatableDiagnostic>(),
-                new EquatableArray<EquatableDiagnostic>(),
-                cudaFailures.GetFailures(),
-                cppFailures.GetFailures(),
+                ToIncludes(requiredIncludesCuda),
+                ToIncludes(requiredIncludesCpp),
+                "",
                 frameName,
                 new EquatableArray<string>(frameDependencies.ToImmutable()),
                 managedCSharpSource);
         }
         catch (Exception ex)
         {
-            var collector = new DiagnosticCollector();
-            collector.Report(Diagnostic.Create(
-                GSharpDiagnostics.InternalCompilerError,
-                Location.None,
-                ex.ToString()));
-
             var errorSource = $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n";
 
             return new TranspiledDeviceMethodResult(
@@ -319,8 +263,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 methodSymbol.Name,
                 methodSymbol.ContainingType.Name,
                 null,
-                "", errorSource, "", errorSource, new EquatableArray<string>(), collector.GetDiagnostics(),
-                new EquatableArray<EquatableDiagnostic>(), new EquatableArray<string>(), new EquatableArray<string>());
+                "", errorSource, "", errorSource, new EquatableArray<string>(), new EquatableArray<string>(), ex.ToString());
         }
     }
 
@@ -370,7 +313,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         foreach (var method in distinctDeviceMethods)
         {
-            ReportDiagnostics(context, method.Diagnostics, method.CppOnlyDiagnostics, isCuda);
+            ReportInternalError(context, method.InternalError);
         }
 
         var commonDeviceSource = NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
@@ -419,7 +362,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             EmitManagedDeviceStateMachines(distinctDeviceMethods, context);
         }
 
-        var requiredIncludes = NativeModuleAssembler.CollectIncludes(distinctKernelMethods, distinctDeviceMethods);
+        var requiredIncludes = NativeModuleAssembler.CollectIncludes(distinctKernelMethods, distinctDeviceMethods, isCuda);
         var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
             allKernelsSource.ToString());
         AotArtifactWriter.Write(compilation, config, bodySource, context);
@@ -514,19 +457,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    // The CUDA transpilation's diagnostics hold the dialect-independent ones; a C++ build adds what only the C++
-    // transpilation found, such as a CUDA-only call it replaced with a runtime failure (GSH0054)
-    private static void ReportDiagnostics(SourceProductionContext context, EquatableArray<EquatableDiagnostic> diagnostics,
-        EquatableArray<EquatableDiagnostic> cppOnlyDiagnostics, bool isCuda)
+    // The generator reports only its own failure (GSH0048); the analyzers report the user's errors, and a construct the
+    // transpiler could not emit is stated in the output as #error
+    private static void ReportInternalError(SourceProductionContext context, string internalError)
     {
-        diagnostics
-            .AsStackEnumerable()
-            .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
-        if (!isCuda)
+        if (internalError.Length > 0)
         {
-            cppOnlyDiagnostics
-                .AsStackEnumerable()
-                .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
+            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.InternalCompilerError, Location.None, internalError));
         }
     }
 
@@ -538,7 +475,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>();
         foreach (var method in methods)
         {
-            ReportDiagnostics(context, method.Diagnostics, method.CppOnlyDiagnostics, isCuda);
+            ReportInternalError(context, method.InternalError);
 
             var source = method.GetSource(isCuda);
             methodsData.Add((method.MethodSymbol, source, method.ManagedCSharpSource));
@@ -551,15 +488,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
     }
 
 
-    private static ImmutableArray<string> CombineIncludes(HashSet<string> a, HashSet<string> b)
+    private static EquatableArray<string> ToIncludes(HashSet<string> includes)
     {
-        var builder = ImmutableArray.CreateBuilder<string>();
-        a
+        var builder = ImmutableArray.CreateBuilder<string>(includes.Count);
+        includes
             .AsStackEnumerable()
             .AddTo(builder);
-        b
-            .AsStackEnumerable()
-            .AddIf(builder, a, static (item, first) => !first.Contains(item));
-        return builder.ToImmutable();
+        return builder.MoveToImmutable().AsEquatableArray();
     }
 }

@@ -162,8 +162,9 @@ public class TypesAndStructsTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.RecordStructWithExpression), isDevice: false, dialect: CurrentDialect);
 
-        // The analyzer reports the construct (UnsupportedSyntaxKindDiagnosticsTests); the transpiler writes a placeholder
-        Assert.Empty(diagnostics);
+        // The analyzer reports the construct (UnsupportedSyntaxKindDiagnosticsTests); the transpiler records the failure and
+        // writes a placeholder
+        diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, "'WithExpression'");
         Assert.Contains("/*unsupported:WithExpression*/", cudaSource);
     }
 

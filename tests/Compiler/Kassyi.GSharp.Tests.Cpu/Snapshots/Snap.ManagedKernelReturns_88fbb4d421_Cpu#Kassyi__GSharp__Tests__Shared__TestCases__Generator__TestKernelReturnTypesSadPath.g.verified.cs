@@ -20,7 +20,8 @@ public partial class TestKernelReturnTypesSadPath
 public static partial class AotContexts
 {
 }
-public const string ArrayKernel_Source = @"// GSharp Transpilation failed for ArrayKernel. Return type float[] is not supported.";
+public const string ArrayKernel_Source = @"#error ""(10,27): GSH0004: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.""
+";
 public static readonly string ArrayKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ArrayKernel_Source;
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ArrayKernel {
 public int __gsharp_state;
@@ -140,7 +141,8 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
-public const string StringKernel_Source = @"// GSharp Transpilation failed for StringKernel. Return type string is not supported.";
+public const string StringKernel_Source = @"#error ""(14,26): GSH0004: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.""
+";
 public static readonly string StringKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +StringKernel_Source;
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__StringKernel {
 public int __gsharp_state;
@@ -451,7 +453,8 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
-public const string ManagedStructKernel_Source = @"// GSharp Transpilation failed for ManagedStructKernel. Return type Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct is not supported.";
+public const string ManagedStructKernel_Source = @"#error ""(30,33): GSH0004: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.""
+";
 public static readonly string ManagedStructKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +ManagedStructKernel_Source;
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__ManagedStructKernel {
 public int __gsharp_state;
@@ -571,7 +574,8 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 return __gsharp_auto_result;
 }
 #pragma warning restore CS8500
-public const string SpanKernel_Source = @"// GSharp Transpilation failed for SpanKernel. Return type System.ReadOnlySpan<float> is not supported.";
+public const string SpanKernel_Source = @"#error ""(34,39): GSH0004: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.""
+";
 public static readonly string SpanKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCpuPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCpuDeviceCode.Source +SpanKernel_Source;
 public class __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Generator__TestKernelReturnTypesSadPath__SpanKernel {
 public int __gsharp_state;

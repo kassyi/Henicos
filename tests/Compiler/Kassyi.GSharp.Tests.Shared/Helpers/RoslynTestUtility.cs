@@ -157,7 +157,7 @@ public static class RoslynTestUtility
     }
 
     /// <summary>Transpiles a method declared in the mega compilation by type and method name into target dialect C++ source.</summary>
-    public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod(
+    public static (string CudaSource, List<TranspileFailure> Failures) TranspileMethod(
         string typeName,
         string methodName,
         bool isDevice = true,
@@ -166,7 +166,7 @@ public static class RoslynTestUtility
         var (semanticModel, methodSymbol) = MegaCompilationCache.GetMethodContext(typeName, methodName);
         var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
-        var diagnostics = new List<Diagnostic>();
+        var diagnostics = new List<TranspileFailure>();
         dialect ??= new GSharpCudaDialect();
         var cudaSource =
             MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, diagnostics.Add, isDevice,
@@ -175,7 +175,7 @@ public static class RoslynTestUtility
     }
 
     /// <summary>Transpiles a method from dynamic compilation inferred from the caller file into target dialect C++ source.</summary>
-    public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod(
+    public static (string CudaSource, List<TranspileFailure> Failures) TranspileMethod(
         Type targetType,
         string methodName,
         [CallerFilePath] string callerFilePath = "",
@@ -202,7 +202,7 @@ public static class RoslynTestUtility
             MegaCompilationCache.GetMethodContext(targetType, methodName, pathList.ToArray());
         var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
-        var diagnostics = new List<Diagnostic>();
+        var diagnostics = new List<TranspileFailure>();
         dialect ??= new GSharpCudaDialect();
         var cudaSource =
             MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, diagnostics.Add, isDevice,
@@ -211,7 +211,7 @@ public static class RoslynTestUtility
     }
 
     /// <summary>Transpiles a method declared on <typeparamref name="TTarget"/> into target dialect C++ source with type safety.</summary>
-    public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod<TTarget>(
+    public static (string CudaSource, List<TranspileFailure> Failures) TranspileMethod<TTarget>(
         string methodName,
         [CallerFilePath] string callerFilePath = "",
         bool isDevice = true,

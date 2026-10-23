@@ -1,5 +1,10 @@
 namespace Kassyi.GSharp.Compiler.Models;
 
+/// <summary>The transpiled outputs of one <c>[GpuKernel]</c>, for both native dialects and the managed fallback.</summary>
+/// <remarks>
+/// A construct that a dialect could not emit turns that dialect's source into <c>#error</c> lines; the analyzer reports
+/// the matching diagnostics. <see cref="InternalError"/> is the only problem the generator itself reports (GSH0048).
+/// </remarks>
 internal readonly struct TranspiledKernelResult(
     IMethodSymbol methodSymbol,
     string methodName,
@@ -8,11 +13,9 @@ internal readonly struct TranspiledKernelResult(
     string cudaSource,
     string cppSource,
     string managedCSharpSource,
-    EquatableArray<string> requiredIncludes,
-    EquatableArray<EquatableDiagnostic> diagnostics,
-    EquatableArray<EquatableDiagnostic> cppOnlyDiagnostics,
-    EquatableArray<string> cudaFailures,
-    EquatableArray<string> cppFailures) : IEquatable<TranspiledKernelResult>
+    EquatableArray<string> cudaIncludes,
+    EquatableArray<string> cppIncludes,
+    string internalError) : IEquatable<TranspiledKernelResult>
 {
     public IMethodSymbol MethodSymbol { get; } = methodSymbol;
     public string MethodName { get; } = methodName;
@@ -22,20 +25,17 @@ internal readonly struct TranspiledKernelResult(
     public string CppSource { get; } = cppSource;
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
     public string ManagedCSharpSource { get; } = managedCSharpSource;
-    public EquatableArray<string> RequiredIncludes { get; } = requiredIncludes;
-    /// <summary>The diagnostics of the CUDA transpilation, reported for every dialect.</summary>
-    public EquatableArray<EquatableDiagnostic> Diagnostics { get; } = diagnostics;
 
-    /// <summary>The diagnostics that only the C++ transpilation reports (e.g. GSH0054), reported for the C++ dialects.</summary>
-    public EquatableArray<EquatableDiagnostic> CppOnlyDiagnostics { get; } = cppOnlyDiagnostics;
+    /// <summary>The <c>#include</c> targets of the CUDA source.</summary>
+    public EquatableArray<string> CudaIncludes { get; } = cudaIncludes;
 
-    /// <summary>Why the CUDA transpilation could not emit parts of the kernel (<see cref="TranspileFailure"/>).</summary>
-    public EquatableArray<string> CudaFailures { get; } = cudaFailures;
+    /// <summary>The <c>#include</c> targets of the C++ source.</summary>
+    public EquatableArray<string> CppIncludes { get; } = cppIncludes;
 
-    /// <summary>Why the C++ transpilation could not emit parts of the kernel (<see cref="TranspileFailure"/>).</summary>
-    public EquatableArray<string> CppFailures { get; } = cppFailures;
+    public EquatableArray<string> GetIncludes(bool isCuda) => isCuda ? CudaIncludes : CppIncludes;
 
-    public EquatableArray<string> GetFailures(bool isCuda) => isCuda ? CudaFailures : CppFailures;
+    /// <summary>The exception that stopped the transpilation (GSH0048), or empty.</summary>
+    public string InternalError { get; } = internalError;
 
     public bool Equals(TranspiledKernelResult other)
     {
@@ -45,17 +45,15 @@ internal readonly struct TranspiledKernelResult(
                CudaSource == other.CudaSource &&
                CppSource == other.CppSource &&
                ManagedCSharpSource == other.ManagedCSharpSource &&
-               RequiredIncludes.Equals(other.RequiredIncludes) &&
-               Diagnostics.Equals(other.Diagnostics) &&
-               CppOnlyDiagnostics.Equals(other.CppOnlyDiagnostics) &&
-               CudaFailures.Equals(other.CudaFailures) &&
-               CppFailures.Equals(other.CppFailures);
+               CudaIncludes.Equals(other.CudaIncludes) &&
+               CppIncludes.Equals(other.CppIncludes) &&
+               InternalError == other.InternalError;
     }
 
     public override bool Equals(object? obj) => obj is TranspiledKernelResult other && Equals(other);
 
     public override int GetHashCode() => HashHelper.Combine(MethodName, ClassName, Namespace, CudaSource, CppSource,
-        ManagedCSharpSource, RequiredIncludes, Diagnostics, CppOnlyDiagnostics, CudaFailures, CppFailures);
+        ManagedCSharpSource, CudaIncludes, CppIncludes, InternalError);
 
     public static bool operator ==(TranspiledKernelResult left, TranspiledKernelResult right) => left.Equals(right);
     public static bool operator !=(TranspiledKernelResult left, TranspiledKernelResult right) => !left.Equals(right);

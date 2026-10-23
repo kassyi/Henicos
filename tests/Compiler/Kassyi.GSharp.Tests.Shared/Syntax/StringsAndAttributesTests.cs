@@ -64,7 +64,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
             Assert.Contains("__gsharp_unsupported(", cudaSource);
         }
 
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
             nameof(StringsAndAttributesTarget.Utf8StringLiteral), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         byte[] output = new byte[1];
         StringsAndAttributesTarget.Utf8StringLiteral(output);
@@ -89,9 +89,9 @@ public class StringsAndAttributesTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.NameOfExpression), isDevice: false, dialect: CurrentDialect);
 
-        // The analyzer reports the string variable (UnsupportedConstructDiagnosticsTests); the transpiler reports nothing
-        Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        // The analyzer reports the string variable (UnsupportedConstructDiagnosticsTests); the transpiler records the failure
+        diagnostics.AssertFails(GSharpDiagnostics.StringNotSupported);
+        await Verify(cudaSource);
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
             nameof(StringsAndAttributesTarget.LoopUnrollAttribute), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         int[] output = new int[1];
         StringsAndAttributesTarget.LoopUnrollAttribute(output);
@@ -117,7 +117,7 @@ public class StringsAndAttributesTests : TranspilerTestBase
             nameof(StringsAndAttributesTarget.GenericStruct), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         Pair_StringsTest<int>[] items = [new() { First = 10, Second = 25 }];
         int[] output = new int[1];

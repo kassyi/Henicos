@@ -27,14 +27,14 @@ public partial class MethodAttributesTests
     [GeneratedRegex($@"{InlineDevice}\s+\w+\s+{FunctionName}CustomMethod\b")]
     private static partial Regex CustomMethodRegex();
 
-    private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileDeviceMethod(string methodName)
+    private static (string CudaSource, List<TranspileFailure> Failures) TranspileDeviceMethod(string methodName)
     {
         var (compilation, tree, semanticModel) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "MethodAttributes.cs"));
         var methodDecl = tree.GetRoot().DescendantNodes()
             .OfType<MethodDeclarationSyntax>()
             .First(m => m.Identifier.Text == methodName);
 
-        var diagnostics = new List<Diagnostic>();
+        var diagnostics = new List<TranspileFailure>();
         var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), true,
             new GSharpCudaDialect(), out var _);
         return (cudaSource, diagnostics);

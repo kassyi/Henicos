@@ -20,7 +20,7 @@ public class LoopUnrollTests : TranspilerTestBase
     private static bool IsUnrollDiagnostic(string id) =>
         id == GSharpDiagnostics.UnrollHintMustPrecedeLoop.Id || id == GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant.Id;
 
-    private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileTestCaseMethod(string methodName)
+    private static (string CudaSource, List<TranspileFailure> Failures) TranspileTestCaseMethod(string methodName)
     {
         var (compilation, tree, semanticModel) = RoslynTestUtility.GetTestCaseContext(Path.Combine("Analyzers", "LoopUnrollStatements.cs"));
 
@@ -28,7 +28,7 @@ public class LoopUnrollTests : TranspilerTestBase
             .OfType<MethodDeclarationSyntax>()
             .First(m => m.Identifier.Text == methodName);
 
-        var diagnostics = new List<Diagnostic>();
+        var diagnostics = new List<TranspileFailure>();
         var cudaSource = MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, d => diagnostics.Add(d), false,
             new GSharpCudaDialect(), out var _);
         return (cudaSource, diagnostics);
@@ -106,16 +106,17 @@ public class LoopUnrollTests : TranspilerTestBase
             .OfType<MethodDeclarationSyntax>()
             .First(m => m.Identifier.Text == methodName);
 
-        var (cudaSource, diagnostics) = TranspileTestCaseMethod(methodName);
+        var (cudaSource, failures) = TranspileTestCaseMethod(methodName);
 
-        // The analyzer reports a misplaced hint or a bad factor (S-46); the transpiler reports nothing
-        Assert.Empty(diagnostics);
+        // The analyzer reports a misplaced hint or a bad factor (S-46); the transpiler records the same IDs as failures
         var analyzerDiagnostics = (await s_analyzerDiagnostics.Value)
             .Where(d => IsUnrollDiagnostic(d.Id) && methodDecl.Span.Contains(d.Location.SourceSpan))
             .ToList();
         LoopUnrollAudit.Audit(methodDecl, semanticModel, cudaSource, analyzerDiagnostics);
+        Assert.Equal(
+            analyzerDiagnostics.Select(static d => d.Id).Order(StringComparer.Ordinal),
+            failures.Select(static f => f.Descriptor.Id).Order(StringComparer.Ordinal));
 
-        var report = cudaSource + string.Concat(diagnostics.Select(d => $"\n// {d.Id}"));
-        await Verify(report, $"LoopUnroll_{methodName}");
+        await Verify(cudaSource, $"LoopUnroll_{methodName}");
     }
 }

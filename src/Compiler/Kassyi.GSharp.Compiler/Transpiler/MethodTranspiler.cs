@@ -17,7 +17,10 @@ public static class MethodTranspiler
     /// </summary>
     /// <param name="methodDecl">The Roslyn method declaration syntax node to transpile.</param>
     /// <param name="semanticModel">The semantic model bound to the compilation containing the method.</param>
-    /// <param name="reportDiagnostic">Not called: the transpiler reports nothing; the analyzer reports what it cannot emit.</param>
+    /// <param name="reportFailure">
+    /// An optional callback that receives the constructs that could not be emitted (<see cref="TranspileFailure"/>); the
+    /// transpiler reports no diagnostics itself.
+    /// </param>
     /// <param name="isDevice">
     /// <see langword="true"/> to emit a device-side function (<c>__device__</c>); 
     /// <see langword="false"/> to emit a kernel entry point (<c>extern "C" __global__</c>).
@@ -35,9 +38,9 @@ public static class MethodTranspiler
     /// Thrown when <paramref name="methodDecl"/> or <paramref name="semanticModel"/> is <see langword="null"/>.
     /// </exception>
     public static string GenerateCudaSource(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
-        Action<Diagnostic>? reportDiagnostic, bool isDevice,
+        Action<TranspileFailure>? reportFailure, bool isDevice,
         ITranspilerDialect dialect, out HashSet<string> requiredIncludes) =>
-        GenerateCudaSource(MethodEmissionPlan.Create(methodDecl, semanticModel, isKernel: !isDevice), reportFailure: null,
+        GenerateCudaSource(MethodEmissionPlan.Create(methodDecl, semanticModel, isKernel: !isDevice), reportFailure,
             dialect, out requiredIncludes);
 
     /// <summary>

@@ -40,7 +40,8 @@ public class UnsupportedSyntaxKindDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, kind));
     }
 
-    // A kind that C# 12 added (the spread element of a collection expression) is reported without being listed anywhere
+    // A kind that C# 12 added (the spread element of a collection expression) is reported without being listed anywhere,
+    // and its kernel's native source becomes #error
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
@@ -52,5 +53,14 @@ public class UnsupportedSyntaxKindDiagnosticsTests
         Assert.Equal(
             [(Analyzer, 44, 23, 44, 30)],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'SpreadElement'"));
+
+        // The generator states it in the kernel's native source, so the native build stops even without the analyzer
+        var (_, output, _) = RoslynTestUtility.RunGenerator(
+            RoslynTestUtility.ReadTestCase("Diagnostics/UnsupportedSyntaxKinds.cu.cs"), dialect);
+        Assert.Contains(
+            output.SyntaxTrees,
+            static tree => tree.ToString().Contains(
+                "#error \"\"(44,23): GSH0003: The syntax 'SpreadElement' is not supported in GSharp GPU kernels\"\"",
+                StringComparison.Ordinal));
     }
 }

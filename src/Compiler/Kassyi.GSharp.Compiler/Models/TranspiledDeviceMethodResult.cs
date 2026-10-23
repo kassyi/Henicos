@@ -1,5 +1,10 @@
 namespace Kassyi.GSharp.Compiler.Models;
 
+/// <summary>The transpiled outputs of one <c>[GpuDeviceFunction]</c>, for both native dialects.</summary>
+/// <remarks>
+/// A construct that a dialect could not emit turns that dialect's body into <c>#error</c> lines; the analyzer reports the
+/// matching diagnostics. <see cref="InternalError"/> is the only problem the generator itself reports (GSH0048).
+/// </remarks>
 internal readonly struct TranspiledDeviceMethodResult(
     IMethodSymbol methodSymbol,
     string methodName,
@@ -9,11 +14,9 @@ internal readonly struct TranspiledDeviceMethodResult(
     string cudaBody,
     string cppSignature,
     string cppBody,
-    EquatableArray<string> requiredIncludes,
-    EquatableArray<EquatableDiagnostic> diagnostics,
-    EquatableArray<EquatableDiagnostic> cppOnlyDiagnostics,
-    EquatableArray<string> cudaFailures,
-    EquatableArray<string> cppFailures,
+    EquatableArray<string> cudaIncludes,
+    EquatableArray<string> cppIncludes,
+    string internalError,
     string frameName = "",
     EquatableArray<string> frameDependencies = default,
     string managedCSharpSource = "") : IEquatable<TranspiledDeviceMethodResult>
@@ -28,20 +31,17 @@ internal readonly struct TranspiledDeviceMethodResult(
     public string CppBody { get; } = cppBody;
     public string GetSignature(bool isCuda) => isCuda ? CudaSignature : CppSignature;
     public string GetBody(bool isCuda) => isCuda ? CudaBody : CppBody;
-    public EquatableArray<string> RequiredIncludes { get; } = requiredIncludes;
-    /// <summary>The diagnostics of the CUDA transpilation, reported for every dialect.</summary>
-    public EquatableArray<EquatableDiagnostic> Diagnostics { get; } = diagnostics;
 
-    /// <summary>The diagnostics that only the C++ transpilation reports (e.g. GSH0054), reported for the C++ dialects.</summary>
-    public EquatableArray<EquatableDiagnostic> CppOnlyDiagnostics { get; } = cppOnlyDiagnostics;
+    /// <summary>The <c>#include</c> targets of the CUDA body.</summary>
+    public EquatableArray<string> CudaIncludes { get; } = cudaIncludes;
 
-    /// <summary>Why the CUDA transpilation could not emit parts of the function (<see cref="TranspileFailure"/>).</summary>
-    public EquatableArray<string> CudaFailures { get; } = cudaFailures;
+    /// <summary>The <c>#include</c> targets of the C++ body.</summary>
+    public EquatableArray<string> CppIncludes { get; } = cppIncludes;
 
-    /// <summary>Why the C++ transpilation could not emit parts of the function (<see cref="TranspileFailure"/>).</summary>
-    public EquatableArray<string> CppFailures { get; } = cppFailures;
+    public EquatableArray<string> GetIncludes(bool isCuda) => isCuda ? CudaIncludes : CppIncludes;
 
-    public EquatableArray<string> GetFailures(bool isCuda) => isCuda ? CudaFailures : CppFailures;
+    /// <summary>The exception that stopped the transpilation (GSH0048), or empty.</summary>
+    public string InternalError { get; } = internalError;
 
     /// <summary>The C++ frame type of a device function that may suspend, or empty for any other device function.</summary>
     public string FrameName { get; } = frameName;
@@ -61,11 +61,9 @@ internal readonly struct TranspiledDeviceMethodResult(
                CudaBody == other.CudaBody &&
                CppSignature == other.CppSignature &&
                CppBody == other.CppBody &&
-               RequiredIncludes.Equals(other.RequiredIncludes) &&
-               Diagnostics.Equals(other.Diagnostics) &&
-               CppOnlyDiagnostics.Equals(other.CppOnlyDiagnostics) &&
-               CudaFailures.Equals(other.CudaFailures) &&
-               CppFailures.Equals(other.CppFailures) &&
+               CudaIncludes.Equals(other.CudaIncludes) &&
+               CppIncludes.Equals(other.CppIncludes) &&
+               InternalError == other.InternalError &&
                FrameName == other.FrameName &&
                FrameDependencies.Equals(other.FrameDependencies) &&
                ManagedCSharpSource == other.ManagedCSharpSource;
@@ -74,8 +72,7 @@ internal readonly struct TranspiledDeviceMethodResult(
     public override bool Equals(object? obj) => obj is TranspiledDeviceMethodResult other && Equals(other);
 
     public override int GetHashCode() => HashHelper.Combine(MethodName, ClassName, Namespace, CudaSignature, CudaBody,
-        CppSignature, CppBody, RequiredIncludes, Diagnostics, CppOnlyDiagnostics, CudaFailures, CppFailures, FrameName,
-        ManagedCSharpSource);
+        CppSignature, CppBody, CudaIncludes, CppIncludes, InternalError, FrameName, ManagedCSharpSource);
 
     public static bool operator ==(TranspiledDeviceMethodResult left, TranspiledDeviceMethodResult right) =>
         left.Equals(right);

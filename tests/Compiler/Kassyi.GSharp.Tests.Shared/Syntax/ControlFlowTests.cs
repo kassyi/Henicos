@@ -125,7 +125,7 @@ public class ControlFlowTests : TranspilerTestBase
             typeof(ControlFlowKernels), nameof(ControlFlowKernels.SwitchExpressionKernel), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public class ControlFlowTests : TranspilerTestBase
             nameof(ControlFlowTarget.RefConditionalExpression), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         int[] a = [1];
         int[] b = [2];
@@ -159,7 +159,7 @@ public class ControlFlowTests : TranspilerTestBase
             nameof(ControlFlowTarget.DefaultLiteral), dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         SampleData[] items = [new() { X = 5, Y = 1.5f }];
         int[] counts = [7];

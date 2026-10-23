@@ -51,11 +51,11 @@ public partial class GeneratedNameLeakTests
 
                 foreach (var dialect in new ITranspilerDialect[] { new GSharpCudaDialect(), new StandardCppDialect() })
                 {
-                    var diagnostics = new List<Diagnostic>();
+                    var failures = new List<TranspileFailure>();
                     var isDevice = !symbol.HasAttribute(KnownAttributes.GpuKernel);
-                    var source = MethodTranspiler.GenerateCudaSource(method, model, diagnostics.Add, isDevice, dialect,
+                    var source = MethodTranspiler.GenerateCudaSource(method, model, failures.Add, isDevice, dialect,
                         out _);
-                    if (diagnostics.Exists(d => d.Severity == DiagnosticSeverity.Error))
+                    if (failures.Count > 0)
                     {
                         continue;
                     }

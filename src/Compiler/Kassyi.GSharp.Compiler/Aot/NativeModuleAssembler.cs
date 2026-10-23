@@ -69,22 +69,53 @@ internal static class NativeModuleAssembler
         }
     }
 
-    /// <summary>The <c>#include</c> targets that the kernels and device functions require.</summary>
+    /// <summary>
+    /// The <c>#include</c> targets that the kernels and device functions require in the module of one dialect: only what
+    /// that dialect's transpilation asked for, not the other dialect's.
+    /// </summary>
     public static HashSet<string> CollectIncludes(IReadOnlyList<TranspiledKernelResult> kernelMethods,
-        IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods)
+        IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods, bool isCuda)
     {
         var requiredIncludes = new HashSet<string>();
         kernelMethods
             .AsStackEnumerable()
-            .SelectMany(static method => method.RequiredIncludes
-                .AsStackEnumerable()
-            ).AddTo(requiredIncludes);
+            .Do(
+                (Includes: requiredIncludes, IsCuda: isCuda),
+                static (method, s) => method.GetIncludes(s.IsCuda)
+                    .AsStackEnumerable()
+                    .AddTo(s.Includes)
+            );
         deviceMethods
             .AsStackEnumerable()
-            .SelectMany(static method => method.RequiredIncludes
-                .AsStackEnumerable()
-            ).AddTo(requiredIncludes);
+            .Do(
+                (Includes: requiredIncludes, IsCuda: isCuda),
+                static (method, s) => method.GetIncludes(s.IsCuda)
+                    .AsStackEnumerable()
+                    .AddTo(s.Includes)
+            );
         return requiredIncludes;
+    }
+
+    /// <summary>
+    /// The source that stands for a method that a dialect could not transpile: one <c>#error</c> per reason
+    /// (<see cref="TranspileFailure.Format"/>).
+    /// </summary>
+    public static string FormatTranspileFailures(IReadOnlyList<string> reasons)
+    {
+        using var writer = new SourceWriter();
+        foreach (var reason in reasons)
+        {
+            writer.Append("#error \"");
+            foreach (var c in reason)
+            {
+                writer.AppendIf(c is '\\' or '"', "\\");
+                writer.Append(c);
+            }
+
+            writer.AppendLine("\"");
+        }
+
+        return writer.ToString();
     }
 
     /// <summary>The native module body in its fixed order: includes, prelude, device code, kernels.</summary>
