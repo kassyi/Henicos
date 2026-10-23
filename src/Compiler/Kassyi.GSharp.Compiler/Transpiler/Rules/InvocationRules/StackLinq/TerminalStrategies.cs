@@ -91,17 +91,22 @@ internal sealed class AllStrategy : IStackLinqTerminalStrategy
 /// <summary>
 /// Parameterized terminal strategy for <c>First</c>, <c>FirstOrDefault</c>, <c>Last</c>, and <c>LastOrDefault</c>.
 /// </summary>
-internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch) : IStackLinqTerminalStrategy
+internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch, bool trapOnEmpty) : IStackLinqTerminalStrategy
 {
     public void EmitInitialValue(ref TranspileContext context, string resultVar, in LinqStage stage)
     {
         context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
         context.Emitter.Writer.AppendLine($" {resultVar} = {{}};");
+        if (trapOnEmpty)
+        {
+            context.Emitter.Writer.AppendLine($"bool {resultVar}_found = false;");
+        }
     }
 
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
-        var statementSuffix = stopOnFirstMatch ? "; break;" : ";";
+        var foundSuffix = trapOnEmpty ? $" {resultVar}_found = true;" : "";
+        var statementSuffix = stopOnFirstMatch ? $";{foundSuffix} break;" : $";{foundSuffix}";
         if (StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol))
         {
             var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
@@ -119,7 +124,18 @@ internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch) : IStackLi
         }
     }
 
-    public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) { }
+    public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar)
+    {
+        if (!trapOnEmpty)
+        {
+            return;
+        }
+
+        var message = StackLinqHelper.HasPredicateOrSelector(stage.Invocation, stage.Symbol)
+            ? "Sequence contains no matching element"
+            : "Sequence contains no elements";
+        TerminalNames.EmitEmptySequenceTrap(ref context, $"!{resultVar}_found", message);
+    }
 }
 
 /// <summary>
@@ -153,7 +169,8 @@ internal sealed class ExtremaStrategy(string comparisonOperator) : IStackLinqTer
         }
     }
 
-    public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) { }
+    public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) =>
+        TerminalNames.EmitEmptySequenceTrap(ref context, $"!{resultVar}_init");
 }
 
 internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
@@ -193,9 +210,18 @@ internal sealed class AverageStrategy : IStackLinqTerminalStrategy
 
     public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar)
     {
-        context.Emitter.Writer.Append($"{resultVar} = {resultVar}_count > 0 ? {resultVar} / (");
-        context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
-        context.Emitter.Writer.AppendLine($")({resultVar}_count) : 0;");
+        context.Emitter.Writer.AppendLine($"if ({resultVar}_count == 0)");
+        using (context.Emitter.Writer.Braces())
+        {
+            context.Emitter.Writer.AppendLine($"{GSharpInternalNames.Prelude.Trap}(GSharpErrorCode::InvalidOperation, \"Sequence contains no elements\");");
+        }
+        context.Emitter.Writer.AppendLine("else");
+        using (context.Emitter.Writer.Braces())
+        {
+            context.Emitter.Writer.Append($"{resultVar} = {resultVar} / (");
+            context.Emitter.Dialect.AppendType(ref context, stage.Symbol.ReturnType);
+            context.Emitter.Writer.AppendLine($")({resultVar}_count);");
+        }
     }
 }
 
@@ -247,5 +273,29 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
         }
     }
 
-    public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar) { }
+    public void EmitPostLoop(ref TranspileContext context, in LinqStage stage, string resultVar)
+    {
+        if (stage.Invocation.ArgumentList.Arguments.Count < 2)
+        {
+            TerminalNames.EmitEmptySequenceTrap(ref context, $"!{resultVar}_init");
+        }
+    }
+}
+
+file static class TerminalNames
+{
+    /// <summary>Prefix of the terminal state flags and counters derived from the fusion result variable.</summary>
+    internal const string StatePrefix = "__gsharp_fusion_res_";
+
+    public static void EmitEmptySequenceTrap(
+        ref TranspileContext context,
+        string condition,
+        string message = "Sequence contains no elements")
+    {
+        context.Emitter.Writer.AppendLine($"if ({condition})");
+        using (context.Emitter.Writer.Braces())
+        {
+            context.Emitter.Writer.AppendLine($"{GSharpInternalNames.Prelude.Trap}(GSharpErrorCode::InvalidOperation, \"{message}\");");
+        }
+    }
 }

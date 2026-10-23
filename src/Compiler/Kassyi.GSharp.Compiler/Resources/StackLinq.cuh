@@ -455,6 +455,19 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             return sum;
         }
 
+        template <typename TSource, typename TFunc>
+        __device__ static inline auto Aggregate(TSource source, TFunc func) {
+            if (!source.MoveNext()) {
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                return decltype(source.Current())();
+            }
+            auto result = source.Current();
+            while (source.MoveNext()) {
+                result = func(result, source.Current());
+            }
+            return result;
+        }
+
         template <typename TSource, typename TAccumulate, typename TFunc>
         __device__ static inline TAccumulate Aggregate(TSource source, TAccumulate seed, TFunc func) {
             TAccumulate result = seed;
@@ -466,7 +479,10 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
         template <typename TSource>
         __device__ static inline auto Max(TSource source) {
-            if (!source.MoveNext()) return decltype(source.Current())();
+            if (!source.MoveNext()) {
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                return decltype(source.Current())();
+            }
             auto max_val = source.Current();
             while (source.MoveNext()) {
                 if (source.Current() > max_val) max_val = source.Current();
@@ -476,7 +492,10 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
         template <typename TSource>
         __device__ static inline auto Min(TSource source) {
-            if (!source.MoveNext()) return decltype(source.Current())();
+            if (!source.MoveNext()) {
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                return decltype(source.Current())();
+            }
             auto min_val = source.Current();
             while (source.MoveNext()) {
                 if (source.Current() < min_val) min_val = source.Current();
@@ -492,7 +511,11 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 sum += (double)source.Current();
                 count++;
             }
-            return count > 0 ? (sum / count) : 0;
+            if (count == 0) {
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                return 0.0;
+            }
+            return sum / count;
         }
     };
 }}}

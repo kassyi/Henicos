@@ -46,6 +46,20 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
         Assert.Equal(32, result[0]);
     }
 
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_EmptySequenceNonTrappingTerminals_ReturnDotNetDefaults()
+    {
+        int[] data = [7, 8, 9];
+        int[] results = new int[12];
+
+        CpuDialectLibraryCallKernels.LaunchEmptySequenceBoundaryKernel(data, results);
+
+        Assert.Equal([0, 0, 0, 1, 0, 0, 0, 0, 0, 42, 0, 42], results);
+    }
+
     [SkippableTheory]
     [InlineData(false, -1)]
     [InlineData(false, 3)]
@@ -173,6 +187,56 @@ public class CpuDialectLibraryCallTests : TranspilerTestBase
 
             Assert.Throws<InvalidOperationException>(
                 () => CpuDialectLibraryCallKernels.LaunchUnfusedSingleOrDefaultKernel(data, 2, result));
+        }
+        finally
+        {
+            CpuKernelLoader.ForceManagedExecution = previous;
+        }
+    }
+
+    [SkippableTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Category(TestCategory.Runtime)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_FusedAndUnfusedEmptySequenceTerminals_ThrowInvalidOperationException(bool forceManaged)
+    {
+        Skip.If(IsCudaDialect, "Trap exception propagation is verified on CPU execution paths.");
+
+        var previous = CpuKernelLoader.ForceManagedExecution;
+        CpuKernelLoader.ForceManagedExecution = forceManaged;
+        try
+        {
+            int[] data = [7, 8, 9];
+            int[] intResult = [0];
+            double[] doubleResult = [0.0];
+
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchFusedFirstKernel(data, 0, intResult));
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchFusedFirstPredicateKernel(data, 100, intResult));
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchFusedLastKernel(data, 0, intResult));
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchFusedLastPredicateKernel(data, 100, intResult));
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchFusedMaxKernel(data, 0, intResult));
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchFusedMinKernel(data, 0, intResult));
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchFusedAverageKernel(data, 0, doubleResult));
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchFusedSeedlessAggregateKernel(data, 0, intResult));
+
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchUnfusedMaxKernel(data, 0, intResult));
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchUnfusedMinKernel(data, 0, intResult));
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchUnfusedAverageKernel(data, 0, doubleResult));
+            Assert.Throws<InvalidOperationException>(
+                () => CpuDialectLibraryCallKernels.LaunchUnfusedSeedlessAggregateKernel(data, 0, intResult));
         }
         finally
         {
