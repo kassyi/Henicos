@@ -36,4 +36,16 @@ public class StackLinqStateOverloadTests : TranspilerTestBase
         Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diag.Id);
         Assert.Contains("IndexOf", diag.GetMessage());
     }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task OfType_InKernel_ReportsGSH0003Once()
+    {
+        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/StackLinqState/StackLinqOfTypeKernels.cu.cs", s_analyzer)
+                                                 .GetDiagnosticsAsync();
+        var diag = Assert.Single(diagnostics);
+        Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diag.Id);
+        Assert.Contains("OfType", diag.GetMessage());
+    }
 }

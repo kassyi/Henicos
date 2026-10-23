@@ -127,7 +127,7 @@ StackLinq implements an extensive suite of standard query operators optimized fo
 | **Element Selection** | `First()`, `FirstOrDefault()`, `Last()`, `LastOrDefault()`, `Single()`, `SingleOrDefault()`, `ElementAt(index)`, `ElementAtOrDefault(index)` |
 | **Materialization & Parallel** | `CopyTo(Span<T>)`, `ToArray()`, `AsParallel()` |
 | **State overloads (host-only)** | `Where(state, (item, state) => ...)` (`WhereWithStateEnumerator`), `Select(state, ...)` (`SelectWithStateEnumerator`), `Count`, `Any`, `All`, `First`, `FirstOrDefault` with `(state, predicate)`. The outer value goes in `state` so the lambda can be `static` and allocate no closure. A kernel reports `GSH0003` for them; a kernel lambda reads outer values directly. |
-| **Collect, act & search (host-only)** | `AddTo(collection)`, `AddIf(collection, predicate)`, `Do(action)`, `DoIf(predicate, action)`, `SelectMany(selector)` (`SelectManyEnumerator`), `TryFirst(predicate, out value)`, `IndexOf(predicate)`; all but `AddTo` and `SelectMany` also take a state value. They replace host loops that add to a caller-owned collection, run an action per element or search with a "found" result. A kernel reports `GSH0003` for them. |
+| **Collect, act & search (host-only)** | `AddTo(collection)`, `AddIf(collection, predicate)`, `Do(action)`, `DoIf(predicate, action)`, `SelectMany(selector)` (`SelectManyEnumerator`), `TryFirst(predicate, out value)`, `IndexOf(predicate)`; all but `AddTo` and `SelectMany` also take a state value. `OfType<TResult>()` (`OfTypeEnumerator`, an instance method of `StackEnumerable`) keeps the elements of a type and drops `null`. They replace host loops that add to a caller-owned collection, run an action per element or search with a "found" result. A kernel reports `GSH0003` for them. |
 
 For full method signatures and examples, refer to [StackLinqExtensions Class](StackLinqExtensions.md) and the individual method/enumerator reference pages below.
 
@@ -164,6 +164,7 @@ GSharp provides the compile-time diagnostic **[`SLQ0001`](../diagnostics/SLQ0001
 * [SkipWhileEnumerator&lt;TEnumerator, TSource&gt; Struct](SkipWhileEnumerator.md) / [SkipWhileAtEnumerator&lt;TEnumerator, TSource&gt; Struct](SkipWhileAtEnumerator.md)
 * [WhereWithStateEnumerator&lt;TEnumerator, TSource, TState&gt; Struct](WhereWithStateEnumerator.md) / [SelectWithStateEnumerator&lt;TEnumerator, TSource, TState, TResult&gt; Struct](SelectWithStateEnumerator.md)
 * [SelectManyEnumerator&lt;TEnumerator, TSource, TInnerEnumerator, TResult&gt; Struct](SelectManyEnumerator.md)
+* [OfTypeEnumerator&lt;TEnumerator, TSource, TResult&gt; Struct](OfTypeEnumerator.md)
 
 ### Extension Method Pages
 
@@ -188,5 +189,6 @@ GSharp provides the compile-time diagnostic **[`SLQ0001`](../diagnostics/SLQ0001
 * [Do Method](Do.md) / [DoIf Method](DoIf.md)
 * [SelectMany Method](SelectMany.md)
 * [TryFirst Method](TryFirst.md) / [IndexOf Method](IndexOf.md)
+* [OfType Method](OfType.md)
 * [Diagnostic SLQ0001: Excessive StackLinq Chain Depth](../diagnostics/SLQ0001.md)
 * [Transpiler Architecture & Lowering Rules](../../02_architecture/00_index.md)

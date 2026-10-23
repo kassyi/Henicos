@@ -12,6 +12,7 @@ public class StackLinqHostOperatorTests
     private static readonly int[] s_data = [1, 2, 3, 4, 5, 6];
     private static readonly int[] s_empty = [];
     private static readonly int[][] s_nested = [[1, 2], [], [3], [4, 5, 6]];
+    private static readonly object[] s_mixed = [1, "a", 2, null, "b"];
 
     [Fact]
     public void AddTo_ShouldAppendEveryElementAndReturnTheCount()
@@ -161,6 +162,45 @@ public class StackLinqHostOperatorTests
     }
 
     [Fact]
+    public void OfType_ShouldKeepTheElementsOfTheTypeInOrder()
+    {
+        var strings = new List<string>();
+        var ints = new List<int>();
+
+        s_mixed
+            .AsStackEnumerable()
+            .OfType<string>()
+            .AddTo(strings);
+        s_mixed
+            .AsStackEnumerable()
+            .OfType<int>()
+            .AddTo(ints);
+
+        Assert.Equal(["a", "b"], strings);
+        Assert.Equal([1, 2], ints);
+    }
+
+    [Fact]
+    public void OfType_AfterNullableSelect_ShouldDropTheNulls()
+    {
+        var hits = new List<string>();
+
+        int added = s_mixed
+            .AsStackEnumerable()
+            .Select(static x => x as string)
+            .OfType<string>()
+            .AddTo(hits);
+        int fromEmpty = s_empty
+            .AsStackEnumerable()
+            .OfType<int>()
+            .Count();
+
+        Assert.Equal(2, added);
+        Assert.Equal(["a", "b"], hits);
+        Assert.Equal(0, fromEmpty);
+    }
+
+    [Fact]
     public void IndexOf_ShouldReturnThePositionOrMinusOne()
     {
         int index = s_data
@@ -245,7 +285,7 @@ public class StackLinqHostOperatorTests
         int actual = RunQueries();
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
-        Assert.Equal(6 + 3 + 4, actual);
+        Assert.Equal(6 + 3 + 4 + 2, actual);
         Assert.Equal(0, allocated);
     }
 
@@ -263,7 +303,11 @@ public class StackLinqHostOperatorTests
         int index = s_data
             .AsStackEnumerable()
             .IndexOf(5, static (x, target) => x == target);
+        int strings = s_mixed
+            .AsStackEnumerable()
+            .OfType<string>()
+            .Count();
 
-        return flattened + third + index;
+        return flattened + third + index + strings;
     }
 }

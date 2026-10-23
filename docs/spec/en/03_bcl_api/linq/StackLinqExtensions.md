@@ -95,7 +95,7 @@ These operators replace host-side loops that collect, act on each element or sea
 | [TryFirst&lt;TEnumerator, TSource&gt;(...)](TryFirst.md) | Finds the first element that satisfies a condition and reports whether one was found (with or without a state value). |
 | [IndexOf&lt;TEnumerator, TSource&gt;(...)](IndexOf.md) | Returns the position of the first element that satisfies a condition, or `-1` (with or without a state value). |
 
-The state overloads of `Where`, `Select`, `Count`, `Any`, `All`, `First` and `FirstOrDefault` are host-only as well.
+The state overloads of `Where`, `Select`, `Count`, `Any`, `All`, `First` and `FirstOrDefault` are host-only as well, and so is [OfType&lt;TResult&gt;()](OfType.md), an instance method of `StackEnumerable<TEnumerator, T>` so that a call names only `TResult`.
 
 ## Remarks
 

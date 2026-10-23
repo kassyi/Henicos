@@ -134,6 +134,6 @@ public static partial class StackLinqExtensions
     //
     // D. Requires Dynamic Dispatch / Reflection (RTTI)
     //    - Cast<TResult>()
-    //    - OfType<TResult>()
+    //    (OfType<TResult>() exists as a host-only instance method of StackEnumerable; a kernel reports GSH0003.)
     // -----------------------------------------------------------------------------------------
 }

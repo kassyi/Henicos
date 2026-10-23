@@ -25,4 +25,19 @@ public readonly ref struct StackEnumerable<TEnumerator, T>
     {
         Enumerator = enumerator;
     }
+
+    /// <summary>
+    /// Filters the sequence down to the elements of type <typeparamref name="TResult"/>.
+    /// </summary>
+    /// <typeparam name="TResult">The type to filter the elements on.</typeparam>
+    /// <returns>A <see cref="StackEnumerable{TEnumerator, T}"/> over the elements of type <typeparamref name="TResult"/>, in order.</returns>
+    /// <remarks>
+    /// <para><b>Usage:</b> An instance method rather than an extension, so that a call names only
+    /// <typeparamref name="TResult"/> (<c>nodes.AsStackEnumerable().OfType&lt;FieldDeclarationSyntax&gt;()</c>); an
+    /// extension would need its enumerator and source types spelled out as well. A <see langword="null"/> element is
+    /// never of <typeparamref name="TResult"/>, so <c>Select(x =&gt; x as T).OfType&lt;T&gt;()</c> drops the misses.</para>
+    /// <para><b>Execution Target:</b> Host-only (CPU) operation. Cannot be transpiled or invoked within GPU kernels.</para>
+    /// </remarks>
+    public StackEnumerable<OfTypeEnumerator<TEnumerator, T, TResult>, TResult> OfType<TResult>() =>
+        new(new OfTypeEnumerator<TEnumerator, T, TResult>(Enumerator));
 }

@@ -21,11 +21,12 @@ internal static class StackLinqHelper
     /// <summary>
     /// Is it a StackLinq operator that runs on the host only? That is every overload passing a state value to its lambda
     /// (<c>Any(state, static (x, s) => ...)</c>; a kernel lambda reads outer values directly), and every
-    /// operator in <c>StackLinqExtensions.HostOnly.cs</c>. The kernel transpiler rules have no strategy for them.
+    /// operator in <c>StackLinqExtensions.HostOnly.cs</c>, plus <c>StackEnumerable.OfType</c>. The kernel transpiler
+    /// rules have no strategy for them.
     /// </summary>
     public static bool IsHostOnly(IMethodSymbol symbol) =>
         IsStackLinqMethod(symbol) &&
-        (symbol.Name is "AddTo" or "AddIf" or "Do" or "DoIf" or "SelectMany" or "TryFirst" or "IndexOf" ||
+        (symbol.Name is "AddTo" or "AddIf" or "Do" or "DoIf" or "SelectMany" or "TryFirst" or "IndexOf" or "OfType" ||
          symbol.Parameters
              .AsStackEnumerable()
              .Any(static p => p.Name == "state"));
