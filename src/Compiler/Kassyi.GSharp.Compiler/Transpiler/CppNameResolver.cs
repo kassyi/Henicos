@@ -185,28 +185,30 @@ internal static class CppNameResolver
     private static int[] CollectDeclarationPositions(SyntaxNode method)
     {
         var positions = ImmutableArray.CreateBuilder<int>();
-        foreach (var node in method.DescendantNodesAndSelf())
-        {
-            var identifier = node switch
-            {
-                ParameterSyntax p => p.Identifier,
-                VariableDeclaratorSyntax v => v.Identifier,
-                SingleVariableDesignationSyntax d => d.Identifier,
-                ForEachStatementSyntax f => f.Identifier,
-                LocalFunctionStatementSyntax l => l.Identifier,
-                LabeledStatementSyntax l => l.Identifier,
-                CatchDeclarationSyntax c => c.Identifier,
-                _ => default
-            };
-
-            if (!identifier.IsKind(SyntaxKind.None) && !identifier.IsMissing)
-            {
-                positions.Add(identifier.SpanStart);
-            }
-        }
+        method.DescendantNodesAndSelf()
+            .AsStackEnumerable()
+            .Select(GetDeclaredIdentifier)
+            .Where(static identifier => !identifier.IsKind(SyntaxKind.None) && !identifier.IsMissing)
+            .Select(static identifier => identifier.SpanStart)
+            .AddTo(positions);
 
         var result = positions.ToArray();
         Array.Sort(result);
         return result;
     }
+
+    // The name a declaration introduces (parameter, local, pattern variable, foreach variable, local function, label,
+    // catch variable); default for any other node
+    private static SyntaxToken GetDeclaredIdentifier(SyntaxNode node) =>
+        node switch
+        {
+            ParameterSyntax p => p.Identifier,
+            VariableDeclaratorSyntax v => v.Identifier,
+            SingleVariableDesignationSyntax d => d.Identifier,
+            ForEachStatementSyntax f => f.Identifier,
+            LocalFunctionStatementSyntax l => l.Identifier,
+            LabeledStatementSyntax l => l.Identifier,
+            CatchDeclarationSyntax c => c.Identifier,
+            _ => default
+        };
 }

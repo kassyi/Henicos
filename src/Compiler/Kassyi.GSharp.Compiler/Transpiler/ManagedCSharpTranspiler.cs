@@ -154,14 +154,12 @@ internal static class ManagedCSharpTranspiler
         where TNode : SyntaxNode
     {
         var creations = ImmutableArray.CreateBuilder<BaseObjectCreationExpressionSyntax>();
-        foreach (var descendant in node.DescendantNodes())
-        {
-            if (descendant is BaseObjectCreationExpressionSyntax creation &&
-                semanticModel.GetTypeSymbol(creation).IsSharedMemoryType())
-            {
-                creations.Add(creation);
-            }
-        }
+        node.DescendantNodes()
+            .AsStackEnumerable()
+            .OfType<BaseObjectCreationExpressionSyntax>()
+            .AddIf(creations, semanticModel, static (creation, model) =>
+                model.GetTypeSymbol(creation).IsSharedMemoryType()
+            );
 
         return creations.Count == 0
             ? node
