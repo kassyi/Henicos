@@ -232,7 +232,7 @@ __gsharp_ty_DebugReduc__NestedPhysicsState __gsharp_tmp{}; __gsharp_tmp.__gsharp
 ());
 __gsharp_ctx->__gsharp_id_28_mag=__gsharp_fn_DebugReduc__ComprehensiveSpecKernel__ComputeMagnitude(__gsharp_ctx->__gsharp_id_23_p);
 __gsharp_ctx->__gsharp_id_28_mag=(float)fabsf(__gsharp_ctx->__gsharp_id_28_mag);
-for(int __gsharp_id_29_i = 0;__gsharp_ctx->__gsharp_id_29_i<__gsharp_id_5_unrollFactor;__gsharp_ctx->__gsharp_id_29_i++)
+for(__gsharp_ctx->__gsharp_id_29_i=0;__gsharp_ctx->__gsharp_id_29_i<__gsharp_id_5_unrollFactor;__gsharp_ctx->__gsharp_id_29_i++)
 {
 if(__gsharp_ctx->__gsharp_id_29_i==1)
 {
@@ -453,7 +453,7 @@ StatusFlag = 1
 __gsharp_ctx.mag = ComputeMagnitude(__gsharp_ctx.p);
 __gsharp_ctx.mag = (float)Math.Abs(__gsharp_ctx.mag);
 // 5. Automatic Loop Unrolling via Constant (for)
-for (int i = 0; __gsharp_ctx.i < unrollFactor; __gsharp_ctx.i++)
+for (__gsharp_ctx.i = 0; __gsharp_ctx.i < unrollFactor; __gsharp_ctx.i++)
 {
 if (__gsharp_ctx.i == 1)
 continue;

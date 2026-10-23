@@ -29,11 +29,12 @@ internal static class ManagedCSharpTranspiler
         // Internal-error reports name the kernel as the user wrote it.
         var kernelName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedSymbols) =
+        var (localInits, regularFields, unhoistedSymbols, renamedLocals) =
             ProcessContextFields(contextFields, semanticModel, kernelName);
 
         var unhoistedBody =
-            new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, kernelName).Visit(loweredBody) as BlockSyntax
+            new ContextLocalRewriter(unhoistedSymbols, renamedLocals, semanticModel, kernelName).Visit(loweredBody) as
+                BlockSyntax
             ?? throw new InvalidOperationException(
                 $"Unhoisting ref-struct fields removed the body of kernel '{kernelName}'.");
         var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: false);
@@ -71,13 +72,13 @@ internal static class ManagedCSharpTranspiler
             GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, methodSymbol);
         var functionName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedSymbols) =
+        var (localInits, regularFields, unhoistedSymbols, renamedLocals) =
             ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
         var copiedParameters = plan.GetCopiedParameters(lowered);
 
         var unhoistedBody =
-            new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, functionName).Visit(lowered.LoweredBody) as
-                BlockSyntax
+            new ContextLocalRewriter(unhoistedSymbols, renamedLocals, semanticModel, functionName)
+                .Visit(lowered.LoweredBody) as BlockSyntax
             ?? throw new InvalidOperationException(
                 $"Unhoisting ref-struct fields removed the body of device function '{functionName}'.");
         var bodySource = RewriteAndNormalizeBody(unhoistedBody, semanticModel, isDeviceFunction: true);
@@ -103,17 +104,18 @@ internal static class ManagedCSharpTranspiler
         return ToSource(rewritten);
     }
 
-    /// <summary>A hoisted context field with the type that <see cref="HoistedFieldTypeResolver"/> resolved for it.</summary>
+    /// <summary>
+    /// A hoisted context field with the type that <see cref="HoistedFieldTypeResolver"/> resolved for it and its name in
+    /// the managed state machine.
+    /// </summary>
     private readonly record struct ContextField(
         VariableDeclaratorSyntax Declarator,
         TypeSyntax DeclaredType,
-        ITypeSymbol ResolvedType)
-    {
-        public string Name => Declarator.Identifier.ValueText.ToCSharpIdentifier();
-    }
+        ITypeSymbol ResolvedType,
+        string Name);
 
     private static (ImmutableArray<ContextField> LocalInits, ImmutableArray<ContextField> RegularFields,
-        HashSet<ILocalSymbol> UnhoistedSymbols)
+        HashSet<ILocalSymbol> UnhoistedSymbols, Dictionary<ILocalSymbol, string> RenamedLocals)
         ProcessContextFields(
             IReadOnlyList<VariableDeclaratorSyntax>? contextFields,
             SemanticModel semanticModel,
@@ -122,12 +124,14 @@ internal static class ManagedCSharpTranspiler
         var regularFields = ImmutableArray.CreateBuilder<ContextField>();
         var localInits = ImmutableArray.CreateBuilder<ContextField>();
         var unhoistedSymbols = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
+        var renamedLocals = new Dictionary<ILocalSymbol, string>(SymbolEqualityComparer.Default);
 
         if (contextFields == null)
         {
-            return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedSymbols);
+            return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedSymbols, renamedLocals);
         }
 
+        var sharedNames = FindSharedNames(contextFields);
         foreach (var field in contextFields)
         {
             if (field.Parent is not VariableDeclarationSyntax declaration)
@@ -135,12 +139,26 @@ internal static class ManagedCSharpTranspiler
                 continue;
             }
 
+            var localSymbol = semanticModel.GetDeclaredSymbol<ILocalSymbol>(field);
+            var name = field.Identifier.ValueText.ToCSharpIdentifier();
+            if (sharedNames.Contains(field.Identifier.ValueText))
+            {
+                if (localSymbol == null)
+                {
+                    throw new InvalidOperationException(
+                        $"The hoisted local '{field.Identifier.ValueText}' of '{kernelName}' shares its name with another one and does not resolve to a symbol.");
+                }
+
+                name = GetDistinctName(localSymbol);
+                renamedLocals[localSymbol] = name;
+            }
+
             var contextField = new ContextField(field, declaration.Type,
-                HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName));
+                HoistedFieldTypeResolver.Resolve(field, semanticModel, kernelName), name);
 
             if (contextField.ResolvedType.IsRefLikeType)
             {
-                if (semanticModel.GetDeclaredSymbol<ILocalSymbol>(field) is { } localSymbol)
+                if (localSymbol != null)
                 {
                     unhoistedSymbols.Add(localSymbol);
                 }
@@ -154,8 +172,28 @@ internal static class ManagedCSharpTranspiler
             }
         }
 
-        return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedSymbols);
+        return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedSymbols, renamedLocals);
     }
+
+    // Names that more than one hoisted local declares; such locals live in sibling scopes of the user's method
+    private static HashSet<string> FindSharedNames(IReadOnlyList<VariableDeclaratorSyntax> contextFields)
+    {
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var shared = new HashSet<string>(StringComparer.Ordinal);
+        contextFields
+            .AsStackEnumerable()
+            .Select(static field => field.Identifier.ValueText)
+            .AddIf(shared, seen, static (name, names) => !names.Add(name));
+        return shared;
+    }
+
+    // [WHY] Every field of a context class needs its own name. A local that shares its name takes the name of its field
+    // in the C++ context struct, which carries the declaration ordinal; user identifiers cannot contain '__' (GSH0055),
+    // so that name collides with nothing the user writes. A function-scope name does not depend on the dialect.
+    private static string GetDistinctName(ILocalSymbol local) =>
+        CppNameResolver.Resolve(local, local.Name, s_cppDialect).ToString();
+
+    private static readonly StandardCppDialect s_cppDialect = new();
 
     private static TNode AddSharedMemorySiteKeys<TNode>(TNode node, SemanticModel semanticModel)
         where TNode : SyntaxNode
@@ -413,8 +451,13 @@ internal static class ManagedCSharpTranspiler
         } memberAccess &&
         memberAccess.IsKind(SyntaxKind.PointerMemberAccessExpression);
 
-    private sealed class UnhoistRefStructRewriter(
+    /// <summary>
+    /// Turns context accesses to ref struct locals back into locals, and renames the accesses to locals that share their
+    /// name with another hoisted local (see <see cref="GetDistinctName"/>).
+    /// </summary>
+    private sealed class ContextLocalRewriter(
         HashSet<ILocalSymbol> unhoistedSymbols,
+        Dictionary<ILocalSymbol, string> renamedLocals,
         SemanticModel semanticModel,
         string kernelName) : CSharpSyntaxRewriter
     {
@@ -441,9 +484,17 @@ internal static class ManagedCSharpTranspiler
 
             var symbol = semanticModel.GetSymbol(memberAccess.Name) as ILocalSymbol ??
                          semanticModel.GetDeclaredSymbol<ILocalSymbol>(memberAccess.Name);
-            return symbol != null && unhoistedSymbols.Contains(symbol)
-                ? memberAccess.Name.WithTriviaFrom(memberAccess)
-                : memberAccess;
+            if (symbol == null)
+            {
+                return memberAccess;
+            }
+
+            SimpleNameSyntax name = renamedLocals.TryGetValue(symbol, out var renamed)
+                ? SyntaxFactory.IdentifierName(renamed)
+                : memberAccess.Name;
+            return unhoistedSymbols.Contains(symbol)
+                ? name.WithTriviaFrom(memberAccess)
+                : memberAccess.WithName(name);
         }
 
         public override SyntaxNode? VisitExpressionStatement(ExpressionStatementSyntax node)
@@ -500,9 +551,17 @@ internal static class ManagedCSharpTranspiler
             }
 
             var callArguments = SyntaxFactory.SeparatedList<ArgumentSyntax>();
-            foreach (var argument in call.ArgumentList.Arguments)
+            var argumentsByParameter = MatchArgumentsToParameters(call.ArgumentList.Arguments, callee);
+            for (var i = 0; i < argumentsByParameter.Length; i++)
             {
-                var visited = Visit(argument) as ArgumentSyntax ?? argument;
+                if (argumentsByParameter[i] is not { } argument)
+                {
+                    callArguments = callArguments.Add(SyntaxFactory.Argument(CreateDefaultArgument(callee.Parameters[i])));
+                    continue;
+                }
+
+                // The frame and the result follow the user's arguments, so every argument is passed by position
+                var visited = (Visit(argument) as ArgumentSyntax ?? argument).WithNameColon(null);
                 callArguments = callArguments.Add(visited.RefKindKeyword.IsKind(SyntaxKind.OutKeyword)
                     ? visited.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword))
                     : visited);
@@ -533,6 +592,93 @@ internal static class ManagedCSharpTranspiler
                 SyntaxFactory.ParseExpression(GetDeviceFunctionMember(callee,
                     GSharpInternalNames.Kernel.StateMachinePrefix)),
                 SyntaxFactory.ArgumentList(callArguments));
+        }
+
+        // [WHY] The state machine of the callee takes every parameter of the user's function followed by the frame, so
+        // a named argument or an omitted optional one would misplace the frame. Index i holds the argument that
+        // parameter i receives, or null when the call leaves the parameter to its default value.
+        private static ArgumentSyntax?[] MatchArgumentsToParameters(SeparatedSyntaxList<ArgumentSyntax> arguments,
+            IMethodSymbol callee)
+        {
+            var parameters = callee.Parameters;
+            var matched = new ArgumentSyntax?[parameters.Length];
+            for (var i = 0; i < arguments.Count; i++)
+            {
+                var argument = arguments[i];
+                var index = argument.NameColon is { } nameColon
+                    ? parameters
+                        .AsStackEnumerable()
+                        .IndexOf(nameColon.Name.Identifier.ValueText, static (parameter, name) => parameter.Name == name)
+                    : i;
+                if (index < 0 || index >= matched.Length)
+                {
+                    throw new InvalidOperationException(
+                        $"An argument of a call that may suspend does not match a parameter of '{callee.Name}'.");
+                }
+
+                matched[index] = argument;
+            }
+
+            return matched;
+        }
+
+        // The value that C# passes for an omitted optional parameter: <literal>, (<enum type>)<literal> or default
+        private static ExpressionSyntax CreateDefaultArgument(IParameterSymbol parameter)
+        {
+            if (!parameter.HasExplicitDefaultValue)
+            {
+                throw new InvalidOperationException(
+                    $"A call that may suspend omits the parameter '{parameter.Name}', which has no default value.");
+            }
+
+            var value = parameter.ExplicitDefaultValue;
+            var literal = value switch
+            {
+                null => SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression),
+                bool flag => SyntaxFactory.LiteralExpression(flag
+                    ? SyntaxKind.TrueLiteralExpression
+                    : SyntaxKind.FalseLiteralExpression),
+                float single when float.IsNaN(single) || float.IsInfinity(single) =>
+                    SyntaxFactory.ParseExpression(GetNonFiniteName("float", single)),
+                double number when double.IsNaN(number) || double.IsInfinity(number) =>
+                    SyntaxFactory.ParseExpression(GetNonFiniteName("double", number)),
+                float single => SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                    SyntaxFactory.Literal(single)),
+                double number => SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                    SyntaxFactory.Literal(number)),
+                _ => CreateIntegralLiteral(value)
+            };
+
+            if (parameter.Type.TypeKind != TypeKind.Enum)
+            {
+                return literal;
+            }
+
+            using var writer = new SourceWriter();
+            writer.AppendCsharpTypeName(parameter.Type);
+            return SyntaxFactory.CastExpression(SyntaxFactory.ParseTypeName(writer.ToString()), literal);
+        }
+
+        private static string GetNonFiniteName(string type, double value) =>
+            type + (double.IsNaN(value) ? ".NaN" : value > 0 ? ".PositiveInfinity" : ".NegativeInfinity");
+
+        private static LiteralExpressionSyntax CreateIntegralLiteral(object value)
+        {
+            var token = value switch
+            {
+                int number => SyntaxFactory.Literal(number),
+                uint number => SyntaxFactory.Literal(number),
+                long number => SyntaxFactory.Literal(number),
+                ulong number => SyntaxFactory.Literal(number),
+                char character => SyntaxFactory.Literal(character),
+                byte or sbyte or short or ushort => SyntaxFactory.Literal(Convert.ToInt32(value, CultureInfo.InvariantCulture)),
+                _ => throw new InvalidOperationException(
+                    $"A call that may suspend omits a parameter whose default value '{value}' has no C# literal.")
+            };
+
+            return SyntaxFactory.LiteralExpression(value is char
+                ? SyntaxKind.CharacterLiteralExpression
+                : SyntaxKind.NumericLiteralExpression, token);
         }
 
         public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>

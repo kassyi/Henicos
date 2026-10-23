@@ -99,7 +99,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-for(int __gsharp_id_14_k = 0;__gsharp_ctx->__gsharp_id_14_k<16;++__gsharp_ctx->__gsharp_id_14_k)
+for(__gsharp_ctx->__gsharp_id_14_k=0;__gsharp_ctx->__gsharp_id_14_k<16;++__gsharp_ctx->__gsharp_id_14_k)
 {
 __gsharp_ctx->__gsharp_id_12_cValue+=__gsharp_ctx->__gsharp_id_4_As[__gsharp_ctx->__gsharp_id_9_ty*16+__gsharp_ctx->__gsharp_id_14_k]*__gsharp_ctx->__gsharp_id_5_Bs[__gsharp_ctx->__gsharp_id_14_k*16+__gsharp_ctx->__gsharp_id_8_tx];
 }
@@ -244,7 +244,7 @@ return;
 
 case 2:
 {
-for (int k = 0; __gsharp_ctx.k < 16; ++__gsharp_ctx.k)
+for (__gsharp_ctx.k = 0; __gsharp_ctx.k < 16; ++__gsharp_ctx.k)
 {
 __gsharp_ctx.cValue += As[__gsharp_ctx.ty * 16 + __gsharp_ctx.k] * Bs[__gsharp_ctx.k * 16 + __gsharp_ctx.tx];
 }

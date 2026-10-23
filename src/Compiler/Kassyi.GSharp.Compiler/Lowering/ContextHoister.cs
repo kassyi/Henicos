@@ -39,6 +39,7 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
             barrierStarts[i] = analyzer.BarrierSpans[i].Start;
         }
 
+        var hoistedNames = new HashSet<string>(StringComparer.Ordinal);
         // [WHY] Binary search (O(V log B)) is used to determine if variables cross any synchronization barriers.
         foreach (var (decl, scopeEnd) in analyzer.Variables)
         {
@@ -55,8 +56,7 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
 
             if (isSharedMemory || isSuspendingCallResult)
             {
-                _hoistedVariables.Add(decl.Identifier.ValueText);
-                hoistedDecls.Add(decl);
+                hoistedNames.Add(decl.Identifier.ValueText);
                 continue;
             }
 
@@ -68,14 +68,20 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
             }
 
             // If a barrier is found after the declaration and before the end of the scope, it crosses.
-            if (index >= barrierCount || barrierStarts[index] >= scopeEnd)
+            if (index < barrierCount && barrierStarts[index] < scopeEnd)
             {
-                continue;
+                hoistedNames.Add(decl.Identifier.ValueText);
             }
-
-            _hoistedVariables.Add(decl.Identifier.ValueText);
-            hoistedDecls.Add(decl);
         }
+
+        // [WHY] Accesses are rewritten by name, so a local that shares its name with a hoisted one (declared in a sibling
+        // scope) reaches the context as well and needs a field of its own: its type may differ, and the transpilers name
+        // each field after its declaration.
+        analyzer.Variables
+            .AsStackEnumerable()
+            .Select(static variable => variable.Decl)
+            .AddIf(hoistedDecls, hoistedNames, static (decl, names) => names.Contains(decl.Identifier.ValueText));
+        _hoistedVariables.UnionWith(hoistedNames);
 
         var rewrittenBlock = (BlockSyntax)Visit(block);
         return (rewrittenBlock, hoistedDecls);
@@ -138,6 +144,56 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
         statements.Add(newLocalDecl);
         statements.AddRange(assignments);
         return SyntaxFactory.Block(statements);
+    }
+
+    // [WHY] A loop without a barrier stays a for statement. When its variable is hoisted, the declaration would
+    // initialize a local that no access reads, so the initializers assign the context field instead.
+    // for (__gsharp_ctx-><variable> = <initializer>, ...; <condition>; <incrementors>) <body>
+    public override SyntaxNode? VisitForStatement(ForStatementSyntax node)
+    {
+        var visited = (ForStatementSyntax?)base.VisitForStatement(node)
+                      ?? throw new InvalidOperationException("Hoisting removed a for statement.");
+        if (visited.Declaration is not { } declaration)
+        {
+            return visited;
+        }
+
+        var initializers = SyntaxFactory.SeparatedList<ExpressionSyntax>();
+        var remainingVariables = SyntaxFactory.SeparatedList<VariableDeclaratorSyntax>();
+        foreach (var variable in declaration.Variables)
+        {
+            if (!_hoistedVariables.Contains(variable.Identifier.ValueText))
+            {
+                remainingVariables = remainingVariables.Add(variable);
+            }
+            else if (variable.Initializer is { } initializer)
+            {
+                initializers = initializers.Add(SyntaxFactory.AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    CreateContextAccess(variable.Identifier, variable),
+                    initializer.Value
+                ));
+            }
+        }
+
+        if (remainingVariables.Count == declaration.Variables.Count)
+        {
+            return visited;
+        }
+
+        var loop = visited
+            .WithDeclaration(null)
+            .WithInitializers(initializers);
+        if (remainingVariables.Count == 0)
+        {
+            return loop;
+        }
+
+        // { <type> <remaining variables>; <loop> }
+        return SyntaxFactory.Block(
+            SyntaxFactory.LocalDeclarationStatement(declaration.WithVariables(remainingVariables)),
+            loop
+        );
     }
 
     public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)

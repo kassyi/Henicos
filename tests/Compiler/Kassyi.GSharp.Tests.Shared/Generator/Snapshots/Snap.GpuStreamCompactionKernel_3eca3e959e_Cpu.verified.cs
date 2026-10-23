@@ -255,8 +255,8 @@ public int offsetA;
 public int offsetB;
 public int globalA;
 public int globalB;
-public int d;
-public int d;
+public int __gsharp_id_17_d;
+public int __gsharp_id_22_d;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan(uint[] output, uint[] input, int elementCount, uint[] blockSums, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__Kernels__GpuStreamCompactionKernels__BlockExclusiveScan __gsharp_ctx) {
 global::Kassyi.GSharp.Core.SharedMemory<uint> sharedMem = new SharedMemory<uint>(2048 + 128, 0x2d815af68769c2cdUL);
@@ -279,13 +279,13 @@ __gsharp_ctx.globalA = __gsharp_ctx.globalOffset + __gsharp_ctx.indexA;
 __gsharp_ctx.globalB = __gsharp_ctx.globalOffset + __gsharp_ctx.indexB;
 sharedMem[__gsharp_ctx.indexA + __gsharp_ctx.offsetA] = (__gsharp_ctx.globalA < elementCount) ? input[__gsharp_ctx.globalA] : 0u;
 sharedMem[__gsharp_ctx.indexB + __gsharp_ctx.offsetB] = (__gsharp_ctx.globalB < elementCount) ? input[__gsharp_ctx.globalB] : 0u;
-__gsharp_ctx.d = __gsharp_ctx.treeSize >> 1;
+__gsharp_ctx.__gsharp_id_17_d = __gsharp_ctx.treeSize >> 1;
 goto case 1;
 }
 
 case 1:
 {
-if (!(__gsharp_ctx.d > 0))
+if (!(__gsharp_ctx.__gsharp_id_17_d > 0))
 goto case 4;
 __gsharp_ctx.__gsharp_state = 2;
 return;
@@ -293,7 +293,7 @@ return;
 
 case 2:
 {
-if (__gsharp_ctx.tid < __gsharp_ctx.d)
+if (__gsharp_ctx.tid < __gsharp_ctx.__gsharp_id_17_d)
 {
 int ai = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 1) - 1;
 int bi = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 2) - 1;
@@ -308,7 +308,7 @@ goto case 3;
 
 case 3:
 {
-__gsharp_ctx.d >>= 1;
+__gsharp_ctx.__gsharp_id_17_d >>= 1;
 goto case 1;
 goto case 4;
 }
@@ -327,13 +327,13 @@ blockSums[__gsharp_ctx.bIdx] = sharedMem[lastIndex + lastOffset];
 sharedMem[lastIndex + lastOffset] = 0u;
 }
 
-__gsharp_ctx.d = 1;
+__gsharp_ctx.__gsharp_id_22_d = 1;
 goto case 5;
 }
 
 case 5:
 {
-if (!(__gsharp_ctx.d < __gsharp_ctx.treeSize))
+if (!(__gsharp_ctx.__gsharp_id_22_d < __gsharp_ctx.treeSize))
 goto case 8;
 __gsharp_ctx.stride >>= 1;
 __gsharp_ctx.__gsharp_state = 6;
@@ -342,7 +342,7 @@ return;
 
 case 6:
 {
-if (__gsharp_ctx.tid < __gsharp_ctx.d)
+if (__gsharp_ctx.tid < __gsharp_ctx.__gsharp_id_22_d)
 {
 int ai = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 1) - 1;
 int bi = __gsharp_ctx.stride * (2 * __gsharp_ctx.tid + 2) - 1;
@@ -358,7 +358,7 @@ goto case 7;
 
 case 7:
 {
-__gsharp_ctx.d *= 2;
+__gsharp_ctx.__gsharp_id_22_d *= 2;
 goto case 5;
 goto case 8;
 }
