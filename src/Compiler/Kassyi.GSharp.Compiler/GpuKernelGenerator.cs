@@ -118,8 +118,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var configProvider = context.AnalyzerConfigOptionsProvider
             .Select((options, _) =>
             {
-                options.GlobalOptions.TryGetValue("build_property.GSharpTargetDialect", out var dialect);
-                var finalDialect = string.IsNullOrWhiteSpace(dialect) ? "Cpu" : dialect;
+                var dialect = TranspilerDialects.GetName(options.GlobalOptions);
 
                 options.GlobalOptions.TryGetValue("build_property.GSharpEmitSource", out var emitSrcStr);
                 var emitSource = string.IsNullOrWhiteSpace(emitSrcStr) ||
@@ -136,7 +135,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     ? Path.Combine(projDir, objPath)
                     : null;
 
-                return new GeneratorConfig(finalDialect ?? "Cpu", emitSource, intermediatePath);
+                return new GeneratorConfig(dialect, emitSource, intermediatePath);
             });
 
         var kernelMethods = context.SyntaxProvider

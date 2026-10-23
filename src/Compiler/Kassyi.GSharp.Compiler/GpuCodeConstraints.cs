@@ -88,6 +88,32 @@ internal static class GpuCodeConstraints
     }
 
     /// <summary>
+    /// Whether <paramref name="dialect"/> emits <c>Gpu.InlinePtx</c>; the others replace the call with a runtime failure
+    /// (GSH0054).
+    /// </summary>
+    public static bool SupportsInlinePtx(ITranspilerDialect dialect) =>
+        dialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly);
+
+    /// <summary>
+    /// Whether <paramref name="symbol"/> is a static field or property that lives in host memory, which device code cannot
+    /// read (GSH0065). Constants, enum members, the members that <paramref name="dialect"/> maps to an intrinsic and the
+    /// members of <c>Kassyi.GSharp.Core</c> types are not.
+    /// </summary>
+    public static bool IsHostStaticMember(ISymbol symbol, ITranspilerDialect dialect)
+    {
+        var isStaticData = symbol switch
+        {
+            IFieldSymbol field => field is { IsStatic: true, IsConst: false } && field.ContainingType?.TypeKind != TypeKind.Enum,
+            IPropertySymbol property => property.IsStatic,
+            _ => false
+        };
+
+        return isStaticData &&
+               !dialect.TryMapIntrinsic(symbol, out _) &&
+               symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() != true;
+    }
+
+    /// <summary>
     /// Whether the argument of <c>Gpu.InlinePtx</c> is text known at compile time: a constant string or an interpolated
     /// string (GSH0006).
     /// </summary>

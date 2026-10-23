@@ -6,6 +6,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
     public static readonly GpuMacroArgumentRule Instance = new();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+        GSharpDiagnostics.InlinePtxNotSupportedByDialect,
         GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral,
         GSharpDiagnostics.MacroArgumentMustBeConstant,
         GSharpDiagnostics.MacroLambdaRequiresParameter,
@@ -81,6 +82,12 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
 
     private void CheckInlinePtx(InvocationExpressionSyntax invocation, ref ValidationContext context)
     {
+        if (!GpuCodeConstraints.SupportsInlinePtx(context.Dialect))
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.InlinePtxNotSupportedByDialect, invocation, context.Dialect.Name);
+        }
+
+        // [WHY] Reported for every dialect: the text must be a constant even where the call becomes a runtime failure
         var args = invocation.ArgumentList.Arguments;
         if (args.Count >= 1)
         {

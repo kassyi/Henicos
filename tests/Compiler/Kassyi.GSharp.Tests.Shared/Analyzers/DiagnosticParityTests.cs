@@ -157,7 +157,8 @@ public partial class DiagnosticParityTests : TranspilerTestBase
                 continue;
             }
 
-            var validationContext = new ValidationContext(model, methodSymbol, walkerDiagnostics.Add);
+            // GetAnalyzerDiagnosticsAsync gives the analyzer the CUDA dialect
+            var validationContext = new ValidationContext(model, methodSymbol, walkerDiagnostics.Add, new GSharpCudaDialect());
             using var walker = GpuKernelValidationWalker.Rent(validationContext);
             walker.Visit(methodDecl);
         }

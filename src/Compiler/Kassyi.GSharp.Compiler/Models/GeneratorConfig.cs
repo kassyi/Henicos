@@ -6,7 +6,7 @@ internal record struct GeneratorConfig(
     string? IntermediateOutputPath)
 {
     /// <summary>Whether <c>GSharpTargetDialect</c> selects the CUDA dialect; any other value selects the C++ dialect.</summary>
-    public readonly bool IsCuda => TargetDialect.Equals("Cuda", StringComparison.OrdinalIgnoreCase);
+    public readonly bool IsCuda => TranspilerDialects.IsCuda(TargetDialect);
 
     /// <summary>The generated class that holds the prelude source shared by every kernel.</summary>
     public readonly string SharedPreludeClassName => $"GSharpShared{TargetDialect}Prelude";
@@ -14,5 +14,5 @@ internal record struct GeneratorConfig(
     /// <summary>The generated class that holds the device function source shared by every kernel.</summary>
     public readonly string SharedDeviceCodeClassName => $"GSharpShared{TargetDialect}DeviceCode";
 
-    public readonly ITranspilerDialect CreateDialect() => IsCuda ? new GSharpCudaDialect() : new StandardCppDialect();
+    public readonly ITranspilerDialect CreateDialect() => TranspilerDialects.Create(TargetDialect);
 }

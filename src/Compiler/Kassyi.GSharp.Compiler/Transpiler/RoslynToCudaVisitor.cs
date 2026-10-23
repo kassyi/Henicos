@@ -369,12 +369,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 // [WHY] Lowering rewrites hoisted locals into references that carry the declarator's original span.
                 symbol ??= Context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node);
 
-                if (symbol != null &&
-                    ((symbol is IFieldSymbol { IsStatic: true, IsConst: false }) || (symbol is IPropertySymbol { IsStatic: true })) &&
-                    !Context.Emitter.Dialect.TryMapIntrinsic(symbol, out _) &&
-                    symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() != true)
+                if (symbol != null && GpuCodeConstraints.IsHostStaticMember(symbol, Context.Emitter.Dialect))
                 {
-                    Context.Reporter.Report(
+                    Context.Reporter.Fail(
                         GSharpDiagnostics.StaticMemberAccessNotSupported,
                         node,
                         symbol.ContainingType?.Name ?? string.Empty,

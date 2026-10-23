@@ -56,14 +56,11 @@ public class StringsAndAttributesTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.StringInterpolationPrintf), isDevice: false, dialect: CurrentDialect);
 
-        // Dialects without InlineAssembly (CPU) must replace the call with a runtime failure and warn.
-        if (CurrentDialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly))
+        // Dialects without InlineAssembly (CPU) must replace the call with a runtime failure; the analyzer warns
+        // (DialectDiagnosticsTests), so the transpiler reports nothing.
+        Assert.Empty(diagnostics);
+        if (!CurrentDialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly))
         {
-            Assert.Empty(diagnostics);
-        }
-        else
-        {
-            diagnostics.AssertContains(GSharpDiagnostics.InlinePtxNotSupportedByDialect);
             Assert.Contains("__gsharp_unsupported(", cudaSource);
         }
 

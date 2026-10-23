@@ -37,10 +37,9 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 return;
             }
 
-            if ((symbol is IFieldSymbol { IsStatic: true, IsConst: false } || symbol is IPropertySymbol { IsStatic: true }) &&
-                symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() != true)
+            if (symbol != null && GpuCodeConstraints.IsHostStaticMember(symbol, context.Emitter.Dialect))
             {
-                context.Reporter.Report(
+                context.Reporter.Fail(
                     GSharpDiagnostics.StaticMemberAccessNotSupported,
                     node,
                     symbol.ContainingType?.Name ?? string.Empty,

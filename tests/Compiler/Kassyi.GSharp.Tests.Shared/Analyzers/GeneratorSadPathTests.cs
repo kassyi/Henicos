@@ -40,7 +40,7 @@ public class GeneratorSadPathTests
     // The IDs in order of position, with their reporter
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("SYN-08", "Analyzers/DelegateEscapeSadPath.cs", new[] { "GSH0065 Analyzer", "GSH0065 Generator", "GSH0001 Analyzer" })]
+    [InlineData("SYN-08", "Analyzers/DelegateEscapeSadPath.cs", new[] { "GSH0065 Analyzer", "GSH0001 Analyzer" })]
     [InlineData("SYN-01", "Analyzers/GpuKernel/UnsupportedSwitch_InGpuKernel.cu.cs", new[] { "GSH0003 Analyzer", "GSH0003 Analyzer" })]
     public async Task Test_SadPath_ReportsMultipleExpectedErrors(string featureId, string testCasePath, string[] expected)
     {

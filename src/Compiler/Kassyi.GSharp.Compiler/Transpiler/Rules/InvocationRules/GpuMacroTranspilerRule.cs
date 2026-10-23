@@ -28,10 +28,10 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
             return;
         }
 
-        if (!context.Emitter.Dialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly))
+        // The analyzer warns (GSH0054); the call becomes a runtime failure
+        if (!GpuCodeConstraints.SupportsInlinePtx(context.Emitter.Dialect))
         {
             var dialectName = context.Emitter.Dialect.Name;
-            context.Reporter.Report(GSharpDiagnostics.InlinePtxNotSupportedByDialect, node, dialectName);
             context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.Unsupported}(\"Gpu.InlinePtx is not supported by the {dialectName} dialect\");");
             context.Emitter.Writer.AppendLine();
             if (!context.Emitter.Dialect.EmulatesThreadsWithStateMachine() || !context.Emitter.IsGpuKernelEntry)
@@ -48,7 +48,7 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 
         if (!GpuCodeConstraints.IsInlinePtxText(argExpr, context.Query.SemanticModel))
         {
-            context.Reporter.Report(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node);
+            context.Reporter.Fail(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, argExpr);
             return;
         }
 

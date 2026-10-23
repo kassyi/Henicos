@@ -29,40 +29,9 @@ internal sealed class StaticMemberAccessRule : ISyntaxValidationRule<MemberAcces
 
     private static void CheckSymbol(ISymbol? symbol, Location location, SyntaxNode node, ref ValidationContext context)
     {
-        if (symbol == null)
-        {
-            return;
-        }
-
-        bool isTargetSymbol = false;
-        if (symbol is IFieldSymbol field)
-        {
-            if (field.IsStatic && !field.IsConst && field.ContainingType?.TypeKind != TypeKind.Enum)
-            {
-                isTargetSymbol = true;
-            }
-        }
-        else if (symbol is IPropertySymbol prop)
-        {
-            if (prop.IsStatic)
-            {
-                isTargetSymbol = true;
-            }
-        }
-
-        if (!isTargetSymbol)
-        {
-            return;
-        }
-
-        if (IsInsideNameof(node, context.SemanticModel))
-        {
-            return;
-        }
-
-        if (symbol.HasAttribute(KnownAttributes.CudaIntrinsic) ||
-            (symbol.ContainingType != null && symbol.ContainingType.HasAttribute(KnownAttributes.CudaIntrinsicPattern)) ||
-            (symbol.ContainingType != null && symbol.ContainingType.ContainingNamespace.IsCoreNamespace()))
+        if (symbol == null ||
+            !GpuCodeConstraints.IsHostStaticMember(symbol, context.Dialect) ||
+            IsInsideNameof(node, context.SemanticModel))
         {
             return;
         }

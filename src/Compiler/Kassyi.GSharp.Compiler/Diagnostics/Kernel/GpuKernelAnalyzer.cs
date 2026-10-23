@@ -12,10 +12,16 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
     {
         context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
         context.EnableConcurrentExecution();
-        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+        context.RegisterCompilationStartAction(static start =>
+        {
+            // The checks that depend on the dialect see the one the generator emits for
+            var dialect = TranspilerDialects.Create(
+                TranspilerDialects.GetName(start.Options.AnalyzerConfigOptionsProvider.GlobalOptions));
+            start.RegisterSyntaxNodeAction(context => AnalyzeMethod(context, dialect), SyntaxKind.MethodDeclaration);
+        });
     }
 
-    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
@@ -42,7 +48,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
         }
 
         // Single-pass traversal of the AST to minimize time complexity and zero allocations
-        var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, context.ReportDiagnostic);
+        var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, context.ReportDiagnostic, dialect);
         using var walker = GpuKernelValidationWalker.Rent(validationContext);
 
         walker.Visit(methodDeclaration);
