@@ -122,7 +122,7 @@ public static partial class StackLinqExtensions
     {
         var enumerator = source.Enumerator;
         long sum = 0;
-        int count = 0;
+        var count = 0;
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
@@ -200,7 +200,7 @@ public static partial class StackLinqExtensions
     {
         var enumerator = source.Enumerator;
         double sum = 0;
-        int count = 0;
+        var count = 0;
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
@@ -278,7 +278,7 @@ public static partial class StackLinqExtensions
     {
         var enumerator = source.Enumerator;
         double sum = 0;
-        int count = 0;
+        var count = 0;
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;

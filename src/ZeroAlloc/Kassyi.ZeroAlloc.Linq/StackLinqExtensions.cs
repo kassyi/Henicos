@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Kassyi.ZeroAlloc.Linq;
@@ -79,6 +80,29 @@ public static partial class StackLinqExtensions
         this StackEnumerable<TEnumerator, TSource> source)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
         new(source.Enumerator);
+
+    // Takes the rest of a span or array source as one span and consumes the enumerator, so that an operator can take its
+    // fast path; returns false for every other enumerator
+    private static bool TryTakeRemainingSpan<TEnumerator, TSource>(
+        ref TEnumerator enumerator,
+        out ReadOnlySpan<TSource> span)
+        where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
+    {
+        if (typeof(TEnumerator) == typeof(SpanEnumerator<TSource>))
+        {
+            span = Unsafe.As<TEnumerator, SpanEnumerator<TSource>>(ref enumerator).GetRemainingSpanAndAdvance();
+            return true;
+        }
+
+        if (typeof(TEnumerator) == typeof(ArrayEnumerator<TSource>))
+        {
+            span = Unsafe.As<TEnumerator, ArrayEnumerator<TSource>>(ref enumerator).GetRemainingSpanAndAdvance();
+            return true;
+        }
+
+        span = default;
+        return false;
+    }
 
     // -----------------------------------------------------------------------------------------
     // BANNED LINQ OPERATIONS (DO NOT IMPLEMENT)

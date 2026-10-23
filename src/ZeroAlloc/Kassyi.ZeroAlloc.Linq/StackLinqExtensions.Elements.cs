@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Runtime.CompilerServices;
 
 namespace Kassyi.ZeroAlloc.Linq;
 
@@ -121,21 +120,8 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
     {
         var enumerator = source.Enumerator;
-        
-        if (typeof(TEnumerator) == typeof(SpanEnumerator<TSource>))
+        if (TryTakeRemainingSpan<TEnumerator, TSource>(ref enumerator, out var span))
         {
-            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<TSource>>(ref enumerator);
-            var span = spanEnum.GetRemainingSpanAndAdvance();
-            if ((uint)index < (uint)span.Length)
-            {
-                return span[index];
-            }
-            throw new ArgumentOutOfRangeException(nameof(index));
-        }
-        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<TSource>))
-        {
-            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<TSource>>(ref enumerator);
-            var span = arrayEnum.GetRemainingSpanAndAdvance();
             if ((uint)index < (uint)span.Length)
             {
                 return span[index];
@@ -143,7 +129,7 @@ public static partial class StackLinqExtensions
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
-        int count = 0;
+        var count = 0;
         while (enumerator.TryGetNext(out var current))
         {
             if (count == index)
@@ -172,21 +158,8 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
     {
         var enumerator = source.Enumerator;
-        
-        if (typeof(TEnumerator) == typeof(SpanEnumerator<TSource>))
+        if (TryTakeRemainingSpan<TEnumerator, TSource>(ref enumerator, out var span))
         {
-            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<TSource>>(ref enumerator);
-            var span = spanEnum.GetRemainingSpanAndAdvance();
-            if ((uint)index < (uint)span.Length)
-            {
-                return span[index];
-            }
-            return default;
-        }
-        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<TSource>))
-        {
-            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<TSource>>(ref enumerator);
-            var span = arrayEnum.GetRemainingSpanAndAdvance();
             if ((uint)index < (uint)span.Length)
             {
                 return span[index];
@@ -194,7 +167,7 @@ public static partial class StackLinqExtensions
             return default;
         }
 
-        int count = 0;
+        var count = 0;
         while (enumerator.TryGetNext(out var current))
         {
             if (count == index)
@@ -248,7 +221,7 @@ public static partial class StackLinqExtensions
         ArgumentNullException.ThrowIfNull(predicate);
         var enumerator = source.Enumerator;
         TSource result = default!;
-        bool found = false;
+        var found = false;
         while (enumerator.TryGetNext(out var current))
         {
             if (predicate(current))
@@ -310,7 +283,7 @@ public static partial class StackLinqExtensions
         ArgumentNullException.ThrowIfNull(predicate);
         var enumerator = source.Enumerator;
         TSource result = default!;
-        bool found = false;
+        var found = false;
         while (enumerator.TryGetNext(out var current))
         {
             if (predicate(current))
@@ -362,21 +335,8 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
     {
         var enumerator = source.Enumerator;
-        
-        if (typeof(TEnumerator) == typeof(SpanEnumerator<TSource>))
+        if (TryTakeRemainingSpan<TEnumerator, TSource>(ref enumerator, out var span))
         {
-            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<TSource>>(ref enumerator);
-            var span = spanEnum.GetRemainingSpanAndAdvance();
-            if (span.Length > 0)
-            {
-                return span[^1];
-            }
-            throw new InvalidOperationException("Sequence contains no elements");
-        }
-        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<TSource>))
-        {
-            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<TSource>>(ref enumerator);
-            var span = arrayEnum.GetRemainingSpanAndAdvance();
             if (span.Length > 0)
             {
                 return span[^1];
@@ -384,7 +344,7 @@ public static partial class StackLinqExtensions
             throw new InvalidOperationException("Sequence contains no elements");
         }
 
-        bool found = false;
+        var found = false;
         TSource result = default!;
         while (enumerator.TryGetNext(out var current))
         {
@@ -428,21 +388,8 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct
     {
         var enumerator = source.Enumerator;
-        
-        if (typeof(TEnumerator) == typeof(SpanEnumerator<TSource>))
+        if (TryTakeRemainingSpan<TEnumerator, TSource>(ref enumerator, out var span))
         {
-            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<TSource>>(ref enumerator);
-            var span = spanEnum.GetRemainingSpanAndAdvance();
-            if (span.Length > 0)
-            {
-                return span[^1];
-            }
-            return default;
-        }
-        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<TSource>))
-        {
-            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<TSource>>(ref enumerator);
-            var span = arrayEnum.GetRemainingSpanAndAdvance();
             if (span.Length > 0)
             {
                 return span[^1];
@@ -450,7 +397,7 @@ public static partial class StackLinqExtensions
             return default;
         }
 
-        bool found = false;
+        var found = false;
         TSource result = default!;
         while (enumerator.TryGetNext(out var current))
         {

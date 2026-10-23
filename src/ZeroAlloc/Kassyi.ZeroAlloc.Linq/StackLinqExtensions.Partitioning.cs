@@ -102,7 +102,7 @@ public static partial class StackLinqExtensions
     {
         var enumerator = source.Enumerator;
         var span = enumerator.GetRemainingSpanAndAdvance();
-        int takeCount = Math.Min(count, span.Length);
+        var takeCount = Math.Min(count, span.Length);
         if (takeCount <= 0)
         {
             return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(ReadOnlySpan<TSource>.Empty));
@@ -122,7 +122,7 @@ public static partial class StackLinqExtensions
     {
         var enumerator = source.Enumerator;
         var span = enumerator.GetRemainingSpanAndAdvance();
-        int takeCount = Math.Min(count, span.Length);
+        var takeCount = Math.Min(count, span.Length);
         if (takeCount <= 0)
         {
             return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(ReadOnlySpan<TSource>.Empty));
@@ -158,7 +158,7 @@ public static partial class StackLinqExtensions
     {
         var enumerator = source.Enumerator;
         var span = enumerator.GetRemainingSpanAndAdvance();
-        int skipCount = Math.Clamp(count, 0, span.Length);
+        var skipCount = Math.Clamp(count, 0, span.Length);
         if (span.Length - skipCount <= 0)
         {
             return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(ReadOnlySpan<TSource>.Empty));
@@ -178,7 +178,7 @@ public static partial class StackLinqExtensions
     {
         var enumerator = source.Enumerator;
         var span = enumerator.GetRemainingSpanAndAdvance();
-        int skipCount = Math.Clamp(count, 0, span.Length);
+        var skipCount = Math.Clamp(count, 0, span.Length);
         if (span.Length - skipCount <= 0)
         {
             return new StackEnumerable<SpanEnumerator<TSource>, TSource>(new SpanEnumerator<TSource>(ReadOnlySpan<TSource>.Empty));

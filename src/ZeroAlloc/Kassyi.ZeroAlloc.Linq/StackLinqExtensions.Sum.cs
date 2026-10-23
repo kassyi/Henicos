@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace Kassyi.ZeroAlloc.Linq;
@@ -20,51 +19,12 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<int>, allows ref struct
     {
         var enumerator = source.Enumerator;
-        int sum = 0;
-
-        if (typeof(TEnumerator) == typeof(SpanEnumerator<int>))
+        if (TryTakeRemainingSpan<TEnumerator, int>(ref enumerator, out var span))
         {
-            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<int>>(ref enumerator);
-            var span = spanEnum.GetRemainingSpanAndAdvance();
-            if (Vector.IsHardwareAccelerated && span.Length >= Vector<int>.Count)
-            {
-                var vectors = MemoryMarshal.Cast<int, Vector<int>>(span);
-                var acc = Vector<int>.Zero;
-                foreach (var v in vectors)
-                {
-                    acc += v;
-                }
-                sum += Vector.Sum(acc);
-                span = span.Slice(vectors.Length * Vector<int>.Count);
-            }
-            foreach (var val in span)
-            {
-                sum += val;
-            }
-            return sum;
-        }
-        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<int>))
-        {
-            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<int>>(ref enumerator);
-            var span = arrayEnum.GetRemainingSpanAndAdvance();
-            if (Vector.IsHardwareAccelerated && span.Length >= Vector<int>.Count)
-            {
-                var vectors = MemoryMarshal.Cast<int, Vector<int>>(span);
-                var acc = Vector<int>.Zero;
-                foreach (var v in vectors)
-                {
-                    acc += v;
-                }
-                sum += Vector.Sum(acc);
-                span = span.Slice(vectors.Length * Vector<int>.Count);
-            }
-            foreach (var val in span)
-            {
-                sum += val;
-            }
-            return sum;
+            return SumVectorized(span);
         }
 
+        var sum = 0;
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
@@ -84,7 +44,7 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<int>, allows ref struct
     {
         var enumerator = source.Enumerator;
-        int sum = 0;
+        var sum = 0;
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
@@ -105,7 +65,7 @@ public static partial class StackLinqExtensions
         where TSource : IAdditionOperators<TSource, TSource, TSource>, IAdditiveIdentity<TSource, TSource>
     {
         var enumerator = source.Enumerator;
-        TSource sum = TSource.AdditiveIdentity;
+        var sum = TSource.AdditiveIdentity;
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
@@ -145,51 +105,12 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<float>, allows ref struct
     {
         var enumerator = source.Enumerator;
+        if (TryTakeRemainingSpan<TEnumerator, float>(ref enumerator, out var span))
+        {
+            return SumVectorized(span);
+        }
+
         float sum = 0;
-
-        if (typeof(TEnumerator) == typeof(SpanEnumerator<float>))
-        {
-            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<float>>(ref enumerator);
-            var span = spanEnum.GetRemainingSpanAndAdvance();
-            if (Vector.IsHardwareAccelerated && span.Length >= Vector<float>.Count)
-            {
-                var vectors = MemoryMarshal.Cast<float, Vector<float>>(span);
-                var acc = Vector<float>.Zero;
-                foreach (var v in vectors)
-                {
-                    acc += v;
-                }
-                sum += Vector.Sum(acc);
-                span = span.Slice(vectors.Length * Vector<float>.Count);
-            }
-            foreach (var val in span)
-            {
-                sum += val;
-            }
-            return sum;
-        }
-        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<float>))
-        {
-            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<float>>(ref enumerator);
-            var span = arrayEnum.GetRemainingSpanAndAdvance();
-            if (Vector.IsHardwareAccelerated && span.Length >= Vector<float>.Count)
-            {
-                var vectors = MemoryMarshal.Cast<float, Vector<float>>(span);
-                var acc = Vector<float>.Zero;
-                foreach (var v in vectors)
-                {
-                    acc += v;
-                }
-                sum += Vector.Sum(acc);
-                span = span.Slice(vectors.Length * Vector<float>.Count);
-            }
-            foreach (var val in span)
-            {
-                sum += val;
-            }
-            return sum;
-        }
-
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
@@ -230,51 +151,12 @@ public static partial class StackLinqExtensions
         where TEnumerator : struct, IStackEnumerator<double>, allows ref struct
     {
         var enumerator = source.Enumerator;
+        if (TryTakeRemainingSpan<TEnumerator, double>(ref enumerator, out var span))
+        {
+            return SumVectorized(span);
+        }
+
         double sum = 0;
-
-        if (typeof(TEnumerator) == typeof(SpanEnumerator<double>))
-        {
-            ref var spanEnum = ref Unsafe.As<TEnumerator, SpanEnumerator<double>>(ref enumerator);
-            var span = spanEnum.GetRemainingSpanAndAdvance();
-            if (Vector.IsHardwareAccelerated && span.Length >= Vector<double>.Count)
-            {
-                var vectors = MemoryMarshal.Cast<double, Vector<double>>(span);
-                var acc = Vector<double>.Zero;
-                foreach (var v in vectors)
-                {
-                    acc += v;
-                }
-                sum += Vector.Sum(acc);
-                span = span.Slice(vectors.Length * Vector<double>.Count);
-            }
-            foreach (var val in span)
-            {
-                sum += val;
-            }
-            return sum;
-        }
-        else if (typeof(TEnumerator) == typeof(ArrayEnumerator<double>))
-        {
-            ref var arrayEnum = ref Unsafe.As<TEnumerator, ArrayEnumerator<double>>(ref enumerator);
-            var span = arrayEnum.GetRemainingSpanAndAdvance();
-            if (Vector.IsHardwareAccelerated && span.Length >= Vector<double>.Count)
-            {
-                var vectors = MemoryMarshal.Cast<double, Vector<double>>(span);
-                var acc = Vector<double>.Zero;
-                foreach (var v in vectors)
-                {
-                    acc += v;
-                }
-                sum += Vector.Sum(acc);
-                span = span.Slice(vectors.Length * Vector<double>.Count);
-            }
-            foreach (var val in span)
-            {
-                sum += val;
-            }
-            return sum;
-        }
-
         while (enumerator.TryGetNext(out var value))
         {
             sum += value;
@@ -300,4 +182,27 @@ public static partial class StackLinqExtensions
         Func<TSource, double> selector)
         where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct =>
         source.Select(selector).Sum();
+
+    // The SIMD path of the int, float and double sums: whole vectors first, then the elements left over
+    private static T SumVectorized<T>(ReadOnlySpan<T> span)
+        where T : struct, IAdditionOperators<T, T, T>, IAdditiveIdentity<T, T>
+    {
+        var sum = T.AdditiveIdentity;
+        if (Vector.IsHardwareAccelerated && span.Length >= Vector<T>.Count)
+        {
+            var vectors = MemoryMarshal.Cast<T, Vector<T>>(span);
+            var acc = Vector<T>.Zero;
+            foreach (var v in vectors)
+            {
+                acc += v;
+            }
+            sum += Vector.Sum(acc);
+            span = span.Slice(vectors.Length * Vector<T>.Count);
+        }
+        foreach (var val in span)
+        {
+            sum += val;
+        }
+        return sum;
+    }
 }
