@@ -149,7 +149,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         {
             if (isMethodCall)
             {
-                context.Emitter.Writer.Append(mappedName).AppendParentheses();
+                context.Emitter.Writer.Append(mappedName).Append("()");
             }
             else
             {

@@ -79,17 +79,17 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             TranspileArguments(callee.Parameters, call.ArgumentList.Arguments, ref context);
             if (callee.Parameters.Length > 0)
             {
-                context.Emitter.Writer.AppendComma();
+                context.Emitter.Writer.Append(',');
             }
 
             context.Emitter.Writer.Append(
                 $"&{GSharpInternalNames.StateMachine.Context}->{GSharpInternalNames.SuspendingCall.CallFramePrefix}{frameIndex.Token.ValueText}");
-            context.Emitter.Writer.AppendComma();
+            context.Emitter.Writer.Append(',');
             context.Emitter.Writer.Append(GSharpInternalNames.SuspendingCall.Root);
 
             if (arguments.Count > 2)
             {
-                context.Emitter.Writer.AppendComma();
+                context.Emitter.Writer.Append(',');
                 context.Emitter.Writer.Append("&");
                 using (context.Emitter.Writer.Parentheses())
                 {
@@ -112,7 +112,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 context.Visitor.Visit(arguments[i]);
                 if (i < arguments.Count - 1)
                 {
-                    context.Emitter.Writer.AppendComma();
+                    context.Emitter.Writer.Append(',');
                 }
             }
         }
@@ -145,7 +145,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 {
                     while (positionalArgIndex < arguments.Count && arguments[positionalArgIndex].NameColon == null)
                     {
-                        context.Emitter.Writer.AppendComma();
+                        context.Emitter.Writer.Append(',');
                         context.Visitor.Visit(arguments[positionalArgIndex]);
                         positionalArgIndex++;
                     }
@@ -158,7 +158,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
             if (i < parameters.Length - 1)
             {
-                context.Emitter.Writer.AppendComma();
+                context.Emitter.Writer.Append(',');
             }
         }
     }

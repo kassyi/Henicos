@@ -13,14 +13,14 @@ public class SourceWriterTests
     {
         using var writer = new SourceWriter();
         writer
-            .AppendKeyword("auto")
-            .AppendSpace()
+            .Append("auto")
+            .Append(' ')
             .Append("x")
-            .AppendSpace()
-            .AppendOperator("=")
-            .AppendSpace()
+            .Append(' ')
+            .Append("=")
+            .Append(' ')
             .Append(123)
-            .AppendSemiColonLine();
+            .AppendLine(";");
 
         string result = writer.ToString().Replace("\r\n", "\n");
         Assert.Equal("auto x = 123;\n", result);
@@ -36,7 +36,7 @@ public class SourceWriterTests
             .Append((string?)null)
             .AppendIf(false, "skip_this")
             .AppendIf(true, "keep_this")
-            .AppendSpace()
+            .Append(' ')
             .AppendLineIf(false, "skip_newline")
             .AppendLineIf(true, "keep_newline")
             .LineIf(false, "skip_line")
@@ -54,12 +54,12 @@ public class SourceWriterTests
         using var writer = new SourceWriter();
         writer
             .Append("func")
-            .AppendParentheses()
-            .AppendSpace()
+            .Append("()")
+            .Append(' ')
             .Append("arr")
-            .AppendBrackets()
-            .AppendSpace()
-            .AppendEmptyScope();
+            .Append("[]")
+            .Append(' ')
+            .Append("{}");
 
         Assert.Equal("func() arr[] {}", writer.ToString());
     }
@@ -92,9 +92,9 @@ public class SourceWriterTests
         writer
             .Line($"// Header for {name}")
             .Append($"__global__ void {name}_{id}")
-            .AppendParentheses()
-            .AppendSpace()
-            .AppendEmptyScope();
+            .Append("()")
+            .Append(' ')
+            .Append("{}");
 
         string result = writer.ToString().Replace("\r\n", "\n");
         Assert.Equal("// Header for Kernel\n__global__ void Kernel_42() {}", result);

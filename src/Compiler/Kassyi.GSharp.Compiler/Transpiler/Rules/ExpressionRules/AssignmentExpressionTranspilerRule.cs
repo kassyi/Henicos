@@ -29,7 +29,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 {
                     context.Emitter.Writer.Append($"auto {GSharpInternalNames.Lowering.TupleTempPrefix}{i} = ");
                     context.Visitor.Visit(rightTuple.Arguments[i].Expression);
-                    context.Emitter.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendLine(";");
                 }
 
                 for (var i = 0; i < leftTuple.Arguments.Count; i++)
@@ -37,7 +37,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
                     context.Visitor.Visit(leftTuple.Arguments[i].Expression);
                     context.Emitter.Writer
                         .Append($" = {GSharpInternalNames.Lowering.TupleTempPrefix}{i}")
-                        .AppendSemiColonLine();
+                        .AppendLine(";");
                 }
             }
 
@@ -51,7 +51,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
         }
 
         context.Visitor.Visit(node.Left);
-        context.Emitter.Writer.AppendOperator(node.OperatorToken.Text);
+        context.Emitter.Writer.Append(node.OperatorToken.Text);
         context.Visitor.Visit(node.Right);
     }
 }

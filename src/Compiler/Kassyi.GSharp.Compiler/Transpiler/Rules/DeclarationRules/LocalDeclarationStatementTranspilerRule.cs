@@ -41,7 +41,7 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
 
         // Dispatch inner variable declaration transpilation to the visitor (which will use VariableDeclarationTranspilerRule)
         context.Visitor.Visit(node.Declaration);
-        context.Emitter.Writer.AppendSemiColon();
+        context.Emitter.Writer.Append(';');
     }
 
     private static void ProcessSharedMemoryDeclaration(LocalDeclarationStatementSyntax node,
@@ -94,7 +94,7 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
 
         context.Emitter.Writer.Append("__shared__ ");
         context.Emitter.Dialect.AppendType(ref context, typeArg);
-        context.Emitter.Writer.AppendSpace();
+        context.Emitter.Writer.Append(' ');
         CppNameResolver.AppendDeclaredName(alloc.Declarator, alloc.Declarator.Identifier, ref context);
         using (context.Emitter.Writer.Brackets())
         {
@@ -161,7 +161,7 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             AppendAlignmentMask(typeArg, ref context);
         }
 
-        context.Emitter.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendLine(";");
     }
 
     private static void AppendAlignmentMask(ITypeSymbol typeArg, ref TranspileContext context)
@@ -203,6 +203,6 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             context.Emitter.Dialect.AppendType(ref context, typeArg);
         }
 
-        context.Emitter.Writer.AppendSemiColon();
+        context.Emitter.Writer.Append(';');
     }
 }

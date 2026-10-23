@@ -45,7 +45,7 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
         }
 
         // Emit: for (int {paramName} = blockIdx.x * blockDim.x + threadIdx.x; {paramName} < [EXPR]; {paramName} += gridDim.x * blockDim.x)
-        context.Emitter.Writer.AppendKeyword("for");
+        context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
         {
             context.Emitter.Writer.Append("int ");

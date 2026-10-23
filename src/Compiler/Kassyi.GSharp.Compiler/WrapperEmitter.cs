@@ -38,13 +38,13 @@ internal static class WrapperEmitter
                 if (!string.IsNullOrEmpty(Modifier))
                 {
                     writer.Append(Modifier);
-                    writer.AppendSpace();
+                    writer.Append(' ');
                 }
 
                 if (RawTypeName != null)
                 {
                     writer.Append(RawTypeName);
-                    writer.AppendSpace();
+                    writer.Append(' ');
                 }
                 else if (Type != null)
                 {
@@ -53,7 +53,7 @@ internal static class WrapperEmitter
                     {
                         writer.Append("?");
                     }
-                    writer.AppendSpace();
+                    writer.Append(' ');
                 }
             }
 
@@ -348,8 +348,7 @@ internal static class WrapperEmitter
             {
                 if (!isFirst)
                 {
-                    writer.AppendComma();
-                    writer.AppendSpace();
+                    writer.Append(", ");
                 }
 
                 var info = GetInteropParameterInfo(p, isDevicePtr);
@@ -360,8 +359,7 @@ internal static class WrapperEmitter
 
             if (!isFirst)
             {
-                writer.AppendComma();
-                writer.AppendSpace();
+                writer.Append(", ");
             }
 
             writer.Append(LaunchOptionParameters);
@@ -417,7 +415,7 @@ internal static class WrapperEmitter
                     GetInteropParameterInfo(p, true).WriteTo(writer, p.Name.ToCSharpIdentifier());
                 }
 
-                writer.AppendComma().AppendSpace();
+                writer.Append(", ");
             }
 
             writer.Append(LaunchOptionParameters);
@@ -435,13 +433,13 @@ internal static class WrapperEmitter
                     writer.Append(p.HasExplicitDefaultValue ? "?.DevicePointer ?? IntPtr.Zero" : ".DevicePointer");
                 }
 
-                writer.AppendComma().AppendSpace();
+                writer.Append(", ");
             }
 
             writer.Append(LaunchOptionArguments);
         }
 
-        writer.AppendSemiColonLine();
+        writer.AppendLine(";");
         writer.AppendLine();
     }
 
@@ -671,8 +669,7 @@ internal static class WrapperEmitter
                     continue;
                 }
 
-                writer.AppendComma();
-                writer.AppendSpace();
+                writer.Append(", ");
 
                 if (KernelParameterShape.Classify(p).IsArray)
                 {
@@ -687,15 +684,14 @@ internal static class WrapperEmitter
                         writer.Append("*");
                     }
 
-                    writer.AppendSpace();
+                    writer.Append(' ');
                     writer.Append(p.Name.ToCSharpIdentifier());
                 }
             }
 
             if (method.ReturnType.SpecialType != SpecialType.System_Void)
             {
-                writer.AppendComma();
-                writer.AppendSpace();
+                writer.Append(", ");
                 writer.AppendFullyQualifiedCsharpName(method.ReturnType);
                 writer.Append($"* {GSharpInternalNames.ReturnValue.Buffer}");
             }
@@ -925,8 +921,7 @@ internal static class WrapperEmitter
                     continue;
                 }
 
-                writer.AppendComma();
-                writer.AppendSpace();
+                writer.Append(", ");
 
                 var shape = KernelParameterShape.Classify(p);
                 if (shape.IsArray)
@@ -947,8 +942,7 @@ internal static class WrapperEmitter
 
             if (method.ReturnType.SpecialType != SpecialType.System_Void)
             {
-                writer.AppendComma();
-                writer.AppendSpace();
+                writer.Append(", ");
                 writer.Append(PinnedAutoResult);
             }
         }

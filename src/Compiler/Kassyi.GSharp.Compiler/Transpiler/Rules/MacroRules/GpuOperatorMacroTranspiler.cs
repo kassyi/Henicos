@@ -81,7 +81,7 @@ internal static class GpuOperatorMacroTranspiler
             EmitMacroArguments(targetMethod, resultOp, leftOp, rightOp, extraArg, hasContext, ref context);
         }
 
-        context.Emitter.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendLine(";");
         return true;
     }
 
@@ -168,7 +168,7 @@ internal static class GpuOperatorMacroTranspiler
         {
             if (!isFirst)
             {
-                localContext.Emitter.Writer.AppendComma();
+                localContext.Emitter.Writer.Append(',');
             }
 
             isFirst = false;

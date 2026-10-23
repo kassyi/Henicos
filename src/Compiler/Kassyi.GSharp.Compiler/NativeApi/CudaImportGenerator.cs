@@ -225,7 +225,7 @@ public class CudaImportGenerator : IIncrementalGenerator
 
                 if (hasAnyModifier)
                 {
-                    writer.AppendSpace();
+                    writer.Append(' ');
                 }
 
                 writer.Append(modifier.Text);
@@ -253,7 +253,7 @@ public class CudaImportGenerator : IIncrementalGenerator
         foreach (var modifier in methodSyntax.Modifiers)
         {
             writer.Append(modifier.Text);
-            writer.AppendSpace();
+            writer.Append(' ');
         }
 
         writer.Append($"void {methodSymbol.Name}(");

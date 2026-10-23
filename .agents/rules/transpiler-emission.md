@@ -14,13 +14,13 @@ Mandatory rules for any code that emits C# (Source Generators) or CUDA C++ (`.cu
 
 Missing closers are a recurring bug source, so a bracket whose closer is written by a separate call must come from a scope helper.
 
-- `{}`: always use a helper (`Scope()`, `Braces()`, `AppendEmptyScope()`). A brace never stays on one line.
+- `{}` with contents: always use a helper (`Scope()`, `Braces()`). An empty `{}` is the literal `Append("{}")`.
 - `()` / `[]`: use a helper when other calls (`Visit`, loops, several statements) emit the contents between the opener and the closer. When the whole bracketed text is written in one call, a literal is fine and reads better (`Append("(void*)")`, `Append("[0]")`).
 
 - ❌ `_writer.Append("if ("); Visit(node.Condition); _writer.AppendLine(")");`
 - ✅
 ```csharp
-_writer.AppendKeyword("if");
+_writer.Append("if");
 using (_writer.Parentheses())
 {
     Visit(node.Condition);
@@ -28,25 +28,27 @@ using (_writer.Parentheses())
 _writer.AppendLine();
 ```
 
-### `SourceWriter` helpers
+### `SourceWriter` scope helpers
 
-| Form | Helper | Output |
-| ----- | ----- | ----- |
-| Scoped (`using`) | `Scope()` | `{` `}` with line breaks / block structure |
-| Scoped (`using`) | `Parentheses()` | `(` `)` inline |
-| Scoped (`using`) | `Brackets()` | `[` `]` inline |
-| Standalone | `AppendParentheses()` | `()` |
-| Standalone | `AppendBrackets()` | `[]` |
-| Standalone | `AppendEmptyScope()` | `{}` |
+| Helper | Output |
+| ----- | ----- |
+| `Scope()` | `{` `}` with line breaks / block structure |
+| `Braces()` | `{` `}` inline (initializer lists) |
+| `Parentheses()` | `(` `)` inline |
+| `Brackets()` | `[` `]` inline |
+| `ImmediatelyInvokedLambda()` | `([&]() {` ... `})()` |
 
-Use the standalone helpers instead of an empty `using` block. The rest of the `SourceWriter` API (separators, keywords,
-conditional text, generated-file headers) and the name helpers are listed in
+Fixed text without a separately written closer is a literal: `Append("()")`, `Append(",")`, `Append("if")`,
+`AppendLine(";")`. `SourceWriter` has no per-token methods (`AppendComma`, `AppendKeyword`, ...); they only hid the text.
+Conditional text, generated-file headers and the name helpers are listed in
 [helpers.md §3](../skills/gsharp-transpiler-guidelines/references/helpers.md#3-emitting-code).
 
 ## 3. Dense, Left-Aligned Output
 
 1. **Zero indentation**: All generated lines (including `spc.AddSource` outputs) are fully left-aligned.
-2. **No decorative spacing** around operators/symbols (`=`, `,`, `+`). Use `AppendComma()`, `AppendOperator()`, `AppendKeyword()`, etc. Never hardcode spaces in string literals.
+2. **No decorative spacing**: do not add spaces, alignment or blank lines only for looks. Expression operators are written
+   as they are (`Append(op)`, giving `a+b`); declarations keep `int x = 1;`. Do not respace existing output: the byte
+   savings are negligible and every snapshot would change.
 
 ## 4. Building Syntax Trees (`SyntaxFactory`)
 

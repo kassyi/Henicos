@@ -36,11 +36,11 @@ internal static class NullRepresentation
         {
             context.Emitter.Writer.Append($"auto {temp} = ");
             context.Visitor.Visit(left);
-            context.Emitter.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendLine(";");
 
             context.Emitter.Writer.Append($"return {temp}.HasValue ? {temp}.Value : ");
             context.Visitor.Visit(right);
-            context.Emitter.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendLine(";");
         }
     }
 
@@ -58,7 +58,7 @@ internal static class NullRepresentation
         {
             context.Emitter.Writer.Append($"auto& {target} = ");
             context.Visitor.Visit(left);
-            context.Emitter.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendLine(";");
 
             context.Emitter.Writer.Append($"return !{target}.HasValue ? ");
             using (context.Emitter.Writer.Parentheses())

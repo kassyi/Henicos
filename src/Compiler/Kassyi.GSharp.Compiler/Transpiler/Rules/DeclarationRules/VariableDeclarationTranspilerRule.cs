@@ -77,7 +77,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             {
                 if (i < variables.Count - 1)
                 {
-                    context.Emitter.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendLine(";");
                 }
 
                 continue;
@@ -92,7 +92,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 context.Emitter.Dialect.AppendType(ref context, typeSymbol);
             }
 
-            context.Emitter.Writer.AppendSpace();
+            context.Emitter.Writer.Append(' ');
             CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
 
             DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
@@ -102,7 +102,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
                 continue;
             }
 
-            context.Emitter.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendLine(";");
         }
     }
 
@@ -140,7 +140,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         }
 
         context.Emitter.Dialect.AppendType(ref context, elemType);
-        context.Emitter.Writer.AppendSpace();
+        context.Emitter.Writer.Append(' ');
         CppNameResolver.AppendDeclaredName(variable, variable.Identifier, ref context);
     }
 
@@ -153,7 +153,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             context.Emitter.Writer.Append(count);
         }
 
-        context.Emitter.Writer.AppendOperator("=");
+        context.Emitter.Writer.Append("=");
         context.Visitor.Visit(initializerNode);
     }
 

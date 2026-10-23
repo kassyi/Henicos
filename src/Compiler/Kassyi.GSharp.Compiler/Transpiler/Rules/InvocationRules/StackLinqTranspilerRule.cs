@@ -40,7 +40,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 
                     if (arguments.Count > 0)
                     {
-                        context.Emitter.Writer.AppendComma();
+                        context.Emitter.Writer.Append(',');
                     }
 
                     break;
@@ -56,7 +56,7 @@ public sealed class StackLinqTranspilerRule : IInvocationTranspilerRule
 
                 if (i < arguments.Count - 1)
                 {
-                    context.Emitter.Writer.AppendComma();
+                    context.Emitter.Writer.Append(',');
                 }
             }
         }

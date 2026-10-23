@@ -74,7 +74,7 @@ internal static class MacroTranspilerHelper
 
                 case ExpressionSyntax expr:
                     context.Visitor.Visit(expr);
-                    context.Emitter.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendLine(";");
                     break;
             }
         }

@@ -55,7 +55,7 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         }
         else
         {
-            context.Emitter.Writer.AppendOperator(opText);
+            context.Emitter.Writer.Append(opText);
         }
 
         context.Visitor.Visit(node.Right);

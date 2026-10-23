@@ -63,7 +63,7 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
                 else if (expr != null)
                 {
                     context.Visitor.Visit(expr);
-                    context.Emitter.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendLine(";");
                 }
             }
         }

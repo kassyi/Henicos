@@ -22,7 +22,7 @@ internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
             return false;
         }
 
-        context.Emitter.Writer.AppendKeyword("if");
+        context.Emitter.Writer.Append("if");
         using (context.Emitter.Writer.Parentheses())
         {
             context.Emitter.Writer.Append("threadIdx.x == 0 && blockIdx.x == 0");

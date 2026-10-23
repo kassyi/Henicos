@@ -141,7 +141,7 @@ internal static class StructTranspiler
                 context.Emitter.Writer.Append(length);
             }
 
-            context.Emitter.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendLine(";");
 
             WriteInlineArrayIndexer(ref context, firstField.Type, element, isConst: false);
             WriteInlineArrayIndexer(ref context, firstField.Type, element, isConst: true);
@@ -199,7 +199,7 @@ internal static class StructTranspiler
                 context.Emitter.Writer.Append("index");
             }
 
-            context.Emitter.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendLine(";");
         }
     }
 
@@ -263,7 +263,7 @@ internal static class StructTranspiler
     private static void WriteStructFooter(ref TranspileContext context)
     {
         context.Emitter.Writer
-            .AppendSemiColonLine()
+            .AppendLine(";")
             .AppendLine("#endif")
             .AppendLine();
     }
@@ -286,7 +286,7 @@ internal static class StructTranspiler
                 context.Emitter.Writer.Append(" v");
             }
 
-            context.Emitter.Writer.AppendSpace();
+            context.Emitter.Writer.Append(' ');
             using (context.Emitter.Writer.Scope())
             {
                 if (firstField != null)
@@ -309,7 +309,7 @@ internal static class StructTranspiler
                 }
 
                 context.Emitter.Writer.Append($"return this->{GetMemberName(firstField, ref context)}");
-                context.Emitter.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendLine(";");
             }
         }
     }
@@ -353,7 +353,7 @@ internal static class StructTranspiler
                             context.Visitor.Visit(sizeExp);
                         }
 
-                        context.Emitter.Writer.AppendSemiColonLine();
+                        context.Emitter.Writer.AppendLine(";");
                     }
                     else
                     {

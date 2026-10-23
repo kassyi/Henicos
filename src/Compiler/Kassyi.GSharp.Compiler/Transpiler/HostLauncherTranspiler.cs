@@ -24,10 +24,10 @@ internal static class HostLauncherTranspiler
         }
 
         context.Emitter.Writer.AppendLine();
-        context.Emitter.Writer.AppendKeyword("extern \"C\" __declspec(dllexport) void");
+        context.Emitter.Writer.Append("extern \"C\" __declspec(dllexport) void");
         var methodName = MethodSignatureTranspiler.GetKernelMethodName(method, methodSymbol);
         var contextName = MethodSignatureTranspiler.GetKernelDerivedName(ContextPrefix, method, methodSymbol);
-        context.Emitter.Writer.AppendSpace()
+        context.Emitter.Writer.Append(' ')
             .Append(MethodSignatureTranspiler.GetKernelDerivedName(LaunchExportPrefix, method, methodSymbol))
             .Append('(');
 
@@ -149,7 +149,7 @@ internal static class HostLauncherTranspiler
                 context.Visitor.Visit(sizeExpression);
             }
 
-            context.Emitter.Writer.AppendSemiColon().AppendLine();
+            context.Emitter.Writer.AppendLine(";");
         }
     }
 
@@ -239,7 +239,7 @@ internal static class HostLauncherTranspiler
                     }
                 }
 
-                context.Emitter.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendLine(";");
             }
         }
     }
@@ -248,7 +248,7 @@ internal static class HostLauncherTranspiler
     {
         if (!isFirst)
         {
-            context.Emitter.Writer.AppendComma().AppendSpace();
+            context.Emitter.Writer.Append(", ");
         }
 
         isFirst = false;

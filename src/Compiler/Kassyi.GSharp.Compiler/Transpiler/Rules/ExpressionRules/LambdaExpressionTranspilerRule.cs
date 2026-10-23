@@ -59,10 +59,10 @@ public sealed class LambdaExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         }
         else
         {
-            context.Emitter.Writer.AppendParentheses();
+            context.Emitter.Writer.Append("()");
         }
 
-        context.Emitter.Writer.AppendSpace();
+        context.Emitter.Writer.Append(' ');
 
         LambdaTranspilerHelper.TranspileLambdaBody(ref context, block, expressionBody);
     }

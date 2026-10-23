@@ -27,7 +27,7 @@ public sealed class ElementAccessExpressionTranspilerRule : SyntaxNodeTranspiler
                 context.Visitor.Visit(node.ArgumentList.Arguments[i].Expression);
                 if (i < node.ArgumentList.Arguments.Count - 1)
                 {
-                    context.Emitter.Writer.AppendComma();
+                    context.Emitter.Writer.Append(',');
                 }
             }
         }

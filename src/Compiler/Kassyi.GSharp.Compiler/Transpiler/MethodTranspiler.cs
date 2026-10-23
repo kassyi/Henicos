@@ -172,7 +172,7 @@ public static class MethodTranspiler
             MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, lowered != null, ref context);
         }
 
-        context.Emitter.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendLine(";");
 
         context.Emitter.Writer = mainWriter;
         foreach (var structSym in StructTranspiler.GetTopologicallySortedStructs(ref context))
@@ -235,9 +235,9 @@ public static class MethodTranspiler
         {
             StructTranspiler.RegisterUsedStructIfApplicable(parameter.Type, ref context);
             context.Emitter.Dialect.AppendType(ref context, parameter.Type);
-            context.Emitter.Writer.AppendSpace()
+            context.Emitter.Writer.Append(' ')
                 .AppendCppName(CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect))
-                .AppendSemiColon().AppendLine();
+                .AppendLine(";");
         }
 
         foreach (var field in lowered.ContextFields)
@@ -289,9 +289,9 @@ public static class MethodTranspiler
 
     private static void WriteContextFieldName(VariableDeclaratorSyntax field, ref TranspileContext context)
     {
-        context.Emitter.Writer.AppendSpace();
+        context.Emitter.Writer.Append(' ');
         CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
-        context.Emitter.Writer.AppendSemiColon().AppendLine();
+        context.Emitter.Writer.AppendLine(";");
     }
 
     private static void WriteMethodBody(MethodDeclarationSyntax method, LoweredStateMachine? lowered,
@@ -355,11 +355,11 @@ public static class MethodTranspiler
                 }
 
                 context.Visitor.Visit(method.ExpressionBody.Expression);
-                context.Emitter.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendLine(";");
 
                 if (isKernelWithReturn)
                 {
-                    context.Emitter.Writer.AppendKeyword("return").AppendSemiColonLine();
+                    context.Emitter.Writer.AppendLine("return;");
                 }
             }
         }
@@ -375,7 +375,7 @@ public static class MethodTranspiler
             return;
         }
 
-        context.Emitter.Writer.AppendKeyword("if");
+        context.Emitter.Writer.Append("if");
         using (context.Emitter.Writer.Parentheses())
         {
             context.Emitter.Writer.Append($"{GSharpInternalNames.StateMachine.State}==0");
@@ -388,7 +388,7 @@ public static class MethodTranspiler
                 var name = CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect);
                 context.Emitter.Writer.Append($"{GSharpInternalNames.StateMachine.Context}->").AppendCppName(name)
                     .Append($"={GSharpInternalNames.SuspendingCall.CopiedParameterPrefix}").AppendCppName(name)
-                    .AppendSemiColon().AppendLine();
+                    .AppendLine(";");
             }
         }
     }

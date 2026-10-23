@@ -75,49 +75,6 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         return ref this;
     }
 
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendComma()
-    {
-        Builder.Append(',');
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendSpace()
-    {
-        Builder.Append(' ');
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendSemiColon()
-    {
-        Builder.Append(';');
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendSemiColonLine()
-    {
-        Builder.AppendLine(";");
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendOperator(string op)
-    {
-        Builder.Append(op);
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendKeyword(string keyword)
-    {
-        Builder.Append(keyword);
-        return ref this;
-    }
-
-
 #pragma warning disable CA1822 // Mark members as static
     [UnscopedRef]
     public ref readonly SourceWriter Append(
@@ -289,27 +246,6 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
     public SourceWriterInlineScope Braces() => new(this, "{", "}");
     public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda(string? returnType = null) => new(this, returnType);
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendParentheses()
-    {
-        Append("()");
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendBrackets()
-    {
-        Append("[]");
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendEmptyScope()
-    {
-        Append("{}");
-        return ref this;
-    }
 
     /// <summary>Name recorded in the <c>GeneratedCodeAttribute</c> of generated types.</summary>
     public const string GeneratorName = "Kassyi.GSharp.Compiler";

@@ -226,7 +226,7 @@ internal static class MethodSignatureTranspiler
                 context.Emitter.Writer.Append(" __restrict__");
             }
 
-            context.Emitter.Writer.AppendSpace();
+            context.Emitter.Writer.Append(' ');
             if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
             {
                 context.Emitter.Writer.Append(GSharpInternalNames.SuspendingCall.CopiedParameterPrefix);
@@ -285,7 +285,7 @@ internal static class MethodSignatureTranspiler
         }
         else
         {
-            context.Emitter.Writer.AppendKeyword("void");
+            context.Emitter.Writer.Append("void");
         }
     }
 
@@ -347,7 +347,7 @@ internal static class MethodSignatureTranspiler
     private static void WriteKernelMethodPrefix(ref TranspileContext context)
     {
         // Auto-allocate feature: GpuKernel methods are now allowed to return values.
-        context.Emitter.Writer.AppendKeyword(context.Emitter.Dialect.IsCuda
+        context.Emitter.Writer.Append(context.Emitter.Dialect.IsCuda
             ? "extern \"C\" __global__ void"
             : "extern \"C\" __declspec(dllexport) void");
     }

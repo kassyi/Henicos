@@ -40,7 +40,7 @@ internal static class DeclarationTranspilerHelper
 
             if (i < variables.Count - 1)
             {
-                context.Emitter.Writer.AppendComma();
+                context.Emitter.Writer.Append(',');
             }
         }
     }

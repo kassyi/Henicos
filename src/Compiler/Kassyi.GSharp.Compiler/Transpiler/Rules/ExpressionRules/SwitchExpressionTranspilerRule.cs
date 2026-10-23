@@ -21,7 +21,7 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     {
         using (context.Emitter.Writer.ImmediatelyInvokedLambda())
         {
-            context.Emitter.Writer.AppendKeyword("switch");
+            context.Emitter.Writer.Append("switch");
             using (context.Emitter.Writer.Parentheses())
             {
                 context.Visitor.Visit(node.GoverningExpression);
@@ -60,7 +60,7 @@ public sealed class SwitchExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
 
                     context.Emitter.Writer.Append(" return ");
                     context.Visitor.Visit(arm.Expression);
-                    context.Emitter.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendLine(";");
                 }
             }
         }
