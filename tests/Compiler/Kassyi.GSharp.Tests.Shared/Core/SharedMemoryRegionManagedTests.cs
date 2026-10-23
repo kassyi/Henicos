@@ -162,6 +162,26 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
         });
     }
 
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("", 0, "", 12638153115695167455UL)]
+    [InlineData("a.cs", 10, "M", 5490221886580183845UL)]
+    [InlineData("P:/src/Kernels.cu.cs", 42, "ReduceKernel", 6238177414468702278UL)]
+    [InlineData("\u65e5\u672c.cs", int.MaxValue, "\u30e1\u30bd\u30c3\u30c9", 1140269122134921303UL)]
+    [InlineData("x.cs", -1, "M", 10450852572731352005UL)]
+    public void Test_Declaration_SiteKey_IsPinnedFnv1A64(string path, int line, string member, ulong siteKey)
+    {
+        // The key is shared with the compiler's 64-bit key space; pin its exact value.
+        WithBlock(() =>
+        {
+            var byCaller = new SharedMemory<int>(4, path, line, member);
+            byCaller[0] = 9;
+
+            Assert.Equal(9, new SharedMemory<int>(4, siteKey)[0]);
+            Assert.Equal(0, new SharedMemory<int>(4, path, unchecked(line + 1), member)[0]);
+        });
+    }
+
     private static void WithBlock(Action body) => RunOnFreshThread(() =>
     {
         try
