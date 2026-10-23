@@ -4,12 +4,11 @@ namespace Kassyi.GSharp.Compiler.Extensions;
 internal static class CSharpTypeNameWriter
 {
     /// <summary>
-    /// Gets the full namespace name without allocating via ToDisplayString().
-    /// Uses StringBuilder to construct the dot-separated name from bottom to top.
+    /// Gets the dot-separated name of <paramref name="namespaceSymbol"/>, or an empty string for the global namespace.
     /// </summary>
     public static string GetFullNamespaceName(this INamespaceSymbol? namespaceSymbol)
     {
-        if (namespaceSymbol == null || namespaceSymbol.IsGlobalNamespace)
+        if (namespaceSymbol is null or { IsGlobalNamespace: true })
         {
             return string.Empty;
         }
@@ -20,30 +19,9 @@ internal static class CSharpTypeNameWriter
             return namespaceSymbol.Name;
         }
 
-        using var enumerator = getNamespaces(namespaceSymbol).GetEnumerator();
-        if (!enumerator.MoveNext())
-        {
-            return string.Empty;
-        }
-
-        var sb = new StringBuilder(enumerator.Current);
-        while (enumerator.MoveNext())
-        {
-            sb.Insert(0, ".");
-            sb.Insert(0, enumerator.Current);
-        }
-
-        return sb.ToString();
-
-        static IEnumerable<string> getNamespaces(INamespaceSymbol? ns)
-        {
-            var current = ns;
-            while (current is { IsGlobalNamespace: false })
-            {
-                yield return current.Name;
-                current = current.ContainingNamespace;
-            }
-        }
+        using var writer = new SourceWriter();
+        writer.AppendNamespace(namespaceSymbol);
+        return writer.ToString();
     }
 
     /// <summary>
@@ -81,21 +59,28 @@ internal static class CSharpTypeNameWriter
     /// </remarks>
     public static ref readonly SourceWriter AppendCsharpTypeName(this in SourceWriter writer, ITypeSymbol type)
     {
-        writer.AppendCsharpTypeNameWithoutAnnotation(type);
-        if (type is { IsReferenceType: true, NullableAnnotation: NullableAnnotation.Annotated })
-        {
-            writer.Append('?');
-        }
-
+        AppendTypeName(writer, type, useKeywords: true);
         return ref writer;
     }
 
-    private static void AppendCsharpTypeNameWithoutAnnotation(this in SourceWriter writer, ITypeSymbol type)
+    /// <summary>
+    /// Appends the fully-qualified C# name of <paramref name="symbol"/> (e.g. "global::System.Int32[]"), without
+    /// keywords or nullable annotations.
+    /// </summary>
+    public static ref readonly SourceWriter AppendFullyQualifiedCsharpName(this in SourceWriter writer,
+        ITypeSymbol symbol)
+    {
+        AppendTypeName(writer, symbol, useKeywords: false);
+        return ref writer;
+    }
+
+    // With keywords, primitives use their keyword, Nullable<T> becomes T? and a nullable reference type keeps its ?
+    private static void AppendTypeName(in SourceWriter writer, ITypeSymbol type, bool useKeywords)
     {
         switch (type)
         {
             case IArrayTypeSymbol arrayType:
-                writer.AppendCsharpTypeName(arrayType.ElementType);
+                AppendTypeName(writer, arrayType.ElementType, useKeywords);
                 writer.Append('[');
                 for (var i = 0; i < arrayType.Rank - 1; i++)
                 {
@@ -103,154 +88,68 @@ internal static class CSharpTypeNameWriter
                 }
 
                 writer.Append(']');
-                return;
+                break;
             case IPointerTypeSymbol pointerType:
-                writer.AppendCsharpTypeName(pointerType.PointedAtType);
+                AppendTypeName(writer, pointerType.PointedAtType, useKeywords);
                 writer.Append('*');
-                return;
-            case INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType:
-                writer.AppendCsharpTypeName(nullableType.TypeArguments[0]);
+                break;
+            case ITypeParameterSymbol typeParameter:
+                writer.Append(typeParameter.Name);
+                break;
+            case INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType
+                when useKeywords:
+                AppendTypeName(writer, nullableType.TypeArguments[0], useKeywords);
                 writer.Append('?');
-                return;
-            case INamedTypeSymbol { TypeArguments.Length: > 0 } genericType:
+                break;
+            case INamedTypeSymbol namedType when useKeywords && namedType.SpecialType.GetCsharpKeyword() is { } keyword:
+                writer.Append(keyword);
+                break;
+            default:
                 writer.Append("global::");
-                AppendContainingNamespaceOrType(writer, genericType.ContainingSymbol);
-                writer.Append(genericType.Name);
-                writer.Append('<');
-                for (var i = 0; i < genericType.TypeArguments.Length; i++)
-                {
-                    if (i > 0)
-                    {
-                        writer.Append(", ");
-                    }
-
-                    writer.AppendCsharpTypeName(genericType.TypeArguments[i]);
-                }
-
-                writer.Append('>');
-                return;
+                AppendQualifiedName(writer, type, useKeywords);
+                break;
         }
 
-        var keyword = type.SpecialType.GetCsharpKeyword();
-        if (keyword != null)
+        if (useKeywords && type is { IsReferenceType: true, NullableAnnotation: NullableAnnotation.Annotated })
         {
-            writer.Append(keyword);
+            writer.Append('?');
+        }
+    }
+
+    // <namespace>.<containing type>.<name>[<type arguments>]. A containing type keeps its type arguments, so a type
+    // nested in a generic type is written as Outer<int>.Inner.
+    private static void AppendQualifiedName(in SourceWriter writer, ITypeSymbol type, bool useKeywords)
+    {
+        switch (type.ContainingSymbol)
+        {
+            case INamedTypeSymbol containingType:
+                AppendQualifiedName(writer, containingType, useKeywords);
+                writer.Append('.');
+                break;
+            case INamespaceSymbol { IsGlobalNamespace: false } containingNamespace:
+                writer.AppendNamespace(containingNamespace);
+                writer.Append('.');
+                break;
+        }
+
+        writer.Append(type.Name);
+        if (type is not INamedTypeSymbol { TypeArguments: { Length: > 0 } typeArguments })
+        {
             return;
         }
 
-        writer.AppendFullyQualifiedCsharpName(type);
-    }
-
-    public static ref readonly SourceWriter AppendFullyQualifiedCsharpName(this in SourceWriter writer,
-        ITypeSymbol symbol)
-    {
-        switch (symbol)
+        writer.Append('<');
+        for (var i = 0; i < typeArguments.Length; i++)
         {
-            case IArrayTypeSymbol arrayType:
-                writer.AppendFullyQualifiedCsharpName(arrayType.ElementType);
-                writer.Append('[');
-                for (var i = 0; i < arrayType.Rank - 1; i++)
-                {
-                    writer.Append(',');
-                }
-
-                writer.Append(']');
-                return ref writer;
-
-            case IPointerTypeSymbol pointerType:
-                writer.AppendFullyQualifiedCsharpName(pointerType.PointedAtType);
-                writer.Append('*');
-                return ref writer;
-
-            case ITypeParameterSymbol typeParam:
-                writer.Append(typeParam.Name);
-                return ref writer;
-        }
-
-        if (symbol is INamedTypeSymbol { TypeArguments.Length: > 0 } namedType)
-        {
-            writer.Append("global::");
-            AppendContainingNamespaceOrType(writer, namedType.ContainingSymbol);
-            writer.Append(namedType.Name);
-            writer.Append('<');
-            for (var i = 0; i < namedType.TypeArguments.Length; i++)
+            if (i > 0)
             {
-                if (i > 0)
-                {
-                    writer.Append(", ");
-                }
-
-                writer.AppendFullyQualifiedCsharpName(namedType.TypeArguments[i]);
+                writer.Append(", ");
             }
 
-            writer.Append('>');
-            return ref writer;
+            AppendTypeName(writer, typeArguments[i], useKeywords);
         }
 
-        if (symbol.TryGetDeclaringSyntax<BaseTypeDeclarationSyntax>(out var typeDecl))
-        {
-            writer.Append("global::");
-            AppendParentNamespaceOrTypeFromAst(writer, typeDecl.Parent);
-            writer.Append(typeDecl.Identifier.ValueText);
-            return ref writer;
-        }
-
-        writer.Append("global::");
-        AppendContainingNamespaceOrType(writer, symbol.ContainingSymbol);
-        writer.Append(symbol.Name);
-        return ref writer;
-    }
-
-    private static void AppendParentNamespaceOrTypeFromAst(in SourceWriter writer, SyntaxNode? parent)
-    {
-        switch (parent)
-        {
-            case null:
-                return;
-            case BaseNamespaceDeclarationSyntax ns:
-                AppendParentNamespaceOrTypeFromAst(writer, ns.Parent);
-
-                AppendNameSyntax(writer, ns.Name);
-
-                writer.Append('.');
-                break;
-            case BaseTypeDeclarationSyntax parentType:
-                AppendParentNamespaceOrTypeFromAst(writer, parentType.Parent);
-                writer.Append(parentType.Identifier.ValueText);
-                writer.Append('.');
-                break;
-        }
-    }
-
-    private static void AppendNameSyntax(in SourceWriter writer, NameSyntax name)
-    {
-        switch (name)
-        {
-            case QualifiedNameSyntax q:
-
-                AppendNameSyntax(writer, q.Left);
-
-                writer.Append('.');
-
-                writer.Append(q.Right.Identifier.ValueText);
-                break;
-            case SimpleNameSyntax s:
-
-                writer.Append(s.Identifier.ValueText);
-                break;
-        }
-    }
-
-    private static void AppendContainingNamespaceOrType(in SourceWriter writer, ISymbol? parent)
-    {
-        if (parent is null || parent is INamespaceSymbol { IsGlobalNamespace: true })
-        {
-            return;
-        }
-
-        AppendContainingNamespaceOrType(writer, parent.ContainingSymbol);
-        writer.Append(parent.Name);
-        writer.Append('.');
+        writer.Append('>');
     }
 
     /// <summary>
