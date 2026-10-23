@@ -35,8 +35,9 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             var statement = StoreDiscardedResult(original);
 
             // Rewrite the statement and capture any hoisted warp instructions
-            var rewrittenStatement = new StatementRewriter(this, statement, hoistedAssignments).Visit(statement) as StatementSyntax
-                                     ?? throw new InvalidOperationException("Warp instruction hoisting removed a statement.");
+            var rewrittenStatement =
+                new StatementRewriter(this, statement, hoistedAssignments).Visit(statement) as StatementSyntax
+                ?? throw new InvalidOperationException("Warp instruction hoisting removed a statement.");
 
             newStatements.AddRange(hoistedAssignments);
             newStatements.Add(rewrittenStatement);
@@ -50,7 +51,8 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
     private StatementSyntax StoreDiscardedResult(StatementSyntax statement) =>
         statement is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax call } &&
         BarrierHelper.IsValueReturningSuspendingCall(call)
-            ? StatementRewriter.CreateTempDeclaration(GetNextCallTempName(), call.WithoutTrivia()).WithTriviaFrom(statement)
+            ? StatementRewriter.CreateTempDeclaration(GetNextCallTempName(), call.WithoutTrivia())
+                .WithTriviaFrom(statement)
             : statement;
 
     private string GetNextTempName() => $"{GSharpInternalNames.Lowering.WarpTempPrefix}{_tempCounter++}";
@@ -98,7 +100,8 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             node.WithStatement(VisitLoopBody(node.Statement));
 
         private StatementSyntax VisitLoopBody(StatementSyntax body) =>
-            Visit(body) as StatementSyntax ?? throw new InvalidOperationException("Warp instruction hoisting removed a loop body.");
+            Visit(body) as StatementSyntax ??
+            throw new InvalidOperationException("Warp instruction hoisting removed a loop body.");
 
         public override SyntaxNode? Visit(SyntaxNode? node)
         {
@@ -140,8 +143,10 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
                 case ExpressionStatementSyntax:
                 // If it's already perfectly hoisted, skip
                 case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax vd } when
-                    vd.Identifier.Text.StartsWith(GSharpInternalNames.Lowering.WarpTempPrefix, StringComparison.Ordinal) ||
-                    vd.Identifier.Text.StartsWith(GSharpInternalNames.Lowering.CallTempPrefix, StringComparison.Ordinal):
+                    vd.Identifier.Text.StartsWith(GSharpInternalNames.Lowering.WarpTempPrefix,
+                        StringComparison.Ordinal) ||
+                    vd.Identifier.Text.StartsWith(GSharpInternalNames.Lowering.CallTempPrefix,
+                        StringComparison.Ordinal):
 
                     return visitedNode;
             }
@@ -189,7 +194,9 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
                     SyntaxFactory.VariableDeclaration(
                         declarationExpression.Type.WithoutTrivia(),
                         SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.VariableDeclarator(identifier).WithAdditionalAnnotations(annotations)))
+                            SyntaxFactory.VariableDeclarator(identifier).WithAdditionalAnnotations(annotations)
+                        )
+                    )
                 ).NormalizeWhitespace());
 
                 return argument.WithExpression(SyntaxFactory.IdentifierName(identifier)
@@ -239,7 +246,8 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(expression);
         }
 
-        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value) =>
+        internal static LocalDeclarationStatementSyntax
+            CreateTempDeclaration(string tempName, ExpressionSyntax value) =>
             SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),

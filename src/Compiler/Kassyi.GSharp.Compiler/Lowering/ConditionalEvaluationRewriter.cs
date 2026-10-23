@@ -20,7 +20,8 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
 
     /// <summary>Rewrites the conditional operators in the block that need it.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) =>
-        Visit(block) as BlockSyntax ?? throw new InvalidOperationException("Conditional evaluation lowering removed the block.");
+        Visit(block) as BlockSyntax ??
+        throw new InvalidOperationException("Conditional evaluation lowering removed the block.");
 
     public override SyntaxNode VisitBlock(BlockSyntax node) => node.WithStatements(RewriteStatements(node.Statements));
 
@@ -73,7 +74,8 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
             if (FindConditional(statement) is not { } conditional)
             {
                 newStatements.Add(Visit(statement) as StatementSyntax
-                                  ?? throw new InvalidOperationException("Conditional evaluation lowering removed a statement."));
+                                  ?? throw new InvalidOperationException(
+                                      "Conditional evaluation lowering removed a statement."));
                 continue;
             }
 
@@ -96,29 +98,35 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
         switch (conditional)
         {
             case BinaryExpressionSyntax binary:
-                {
-                    // var t = left; if (t) / if (!t) { t = right; }
-                    ExpressionSyntax guard = binary.IsKind(SyntaxKind.LogicalAndExpression)
-                        ? temp
-                        : SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, temp);
-                    return (ImmutableArray.Create<StatementSyntax>(
-                        CreateTempDeclaration(name, binary.Left.WithoutTrivia()),
-                        SyntaxFactory.IfStatement(guard, SyntaxFactory.Block(Assign(temp, binary.Right)))), temp);
-                }
+            {
+                // var t = left; if (t) / if (!t) { t = right; }
+                ExpressionSyntax guard = binary.IsKind(SyntaxKind.LogicalAndExpression)
+                    ? temp
+                    : SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, temp);
+                return (ImmutableArray.Create<StatementSyntax>(
+                    CreateTempDeclaration(name, binary.Left.WithoutTrivia()),
+                    SyntaxFactory.IfStatement(guard, SyntaxFactory.Block(Assign(temp, binary.Right)))
+                ), temp);
+            }
             case ConditionalExpressionSyntax ternary:
-                {
-                    // var t = default; if (c) { t = whenTrue; } else { t = whenFalse; }
-                    var typedDefault = SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression)
-                        .WithAdditionalAnnotations(ternary.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
-                    return (ImmutableArray.Create<StatementSyntax>(
+            {
+                // var t = default; if (c) { t = whenTrue; } else { t = whenFalse; }
+                var typedDefault = SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression)
+                    .WithAdditionalAnnotations(ternary.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
+                    );
+                return (ImmutableArray.Create<StatementSyntax>(
                         CreateTempDeclaration(name, typedDefault),
                         SyntaxFactory.IfStatement(
                             ternary.Condition.WithoutTrivia(),
                             SyntaxFactory.Block(Assign(temp, ternary.WhenTrue)),
-                            SyntaxFactory.ElseClause(SyntaxFactory.Block(Assign(temp, ternary.WhenFalse))))), temp);
-                }
+                            SyntaxFactory.ElseClause(SyntaxFactory.Block(Assign(temp, ternary.WhenFalse)))
+                        )
+                    )
+                    , temp);
+            }
             default:
-                throw new InvalidOperationException($"Cannot lower a conditional expression of kind '{conditional.Kind()}'.");
+                throw new InvalidOperationException(
+                    $"Cannot lower a conditional expression of kind '{conditional.Kind()}'.");
         }
     }
 
@@ -181,5 +189,8 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
                 SyntaxFactory.IdentifierName("var"),
                 SyntaxFactory.SingletonSeparatedList(
                     SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(name))
-                        .WithInitializer(SyntaxFactory.EqualsValueClause(value)))));
+                        .WithInitializer(SyntaxFactory.EqualsValueClause(value))
+                )
+            )
+        );
 }

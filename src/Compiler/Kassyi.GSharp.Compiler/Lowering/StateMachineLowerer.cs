@@ -134,7 +134,8 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
             {
                 currentCaseStatements.Add(CreateStateAssignment(nextState));
                 currentCaseStatements.Add(SyntaxFactory.ReturnStatement()
-                    .WithAdditionalAnnotations(new SyntaxAnnotation(LoweringAnnotations.StateMachineReturnAnnotationKind)));
+                    .WithAdditionalAnnotations(
+                        new SyntaxAnnotation(LoweringAnnotations.StateMachineReturnAnnotationKind)));
             }
             else
             {
@@ -195,7 +196,13 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
             SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, resume),
             SyntaxFactory.Block(
                 CreateStateAssignment(resumeState),
-                SyntaxFactory.ReturnStatement().WithAdditionalAnnotations(new SyntaxAnnotation(LoweringAnnotations.StateMachineReturnAnnotationKind))));
+                SyntaxFactory.ReturnStatement()
+                    .WithAdditionalAnnotations(
+                        new SyntaxAnnotation(
+                            LoweringAnnotations.StateMachineReturnAnnotationKind)
+                    )
+            )
+        );
     }
 
     private static StatementSyntax RewriteGoto(StatementSyntax stmt, Dictionary<string, int> labelStates) =>
@@ -247,7 +254,8 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
         var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>();
         // Arguments are: context, mask, val, delta, width [optional]
         // The root context owns the warp exchange, also when the shuffle is in a device function
-        newArgs = newArgs.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)));
+        newArgs = newArgs.Add(
+            SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)));
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[0]);
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[1]); // pass val for type inference
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[2]);

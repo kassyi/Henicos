@@ -95,7 +95,10 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
             {
                 // [WHY] Hoisted variables reside in the context struct, so initializations must become explicit member assignments.
                 var typeSyntax = (variable.Parent as VariableDeclarationSyntax)?.Type;
-                var isSharedMemory = typeSyntax is GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType };
+                var isSharedMemory = typeSyntax is GenericNameSyntax
+                {
+                    Identifier.ValueText: TypeConstants.SharedMemoryType
+                };
 
                 if (variable.Initializer == null || (isSharedMemory && !isDeviceFunction))
                 {
@@ -159,7 +162,9 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
             SyntaxKind.PointerMemberAccessExpression,
             SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
             SyntaxFactory.IdentifierName(identifier.WithoutTrivia())
-                .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+                .WithAdditionalAnnotations(
+                    original.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
+                )
         );
     }
 
