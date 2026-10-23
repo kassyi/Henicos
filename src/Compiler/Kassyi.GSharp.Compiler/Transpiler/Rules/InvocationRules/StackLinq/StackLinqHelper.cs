@@ -18,6 +18,13 @@ internal static class StackLinqHelper
             ContainingNamespace: { Name: "ZeroAlloc", ContainingNamespace.Name: "Kassyi" }
         };
 
+    /// <summary>
+    /// Is it an overload that passes a state value to its lambda (<c>Any(state, static (x, s) => ...)</c>)? Those exist
+    /// so that host code avoids a closure; they are host-only because a kernel lambda reads outer values directly.
+    /// </summary>
+    public static bool TakesState(IMethodSymbol symbol) =>
+        IsStackLinqMethod(symbol) && symbol.Parameters.AsStackEnumerable().Any(static p => p.Name == "state");
+
     public static ArgumentSyntax GetLambdaArgument(InvocationExpressionSyntax invocation, IMethodSymbol symbol)
     {
         if (symbol.IsExtensionMethod && invocation.Expression is MemberAccessExpressionSyntax)
