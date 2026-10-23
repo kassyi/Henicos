@@ -3,18 +3,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// <summary>Connects all AST lowering passes into a pipeline that transforms standard C# kernel bodies into a flat state machine.</summary>
 public static class AstLoweringPipeline
 {
-    /// <summary>Annotation kind that records the span of the original node a lowered node was derived from.</summary>
-    public const string OriginalSpanAnnotationKind = "GSharpOriginalSpan";
-
-    /// <summary>Annotation kind that marks a call to a device function that reaches a barrier (see <see cref="SuspensionAnalysis"/>).</summary>
-    public const string SuspendingCallAnnotationKind = "GSharpSuspendingCall";
-
-    /// <summary>
-    /// Data of a <see cref="SuspendingCallAnnotationKind"/> annotation on a call whose callee returns a value. The state
-    /// machine always stores that value, even when the caller discards it.
-    /// </summary>
-    public const string ValueReturningCallAnnotationData = "Value";
-
     /// <summary>Lowers the body of a kernel or device function, block or expression body, into a flat state machine.</summary>
     /// <param name="method">A method that has a body (see <see cref="MethodDeclarationSyntaxExtensions.HasBody"/>).</param>
     /// <param name="semanticModel">A semantic model of the compilation, used to find calls that suspend.</param>
@@ -153,7 +141,7 @@ public static class AstLoweringPipeline
             }
 
             var visited = (base.Visit(node) ?? node).WithAdditionalAnnotations(
-                new SyntaxAnnotation(OriginalSpanAnnotationKind, $"{node.SpanStart},{node.Span.Length}"));
+                new SyntaxAnnotation(LoweringAnnotations.OriginalSpanAnnotationKind, $"{node.SpanStart},{node.Span.Length}"));
 
             if (node is not InvocationExpressionSyntax || !suspendingCalls.TryGetValue(node.Span, out var returnsValue))
             {
@@ -161,8 +149,8 @@ public static class AstLoweringPipeline
             }
 
             return visited.WithAdditionalAnnotations(returnsValue
-                ? new SyntaxAnnotation(SuspendingCallAnnotationKind, ValueReturningCallAnnotationData)
-                : new SyntaxAnnotation(SuspendingCallAnnotationKind));
+                ? new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind, LoweringAnnotations.ValueReturningCallAnnotationData)
+                : new SyntaxAnnotation(LoweringAnnotations.SuspendingCallAnnotationKind));
         }
     }
 }

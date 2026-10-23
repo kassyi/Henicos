@@ -159,7 +159,7 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
             SyntaxKind.PointerMemberAccessExpression,
             SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
             SyntaxFactory.IdentifierName(identifier.WithoutTrivia())
-                .WithAdditionalAnnotations(original.GetAnnotations(AstLoweringPipeline.OriginalSpanAnnotationKind))
+                .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
         );
     }
 

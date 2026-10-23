@@ -271,7 +271,7 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
-        var isStateMachineReturn = node.HasAnnotations("StateMachineReturn");
+        var isStateMachineReturn = node.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind);
 
         if (context.Emitter is { IsSuspendingDeviceFunction: true, CallableDepth: 0 })
         {

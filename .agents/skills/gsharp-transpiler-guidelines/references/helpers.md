@@ -34,6 +34,7 @@ Type and namespace names: `TypeConstants` (`TypeConstants.GpuType`, `TypeConstan
 | Declared symbol of a given kind | `SemanticModelExtensions.GetDeclaredSymbol` (`GetDeclaredSymbol<IMethodSymbol>(decl)`) | `GetDeclaredSymbol(decl) as IMethodSymbol` |
 | Constant value / operation that may not resolve | `SemanticModelExtensions.GetSafeConstantValue`, `SemanticModelExtensions.GetSafeOperation` | try/catch around Roslyn calls |
 | Location in the user's source after lowering rewrote the tree | `SemanticModelExtensions.GetOriginalLocation` | `node.GetLocation()` on a rewritten node |
+| Attach or read a lowering annotation (original span, suspending call, state machine `return`) | `LoweringAnnotations.OriginalSpanAnnotationKind`, `LoweringAnnotations.SuspendingCallAnnotationKind`, `LoweringAnnotations.StateMachineReturnAnnotationKind` | `node.HasAnnotations("StateMachineReturn")` |
 | Method body, block or `=>` | `MethodDeclarationSyntaxExtensions.GetBodyNode`, `MethodDeclarationSyntaxExtensions.HasBody` | `Body ?? (SyntaxNode?)ExpressionBody` |
 | Node or token is one of 2-3 kinds | `SyntaxExtensions.IsKind` (`node.IsKind(a, b)`) | `IsKind(a) \|\| IsKind(b)` |
 | Walk a tree on a hot path | derive from `PooledWalker` and rent it (see `GpuKernelValidationWalker`) | `new MyWalker()` per call |

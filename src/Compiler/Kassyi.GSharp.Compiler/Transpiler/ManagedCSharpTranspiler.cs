@@ -657,7 +657,7 @@ internal static class ManagedCSharpTranspiler
                 return RewriteDeviceFunctionReturn(node);
             }
 
-            if (_inLambdaOrLocalFuncCount != 0 || node.HasAnnotations("StateMachineReturn"))
+            if (_inLambdaOrLocalFuncCount != 0 || node.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind))
             {
                 return base.VisitReturnStatement(node);
             }
@@ -695,7 +695,7 @@ internal static class ManagedCSharpTranspiler
         // next call and reports completion
         private SyntaxNode RewriteDeviceFunctionReturn(ReturnStatementSyntax node)
         {
-            if (node.HasAnnotations("StateMachineReturn"))
+            if (node.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind))
             {
                 return SyntaxFactory.ReturnStatement(SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression))
                     .WithTriviaFrom(node);

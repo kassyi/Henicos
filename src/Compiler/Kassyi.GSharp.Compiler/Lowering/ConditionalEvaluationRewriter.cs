@@ -109,7 +109,7 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
                 {
                     // var t = default; if (c) { t = whenTrue; } else { t = whenFalse; }
                     var typedDefault = SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression)
-                        .WithAdditionalAnnotations(ternary.GetAnnotations(AstLoweringPipeline.OriginalSpanAnnotationKind));
+                        .WithAdditionalAnnotations(ternary.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
                     return (ImmutableArray.Create<StatementSyntax>(
                         CreateTempDeclaration(name, typedDefault),
                         SyntaxFactory.IfStatement(

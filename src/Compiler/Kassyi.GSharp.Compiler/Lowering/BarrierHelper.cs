@@ -5,7 +5,7 @@ internal static class BarrierHelper
 {
     /// <summary>
     /// Determines whether the specified invocation represents a thread barrier, warp-level synchronization, or a call to a
-    /// device function that reaches one (marked by <see cref="AstLoweringPipeline.SuspendingCallAnnotationKind"/>).
+    /// device function that reaches one (marked by <see cref="LoweringAnnotations.SuspendingCallAnnotationKind"/>).
     /// </summary>
     public static bool IsPhaseBarrier(InvocationExpressionSyntax inv)
     {
@@ -49,14 +49,14 @@ internal static class BarrierHelper
 
     /// <summary>Determines whether the specified invocation calls a device function that may suspend the calling thread.</summary>
     public static bool IsSuspendingCall(InvocationExpressionSyntax inv) =>
-        inv.HasAnnotations(AstLoweringPipeline.SuspendingCallAnnotationKind);
+        inv.HasAnnotations(LoweringAnnotations.SuspendingCallAnnotationKind);
 
     /// <summary>Determines whether the specified invocation calls a device function that may suspend and returns a value.</summary>
     public static bool IsValueReturningSuspendingCall(InvocationExpressionSyntax inv)
     {
-        foreach (var annotation in inv.GetAnnotations(AstLoweringPipeline.SuspendingCallAnnotationKind))
+        foreach (var annotation in inv.GetAnnotations(LoweringAnnotations.SuspendingCallAnnotationKind))
         {
-            if (annotation.Data == AstLoweringPipeline.ValueReturningCallAnnotationData)
+            if (annotation.Data == LoweringAnnotations.ValueReturningCallAnnotationData)
             {
                 return true;
             }

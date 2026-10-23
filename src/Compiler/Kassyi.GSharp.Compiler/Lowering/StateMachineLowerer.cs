@@ -134,7 +134,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
             {
                 currentCaseStatements.Add(CreateStateAssignment(nextState));
                 currentCaseStatements.Add(SyntaxFactory.ReturnStatement()
-                    .WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn")));
+                    .WithAdditionalAnnotations(new SyntaxAnnotation(LoweringAnnotations.StateMachineReturnAnnotationKind)));
             }
             else
             {
@@ -195,7 +195,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
             SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, resume),
             SyntaxFactory.Block(
                 CreateStateAssignment(resumeState),
-                SyntaxFactory.ReturnStatement().WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn"))));
+                SyntaxFactory.ReturnStatement().WithAdditionalAnnotations(new SyntaxAnnotation(LoweringAnnotations.StateMachineReturnAnnotationKind))));
     }
 
     private static StatementSyntax RewriteGoto(StatementSyntax stmt, Dictionary<string, int> labelStates) =>

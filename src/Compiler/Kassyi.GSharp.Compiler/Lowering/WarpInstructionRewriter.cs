@@ -183,7 +183,7 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             {
                 // 'out int x' declares a local that the callee writes on its last resume, so it is declared before the
                 // call. The declarator and the reference keep the span of the designation, which names the local.
-                var annotations = designation.GetAnnotations(AstLoweringPipeline.OriginalSpanAnnotationKind);
+                var annotations = designation.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind);
                 var identifier = designation.Identifier.WithoutTrivia();
                 hoistedAssignments.Add(SyntaxFactory.LocalDeclarationStatement(
                     SyntaxFactory.VariableDeclaration(
