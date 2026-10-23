@@ -8,17 +8,20 @@ public class DialectDiagnosticsTests
 {
     private static readonly string s_source = RoslynTestUtility.ReadTestCase("Generator/DialectDiagnostics.cu.cs");
 
-    // The C++ dialect's own failures used to be dropped, so a CPU build said nothing about the replaced call
+    // The C++ dialect's own failures used to be dropped, so a CPU build said nothing about the replaced call. Each call is
+    // reported once at the call: the device function's (line 11) and the kernel's, whose C++ output is lowered (line 18).
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_CpuDialect_ReportsInlinePtxOncePerCall()
     {
         var diagnostics = await KernelDiagnostics.RunAsync(s_source, "Cpu");
 
-        var inlinePtx = diagnostics.Where(static d => d.Id == GSharpDiagnostics.InlinePtxNotSupportedByDialect.Id).ToList();
-        Assert.Equal(2, inlinePtx.Count);
-        Assert.All(inlinePtx, static d => Assert.Equal(DiagnosticOrigin.Analyzer, d.Origin));
-        Assert.Equal([11, 18], inlinePtx.Select(static d => d.StartLine));
+        Assert.Equal(
+            [
+                (DiagnosticOrigin.Analyzer, 11, 13, 11, 34),
+                (DiagnosticOrigin.Analyzer, 18, 13, 18, 34)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.InlinePtxNotSupportedByDialect.Id));
     }
 
     [Fact]
@@ -27,6 +30,6 @@ public class DialectDiagnosticsTests
     {
         var diagnostics = await KernelDiagnostics.RunAsync(s_source, "Cuda");
 
-        Assert.DoesNotContain(diagnostics, static d => d.Id == GSharpDiagnostics.InlinePtxNotSupportedByDialect.Id);
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.InlinePtxNotSupportedByDialect.Id));
     }
 }
