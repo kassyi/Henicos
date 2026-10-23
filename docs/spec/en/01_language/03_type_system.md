@@ -153,7 +153,7 @@ This enables developers to write highly readable, modern C# code, while offloadi
 
 The following C# memory operations are strictly prohibited within a G# kernel:
 
-1. **Heap Allocation**: The `new` keyword cannot be used to instantiate classes or reference types. (e.g., `new int[10]` or `new List<int>()` are invalid). The only exceptions are stack-allocated object creations for value type structs (e.g., `new Vector8()`, target-typed `new()`, or `record struct` instantiation) and both static and dynamic `SharedMemory<T>` declarations.
+1. **Heap Allocation**: The `new` keyword cannot be used to instantiate classes or reference types. (e.g., `new int[10]` or `new List<int>()` are invalid; for a small per-thread sequence use `stackalloc` with a `Span<T>`, or an `[InlineArray]` struct plus an `int` count, instead of a `List<T>`). The only exceptions are stack-allocated object creations for value type structs (e.g., `new Vector8()`, target-typed `new()`, or `record struct` instantiation) and both static and dynamic `SharedMemory<T>` declarations.
 2. **String Manipulation**: `string` is a managed reference type. Strings cannot be passed to, instantiated, or concatenated within a kernel.
 3. **Box/Unbox**: Casting value types to `object` or interfaces is prohibited.
 

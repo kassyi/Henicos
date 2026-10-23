@@ -62,6 +62,29 @@ public class ForEachNotSupportedRuleTests : TranspilerTestBase
 
     [Fact]
     [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Validate_SystemList_ReportsDiagnostic()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/ForEachNotSupported/ForEachOverSystemList.cs"));
+        var tree = compilation.SyntaxTrees.First();
+        var model = compilation.GetSemanticModel(tree);
+        var forEachNode = tree.GetRoot().DescendantNodes().OfType<ForEachStatementSyntax>().First();
+
+        var dummyMethod = compilation.GetTypeByMetadataName("TestContainer")!
+            .GetMembers("TestMethod").OfType<IMethodSymbol>().First();
+
+        var reportedDiagnostics = new List<Diagnostic>();
+        var context = new ValidationContext(model, dummyMethod, reportedDiagnostics.Add);
+
+        ForEachNotSupportedRule.Instance.Analyze(forEachNode, ref context);
+
+        var diagnostic = Assert.Single(reportedDiagnostics);
+        Assert.Equal(GSharpDiagnostics.ForeachNotSupported.Id, diagnostic.Id);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
     public void Validate_ArrayAndSpan_DoesNotReportDiagnostic()
     {
