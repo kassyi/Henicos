@@ -17,6 +17,14 @@ __device__ inline System_Nullable() : HasValue(false), Value() {}
 __device__ inline System_Nullable(T val) : HasValue(true), Value(val) {}
 };
 
+// The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,
+// goto). Guards of one block are destroyed in reverse order, as C# disposes nested usings.
+template <typename T>
+struct __gsharp_using_scope {
+T& resource;
+__device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
+};
+
 template <typename T>
 struct GSharpArray {
 T* __restrict__ data;

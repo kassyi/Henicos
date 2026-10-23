@@ -33,6 +33,12 @@ public class KernelDiagnosticsInventoryTests
         // GSH0003 (switch expression)
         "Analyzers/GpuKernel/UnsupportedSwitch_InGpuKernel.cu.cs",
         "Diagnostics/UnsupportedSwitchPatterns.cu.cs",
+        // GSH0003 (barrier in the scope of a using; a using of a class), GSH0001
+        "Diagnostics/UsingBarrierScope.cu.cs",
+        // GSH0003 (dynamic, TypedReference, GCHandle)
+        "Diagnostics/RuntimeOnlyTypes.cu.cs",
+        // GSH0003 (finalizer marked as GPU code)
+        "Diagnostics/GpuFinalizer.cu.cs",
         // GSH0003 (operator macro target)
         "Diagnostics/OperatorMacroMissingTarget.cu.cs",
         // GSH0003 (operator macro context: none, or more than one)

@@ -30,6 +30,20 @@ internal static class GpuCodeConstraints
     /// </summary>
     public static bool IsFunctionPointer(ITypeSymbol? type) => type is IFunctionPointerTypeSymbol;
 
+    /// <summary>
+    /// The name of <paramref name="type"/> when only the .NET runtime can give it meaning, so device code cannot use it
+    /// (GSH0003): <c>dynamic</c> (dynamic dispatch through the runtime binder), <see cref="TypedReference"/> (a
+    /// reference tracked by the GC) or <c>GCHandle</c> (a handle of the GC); otherwise <see langword="null"/>.
+    /// </summary>
+    public static string? GetRuntimeOnlyTypeName(ITypeSymbol? type) => type switch
+    {
+        { TypeKind: TypeKind.Dynamic } => "dynamic",
+        { SpecialType: SpecialType.System_TypedReference } => nameof(TypedReference),
+        INamedTypeSymbol { Name: TypeConstants.GCHandleType } named when named.ContainingNamespace.IsSystemRuntimeInteropServices() =>
+            TypeConstants.GCHandleType,
+        _ => null
+    };
+
     /// <summary>Whether <paramref name="type"/> is <see cref="string"/>, which device code cannot hold (GSH0002).</summary>
     public static bool IsString(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_String };
 
@@ -85,6 +99,12 @@ internal static class GpuCodeConstraints
     /// <summary>Whether a switch expression arm's pattern is one the transpiler emits: a constant or a discard (GSH0003).</summary>
     public static bool IsSupportedSwitchArmPattern(PatternSyntax pattern) =>
         pattern is ConstantPatternSyntax or DiscardPatternSyntax;
+
+    /// <summary>
+    /// The GSH0003 text for a barrier in the scope of a <c>using</c>: the CPU state machine returns at a barrier, which
+    /// would dispose the resource before the code after the barrier uses it.
+    /// </summary>
+    public const string BarrierInUsingScope = "barrier in the scope of a using";
 
     /// <summary>The GSH0003 text for a stack array whose size is not a constant.</summary>
     public const string DynamicArraySize = "dynamic array size";

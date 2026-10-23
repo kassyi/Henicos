@@ -53,6 +53,25 @@
 (21,13)-(21,27) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
 (32,13)-(32,23) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
 
+## Diagnostics/UsingBarrierScope.cu.cs
+(30,13)-(30,30) GSH0003 analyzer: The syntax 'barrier in the scope of a using' is not supported in GSharp GPU kernels
+(34,9)-(34,26) GSH0003 analyzer: The syntax 'barrier in the scope of a using' is not supported in GSharp GPU kernels
+(41,13)-(41,30) GSH0003 analyzer: The syntax 'barrier in the scope of a using' is not supported in GSharp GPU kernels
+(64,16)-(64,19) GSH0003 analyzer: The syntax 'using of a resource that is not a user struct' is not supported in GSharp GPU kernels
+(64,31)-(64,55) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
+
+## Diagnostics/RuntimeOnlyTypes.cu.cs
+(14,13)-(14,20) GSH0003 analyzer: The syntax 'dynamic' is not supported in GSharp GPU kernels
+(23,13)-(23,27) GSH0003 analyzer: The syntax 'TypedReference' is not supported in GSharp GPU kernels
+(23,40)-(23,56) GSH0003 analyzer: The syntax 'MakeRefExpression' is not supported in GSharp GPU kernels
+(31,13)-(31,21) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
+(31,31)-(31,39) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
+(32,13)-(32,16) GSH0003 analyzer: The syntax 'GCHandle' is not supported in GSharp GPU kernels
+
+## Diagnostics/GpuFinalizer.cu.cs
+(11,5)-(11,26) GSH0003 analyzer: The syntax 'DestructorDeclaration' is not supported in GSharp GPU kernels
+(20,5)-(20,29) GSH0003 analyzer: The syntax 'DestructorDeclaration' is not supported in GSharp GPU kernels
+
 ## Diagnostics/OperatorMacroMissingTarget.cu.cs
 (36,9)-(36,18) GSH0003 analyzer: The syntax 'Macro target method 'OperatorMacroTargets.Missing' is missing or incompatible.' is not supported in GSharp GPU kernels
 

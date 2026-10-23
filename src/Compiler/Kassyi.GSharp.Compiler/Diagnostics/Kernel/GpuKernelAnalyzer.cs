@@ -18,7 +18,23 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             var dialect = TranspilerDialects.Create(
                 TranspilerDialects.GetName(start.Options.AnalyzerConfigOptionsProvider.GlobalOptions));
             start.RegisterSyntaxNodeAction(context => AnalyzeMethod(context, dialect), SyntaxKind.MethodDeclaration);
+            start.RegisterSyntaxNodeAction(context => AnalyzeDestructor(context, dialect), SyntaxKind.DestructorDeclaration);
         });
+    }
+
+    // A finalizer marked as GPU code is reported by its rule (GpuFinalizerRule); the generator does not emit it
+    private static void AnalyzeDestructor(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect)
+    {
+        var destructor = (DestructorDeclarationSyntax)context.Node;
+        if (context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(destructor) is not { } symbol ||
+            !GpuExecutionSpace.IsGpuFunction(symbol))
+        {
+            return;
+        }
+
+        var validationContext = new ValidationContext(context.SemanticModel, symbol, context.ReportDiagnostic, dialect);
+        using var walker = GpuKernelValidationWalker.Rent(validationContext);
+        walker.Visit(destructor);
     }
 
     private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ITranspilerDialect dialect)

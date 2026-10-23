@@ -75,6 +75,7 @@ public static class MethodTranspiler
 
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
+        using var disposeWriter = new SourceWriter();
 
         context.Emitter.Writer = bodyWriter;
 
@@ -104,6 +105,10 @@ public static class MethodTranspiler
             HostLauncherTranspiler.WriteCpuLauncher(in plan, lowered?.ContextFields, ref context);
         }
 
+        // Before the structs: a Dispose body can use more of them
+        context.Emitter.Writer = disposeWriter;
+        UsingTranspiler.WriteDisposeDefinitions(ref context);
+
         context.Emitter.Writer = mainWriter;
         var sortedStructs = StructTranspiler.GetTopologicallySortedStructs(ref context);
         foreach (var structSym in sortedStructs)
@@ -111,7 +116,7 @@ public static class MethodTranspiler
             StructTranspiler.WriteStructDefinition(structSym, ref context);
         }
 
-        return mainWriter + bodyWriter.ToString();
+        return mainWriter + disposeWriter.ToString() + bodyWriter.ToString();
     }
 
     /// <summary>

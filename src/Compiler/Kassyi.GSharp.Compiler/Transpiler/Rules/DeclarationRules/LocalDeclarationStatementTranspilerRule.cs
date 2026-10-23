@@ -40,6 +40,11 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
         // Dispatch inner variable declaration transpilation to the visitor (which will use VariableDeclarationTranspilerRule)
         context.Visitor.Visit(node.Declaration);
         context.Emitter.Writer.Append(';');
+
+        if (node.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
+        {
+            UsingTranspiler.TranspileUsingDeclaration(node, ref context);
+        }
     }
 
     private static void ProcessSharedMemoryDeclaration(LocalDeclarationStatementSyntax node,

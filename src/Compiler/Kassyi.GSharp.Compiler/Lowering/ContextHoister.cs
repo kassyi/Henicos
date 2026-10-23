@@ -240,8 +240,13 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
 
         public override void VisitVariableDeclarator(VariableDeclaratorSyntax node)
         {
-            var parentBlock = node.FirstAncestorOrSelf<BlockSyntax>();
-            if (parentBlock != null)
+            // The resource of a using statement lives until the end of the statement. The analyzer rejects a barrier
+            // inside it (KernelBarrierValidator), so it never crosses one; a barrier after it leaves it a plain local.
+            if (node.Parent?.Parent is UsingStatementSyntax usingStatement)
+            {
+                Variables.Add((node, usingStatement.Span.End));
+            }
+            else if (node.FirstAncestorOrSelf<BlockSyntax>() is { } parentBlock)
             {
                 Variables.Add((node, parentBlock.Span.End));
             }

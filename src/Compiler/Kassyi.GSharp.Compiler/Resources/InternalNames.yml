@@ -50,6 +50,16 @@ Lowering:
     CoalesceTemp: __gsharp_coalesce_tmp
     SwitchStatePrefix: __gsharp_switch_
 
+Using:
+  Summary: >-
+    The disposal of a C# using in device code. A struct that has a Dispose method declares it as a member under its own
+    name; the guard of each using calls it when its scope ends.
+  Names:
+    ScopeGuard: { Value: __gsharp_using_scope, Prelude: Types.hpp }
+    Dispose: { Value: __gsharp_dispose, Prelude: Types.hpp }
+    GuardPrefix: __gsharp_using_guard_
+    ResourcePrefix: __gsharp_using_resource_
+
 Launcher:
   Summary: Locals of the CPU C++ launcher and the managed wrappers. Kernel parameters share their scope.
   Names:

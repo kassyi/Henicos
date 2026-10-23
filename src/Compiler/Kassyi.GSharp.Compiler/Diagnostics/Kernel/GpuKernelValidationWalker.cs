@@ -76,6 +76,9 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
     private static readonly ImmutableArray<ISyntaxValidationRule<LocalDeclarationStatementSyntax>> s_localDeclarationRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<LocalDeclarationStatementSyntax>>().ToImmutableArray();
 
+    private static readonly ImmutableArray<ISyntaxValidationRule<DestructorDeclarationSyntax>> s_destructorRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<DestructorDeclarationSyntax>>().ToImmutableArray();
+
     public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
     {
         foreach (var rule in s_methodRules)
@@ -84,6 +87,15 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         }
 
         base.VisitMethodDeclaration(node);
+    }
+
+    // The generator emits no finalizer, so its body is not checked
+    public override void VisitDestructorDeclaration(DestructorDeclarationSyntax node)
+    {
+        foreach (var rule in s_destructorRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
     }
 
     public override void VisitLocalFunctionStatement(LocalFunctionStatementSyntax node)
