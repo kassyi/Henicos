@@ -1,0 +1,122 @@
+﻿## Generator/SadPathDiagnostics.cu.cs
+(5,25)-(5,40) GSH0036 analyzer: The class 'ErrorSpecKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(11,13)-(11,19) GSH0002 generator: The string type is not supported in GPU kernels
+(12,26)-(12,38) GSH0001 generator: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
+(12,26)-(12,38) GSH0003 generator: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels
+
+## Analyzers/InvalidMappingSadPath.cs
+(12,21)-(12,52) GSH0036 analyzer: The class 'GEN_39_52_InvalidMappingSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(12,21)-(12,52) GSH0036 analyzer: The class 'GEN_39_52_InvalidMappingSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(28,19)-(28,31) GSH0001 generator: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
+(28,19)-(28,31) GSH0003 generator: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels
+
+## Analyzers/GpuKernel/StringTernary_InGpuKernel.cu.cs
+(5,21)-(5,53) GSH0036 analyzer: The class 'GSH_01_StringTernary_InGpuKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(12,9)-(12,15) GSH0002 generator: The string type is not supported in GPU kernels
+
+## Analyzers/DelegateEscapeSadPath.cs
+(11,21)-(11,52) GSH0036 analyzer: The class 'SYN08_DelegateEscapeSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(11,21)-(11,52) GSH0036 analyzer: The class 'SYN08_DelegateEscapeSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(21,9)-(21,24) GSH0065 analyzer: The static member 'SYN08_DelegateEscapeSadPathCase.EscapedDelegate' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(21,9)-(21,24) GSH0065 generator: The static member 'SYN08_DelegateEscapeSadPathCase.EscapedDelegate' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(29,30)-(29,63) GSH0001 generator: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
+(29,30)-(29,63) GSH0003 generator: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels
+
+## Diagnostics/UnsupportedSyntaxNodes.cu.cs
+(18,19)-(18,39) GSH0003 generator: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
+(19,9)-(22,10) GSH0003 generator: The syntax 'UncheckedStatement' is not supported in GSharp GPU kernels
+(30,21)-(30,41) GSH0003 generator: The syntax 'WithExpression' is not supported in GSharp GPU kernels
+(35,35)-(35,54) GSH0003 generator: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
+(44,9)-(44,28) GSH0003 generator: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
+
+## Analyzers/DynamicStackAllocSadPath.cs
+(6,21)-(6,55) GSH0036 analyzer: The class 'SYN13_DynamicStackAllocSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(13,43)-(13,54) GSH0003 generator: The syntax 'dynamic array size' is not supported in GSharp GPU kernels
+
+## Analyzers/GpuKernel/UnsupportedSwitch_InGpuKernel.cu.cs
+(5,21)-(5,57) GSH0036 analyzer: The class 'SYN_01_UnsupportedSwitch_InGpuKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(16,15)-(16,28) GSH0003 generator: The syntax 'Switch expression arms with 'when' clauses are not supported' is not supported in GSharp GPU kernels
+(23,13)-(23,16) GSH0003 generator: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
+
+## Diagnostics/OperatorMacroMissingTarget.cu.cs
+(36,9)-(36,18) GSH0003 generator: The syntax 'Macro target method 'OperatorMacroTargets.Missing' is missing or incompatible.' is not supported in GSharp GPU kernels
+
+## Analyzers/MacroArgumentSadPath.cs
+(5,14)-(5,41) GSH0036 analyzer: The class 'GEN_36_MacroArgumentSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(14,9)-(17,11) GSH0003 generator: The syntax 'ForUnroll arguments must be constants' is not supported in GSharp GPU kernels
+(14,26)-(14,31) GSH0012 analyzer: The argument 'count' of macro 'ForUnroll' must be a compile-time constant
+(19,9)-(19,15) GSH0002 generator: The string type is not supported in GPU kernels
+(21,9)-(21,30) GSH0006 generator: The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal
+(21,9)-(21,30) GSH0054 generator: Gpu.InlinePtx is not supported by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure
+(21,23)-(21,29) GSH0006 analyzer: The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal
+(25,9)-(25,28) GSH0003 generator: The syntax 'Gpu.SyncGrid requires a single lambda expression argument' is not supported in GSharp GPU kernels
+(25,9)-(25,28) GSH0030 analyzer: The method 'MyKernel' calls Gpu.SyncGrid but is not marked with [GpuKernel(Cooperative = true)]. Grid synchronization requires a cooperative kernel launch.
+(25,22)-(25,27) GSH0003 analyzer: The syntax 'Gpu.SyncGrid requires a lambda expression argument' is not supported in GSharp GPU kernels
+
+## Diagnostics/MacroLambdaWithoutParameter.cu.cs
+
+## Analyzers/UnrollHintSadPath.cs
+(5,14)-(5,31) GSH0036 analyzer: The class 'UnrollHintSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(11,9)-(11,26) GSH0017 analyzer: Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop
+(11,9)-(11,26) GSH0017 generator: Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop
+(15,25)-(15,27) GSH0016 analyzer: The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer
+(15,25)-(15,27) GSH0016 generator: The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer
+
+## Generator/KernelReturnTypes_SadPath.cs
+(6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
+(10,27)-(10,38) GSH0004 generator: Method 'ArrayKernel' is marked with [GpuKernel] but returns unsupported type 'float[]'. GpuKernel methods must return void or an unmanaged blittable type.
+(14,26)-(14,38) GSH0004 generator: Method 'StringKernel' is marked with [GpuKernel] but returns unsupported type 'string'. GpuKernel methods must return void or an unmanaged blittable type.
+(30,33)-(30,52) GSH0004 generator: Method 'ManagedStructKernel' is marked with [GpuKernel] but returns unsupported type 'Kassyi.GSharp.Tests.Shared.TestCases.Generator.TestKernelReturnTypesSadPath.ManagedStruct'. GpuKernel methods must return void or an unmanaged blittable type.
+(34,39)-(34,49) GSH0004 generator: Method 'SpanKernel' is marked with [GpuKernel] but returns unsupported type 'System.ReadOnlySpan<float>'. GpuKernel methods must return void or an unmanaged blittable type.
+
+## Analyzers/StructSizeDiagnostics.cs
+(65,24)-(65,39) GSH0064 generator: The parameters of kernel 'StructSizeDiagnosticKernels.OverLimitKernel' take 4112 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
+(71,24)-(71,37) GSH0064 generator: The parameters of kernel 'StructSizeDiagnosticKernels.PaddingKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
+(78,23)-(78,35) GSH0064 generator: The parameters of kernel 'StructSizeDiagnosticKernels.ResultKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
+(104,63)-(104,67) GSH0013 generator: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+
+## Generator/DialectDiagnostics.cu.cs
+(11,13)-(11,34) GSH0054 generator: Gpu.InlinePtx is not supported by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure
+(18,13)-(18,34) GSH0054 generator: Gpu.InlinePtx is not supported by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure
+
+## Generator/AotContextName_Namespaces.cs
+(4,30)-(4,34) GSH0058 generator: The structs 'global::N1.Pair' and 'global::N2.Pair' both map to 'AotContexts.Pair' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
+
+## Generator/AotContextName_ContextSuffix.cs
+(7,19)-(7,22) GSH0058 generator: The structs 'global::AotNameTest.FooContext' and 'global::AotNameTest.Foo' both map to 'AotContexts.Foo' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
+
+## Generator/AotContextName_GenericConstructions.cs
+(5,19)-(5,22) GSH0058 generator: The structs 'global::AotNameTest.Box<global::System.Int32>' and 'global::AotNameTest.Box<global::System.Int64>' both map to 'AotContexts.Box' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
+
+## Generator/KernelOverload_Indistinguishable.cu.cs
+(12,28)-(12,31) GSH0059 generator: The [GpuKernel] overloads 'Run(global::System.Int32[])' and 'Run(ref global::System.Int32)' produce the same LaunchRunPtr launch wrapper signature. Rename one of the kernels.
+(12,32)-(12,45) GSH0044 analyzer: The parameter 'value' uses a prohibited modifier (ref/out/in) or type (ref struct). These cannot be saved to the state machine context across barriers.
+
+## Analyzers/StaticMemberAccess_SadPath.cs
+(20,28)-(20,33) GSH0065 analyzer: The static member 'Cfg.M' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,28)-(20,33) GSH0065 generator: The static member 'Cfg.M' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,36)-(20,47) GSH0065 analyzer: The static member 'Cfg.Mutable' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,36)-(20,47) GSH0065 generator: The static member 'Cfg.Mutable' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,50)-(20,58) GSH0065 analyzer: The static member 'Cfg.Prop' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,50)-(20,58) GSH0065 generator: The static member 'Cfg.Prop' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,61)-(20,81) GSH0065 analyzer: The static member 'K.SameClassStaticField' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,61)-(20,81) GSH0065 generator: The static member 'K.SameClassStaticField' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,84)-(20,103) GSH0065 analyzer: The static member 'K.SameClassStaticProp' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(20,84)-(20,103) GSH0065 generator: The static member 'K.SameClassStaticProp' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(26,16)-(26,21) GSH0065 analyzer: The static member 'Cfg.M' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(26,16)-(26,21) GSH0065 generator: The static member 'Cfg.M' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+
+## Diagnostics/StaticMemberAccessTwice.cu.cs
+(15,23)-(15,32) GSH0065 analyzer: The static member 'StaticMemberAccessTwiceKernels.s_counter' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(15,23)-(15,32) GSH0065 generator: The static member 'StaticMemberAccessTwiceKernels.s_counter' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(15,35)-(15,75) GSH0065 analyzer: The static member 'StaticMemberAccessTwiceKernels.s_counter' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+(15,35)-(15,75) GSH0065 generator: The static member 'StaticMemberAccessTwiceKernels.s_counter' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
+
+## Analyzers/InstanceDeviceFunction_SadPath.cs
+(10,16)-(10,21) GSH0066 analyzer: The method 'S.Twice' is marked with [GpuDeviceFunction] but is an instance method. Mark the method as 'static' and pass the struct as a parameter.
+(16,16)-(16,19) GSH0066 analyzer: The method 'C.Add' is marked with [GpuDeviceFunction] but is an instance method. Mark the method as 'static' and pass the struct as a parameter.
+
