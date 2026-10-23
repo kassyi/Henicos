@@ -153,6 +153,8 @@ internal sealed class TranspilerRuleRegistry
             SyntaxKind.PointerIndirectionExpression
         ], new PrefixUnaryExpressionTranspilerRule());
         registry.Register(SyntaxKind.SwitchExpression, new SwitchExpressionTranspilerRule());
+        registry.Register(SyntaxKind.ThisExpression, new ThisExpressionTranspilerRule());
+        registry.Register(SyntaxKind.WithExpression, new WithExpressionTranspilerRule());
 
         // Declarations
         registry.Register(SyntaxKind.LocalDeclarationStatement, new LocalDeclarationStatementTranspilerRule());

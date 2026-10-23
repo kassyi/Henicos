@@ -10,8 +10,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 /// </remarks>
 public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleBase<LocalDeclarationStatementSyntax>
 {
-    private const int MaxSharedMemoryWarningBytes = 32768;
-
     // The running byte offset into the dynamic shared memory buffer; declared and advanced only by this rule.
     private const string SharedMemoryOffset = "__gsharp_smem_offset";
 
@@ -42,6 +40,11 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
         // Dispatch inner variable declaration transpilation to the visitor (which will use VariableDeclarationTranspilerRule)
         context.Visitor.Visit(node.Declaration);
         context.Emitter.Writer.Append(';');
+
+        if (node.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
+        {
+            UsingTranspiler.TranspileUsingDeclaration(node, ref context);
+        }
     }
 
     private static void ProcessSharedMemoryDeclaration(LocalDeclarationStatementSyntax node,
@@ -90,8 +93,6 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
     private static void WriteStaticSharedMemory(SharedMemoryAllocation alloc,
         ITypeSymbol typeArg, LocalDeclarationStatementSyntax node, int i, ref TranspileContext context)
     {
-        CheckExcessiveSharedMemoryUsage(alloc.SizeArgument, alloc.StaticSize, typeArg, ref context);
-
         context.Emitter.Writer.Append("__shared__ ");
         context.Emitter.Dialect.AppendType(ref context, typeArg);
         context.Emitter.Writer.Append(' ');
@@ -105,18 +106,6 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
         if (i < node.Declaration.Variables.Count - 1)
         {
             context.Emitter.Writer.AppendLine();
-        }
-    }
-
-    private static void CheckExcessiveSharedMemoryUsage(ExpressionSyntax sizeArg, int elementCount,
-        ITypeSymbol typeArg, ref TranspileContext context)
-    {
-        var elemSize = CudaLayoutRules.GetCudaLayout(typeArg).Size;
-        var byteSize = elementCount * elemSize;
-        if (byteSize > MaxSharedMemoryWarningBytes)
-        {
-            context.Reporter.Report(GSharpDiagnostics.ExcessiveSharedMemoryWarning, sizeArg, byteSize,
-                MaxSharedMemoryWarningBytes);
         }
     }
 

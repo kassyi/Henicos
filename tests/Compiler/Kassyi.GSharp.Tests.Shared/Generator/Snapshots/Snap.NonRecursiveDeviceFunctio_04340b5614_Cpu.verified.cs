@@ -149,30 +149,30 @@ public int tid;
 public static unsafe bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(int value, int length, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange __gsharp_ctx, ref int __gsharp_result) {
 SharedMemory<int> shared = new(256, 0x03b69bc16ee586d8UL);
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            __gsharp_ctx.tid = ThreadIndex.X;
-            shared[__gsharp_ctx.tid] = value;
-            __gsharp_ctx.__gsharp_state = 1;
-            return false;
-        }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.tid = ThreadIndex.X;
+shared[__gsharp_ctx.tid] = value;
+__gsharp_ctx.__gsharp_state = 1;
+return false;
+}
 
-        case 1:
-        {
-            {
-                __gsharp_result = shared[length - 1 - __gsharp_ctx.tid];
-                __gsharp_ctx.__gsharp_state = 0;
-                return true;
-            }
+case 1:
+{
+{
+__gsharp_result = shared[length - 1 - __gsharp_ctx.tid];
+__gsharp_ctx.__gsharp_state = 0;
+return true;
+}
 
-            {
-                __gsharp_ctx.__gsharp_state = 0;
-                return true;
-            }
-        }
-    }
+{
+__gsharp_ctx.__gsharp_state = 0;
+return true;
+}
+}
+}
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
@@ -189,45 +189,45 @@ public global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRe
 }
 public static unsafe bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice(int value, int length, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice __gsharp_ctx, ref int __gsharp_result) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            goto case 1;
-        }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+goto case 1;
+}
 
-        case 1:
-        {
-            if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(value, length, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_0))
-            {
-                __gsharp_ctx.__gsharp_state = 1;
-                return false;
-            }
+case 1:
+{
+if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(value, length, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_0))
+{
+__gsharp_ctx.__gsharp_state = 1;
+return false;
+}
 
-            __gsharp_ctx.once = __gsharp_ctx.__gsharp_call_temp_0;
-            goto case 2;
-        }
+__gsharp_ctx.once = __gsharp_ctx.__gsharp_call_temp_0;
+goto case 2;
+}
 
-        case 2:
-        {
-            if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(__gsharp_ctx.once, length, __gsharp_ctx.__gsharp_call_frame_1, ref __gsharp_ctx.__gsharp_call_temp_1))
-            {
-                __gsharp_ctx.__gsharp_state = 2;
-                return false;
-            }
+case 2:
+{
+if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__Exchange(__gsharp_ctx.once, length, __gsharp_ctx.__gsharp_call_frame_1, ref __gsharp_ctx.__gsharp_call_temp_1))
+{
+__gsharp_ctx.__gsharp_state = 2;
+return false;
+}
 
-            {
-                __gsharp_result = __gsharp_ctx.__gsharp_call_temp_1;
-                __gsharp_ctx.__gsharp_state = 0;
-                return true;
-            }
+{
+__gsharp_result = __gsharp_ctx.__gsharp_call_temp_1;
+__gsharp_ctx.__gsharp_state = 0;
+return true;
+}
 
-            {
-                __gsharp_ctx.__gsharp_state = 0;
-                return true;
-            }
-        }
-    }
+{
+__gsharp_ctx.__gsharp_state = 0;
+return true;
+}
+}
+}
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
@@ -240,26 +240,26 @@ public int lane;
 }
 public static unsafe bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp(global::System.Span<int> data, __gsharp_frame_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            __gsharp_ctx.lane = ThreadIndex.X & 31;
-            __gsharp_warp_exchange_assign(data[__gsharp_ctx.lane]);
-            __gsharp_ctx.__gsharp_state = 1;
-            return false;
-        }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.lane = ThreadIndex.X & 31;
+__gsharp_warp_exchange_assign(data[__gsharp_ctx.lane]);
+__gsharp_ctx.__gsharp_state = 1;
+return false;
+}
 
-        case 1:
-        {
-            var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, data[__gsharp_ctx.lane], 31 - __gsharp_ctx.lane);
-            data[__gsharp_ctx.lane] = __gsharp_warp_temp_0;
-            {
-                __gsharp_ctx.__gsharp_state = 0;
-                return true;
-            }
-        }
-    }
+case 1:
+{
+var __gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_sync(__gsharp_ctx, 0xFFFFFFFFu, data[__gsharp_ctx.lane], 31 - __gsharp_ctx.lane);
+data[__gsharp_ctx.lane] = __gsharp_warp_temp_0;
+{
+__gsharp_ctx.__gsharp_state = 0;
+return true;
+}
+}
+}
 }
 throw new global::System.InvalidOperationException("The device function state machine reached an unknown state.");
 }
@@ -409,46 +409,46 @@ public global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRe
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel(int[] input, int[] output, int length, int usePrimary, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            __gsharp_ctx.tid = ThreadIndex.X;
-            __gsharp_ctx.__gsharp_arg_temp_0 = input[__gsharp_ctx.tid];
-            goto case 1;
-        }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.__gsharp_arg_temp_0 = input[__gsharp_ctx.tid];
+goto case 1;
+}
 
-        case 1:
-        {
-            if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice(__gsharp_ctx.__gsharp_arg_temp_0, length, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_1))
-            {
-                __gsharp_ctx.__gsharp_state = 1;
-                return;
-            }
+case 1:
+{
+if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ExchangeTwice(__gsharp_ctx.__gsharp_arg_temp_0, length, __gsharp_ctx.__gsharp_call_frame_0, ref __gsharp_ctx.__gsharp_call_temp_1))
+{
+__gsharp_ctx.__gsharp_state = 1;
+return;
+}
 
-            output[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_call_temp_1;
-            if (!(usePrimary != 0))
-                goto case 3;
-            goto case 2;
-        }
+output[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_call_temp_1;
+if (!(usePrimary != 0))
+goto case 3;
+goto case 2;
+}
 
-        case 2:
-        {
-            if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp(output, __gsharp_ctx.__gsharp_call_frame_1))
-            {
-                __gsharp_ctx.__gsharp_state = 2;
-                return;
-            }
+case 2:
+{
+if (!global::Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage.NonRecursiveDeviceFunctionBarrierKernels.__gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__ReverseWarp(output, __gsharp_ctx.__gsharp_call_frame_1))
+{
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
 
-            goto case 3;
-        }
+goto case 3;
+}
 
-        case 3:
-        {
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+case 3:
+{
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -479,8 +479,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__NonRecursiveDeviceFunctionBarrierKernels__DeviceFunctionBarrierKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

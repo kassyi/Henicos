@@ -29,10 +29,16 @@ public static class GSH35_ParallelDependentCall_HappyPath
             SequentialMethod();
         });
 
-        if (Gpu.ThreadIndex.X == 0)
+        if (ThreadIndex.X == 0)
         {
             // Calling sequential method inside manual divergent branch is fine
             SequentialMethod();
         }
+
+        // The body of SyncGrid runs on every thread with a grid sync between statements, so parallel calls are fine
+        Gpu.SyncGrid(() => 
+        {
+            ParallelMethod();
+        });
     }
 }

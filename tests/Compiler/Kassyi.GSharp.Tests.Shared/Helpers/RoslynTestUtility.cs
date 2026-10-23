@@ -113,15 +113,15 @@ public static class RoslynTestUtility
         return MegaCompilationCache.GetNamedTypeSymbol(typeName);
     }
 
-    /// <summary>Creates a Roslyn compilation by parsing source text and adding it to the mega compilation cache.</summary>
-    public static Compilation CreateCompilation(string source)
+    /// <summary>Creates a Roslyn compilation by parsing each source text and adding it to the mega compilation cache.</summary>
+    public static Compilation CreateCompilation(params string[] sources)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 #pragma warning disable RS0030
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
+        var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
 #pragma warning restore RS0030
 
-        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
+        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTrees);
     }
 
     /// <summary>Creates a dummy semantic model and method symbol for testing analyzers or isolated transpiler nodes.</summary>
@@ -157,7 +157,7 @@ public static class RoslynTestUtility
     }
 
     /// <summary>Transpiles a method declared in the mega compilation by type and method name into target dialect C++ source.</summary>
-    public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod(
+    public static (string CudaSource, List<TranspileFailure> Failures) TranspileMethod(
         string typeName,
         string methodName,
         bool isDevice = true,
@@ -166,7 +166,7 @@ public static class RoslynTestUtility
         var (semanticModel, methodSymbol) = MegaCompilationCache.GetMethodContext(typeName, methodName);
         var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
-        var diagnostics = new List<Diagnostic>();
+        var diagnostics = new List<TranspileFailure>();
         dialect ??= new GSharpCudaDialect();
         var cudaSource =
             MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, diagnostics.Add, isDevice,
@@ -175,7 +175,7 @@ public static class RoslynTestUtility
     }
 
     /// <summary>Transpiles a method from dynamic compilation inferred from the caller file into target dialect C++ source.</summary>
-    public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod(
+    public static (string CudaSource, List<TranspileFailure> Failures) TranspileMethod(
         Type targetType,
         string methodName,
         [CallerFilePath] string callerFilePath = "",
@@ -202,7 +202,7 @@ public static class RoslynTestUtility
             MegaCompilationCache.GetMethodContext(targetType, methodName, pathList.ToArray());
         var methodDecl = (MethodDeclarationSyntax)methodSymbol.DeclaringSyntaxReferences[0].GetSyntax();
 
-        var diagnostics = new List<Diagnostic>();
+        var diagnostics = new List<TranspileFailure>();
         dialect ??= new GSharpCudaDialect();
         var cudaSource =
             MethodTranspiler.GenerateCudaSource(methodDecl, semanticModel, diagnostics.Add, isDevice,
@@ -211,7 +211,7 @@ public static class RoslynTestUtility
     }
 
     /// <summary>Transpiles a method declared on <typeparamref name="TTarget"/> into target dialect C++ source with type safety.</summary>
-    public static (string CudaSource, List<Diagnostic> Diagnostics) TranspileMethod<TTarget>(
+    public static (string CudaSource, List<TranspileFailure> Failures) TranspileMethod<TTarget>(
         string methodName,
         [CallerFilePath] string callerFilePath = "",
         bool isDevice = true,
@@ -234,9 +234,13 @@ public static class RoslynTestUtility
 
     /// <summary>Executes the GpuKernelGenerator on the given source text and produces the output compilation and diagnostics.</summary>
     public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics)
-        RunGenerator(string source, string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null)
+        RunGenerator(string source, string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null) =>
+        RunGenerator(CreateCompilation(source), targetDialect, additionalOptions);
+
+    /// <summary>Executes the GpuKernelGenerator on the given compilation and produces the output compilation and diagnostics.</summary>
+    public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics)
+        RunGenerator(Compilation compilation, string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null)
     {
-        var compilation = CreateCompilation(source);
         var generator = new GpuKernelGenerator();
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(

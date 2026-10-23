@@ -41,6 +41,14 @@ internal static class AotHostNames
         return ref writer;
     }
 
+    /// <summary>Gets the path that <see cref="AppendAotStructPath"/> writes.</summary>
+    public static string GetAotStructPath(ISymbol symbol)
+    {
+        using var writer = new SourceWriter();
+        writer.AppendAotStructPath(symbol);
+        return writer.ToString();
+    }
+
     /// <summary>The name that the native shadow struct of <paramref name="symbol"/> declares: the type name without a trailing <c>Context</c>.</summary>
     public static string GetNativeStructName(ISymbol symbol) => TrimContextSuffix(symbol.Name);
 
@@ -100,6 +108,22 @@ internal static class AotHostNames
     {
         writer.Append(AotContextsClassName).Append('.').AppendUnmarshalMethodName(symbol);
         return ref writer;
+    }
+
+    /// <summary>Gets the name that <see cref="AppendQualifiedMarshalMethodName"/> writes.</summary>
+    public static string GetQualifiedMarshalMethodName(ISymbol symbol)
+    {
+        using var writer = new SourceWriter();
+        writer.AppendQualifiedMarshalMethodName(symbol);
+        return writer.ToString();
+    }
+
+    /// <summary>Gets the name that <see cref="AppendQualifiedUnmarshalMethodName"/> writes.</summary>
+    public static string GetQualifiedUnmarshalMethodName(ISymbol symbol)
+    {
+        using var writer = new SourceWriter();
+        writer.AppendQualifiedUnmarshalMethodName(symbol);
+        return writer.ToString();
     }
 
     /// <summary>The name of the module context class of an assembly.</summary>

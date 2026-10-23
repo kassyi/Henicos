@@ -7,6 +7,7 @@ Architectural constraints enforced by the GSharp generator pipeline. Abide by th
 
 ## 2. No Silent Failures (Strict Diagnostics)
 Unsupported C# syntax (`new`, `string`, LINQ, recursion, ...) must not be ignored, emitted as empty strings, or thrown as raw exceptions. Report via `context.ReportDiagnostic` with the matching `GSharpDiagnostics` (e.g. `GSH0001`, `GSH0003`). How to define and report one from an analyzer, the transpiler or a kernel validation rule: [helpers.md §5](../skills/gsharp-transpiler-guidelines/references/helpers.md#5-diagnostics).
+- **Lowered trees keep their original spans**: The C++ kernels and suspending device functions are transpiled from a lowered tree outside the compilation. `Reporter.Report` maps a node back to the user's source through the original-span annotation (`LoweringAnnotations.OriginalSpanAnnotationKind`) of the node or its nearest annotated ancestor (`GetReportLocation`). A lowering pass must keep that annotation on the nodes it copies or rebuilds. A node without one is reported with `Location.None`. A C++ build drops C++ diagnostics that the CUDA run already reported (same ID, same location), so a location-less one is lost whenever the CUDA run has the same ID without a location.
 
 ## 3. C++ Header Guards for Structs
 C++ definitions for C# `struct`s (e.g. `StructTranspiler`) must be wrapped in an include guard (`#ifndef __GSHARP_STRUCT_{structName}__`) to avoid redefinition when kernels sharing a struct are JIT-compiled together.
@@ -21,7 +22,7 @@ When transpiling variable references (esp. `ref`/`out` arguments), query the `Se
 `var` maps to `auto`. Never allow `var` initialized from an untyped bare integer literal (`var x = 0;`); require explicit suffixes (`0u`, `1L`) to avoid NVCC/Roslyn signedness divergence. Literals with a decimal point or exponent are exempt.
 
 ## 7. Guard Physical File I/O Against IDE Design-Time Workers
-When a generator writes AOT artifacts (`.g.cu` / `.g.cpp`, e.g. `GpuKernelGenerator.WriteUnityAotArtifact`) to `$(IntermediateOutputPath)`, skip the physical write when `IsDesignTimeCompilation(compilation)` is true.
+When a generator writes AOT artifacts (`.g.cu` / `.g.cpp`, written by `Aot/AotArtifactWriter.Write`) to `$(IntermediateOutputPath)`, skip the physical write when `IsDesignTimeCompilation(compilation)` is true.
 - **Why**: IDE workers (`JetBrains.Roslyn.Worker`, `ServiceHub.RoslynCodeAnalysisService`, `LanguageServer`, `OmniSharp`) read `build_property.IntermediateOutputPath` and run generators on every change. They race with `csc.exe`/`nvcc`/`cl.exe`/`g++` and overwrite valid artifacts using stale in-memory `CompilationReference`s (`CandidateReason.Ambiguous`).
 - **Pitfall**: A worker that loaded an older `Kassyi.GSharp.Compiler.dll` keeps overwriting `obj/` until restarted.
 

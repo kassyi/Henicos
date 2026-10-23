@@ -8049,7 +8049,7 @@
     },
     "score": 33,
     "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/WrapperEmitter.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Marshaling/WrapperEmitter.cs",
       "src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs"
     ],
     "pr": [
@@ -8797,5 +8797,244 @@
     "domain": "GEN",
     "score": 27,
     "id": "GEN-56"
+  },
+  {
+    "id": "MEM-01",
+    "title": "Fundamental Ownership & Control Flow Analysis",
+    "domain": "MEM",
+    "category": "Category I: Fundamental Ownership",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 3,
+      "generality": 5,
+      "score": 39
+    },
+    "details": {
+      "current_behavior": "LocalDisposableOwnershipAnalyzer reports a disposable that is created and discarded (GSH0067) and a local initialized with new that is never disposed or transferred (GSH0068); passing it to a constructor, a [TakesOwnership], ref or out parameter, returning, assigning or capturing it counts as a transfer. It has no flow analysis: any Dispose or using in the method counts as disposal, so a Dispose skipped by an early return is not reported. Async void and disposal through a nullable are not checked. DisposableOwnershipAnalyzer checks the fields of a type and its Dispose() (GSH0020, GSH0022, GSH0027, GSH0028).",
+      "strategy": "Add flow analysis to GSH0068 so that a path that leaves the method without Dispose (early return, break) is reported. Ban async void and Dispose through a nullable without a null check.",
+      "csharp_example": "var workspace = new GpuWorkspace();\nif (error) return; // Error: Leak detected on early return path\nworkspace.Dispose();"
+    },
+    "score": 39,
+    "files": [
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Host/LocalDisposableOwnershipAnalyzer.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Host/DisposableOwnershipAnalyzer.cs",
+      "docs/spec/en/04_guides/02_memory_safety_patterns.md"
+    ],
+    "pr": [],
+    "depends_on": [],
+    "_searchableText": "mem01fundamentalownershipcontrolflowanalysis"
+  },
+  {
+    "id": "MEM-02",
+    "title": "Object Lifecycle & Encapsulation Verification",
+    "domain": "MEM",
+    "category": "Category II: Object Lifecycle",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 4,
+      "generality": 4,
+      "score": 34
+    },
+    "details": {
+      "current_behavior": "Implemented on the host: missing IDisposable on a type with owned resources (GSH0020), owned scopes not disposed in Dispose() (GSH0022), property getter and implicit cast side effects (GSH0023, GSH0024), static disposable fields (GSH0026), disposing a borrowed resource (GSH0027), and [TakesOwnership] constructor parameters as owners. The [TakesOwnership] misuse diagnostics GSH0049, GSH0050 and GSH0051 are in the catalog but no analyzer reports them.",
+      "strategy": "Report GSH0049 (non-IDisposable target), GSH0050 (not a constructor parameter) and GSH0051 (by-reference parameter) from DisposableOwnershipAnalyzer.",
+      "csharp_example": "class A : IDisposable { GpuWorkspace _w = new GpuWorkspace(); public void Dispose() { _w.Dispose(); } }"
+    },
+    "score": 34,
+    "files": [
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Host/DisposableOwnershipAnalyzer.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Host/SideEffectAnalyzer.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Host/AllocationAnalyzer.cs",
+      "src/Core/Kassyi.GSharp.Core/TakesOwnershipAttribute.cs"
+    ],
+    "pr": [],
+    "depends_on": [],
+    "_searchableText": "mem02objectlifecycleencapsulationverification"
+  },
+  {
+    "id": "MEM-03",
+    "title": "Collections, Iterators & Generics Zero-Allocation",
+    "domain": "MEM",
+    "category": "Category III: Collections & Iterators",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 4,
+      "difficulty": 4,
+      "generality": 4,
+      "score": 30
+    },
+    "details": {
+      "current_behavior": "Device code rejects foreach (GSH0007), LINQ (GSH0008) and manual GetEnumerator calls (GSH0019), and a constructor with several unguarded allocations is reported (GSH0025). Interface boxing, spread duplication of resources and unconsumed custom enumerators are not checked.",
+      "strategy": "Enforce zero-allocation generics (monomorphization) and safe collection ingestion/exhaustive loop disposal. Ban interface boxing, collection spread operator duplication, and unconsumed custom enumerators.",
+      "csharp_example": "Span<GpuWorkspace> workspaces = [w1, w2];\nSpan<GpuWorkspace> copies = [..workspaces]; // Error: Ambiguous ownership duplication"
+    },
+    "score": 30,
+    "files": [],
+    "pr": [],
+    "depends_on": [],
+    "_searchableText": "mem03collectionsiteratorsgenericszeroallocation"
+  },
+  {
+    "id": "MEM-04",
+    "title": "Advanced Syntax & Functional Patterns Safeguards",
+    "domain": "MEM",
+    "category": "Category IV: Advanced Syntax",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 4,
+      "difficulty": 5,
+      "generality": 3,
+      "score": 25
+    },
+    "details": {
+      "current_behavior": "Device code disposes the resource of a using statement or declaration on every exit of its scope, for a struct that implements IDisposable and for a ref struct with a Dispose() method (UsingTranspiler); a barrier in the scope of a using is GSH0003. A with expression on a struct copies the value and assigns the members (WithExpressionTranspilerRule); on a class it is GSH0003. A full deconstruction is GSH0003; only a simple swap deconstructs. The bans (undisposed deconstruction, multicast delegate double disposal, escaping borrowed closures) are not checked.",
+      "strategy": "Support tuple return and deconstruction. Ban undisposed deconstruction, multicast delegate double-disposal, and escaping borrowed closures.",
+      "csharp_example": "var a = new Holder(new GpuWorkspace());\nvar b = a with { ID = 2 };\nb.Workspace.Dispose();"
+    },
+    "score": 25,
+    "files": [
+      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/UsingTranspiler.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/UsingDisposalKernels.cu.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/UsingDisposalTests.cs"
+    ],
+    "pr": [],
+    "depends_on": [],
+    "_searchableText": "mem04advancedsyntaxfunctionalpatternssafeguards"
+  },
+  {
+    "id": "MEM-05",
+    "title": "Unmanaged Boundaries & Low-Level Escape Hatches",
+    "domain": "MEM",
+    "category": "Category V: Unmanaged Boundaries",
+    "status": "implemented",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 4,
+      "generality": 2,
+      "score": 30
+    },
+    "details": {
+      "current_behavior": "stackalloc and fixed blocks are supported; a stack array becomes a local array, also inside a loop. Device code rejects a finalizer marked as GPU code, dynamic, TypedReference (with __makeref) and GCHandle (GSH0003). Gpu.Unsafe.Malloc / Free map to the device heap and are reported as GSH0029. An unbounded pointer needs an unsafe context, which the C# compiler enforces. A stackalloc in a loop is not an error: it becomes a local array, not alloca.",
+      "strategy": "Implemented. A stackalloc in a loop was dropped from the bans because the transpiler no longer emits alloca.",
+      "csharp_example": "class Resource { [GpuKernel] ~Resource() { Free(); } } // Error: Finalizers are not supported on GPU."
+    },
+    "score": 30,
+    "files": [
+      "src/Core/Kassyi.GSharp.Core/Intrinsics.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Host/AllocationAnalyzer.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Kernel/Rules/GpuFinalizerRule.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Kernel/Rules/RuntimeOnlyTypeRule.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Diagnostics/GpuFinalizerDiagnosticsTests.cs",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Diagnostics/RuntimeOnlyTypeDiagnosticsTests.cs"
+    ],
+    "pr": [],
+    "depends_on": [],
+    "_searchableText": "mem05unmanagedboundarieslowlevelescapehatches"
+  },
+  {
+    "id": "MEM-06",
+    "title": "Analyzer Rule: Forbid IDisposable in SharedMemory<T>",
+    "domain": "MEM",
+    "category": "Concurrency & Shared Memory Ownership",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 2,
+      "generality": 4,
+      "score": 35
+    },
+    "details": {
+      "current_behavior": "No analyzer reports a SharedMemory<T> whose T implements IDisposable: the rule (SharedMemoryForbiddenDisposableRule, GSH025) and its tests were lost in 88d1c039. SharedMemory<T> requires an unmanaged T, so a class is rejected by the C# compiler, but an unmanaged struct that implements IDisposable is accepted.",
+      "strategy": "Restore the rule as an ISyntaxValidationRule that decides the element type by symbol, with a GSH ID from manage-diagnostics --next-id, a doc page and TestCases.",
+      "csharp_example": "var shared = new SharedMemory<DisposableStruct>(64); // Error: a disposable element in shared memory"
+    },
+    "score": 35,
+    "files": [
+      "src/Core/Kassyi.GSharp.Core/SharedMemory.cs"
+    ],
+    "pr": [],
+    "depends_on": [],
+    "_searchableText": "mem06analyzerruleforbididisposableinsharedmemoryt"
+  },
+  {
+    "id": "MEM-07",
+    "title": "Implement GpuArc<T> for Safe Shared Ownership",
+    "domain": "MEM",
+    "category": "Concurrency & Shared Memory Ownership",
+    "status": "rejected",
+    "metrics": {
+      "blocker": 3,
+      "difficulty": 4,
+      "generality": 3,
+      "score": 30
+    },
+    "details": {
+      "current_behavior": "Dynamic shared ownership on the GPU is not provided: there is no GpuArc<T>, and ownership moves only statically ([TakesOwnership], using).",
+      "strategy": "Implement GpuArc<T> in Kassyi.GSharp.Core and map it to a C++ template in Prelude.cu using atomicAdd/Sub. This enforces safe, atomic reference-counted disposal at the cost of performance.",
+      "csharp_example": "using var arc = new GpuArc<GpuWorkspace>(workspace);",
+      "memo": "Rejected because dynamic shared ownership using Atomic Reference Counting (ARC) via GpuArc<T> serializes warps on the reference count and races on disposal; shared ownership is rejected in favor of static, zero-cost borrowing (ref)."
+    },
+    "score": 30,
+    "files": [],
+    "pr": [],
+    "depends_on": [],
+    "_searchableText": "mem07implementgpuarctforsafesharedownership"
+  },
+  {
+    "id": "SYN-95",
+    "title": "Struct instance methods and 'this' keyword mapping",
+    "domain": "SYN",
+    "category": "Structs, Type Definitions, and Object Syntax",
+    "status": "incomplete",
+    "metrics": {
+      "blocker": 5,
+      "difficulty": 4,
+      "generality": 4,
+      "score": 40
+    },
+    "details": {
+      "current_behavior": "The device struct has no member functions except computed property getters, implicit conversions and the Dispose that a using calls: an instance [GpuDeviceFunction] is GSH0066, and a call to another instance method of a struct reaches the native compiler as an undefined member. The implementation and its tests were lost in 88d1c039 (#451).",
+      "strategy": "Emit struct instance methods as C++ inline member functions with this mapped to (*this), and allow them as device functions.",
+      "csharp_example": "struct S { public void M() { this.x = 1; } } ... var s = new S(); s.M();"
+    },
+    "score": 40,
+    "files": [
+      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StructTranspiler.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Kernel/Rules/KernelSignatureRule.cs"
+    ],
+    "pr": [],
+    "depends_on": [],
+    "_searchableText": "syn95structinstancemethodsandthiskeywordmapping"
+  },
+  {
+    "id": "SYN-96",
+    "title": "Foreach Loop Lowering to For Loop with Array Fat Pointer (Length & Bounds Check)",
+    "domain": "SYN",
+    "category": "Collections, Arrays, and Memory Operations",
+    "status": "implemented",
+    "metrics": {
+      "blocker": 3,
+      "difficulty": 4,
+      "generality": 5,
+      "score": 35
+    },
+    "details": {
+      "current_behavior": "An array crosses the kernel boundary as GSharpArray<T> (data pointer and length), and foreach over an array, an [InlineArray], a Span, a ReadOnlySpan or a List becomes a C++ range-based for over its begin() and end(); other collections are GSH0007. Indexer accesses have no bounds check.",
+      "strategy": "Implemented with the GSharpArray<T> fat pointer and a range-based for. Bounds check assertions for indexer accesses are not added.",
+      "csharp_example": "[GpuKernel]\npublic static void SumKernel(int[] input, int[] output)\n{\n    int sum = 0;\n    foreach (var item in input)\n    {\n        sum += item;\n    }\n    output[ThreadIndex.X] = sum;\n}",
+      "target_cuda": "for (auto item : input)\n{\n    ...\n}"
+    },
+    "score": 35,
+    "files": [
+      "src/Compiler/Kassyi.GSharp.Compiler/Transpiler/StatementTranspilers.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Diagnostics/Kernel/Rules/ForEachNotSupportedRule.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Resources/Prelude.cu",
+      "tests/Compiler/Kassyi.GSharp.Tests.Shared/Syntax/LoopsAndJumpsKernels.cu.cs"
+    ],
+    "pr": [],
+    "depends_on": [],
+    "_searchableText": "syn96foreachlooploweringtoforloopwitharrayfatpointerlengthboundscheck"
   }
 ]

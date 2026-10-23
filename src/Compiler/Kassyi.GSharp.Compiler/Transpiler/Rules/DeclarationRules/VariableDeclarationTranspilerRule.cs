@@ -53,14 +53,14 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
     private static void ValidateAndTrackVariableType(ITypeSymbol? typeSymbol, TypeSyntax typeSyntax,
         ref TranspileContext context)
     {
-        if (typeSymbol is { SpecialType: SpecialType.System_String })
+        if (GpuCodeConstraints.IsString(typeSymbol))
         {
-            context.Reporter.Report(GSharpDiagnostics.StringNotSupported, typeSyntax);
+            context.Reporter.Fail(GSharpDiagnostics.StringNotSupported, typeSyntax);
         }
 
-        if (typeSymbol is IFunctionPointerTypeSymbol)
+        if (GpuCodeConstraints.IsFunctionPointer(typeSymbol))
         {
-            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
         }
 
         StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
@@ -128,7 +128,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             return true;
         }
 
-        return TryWriteFixedSizeArray(variable, elemType, isConst, sizeExpr, "dynamic array size", ref context);
+        return TryWriteFixedSizeArray(variable, elemType, isConst, sizeExpr, ref context);
     }
 
     private static void WriteArrayDeclarationHeader(ITypeSymbol elemType, VariableDeclaratorSyntax variable,
@@ -158,17 +158,16 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
     }
 
     private static bool TryWriteFixedSizeArray(VariableDeclaratorSyntax variable, ITypeSymbol elemType, bool isConst,
-        ExpressionSyntax? sizeExpr, string errorLabel, ref TranspileContext context)
+        ExpressionSyntax? sizeExpr, ref TranspileContext context)
     {
         if (sizeExpr == null)
         {
             return false;
         }
 
-        var constVal = context.Query.SemanticModel.GetSafeConstantValue(sizeExpr);
-        if (!constVal.HasValue)
+        if (!GpuCodeConstraints.IsConstantArraySize(sizeExpr, context.Query.SemanticModel))
         {
-            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, sizeExpr, errorLabel);
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, sizeExpr, GpuCodeConstraints.DynamicArraySize);
             return true;
         }
 

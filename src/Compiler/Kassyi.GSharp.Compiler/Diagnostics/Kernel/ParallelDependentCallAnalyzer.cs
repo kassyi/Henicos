@@ -54,11 +54,9 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
         {
             var symbol = context.SemanticModel.GetSymbol(node) as IMethodSymbol;
-            // SyncGrid runs its body on one thread only in the form that takes a body
+            // The body of SyncGrid runs on every thread with a grid sync between statements, so it is not a single-thread context
             var isSingleThreadMacro = symbol != null &&
-                                      GpuMacroClassifier.Classify(symbol) is
-                                          { Kind: GpuMacroKind.SingleThread } or
-                                          { Kind: GpuMacroKind.SyncGrid, HasBody: true };
+                                      GpuMacroClassifier.Classify(symbol).Kind is GpuMacroKind.SingleThread;
 
             if (isSingleThreadMacro)
             {
@@ -184,11 +182,10 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
 
             return targetExpr.DescendantNodesAndSelf()
                 .AsStackEnumerable()
-                .Any(static node =>
-                    node is IdentifierNameSyntax
-                    {
-                        Identifier.ValueText: "ThreadIndex" or "GlobalThreadIndex" or "BlockIndex"
-                    });
+                .Any(context.SemanticModel, static (node, model) =>
+                    node is MemberAccessExpressionSyntax &&
+                    model.GetSymbol(node) is IPropertySymbol { ContainingType: { Name: "ThreadIndex" or "BlockIndex" } type } &&
+                    type.ContainingNamespace.IsCoreNamespace());
 
             static bool isZeroLiteral(ExpressionSyntax expr) =>
                 expr is LiteralExpressionSyntax { Token.ValueText: "0" };

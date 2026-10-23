@@ -20,13 +20,8 @@ public partial class ErrorSpecKernel
 public static partial class AotContexts
 {
 }
-public const string BadKernel_Source = @"extern ""C"" __global__ void __gsharp_k_TestSpace__ErrorSpecKernel__BadKernel(int* __restrict__ __gsharp_auto_result){
-unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x) * (blockDim.x * blockDim.y * blockDim.z) + threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-System_String __gsharp_id_0_s = ""hello"";
-System_Object __gsharp_id_1_obj = /*unsupported:ObjectCreationExpression*/;
-__gsharp_auto_result[__gsharp_global_tid] = 0;
-return;
-}
+public const string BadKernel_Source = @"#error ""(11,13): GSH0002: The string type is not supported in GPU kernels""
+#error ""(12,26): GSH0001: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.""
 ";
 public static readonly string BadKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +BadKernel_Source;
 private static IntPtr? s_hfunc_BadKernel;

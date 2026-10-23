@@ -5,13 +5,20 @@ internal static class DiagnosticRuleRegistry
     public static readonly ImmutableArray<IValidationRule> Rules = ImmutableArray.Create<IValidationRule>(
         CppReservedIdentifierRule.Instance,
         ForEachNotSupportedRule.Instance,
+        GpuFinalizerRule.Instance,
         GpuMacroArgumentRule.Instance,
         ImplicitVarNeedsSuffixRule.Instance,
+        KernelSignatureRule.Instance,
         LinqNotSupportedRule.Instance,
         ManualEnumeratorRule.Instance,
+        ManualUnmanagedAllocationRule.Instance,
         ParamsModifierNotSupportedRule.Instance,
         ProhibitedApiRule.Instance,
+        RuntimeOnlyTypeRule.Instance,
+        SharedMemoryDisposableRule.Instance,
+        SharedMemorySizeRule.Instance,
         StaticMemberAccessRule.Instance,
+        UnsupportedConstructRule.Instance,
         UserDefinedOperatorRule.Instance
     );
 

@@ -141,26 +141,26 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            FixedArray4 arr = new FixedArray4();
-            arr[0] = 10;
-            arr[1] = 20;
-            arr[2] = 30;
-            arr[3] = 40;
-            int total = 0;
-            foreach (var val in arr)
-            {
-                total += val;
-            }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+FixedArray4 arr = new FixedArray4();
+arr[0] = 10;
+arr[1] = 20;
+arr[2] = 30;
+arr[3] = 40;
+int total = 0;
+foreach (var val in arr)
+{
+total += val;
+}
 
-            output[0] = total;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+output[0] = total;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -185,8 +185,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -343,22 +344,22 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachCollectionExpressionKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachCollectionExpressionKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            ReadOnlySpan<int> arr = [10, 20, 30, 40];
-            int total = 0;
-            foreach (var val in arr)
-            {
-                total += val;
-            }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+ReadOnlySpan<int> arr = [10, 20, 30, 40];
+int total = 0;
+foreach (var val in arr)
+{
+total += val;
+}
 
-            output[0] = total;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+output[0] = total;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -383,8 +384,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachCollectionExpressionKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachCollectionExpressionKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachCollectionExpressionKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -541,28 +543,28 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachStackAllocKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachStackAllocKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            Span<int> arr = stackalloc int[]
-            {
-                10,
-                20,
-                30,
-                40
-            };
-            int total = 0;
-            foreach (var val in arr)
-            {
-                total += val;
-            }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+Span<int> arr = stackalloc int[]
+{
+10,
+20,
+30,
+40
+};
+int total = 0;
+foreach (var val in arr)
+{
+total += val;
+}
 
-            output[0] = total;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+output[0] = total;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -587,8 +589,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachStackAllocKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachStackAllocKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachStackAllocKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

@@ -121,23 +121,23 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__SimpleConstantSwitchKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__SimpleConstantSwitchKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int tid = ThreadIndex.X;
-            int val = input[tid];
-            output[tid] = val switch
-            {
-                1 => 100,
-                2 => 200,
-                3 => 300,
-                _ => -1
-            };
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int tid = ThreadIndex.X;
+int val = input[tid];
+output[tid] = val switch
+{
+1 => 100,
+2 => 200,
+3 => 300,
+_ => -1
+};
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -168,8 +168,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__SimpleConstantSwitchKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__SimpleConstantSwitchKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__SimpleConstantSwitchKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -331,23 +332,23 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__FloatingPointReturnSwitchKernel(int[] input, float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__FloatingPointReturnSwitchKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int tid = ThreadIndex.X;
-            int mode = input[tid];
-            output[tid] = mode switch
-            {
-                0 => 0.0f,
-                1 => 3.14159f,
-                2 => 2.71828f,
-                _ => -1.0f
-            };
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int tid = ThreadIndex.X;
+int mode = input[tid];
+output[tid] = mode switch
+{
+0 => 0.0f,
+1 => 3.14159f,
+2 => 2.71828f,
+_ => -1.0f
+};
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -378,8 +379,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__FloatingPointReturnSwitchKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__FloatingPointReturnSwitchKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__FloatingPointReturnSwitchKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -543,25 +545,25 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__MultipleArmsBoundarySwitchKernel(int[] input, int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__MultipleArmsBoundarySwitchKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int tid = ThreadIndex.X;
-            int val = input[tid];
-            output[tid] = val switch
-            {
-                int.MinValue => 1,
-                -1 => 2,
-                0 => 3,
-                1 => 4,
-                int.MaxValue => 5,
-                _ => 0
-            };
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int tid = ThreadIndex.X;
+int val = input[tid];
+output[tid] = val switch
+{
+int.MinValue => 1,
+-1 => 2,
+0 => 3,
+1 => 4,
+int.MaxValue => 5,
+_ => 0
+};
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -592,8 +594,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__MultipleArmsBoundarySwitchKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__MultipleArmsBoundarySwitchKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SwitchExpressionKernels__MultipleArmsBoundarySwitchKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

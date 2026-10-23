@@ -66,32 +66,40 @@ struct dim3 { uint32_t x, y, z; };
 
 template <typename T>
 struct System_Nullable {
-    bool HasValue;
-    T Value;
-    System_Nullable() : HasValue(false), Value() {}
-    System_Nullable(T val) : HasValue(true), Value(val) {}
+bool HasValue;
+T Value;
+System_Nullable() : HasValue(false), Value() {}
+System_Nullable(T val) : HasValue(true), Value(val) {}
+};
+
+// The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,
+// goto). Guards of one block are destroyed in reverse order, as C# disposes nested usings.
+template <typename T>
+struct __gsharp_using_scope {
+T& resource;
+inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 };
 
 template <typename T>
 struct GSharpArray {
-    T* __restrict__ data;
-    int length;
+T* __restrict__ data;
+int length;
 
-    inline GSharpArray() : data(nullptr), length(0) {}
-    inline GSharpArray(T* d, int l) : data(d), length(l) {}
-    
-    // Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
-    template <typename U>
-    inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length) {}
-    inline T* begin() { return data; }
-    inline T* end() { return data + length; }
-    inline const T* begin() const { return data; }
-    inline const T* end() const { return data + length; }
-    inline int size() const { return length; }
-    inline T& operator[](int index) { return data[index]; }
-    inline const T& operator[](int index) const { return data[index]; }
-    inline operator T*() { return data; }
-    inline operator const T*() const { return data; }
+inline GSharpArray() : data(nullptr), length(0) {}
+inline GSharpArray(T* d, int l) : data(d), length(l) {}
+
+// Allows implicit conversion from GSharpArray<U> to GSharpArray<T> if U* is convertible to T* (e.g. T to const T)
+template <typename U>
+inline GSharpArray(const GSharpArray<U>& other) : data(other.data), length(other.length) {}
+inline T* begin() { return data; }
+inline T* end() { return data + length; }
+inline const T* begin() const { return data; }
+inline const T* end() const { return data + length; }
+inline int size() const { return length; }
+inline T& operator[](int index) { return data[index]; }
+inline const T& operator[](int index) const { return data[index]; }
+inline operator T*() { return data; }
+inline operator const T*() const { return data; }
 };
 
 template <typename R, typename... Args>
@@ -102,11 +110,11 @@ using System_Action = std::function<void(Args...)>;
 
 template <typename T>
 struct Kassyi_GSharp_Core_SharedMemory {
-    T* data;
-    inline T& operator[](int index) { return data[index]; }
-    inline const T& operator[](int index) const { return data[index]; }
-    inline operator T*() { return data; }
-    inline operator const T*() const { return data; }
+T* data;
+inline T& operator[](int index) { return data[index]; }
+inline const T& operator[](int index) const { return data[index]; }
+inline operator T*() { return data; }
+inline operator const T*() const { return data; }
 };
 
 
@@ -125,7 +133,7 @@ __forceinline__ uint32_t __gsharp_uint_cast(double x) { return (uint32_t)x; }
 template <typename T> T max(T a, T b) { return std::max(a, b); }
 template <typename T> T min(T a, T b) { return std::min(a, b); }
 template <typename T> T __gsharp_clamp(T val, T min_val, T max_val) {
-    return std::max(min_val, std::min(val, max_val));
+return std::max(min_val, std::min(val, max_val));
 }
 
 // --- Bit Manipulation & Arithmetic ---
@@ -142,61 +150,89 @@ __forceinline__ uint64_t __gsharp_tzc_64(uint64_t value) { unsigned long index; 
 __forceinline__ uint32_t __gsharp_log2_32(uint32_t value) { unsigned long index; return _BitScanReverse(&index, value) ? index : 0; }
 __forceinline__ uint64_t __gsharp_log2_64(uint64_t value) { unsigned long index; return _BitScanReverse64(&index, value) ? index : 0; }
 __forceinline__ unsigned int __gsharp_bfe(unsigned int a, int pos, int len) {
-    if (len <= 0) return 0;
-    if (len >= 32) return a >> pos;
-    return (a >> pos) & ((1U << len) - 1);
+if (len <= 0) return 0;
+if (len >= 32) return a >> pos;
+return (a >> pos) & ((1U << len) - 1);
 }
 __forceinline__ unsigned long long __gsharp_bfe64(unsigned long long a, int pos, int len) {
-    if (len <= 0) return 0;
-    if (len >= 64) return a >> pos;
-    return (a >> pos) & ((1ULL << len) - 1);
+if (len <= 0) return 0;
+if (len >= 64) return a >> pos;
+return (a >> pos) & ((1ULL << len) - 1);
 }
 __forceinline__ unsigned int __gsharp_bfi(unsigned int a, unsigned int b, int pos, int len) {
-    if (len <= 0) return b;
-    unsigned int mask = len >= 32 ? 0xFFFFFFFFU : ((1U << len) - 1);
-    return (b & ~(mask << pos)) | ((a & mask) << pos);
+if (len <= 0) return b;
+unsigned int mask = len >= 32 ? 0xFFFFFFFFU : ((1U << len) - 1);
+return (b & ~(mask << pos)) | ((a & mask) << pos);
 }
 __forceinline__ unsigned long long __gsharp_bfi64(unsigned long long a, unsigned long long b, int pos, int len) {
-    if (len <= 0) return b;
-    unsigned long long mask = len >= 64 ? 0xFFFFFFFFFFFFFFFFULL : ((1ULL << len) - 1);
-    return (b & ~(mask << pos)) | ((a & mask) << pos);
+if (len <= 0) return b;
+unsigned long long mask = len >= 64 ? 0xFFFFFFFFFFFFFFFFULL : ((1ULL << len) - 1);
+return (b & ~(mask << pos)) | ((a & mask) << pos);
 }
 __forceinline__ unsigned int __gsharp_lop3(unsigned int a, unsigned int b, unsigned int c, unsigned char immLut) {
-    unsigned int res = 0;
-    for (int i = 0; i < 32; i++) {
-        int bitA = (a >> i) & 1;
-        int bitB = (b >> i) & 1;
-        int bitC = (c >> i) & 1;
-        int idx = (bitA << 2) | (bitB << 1) | bitC;
-        if ((immLut >> idx) & 1) res |= (1U << i);
-    }
-    return res;
+unsigned int res = 0;
+for (int i = 0; i < 32; i++) {
+int bitA = (a >> i) & 1;
+int bitB = (b >> i) & 1;
+int bitC = (c >> i) & 1;
+int idx = (bitA << 2) | (bitB << 1) | bitC;
+if ((immLut >> idx) & 1) res |= (1U << i);
+}
+return res;
+}
+__forceinline__ unsigned int __brev(unsigned int val) {
+unsigned int res = 0;
+for (int i = 0; i < 32; i++) {
+if ((val >> i) & 1) res |= (1U << (31 - i));
+}
+return res;
+}
+// CUDA wraps the shift amount to 0-31
+__forceinline__ unsigned int __funnelshift_l(unsigned int lo, unsigned int hi, unsigned int shift) {
+unsigned long long pair = ((unsigned long long)hi << 32) | lo;
+return (unsigned int)((pair << (shift & 31)) >> 32);
+}
+__forceinline__ unsigned int __funnelshift_r(unsigned int lo, unsigned int hi, unsigned int shift) {
+unsigned long long pair = ((unsigned long long)hi << 32) | lo;
+return (unsigned int)(pair >> (shift & 31));
+}
+// Like the PTX add.cc / addc sequence of the CUDA prelude: any non-zero carry-in adds one
+__forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
+unsigned long long sum = (unsigned long long)a + b + ((unsigned int)*carry != 0 ? 1 : 0);
+*carry = sum >> 32;
+return (unsigned int)sum;
+}
+// Like the PTX sub.cc / subc sequence of the CUDA prelude: any non-zero borrow-in subtracts one
+__forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
+unsigned long long subtrahend = (unsigned long long)b + ((unsigned int)*borrow != 0 ? 1 : 0);
+*borrow = (unsigned long long)a < subtrahend ? 1 : 0;
+return (unsigned int)((unsigned long long)a - subtrahend);
 }
 __forceinline__ unsigned long long __brevll(unsigned long long val) {
-    unsigned long long res = 0;
-    for (int i = 0; i < 64; i++) {
-        if ((val >> i) & 1) res |= (1ULL << (63 - i));
-    }
-    return res;
+unsigned long long res = 0;
+for (int i = 0; i < 64; i++) {
+if ((val >> i) & 1) res |= (1ULL << (63 - i));
+}
+return res;
 }
 __forceinline__ int __dp4a(int a, int b, int c) {
-    const signed char* va = reinterpret_cast<const signed char*>(&a);
-    const signed char* vb = reinterpret_cast<const signed char*>(&b);
-    return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
+const signed char* va = reinterpret_cast<const signed char*>(&a);
+const signed char* vb = reinterpret_cast<const signed char*>(&b);
+return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
 }
 __forceinline__ unsigned int __dp4a(unsigned int a, unsigned int b, unsigned int c) {
-    const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
-    const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
-    return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
+const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
+const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
+return c + va[0]*vb[0] + va[1]*vb[1] + va[2]*vb[2] + va[3]*vb[3];
 }
 __forceinline__ unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {
-    const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
-    const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
-    unsigned int diff = (unsigned int)std::abs((int)va[0] - (int)vb[0])
-                      + (unsigned int)std::abs((int)va[1] - (int)vb[1])
-                      + (unsigned int)std::abs((int)va[2] - (int)vb[2])
-                      + (unsigned int)std::abs((int)va[3] - (int)vb[3]);
-    return c + diff;
+const unsigned char* va = reinterpret_cast<const unsigned char*>(&a);
+const unsigned char* vb = reinterpret_cast<const unsigned char*>(&b);
+unsigned int diff = (unsigned int)std::abs((int)va[0] - (int)vb[0])
++ (unsigned int)std::abs((int)va[1] - (int)vb[1])
++ (unsigned int)std::abs((int)va[2] - (int)vb[2])
++ (unsigned int)std::abs((int)va[3] - (int)vb[3]);
+return c + diff;
 }
 
 // --- Thread & Block State ---
@@ -206,17 +242,17 @@ thread_local dim3 blockDim;
 thread_local dim3 gridDim;
 
 extern ""C"" __declspec(dllexport) void __gsharp_set_thread_idx(uint32_t tx, uint32_t ty, uint32_t tz, uint32_t bx, uint32_t by, uint32_t bz, uint32_t dx, uint32_t dy, uint32_t dz, uint32_t gx, uint32_t gy, uint32_t gz) {
-    threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
-    blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
-    blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;
-    gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
+threadIdx.x = tx; threadIdx.y = ty; threadIdx.z = tz;
+blockIdx.x = bx; blockIdx.y = by; blockIdx.z = bz;
+blockDim.x = dx; blockDim.y = dy; blockDim.z = dz;
+gridDim.x = gx; gridDim.y = gy; gridDim.z = gz;
 }
 
 namespace cg {
-    struct grid_group {
-        void sync() {}
-    };
-    inline grid_group this_grid() { return grid_group(); }
+struct grid_group {
+void sync() {}
+};
+inline grid_group this_grid() { return grid_group(); }
 }
 
 inline void __syncthreads() {}
@@ -233,91 +269,91 @@ inline thread_local int __gsharp_smem_site_count;
 inline thread_local size_t __gsharp_smem_current_base;
 
 inline void __gsharp_reset_smem() {
-    __gsharp_smem_current_base = 0;
-    __gsharp_smem_site_count = 0;
+__gsharp_smem_current_base = 0;
+__gsharp_smem_site_count = 0;
 }
 
 inline void* __gsharp_allocate_smem(unsigned long long siteKey, size_t size, size_t alignment) {
-    for (int i = 0; i < __gsharp_smem_site_count; i++) {
-        if (__gsharp_smem_keys[i] == siteKey) {
-            return (void*)(__gsharp_dynamic_smem + __gsharp_smem_offsets[i]);
-        }
-    }
-    size_t offset = (__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1);
-    if (__gsharp_smem_site_count == __GSHARP_SMEM_MAX_SITES || offset + size > sizeof(__gsharp_dynamic_smem)) {
-        std::fprintf(stderr, ""G#: shared memory of the block exceeds %d declarations or %zu bytes\n"",
-                     __GSHARP_SMEM_MAX_SITES, sizeof(__gsharp_dynamic_smem));
-        std::abort();
-    }
-    __gsharp_smem_keys[__gsharp_smem_site_count] = siteKey;
-    __gsharp_smem_offsets[__gsharp_smem_site_count] = offset;
-    __gsharp_smem_site_count++;
-    __gsharp_smem_current_base = offset + size;
-    return (void*)(__gsharp_dynamic_smem + offset);
+for (int i = 0; i < __gsharp_smem_site_count; i++) {
+if (__gsharp_smem_keys[i] == siteKey) {
+return (void*)(__gsharp_dynamic_smem + __gsharp_smem_offsets[i]);
+}
+}
+size_t offset = (__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1);
+if (__gsharp_smem_site_count == __GSHARP_SMEM_MAX_SITES || offset + size > sizeof(__gsharp_dynamic_smem)) {
+std::fprintf(stderr, ""G#: shared memory of the block exceeds %d declarations or %zu bytes\n"",
+__GSHARP_SMEM_MAX_SITES, sizeof(__gsharp_dynamic_smem));
+std::abort();
+}
+__gsharp_smem_keys[__gsharp_smem_site_count] = siteKey;
+__gsharp_smem_offsets[__gsharp_smem_site_count] = offset;
+__gsharp_smem_site_count++;
+__gsharp_smem_current_base = offset + size;
+return (void*)(__gsharp_dynamic_smem + offset);
 }
 
 // --- Atomics ---
 template<typename T>
 __forceinline__ T __gsharp_atomic_fetch_add(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_add(val, std::memory_order_relaxed);
+return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_add(val, std::memory_order_relaxed);
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_max(T* address, T val) {
-    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
-    T old = atom->load(std::memory_order_relaxed);
-    while (old < val && !atom->compare_exchange_weak(old, val, std::memory_order_relaxed)) { }
-    return old;
+volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+T old = atom->load(std::memory_order_relaxed);
+while (old < val && !atom->compare_exchange_weak(old, val, std::memory_order_relaxed)) { }
+return old;
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_min(T* address, T val) {
-    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
-    T old = atom->load(std::memory_order_relaxed);
-    while (val < old && !atom->compare_exchange_weak(old, val, std::memory_order_relaxed)) { }
-    return old;
+volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+T old = atom->load(std::memory_order_relaxed);
+while (val < old && !atom->compare_exchange_weak(old, val, std::memory_order_relaxed)) { }
+return old;
 }
 
 // Read-modify-write via CAS loop for operations without a native std::atomic member (float add, CUDA inc/dec wrap).
 template<typename T, typename TUpdate>
 __forceinline__ T __gsharp_atomic_update(T* address, TUpdate update) {
-    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
-    T old = atom->load(std::memory_order_relaxed);
-    while (!atom->compare_exchange_weak(old, update(old), std::memory_order_relaxed)) { }
-    return old;
+volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+T old = atom->load(std::memory_order_relaxed);
+while (!atom->compare_exchange_weak(old, update(old), std::memory_order_relaxed)) { }
+return old;
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_fetch_sub(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_sub(val, std::memory_order_relaxed);
+return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_sub(val, std::memory_order_relaxed);
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_or(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_or(val, std::memory_order_relaxed);
+return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_or(val, std::memory_order_relaxed);
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_and(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_and(val, std::memory_order_relaxed);
+return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_and(val, std::memory_order_relaxed);
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_xor(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_xor(val, std::memory_order_relaxed);
+return reinterpret_cast<volatile std::atomic<T>*>(address)->fetch_xor(val, std::memory_order_relaxed);
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_cas(T* address, T compare, T val) {
-    volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
-    T expected = compare;
-    atom->compare_exchange_strong(expected, val, std::memory_order_relaxed);
-    return expected;
+volatile std::atomic<T>* atom = reinterpret_cast<volatile std::atomic<T>*>(address);
+T expected = compare;
+atom->compare_exchange_strong(expected, val, std::memory_order_relaxed);
+return expected;
 }
 
 template<typename T>
 __forceinline__ T __gsharp_atomic_exch(T* address, T val) {
-    return reinterpret_cast<volatile std::atomic<T>*>(address)->exchange(val, std::memory_order_relaxed);
+return reinterpret_cast<volatile std::atomic<T>*>(address)->exchange(val, std::memory_order_relaxed);
 }
 
 __forceinline__ int atomicAdd(int* address, int val) { return __gsharp_atomic_fetch_add(address, val); }
@@ -373,9 +409,9 @@ template <typename T> inline T __shfl_xor_sync(unsigned mask, T var, int laneMas
 
 template<typename T>
 inline void __gsharp_warp_exchange_assign_impl(T val, uint64_t* exchange) {
-    uint64_t raw = 0;
-    std::memcpy(&raw, &val, sizeof(T));
-    *exchange = raw;
+uint64_t raw = 0;
+std::memcpy(&raw, &val, sizeof(T));
+*exchange = raw;
 }
 
 // Shuffle k publishes into slot k % 2. Lanes of a converged warp run the same shuffle sequence and a source lane is at
@@ -385,92 +421,92 @@ inline void __gsharp_warp_exchange_assign_impl(T val, uint64_t* exchange) {
 
 template<typename TContext, typename T>
 inline T __gsharp_warp_shuffle_read_down_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
-    uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-    uint32_t laneId = tid % 32;
-    uint32_t warpId = tid / 32;
-    uint32_t logicalLane = laneId % width;
-    uint32_t srcLane = logicalLane + delta;
-    
-    T result;
-    if (srcLane < (uint32_t)width) {
-        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
-        std::memcpy(&result, &raw, sizeof(T));
-    } else {
-        result = val;
-    }
-    return result;
+uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+uint32_t laneId = tid % 32;
+uint32_t warpId = tid / 32;
+uint32_t logicalLane = laneId % width;
+uint32_t srcLane = logicalLane + delta;
+
+T result;
+if (srcLane < (uint32_t)width) {
+uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
+std::memcpy(&result, &raw, sizeof(T));
+} else {
+result = val;
+}
+return result;
 }
 
 template<typename TContext, typename T>
 inline T __gsharp_warp_shuffle_read_up_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t delta, int width = 32) {
-    uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-    uint32_t laneId = tid % 32;
-    uint32_t warpId = tid / 32;
-    uint32_t logicalLane = laneId % width;
-    
-    T result;
-    if (logicalLane >= delta) {
-        uint32_t srcLane = logicalLane - delta;
-        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
-        std::memcpy(&result, &raw, sizeof(T));
-    } else {
-        result = val;
-    }
-    return result;
+uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+uint32_t laneId = tid % 32;
+uint32_t warpId = tid / 32;
+uint32_t logicalLane = laneId % width;
+
+T result;
+if (logicalLane >= delta) {
+uint32_t srcLane = logicalLane - delta;
+uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
+std::memcpy(&result, &raw, sizeof(T));
+} else {
+result = val;
+}
+return result;
 }
 
 template<typename TContext, typename T>
 inline T __gsharp_warp_shuffle_read_xor_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t laneMask, int width = 32) {
-    uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-    uint32_t laneId = tid % 32;
-    uint32_t warpId = tid / 32;
-    uint32_t logicalLane = laneId % width;
-    uint32_t srcLane = logicalLane ^ laneMask;
-    
-    T result;
-    if (srcLane < (uint32_t)width) {
-        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
-        std::memcpy(&result, &raw, sizeof(T));
-    } else {
-        result = val;
-    }
-    return result;
+uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+uint32_t laneId = tid % 32;
+uint32_t warpId = tid / 32;
+uint32_t logicalLane = laneId % width;
+uint32_t srcLane = logicalLane ^ laneMask;
+
+T result;
+if (srcLane < (uint32_t)width) {
+uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
+std::memcpy(&result, &raw, sizeof(T));
+} else {
+result = val;
+}
+return result;
 }
 
 template<typename TContext, typename T>
 inline T __gsharp_warp_shuffle_read_sync(TContext* __gsharp_ctx, uint32_t mask, T val, uint32_t srcLane, int width = 32) {
-    uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
-    uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
-    uint32_t laneId = tid % 32;
-    uint32_t warpId = tid / 32;
-    uint32_t logicalLane = laneId % width;
-    
-    T result;
-    if (srcLane < (uint32_t)width && (mask & (1u << srcLane))) {
-        uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
-        uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
-        std::memcpy(&result, &raw, sizeof(T));
-    } else {
-        result = val;
-    }
-    return result;
+uint32_t slot = __gsharp_ctx->__gsharp_warp_shuffle_count++ & 1u;
+uint32_t tid = threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;
+uint32_t laneId = tid % 32;
+uint32_t warpId = tid / 32;
+uint32_t logicalLane = laneId % width;
+
+T result;
+if (srcLane < (uint32_t)width && (mask & (1u << srcLane))) {
+uint32_t srcTid = warpId * 32 + (laneId - logicalLane) + srcLane;
+uint64_t raw = __gsharp_ctx->__gsharp_all_contexts[srcTid].__gsharp_warp_exchange[slot];
+std::memcpy(&result, &raw, sizeof(T));
+} else {
+result = val;
+}
+return result;
 }
 
 template<typename T>
 inline unsigned int __match_any_sync(unsigned int mask, T val) {
-    return mask & 1;
+return mask & 1;
 }
 
 template<typename T>
 inline unsigned int __match_all_sync(unsigned int mask, T val, int* pred) {
-    if (pred) *pred = 1;
-    return mask & 1;
+if (pred) *pred = 1;
+return mask & 1;
 }
 
 inline void __nanosleep(unsigned int duration) {}
@@ -478,63 +514,63 @@ inline void __syncwarp(unsigned int mask = 0xFFFFFFFFU) {}
 
 // --- Compiler Hints ---
 namespace Hint {
-    inline void Unroll() {}
+inline void Unroll() {}
 }
 
 // --- Runtime Error Channel (CPU Dialect) ---
 enum class GSharpErrorCode : int32_t {
-    None = 0,
-    NotSupported = 1,
-    InvalidOperation = 2,
-    IndexOutOfRange = 3
+None = 0,
+NotSupported = 1,
+InvalidOperation = 2,
+IndexOutOfRange = 3
 };
 
 struct GSharpErrorSlot {
-    std::atomic<int32_t> code{0};
-    const char* message{nullptr};
+std::atomic<int32_t> code{0};
+const char* message{nullptr};
 
-    inline void Reset() noexcept {
-        message = nullptr;
-        code.store(0, std::memory_order_release);
-    }
+inline void Reset() noexcept {
+message = nullptr;
+code.store(0, std::memory_order_release);
+}
 
-    inline bool HasError() const noexcept {
-        return code.load(std::memory_order_acquire) != 0;
-    }
+inline bool HasError() const noexcept {
+return code.load(std::memory_order_acquire) != 0;
+}
 
-    inline void Report(GSharpErrorCode errCode, const char* msg) noexcept {
-        int32_t expected = 0;
-        if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
-                                         std::memory_order_acq_rel,
-                                         std::memory_order_relaxed)) {
-            message = msg;
-        }
-    }
+inline void Report(GSharpErrorCode errCode, const char* msg) noexcept {
+int32_t expected = 0;
+if (code.compare_exchange_strong(expected, static_cast<int32_t>(errCode),
+std::memory_order_acq_rel,
+std::memory_order_relaxed)) {
+message = msg;
+}
+}
 };
 
 inline thread_local GSharpErrorSlot __gsharp_host_last_error;
 inline thread_local GSharpErrorSlot* __gsharp_active_error_slot = nullptr;
 
 extern ""C"" __declspec(dllexport) int32_t __gsharp_consume_last_error(const char** outMessage) {
-    int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
-    if (c != 0) {
-        if (outMessage != nullptr) {
-            *outMessage = __gsharp_host_last_error.message;
-        }
-        __gsharp_host_last_error.Reset();
-    }
-    return c;
+int32_t c = __gsharp_host_last_error.code.load(std::memory_order_acquire);
+if (c != 0) {
+if (outMessage != nullptr) {
+*outMessage = __gsharp_host_last_error.message;
+}
+__gsharp_host_last_error.Reset();
+}
+return c;
 }
 
 // Records a runtime failure for constructs the CPU dialect cannot execute (e.g. Gpu.InlinePtx).
 // First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
 inline void __gsharp_unsupported(const char* message)
 {
-    if (__gsharp_active_error_slot != nullptr) {
-        __gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
-    } else {
-        __gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
-    }
+if (__gsharp_active_error_slot != nullptr) {
+__gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
+} else {
+__gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
+}
 }
 
 ";

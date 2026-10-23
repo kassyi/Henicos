@@ -146,23 +146,23 @@ public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(ref int scalarRef, out float scalarOut, int[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, uint constantVal, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel __gsharp_ctx) {
-        scalarOut = default;
+scalarOut = default;
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            scalarOut = 0;
-            if (scalarRef > constantVal)
-            {
-                scalarOut = arrayVal[0] + structRef.A;
-                structRef.B = scalarOut;
-            }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+scalarOut = 0;
+if (scalarRef > constantVal)
+{
+scalarOut = arrayVal[0] + structRef.A;
+structRef.B = scalarOut;
+}
 
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -188,8 +188,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

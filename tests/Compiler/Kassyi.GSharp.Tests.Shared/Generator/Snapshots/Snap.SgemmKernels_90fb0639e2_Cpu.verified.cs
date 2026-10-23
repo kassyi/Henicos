@@ -99,7 +99,7 @@ return;
 case 2:
 __gsharp_switch_1_state_2:
 {
-for(int __gsharp_id_14_k = 0;__gsharp_ctx->__gsharp_id_14_k<16;++__gsharp_ctx->__gsharp_id_14_k)
+for(__gsharp_ctx->__gsharp_id_14_k=0;__gsharp_ctx->__gsharp_id_14_k<16;++__gsharp_ctx->__gsharp_id_14_k)
 {
 __gsharp_ctx->__gsharp_id_12_cValue+=__gsharp_ctx->__gsharp_id_4_As[__gsharp_ctx->__gsharp_id_9_ty*16+__gsharp_ctx->__gsharp_id_14_k]*__gsharp_ctx->__gsharp_id_5_Bs[__gsharp_ctx->__gsharp_id_14_k*16+__gsharp_ctx->__gsharp_id_8_tx];
 }
@@ -198,84 +198,84 @@ public int m;
 public int k;
 }
 public static unsafe void __gsharp_statemachine_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel(float[] a, float[] b, float[] c, int n, __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel __gsharp_ctx) {
-        SharedMemory<float> As = new(256, 0x73f1e09054a8d88dUL);
-        SharedMemory<float> Bs = new(256, 0x73f1df9054a8d6daUL);
+SharedMemory<float> As = new(256, 0x73f1e09054a8d88dUL);
+SharedMemory<float> Bs = new(256, 0x73f1df9054a8d6daUL);
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            __gsharp_ctx.bx = BlockIndex.X;
-            __gsharp_ctx.by = BlockIndex.Y;
-            __gsharp_ctx.tx = ThreadIndex.X;
-            __gsharp_ctx.ty = ThreadIndex.Y;
-            __gsharp_ctx.row = __gsharp_ctx.by * 16 + __gsharp_ctx.ty;
-            __gsharp_ctx.col = __gsharp_ctx.bx * 16 + __gsharp_ctx.tx;
-            __gsharp_ctx.cValue = 0.0f;
-            __gsharp_ctx.m = 0;
-            goto case 1;
-        }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.bx = BlockIndex.X;
+__gsharp_ctx.by = BlockIndex.Y;
+__gsharp_ctx.tx = ThreadIndex.X;
+__gsharp_ctx.ty = ThreadIndex.Y;
+__gsharp_ctx.row = __gsharp_ctx.by * 16 + __gsharp_ctx.ty;
+__gsharp_ctx.col = __gsharp_ctx.bx * 16 + __gsharp_ctx.tx;
+__gsharp_ctx.cValue = 0.0f;
+__gsharp_ctx.m = 0;
+goto case 1;
+}
 
-        case 1:
-        {
-            if (!(__gsharp_ctx.m < (n + 15) / 16))
-                goto case 5;
-            if (__gsharp_ctx.row < n && __gsharp_ctx.m * 16 + __gsharp_ctx.tx < n)
-            {
-                As[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = a[__gsharp_ctx.row * n + __gsharp_ctx.m * 16 + __gsharp_ctx.tx];
-            }
-            else
-            {
-                As[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = 0.0f;
-            }
+case 1:
+{
+if (!(__gsharp_ctx.m < (n + 15) / 16))
+goto case 5;
+if (__gsharp_ctx.row < n && __gsharp_ctx.m * 16 + __gsharp_ctx.tx < n)
+{
+As[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = a[__gsharp_ctx.row * n + __gsharp_ctx.m * 16 + __gsharp_ctx.tx];
+}
+else
+{
+As[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = 0.0f;
+}
 
-            if (__gsharp_ctx.m * 16 + __gsharp_ctx.ty < n && __gsharp_ctx.col < n)
-            {
-                Bs[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = b[(__gsharp_ctx.m * 16 + __gsharp_ctx.ty) * n + __gsharp_ctx.col];
-            }
-            else
-            {
-                Bs[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = 0.0f;
-            }
+if (__gsharp_ctx.m * 16 + __gsharp_ctx.ty < n && __gsharp_ctx.col < n)
+{
+Bs[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = b[(__gsharp_ctx.m * 16 + __gsharp_ctx.ty) * n + __gsharp_ctx.col];
+}
+else
+{
+Bs[__gsharp_ctx.ty * 16 + __gsharp_ctx.tx] = 0.0f;
+}
 
-            __gsharp_ctx.__gsharp_state = 2;
-            return;
-        }
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
 
-        case 2:
-        {
-            for (int k = 0; __gsharp_ctx.k < 16; ++__gsharp_ctx.k)
-            {
-                __gsharp_ctx.cValue += As[__gsharp_ctx.ty * 16 + __gsharp_ctx.k] * Bs[__gsharp_ctx.k * 16 + __gsharp_ctx.tx];
-            }
+case 2:
+{
+for (__gsharp_ctx.k = 0; __gsharp_ctx.k < 16; ++__gsharp_ctx.k)
+{
+__gsharp_ctx.cValue += As[__gsharp_ctx.ty * 16 + __gsharp_ctx.k] * Bs[__gsharp_ctx.k * 16 + __gsharp_ctx.tx];
+}
 
-            __gsharp_ctx.__gsharp_state = 3;
-            return;
-        }
+__gsharp_ctx.__gsharp_state = 3;
+return;
+}
 
-        case 3:
-        {
-            goto case 4;
-        }
+case 3:
+{
+goto case 4;
+}
 
-        case 4:
-        {
-            __gsharp_ctx.m++;
-            goto case 1;
-            goto case 5;
-        }
+case 4:
+{
+__gsharp_ctx.m++;
+goto case 1;
+goto case 5;
+}
 
-        case 5:
-        {
-            if (__gsharp_ctx.row < n && __gsharp_ctx.col < n)
-            {
-                c[__gsharp_ctx.row * n + __gsharp_ctx.col] = __gsharp_ctx.cValue;
-            }
+case 5:
+{
+if (__gsharp_ctx.row < n && __gsharp_ctx.col < n)
+{
+c[__gsharp_ctx.row * n + __gsharp_ctx.col] = __gsharp_ctx.cValue;
+}
 
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -312,8 +312,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__SgemmKernels__SgemmKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

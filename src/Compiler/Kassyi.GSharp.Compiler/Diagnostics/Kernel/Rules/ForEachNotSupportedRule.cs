@@ -18,22 +18,11 @@ internal sealed class ForEachNotSupportedRule : ISyntaxValidationRule<ForEachSta
             return;
         }
 
-        // Allowed: Array, InlineArray, Span/ReadOnlySpan, List
+        // Allowed: Array, InlineArray, Span/ReadOnlySpan
         if (type is IArrayTypeSymbol ||
             type.HasAttribute(KnownAttributes.InlineArray) ||
-            (type.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType &&
-             type.ContainingNamespace.IsSystemNamespace()) ||
-            (type.Name is TypeConstants.ListType &&
-             type.ContainingNamespace is
-             {
-                 Name: "Generic",
-                 ContainingNamespace:
-                 {
-                     Name: "Collections",
-                     ContainingNamespace:
-                     { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
-                 }
-             }))
+            type.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType &&
+            type.ContainingNamespace.IsSystemNamespace())
         {
             return;
         }

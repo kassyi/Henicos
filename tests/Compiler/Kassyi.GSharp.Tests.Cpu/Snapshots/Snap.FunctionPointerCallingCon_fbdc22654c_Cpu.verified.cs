@@ -31,5 +31,3 @@ if (__gsharp_launch_error.HasError()) {
 __gsharp_host_last_error.Report(static_cast<GSharpErrorCode>(__gsharp_launch_error.code.load(std::memory_order_acquire)), __gsharp_launch_error.message);
 }
 }
-
-// GSH0003

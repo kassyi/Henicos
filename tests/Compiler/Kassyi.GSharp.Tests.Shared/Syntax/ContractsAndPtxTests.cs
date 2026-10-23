@@ -94,14 +94,14 @@ public class ContractsAndPtxTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ContractsAndPtxTarget>(
             nameof(ContractsAndPtxTarget.WmmaTensorCores), dialect: CurrentDialect);
 
+        // The analyzer warns about the call in the CPU dialect (DialectDiagnosticsTests); the transpiler reports nothing
+        Assert.Empty(diagnostics);
         if (CurrentDialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly))
         {
-            Assert.Empty(diagnostics);
             Assert.Contains("// wmma.mma.sync.aligned.row.col.m16n16k16.f32.f32", cudaSource);
         }
         else
         {
-            diagnostics.AssertContains(GSharpDiagnostics.InlinePtxNotSupportedByDialect);
             Assert.Contains("__gsharp_unsupported(", cudaSource);
             Assert.DoesNotContain("wmma.mma", cudaSource);
         }

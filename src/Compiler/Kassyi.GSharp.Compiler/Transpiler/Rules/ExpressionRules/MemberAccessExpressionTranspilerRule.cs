@@ -37,10 +37,10 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 return;
             }
 
-            if ((symbol is IFieldSymbol { IsStatic: true, IsConst: false } || symbol is IPropertySymbol { IsStatic: true }) &&
-                symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() != true)
+            if (symbol != null &&
+                GpuCodeConstraints.IsHostStaticMemberReference(node, symbol, context.Query.SemanticModel, context.Emitter.Dialect))
             {
-                context.Reporter.Report(
+                context.Reporter.Fail(
                     GSharpDiagnostics.StaticMemberAccessNotSupported,
                     node,
                     symbol.ContainingType?.Name ?? string.Empty,
@@ -105,10 +105,32 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (context.Emitter.Dialect.TryMapIntrinsic(symbol, out var mappedName))
         {
             context.Emitter.Writer.Append(mappedName);
+            AppendIntrinsicTemplateArguments(symbol, ref context);
             return true;
         }
 
         return false;
+    }
+
+    // <native name><<type argument>, <type argument>>
+    // [WHY] A generic [CudaIntrinsic] method maps to a C++ function template. It is called with the type arguments that
+    // C# bound (written or inferred), so that C++ deduction cannot pick other types.
+    private static void AppendIntrinsicTemplateArguments(ISymbol symbol, ref TranspileContext context)
+    {
+        if (symbol is not IMethodSymbol { IsGenericMethod: true } method ||
+            !method.OriginalDefinition.HasAttribute(KnownAttributes.CudaIntrinsic))
+        {
+            return;
+        }
+
+        using (context.Emitter.Writer.InlineScope("<", ">"))
+        {
+            for (var i = 0; i < method.TypeArguments.Length; i++)
+            {
+                context.Emitter.Writer.AppendIf(i > 0, ", ");
+                context.Emitter.Dialect.AppendType(ref context, method.TypeArguments[i]);
+            }
+        }
     }
 
     private static bool TryTranspileEnumAccess(ISymbol? memberExprSymbol, MemberAccessExpressionSyntax node,
@@ -141,6 +163,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (memberName.Kind != CppNameKind.Verbatim)
         {
             context.Emitter.Writer.AppendCppName(memberName);
+            ComputedPropertyGetterCall.AppendCallIfGetter(memberSymbol, ref context);
             return;
         }
 

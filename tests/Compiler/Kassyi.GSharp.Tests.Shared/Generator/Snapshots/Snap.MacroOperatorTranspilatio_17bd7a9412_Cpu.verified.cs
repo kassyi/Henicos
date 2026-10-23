@@ -125,9 +125,9 @@ __gsharp_switch_1_state_0:
 __gsharp_ty_TestNamespace__DummyRef __gsharp_id_4_a = __gsharp_id_1_dA;
 __gsharp_ty_TestNamespace__DummyRef __gsharp_id_5_b = __gsharp_id_2_dB;
 __gsharp_ty_TestNamespace__DummyRef __gsharp_id_6_c = __gsharp_id_3_dResult;
-DummyOp(&ctx,__gsharp_id_6_c,__gsharp_id_4_a,__gsharp_id_5_b);
-DummyUnaryOp(__gsharp_id_6_c,__gsharp_id_4_a);
-DummyShiftOp(ctx,__gsharp_id_6_c,__gsharp_id_4_a,5);
+__gsharp_fn_TestNamespace__DummyKernels__DummyOp(&__gsharp_id_0_ctx,__gsharp_id_6_c,__gsharp_id_4_a,__gsharp_id_5_b);
+__gsharp_fn_TestNamespace__DummyKernels__DummyUnaryOp(__gsharp_id_6_c,__gsharp_id_4_a);
+__gsharp_fn_TestNamespace__DummyKernels__DummyShiftOp(__gsharp_id_0_ctx,__gsharp_id_6_c,__gsharp_id_4_a,5);
 __gsharp_state=-1;
 return;
 }
@@ -189,20 +189,20 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_TestNamespace__TestKernels__MacroKernel(global::TestNamespace.DummyContext ctx, uint[] dA, uint[] dB, uint[] dResult, __gsharp_context_TestNamespace__TestKernels__MacroKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            DummyRef a = dA;
-            DummyRef b = dB;
-            DummyRef c = dResult;
-            c = a + b;
-            c = ~a;
-            c = a << 5;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+DummyRef a = dA;
+DummyRef b = dB;
+DummyRef c = dResult;
+c = a + b;
+c = ~a;
+c = a << 5;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -239,8 +239,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_TestNamespace__TestKernels__MacroKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_TestNamespace__TestKernels__MacroKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_TestNamespace__TestKernels__MacroKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

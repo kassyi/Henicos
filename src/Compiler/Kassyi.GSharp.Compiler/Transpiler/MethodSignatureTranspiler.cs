@@ -5,54 +5,57 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class MethodSignatureTranspiler
 {
-    /// <summary>The exported entry point of a kernel (see <see cref="GlobalCppNames.GetKernelName"/>).</summary>
-    public static string GetKernelMethodName(MethodDeclarationSyntax method, IMethodSymbol? methodSymbol) =>
-        methodSymbol != null ? GlobalCppNames.GetKernelName(methodSymbol) : method.Identifier.ValueText;
-
     /// <summary>
-    /// A name that belongs to one kernel: <paramref name="prefix"/> followed by the body of its entry point name.
+    /// Writes the signature of a kernel entry point or of a device function that does not suspend. A kernel with a state
+    /// machine (<paramref name="hasContext"/>) takes its per-thread context as the last parameter before the auto result.
     /// </summary>
-    public static string GetKernelDerivedName(string prefix, MethodDeclarationSyntax method, IMethodSymbol? methodSymbol) =>
-        methodSymbol != null
-            ? GlobalCppNames.GetKernelDerivedName(prefix, methodSymbol)
-            : prefix + method.Identifier.ValueText;
-
-    public static void WriteMethodSignature(MethodDeclarationSyntax method, bool isDevice, bool hasContext,
-        ref TranspileContext context)
+    public static void WriteMethodSignature(in MethodEmissionPlan plan, bool hasContext, ref TranspileContext context)
     {
-        var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
-        if (isDevice && methodSymbol is { IsStatic: false } && methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction))
+        var method = plan.Declaration;
+        var methodSymbol = plan.Symbol;
+        var isDevice = plan.Kind != MethodEmissionKind.Kernel;
+        if (isDevice && methodSymbol != null && GpuCodeConstraints.IsInstanceDeviceFunction(methodSymbol))
         {
-            context.Reporter.Report(
+            context.Reporter.Fail(
                 GSharpDiagnostics.InstanceDeviceFunctionNotSupported,
                 method.Identifier.GetLocation(),
                 methodSymbol.ContainingType.Name,
                 methodSymbol.Name);
         }
 
-        ReportUnsupportedParameterTypes(methodSymbol, ref context);
-        ReportKernelParameterSpace(methodSymbol, method, isDevice, ref context);
+        FailUnsupportedParameterTypes(methodSymbol, ref context);
 
+        string methodName;
+        string? contextName = null;
         if (isDevice)
         {
             WriteDeviceMethodPrefix(methodSymbol, ref context);
+            methodName = methodSymbol != null && CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)
+                ? GlobalCppNames.GetFunctionName(methodSymbol)
+                : method.Identifier.Text;
         }
         else
         {
-            WriteKernelMethodPrefix(ref context);
-        }
+            // A kernel is named only from its symbol (GlobalCppNames.GetKernelName); without one there is no entry point
+            if (methodSymbol is null)
+            {
+                return;
+            }
 
-        var methodName = !isDevice ? GetKernelMethodName(method, methodSymbol)
-            : methodSymbol != null && CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)
-                ? GlobalCppNames.GetFunctionName(methodSymbol)
-                : method.Identifier.Text;
+            WriteKernelMethodPrefix(ref context);
+            methodName = GlobalCppNames.GetKernelName(methodSymbol);
+            if (hasContext)
+            {
+                contextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, methodSymbol);
+            }
+        }
 
         context.Emitter.Writer.Append($" {methodName}");
         using (context.Emitter.Writer.Parentheses())
         {
             WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
 
-            if (hasContext)
+            if (contextName != null)
             {
                 if (method.ParameterList.Parameters.Count > 0)
                 {
@@ -60,17 +63,17 @@ internal static class MethodSignatureTranspiler
                 }
 
                 context.Emitter.Writer
-                    .Append(GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, method, methodSymbol))
+                    .Append(contextName)
                     .Append("* ").Append(GSharpInternalNames.StateMachine.Context);
             }
 
-            if (isDevice || methodSymbol is null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
-                methodSymbol.ReturnType.SpecialType == SpecialType.System_Void)
+            // A plan with an auto result always has a symbol
+            if (isDevice || !plan.HasAutoResult || methodSymbol is null)
             {
                 return;
             }
 
-            if (method.ParameterList.Parameters.Count > 0 || hasContext)
+            if (method.ParameterList.Parameters.Count > 0 || contextName != null)
             {
                 context.Emitter.Writer.Append(", ");
             }
@@ -85,13 +88,12 @@ internal static class MethodSignatureTranspiler
     /// <c>template &lt;typename TRoot&gt; bool f(params, Frame* __gsharp_ctx, TRoot* __gsharp_root[, R* __gsharp_result])</c>.
     /// It returns whether the call completed; the root is the kernel context that owns the warp exchange.
     /// </summary>
-    public static void WriteSuspendingDeviceSignature(MethodDeclarationSyntax method,
+    public static void WriteSuspendingDeviceSignature(MethodDeclarationSyntax method, IMethodSymbol methodSymbol,
         IReadOnlyCollection<string> copiedParameters, ref TranspileContext context)
     {
-        var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
-        ReportUnsupportedParameterTypes(methodSymbol, ref context);
+        FailUnsupportedParameterTypes(methodSymbol, ref context);
 
-        var methodName = methodSymbol != null && CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)
+        var methodName = CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)
             ? GlobalCppNames.GetFunctionName(methodSymbol)
             : method.Identifier.Text;
         context.Emitter.Writer.Append($"template <typename TRoot> {GetInliningKeyword(methodSymbol)} bool {methodName}");
@@ -104,10 +106,10 @@ internal static class MethodSignatureTranspiler
             }
 
             context.Emitter.Writer
-                .Append(GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, method, methodSymbol))
+                .Append(GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol))
                 .Append($"* {GSharpInternalNames.StateMachine.Context}, TRoot* {GSharpInternalNames.SuspendingCall.Root}");
 
-            if (methodSymbol is { ReturnsVoid: false })
+            if (!methodSymbol.ReturnsVoid)
             {
                 context.Emitter.Writer.Append(", ");
                 context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
@@ -116,44 +118,9 @@ internal static class MethodSignatureTranspiler
         }
     }
 
-    private const int KernelParameterSpaceLimitBytes = 4096;
-
-    private const int DevicePointerBytes = 8;
-
-    // [WHY] CUDA limits total parameter space for kernel arguments to 4 KB (4096 bytes).
-    private static void ReportKernelParameterSpace(IMethodSymbol? methodSymbol, MethodDeclarationSyntax method, bool isDevice, ref TranspileContext context)
-    {
-        if (isDevice || methodSymbol is null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel))
-        {
-            return;
-        }
-
-        var offset = 0;
-        foreach (var parameter in methodSymbol.Parameters)
-        {
-            var layout = parameter.RefKind != RefKind.None
-                ? new CudaLayoutRules.CudaLayoutInfo(DevicePointerBytes, DevicePointerBytes)
-                : CudaLayoutRules.GetCudaLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type);
-
-            offset = CudaLayoutRules.AlignUp(offset, layout.Alignment) + layout.Size;
-        }
-
-        if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
-        {
-            offset = CudaLayoutRules.AlignUp(offset, DevicePointerBytes) + DevicePointerBytes;
-        }
-
-        if (offset > KernelParameterSpaceLimitBytes)
-        {
-            // The message names the kernel as the user wrote it, not by its entry point.
-            var kernelName = $"{methodSymbol.ContainingType.Name}.{methodSymbol.Name}";
-            context.Reporter.Report(GSharpDiagnostics.KernelParameterSpaceExceeded, method.Identifier.GetLocation(), kernelName, offset, KernelParameterSpaceLimitBytes);
-        }
-    }
-
-    // [WHY] Reported here rather than in WriteParameters, which also runs for the CPU host launcher
-    // and would duplicate the diagnostic for the same parameter.
-    private static void ReportUnsupportedParameterTypes(IMethodSymbol? methodSymbol, ref TranspileContext context)
+    // [WHY] Checked here rather than in WriteParameters, which also runs for the CPU host launcher
+    // and would record the same parameter twice.
+    private static void FailUnsupportedParameterTypes(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         if (methodSymbol is null)
         {
@@ -162,14 +129,14 @@ internal static class MethodSignatureTranspiler
 
         foreach (var parameter in methodSymbol.Parameters)
         {
-            if (parameter.Type is not IFunctionPointerTypeSymbol ||
+            if (!GpuCodeConstraints.IsFunctionPointer(parameter.Type) ||
                 !parameter.TryGetDeclaringSyntax<ParameterSyntax>(out var paramSyntax) ||
                 paramSyntax.Type is not { } typeSyntax)
             {
                 continue;
             }
 
-            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, typeSyntax, typeSyntax.Kind().ToString());
         }
     }
 

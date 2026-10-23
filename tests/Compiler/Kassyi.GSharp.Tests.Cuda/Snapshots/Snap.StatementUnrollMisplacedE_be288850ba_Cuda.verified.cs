@@ -6,5 +6,3 @@ __gsharp_id_1_sum+=__gsharp_id_2_i;
 }
 __gsharp_id_0_data[0]=__gsharp_id_1_sum;
 }
-
-// GSH0017

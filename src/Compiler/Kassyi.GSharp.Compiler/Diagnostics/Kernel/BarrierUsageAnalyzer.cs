@@ -9,6 +9,7 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 {
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
+            GSharpDiagnostics.UnsupportedSyntax, // GSH0003 (a barrier in the scope of a using)
             GSharpDiagnostics.DivergentBarrierProhibited, // GSH0037
             GSharpDiagnostics.ExceptionHandlingInKernelProhibited, // GSH0038
             GSharpDiagnostics.CrossBarrierRefStructProhibited, // GSH0039

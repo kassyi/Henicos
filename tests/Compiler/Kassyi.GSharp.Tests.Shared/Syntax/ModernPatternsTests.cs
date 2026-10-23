@@ -71,7 +71,8 @@ public class ModernPatternsTests : TranspilerTestBase
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.ListPatterns), isDevice: false, dialect: CurrentDialect);
 
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "Switch expression patterns other than constant and discard are not supported");
+        // The analyzer reports the pattern (UnsupportedConstructDiagnosticsTests); the transpiler records the failure
+        diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, GpuCodeConstraints.SwitchArmPatternNotSupported);
     }
 
     [Fact]
@@ -81,17 +82,21 @@ public class ModernPatternsTests : TranspilerTestBase
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.PropertyPatterns), isDevice: false, dialect: CurrentDialect);
 
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "Switch expression patterns other than constant and discard are not supported");
+        // The analyzer reports the pattern (UnsupportedConstructDiagnosticsTests); the transpiler records the failure
+        diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, GpuCodeConstraints.SwitchArmPatternNotSupported);
     }
 
     [Fact]
     [Category(TestCategory.Syntax)]
     public void Test_PositionalPatterns_Transpilation()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.PositionalPatterns), isDevice: false, dialect: CurrentDialect);
 
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax);
+        // The analyzer reports the construct (UnsupportedSyntaxKindDiagnosticsTests); the transpiler records the failure and
+        // writes a placeholder
+        diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, "'TupleExpression'");
+        Assert.Contains("/*unsupported:TupleExpression*/", cudaSource);
     }
 
     [Fact]

@@ -39,5 +39,5 @@ Compiler-generated overloads accepting `IntPtr` instead of managed arrays.
 The following patterns are subject to immediate refactoring upon discovery:
 - ❌ `Kernel_FloatAdd` (Prefixes are prohibited)
 - ❌ `Device_AlignSignificand` (Prefixes and underscores are prohibited)
-- ❌ `LaunchFloatAddKernel_Device` (Underscores in generated code are prohibited; unified to `Ptr` via compiler's `WrapperEmitter.cs`)
+- ❌ `LaunchFloatAddKernel_Device` (Underscores in generated code are prohibited; unified to `Ptr` via compiler's `Marshaling/WrapperEmitter.cs`)
 - ❌ `AlignSignificandDevice` or `AutoPayDevice` (`Device` is discouraged even as a suffix because it reads as the noun "apparatus/machine" in English, causing semantic misinterpretation)

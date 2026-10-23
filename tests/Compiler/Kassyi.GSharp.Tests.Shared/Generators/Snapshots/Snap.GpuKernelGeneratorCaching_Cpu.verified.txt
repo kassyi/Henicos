@@ -1,0 +1,27 @@
+﻿## First run
+GpuDeviceFunction: New x1
+GpuKernelClass: New x1
+GpuKernelMethod: New x3
+SourceOutput(GpuAotArtifactInput): New x1
+SourceOutput(GpuKernelWrapperInput): New x1
+SourceOutput(GpuModuleContextInput): New x1
+SourceOutput(GpuSharedSourcesInput): New x1
+
+## After adding an unrelated file
+GpuDeviceFunction: Unchanged x1
+GpuKernelClass: Cached x1
+GpuKernelMethod: Unchanged x3
+SourceOutput(GpuAotArtifactInput): Cached x1
+SourceOutput(GpuKernelWrapperInput): Cached x1
+SourceOutput(GpuModuleContextInput): Cached x1
+SourceOutput(GpuSharedSourcesInput): Cached x1
+
+## After editing one kernel body
+GpuDeviceFunction: Unchanged x1
+GpuKernelClass: Modified x1
+GpuKernelMethod: Modified x1, Unchanged x2
+SourceOutput(GpuAotArtifactInput): Unchanged x1
+SourceOutput(GpuKernelWrapperInput): Modified x1
+SourceOutput(GpuModuleContextInput): Cached x1
+SourceOutput(GpuSharedSourcesInput): Cached x1
+

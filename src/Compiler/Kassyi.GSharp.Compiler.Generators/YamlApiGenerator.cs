@@ -36,15 +36,18 @@ public static class YamlApiGenerator
             definitions.Add(definition);
         }
 
-        foreach (var def in definitions)
+        var fileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var def in NativeIntrinsicEmitter.MergeByClass(definitions.ToImmutable()))
         {
-            if (def.BindingKind != NativeApiBindingKind.Intrinsic)
+            var fileName = $"{def.ClassName}Intrinsics.g.cs";
+            if (!fileNames.Add(fileName))
             {
-                continue;
+                var error = new NativeApiReadError(NativeApiReadErrorKind.Schema, def.ClassNameLine,
+                    $"Intrinsic definitions in different namespaces declare the class '{def.ClassName}', and both would be written to {fileName}.");
+                throw new InvalidDataException($"{inputDir}: error {error.DiagnosticId}: {error.Message}");
             }
 
-            var source = NativeIntrinsicEmitter.EmitIntrinsics(def);
-            File.WriteAllText(Path.Combine(outputDir, $"{def.ClassName}Intrinsics.g.cs"), source, Encoding.UTF8);
+            File.WriteAllText(Path.Combine(outputDir, fileName), NativeIntrinsicEmitter.EmitIntrinsics(def), Encoding.UTF8);
         }
     }
 }

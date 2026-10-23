@@ -52,21 +52,6 @@ public abstract class TranspilerTestBase
             .WithDialect(DialectName);
     }
 
-    /// <summary>
-    /// Renders transpiled source together with the reported diagnostic IDs so that both
-    /// are pinned by a single <c>.verified.cs</c> snapshot.
-    /// </summary>
-    protected static string Report(string cudaSource, IReadOnlyList<Diagnostic> diagnostics)
-    {
-        var builder = new System.Text.StringBuilder(cudaSource);
-        foreach (var diagnostic in diagnostics)
-        {
-            builder.Append("\n// ").Append(diagnostic.Id);
-        }
-
-        return builder.ToString();
-    }
-
     protected SettingsTask Verify(object? target,
         [CallerMemberName] string methodName = "")
     {

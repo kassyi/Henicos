@@ -43,10 +43,10 @@ internal static class MacroTranspilerHelper
         out MacroScope scope)
     {
         scope = default;
-        var paramName = ExtractUnrollLoopParameterName(lambdaExpr, hasContext);
-        if (string.IsNullOrEmpty(paramName))
+        var paramName = GpuCodeConstraints.GetMacroLoopParameter(lambdaExpr, hasContext)?.Identifier.Text ?? string.Empty;
+        if (paramName.Length == 0)
         {
-            context.Reporter.Report(GSharpDiagnostics.MacroLambdaRequiresParameter, invocation, macroName);
+            context.Reporter.Fail(GSharpDiagnostics.MacroLambdaRequiresParameter, invocation, macroName);
             return false;
         }
 
@@ -80,34 +80,4 @@ internal static class MacroTranspilerHelper
         }
     }
 
-    public static bool TryGetConstantInt(ExpressionSyntax expression, SemanticModel semanticModel, out int value)
-    {
-        var constant = semanticModel.GetSafeConstantValue(expression);
-        if (constant.Value is int intValue)
-        {
-            value = intValue;
-            return true;
-        }
-
-        value = 0;
-        return false;
-    }
-
-    public static string ExtractUnrollLoopParameterName(LambdaExpressionSyntax lambda, bool hasContext) =>
-        ExtractUnrollLoopParameter(lambda, hasContext)?.Identifier.Text ?? string.Empty;
-
-    public static ParameterSyntax? ExtractUnrollLoopParameter(LambdaExpressionSyntax lambda, bool hasContext)
-    {
-        return lambda switch
-        {
-            SimpleLambdaExpressionSyntax simpleLambda => simpleLambda.Parameter,
-            ParenthesizedLambdaExpressionSyntax parenLambda when hasContext &&
-                                                                 parenLambda.ParameterList.Parameters.Count == 2 =>
-                parenLambda.ParameterList.Parameters[1],
-            ParenthesizedLambdaExpressionSyntax parenLambda when !hasContext &&
-                                                                 parenLambda.ParameterList.Parameters.Count == 1 =>
-                parenLambda.ParameterList.Parameters[0],
-            _ => null
-        };
-    }
 }

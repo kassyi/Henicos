@@ -145,21 +145,21 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate(global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] states, int length, int multiplier, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-            if (tid < length)
-            {
-                LifecycleObjectState s = states[tid];
-                states[tid] = TransformState(s, multiplier);
-            }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+if (tid < length)
+{
+LifecycleObjectState s = states[tid];
+states[tid] = TransformState(s, multiplier);
+}
 
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -184,8 +184,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -354,24 +355,24 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization(int[] inputValues, global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] outputStates, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-            if (tid < length)
-            {
-                LifecycleObjectState state = default;
-                state.Id = tid + 1;
-                state.Value = inputValues[tid];
-                state.Status = inputValues[tid] < 0 ? -1 : (inputValues[tid] == 0 ? 0 : 1);
-                outputStates[tid] = state;
-            }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+if (tid < length)
+{
+LifecycleObjectState state = default;
+state.Id = tid + 1;
+state.Value = inputValues[tid];
+state.Status = inputValues[tid] < 0 ? -1 : (inputValues[tid] == 0 ? 0 : 1);
+outputStates[tid] = state;
+}
 
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -402,8 +403,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

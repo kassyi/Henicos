@@ -10,5 +10,6 @@ public static class ModuleInitializer
         Environment.SetEnvironmentVariable("DiffEngine_Disabled", "true");
         DiffRunner.Disabled = true;
         Verifier.UseProjectRelativeDirectory("Snapshots");
+        TestConsole.Silence();
     }
 }

@@ -74,6 +74,14 @@ internal static class CSharpTypeNameWriter
         return ref writer;
     }
 
+    /// <summary>Gets the name that <see cref="AppendFullyQualifiedCsharpName"/> writes.</summary>
+    public static string GetFullyQualifiedCsharpName(this ITypeSymbol symbol)
+    {
+        using var writer = new SourceWriter();
+        writer.AppendFullyQualifiedCsharpName(symbol);
+        return writer.ToString();
+    }
+
     // With keywords, primitives use their keyword, Nullable<T> becomes T? and a nullable reference type keeps its ?
     private static void AppendTypeName(in SourceWriter writer, ITypeSymbol type, bool useKeywords)
     {

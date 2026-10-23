@@ -4,9 +4,44 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// Maps a YAML native API definition onto <see cref="NativeApiDefinition"/> and validates its schema.
 /// </summary>
 /// <remarks>
-/// Unknown keys are ignored so that definitions stay forward-compatible. String values that end up in
+/// <para>Unknown keys are ignored so that definitions stay forward-compatible. String values that end up in
 /// generated code are validated as C# identifiers where they name a symbol; free-form values such as
-/// types and descriptions are passed through and escaped by the emitter.
+/// types and descriptions are passed through and escaped by the emitter.</para>
+/// <para>A parameter or return <c>type</c> is the C# spelling, modifiers included (<c>ref T</c>, <c>in T</c>,
+/// <c>out T</c>, <c>ref readonly T</c>, <c>WmmaMatrixA&lt;TShape, T, TLayout&gt;</c>). Intrinsic definitions (neither
+/// <c>libraryName</c> nor <c>moduleName</c>) can also declare a generic method and a nested class:</para>
+/// <code>
+/// - name: CopyAsync
+///   nativeName: __gsharp_cp_async
+///   className: Gpu.Unsafe          # dotted path: a static class nested in Gpu
+///   typeParameters:
+///     - name: T
+///       constraints: unmanaged     # a scalar or a sequence, emitted in order after "where T :"
+///       description: The element type.
+///   parameters:
+///     - { name: sharedDst, type: ref T }
+///     - { name: globalSrc, type: ref readonly T }
+/// </code>
+/// <para>Documentation that needs XML markup is written whole in <c>xmlDoc</c> (a method key, which replaces the
+/// escaped <c>summary</c> and <c>description</c> keys) and, for a nested class, in the top-level <c>classes</c> list.
+/// <c>isUnsafe: true</c> declares an intrinsic <c>unsafe</c>; one that returns a pointer throws through
+/// <c>GpuOnlyException.Throw&lt;nint&gt;().ToPointer()</c>.</para>
+/// <code>
+/// classes:
+///   - name: Gpu.Unsafe
+///     xmlDoc: |
+///       &lt;summary&gt;Provides low-level unsafe device memory management intrinsics.&lt;/summary&gt;
+/// methods:
+///   - name: Free
+///     nativeName: free
+///     className: Gpu.Unsafe
+///     isUnsafe: true
+///     xmlDoc: |
+///       &lt;summary&gt;Frees unmanaged memory allocated by &lt;see cref="Malloc"/&gt; (&lt;c&gt;free&lt;/c&gt;).&lt;/summary&gt;
+///       &lt;param name="ptr"&gt;A raw pointer to the allocated memory block to free.&lt;/param&gt;
+///     parameters:
+///       - { name: ptr, type: void* }
+/// </code>
 /// </remarks>
 internal static class NativeApiYamlReader
 {
@@ -65,25 +100,89 @@ internal static class NativeApiYamlReader
             definition.LibraryNames = ReadLibraryNames(libraryNamesNode);
         }
 
-        if (!mapping.TryGetValue("methods", out var methodsNode) || IsNull(methodsNode))
+        if (mapping.TryGetValue("methods", out var methodsNode) && !IsNull(methodsNode))
         {
-            return definition;
+            if (methodsNode is not YamlSequence methods)
+            {
+                throw Schema(methodsNode.Line, "'methods' must be a sequence.");
+            }
+
+            var builder = ImmutableArray.CreateBuilder<ApiMethodDefinition>(methods.Items.Count);
+            foreach (var item in methods.Items)
+            {
+                builder.Add(ReadMethod(item, definition.BindingKind));
+            }
+
+            definition.Methods = builder.MoveToImmutable();
         }
 
-        if (methodsNode is not YamlSequence methods)
+        if (mapping.TryGetValue("classes", out var classesNode) && !IsNull(classesNode))
         {
-            throw Schema(methodsNode.Line, "'methods' must be a sequence.");
+            definition.Classes = ReadClasses(classesNode, definition);
         }
-
-        var builder = ImmutableArray.CreateBuilder<ApiMethodDefinition>(methods.Items.Count);
-        foreach (var item in methods.Items)
-        {
-            builder.Add(ReadMethod(item, definition.BindingKind));
-        }
-
-        definition.Methods = builder.MoveToImmutable();
 
         return definition;
+    }
+
+    private static ImmutableArray<ClassDocumentationDefinition> ReadClasses(YamlNode node, NativeApiDefinition definition)
+    {
+        if (definition.BindingKind != NativeApiBindingKind.Intrinsic)
+        {
+            throw Schema(node.Line, "'classes' is supported only by intrinsic definitions.");
+        }
+
+        if (node is not YamlSequence sequence)
+        {
+            throw Schema(node.Line, "'classes' must be a sequence.");
+        }
+
+        var builder = ImmutableArray.CreateBuilder<ClassDocumentationDefinition>(sequence.Items.Count);
+        foreach (var item in sequence.Items)
+        {
+            if (item is not YamlMapping mapping)
+            {
+                throw Schema(item.Line, "Each entry of 'classes' must be a mapping.");
+            }
+
+            var entry = new ClassDocumentationDefinition
+            {
+                Name = RequireScalar(mapping, "name"),
+                XmlDoc = RequireScalar(mapping, "xmlDoc"),
+            };
+
+            // [WHY] The documentation goes on the declaration that holds the class's methods; any other entry is lost.
+            if (!DeclaresMethods(definition, entry.Name))
+            {
+                throw Schema(LineOf(mapping, "name"),
+                    $"'classes' entry '{entry.Name}' names no class that a method is declared in.");
+            }
+
+            foreach (var previous in builder)
+            {
+                if (previous.Name == entry.Name)
+                {
+                    throw Schema(LineOf(mapping, "name"), $"'classes' entry '{entry.Name}' is declared twice.");
+                }
+            }
+
+            builder.Add(entry);
+        }
+
+        return builder.MoveToImmutable();
+    }
+
+    private static bool DeclaresMethods(NativeApiDefinition definition, string className)
+    {
+        foreach (var method in definition.Methods)
+        {
+            var methodClass = string.IsNullOrEmpty(method.ClassName) ? definition.ClassName : method.ClassName;
+            if (methodClass == className)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static NativeLibraryNames ReadLibraryNames(YamlNode node)
@@ -117,14 +216,16 @@ internal static class NativeApiYamlReader
             StringMarshalling = OptionalScalar(mapping, "stringMarshalling"),
             IsUnsafe = OptionalBoolean(mapping, "isUnsafe"),
             Summary = OptionalScalar(mapping, "summary"),
+            XmlDoc = OptionalScalar(mapping, "xmlDoc"),
             ReturnType = OptionalScalar(mapping, "returnType") ?? "void",
             ReturnDescription = OptionalScalar(mapping, "returnDescription"),
         };
 
         ValidateIdentifier(mapping, "name", method.Name);
-        if (method.ClassName is not null)
+        if (method.ClassName is not null && !IsValidDottedName(method.ClassName))
         {
-            ValidateIdentifier(mapping, "className", method.ClassName);
+            throw Schema(LineOf(mapping, "className"),
+                $"'className' value '{method.ClassName}' is not a valid C# class name or nested class path.");
         }
 
         if (method.StringMarshalling is not null)
@@ -152,6 +253,11 @@ internal static class NativeApiYamlReader
             };
         }
 
+        if (mapping.TryGetValue("typeParameters", out var typeParametersNode) && !IsNull(typeParametersNode))
+        {
+            method.TypeParameters = ReadTypeParameters(typeParametersNode, method, bindingKind);
+        }
+
         if (mapping.TryGetValue("parameters", out var parametersNode) && !IsNull(parametersNode))
         {
             if (parametersNode is not YamlSequence parameters)
@@ -168,7 +274,96 @@ internal static class NativeApiYamlReader
             method.Parameters = builder.MoveToImmutable();
         }
 
+        if (method.XmlDoc is not null && HasPlainTextDocumentation(method))
+        {
+            throw Schema(LineOf(mapping, "xmlDoc"),
+                $"'xmlDoc' of method '{method.Name}' replaces 'summary', 'returnDescription' and the 'description' keys; write the whole documentation in 'xmlDoc'.");
+        }
+
         return method;
+    }
+
+    private static bool HasPlainTextDocumentation(ApiMethodDefinition method)
+    {
+        if (method.Summary is not null || method.ReturnDescription is not null)
+        {
+            return true;
+        }
+
+        foreach (var parameter in method.Parameters)
+        {
+            if (parameter.Description is not null)
+            {
+                return true;
+            }
+        }
+
+        foreach (var typeParameter in method.TypeParameters)
+        {
+            if (typeParameter.Description is not null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static ImmutableArray<TypeParameterDefinition> ReadTypeParameters(
+        YamlNode node, ApiMethodDefinition method, NativeApiBindingKind bindingKind)
+    {
+        if (bindingKind != NativeApiBindingKind.Intrinsic)
+        {
+            throw Schema(node.Line,
+                $"'typeParameters' is supported only by intrinsic definitions, but method '{method.Name}' binds a host library or a kernel module.");
+        }
+
+        if (node is not YamlSequence sequence)
+        {
+            throw Schema(node.Line, "'typeParameters' must be a sequence.");
+        }
+
+        var builder = ImmutableArray.CreateBuilder<TypeParameterDefinition>(sequence.Items.Count);
+        foreach (var item in sequence.Items)
+        {
+            var typeParameter = ReadTypeParameter(item);
+            if (typeParameter.Name == method.TypeTemplate?.Placeholder)
+            {
+                throw Schema(item.Line,
+                    $"'typeParameters' entry '{typeParameter.Name}' of method '{method.Name}' is also the 'typeTemplate' placeholder.");
+            }
+
+            foreach (var previous in builder)
+            {
+                if (previous.Name == typeParameter.Name)
+                {
+                    throw Schema(item.Line,
+                        $"'typeParameters' entry '{typeParameter.Name}' of method '{method.Name}' is declared twice.");
+                }
+            }
+
+            builder.Add(typeParameter);
+        }
+
+        return builder.MoveToImmutable();
+    }
+
+    private static TypeParameterDefinition ReadTypeParameter(YamlNode node)
+    {
+        if (node is not YamlMapping mapping)
+        {
+            throw Schema(node.Line, "Each entry of 'typeParameters' must be a mapping.");
+        }
+
+        var typeParameter = new TypeParameterDefinition
+        {
+            Name = RequireScalar(mapping, "name"),
+            Constraints = ReadStringList(mapping, "constraints"),
+            Description = OptionalScalar(mapping, "description"),
+        };
+
+        ValidateIdentifier(mapping, "name", typeParameter.Name);
+        return typeParameter;
     }
 
     private static ParameterDefinition ReadParameter(YamlNode node)
@@ -264,6 +459,15 @@ internal static class NativeApiYamlReader
 
     private static void ValidateNamespace(YamlMapping mapping, string value)
     {
+        if (!IsValidDottedName(value))
+        {
+            throw Schema(LineOf(mapping, "namespace"), $"'namespace' value '{value}' is not a valid C# namespace.");
+        }
+    }
+
+    /// <summary>Whether every dot-separated segment of <paramref name="value"/> is a C# identifier.</summary>
+    private static bool IsValidDottedName(string value)
+    {
         var start = 0;
         for (var i = 0; i <= value.Length; i++)
         {
@@ -274,11 +478,13 @@ internal static class NativeApiYamlReader
 
             if (!SyntaxFacts.IsValidIdentifier(value[start..i]))
             {
-                throw Schema(LineOf(mapping, "namespace"), $"'namespace' value '{value}' is not a valid C# namespace.");
+                return false;
             }
 
             start = i + 1;
         }
+
+        return true;
     }
 
     private static void ValidateIdentifier(YamlMapping mapping, string key, string value)

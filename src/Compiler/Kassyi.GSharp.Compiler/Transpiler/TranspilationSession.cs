@@ -28,24 +28,19 @@ internal readonly ref struct TranspilationSession
     }
 
     public static TranspilationSession Begin(
-        MethodDeclarationSyntax methodDecl,
-        SemanticModel semanticModel,
-        Action<Diagnostic>? reportDiagnostic = null,
-        ITranspilerDialect? dialect = null)
+        in MethodEmissionPlan plan,
+        Action<TranspileFailure>? reportFailure,
+        ITranspilerDialect dialect)
     {
-        if (methodDecl is null)
+        var semanticModel = plan.SemanticModel;
+        var methodSymbol = plan.Symbol;
+        if (methodSymbol != null && !GpuCodeConstraints.HasSupportedReturnType(methodSymbol))
         {
-            throw new ArgumentNullException(nameof(methodDecl));
-        }
-
-        if (semanticModel is null)
-        {
-            throw new ArgumentNullException(nameof(semanticModel));
-        }
-
-        var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        if (methodSymbol != null && !GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
-        {
+            reportFailure?.Invoke(new TranspileFailure(
+                GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable,
+                methodSymbol.Locations.Length > 0 ? methodSymbol.Locations[0] : Location.None,
+                [methodSymbol.Name, GpuCodeConstraints.FormatReturnType(methodSymbol)]
+            ));
 #pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path).
             var error =
                 $"// GSharp Transpilation failed for {methodSymbol.Name}. Return type {methodSymbol.ReturnType.ToDisplayString()} is not supported.";
@@ -54,9 +49,7 @@ internal readonly ref struct TranspilationSession
         }
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        dialect ??= new GSharpCudaDialect();
-
-        var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
+        var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportFailure, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
         if (methodSymbol != null)
@@ -68,8 +61,8 @@ internal readonly ref struct TranspilationSession
                 context.Emitter.SkipLocalsInit = true;
             }
 
-            context.Emitter.IsGpuKernelEntry = methodSymbol.HasAttribute(KnownAttributes.GpuKernel);
-            context.Emitter.IsVoidReturn = methodSymbol.ReturnType.SpecialType == SpecialType.System_Void;
+            context.Emitter.IsGpuKernelEntry = plan.IsGpuKernelEntry;
+            context.Emitter.IsVoidReturn = plan.ReturnsVoid;
         }
 
         return new TranspilationSession(visitor, methodSymbol, null);

@@ -188,7 +188,10 @@ internal readonly ref struct KernelBarrierValidator(
         }
     }
 
-    /// <summary>Validates immediate syntactic ancestors of a barrier invocation (GSH0037, GSH0043, GSH0045).</summary>
+    /// <summary>
+    /// Validates immediate syntactic ancestors of a barrier invocation (GSH0037, GSH0043, GSH0045, and GSH0003 for a
+    /// barrier in the scope of a <c>using</c>).
+    /// </summary>
     /// <param name="barrier">A block barrier, or a call to a device function that reaches a barrier.</param>
     /// <param name="isBlockBarrier">Whether every thread of the block has to reach <paramref name="barrier"/> (GSH0037).</param>
     private void InspectBarrierAncestors(InvocationExpressionSyntax barrier, bool isBlockBarrier)
@@ -214,6 +217,14 @@ internal readonly ref struct KernelBarrierValidator(
                     context.ReportDiagnostic(
                         GSharpDiagnostics.FixedBlockBarrierProhibited,
                         barrier.GetLocation());
+                    break;
+                // GSH0003: the state machine would leave the scope of the resource at the barrier and dispose it
+                case UsingStatementSyntax:
+                case BlockSyntax block when IsInUsingDeclarationScope(block, barrier):
+                    context.ReportDiagnostic(
+                        GSharpDiagnostics.UnsupportedSyntax,
+                        barrier.GetLocation(),
+                        GpuCodeConstraints.BarrierInUsingScope);
                     break;
                 // GSH0045: Queue local function containing barrier for recursion check
                 case LocalFunctionStatementSyntax localFunc:
@@ -247,6 +258,21 @@ internal readonly ref struct KernelBarrierValidator(
                                                SyntaxKind.CoalesceExpression) => binary.Left,
         _ => null
     };
+
+    /// <summary>
+    /// Whether <paramref name="barrier"/> in <paramref name="block"/> is in the scope of a <c>using</c> declaration of the
+    /// block: one declared before it, or any one when the block is a nested block, whose statements the lowering moves
+    /// into the enclosing block (BranchRewriter, LoopRewriter) so that its scope would end there.
+    /// </summary>
+    private static bool IsInUsingDeclarationScope(BlockSyntax block, InvocationExpressionSyntax barrier)
+    {
+        var isNested = block.Parent is BlockSyntax;
+        return block.Statements
+            .AsStackEnumerable()
+            .Any((barrier.SpanStart, isNested), static (statement, state) =>
+                UsingTranspiler.IsUsingDeclaration(statement) &&
+                (state.isNested || statement.SpanStart < state.SpanStart));
+    }
 
     /// <summary>Validates that local functions containing barriers are not recursive (GSH0045).</summary>
     private void ValidateRecursiveLocalFunctions()

@@ -18,9 +18,9 @@ internal static class StructTranspiler
             return;
         }
 
-        foreach (var field in StructAbiMembers.GetInstanceFields(namedStruct))
+        foreach (var member in StructAbiMembers.Get(namedStruct))
         {
-            RegisterUsedStructIfApplicable(field.Type, ref context);
+            RegisterUsedStructIfApplicable(member.Type, ref context);
         }
     }
 
@@ -62,9 +62,9 @@ internal static class StructTranspiler
                 return;
             }
 
-            foreach (var field in StructAbiMembers.GetInstanceFields(s))
+            foreach (var member in StructAbiMembers.Get(s))
             {
-                if (TryGetUserStruct(field.Type, out var dep) && structSet.Contains(dep))
+                if (TryGetUserStruct(member.Type, out var dep) && structSet.Contains(dep))
                 {
                     visit(dep);
                 }
@@ -121,17 +121,16 @@ internal static class StructTranspiler
         ref TranspileContext context)
     {
         var length = (int)(inlineArrayAttr.ConstructorArguments[0].Value ?? 0);
-        var firstField = GetFirstInstanceField(structSym);
-        if (firstField == null)
+        if (!TryGetFirstMember(structSym, out var firstMember))
         {
             return;
         }
 
-        var element = GetMemberName(firstField, ref context);
+        var element = GetMemberName(firstMember.Symbol, ref context);
         WriteStructHeader(ref context, structSym);
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Dialect.AppendType(ref context, firstField.Type);
+            context.Emitter.Dialect.AppendType(ref context, firstMember.Type);
             context.Emitter.Writer.Append($" {element}");
             using (context.Emitter.Writer.Brackets())
             {
@@ -140,9 +139,9 @@ internal static class StructTranspiler
 
             context.Emitter.Writer.AppendLine(";");
 
-            WriteInlineArrayIndexer(ref context, firstField.Type, element, isConst: false);
-            WriteInlineArrayIndexer(ref context, firstField.Type, element, isConst: true);
-            WriteInlineArrayIterators(ref context, firstField.Type, element, length);
+            WriteInlineArrayIndexer(ref context, firstMember.Type, element, isConst: false);
+            WriteInlineArrayIndexer(ref context, firstMember.Type, element, isConst: true);
+            WriteInlineArrayIterators(ref context, firstMember.Type, element, length);
         }
 
         WriteStructFooter(ref context);
@@ -206,12 +205,9 @@ internal static class StructTranspiler
 
         using (context.Emitter.Writer.Scope())
         {
-            foreach (var member in structSym.GetMembers())
+            foreach (var member in StructAbiMembers.Get(structSym))
             {
-                if (member is { IsStatic: false, IsImplicitlyDeclared: false })
-                {
-                    WriteStructMember(ref context, member);
-                }
+                WriteStructMember(ref context, member);
             }
 
             foreach (var member in structSym.GetMembers())
@@ -220,6 +216,17 @@ internal static class StructTranspiler
                 {
                     WriteImplicitConversionOperator(structSym, ref context, conv);
                 }
+                else if (member is IPropertySymbol property && StructAbiMembers.IsComputedProperty(property))
+                {
+                    WriteComputedPropertyGetter(property, ref context);
+                }
+            }
+
+            // [WHY] Declared in every definition, defined only by the methods that dispose the struct (UsingTranspiler):
+            // the include guard keeps the first definition of the struct that any method writes.
+            if (UsingTranspiler.FindDisposeMethod(structSym, context.Query.SemanticModel.Compilation) != null)
+            {
+                context.Emitter.Writer.AppendLine($"__device__ void {GSharpInternalNames.Using.Dispose}();");
             }
         }
 
@@ -268,7 +275,7 @@ internal static class StructTranspiler
     private static void WriteImplicitConversionOperator(INamedTypeSymbol structSym, ref TranspileContext context,
         IMethodSymbol conv)
     {
-        var firstField = GetFirstInstanceField(structSym);
+        var hasFirstMember = TryGetFirstMember(structSym, out var firstMember);
 
         if (conv.ReturnType.IsEqualTo(structSym))
         {
@@ -286,9 +293,9 @@ internal static class StructTranspiler
             context.Emitter.Writer.Append(' ');
             using (context.Emitter.Writer.Scope())
             {
-                if (firstField != null)
+                if (hasFirstMember)
                 {
-                    context.Emitter.Writer.AppendLine($"this->{GetMemberName(firstField, ref context)} = v;");
+                    context.Emitter.Writer.AppendLine($"this->{GetMemberName(firstMember.Symbol, ref context)} = v;");
                 }
             }
         }
@@ -300,71 +307,123 @@ internal static class StructTranspiler
             context.Emitter.Writer.Append("() const ");
             using (context.Emitter.Writer.Scope())
             {
-                if (firstField == null)
+                if (!hasFirstMember)
                 {
                     return;
                 }
 
-                context.Emitter.Writer.Append($"return this->{GetMemberName(firstField, ref context)}");
+                context.Emitter.Writer.Append($"return this->{GetMemberName(firstMember.Symbol, ref context)}");
                 context.Emitter.Writer.AppendLine(";");
             }
         }
     }
 
+    // __device__ inline <type> <property name>() const { <getter body> }
+    // [WHY] The getter keeps the C++ name of the property (CppNameResolver), so the implicit `A` and `Sum` in a getter body
+    // resolve to the members of the struct, and a read elsewhere only appends the call (ComputedPropertyGetterCall).
+    private static void WriteComputedPropertyGetter(IPropertySymbol property, ref TranspileContext context)
+    {
+        // A struct from metadata or from another compilation has no getter body to bind here.
+        var compilation = context.Query.SemanticModel.Compilation;
+        if (!property.TryGetDeclaringSyntax<PropertyDeclarationSyntax>(out var declaration) ||
+            !compilation.ContainsSyntaxTree(declaration.SyntaxTree) ||
+            !TryGetGetterBody(declaration, out var block, out var expression))
+        {
+            return;
+        }
+
+        context.Emitter.Writer.Append("__device__ inline ");
+        context.Emitter.Dialect.AppendType(ref context, property.Type);
+        context.Emitter.Writer.Append(' ')
+            .AppendCppName(CppNameResolver.Resolve(property, property.Name, context.Emitter.Dialect))
+            .Append("() const ");
+
+        // [WHY] The struct may be declared in another file than the kernel, so its body is bound with a model of its own tree.
+        var query = context.Query;
+        var reporter = context.Reporter;
+        var model = compilation.GetSemanticModel(declaration.SyntaxTree);
+        context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
+        context.Reporter = reporter.WithSemanticModel(model);
+
+        try
+        {
+            LambdaTranspilerHelper.TranspileLambdaBody(ref context, block, expression);
+        }
+        finally
+        {
+            context.Query = query;
+            context.Reporter = reporter;
+        }
+    }
+
+    // The body of `=> expr`, `get => expr` or `get { ... }`
+    private static bool TryGetGetterBody(PropertyDeclarationSyntax declaration, out BlockSyntax? block,
+        out ExpressionSyntax? expression)
+    {
+        block = null;
+        expression = declaration.ExpressionBody?.Expression;
+        if (expression != null || declaration.AccessorList is not { } accessorList)
+        {
+            return expression != null;
+        }
+
+        var getter = accessorList.Accessors
+            .AsStackEnumerable()
+            .FirstOrDefault(static accessor => accessor.IsKind(SyntaxKind.GetAccessorDeclaration));
+        block = getter?.Body;
+        expression = getter?.ExpressionBody?.Expression;
+        return block != null || expression != null;
+    }
+
     private static string GetMemberName(ISymbol member, ref TranspileContext context) =>
         CppNameResolver.Resolve(member, member.Name, context.Emitter.Dialect).ToString();
 
-    private static IFieldSymbol? GetFirstInstanceField(INamedTypeSymbol structSym)
+    private static bool TryGetFirstMember(INamedTypeSymbol structSym, out StructAbiMember firstMember)
     {
-        foreach (var field in StructAbiMembers.GetInstanceFields(structSym))
+        foreach (var member in StructAbiMembers.Get(structSym))
         {
-            return field;
+            firstMember = member;
+            return true;
         }
 
-        return null;
+        firstMember = default;
+        return false;
     }
 
-    private static void WriteStructMember(ref TranspileContext context, ISymbol member)
+    private static void WriteStructMember(ref TranspileContext context, StructAbiMember member)
     {
-        switch (member)
+        if (member is { Kind: StructAbiMemberKind.FixedBuffer, Symbol: IFieldSymbol field })
         {
-            case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
+            field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
+
+            ExpressionSyntax? sizeExp = null;
+            if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
             {
-                field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
-
-                ExpressionSyntax? sizeExp = null;
-                if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
-                {
-                    sizeExp = argList.Arguments[0].Expression;
-                }
-
-                if (sizeExp != null)
-                {
-                    context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
-                    context.Emitter.Writer.Append($" {GetMemberName(field, ref context)}");
-                    using (context.Emitter.Writer.Brackets())
-                    {
-                        context.Visitor.Visit(sizeExp);
-                    }
-
-                    context.Emitter.Writer.AppendLine(";");
-                }
-                else
-                {
-                    context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
-                    context.Emitter.Writer.AppendLine(
-                        $"* {GetMemberName(field, ref context)}; // ERROR: fixed size not found");
-                }
-
-                break;
+                sizeExp = argList.Arguments[0].Expression;
             }
-            case IFieldSymbol field:
-                WriteMemberDeclaration(field.Type, GetMemberName(field, ref context), field, ref context);
-                break;
-            case IPropertySymbol prop:
-                WriteMemberDeclaration(prop.Type, GetMemberName(prop, ref context), prop, ref context);
-                break;
+
+            if (sizeExp != null)
+            {
+                context.Emitter.Dialect.AppendType(ref context, member.Type);
+                context.Emitter.Writer.Append($" {GetMemberName(field, ref context)}");
+                using (context.Emitter.Writer.Brackets())
+                {
+                    context.Visitor.Visit(sizeExp);
+                }
+
+                context.Emitter.Writer.AppendLine(";");
+            }
+            else
+            {
+                context.Emitter.Dialect.AppendType(ref context, member.Type);
+                context.Emitter.Writer.AppendLine(
+                    $"* {GetMemberName(field, ref context)}; // ERROR: fixed size not found");
+            }
+
+            return;
         }
+
+        WriteMemberDeclaration(member.Type, GetMemberName(member.Symbol, ref context), member.Symbol, ref context);
     }
 
     private static void WriteMemberDeclaration(ITypeSymbol type, string name, ISymbol memberSymbol,

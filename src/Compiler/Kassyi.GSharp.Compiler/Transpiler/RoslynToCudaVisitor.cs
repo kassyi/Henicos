@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 using Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
@@ -32,7 +33,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// </summary>
     /// <param name="dialect">The target language and hardware dialect controlling code emission.</param>
     /// <param name="semanticModel">The Roslyn semantic model bound to the active compilation unit.</param>
-    /// <param name="reportDiagnostic">An optional callback delegate to report compiler warnings or errors.</param>
+    /// <param name="reportFailure">An optional callback that receives the constructs that could not be emitted (<see cref="TranspileFailure"/>).</param>
     /// <param name="bclIntrinsicMap">An optional lookup dictionary mapping BCL method symbols to target intrinsics.</param>
     /// <returns>A pooled and initialized <see cref="RoslynToCudaVisitor"/> instance ready for traversal.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="dialect"/> or <paramref name="semanticModel"/> is <see langword="null"/>.</exception>
@@ -41,7 +42,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// </remarks>
     public static RoslynToCudaVisitor Rent(
         ITranspilerDialect dialect,
-        SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
+        SemanticModel semanticModel, Action<TranspileFailure>? reportFailure = null,
         ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
     {
         if (dialect is null)
@@ -71,7 +72,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             visitor._localVariableOverrides,
             visitor._activeSwitchIds,
             semanticModel,
-            reportDiagnostic,
+            reportFailure,
             visitor,
             bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
             dialect);
@@ -112,12 +113,23 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// The boundary of the syntax G# emits: a kind that no rule and no override handles, including a kind that a newer C#
+    /// adds, becomes a GSH0003 failure, which the analyzer reports (no list of rejected kinds to keep up to date).
+    /// </remarks>
     public override void DefaultVisit(SyntaxNode node)
     {
-        Context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
+        Context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
+        AppendUnsupportedPlaceholder(node);
+    }
 
-        // [WHY] Descending into the children would splice their raw tokens into the output (invalid C++)
-        // and re-report every nested node. A single diagnostic plus a placeholder keeps the output inspectable.
+    /// <summary>Writes a placeholder for a construct the transpiler cannot emit.</summary>
+    /// <remarks>
+    /// [WHY] Descending into the children would splice their raw tokens into the output (invalid C++)
+    /// and re-report every nested node. A single diagnostic plus a placeholder keeps the output inspectable.
+    /// </remarks>
+    internal void AppendUnsupportedPlaceholder(SyntaxNode node)
+    {
         Context.Emitter.Writer.Append("/*unsupported:");
         Context.Emitter.Writer.Append(node.Kind().ToString());
         Context.Emitter.Writer.Append("*/");
@@ -144,7 +156,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         if (node.Keyword.IsKind(SyntaxKind.StringKeyword))
         {
-            Context.Reporter.Report(GSharpDiagnostics.StringNotSupported, node);
+            Context.Reporter.Fail(GSharpDiagnostics.StringNotSupported, node);
         }
 
         var typeSymbol = Context.Query.SemanticModel.GetTypeSymbol(node);
@@ -241,13 +253,26 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
         foreach (var statement in node.Statements)
         {
-            Visit(statement);
+            // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
+            // block with a using declaration keeps them, because the end of the C++ scope disposes the resource.
+            if (statement is BlockSyntax nested && UsingTranspiler.DeclaresUsing(nested))
+            {
+                VisitStatementOrBlock(nested);
+            }
+            else
+            {
+                Visit(statement);
+            }
+
             Context.Emitter.Writer.AppendLine();
         }
     }
 
     public override void VisitIfStatement(IfStatementSyntax node)
         => StatementTranspilers.TranspileIfStatement(node, ref Context);
+
+    public override void VisitUsingStatement(UsingStatementSyntax node)
+        => UsingTranspiler.TranspileUsingStatement(node, ref Context);
 
     public override void VisitFixedStatement(FixedStatementSyntax node)
     {
@@ -359,11 +384,9 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 symbol ??= Context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node);
 
                 if (symbol != null &&
-                    ((symbol is IFieldSymbol { IsStatic: true, IsConst: false }) || (symbol is IPropertySymbol { IsStatic: true })) &&
-                    !Context.Emitter.Dialect.TryMapIntrinsic(symbol, out _) &&
-                    symbol.ContainingType?.ContainingNamespace.IsCoreNamespace() != true)
+                    GpuCodeConstraints.IsHostStaticMemberReference(node, symbol, Context.Query.SemanticModel, Context.Emitter.Dialect))
                 {
-                    Context.Reporter.Report(
+                    Context.Reporter.Fail(
                         GSharpDiagnostics.StaticMemberAccessNotSupported,
                         node,
                         symbol.ContainingType?.Name ?? string.Empty,
@@ -372,6 +395,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
                 Context.Emitter.Writer.AppendCppName(
                     CppNameResolver.Resolve(symbol, node.Identifier.ValueText, Context.Emitter.Dialect));
+                ComputedPropertyGetterCall.AppendCallIfGetter(symbol, ref Context);
                 break;
         }
     }

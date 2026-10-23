@@ -216,34 +216,34 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel(int[] offsets, __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            // Verify and record the actual field offsets inside the kernel at runtime.
-            unsafe
-            {
-                GEN56_AlignmentTestStruct s = default;
-                byte* basePtr = (byte*)&s;
-                // CUDA ABI Expected:
-                // Field1_Byte: 0
-                // Field2_Float2: 8  (alignment 8)
-                // Field3_Float4: 16 (alignment 16)
-                // Field4_Short: 32
-                // Field5_Double2: 48 (alignment 16, next multiple after 34)
-                offsets[0] = (int)((byte*)&s.Field1_Byte - basePtr);
-                offsets[1] = (int)((byte*)&s.Field2_Float2 - basePtr);
-                offsets[2] = (int)((byte*)&s.Field3_Float4 - basePtr);
-                offsets[3] = (int)((byte*)&s.Field4_Short - basePtr);
-                offsets[4] = (int)((byte*)&s.Field5_Double2 - basePtr);
-                // struct size manually set for test verification instead of using sizeof
-                offsets[5] = 64;
-            }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+// Verify and record the actual field offsets inside the kernel at runtime.
+unsafe
+{
+GEN56_AlignmentTestStruct s = default;
+byte* basePtr = (byte*)&s;
+// CUDA ABI Expected:
+// Field1_Byte: 0
+// Field2_Float2: 8  (alignment 8)
+// Field3_Float4: 16 (alignment 16)
+// Field4_Short: 32
+// Field5_Double2: 48 (alignment 16, next multiple after 34)
+offsets[0] = (int)((byte*)&s.Field1_Byte - basePtr);
+offsets[1] = (int)((byte*)&s.Field2_Float2 - basePtr);
+offsets[2] = (int)((byte*)&s.Field3_Float4 - basePtr);
+offsets[3] = (int)((byte*)&s.Field4_Short - basePtr);
+offsets[4] = (int)((byte*)&s.Field5_Double2 - basePtr);
+// struct size manually set for test verification instead of using sizeof
+offsets[5] = 64;
+}
 
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -268,8 +268,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__WriteExpectedOffsetsKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -462,17 +463,17 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct data, __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            // 最適化によるメモリアクセス省略を防ぐため、スカラーフィールドのみダミーアクセス
-            data.Field1_Byte = (byte)(data.Field1_Byte + 1 - 1);
-            data.Field4_Short = (short)(data.Field4_Short + 1 - 1);
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+// 最適化によるメモリアクセス省略を防ぐため、スカラーフィールドのみダミーアクセス
+data.Field1_Byte = (byte)(data.Field1_Byte + 1 - 1);
+data.Field4_Short = (short)(data.Field4_Short + 1 - 1);
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -491,8 +492,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

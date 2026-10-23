@@ -32,8 +32,18 @@ public class SnapshotTestCaseGenerator : IIncrementalGenerator
             return projDir ?? string.Empty;
         });
 
-        context.RegisterSourceOutput(projectDirProvider, static (spc, projDir) =>
+        // The compiler also loads this assembly for its HNT analyzers; the test case list belongs to test assemblies only
+        var isTestAssemblyProvider = context.CompilationProvider.Select(static (compilation, _) =>
+            compilation.AssemblyName?.Contains("Test") == true);
+
+        context.RegisterSourceOutput(projectDirProvider.Combine(isTestAssemblyProvider), static (spc, input) =>
         {
+            var (projDir, isTestAssembly) = input;
+            if (!isTestAssembly)
+            {
+                return;
+            }
+
             var rootDir = TryFindRepositoryRoot(projDir);
             if (rootDir is null)
             {

@@ -1,8 +1,5 @@
 using Kassyi.GSharp.Compiler.Diagnostics;
-using Kassyi.GSharp.Compiler.Dialects;
-using Kassyi.GSharp.Compiler.Transpiler;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
@@ -28,14 +25,8 @@ public class InstanceDeviceFunctionAnalyzerTests : TranspilerTestBase
         Assert.Contains(reported, d => d.GetMessage().Contains("'S.Twice'", StringComparison.Ordinal));
         Assert.Contains(reported, d => d.GetMessage().Contains("'C.Add'", StringComparison.Ordinal));
 
-        var (compilation, tree, model) = RoslynTestUtility.GetTestCaseContext("Analyzers/InstanceDeviceFunction_SadPath.cs");
+        var (compilation, _, _) = RoslynTestUtility.GetTestCaseContext("Analyzers/InstanceDeviceFunction_SadPath.cs");
         Assert.DoesNotContain(compilation.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
-
-        var methodDecl = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First(m => m.Identifier.Text == "Twice");
-        var transpileDiagnostics = new List<Diagnostic>();
-        MethodTranspiler.GenerateCudaSource(methodDecl, model, transpileDiagnostics.Add, isDevice: true, new GSharpCudaDialect(), out _);
-
-        Assert.Contains(transpileDiagnostics, d => d.Id == GSH0066 && d.GetMessage().Contains("'S.Twice'", StringComparison.Ordinal));
     }
 
     [Fact]

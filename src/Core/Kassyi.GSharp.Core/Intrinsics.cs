@@ -239,6 +239,8 @@ public static partial class Gpu
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
     public static void SingleThread(Action body) => GpuOnlyException.Throw();
 
+    // Gpu.Unsafe (Malloc / Free) is generated from src/NativeApi/device_heap_intrinsics.yml.
+
     // Removed Warp-related communication methods from Gpu class.
     // They are now source-generated in the Warp class by IntrinsicsGenerator.
 #pragma warning restore IDE0051

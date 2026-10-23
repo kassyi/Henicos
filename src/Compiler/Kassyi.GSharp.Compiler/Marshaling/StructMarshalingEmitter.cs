@@ -3,25 +3,41 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits custom struct marshal and unmarshal helper methods between managed and native shadow representations.</summary>
 internal static class StructMarshalingEmitter
 {
-    /// <summary>Emits marshal and unmarshal routines for all custom structs used in kernel signatures.</summary>
+    /// <summary>Emits the rendered structs of a kernel class (<see cref="RenderStructs"/>).</summary>
     /// <remarks>A struct whose <c>AotContexts</c> name is already taken gets no helpers; GSH0058 reports it.</remarks>
-    internal static void WriteStructMarshaling(SourceWriter writer,
-        IEnumerable<(IMethodSymbol Method, string Source, string ManagedCSharpSource)> methods)
+    internal static void WriteStructMarshaling(SourceWriter writer, EquatableArray<StructHostSource> structs)
     {
-        var structTypes = CollectUniqueStructs(methods, null);
-        if (structTypes.Length > 0)
+        if (structs.Length > 0)
         {
             writer.AppendLine(
                 "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
-            foreach (var s in structTypes)
+            foreach (var s in structs)
             {
-                NativeStructEmitter.WriteNativeStructDeclaration(writer, s);
-                WriteMarshalMethod(writer, s);
-                WriteUnmarshalMethod(writer, s);
+                writer.Append(s.Text);
             }
 
             writer.AppendLine("#pragma warning restore CS8500");
         }
+    }
+
+    /// <summary>
+    /// Renders the native shadow struct and the marshaling methods of each custom struct of <paramref name="kernel"/>'s
+    /// parameters, one per <c>AotContexts</c> name (<see cref="CollectUniqueStructs"/>).
+    /// </summary>
+    internal static EquatableArray<StructHostSource> RenderStructs(IMethodSymbol kernel)
+    {
+        var structTypes = CollectUniqueStructs([kernel], null);
+        var sources = ImmutableArray.CreateBuilder<StructHostSource>(structTypes.Length);
+        foreach (var s in structTypes)
+        {
+            using var writer = new SourceWriter();
+            NativeStructEmitter.WriteNativeStructDeclaration(writer, s);
+            WriteMarshalMethod(writer, s);
+            WriteUnmarshalMethod(writer, s);
+            sources.Add(new StructHostSource(AotHostNames.GetAotStructPath(s), writer.ToString()));
+        }
+
+        return sources.MoveToImmutable().AsEquatableArray();
     }
 
     /// <summary>
@@ -32,14 +48,13 @@ internal static class StructMarshalingEmitter
     /// Two constructions of one generic struct (<c>Box&lt;int&gt;</c>, <c>Box&lt;long&gt;</c>) are also duplicates:
     /// the native declaration is not generic, so each construction needs its own layout under the same name.
     /// </remarks>
-    internal static ImmutableArray<INamedTypeSymbol> CollectUniqueStructs(
-        IEnumerable<(IMethodSymbol Method, string Source, string ManagedCSharpSource)> methods,
+    internal static ImmutableArray<INamedTypeSymbol> CollectUniqueStructs(IEnumerable<IMethodSymbol> kernels,
         ImmutableArray<(INamedTypeSymbol Kept, INamedTypeSymbol Duplicate, string Name)>.Builder? duplicates)
     {
         var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-        foreach (var (method, _, _) in methods)
+        foreach (var kernel in kernels)
         {
-            method.Parameters
+            kernel.Parameters
                 .AsStackEnumerable()
                 .Do(structTypes, static (parameter, structs) => CudaLayoutRules.CollectStructs(parameter.Type, structs));
         }
@@ -48,9 +63,7 @@ internal static class StructMarshalingEmitter
         var unique = ImmutableArray.CreateBuilder<INamedTypeSymbol>(structTypes.Count);
         foreach (var s in structTypes)
         {
-            using var nameWriter = new SourceWriter();
-            nameWriter.AppendAotStructPath(s);
-            var name = nameWriter.ToString();
+            var name = AotHostNames.GetAotStructPath(s);
             if (!byName.TryGetValue(name, out var kept))
             {
                 byName.Add(name, s);
@@ -82,17 +95,60 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            foreach (var field in StructAbiMembers.GetInstanceFields(s))
+            foreach (var member in StructAbiMembers.Get(s))
             {
-                WriteMarshalMember(writer, field);
+                WriteMarshalMember(writer, member);
             }
         }
 
         writer.AppendLine();
     }
 
-    private static void WriteMarshalMember(SourceWriter writer, IFieldSymbol member)
+    // [WHY] An [InlineArray(N)] struct and a fixed buffer are copied as one block of ElementCount elements: the element
+    // field of an inline array is usually private, and a fixed buffer cannot be assigned. The inline array's host value
+    // is the whole struct, so it is copied by its own address (Unsafe.Copy infers its type from host).
+    private static bool WriteBlockCopy(SourceWriter writer, StructAbiMember member, bool toNative)
     {
+        var name = member.Name.ToCSharpIdentifier();
+        switch (member.Kind)
+        {
+            case StructAbiMemberKind.InlineArrayElement:
+                writer.AppendLine($"fixed (byte* pField = native.{name})");
+                using (writer.Scope())
+                {
+                    writer.AppendLine(toNative
+                        ? "System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);"
+                        : "System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);");
+                }
+
+                return true;
+            case StructAbiMemberKind.FixedBuffer:
+                // C# allows a fixed buffer only of a primitive type, so the element always has a keyword
+                var element = member.Type.SpecialType.GetCsharpKeyword() ?? "byte";
+                var byteCount = $"{member.ElementCount} * sizeof({element})";
+                writer.AppendLine($"fixed (byte* pField = native.{name})");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"fixed ({element}* pHost = host.{name})");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine($"System.Buffer.MemoryCopy({(toNative ? "pHost, pField" : "pField, pHost")}, {byteCount}, {byteCount});");
+                    }
+                }
+
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static void WriteMarshalMember(SourceWriter writer, StructAbiMember member)
+    {
+        if (WriteBlockCopy(writer, member, toNative: true))
+        {
+            return;
+        }
+
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
             WriteMarshalArrayMember(writer, member, elementType);
@@ -126,7 +182,7 @@ internal static class StructMarshalingEmitter
         }
     }
 
-    private static void WriteMarshalArrayMember(SourceWriter writer, IFieldSymbol member, ITypeSymbol elementType)
+    private static void WriteMarshalArrayMember(SourceWriter writer, StructAbiMember member, ITypeSymbol elementType)
     {
         writer.AppendLine($"if (host.{member.Name.ToCSharpIdentifier()} != null)");
         using (writer.Scope())
@@ -219,17 +275,22 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            foreach (var field in StructAbiMembers.GetInstanceFields(s))
+            foreach (var member in StructAbiMembers.Get(s))
             {
-                WriteUnmarshalMember(writer, field);
+                WriteUnmarshalMember(writer, member);
             }
         }
 
         writer.AppendLine();
     }
 
-    private static void WriteUnmarshalMember(SourceWriter writer, IFieldSymbol member)
+    private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member)
     {
+        if (WriteBlockCopy(writer, member, toNative: false))
+        {
+            return;
+        }
+
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
             WriteUnmarshalArrayMember(writer, member, elementType);
@@ -263,7 +324,7 @@ internal static class StructMarshalingEmitter
         }
     }
 
-    private static void WriteUnmarshalArrayMember(SourceWriter writer, IFieldSymbol member, ITypeSymbol elementType)
+    private static void WriteUnmarshalArrayMember(SourceWriter writer, StructAbiMember member, ITypeSymbol elementType)
     {
         writer.AppendLine(
             $"if (host.{member.Name.ToCSharpIdentifier()} != null && !isDevicePtr && native.{member.Name.ToCSharpIdentifier()}.Data != IntPtr.Zero)");

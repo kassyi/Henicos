@@ -69,6 +69,36 @@ internal static class SemanticModelExtensions
     }
 
     /// <summary>
+    /// Gets the location at which a diagnostic about <paramref name="node"/> is reported: its own location when it is in
+    /// the compilation, otherwise the original location of it or of its nearest mapped ancestor (lowering synthesizes
+    /// nodes without one), or <see cref="Location.None"/>.
+    /// </summary>
+    /// <remarks>
+    /// A source generator may not report a location in a tree outside the compilation, which is where every node of a
+    /// lowered body is. The mapping relies on the original-span annotation that lowering puts on every node it copies
+    /// (<see cref="LoweringAnnotations.OriginalSpanAnnotationKind"/>). A node with no annotated ancestor is reported
+    /// without a location, and the generator treats all location-less diagnostics with the same ID as one when it drops
+    /// the C++ diagnostics that the CUDA run already reported, so such a C++-only diagnostic can be lost.
+    /// </remarks>
+    public static Location GetReportLocation(this SemanticModel semanticModel, SyntaxNode node)
+    {
+        if (semanticModel.Compilation.ContainsSyntaxTree(node.SyntaxTree))
+        {
+            return node.GetLocation();
+        }
+
+        for (var current = node; current != null; current = current.Parent)
+        {
+            if (semanticModel.GetOriginalLocation(current) is { } location)
+            {
+                return location;
+            }
+        }
+
+        return Location.None;
+    }
+
+    /// <summary>
     /// Gets the resolved symbol for the specified syntax node, or null if unresolvable.
     /// </summary>
     public static ISymbol? GetSymbol(this SemanticModel semanticModel, SyntaxNode node,

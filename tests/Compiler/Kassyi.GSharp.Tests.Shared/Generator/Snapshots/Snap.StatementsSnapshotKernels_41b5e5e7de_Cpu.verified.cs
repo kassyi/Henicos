@@ -153,63 +153,63 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__StatementsSnapshotKernels__BasicStatementsKernel(int[] output, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StatementsSnapshotKernels__BasicStatementsKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int total = 0;
-            // IfStatement & ReturnStatement
-            if (n <= 0)
-            {
-                {
-                    __gsharp_ctx.__gsharp_state = -1;
-                    return;
-                }
-            }
-            else if (n == 1)
-            {
-                output[0] = 1;
-                {
-                    __gsharp_ctx.__gsharp_state = -1;
-                    return;
-                }
-            }
-            else
-            {
-                total += 1;
-            }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int total = 0;
+// IfStatement & ReturnStatement
+if (n <= 0)
+{
+{
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+else if (n == 1)
+{
+output[0] = 1;
+{
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
+else
+{
+total += 1;
+}
 
-            // ForStatement
-            for (int i = 0; i < n; i++)
-            {
-                total += i;
-                if (i > 100)
-                    break;
-                if (i % 2 == 0)
-                    continue;
-            }
+// ForStatement
+for (int i = 0; i < n; i++)
+{
+total += i;
+if (i > 100)
+break;
+if (i % 2 == 0)
+continue;
+}
 
-            // WhileStatement
-            int j = n;
-            while (j > 0)
-            {
-                total *= 2;
-                j--;
-            }
+// WhileStatement
+int j = n;
+while (j > 0)
+{
+total *= 2;
+j--;
+}
 
-            // DoStatement
-            int k = 0;
-            do
-            {
-                total -= 1;
-                k++;
-            }
-            while (k < 10);
-            output[0] = total;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+// DoStatement
+int k = 0;
+do
+{
+total -= 1;
+k++;
+}
+while (k < 10);
+output[0] = total;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -234,8 +234,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StatementsSnapshotKernels__BasicStatementsKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StatementsSnapshotKernels__BasicStatementsKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StatementsSnapshotKernels__BasicStatementsKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

@@ -50,7 +50,7 @@ public readonly struct GpuBigFloat : IGpuBigNumber<GpuBigFloat>
     public int GetBitLength() => UFloat.GetBitLength();
 
     /// <inheritdoc/>
-    public static GpuBigFloat Create(GpuBigUInt magnitude, int exponent, bool isNegative) =>
+    public static GpuBigFloat Create([TakesOwnership] GpuBigUInt magnitude, int exponent, bool isNegative) =>
         new(magnitude, exponent, isNegative && !magnitude.IsZero());
 
     /// <summary>

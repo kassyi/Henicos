@@ -113,17 +113,17 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel(uint[] val, int[] shift, uint[] rotLeftRes, uint[] rotRightRes, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int tid = ThreadIndex.X;
-            rotLeftRes[tid] = System.Numerics.BitOperations.RotateLeft(val[tid], shift[tid]);
-            rotRightRes[tid] = System.Numerics.BitOperations.RotateRight(val[tid], shift[tid]);
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int tid = ThreadIndex.X;
+rotLeftRes[tid] = System.Numerics.BitOperations.RotateLeft(val[tid], shift[tid]);
+rotRightRes[tid] = System.Numerics.BitOperations.RotateRight(val[tid], shift[tid]);
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -166,8 +166,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate32Kernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -323,17 +324,17 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel(ulong[] val, int[] shift, ulong[] rotLeftRes, ulong[] rotRightRes, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int tid = ThreadIndex.X;
-            rotLeftRes[tid] = System.Numerics.BitOperations.RotateLeft(val[tid], shift[tid]);
-            rotRightRes[tid] = System.Numerics.BitOperations.RotateRight(val[tid], shift[tid]);
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int tid = ThreadIndex.X;
+rotLeftRes[tid] = System.Numerics.BitOperations.RotateLeft(val[tid], shift[tid]);
+rotRightRes[tid] = System.Numerics.BitOperations.RotateRight(val[tid], shift[tid]);
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -376,8 +377,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__BitOperationsKernels__Rotate64Kernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

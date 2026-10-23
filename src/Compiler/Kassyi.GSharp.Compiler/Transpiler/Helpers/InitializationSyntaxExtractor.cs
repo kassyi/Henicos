@@ -9,7 +9,8 @@ internal static class InitializationSyntaxExtractor
 
         switch (typeSymbol)
         {
-            case INamedTypeSymbol { TypeArguments.Length: 1, Name: TypeConstants.SpanType or TypeConstants.ReadOnlySpanType } named:
+            case INamedTypeSymbol { TypeArguments.Length: 1, Name: TypeConstants.SpanType or TypeConstants.ReadOnlySpanType } named
+                when named.ContainingNamespace.IsSystemNamespace():
 
                 elemType = named.TypeArguments[0];
 

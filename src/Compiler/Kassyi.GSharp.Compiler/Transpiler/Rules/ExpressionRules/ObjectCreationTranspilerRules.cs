@@ -36,6 +36,14 @@ internal static class ObjectCreationHelper
     public static void TranspileObjectCreation(BaseObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
         var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node);
+        if (!GpuCodeConstraints.IsSupportedObjectCreation(typeSymbol))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.ObjectCreationNotSupported, node);
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
+        // An unresolved type is the C# compiler's error
         if (typeSymbol is null or IErrorTypeSymbol || typeSymbol.TypeKind == TypeKind.Error)
         {
             return;
@@ -91,14 +99,8 @@ internal static class ObjectCreationHelper
             return;
         }
 
-        if (typeSymbol is { TypeKind: TypeKind.Struct })
-        {
-            TranspileStructCreationCore(typeSymbol, initializer, argumentList, ref context);
-            return;
-        }
-
-        context.Reporter.Report(GSharpDiagnostics.ObjectCreationNotSupported, node);
-        context.Visitor.DefaultVisit(node);
+        // IsSupportedObjectCreation leaves only a struct here
+        TranspileStructCreationCore(typeSymbol, initializer, argumentList, ref context);
     }
 
     private static void TranspileStructCreationCore(ITypeSymbol typeSymbol, InitializerExpressionSyntax? initializer,

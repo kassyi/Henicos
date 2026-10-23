@@ -47,7 +47,7 @@ public readonly struct GpuBigInt([TakesOwnership] GpuBigUInt value, bool isNegat
     public int GetBitLength() => Value.GetBitLength();
 
     /// <inheritdoc/>
-    public static GpuBigInt Create(GpuBigUInt magnitude, int exponent, bool isNegative)
+    public static GpuBigInt Create([TakesOwnership] GpuBigUInt magnitude, int exponent, bool isNegative)
     {
         if (exponent != 0)
         {

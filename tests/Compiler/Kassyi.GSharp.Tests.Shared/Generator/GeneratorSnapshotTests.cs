@@ -188,8 +188,25 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         return driver.GetRunResult();
     }
 
+    // Generated code is left-aligned (transpiler-emission §3); this covers the shared files the snapshots leave out.
+    private static void AssertLeftAligned(GeneratorDriverRunResult runResult)
+    {
+        foreach (var tree in runResult.GeneratedTrees)
+        {
+            foreach (var line in tree.GetText().Lines)
+            {
+                var text = line.ToString();
+                if (text.Length > 0 && char.IsWhiteSpace(text[0]))
+                {
+                    Assert.Fail($"{Path.GetFileName(tree.FilePath)}({line.LineNumber + 1}) is indented: {text}");
+                }
+            }
+        }
+    }
+
     private async Task VerifySnapshotAsync(GeneratorDriverRunResult runResult, string testName)
     {
+        AssertLeftAligned(runResult);
         var nonSharedTrees = runResult.GeneratedTrees
             .Where(t => !t.FilePath.Contains("GSharpShared") || t.FilePath.Contains("DeviceCode"))
             .OrderBy(t => t.FilePath)
@@ -242,6 +259,7 @@ public partial class GeneratorSnapshotTests : Kassyi.GSharp.Tests.Shared.Helpers
         driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
 
         var runResult = driver.GetRunResult();
+        AssertLeftAligned(runResult);
         var sharedHeader = runResult.GeneratedTrees
             .FirstOrDefault(t => t.FilePath.Contains("Prelude"))
             ?.GetText().ToString();

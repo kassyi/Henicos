@@ -27,7 +27,8 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | Is it `SharedMemory<T>` / `System.Numerics.Vector*`? | `.IsSharedMemoryType`, `.IsSystemNumericsVector` | `Name == "SharedMemory"` |
 | Is this a user struct that G# defines on the device? | `GlobalCppNames.IsEmittedUserType` (definition), `GlobalCppNames.IsEncodedUserType` (references, gives way to the dialect type map) | `TypeKind == Struct && !IsSystemOrNumerics() && !IsSharedMemoryType()` spelled out |
 | Does a struct need a native shadow struct on the host? | `CudaLayoutRules.IsCustomStruct` (a different classification: also leaves out array-like and Core types) | reusing the device predicate |
-| Fields that make up a struct's native layout (used struct discovery, shadow struct, marshaling, `CudaLayoutRules`) | `StructAbiMembers.GetInstanceFields` (a `foreach` that allocates nothing; its remarks list where the host and the device still disagree) | `GetMembers()` plus `is IFieldSymbol { IsStatic: false }` |
+| Members that make up a struct's native layout (used struct discovery, device definition, shadow struct, marshaling, `CudaLayoutRules`) | `StructAbiMembers.Get` (a `foreach` over `StructAbiMember`: `Symbol`, `Name`, `Type`, `ElementCount`, `Kind`; allocates nothing) | `GetMembers()` plus `is IFieldSymbol { IsStatic: false }` |
+| Is this a computed property (no backing field, `get` only), which the device emits as a getter member function? | `StructAbiMembers.IsComputedProperty` / `StructAbiMembers.IsAutoProperty` | a search of `GetMembers()` for a field whose `AssociatedSymbol` is the property |
 | Native offsets of a struct's fields (`[StructLayout(Pack = n)]` applied) | `CudaLayoutRules.GetFieldLayouts`; the size and alignment of a whole type: `CudaLayoutRules.GetCudaLayout` | an `AlignUp` loop over the fields |
 | `[StructLayout(Pack = n)]` | `.TryGetStructLayoutPack` | reading `NamedArguments` by hand |
 | First declaring syntax of a symbol | `.TryGetDeclaringSyntax` | `DeclaringSyntaxReferences[0].GetSyntax()` |
@@ -35,6 +36,12 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 
 Type and namespace names: `TypeConstants` (`TypeConstants.GpuType`, `TypeConstants.GpuMacros`). Attribute short names:
 `KnownAttributes`. Never spell `"Gpu"`, `"SharedMemory"` or an attribute name as a literal.
+
+A name alone also matches a user type of the same name. The repository-internal analyzer HNT0003
+(`TypeNameCheckAnalyzer` in `tests/Shared/Kassyi.GSharp.Tests.Generators`, run on the compiler build) warns when a
+`TypeConstants` type name or a `KnownAttributes` name is compared with a symbol's `Name` and the same member never
+looks at a namespace (`ContainingNamespace`, `IsCoreNamespace`, `IsSystem*`, `HasAttribute` ...). When a caller already
+checked the namespace, suppress it with `#pragma warning disable HNT0003 // <the caller that checks>`.
 
 ## 2. Semantic model and syntax
 
@@ -45,6 +52,7 @@ Type and namespace names: `TypeConstants` (`TypeConstants.GpuType`, `TypeConstan
 | Declared symbol of a given kind | `.GetDeclaredSymbol` (`GetDeclaredSymbol<IMethodSymbol>(decl)`) | `GetDeclaredSymbol(decl) as IMethodSymbol` |
 | Constant value / operation that may not resolve | `.GetSafeConstantValue`, `.GetSafeOperation` | try/catch around Roslyn calls |
 | Location in the user's source after lowering rewrote the tree | `.GetOriginalLocation` | `node.GetLocation()` on a rewritten node |
+| Location to report a diagnostic at, for a node that may be in a lowered tree (falls back to the nearest mapped ancestor, then `Location.None`) | `.GetReportLocation` (`context.Reporter.Fail(descriptor, node)` uses it) | `node.GetLocation()`: a generator may not report a location outside the compilation |
 | Attach or read a lowering annotation (original span, suspending call, state machine `return`) | `LoweringAnnotations.OriginalSpanAnnotationKind`, `LoweringAnnotations.SuspendingCallAnnotationKind`, `LoweringAnnotations.StateMachineReturnAnnotationKind` | `node.HasAnnotations("StateMachineReturn")` |
 | Method body, block or `=>` | `.GetBodyNode`, `.HasBody` | `Body ?? (SyntaxNode?)ExpressionBody` |
 | Node or token is one of 2-3 kinds | `.IsKind` (`node.IsKind(a, b)`) | `IsKind(a) \|\| IsKind(b)` |
@@ -59,9 +67,9 @@ fixed text (separators, keywords, `;`) is a literal. The other helpers:
 | ----- | ----- | ----- |
 | Text with values in it | `$""` passed straight to `.Append` / `.AppendLine` / `.Line` (zero allocation via `SourceWriterInterpolatedStringHandler`) | a chain of `Append` calls for one line, a separate `StringBuilder`, or `var s = $"..."` then `Append(s)` |
 | Conditional text | `.AppendIf`, `.AppendLineIf` | `if (x) writer.Append(...)` |
-| C# type name in generated host code | `.AppendCsharpTypeName`, `.AppendFullyQualifiedCsharpName` | `ToDisplayString()` |
+| C# type name in generated host code | `.AppendCsharpTypeName`, `.AppendFullyQualifiedCsharpName` (`.GetFullyQualifiedCsharpName` for a value of the pipeline model) | `ToDisplayString()` |
 | C# namespace name in generated host code | `.AppendNamespace`, `.GetFullNamespaceName` | `ToDisplayString()` |
-| How a kernel parameter crosses to the device (array-like, user struct, `ref` / `out`, container, length / span expression) | `KernelParameterShape.Classify` | `GetMarshaledType` plus `IsArrayLikeType` / `IsCustomStruct` / `RefKind` checks, `Name == "ArraySegment"` |
+| How a kernel parameter crosses to the device (array-like, user struct, `ref` / `out`, container, copy direction, length / span expression); a value of the pipeline model, built in the transform. The kernel and its class: `KernelHostModel.Create`, `KernelClassModel.Create` (overloads, member keys) | `KernelParameterShape.Classify` | `GetMarshaledType` plus `IsArrayLikeType` / `IsCustomStruct` / `RefKind` checks, `Name == "ArraySegment"` |
 | User identifier in generated host C# | `.ToCSharpIdentifier` | prefixing `@` by hand |
 | C++ name of a user symbol (declaration / reference) | `CppNameResolver.AppendDeclaredName`, `CppNameResolver.AppendReferencedName`, `CppNameResolver.AppendSymbolName` | `identifier.ValueText` written directly |
 | Compiler-internal name (`__gsharp_*`) | `GSharpInternalNames` (add new names to `Resources/InternalNames.yml`) | a `"__gsharp_..."` literal |
@@ -79,7 +87,7 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 
 - `context.Emitter.Writer`: the output (`SourceWriter`).
 - `context.Query.SemanticModel`: symbol lookups.
-- `context.Reporter.Report(descriptor, node, args)`: diagnostics.
+- `context.Reporter.Fail(descriptor, node, args)`: records a construct it cannot emit (`TranspileFailure`); the analyzer reports it as a diagnostic, the generator states it in the output. A body bound with another tree's model (a struct's computed property getter) uses `.WithSemanticModel`, so its failures stay in the same transpilation.
 - `context.Visitor.Visit(child)`: transpile a child node.
 
 | Intent | Use |
@@ -90,7 +98,9 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 | Map a BCL method to a CUDA / C++ function | the dialect YAML under `Dialects/`, not a new rule |
 | Branch on the target (CUDA or not, threads run as state machines) | `ITranspilerDialect.IsCuda`, `.EmulatesThreadsWithStateMachine` (from the YAML `Backend` and capabilities), not `dialect is ...` or a name comparison |
 | Pass a `ref` / `out` argument | `RefSyntaxHelper.TranspileAsByRefArgument` |
+| Read a computed property of a struct that G# emits (`s.Sum` → `s.__gsharp_mb_Sum()`) | write the member name as usual, then `ComputedPropertyGetterCall.AppendCallIfGetter` |
 | Transpile a lambda body inline | `LambdaTranspilerHelper.TranspileLambdaBody` |
+| A C# `using`: the `Dispose` it calls, whether a statement or a block declares one (`using var`) | `UsingTranspiler.FindDisposeMethod`, `UsingTranspiler.IsUsingDeclaration`, `UsingTranspiler.DeclaresUsing`; the statement and the declaration are emitted by `UsingTranspiler` |
 | Enter or suppress automatic grid sync (`Gpu.SyncGrid` bodies, single-thread regions) | `AutoSyncGrid.Enter`, `AutoSyncGrid.Suppress`, `AutoSyncGrid.Restore` in `try` / `finally`; `AutoSyncGrid.IsActive` to read it. Never write `Emitter.AutoSyncGridDepth` directly |
 | Null test of an array-like value, `??`, `??=` | `NullRepresentation.IsArrayNullComparable`, `NullRepresentation.AppendArrayNullTest`, `NullRepresentation.AppendCoalesce`, `NullRepresentation.AppendCoalesceAssignment` |
 
@@ -102,8 +112,10 @@ The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressio
 | ----- | ----- | ----- |
 | Define a diagnostic | an entry in `Diagnostics/diagnostics.json` (generates `GSharpDiagnostics`) | `new DiagnosticDescriptor(...)` |
 | Report from an analyzer | `.ReportDiagnostic` (`context.ReportDiagnostic(descriptor, node, args)`) | `Diagnostic.Create(...)` plus `context.ReportDiagnostic` |
-| Report from the transpiler | `context.Reporter.Report` | throwing, or emitting nothing |
+| The transpiler cannot emit a construct | `context.Reporter.Fail` (an unhandled syntax kind already fails in `DefaultVisit`); `TranspilerFailureCheck.AddFailures` runs the transpiler in `GpuKernelAnalyzer` and reports the failures | throwing, emitting nothing, a diagnostic from the transpiler, or a list of rejected syntax kinds in a rule |
 | Check a syntax rule inside kernels | implement `ISyntaxValidationRule` and register it in `DiagnosticRuleRegistry` | a new analyzer that walks kernel bodies again |
+| Decide a G# restriction that the analyzer reports and the transpiler must also respect (return type, instance device function, function pointer, `string`, `new`, switch expression arm, stack array size, operator macro target, `Gpu.InlinePtx` text, unroll factor and loop, `Gpu.ForUnroll` constants, loop macro variable, `Gpu.SyncGrid` body, `Gpu.InlinePtx` support, host static member, a type that only the .NET runtime can use) | `GpuCodeConstraints.HasSupportedReturnType`, `GpuCodeConstraints.IsInstanceDeviceFunction`, `GpuCodeConstraints.IsFunctionPointer`, `GpuCodeConstraints.GetRuntimeOnlyTypeName`, `GpuCodeConstraints.IsString`, `GpuCodeConstraints.IsSupportedObjectCreation`, `GpuCodeConstraints.GetWithMemberProblem`, `GpuCodeConstraints.IsSupportedSwitchArmPattern`, `GpuCodeConstraints.FindDynamicArraySize`, `GpuCodeConstraints.IsConstantArraySize`, `GpuOperatorMacroTranspiler.TryResolve`, `GpuCodeConstraints.SupportsInlinePtx`, `GpuCodeConstraints.IsHostStaticMember`, `GpuCodeConstraints.IsHostStaticMemberReference`, `GpuCodeConstraints.IsInlinePtxText`, `GpuCodeConstraints.TryGetUnrollFactor`, `GpuCodeConstraints.TryGetMacroConstantInt`, `GpuCodeConstraints.GetMacroLoopParameter`, `GpuCodeConstraints.GetUnrolledLoop`, `GpuCodeConstraints.TryGetSyncGridBody` | the same condition written again in the rule and in the transpiler |
+| The project's dialect (`GSharpTargetDialect`) in an analyzer or the generator; a rule reads it from `ValidationContext.Dialect` | `TranspilerDialects.GetName`, `TranspilerDialects.Create` | `build_property.GSharpTargetDialect` read by hand, `"Cuda"` compared by hand |
 | Diagnostic stored in an incremental pipeline model | `.AsEquatable` | a raw `Diagnostic` field |
 
 ## 6. Incremental generator models

@@ -24,10 +24,14 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
             return false;
         }
 
-        if (!MacroTranspilerHelper.TryGetConstantInt(args[offset].Expression, context.Query.SemanticModel, out var start) ||
-            !MacroTranspilerHelper.TryGetConstantInt(args[offset + 1].Expression, context.Query.SemanticModel, out var count))
+        var hasStart = GpuCodeConstraints.TryGetMacroConstantInt(args[offset].Expression, context.Query.SemanticModel,
+            out var start);
+        var hasCount = GpuCodeConstraints.TryGetMacroConstantInt(args[offset + 1].Expression, context.Query.SemanticModel,
+            out var count);
+        if (!hasStart || !hasCount)
         {
-            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, invocation, "ForUnroll arguments must be constants");
+            FailIfNotConstant(hasStart, args[offset].Expression, "start", ref context);
+            FailIfNotConstant(hasCount, args[offset + 1].Expression, "count", ref context);
             return false;
         }
 
@@ -58,5 +62,15 @@ internal sealed class ForUnrollMacroRule : IMacroTranspilerRule
         }
 
         return true;
+    }
+
+    private static void FailIfNotConstant(bool isConstant, ExpressionSyntax argument, string parameterName,
+        ref TranspileContext context)
+    {
+        if (!isConstant)
+        {
+            context.Reporter.Fail(GSharpDiagnostics.MacroArgumentMustBeConstant, argument, parameterName,
+                TypeConstants.GpuMacros.ForUnroll);
+        }
     }
 }

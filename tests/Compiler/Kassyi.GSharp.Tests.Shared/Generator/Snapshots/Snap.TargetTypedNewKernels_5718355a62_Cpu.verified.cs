@@ -139,20 +139,20 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__HappyPathKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__HappyPathKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int tid = ThreadIndex.X;
-            NestedChildStruct c1 = new();
-            c1.Value = tid + 100;
-            NestedChildStruct c2 = CreateChild(new());
-            c2.Value = tid + 200;
-            output[tid] = c1.Value + c2.Value;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int tid = ThreadIndex.X;
+NestedChildStruct c1 = new();
+c1.Value = tid + 100;
+NestedChildStruct c2 = CreateChild(new());
+c2.Value = tid + 200;
+output[tid] = c1.Value + c2.Value;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -177,8 +177,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__HappyPathKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__HappyPathKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__HappyPathKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -351,22 +352,22 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__NestedInitializerKernel(int[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__NestedInitializerKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int tid = ThreadIndex.X;
-            NestedParentStruct p = new NestedParentStruct
-            {
-                Id = tid,
-                Child = new()
-            };
-            p.Child.Value = tid * 5;
-            output[tid] = p.Id + p.Child.Value;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int tid = ThreadIndex.X;
+NestedParentStruct p = new NestedParentStruct
+{
+Id = tid,
+Child = new()
+};
+p.Child.Value = tid * 5;
+output[tid] = p.Id + p.Child.Value;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -391,8 +392,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__NestedInitializerKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__NestedInitializerKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__NestedInitializerKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

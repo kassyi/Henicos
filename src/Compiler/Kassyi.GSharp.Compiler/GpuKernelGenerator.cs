@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Aot;
 using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler;
@@ -6,31 +7,54 @@ namespace Kassyi.GSharp.Compiler;
 [Generator]
 public class GpuKernelGenerator : IIncrementalGenerator
 {
-    private sealed class DiagnosticCollector
+    /// <summary>The tracking name of the step that transpiles each <c>[GpuKernel]</c>, for incremental-caching tests.</summary>
+    public const string KernelTrackingName = "GpuKernelMethod";
+
+    /// <summary>The tracking name of the step that transpiles each <c>[GpuDeviceFunction]</c>.</summary>
+    public const string DeviceFunctionTrackingName = "GpuDeviceFunction";
+
+    /// <summary>The tracking name of the step that builds the model of each kernel class, which its wrapper is emitted from.</summary>
+    public const string KernelClassTrackingName = "GpuKernelClass";
+
+    /// <summary>The tracking name of the input of the output that emits the shared prelude and device function sources.</summary>
+    public const string SharedSourcesTrackingName = "GpuSharedSourcesInput";
+
+    /// <summary>The tracking name of the input of the output that emits each kernel class's wrapper.</summary>
+    public const string KernelWrapperTrackingName = "GpuKernelWrapperInput";
+
+    /// <summary>The tracking name of the input of the output that emits each class's managed device state machines.</summary>
+    public const string DeviceStateMachinesTrackingName = "GpuDeviceStateMachinesInput";
+
+    /// <summary>The tracking name of the input of the output that writes the AOT artifact.</summary>
+    public const string AotArtifactTrackingName = "GpuAotArtifactInput";
+
+    /// <summary>The tracking name of the input of the output that emits the CUDA module context.</summary>
+    public const string ModuleContextTrackingName = "GpuModuleContextInput";
+
+    /// <summary>
+    /// Collects what one dialect's transpilation could not emit (<see cref="TranspileFailure"/>), each reason once, and
+    /// states the reasons in place of that dialect's output.
+    /// </summary>
+    private sealed class FailureCollector
     {
-        private readonly ImmutableArray<Diagnostic>.Builder _diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+        private readonly ImmutableArray<string>.Builder _failures = ImmutableArray.CreateBuilder<string>();
 
-        public EquatableArray<EquatableDiagnostic> GetDiagnostics()
+        // The text is what the generated source states, so a failure found by both the signature and the body is one
+        public void Fail(TranspileFailure failure)
         {
-            var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>(_diagnostics.Count);
-            _diagnostics
-                .AsStackEnumerable()
-                .Select(static d => d.AsEquatable())
-                .AddTo(builder);
-
-            return builder.MoveToImmutable().AsEquatableArray();
-        }
-
-        public void Report(Diagnostic d)
-        {
-            var isDuplicate = _diagnostics
-                .AsStackEnumerable()
-                .Any(d, static (existing, reported) => existing.Id == reported.Id && existing.Location == reported.Location);
-            if (!isDuplicate)
+            var reason = failure.Format();
+            if (!_failures.Contains(reason))
             {
-                _diagnostics.Add(d);
+                _failures.Add(reason);
             }
         }
+
+        /// <summary>
+        /// <paramref name="source"/> when nothing failed; otherwise one <c>#error</c> per reason, so that a failure the
+        /// analyzer misses still stops the native build. The analyzer reports the same failures as diagnostics.
+        /// </summary>
+        public string Apply(string source) =>
+            _failures.Count == 0 ? source : NativeModuleAssembler.FormatTranspileFailures(_failures);
     }
 
     private static bool CheckSuppressGs0001(MethodDeclarationSyntax methodDeclaration)
@@ -77,8 +101,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var configProvider = context.AnalyzerConfigOptionsProvider
             .Select((options, _) =>
             {
-                options.GlobalOptions.TryGetValue("build_property.GSharpTargetDialect", out var dialect);
-                var finalDialect = string.IsNullOrWhiteSpace(dialect) ? "Cpu" : dialect;
+                var dialect = TranspilerDialects.GetName(options.GlobalOptions);
 
                 options.GlobalOptions.TryGetValue("build_property.GSharpEmitSource", out var emitSrcStr);
                 var emitSource = string.IsNullOrWhiteSpace(emitSrcStr) ||
@@ -95,73 +118,109 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     ? Path.Combine(projDir, objPath)
                     : null;
 
-                return new GeneratorConfig(finalDialect ?? "Cpu", emitSource, intermediatePath);
+                return new GeneratorConfig(dialect, emitSource, intermediatePath);
             });
 
+        // The wrappers take only the assembly names from the compilation, so this value compares equal across edits and
+        // the steps after it stay cached; the compilation itself is never combined with an output
+        var hostOptions = context.CompilationProvider
+            .Select(static (compilation, _) => (compilation.Assembly.Name, compilation.AssemblyName))
+            .Combine(configProvider)
+            .Select(static (input, _) => HostEmitOptions.Create(input.Right, input.Left.Item1, input.Left.Item2));
+
+        var aotTarget = context.CompilationProvider.Select(static (compilation, _) => AotTarget.Create(compilation));
+
+        // ForAttributeWithMetadataName resolves the attribute through the symbol, so an alias of it is found as well; the
+        // predicate only checks the node kind
         var kernelMethods = context.SyntaxProvider
-            .CreateSyntaxProvider(
-                predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuKernel),
-                transform: static (ctx, _) => TranspileKernel(ctx, KnownAttributes.GpuKernel))
+            .ForAttributeWithMetadataName(
+                KnownAttributes.GpuKernelMetadataName,
+                predicate: static (node, _) => node is MethodDeclarationSyntax,
+                transform: static (ctx, _) => TranspileKernel(ctx))
+            .WithTrackingName(KernelTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
 
         var deviceMethods = context.SyntaxProvider
-            .CreateSyntaxProvider(
-                predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuDeviceFunction),
-                transform: static (ctx, _) => TranspileDeviceMethod(ctx, KnownAttributes.GpuDeviceFunction))
+            .ForAttributeWithMetadataName(
+                KnownAttributes.GpuDeviceFunctionMetadataName,
+                predicate: static (node, _) => node is MethodDeclarationSyntax,
+                transform: static (ctx, _) => TranspileDeviceMethod(ctx))
+            .WithTrackingName(DeviceFunctionTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
 
-        var kernelsAndDevices = kernelMethods.Collect().Combine(deviceMethods.Collect());
-        var compilationAndAll = context.CompilationProvider.Combine(kernelsAndDevices.Combine(configProvider));
+        var allKernels = kernelMethods.Collect();
+        var allDevices = deviceMethods.Collect();
 
-        context.RegisterSourceOutput(compilationAndAll,
-            static (spc, source) => Execute(source.Left, source.Right.Left.Left, source.Right.Left.Right,
-                source.Right.Right, spc));
+        // A project without kernels gets nothing, not even the sources of its device functions
+        var hasKernels = allKernels.Select(static (kernels, _) => !kernels.IsDefaultOrEmpty);
+
+        // The class models come from the kernels of one compilation (#383); each class and the warmup list compare on
+        // their own, so an edit reruns only the outputs whose model changed
+        var kernelModule = allKernels.Select(static (kernels, _) => KernelModuleModel.Create(kernels));
+        var kernelClasses = kernelModule
+            .SelectMany(static (module, _) => module.Classes.AsImmutableArray())
+            .WithTrackingName(KernelClassTrackingName);
+        var warmups = kernelModule.Select(static (module, _) => module.Warmups);
+        var stateMachines = allDevices
+            .SelectMany(static (devices, _) => GroupDeviceStateMachines(devices));
+
+        context.RegisterSourceOutput(
+            allDevices.Combine(configProvider).Combine(hasKernels).WithTrackingName(SharedSourcesTrackingName),
+            static (spc, input) => EmitSharedSources(spc, input.Left.Left, input.Left.Right, input.Right));
+        context.RegisterSourceOutput(kernelClasses.Combine(hostOptions).WithTrackingName(KernelWrapperTrackingName),
+            static (spc, input) => EmitKernelClass(spc, input.Left, input.Right));
+        context.RegisterSourceOutput(
+            stateMachines.Combine(configProvider).Combine(hasKernels).WithTrackingName(DeviceStateMachinesTrackingName),
+            static (spc, input) => EmitDeviceStateMachines(spc, input.Left.Left, input.Left.Right, input.Right));
+        context.RegisterSourceOutput(
+            aotTarget.Combine(allKernels).Combine(allDevices).Combine(configProvider).WithTrackingName(AotArtifactTrackingName),
+            static (spc, input) => WriteAot(spc, input.Left.Left.Left, input.Left.Left.Right, input.Left.Right, input.Right));
+        context.RegisterSourceOutput(
+            warmups.Combine(hostOptions).Combine(hasKernels).WithTrackingName(ModuleContextTrackingName),
+            static (spc, input) => EmitModuleContext(spc, input.Left.Left, input.Left.Right, input.Right));
     }
 
-    private static TranspiledKernelResult? TranspileKernel(GeneratorSyntaxContext context, string attributeName)
+    private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context)
     {
-        var methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
-        if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+        if (context.TargetNode is not MethodDeclarationSyntax methodDeclaration ||
+            context.TargetSymbol is not IMethodSymbol methodSymbol)
         {
             return null;
         }
 
+        // The values that the host wrappers need are read here, from this compilation, so that a result taken from the
+        // cache never refers to an earlier one (#383)
+        var header = HostClassHeader.Create(methodSymbol.ContainingType);
+        var host = KernelHostModel.Create(methodSymbol, StructMarshalingEmitter.RenderStructs(methodSymbol));
+
         try
         {
-            var collector = new DiagnosticCollector();
+            var cudaFailures = new FailureCollector();
+            var cppFailures = new FailureCollector();
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
-            var cudaSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
-                collector.Report,
-                isDevice: false, cudaDialect, out var requiredIncludesCuda);
+            var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: true);
 
-            var lowered = methodDeclaration.HasBody()
-                ? AstLoweringPipeline.Lower(methodDeclaration, context.SemanticModel)
-                : null;
-
-            var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
-            {
-            }, isDevice: false, cppDialect, out var requiredIncludesCpp, lowered);
-
-            var managedCSharpSource =
-                MethodTranspiler.GenerateManagedCSharpSource(methodDeclaration, context.SemanticModel, lowered);
+            var cudaSource = cudaFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
+                out var requiredIncludesCuda));
+            var cppSource = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
+                out var requiredIncludesCpp));
+            var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
                 return new TranspiledKernelResult(
-                    methodSymbol,
-                    methodSymbol.Name,
-                    methodSymbol.ContainingType.Name,
-                    methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+                    header,
+                    host,
                     cudaSource,
                     cppSource,
                     managedCSharpSource,
-                    new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                    collector.GetDiagnostics()
+                    ToIncludes(requiredIncludesCuda),
+                    ToIncludes(requiredIncludesCpp),
+                    ""
                 );
             }
 
@@ -169,70 +228,56 @@ public class GpuKernelGenerator : IIncrementalGenerator
             cppSource = "// gsharp:suppress GS0001\n" + cppSource;
 
             return new TranspiledKernelResult(
-                methodSymbol,
-                methodSymbol.Name,
-                methodSymbol.ContainingType.Name,
-                methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+                header,
+                host,
                 cudaSource,
                 cppSource,
                 managedCSharpSource,
-                new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                collector.GetDiagnostics()
+                ToIncludes(requiredIncludesCuda),
+                ToIncludes(requiredIncludesCpp),
+                ""
             );
         }
         catch (Exception ex)
         {
-            var collector = new DiagnosticCollector();
-            collector.Report(Diagnostic.Create(
-                GSharpDiagnostics.InternalCompilerError,
-                Location.None,
-                ex.ToString()));
-
             return new TranspiledKernelResult(
-                methodSymbol,
-                methodSymbol.Name,
-                methodSymbol.ContainingType.Name,
-                methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+                header,
+                host,
                 "", "", $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n",
-                new EquatableArray<string>(), collector.GetDiagnostics());
+                new EquatableArray<string>(), new EquatableArray<string>(), ex.ToString());
         }
     }
 
-    private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorSyntaxContext context,
-        string attributeName)
+    private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorAttributeSyntaxContext context)
     {
-        var methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
-        if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+        if (context.TargetNode is not MethodDeclarationSyntax methodDeclaration ||
+            context.TargetSymbol is not IMethodSymbol methodSymbol)
         {
             return null;
         }
 
         try
         {
-            var collector = new DiagnosticCollector();
+            var cudaFailures = new FailureCollector();
+            var cppFailures = new FailureCollector();
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
-            var cudaSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel,
-                collector.Report, isDevice: true, cudaDialect);
-            var cppSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel, _ =>
-            {
-            }, isDevice: true, cppDialect);
+            var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: false);
 
-            var cudaBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
-                collector.Report,
-                isDevice: true, cudaDialect, out var requiredIncludesCuda);
-            var cppBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
-            {
-            }, isDevice: true, cppDialect, out var requiredIncludesCpp);
+            var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaFailures.Fail, cudaDialect);
+            var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppFailures.Fail, cppDialect);
+
+            var cudaBody = cudaFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
+                out var requiredIncludesCuda));
+            var cppBody = cppFailures.Apply(MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
+                out var requiredIncludesCpp));
 
             // A device function that may suspend has a frame, which embeds the frames of the calls it makes
             var frameName = "";
             var frameDependencies = ImmutableArray.CreateBuilder<string>();
             var managedCSharpSource = "";
-            if (methodDeclaration.GetBodyNode() is { } body &&
-                SuspensionAnalysis.RequiresStateMachine(methodSymbol, context.SemanticModel.Compilation))
+            if (plan.Kind == MethodEmissionKind.SuspendingDeviceFunction && methodDeclaration.GetBodyNode() is { } body)
             {
                 frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol);
                 foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body,
@@ -241,168 +286,56 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     frameDependencies.Add(GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee));
                 }
 
-                managedCSharpSource =
-                    MethodTranspiler.GenerateManagedDeviceFunctionSource(methodDeclaration, context.SemanticModel);
+                managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
             }
 
             return new TranspiledDeviceMethodResult(
-                methodSymbol,
+                HostClassHeader.Create(methodSymbol.ContainingType),
                 methodSymbol.Name,
-                methodSymbol.ContainingType.Name,
-                methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
                 cudaSignature,
                 cudaBody,
                 cppSignature,
                 cppBody,
-                new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                collector.GetDiagnostics(),
+                ToIncludes(requiredIncludesCuda),
+                ToIncludes(requiredIncludesCpp),
+                "",
                 frameName,
                 new EquatableArray<string>(frameDependencies.ToImmutable()),
                 managedCSharpSource);
         }
         catch (Exception ex)
         {
-            var collector = new DiagnosticCollector();
-            collector.Report(Diagnostic.Create(
-                GSharpDiagnostics.InternalCompilerError,
-                Location.None,
-                ex.ToString()));
-
             var errorSource = $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n";
 
             return new TranspiledDeviceMethodResult(
-                methodSymbol,
+                HostClassHeader.Create(methodSymbol.ContainingType),
                 methodSymbol.Name,
-                methodSymbol.ContainingType.Name,
-                null,
-                "", errorSource, "", errorSource, new EquatableArray<string>(), collector.GetDiagnostics());
+                "", errorSource, "", errorSource, new EquatableArray<string>(), new EquatableArray<string>(), ex.ToString());
         }
     }
 
-    private static bool IsSyntaxTargetForGeneration(SyntaxNode node, string attributeName)
+    // The prelude and the device functions shared by every kernel, as C# constants for the JIT path
+    private static void EmitSharedSources(SourceProductionContext context,
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods, GeneratorConfig config, bool hasKernels)
     {
-        if (node is not MethodDeclarationSyntax { AttributeLists.Count: > 0 } m)
-        {
-            return false;
-        }
-
-        return m.AttributeLists
-            .AsStackEnumerable()
-            .SelectMany(static list => list.Attributes
-                .AsStackEnumerable()
-            ).Any(
-                attributeName,
-                static (attribute, name) =>
-                    GetSimpleName(attribute.Name) is { } simpleName &&
-                    KnownAttributes.IsAttributeName(simpleName.Identifier.ValueText, name)
-            );
-    }
-
-    private static SimpleNameSyntax? GetSimpleName(NameSyntax name) => name switch
-    {
-        SimpleNameSyntax simple => simple,
-        QualifiedNameSyntax qualified => qualified.Right,
-        AliasQualifiedNameSyntax alias => alias.Name,
-        _ => null
-    };
-
-    private static void Execute(Compilation compilation, ImmutableArray<TranspiledKernelResult> kernelMethods,
-        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods, GeneratorConfig config,
-        SourceProductionContext context)
-    {
-        if (kernelMethods.IsDefaultOrEmpty)
+        if (!hasKernels)
         {
             return;
         }
 
-        var isCuda = config.IsCuda;
-        var dialect = config.CreateDialect();
-
-        var distinctDeviceMethods = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
-        deviceMethods
-            .AsStackEnumerable()
-            .AddIf(distinctDeviceMethods, new HashSet<TranspiledDeviceMethodResult>(), static (m, seen) => seen.Add(m));
-
-        var commonDeviceSource =
-            GenerateCommonDeviceSource(distinctDeviceMethods, context, isCuda);
-        var preludeSource = GetPreludeSource(dialect);
-
-        EmitSharedSources(context, config, preludeSource, commonDeviceSource);
-
-        var allKernelsSource = new StringBuilder();
-        var seenKernelMethods = new HashSet<TranspiledKernelResult>();
-        var distinctKernelMethods = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
-
-        var methodsByClass =
-            new Dictionary<INamedTypeSymbol, ImmutableArray<TranspiledKernelResult>.Builder>(SymbolEqualityComparer
-                .Default);
-        foreach (var method in kernelMethods)
+        var distinctDeviceMethods = GetDistinctDeviceMethods(deviceMethods);
+        foreach (var method in distinctDeviceMethods)
         {
-            if (seenKernelMethods.Add(method))
-            {
-                distinctKernelMethods.Add(method);
-                var source = method.GetSource(isCuda);
-                allKernelsSource.AppendLine(source);
-
-                if (!methodsByClass.TryGetValue(method.MethodSymbol.ContainingType, out var builder))
-                {
-                    builder = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
-                    methodsByClass[method.MethodSymbol.ContainingType] = builder;
-                }
-
-                builder.Add(method);
-            }
+            ReportInternalError(context, method.InternalError);
         }
 
-        methodsByClass
-            .AsStackEnumerable()
-            .Do(
-                (Config: config, Context: context, IsCuda: isCuda),
-                static (kvp, s) => ProcessKernelClass(kvp.Key, kvp.Value, s.Config, s.Context, s.IsCuda)
-            );
-
-        if (!isCuda)
-        {
-            EmitManagedDeviceStateMachines(distinctDeviceMethods, context);
-        }
-
-        var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
-        var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
-        var requiredIncludes = new HashSet<string>();
-        distinctKernelMethods
-            .AsStackEnumerable()
-            .SelectMany(static method => method.RequiredIncludes
-                .AsStackEnumerable()
-            ).AddTo(requiredIncludes);
-        distinctDeviceMethods
-            .AsStackEnumerable()
-            .SelectMany(static method => method.RequiredIncludes
-                .AsStackEnumerable()
-            ).AddTo(requiredIncludes);
-
-        if (!IsDesignTimeCompilation(compilation))
-        {
-            WriteUnityAotArtifact(safeAssemblyName, config, preludeSource, commonDeviceSource,
-                allKernelsSource.ToString(), dialect, context, requiredIncludes);
-        }
-
-        if (!isCuda)
-        {
-            return;
-        }
-
-        var contextSource = WrapperEmitter.GenerateModuleContextClass(assemblyName, distinctKernelMethods);
-        context.AddSource($"{AotHostNames.GetModuleContextName(assemblyName)}.g.cs",
-            SourceText.From(contextSource, Encoding.UTF8));
-    }
-
-    private static void EmitSharedSources(SourceProductionContext context, GeneratorConfig config, string preludeSource,
-        string commonDeviceSource)
-    {
         if (!config.EmitSource)
         {
             return;
         }
+
+        var commonDeviceSource = NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, config.IsCuda);
+        var preludeSource = NativeModuleAssembler.GetPreludeSource(config.CreateDialect());
 
         using var preludeWriter = new SourceWriter();
         preludeWriter.AppendGeneratedFileHeader(enableNullable: false);
@@ -441,241 +374,132 @@ public class GpuKernelGenerator : IIncrementalGenerator
             SourceText.From(deviceWriter.ToString(), Encoding.UTF8));
     }
 
+    // The wrapper of one kernel class. KernelClassAnalyzer reports the overloads and structs that it leaves out (GSH0059,
+    // GSH0058)
+    private static void EmitKernelClass(SourceProductionContext context, KernelClassModel model, HostEmitOptions options)
+    {
+        foreach (var kernel in model.Kernels)
+        {
+            ReportInternalError(context, kernel.InternalError);
+        }
+
+        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(model, options.Config, options.AssemblyName);
+        context.AddSource(model.Class.HintName, SourceText.From(wrapperSource, Encoding.UTF8));
+    }
+
     // The managed fallback runs the state machines of the device functions that may suspend; they are emitted into the
     // partial class that declares each function.
-    private static void EmitManagedDeviceStateMachines(IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods,
-        SourceProductionContext context)
+    private static void EmitDeviceStateMachines(SourceProductionContext context, DeviceStateMachineGroup group,
+        GeneratorConfig config, bool hasKernels)
     {
-        var sourcesByClass = new Dictionary<INamedTypeSymbol, ImmutableArray<string>.Builder>(SymbolEqualityComparer.Default);
-        foreach (var method in deviceMethods)
+        if (!hasKernels || config.IsCuda)
+        {
+            return;
+        }
+
+        context.AddSource(group.Class.HintName[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
+            SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(group.Class, group.Sources), Encoding.UTF8));
+    }
+
+    // Keyed by the hint name, which identifies the class (#472)
+    private static ImmutableArray<DeviceStateMachineGroup> GroupDeviceStateMachines(
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods)
+    {
+        var sourcesByClass = new Dictionary<string, ImmutableArray<string>.Builder>(StringComparer.Ordinal);
+        var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
+        foreach (var method in GetDistinctDeviceMethods(deviceMethods))
         {
             if (method.ManagedCSharpSource.Length == 0)
             {
                 continue;
             }
 
-            var classSymbol = method.MethodSymbol.ContainingType;
-            if (!sourcesByClass.TryGetValue(classSymbol, out var sources))
+            if (!sourcesByClass.TryGetValue(method.Class.HintName, out var sources))
             {
                 sources = ImmutableArray.CreateBuilder<string>();
-                sourcesByClass[classSymbol] = sources;
+                sourcesByClass[method.Class.HintName] = sources;
+                classOrder.Add(method.Class);
             }
 
             sources.Add(method.ManagedCSharpSource);
         }
 
-        foreach (var kvp in sourcesByClass)
-        {
-            var hintName = GlobalCppNames.GetHintName(kvp.Key);
-            context.AddSource(hintName[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
-                SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(kvp.Key, kvp.Value), Encoding.UTF8));
-        }
+        var groups = ImmutableArray.CreateBuilder<DeviceStateMachineGroup>(classOrder.Count);
+        classOrder
+            .AsStackEnumerable()
+            .Select(sourcesByClass, static (header, sources) =>
+                new DeviceStateMachineGroup(header, sources[header.HintName].ToImmutable().AsEquatableArray()))
+            .AddTo(groups);
+        return groups.MoveToImmutable();
     }
 
-    private static void ProcessKernelClass(INamedTypeSymbol classSymbol, IEnumerable<TranspiledKernelResult> methods,
-        GeneratorConfig config,
-        SourceProductionContext context, bool isCuda)
+    // The native module of the assembly (.g.cu / .g.cpp), which the build compiles ahead of time
+    private static void WriteAot(SourceProductionContext context, AotTarget target,
+        ImmutableArray<TranspiledKernelResult> kernelMethods, ImmutableArray<TranspiledDeviceMethodResult> deviceMethods,
+        GeneratorConfig config)
     {
-        var methodsData =
-            ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>();
-        foreach (var method in methods)
-        {
-            method.Diagnostics
-                .AsStackEnumerable()
-                .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
-
-            if (KernelHostNames.TryFindIndistinguishableOverload(method.MethodSymbol, out var earlier, out var wrapper))
-            {
-                var location = method.MethodSymbol.Locations.Length > 0 ? method.MethodSymbol.Locations[0] : Location.None;
-                context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.IndistinguishableKernelOverloads, location,
-                    KernelHostNames.FormatSignature(earlier), KernelHostNames.FormatSignature(method.MethodSymbol), wrapper));
-            }
-
-            var source = method.GetSource(isCuda);
-            methodsData.Add((method.MethodSymbol, source, method.ManagedCSharpSource));
-        }
-
-        ReportDuplicateAotContextNames(classSymbol, methodsData, context);
-
-        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(classSymbol, methodsData, config);
-        context.AddSource(GlobalCppNames.GetHintName(classSymbol),
-            SourceText.From(wrapperSource, Encoding.UTF8));
-    }
-
-
-    // GSH0058: AotContexts drops a trailing "Context", namespaces and type arguments, so different structs can share
-    // one name.
-    private static void ReportDuplicateAotContextNames(INamedTypeSymbol classSymbol,
-        ImmutableArray<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>.Builder methods,
-        SourceProductionContext context)
-    {
-        var duplicates = ImmutableArray.CreateBuilder<(INamedTypeSymbol Kept, INamedTypeSymbol Duplicate, string Name)>();
-        StructMarshalingEmitter.CollectUniqueStructs(methods, duplicates);
-        foreach (var (kept, duplicate, name) in duplicates)
-        {
-            var location = duplicate.Locations.Length > 0 ? duplicate.Locations[0] : Location.None;
-            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.DuplicateAotContextName, location,
-                FormatStructName(kept), FormatStructName(duplicate), name, classSymbol.Name));
-        }
-    }
-
-    private static string FormatStructName(INamedTypeSymbol type)
-    {
-        using var writer = new SourceWriter();
-        writer.AppendFullyQualifiedCsharpName(type);
-        return writer.ToString();
-    }
-
-    private static bool IsDesignTimeCompilation(Compilation compilation)
-    {
-        var domainName = AppDomain.CurrentDomain.FriendlyName;
-        if ((domainName.IndexOf("Roslyn.Worker", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("JetBrains", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("ServiceHub", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("LanguageServer", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("OmniSharp", StringComparison.OrdinalIgnoreCase) >= 0))
-        {
-            return true;
-        }
-
-        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        if ((baseDir.IndexOf("resharper", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             baseDir.IndexOf("jetbrains", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             baseDir.IndexOf("ServiceHub", StringComparison.OrdinalIgnoreCase) >= 0))
-        {
-            return true;
-        }
-
-        foreach (var reference in compilation.References)
-        {
-            if (reference is CompilationReference)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static void WriteUnityAotArtifact(string safeAssemblyName, GeneratorConfig config,
-        string preludeSource, string commonDeviceSource, string allKernelsSource, ITranspilerDialect dialect,
-        SourceProductionContext context, HashSet<string> requiredIncludes)
-    {
-        var includesBuilder = new StringBuilder();
-        foreach (var inc in requiredIncludes)
-        {
-            includesBuilder.AppendLine($"#include {inc}");
-        }
-        var bodySource = includesBuilder + preludeSource + commonDeviceSource + allKernelsSource;
-        var sourceHash = GSharpNameEncoding.ComputeSourceHash(bodySource);
-        var fullSource = GSharpNameEncoding.FormatSymbolHeaderLine(sourceHash) + "\n" + bodySource;
-        var dialectName = dialect.IsCuda ? "Cuda" : "Cpu";
-        var gsymContent = GSharpNameEncoding.BuildSymbolFileContent(bodySource, dialectName, static id => GlobalCppNames.TryGetFullName(id, out var full) ? full : null);
-
-        var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
-        var fileName = $"Kassyi.GSharp.Kernels_{safeAssemblyName}{ext}";
-        var safeIntermediateOutputPath = config.IntermediateOutputPath ?? "";
-        if (string.IsNullOrEmpty(safeIntermediateOutputPath))
+        if (kernelMethods.IsDefaultOrEmpty)
         {
             return;
         }
 
-        var filePath = Path.Combine(safeIntermediateOutputPath, fileName);
-        var gsymFilePath = filePath + ".gsym.json";
+        var isCuda = config.IsCuda;
+        var distinctDeviceMethods = GetDistinctDeviceMethods(deviceMethods);
+        var commonDeviceSource = NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
+        var preludeSource = NativeModuleAssembler.GetPreludeSource(config.CreateDialect());
 
-#pragma warning disable RS1035 // Do not do file IO in analyzers
-        try
+        var allKernelsSource = new StringBuilder();
+        foreach (var method in kernelMethods)
         {
-            if (!Directory.Exists(safeIntermediateOutputPath))
-            {
-                Directory.CreateDirectory(safeIntermediateOutputPath);
-            }
+            allKernelsSource.AppendLine(method.GetSource(isCuda));
+        }
 
-            File.WriteAllText(filePath, fullSource);
-            File.WriteAllText(gsymFilePath, gsymContent);
-        }
-        catch (Exception ex)
-        {
-            // Ignore IO errors on best-effort basis, but report them as an info diagnostic
-            var diagnostic = Diagnostic.Create(
-                GSharpDiagnostics.AotArtifactWriteFailed,
-                Location.None,
-                filePath,
-                ex.Message);
-            context.ReportDiagnostic(diagnostic);
-        }
-#pragma warning restore RS1035
+        var requiredIncludes = NativeModuleAssembler.CollectIncludes(kernelMethods, distinctDeviceMethods, isCuda);
+        var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
+            allKernelsSource.ToString());
+        AotArtifactWriter.Write(target, config, bodySource, context);
     }
 
-    private static string GenerateCommonDeviceSource(IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods,
-        SourceProductionContext context, bool isCuda)
+    // The CUDA module context, which loads the fatbin and warms up every kernel's function pointer
+    private static void EmitModuleContext(SourceProductionContext context, EquatableArray<KernelWarmup> warmups,
+        HostEmitOptions options, bool hasKernels)
     {
-        var deviceSourceBuilder = new StringBuilder();
-
-        // Pass 1: Forward declarations
-        foreach (var method in deviceMethods)
+        if (!hasKernels || !options.Config.IsCuda)
         {
-            method.Diagnostics
-                .AsStackEnumerable()
-                .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
-
-            deviceSourceBuilder.AppendLine(method.GetSignature(isCuda));
+            return;
         }
 
-        // Pass 2: Method bodies. A frame embeds the frames of its calls by value, so callees come first (CPU dialects).
-        var methodsByFrame = new Dictionary<string, int>(StringComparer.Ordinal);
-        for (var i = 0; i < deviceMethods.Count; i++)
+        var contextSource = CudaHostLaunchEmitter.GenerateModuleContextClass(options.ModuleAssemblyName, warmups);
+        context.AddSource($"{AotHostNames.GetModuleContextName(options.ModuleAssemblyName)}.g.cs",
+            SourceText.From(contextSource, Encoding.UTF8));
+    }
+
+    private static ImmutableArray<TranspiledDeviceMethodResult>.Builder GetDistinctDeviceMethods(
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods)
+    {
+        var distinct = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
+        deviceMethods
+            .AsStackEnumerable()
+            .AddIf(distinct, new HashSet<TranspiledDeviceMethodResult>(), static (m, seen) => seen.Add(m));
+        return distinct;
+    }
+
+    // The generator reports only its own failure (GSH0048); the analyzers report the user's errors, and a construct the
+    // transpiler could not emit is stated in the output as #error
+    private static void ReportInternalError(SourceProductionContext context, string internalError)
+    {
+        if (internalError.Length > 0)
         {
-            if (deviceMethods[i].FrameName.Length > 0)
-            {
-                methodsByFrame[deviceMethods[i].FrameName] = i;
-            }
-        }
-
-        var emitted = new bool[deviceMethods.Count];
-        for (var i = 0; i < deviceMethods.Count; i++)
-        {
-            appendBody(i);
-        }
-
-        return deviceSourceBuilder.ToString();
-
-        void appendBody(int index)
-        {
-            if (emitted[index])
-            {
-                return;
-            }
-
-            emitted[index] = true;
-            var method = deviceMethods[index];
-            if (!isCuda)
-            {
-                foreach (var dependency in method.FrameDependencies)
-                {
-                    if (methodsByFrame.TryGetValue(dependency, out var dependencyIndex))
-                    {
-                        appendBody(dependencyIndex);
-                    }
-                }
-            }
-
-            deviceSourceBuilder.AppendLine(method.GetBody(isCuda));
+            context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.InternalCompilerError, Location.None, internalError));
         }
     }
 
-    private static string GetPreludeSource(ITranspilerDialect dialect) =>
-        dialect.IsCuda ? GSharpPreludeResources.Cuda : GSharpPreludeResources.Cpp;
-
-    private static ImmutableArray<string> CombineIncludes(HashSet<string> a, HashSet<string> b)
+    private static EquatableArray<string> ToIncludes(HashSet<string> includes)
     {
-        var builder = ImmutableArray.CreateBuilder<string>();
-        a
+        var builder = ImmutableArray.CreateBuilder<string>(includes.Count);
+        includes
             .AsStackEnumerable()
             .AddTo(builder);
-        b
-            .AsStackEnumerable()
-            .AddIf(builder, a, static (item, first) => !first.Contains(item));
-        return builder.ToImmutable();
+        return builder.MoveToImmutable().AsEquatableArray();
     }
 }

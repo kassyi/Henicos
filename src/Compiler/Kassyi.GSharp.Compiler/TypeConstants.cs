@@ -24,8 +24,15 @@ internal static class TypeConstants
 
     public const string SpanType = nameof(Span<byte>);
     public const string ReadOnlySpanType = nameof(ReadOnlySpan<byte>);
-    public const string ListType = nameof(List<object>);
     public const string WarpType = "Warp";
+    public const string GCHandleType = nameof(System.Runtime.InteropServices.GCHandle);
+
+    /// <summary><c>Gpu.Unsafe</c>, the low-level device memory intrinsics.</summary>
+    public static class GpuUnsafe
+    {
+        public const string Type = "Unsafe";
+        public const string Malloc = nameof(Malloc);
+    }
 
     public static class GpuMacros
     {

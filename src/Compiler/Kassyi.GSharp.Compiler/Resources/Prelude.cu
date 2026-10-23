@@ -10,6 +10,14 @@ struct System_Nullable {
     __device__ inline System_Nullable(T val) : HasValue(true), Value(val) {}
 };
 
+// The scope of a C# using: disposes the resource when control leaves the enclosing block (end, return, break, continue,
+// goto). Guards of one block are destroyed in reverse order, as C# disposes nested usings.
+template <typename T>
+struct __gsharp_using_scope {
+    T& resource;
+    __device__ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
+};
+
 template <typename T>
 struct GSharpArray {
     T* __restrict__ data;
@@ -71,6 +79,58 @@ __device__ __forceinline__ unsigned long long __gsharp_mul_wide(unsigned int a, 
     unsigned long long res;
     asm volatile("mul.wide.u32 %0, %1, %2;" : "=l"(res) : "r"(a), "r"(b));
     return res;
+}
+
+__device__ __forceinline__ unsigned long long __gsharp_mad_wide(unsigned int a, unsigned int b, unsigned long long c) {
+    unsigned long long res;
+    asm volatile("mad.wide.u32 %0, %1, %2, %3;" : "=l"(res) : "r"(a), "r"(b), "l"(c));
+    return res;
+}
+
+__device__ __forceinline__ long long __gsharp_mad_wide_s(int a, int b, long long c) {
+    long long res;
+    asm volatile("mad.wide.s32 %0, %1, %2, %3;" : "=l"(res) : "r"(a), "r"(b), "l"(c));
+    return res;
+}
+
+// (a * b) + c + carry-in; *carry holds 0 or 1 on entry and the carry-out of the 64-bit sum on exit.
+// The product is at most 2^64 - 2^33 + 1, so the two additions cannot both wrap.
+__device__ __forceinline__ unsigned long long __gsharp_madc_cc(unsigned int a, unsigned int b, unsigned long long c, unsigned long long* carry) {
+    unsigned long long product = __gsharp_mad_wide(a, b, 0ull);
+    unsigned long long partial = product + c;
+    unsigned long long carryOut = partial < product ? 1ull : 0ull;
+    unsigned long long res = partial + (*carry & 1ull);
+    carryOut |= res < partial ? 1ull : 0ull;
+    *carry = carryOut;
+    return res;
+}
+
+// mbarrier (sm_80+). The object lives in shared memory; the generic pointer is converted to a shared address.
+__device__ __forceinline__ void __gsharp_mbarrier_init(unsigned long long* barrier, unsigned int expectedCount) {
+    unsigned int addr = (unsigned int)__cvta_generic_to_shared(barrier);
+    asm volatile("mbarrier.init.shared.b64 [%0], %1;" :: "r"(addr), "r"(expectedCount) : "memory");
+}
+
+__device__ __forceinline__ void __gsharp_mbarrier_arrive(unsigned long long* barrier) {
+    unsigned int addr = (unsigned int)__cvta_generic_to_shared(barrier);
+    unsigned long long state;
+    asm volatile("mbarrier.arrive.shared.b64 %0, [%1];" : "=l"(state) : "r"(addr) : "memory");
+    (void)state;
+}
+
+// Spins on mbarrier.test_wait.parity until the phase with the given parity has completed.
+__device__ __forceinline__ void __gsharp_mbarrier_wait(unsigned long long* barrier, unsigned int phase) {
+    unsigned int addr = (unsigned int)__cvta_generic_to_shared(barrier);
+    unsigned int done = 0;
+    while (!done) {
+        asm volatile(
+            "{\n\t"
+            ".reg .pred p;\n\t"
+            "mbarrier.test_wait.parity.shared.b64 p, [%1], %2;\n\t"
+            "selp.u32 %0, 1, 0, p;\n\t"
+            "}"
+            : "=r"(done) : "r"(addr), "r"(phase) : "memory");
+    }
 }
 
 __device__ __forceinline__ unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {

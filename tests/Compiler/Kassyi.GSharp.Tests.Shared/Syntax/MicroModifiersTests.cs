@@ -109,7 +109,7 @@ public class MicroModifiersTests : TranspilerTestBase
             nameof(MicroModifiersTarget.FileLocalTypes), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         int[] output = [0];
         MicroModifiersTarget.FileLocalTypes(output);
@@ -131,7 +131,7 @@ public class MicroModifiersTests : TranspilerTestBase
         walker.Visit(methodDecl);
 
         validationDiagnostics.AssertContains(GSharpDiagnostics.ParamsModifierNotSupported);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         Assert.Equal(0, MicroModifiersTarget.ParamsSpan());
         Assert.Equal(3, MicroModifiersTarget.ParamsSpan(1, 2, 3));
@@ -146,7 +146,7 @@ public class MicroModifiersTests : TranspilerTestBase
             nameof(MicroModifiersTarget.RefReadonlyReturns), isDevice: true, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         Assert.True(RefReadonlyReturnAliases(first: true));
         Assert.True(RefReadonlyReturnAliases(first: false));
@@ -161,7 +161,7 @@ public class MicroModifiersTests : TranspilerTestBase
             nameof(MicroModifiersTarget.VolatileModifier), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         VolatileState_MicroMod[] states = [default];
         MicroModifiersTarget.VolatileModifier(states);
@@ -177,7 +177,7 @@ public class MicroModifiersTests : TranspilerTestBase
             nameof(MicroModifiersTarget.SkipLocalsInitAttribute), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         int[] output = [0];
         MicroModifiersTarget.SkipLocalsInitAttribute(output);
@@ -192,10 +192,12 @@ public class MicroModifiersTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.ForeachTupleDeconstruction), isDevice: false, dialect: CurrentDialect);
 
-        // Tuple deconstruction is unsupported by spec; it must be reported exactly once without leaking raw tokens.
+        // Tuple deconstruction is unsupported by spec; the analyzer reports it once (UnsupportedSyntaxKindDiagnosticsTests)
+        // and the transpiler records one failure and writes a placeholder without leaking raw tokens.
         Assert.Single(diagnostics);
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "ForEachVariableStatement");
-        await Verify(Report(cudaSource, diagnostics));
+        diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, "'ForEachVariableStatement'");
+        Assert.Contains("/*unsupported:ForEachVariableStatement*/", cudaSource);
+        await Verify(cudaSource);
 
         int[] output = [0];
         MicroModifiersTarget.ForeachTupleDeconstruction([(1, 2), (3, 4), (5, 6)], output);
@@ -210,9 +212,10 @@ public class MicroModifiersTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.FunctionPointerCallingConventions), isDevice: false, dialect: CurrentDialect);
 
-        // Host function pointers cannot be dereferenced on the device, so the parameter is rejected.
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "FunctionPointerType");
-        await Verify(Report(cudaSource, diagnostics));
+        // Host function pointers cannot be dereferenced on the device; the analyzer rejects the parameter
+        // (KernelSignatureDiagnosticsTests) and the transpiler records the failure.
+        diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, "'FunctionPointerType'");
+        await Verify(cudaSource);
 
         Assert.Equal(15, InvokeFunctionPointerTarget());
     }
@@ -226,7 +229,7 @@ public class MicroModifiersTests : TranspilerTestBase
             nameof(MicroModifiersTarget.LineDirectives), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         int[] output = [0];
         MicroModifiersTarget.LineDirectives(output);
@@ -242,7 +245,7 @@ public class MicroModifiersTests : TranspilerTestBase
             nameof(MicroModifiersTarget.ImplicitStackallocArray), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        await Verify(Report(cudaSource, diagnostics));
+        await Verify(cudaSource);
 
         int[] output = [0];
         MicroModifiersTarget.ImplicitStackallocArray(output);

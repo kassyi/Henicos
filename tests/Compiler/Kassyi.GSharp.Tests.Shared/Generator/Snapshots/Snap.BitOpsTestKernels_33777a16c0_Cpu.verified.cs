@@ -124,28 +124,28 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__BitOpsTestKernels__BitOpsKernel(uint[] u32Data, ulong[] u64Data, __gsharp_context_Kassyi__GSharp__Tests__BitOpsTestKernels__BitOpsKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            uint u32Val = u32Data[0];
-            u32Data[1] = (uint)System.Numerics.BitOperations.LeadingZeroCount(u32Val);
-            u32Data[2] = (uint)System.Numerics.BitOperations.PopCount(u32Val);
-            u32Data[3] = (uint)System.Numerics.BitOperations.TrailingZeroCount(u32Val);
-            u32Data[4] = (uint)System.Numerics.BitOperations.Log2(u32Val);
-            u32Data[5] = System.Numerics.BitOperations.RotateLeft(u32Val, 5);
-            u32Data[6] = System.Numerics.BitOperations.RotateRight(u32Val, 3);
-            ulong u64Val = u64Data[0];
-            u64Data[1] = (ulong)System.Numerics.BitOperations.LeadingZeroCount(u64Val);
-            u64Data[2] = (ulong)System.Numerics.BitOperations.PopCount(u64Val);
-            u64Data[3] = (ulong)System.Numerics.BitOperations.TrailingZeroCount(u64Val);
-            u64Data[4] = (ulong)System.Numerics.BitOperations.Log2(u64Val);
-            u64Data[5] = System.Numerics.BitOperations.RotateLeft(u64Val, 10);
-            u64Data[6] = System.Numerics.BitOperations.RotateRight(u64Val, 7);
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+uint u32Val = u32Data[0];
+u32Data[1] = (uint)System.Numerics.BitOperations.LeadingZeroCount(u32Val);
+u32Data[2] = (uint)System.Numerics.BitOperations.PopCount(u32Val);
+u32Data[3] = (uint)System.Numerics.BitOperations.TrailingZeroCount(u32Val);
+u32Data[4] = (uint)System.Numerics.BitOperations.Log2(u32Val);
+u32Data[5] = System.Numerics.BitOperations.RotateLeft(u32Val, 5);
+u32Data[6] = System.Numerics.BitOperations.RotateRight(u32Val, 3);
+ulong u64Val = u64Data[0];
+u64Data[1] = (ulong)System.Numerics.BitOperations.LeadingZeroCount(u64Val);
+u64Data[2] = (ulong)System.Numerics.BitOperations.PopCount(u64Val);
+u64Data[3] = (ulong)System.Numerics.BitOperations.TrailingZeroCount(u64Val);
+u64Data[4] = (ulong)System.Numerics.BitOperations.Log2(u64Val);
+u64Data[5] = System.Numerics.BitOperations.RotateLeft(u64Val, 10);
+u64Data[6] = System.Numerics.BitOperations.RotateRight(u64Val, 7);
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -176,8 +176,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__BitOpsTestKernels__BitOpsKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__BitOpsTestKernels__BitOpsKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__BitOpsTestKernels__BitOpsKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

@@ -46,12 +46,15 @@ public class GeneratorFileIoArchitectureTests
             string.Join(Environment.NewLine, violations));
     }
 
-    [Fact]
+    // The generator entry point and the one place that writes the AOT artifact
+    [Theory]
     [Scenario(TestScenario.SadPath)]
-    public void Test_GpuKernelGenerator_CatchBlocksDoNotWriteFiles()
+    [InlineData("GpuKernelGenerator.cs")]
+    [InlineData("Aot/AotArtifactWriter.cs")]
+    public void Test_GeneratorSources_CatchBlocksDoNotWriteFiles(string relativePath)
     {
         var compilerRoot = RepositoryPaths.CompilerProject;
-        var generatorPath = Path.Combine(compilerRoot, "GpuKernelGenerator.cs");
+        var generatorPath = Path.Combine(compilerRoot, relativePath);
         var root = CSharpSyntaxTree.ParseText(File.ReadAllText(generatorPath)).GetRoot();
         var violations = new List<string>();
 
@@ -63,13 +66,13 @@ public class GeneratorFileIoArchitectureTests
                     IsFileAccessExpression(memberAccess.Expression))
                 {
                     var line = invocation.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-                    violations.Add($"GpuKernelGenerator.cs:{line}: {invocation}");
+                    violations.Add($"{relativePath}:{line}: {invocation}");
                 }
             }
         }
 
         Assert.True(violations.Count == 0,
-            "GpuKernelGenerator catch blocks must not perform file I/O:" + Environment.NewLine +
+            $"{relativePath} catch blocks must not perform file I/O:" + Environment.NewLine +
             string.Join(Environment.NewLine, violations));
     }
 

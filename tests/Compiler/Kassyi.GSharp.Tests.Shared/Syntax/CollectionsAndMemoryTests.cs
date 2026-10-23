@@ -24,10 +24,13 @@ public class CollectionsAndMemoryTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Test_IndexAndRange_Transpilation()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<CollectionsAndMemoryTarget>(
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<CollectionsAndMemoryTarget>(
             nameof(CollectionsAndMemoryTarget.IndexAndRange), dialect: CurrentDialect);
 
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "IndexExpression");
+        // The analyzer reports the construct (UnsupportedSyntaxKindDiagnosticsTests); the transpiler records the failure and
+        // writes a placeholder
+        diagnostics.AssertFails(GSharpDiagnostics.UnsupportedSyntax, "'IndexExpression'");
+        Assert.Contains("/*unsupported:IndexExpression*/", cudaSource);
     }
 
     [Fact]

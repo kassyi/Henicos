@@ -159,10 +159,14 @@ public class TypesAndStructsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Test_RecordStructWithExpression_Transpilation()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<TypesAndStructsTarget>(
             nameof(TypesAndStructsTarget.RecordStructWithExpression), isDevice: false, dialect: CurrentDialect);
 
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "WithExpression");
+        // 'with' on a struct is a supported construct (StructWithExpressionTests runs it); a class is reported by
+        // WithExpressionDiagnosticsTests
+        Assert.Empty(diagnostics);
+        Assert.DoesNotContain("unsupported:", cudaSource);
+        Assert.Contains("= 99;", cudaSource);
     }
 
     [Fact]

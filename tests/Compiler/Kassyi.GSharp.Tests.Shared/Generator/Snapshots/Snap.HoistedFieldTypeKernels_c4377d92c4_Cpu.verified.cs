@@ -121,23 +121,23 @@ public uint sum;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__HoistedVarKernel(int[] data, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__HoistedVarKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            __gsharp_ctx.sum = 0u;
-            __gsharp_ctx.sum += (uint)data[ThreadIndex.X];
-            __gsharp_ctx.__gsharp_state = 1;
-            return;
-        }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.sum = 0u;
+__gsharp_ctx.sum += (uint)data[ThreadIndex.X];
+__gsharp_ctx.__gsharp_state = 1;
+return;
+}
 
-        case 1:
-        {
-            data[ThreadIndex.X] = (int)__gsharp_ctx.sum;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+case 1:
+{
+data[ThreadIndex.X] = (int)__gsharp_ctx.sum;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -162,8 +162,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__HoistedVarKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__HoistedVarKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__HoistedVarKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -382,68 +383,68 @@ public float __gsharp_warp_temp_3;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__FloatWarpReductionKernel(float[] input, float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__FloatWarpReductionKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            __gsharp_ctx.tid = ThreadIndex.X;
-            __gsharp_ctx.lane = __gsharp_ctx.tid % 32;
-            __gsharp_ctx.warpId = __gsharp_ctx.tid / 32;
-            __gsharp_ctx.val = input[__gsharp_ctx.tid];
-            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
-            __gsharp_ctx.__gsharp_state = 1;
-            return;
-        }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.lane = __gsharp_ctx.tid % 32;
+__gsharp_ctx.warpId = __gsharp_ctx.tid / 32;
+__gsharp_ctx.val = input[__gsharp_ctx.tid];
+__gsharp_warp_exchange_assign(__gsharp_ctx.val);
+__gsharp_ctx.__gsharp_state = 1;
+return;
+}
 
-        case 1:
-        {
-            __gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 16);
-            __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_0;
-            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
-            __gsharp_ctx.__gsharp_state = 2;
-            return;
-        }
+case 1:
+{
+__gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 16);
+__gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_0;
+__gsharp_warp_exchange_assign(__gsharp_ctx.val);
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
 
-        case 2:
-        {
-            __gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 8);
-            __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_1;
-            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
-            __gsharp_ctx.__gsharp_state = 3;
-            return;
-        }
+case 2:
+{
+__gsharp_ctx.__gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 8);
+__gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_1;
+__gsharp_warp_exchange_assign(__gsharp_ctx.val);
+__gsharp_ctx.__gsharp_state = 3;
+return;
+}
 
-        case 3:
-        {
-            __gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 4);
-            __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_2;
-            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
-            __gsharp_ctx.__gsharp_state = 4;
-            return;
-        }
+case 3:
+{
+__gsharp_ctx.__gsharp_warp_temp_2 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 4);
+__gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_2;
+__gsharp_warp_exchange_assign(__gsharp_ctx.val);
+__gsharp_ctx.__gsharp_state = 4;
+return;
+}
 
-        case 4:
-        {
-            __gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 2);
-            __gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_3;
-            __gsharp_warp_exchange_assign(__gsharp_ctx.val);
-            __gsharp_ctx.__gsharp_state = 5;
-            return;
-        }
+case 4:
+{
+__gsharp_ctx.__gsharp_warp_temp_3 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 2);
+__gsharp_ctx.val += __gsharp_ctx.__gsharp_warp_temp_3;
+__gsharp_warp_exchange_assign(__gsharp_ctx.val);
+__gsharp_ctx.__gsharp_state = 5;
+return;
+}
 
-        case 5:
-        {
-            var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 1);
-            __gsharp_ctx.val += __gsharp_warp_temp_4;
-            if (__gsharp_ctx.lane == 0)
-            {
-                output[__gsharp_ctx.warpId] = __gsharp_ctx.val;
-            }
+case 5:
+{
+var __gsharp_warp_temp_4 = __gsharp_warp_shuffle_read_down_sync(__gsharp_ctx, 0xffffffff, __gsharp_ctx.val, 1);
+__gsharp_ctx.val += __gsharp_warp_temp_4;
+if (__gsharp_ctx.lane == 0)
+{
+output[__gsharp_ctx.warpId] = __gsharp_ctx.val;
+}
 
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -474,8 +475,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__FloatWarpReductionKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__FloatWarpReductionKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__FloatWarpReductionKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -648,23 +650,23 @@ public global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedPoint p;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__StructVarKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.HoistedPoint[] items, float[] output, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__StructVarKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            __gsharp_ctx.tid = ThreadIndex.X;
-            __gsharp_ctx.p = items[__gsharp_ctx.tid];
-            __gsharp_ctx.__gsharp_state = 1;
-            return;
-        }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.tid = ThreadIndex.X;
+__gsharp_ctx.p = items[__gsharp_ctx.tid];
+__gsharp_ctx.__gsharp_state = 1;
+return;
+}
 
-        case 1:
-        {
-            output[__gsharp_ctx.tid] = __gsharp_ctx.p.X + __gsharp_ctx.p.Y;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+case 1:
+{
+output[__gsharp_ctx.tid] = __gsharp_ctx.p.X + __gsharp_ctx.p.Y;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -695,8 +697,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__StructVarKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__StructVarKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__StructVarKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

@@ -3,5 +3,3 @@ int __gsharp_id_2_sum = 0;
 /*unsupported:ForEachVariableStatement*/
 __gsharp_id_1_output[0]=__gsharp_id_2_sum;
 }
-
-// GSH0003
