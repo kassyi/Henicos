@@ -28,9 +28,6 @@ public static class MethodTranspiler
     /// <param name="requiredIncludes">
     /// When this method returns, contains the set of header include directives required by the emitted code.
     /// </param>
-    /// <param name="preLowered">
-    /// Optional pre-computed lowered body and context fields to avoid redundant AST lowering.
-    /// </param>
     /// <returns>
     /// A string containing the complete emitted source code, including topologically sorted struct dependencies and the function definition.
     /// </returns>
@@ -39,10 +36,24 @@ public static class MethodTranspiler
     /// </exception>
     public static string GenerateCudaSource(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
         Action<Diagnostic>? reportDiagnostic, bool isDevice,
-        ITranspilerDialect dialect, out HashSet<string> requiredIncludes,
-        LoweredStateMachine? preLowered = null)
+        ITranspilerDialect dialect, out HashSet<string> requiredIncludes) =>
+        GenerateCudaSource(MethodEmissionPlan.Create(methodDecl, semanticModel, isKernel: !isDevice), reportDiagnostic,
+            dialect, out requiredIncludes);
+
+    /// <summary>
+    /// Transpiles the method of <paramref name="plan"/> into a complete target dialect implementation string, including
+    /// dependent struct definitions, parameter qualifiers, and the method body.
+    /// </summary>
+    /// <param name="plan">The classified and, where needed, lowered method.</param>
+    /// <param name="reportDiagnostic">An optional callback delegate to receive emitted compiler diagnostics and warnings.</param>
+    /// <param name="dialect">The target language dialect to use for code generation.</param>
+    /// <param name="requiredIncludes">
+    /// When this method returns, contains the set of header include directives required by the emitted code.
+    /// </param>
+    internal static string GenerateCudaSource(in MethodEmissionPlan plan, Action<Diagnostic>? reportDiagnostic,
+        ITranspilerDialect dialect, out HashSet<string> requiredIncludes)
     {
-        using var session = TranspilationSession.Begin(methodDecl, semanticModel, reportDiagnostic, dialect);
+        using var session = TranspilationSession.Begin(in plan, reportDiagnostic, dialect);
         if (session.ErrorMessage != null)
         {
             requiredIncludes = [];
@@ -52,47 +63,42 @@ public static class MethodTranspiler
         ref var context = ref session.Context;
         requiredIncludes = context.Emitter.RequiredIncludes;
 
-        var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        var isSuspendingDevice = isDevice && IsLoweredSuspendingDeviceFunction(methodDecl, methodSymbol, ref context);
+        var methodDecl = plan.Declaration;
+        var isDevice = plan.Kind != MethodEmissionKind.Kernel;
+        var isSuspendingDevice = plan.IsSuspendingOn(dialect);
         context.Emitter.IsSuspendingDeviceFunction = isSuspendingDevice;
 
-        LoweredStateMachine? lowered = null;
-        if (!isDevice && context.Emitter.Dialect.EmulatesThreadsWithStateMachine() && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
-        {
-            lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl, semanticModel);
-        }
-        else if (isSuspendingDevice)
-        {
-            lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel, methodSymbol);
-        }
+        var lowered = plan.GetLoweredFor(dialect);
 
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
 
         context.Emitter.Writer = bodyWriter;
 
-        if (lowered != null)
+        // A plan with a state machine always has a symbol
+        if (lowered != null && plan.Symbol is { } loweredSymbol)
         {
             var prefix = isSuspendingDevice ? GSharpInternalNames.SuspendingCall.FrameTypePrefix : GSharpInternalNames.Kernel.ContextPrefix;
-            var frameName = MethodSignatureTranspiler.GetKernelDerivedName(prefix, methodDecl, methodSymbol);
-            WriteContextStruct(frameName, methodDecl.Identifier.ValueText, lowered, methodSymbol, isSuspendingDevice,
+            var frameName = GlobalCppNames.GetKernelDerivedName(prefix, loweredSymbol);
+            WriteContextStruct(frameName, methodDecl.Identifier.ValueText, lowered, in plan, isSuspendingDevice,
                 ref context);
         }
 
-        if (isSuspendingDevice && lowered != null)
+        if (isSuspendingDevice && lowered != null && plan.Symbol is { } suspendingSymbol)
         {
-            MethodSignatureTranspiler.WriteSuspendingDeviceSignature(methodDecl, lowered.CopiedParameters, ref context);
+            MethodSignatureTranspiler.WriteSuspendingDeviceSignature(methodDecl, suspendingSymbol, lowered.CopiedParameters,
+                ref context);
         }
         else
         {
-            MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, lowered != null, ref context);
+            MethodSignatureTranspiler.WriteMethodSignature(in plan, lowered != null, ref context);
         }
 
-        WriteMethodBody(methodDecl, lowered, ref context);
+        WriteMethodBody(in plan, lowered, ref context);
 
         if (!isDevice && !context.Emitter.Dialect.IsCuda)
         {
-            HostLauncherTranspiler.WriteCpuLauncher(methodDecl, lowered?.ContextFields, ref context);
+            HostLauncherTranspiler.WriteCpuLauncher(in plan, lowered?.ContextFields, ref context);
         }
 
         context.Emitter.Writer = mainWriter;
@@ -106,30 +112,25 @@ public static class MethodTranspiler
     }
 
     /// <summary>
-    /// Transpiles a C# method declaration into a target dialect forward declaration signature,
+    /// Transpiles the device function of <paramref name="plan"/> into a target dialect forward declaration signature,
     /// along with forward declarations of referenced struct types.
     /// </summary>
-    /// <param name="methodDecl">The Roslyn method declaration syntax node to transpile.</param>
-    /// <param name="semanticModel">The semantic model bound to the compilation containing the method.</param>
+    /// <param name="plan">The classified device function.</param>
     /// <param name="reportDiagnostic">An optional callback delegate to receive emitted compiler diagnostics and warnings.</param>
-    /// <param name="isDevice">
-    /// <see langword="true"/> to emit a device-side function forward signature; 
-    /// <see langword="false"/> to emit a kernel entry point signature.
-    /// </param>
-    /// <param name="dialect">
-    /// The target language dialect to use for code generation. If <see langword="null"/>, defaults to <see cref="GSharpCudaDialect"/>.
-    /// </param>
+    /// <param name="dialect">The target language dialect to use for code generation.</param>
     /// <returns>
     /// A string containing the forward declaration statements suitable for header inclusion.
     /// </returns>
-    /// <exception cref="ArgumentNullException">
-    /// Thrown when <paramref name="methodDecl"/> or <paramref name="semanticModel"/> is <see langword="null"/>.
-    /// </exception>
-    public static string GenerateCudaSignature(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel,
-        Action<Diagnostic>? reportDiagnostic = null, bool isDevice = true,
-        ITranspilerDialect? dialect = null)
+    /// <exception cref="ArgumentException">Thrown when <paramref name="plan"/> is a kernel, which has no forward declaration.</exception>
+    internal static string GenerateCudaSignature(in MethodEmissionPlan plan, Action<Diagnostic>? reportDiagnostic,
+        ITranspilerDialect dialect)
     {
-        using var session = TranspilationSession.Begin(methodDecl, semanticModel, reportDiagnostic, dialect);
+        if (plan.Kind == MethodEmissionKind.Kernel)
+        {
+            throw new ArgumentException("Only a device function has a forward declaration.", nameof(plan));
+        }
+
+        using var session = TranspilationSession.Begin(in plan, reportDiagnostic, dialect);
         if (session.ErrorMessage != null)
         {
             return session.ErrorMessage;
@@ -137,39 +138,23 @@ public static class MethodTranspiler
 
         ref var context = ref session.Context;
 
-        var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        var isSuspendingDevice = isDevice && IsLoweredSuspendingDeviceFunction(methodDecl, methodSymbol, ref context);
-
-        LoweredStateMachine? lowered = null;
-        if (!isDevice && context.Emitter.Dialect.EmulatesThreadsWithStateMachine() && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
-        {
-            lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel);
-        }
-
         using var mainWriter = new SourceWriter();
         using var sigWriter = new SourceWriter();
 
         context.Emitter.Writer = sigWriter;
 
-        if (lowered != null)
-        {
-            var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix,
-                methodDecl, methodSymbol);
-            WriteContextStruct(contextName, methodDecl.Identifier.ValueText, lowered, methodSymbol, isFrame: false,
-                ref context);
-        }
-
-        if (isSuspendingDevice)
+        // A suspending device function always has a symbol
+        if (plan.IsSuspendingOn(dialect) && plan.Symbol is { } methodSymbol)
         {
             // The frame is defined with the body; the declaration only needs its name
-            var frameName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix,
-                methodDecl, methodSymbol);
+            var frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix,
+                methodSymbol);
             context.Emitter.Writer.AppendLine($"struct {frameName};");
-            MethodSignatureTranspiler.WriteSuspendingDeviceSignature(methodDecl, [], ref context);
+            MethodSignatureTranspiler.WriteSuspendingDeviceSignature(plan.Declaration, methodSymbol, [], ref context);
         }
         else
         {
-            MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, lowered != null, ref context);
+            MethodSignatureTranspiler.WriteMethodSignature(in plan, hasContext: false, ref context);
         }
 
         context.Emitter.Writer.AppendLine(";");
@@ -186,38 +171,23 @@ public static class MethodTranspiler
     }
 
     /// <summary>
-    /// Transpiles a C# method declaration into a pure C# managed state machine and wrapper for host-side debugging.
+    /// Transpiles the kernel of <paramref name="plan"/> into a pure C# managed state machine and wrapper for host-side debugging.
     /// </summary>
-    /// <param name="methodDecl">The Roslyn method declaration syntax node to transpile.</param>
-    /// <param name="semanticModel">The semantic model bound to the compilation containing the method.</param>
-    /// <param name="preLowered">Optional pre-computed lowered body and context fields to avoid redundant AST lowering.</param>
     /// <returns>A string containing the generated managed C# state machine source code.</returns>
-    public static string GenerateManagedCSharpSource(
-        MethodDeclarationSyntax methodDecl,
-        SemanticModel semanticModel,
-        LoweredStateMachine? preLowered = null) =>
-        ManagedCSharpTranspiler.Generate(methodDecl, semanticModel, preLowered);
+    internal static string GenerateManagedCSharpSource(in MethodEmissionPlan plan) =>
+        ManagedCSharpTranspiler.Generate(in plan);
 
     /// <summary>
     /// Transpiles a device function that may suspend into a managed C# state machine and its frame class, or returns an
     /// empty string for any other device function.
     /// </summary>
-    public static string GenerateManagedDeviceFunctionSource(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel) =>
-        ManagedCSharpTranspiler.GenerateDeviceFunction(methodDecl, semanticModel);
-
-    /// <summary>
-    /// Whether <paramref name="methodDecl"/> is a device function that the CPU dialects lower into a state machine: one
-    /// that reaches a barrier and is not recursive (GSH0061 rejects that).
-    /// </summary>
-    internal static bool IsLoweredSuspendingDeviceFunction(MethodDeclarationSyntax methodDecl, IMethodSymbol? methodSymbol,
-        ref TranspileContext context) =>
-        context.Emitter.Dialect.EmulatesThreadsWithStateMachine() && methodDecl.HasBody() && methodSymbol != null &&
-        SuspensionAnalysis.RequiresStateMachine(methodSymbol, context.Query.SemanticModel.Compilation);
+    internal static string GenerateManagedDeviceFunctionSource(in MethodEmissionPlan plan) =>
+        ManagedCSharpTranspiler.GenerateDeviceFunction(in plan);
 
     // kernelName is the C# name, used only in internal-error reports. A kernel context also holds the warp exchange of the
     // thread; a device function frame holds its copied parameters instead and reaches the warp exchange through the root.
     private static void WriteContextStruct(string contextName, string kernelName, LoweredStateMachine lowered,
-        IMethodSymbol? methodSymbol, bool isFrame, ref TranspileContext context)
+        in MethodEmissionPlan plan, bool isFrame, ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine($"struct {contextName} {{");
         context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.StateMachine.State} = 0;");
@@ -231,7 +201,7 @@ public static class MethodTranspiler
             context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
         }
 
-        foreach (var parameter in GetCopiedParameters(lowered, methodSymbol))
+        foreach (var parameter in plan.GetCopiedParameters(lowered))
         {
             StructTranspiler.RegisterUsedStructIfApplicable(parameter.Type, ref context);
             context.Emitter.Dialect.AppendType(ref context, parameter.Type);
@@ -265,26 +235,6 @@ public static class MethodTranspiler
         context.Query.SemanticModel.GetSymbol(callSite) as IMethodSymbol
         ?? throw new InvalidOperationException("A call that may suspend does not resolve to a device function.");
 
-    internal static ImmutableArray<IParameterSymbol> GetCopiedParameters(LoweredStateMachine lowered, IMethodSymbol? methodSymbol)
-    {
-        var parameters = ImmutableArray.CreateBuilder<IParameterSymbol>(lowered.CopiedParameters.Count);
-        if (methodSymbol == null)
-        {
-            return parameters.ToImmutable();
-        }
-
-        lowered.CopiedParameters
-            .AsStackEnumerable()
-            .Do(
-                (Method: methodSymbol, Result: parameters),
-                static (name, s) => s.Method.Parameters
-                    .AsStackEnumerable()
-                    .AddIf(s.Result, name, static (parameter, target) => parameter.Name == target)
-            );
-
-        return parameters.ToImmutable();
-    }
-
     private static void WriteContextFieldName(VariableDeclaratorSyntax field, ref TranspileContext context)
     {
         context.Emitter.Writer.Append(' ');
@@ -292,14 +242,14 @@ public static class MethodTranspiler
         context.Emitter.Writer.AppendLine(";");
     }
 
-    private static void WriteMethodBody(MethodDeclarationSyntax method, LoweredStateMachine? lowered,
+    private static void WriteMethodBody(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
         ref TranspileContext context)
     {
         using (context.Emitter.Writer.Scope())
         {
-            var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
-            var isKernelWithReturn = methodSymbol != null && methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
-                                     methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
+            var method = plan.Declaration;
+            var methodSymbol = plan.Symbol;
+            var isKernelWithReturn = plan.HasAutoResult;
             var isFrame = context.Emitter.IsSuspendingDeviceFunction;
 
             if (isKernelWithReturn)
@@ -325,7 +275,7 @@ public static class MethodTranspiler
                     context.Emitter.Writer.AppendLine($"auto* {GSharpInternalNames.SuspendingCall.Root} = {GSharpInternalNames.StateMachine.Context};");
                 }
 
-                WriteCopiedParameterInitialization(lowered, methodSymbol, ref context);
+                WriteCopiedParameterInitialization(lowered, in plan, ref context);
                 context.Visitor.Visit(lowered.LoweredBody);
 
                 if (isFrame)
@@ -364,10 +314,10 @@ public static class MethodTranspiler
     }
 
     // On the first entry, the parameters the body assigns are copied into the frame; later resumes keep the frame's copy
-    private static void WriteCopiedParameterInitialization(LoweredStateMachine lowered, IMethodSymbol? methodSymbol,
+    private static void WriteCopiedParameterInitialization(LoweredStateMachine lowered, in MethodEmissionPlan plan,
         ref TranspileContext context)
     {
-        var parameters = GetCopiedParameters(lowered, methodSymbol);
+        var parameters = plan.GetCopiedParameters(lowered);
         if (parameters.Length == 0)
         {
             return;

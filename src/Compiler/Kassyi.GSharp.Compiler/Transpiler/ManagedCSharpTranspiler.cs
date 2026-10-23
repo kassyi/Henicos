@@ -8,24 +8,24 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </remarks>
 internal static class ManagedCSharpTranspiler
 {
-    public static string Generate(
-        MethodDeclarationSyntax methodDecl,
-        SemanticModel semanticModel,
-        LoweredStateMachine? preLowered = null)
+    /// <summary>
+    /// Emits the context class and the state machine of a kernel, or returns an empty string for a kernel without a body.
+    /// </summary>
+    public static string Generate(in MethodEmissionPlan plan)
     {
-        if (!methodDecl.HasBody())
+        // A kernel has a state machine exactly when it has a body, and then always a symbol
+        if (plan.Lowered is not { } lowered || plan.Symbol is not { } methodSymbol)
         {
             return string.Empty;
         }
 
-        var lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl, semanticModel);
+        var methodDecl = plan.Declaration;
+        var semanticModel = plan.SemanticModel;
         var loweredBody = lowered.LoweredBody;
         var contextFields = lowered.ContextFields;
-        var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix,
-            methodDecl, methodSymbol);
-        var stateMachineName = MethodSignatureTranspiler.GetKernelDerivedName(
-            GSharpInternalNames.Kernel.StateMachinePrefix, methodDecl, methodSymbol);
+        var contextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, methodSymbol);
+        var stateMachineName =
+            GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, methodSymbol);
         // Internal-error reports name the kernel as the user wrote it.
         var kernelName = methodDecl.Identifier.ValueText;
 
@@ -41,7 +41,8 @@ internal static class ManagedCSharpTranspiler
         using var writer = new SourceWriter();
         EmitContextClass(writer, contextName, regularFields, ImmutableArray<IParameterSymbol>.Empty, lowered.CallSites,
             semanticModel);
-        EmitStateMachineMethod(writer, contextName, stateMachineName, methodSymbol, localInits, bodySource);
+        EmitStateMachineMethod(writer, contextName, stateMachineName, methodSymbol, plan.HasAutoResult, localInits,
+            bodySource);
         return writer.ToString();
     }
 
@@ -49,16 +50,21 @@ internal static class ManagedCSharpTranspiler
     /// Emits the frame class and the state machine of a device function that may suspend. The state machine returns
     /// whether the call completed; the caller calls it again on every resume until it does.
     /// </summary>
-    public static string GenerateDeviceFunction(MethodDeclarationSyntax methodDecl, SemanticModel semanticModel)
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="plan"/> is not a <see cref="MethodEmissionKind.SuspendingDeviceFunction"/>.
+    /// </exception>
+    public static string GenerateDeviceFunction(in MethodEmissionPlan plan)
     {
-        var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
-        if (!methodDecl.HasBody() || methodSymbol == null ||
-            !SuspensionAnalysis.RequiresStateMachine(methodSymbol, semanticModel.Compilation))
+        // A suspending device function always has a state machine and a symbol
+        if (plan.Kind != MethodEmissionKind.SuspendingDeviceFunction || plan.Lowered is not { } lowered ||
+            plan.Symbol is not { } methodSymbol)
         {
-            return string.Empty;
+            throw new ArgumentException("Only a device function that may suspend has a managed state machine.",
+                nameof(plan));
         }
 
-        var lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel, methodSymbol);
+        var methodDecl = plan.Declaration;
+        var semanticModel = plan.SemanticModel;
         var frameName =
             GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol);
         var stateMachineName =
@@ -67,7 +73,7 @@ internal static class ManagedCSharpTranspiler
 
         var (localInits, regularFields, unhoistedSymbols) =
             ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
-        var copiedParameters = MethodTranspiler.GetCopiedParameters(lowered, methodSymbol);
+        var copiedParameters = plan.GetCopiedParameters(lowered);
 
         var unhoistedBody =
             new UnhoistRefStructRewriter(unhoistedSymbols, semanticModel, functionName).Visit(lowered.LoweredBody) as
@@ -335,21 +341,19 @@ internal static class ManagedCSharpTranspiler
         SourceWriter writer,
         string contextName,
         string stateMachineName,
-        IMethodSymbol? methodSymbol,
+        IMethodSymbol methodSymbol,
+        bool hasAutoResult,
         ImmutableArray<ContextField> localInits,
         string bodySource)
     {
-        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol);
+        EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult);
         writer.AppendLine(") {");
 
-        if (methodSymbol != null)
+        foreach (var p in methodSymbol.Parameters)
         {
-            foreach (var p in methodSymbol.Parameters)
+            if (p.RefKind == RefKind.Out)
             {
-                if (p.RefKind == RefKind.Out)
-                {
-                    writer.AppendLine($"        {p.Name.ToCSharpIdentifier()} = default;");
-                }
+                writer.AppendLine($"{p.Name.ToCSharpIdentifier()} = default;");
             }
         }
 
@@ -374,14 +378,10 @@ internal static class ManagedCSharpTranspiler
         SourceWriter writer,
         string contextName,
         string stateMachineName,
-        IMethodSymbol? methodSymbol)
+        IMethodSymbol methodSymbol,
+        bool hasAutoResult)
     {
         writer.Append($"public static unsafe void {stateMachineName}(");
-        if (methodSymbol == null)
-        {
-            return;
-        }
-
         foreach (var p in methodSymbol.Parameters)
         {
             writer.Append(p.RefKind switch
@@ -397,7 +397,7 @@ internal static class ManagedCSharpTranspiler
 
         writer.Append($"{contextName} {GSharpInternalNames.StateMachine.Context}");
 
-        if (methodSymbol.ReturnType.SpecialType != SpecialType.System_Void)
+        if (hasAutoResult)
         {
             writer.Append(", ref ");
             writer.AppendCsharpTypeName(methodSymbol.ReturnType);

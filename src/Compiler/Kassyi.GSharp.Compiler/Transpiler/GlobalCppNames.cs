@@ -74,7 +74,8 @@ internal static class GlobalCppNames
     /// </summary>
     /// <remarks>
     /// This is the only source of the entry point name: the C++ definition, the CUDA <c>GetFunction</c> lookup and the
-    /// CPU export lookup all use it, together with <see cref="GetKernelDerivedName"/>.
+    /// CPU export lookup all use it, together with <see cref="GetKernelDerivedName"/>. A path that has no symbol emits nothing
+    /// that needs these names; it never builds a fallback name from the syntax.
     /// </remarks>
     public static string GetKernelName(IMethodSymbol kernel) =>
         GetKernelDerivedName(GSharpNameEncoding.KernelPrefix, kernel);
