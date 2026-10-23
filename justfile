@@ -13,6 +13,10 @@ test-all *args="":
 test-coverage *args="":
     dotnet test -s coverage.runsettings --filter "Category!=Stress&Category!=Benchmark" {{args}}
 
+# Run the tests with coverage and list the lines changed since base that no test executed
+coverage-diff base="main":
+    node scripts/coverage-diff.js --run --base {{base}}
+
 # Run tests multiple times to detect flaky tests
 # count can take the time: 
 #	test-stability 5h15m # for 5 hours 15 minutes

@@ -15,5 +15,6 @@
 | `just test-unit` | General unit tests (`Category=Unit`) |
 | `just test-alignment` | Memory alignment / struct layout (`Category=Alignment`) |
 | `just test-all` | Everything |
+| `just coverage-diff [base]` | `just test` with coverage, then the lines changed since `base` (default `main`) that no test executed |
 
 Pick the command matching the domain you modified. Methodology (TDD, snapshot hierarchy) lives in [test-architecture.md](test-architecture.md).
