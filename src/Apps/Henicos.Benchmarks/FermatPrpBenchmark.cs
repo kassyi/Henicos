@@ -19,7 +19,7 @@ public class FermatPrpBenchmark
 
         using var scope = new GpuKernelLoader.CudaContextScope();
 
-        var runner = new FermatAlgorithm(E);
+        using var runner = new FermatAlgorithm(E);
         var repository = new FileCheckpointRepository(CheckpointFile, TempCheckpointFile);
 
         var startIter = 0;
