@@ -80,7 +80,7 @@ internal static class CppNameResolver
         ITypeParameterSymbol parameter => CppName.Global(GlobalCppNames.GetTypeParameterName(parameter)),
         IMethodSymbol method when IsEmittedDeviceFunction(method, dialect) =>
             CppName.Global(GlobalCppNames.GetFunctionName(method)),
-        INamedTypeSymbol type when GlobalCppNames.IsEmittedUserType(type) && !dialect.IsMappedType(type) =>
+        INamedTypeSymbol type when GlobalCppNames.IsEncodedUserType(type, dialect) =>
             CppName.Global(GlobalCppNames.GetTypeName(type)),
         _ => CppName.Verbatim(fallbackName)
     };
@@ -139,10 +139,7 @@ internal static class CppNameResolver
         !dialect.TryMapIntrinsic(method, out _);
 
     private static bool IsEmittedStructMember(ISymbol member, ITranspilerDialect dialect) =>
-        member.ContainingType is { TypeKind: TypeKind.Struct } type &&
-        !type.ContainingNamespace.IsSystemOrNumerics() &&
-        !type.IsSharedMemoryType() &&
-        !dialect.IsMappedType(type);
+        member.ContainingType is { } type && GlobalCppNames.IsEncodedUserType(type, dialect);
 
     private static int GetDeclarationOrdinal(ISymbol symbol)
     {

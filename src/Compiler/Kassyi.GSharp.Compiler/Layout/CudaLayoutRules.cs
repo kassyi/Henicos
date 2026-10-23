@@ -6,6 +6,10 @@ internal static class CudaLayoutRules
     internal record struct CudaLayoutInfo(int Size, int Alignment);
 
     /// <summary>Determines whether the type requires custom native struct generation.</summary>
+    /// <remarks>
+    /// This is the host marshaling classification (native shadow structs), not the device one: unlike
+    /// <see cref="Transpiler.GlobalCppNames.IsEmittedUserType"/> it leaves out array-like structs and Core types.
+    /// </remarks>
     internal static bool IsCustomStruct(ITypeSymbol type)
     {
         // [WHY] Array-like structs (ImmutableArray<T> in System.Collections.Immutable) are marshaled as GSharpArray, not as native shadow structs.

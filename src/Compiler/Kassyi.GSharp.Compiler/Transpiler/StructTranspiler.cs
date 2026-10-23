@@ -13,11 +13,6 @@ internal static class StructTranspiler
             return;
         }
 
-        if (namedStruct.IsSharedMemoryType())
-        {
-            return;
-        }
-
         if (!context.Query.UsedStructs.Add(namedStruct))
         {
             return;
@@ -88,8 +83,7 @@ internal static class StructTranspiler
     {
         // [WHY] Array-like wrappers (T[], Memory<T>, ImmutableArray<T>, ...) reach the device as GSharpArray<T>; only their element type can be a user struct.
         var structType = typeSymbol.TryGetArrayLikeElementType(out var elementType) ? elementType : typeSymbol;
-        if (structType is INamedTypeSymbol { TypeKind: TypeKind.Struct } candidate &&
-            !candidate.ContainingNamespace.IsSystemOrNumerics())
+        if (structType is INamedTypeSymbol candidate && GlobalCppNames.IsEmittedUserType(candidate))
         {
             namedStruct = candidate;
             return true;
