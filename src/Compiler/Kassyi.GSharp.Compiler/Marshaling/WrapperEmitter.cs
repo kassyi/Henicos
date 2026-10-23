@@ -114,6 +114,14 @@ internal static class WrapperEmitter
         }
     }
 
+    // The generated part must declare the accessibility of the user's part, or the compiler reports CS0262.
+    private static string GetClassAccessibility(INamedTypeSymbol classSymbol) =>
+        SyntaxFacts.GetText(classSymbol.DeclaredAccessibility);
+
+    // A context or frame field that a kernel never assigns is reported (CS0649) unless the field is visible outside the
+    // assembly, which it is only in a public class.
+    private static void WriteUnassignedFieldSuppression(SourceWriter writer, INamedTypeSymbol classSymbol) =>
+        writer.AppendLineIf(classSymbol.DeclaredAccessibility != Accessibility.Public, "#pragma warning disable CS0649");
 
     /// <summary>
     /// Emits the managed state machines and frames of the device functions in <paramref name="classSymbol"/> that may
@@ -129,6 +137,7 @@ internal static class WrapperEmitter
             using static global::Kassyi.GSharp.Core.ManagedGpuContext;
             using global::Kassyi.ZeroAlloc.Linq;
             """);
+        WriteUnassignedFieldSuppression(writer, classSymbol);
         writer.AppendLine();
 
         var isGlobalNamespace = classSymbol.ContainingNamespace.IsGlobalNamespace;
@@ -140,8 +149,7 @@ internal static class WrapperEmitter
             writer.AppendLine("{");
         }
 
-        writer.Append("public partial class ");
-        writer.AppendLine(classSymbol.Name);
+        writer.AppendLine($"{GetClassAccessibility(classSymbol)} partial class {classSymbol.Name}");
         using (writer.Scope())
         {
             foreach (var source in sources)
@@ -177,6 +185,7 @@ internal static class WrapperEmitter
             using static global::Kassyi.GSharp.Core.ManagedGpuContext;
             using global::Kassyi.ZeroAlloc.Linq;
             """);
+        WriteUnassignedFieldSuppression(writer, classSymbol);
 
         writer.AppendLine();
 
@@ -189,8 +198,7 @@ internal static class WrapperEmitter
             writer.AppendLine("{");
         }
 
-        writer.Append("public partial class ");
-        writer.AppendLine(className);
+        writer.AppendLine($"{GetClassAccessibility(classSymbol)} partial class {className}");
         using (writer.Scope())
         {
             writer.AppendGeneratedCodeAttributes();
