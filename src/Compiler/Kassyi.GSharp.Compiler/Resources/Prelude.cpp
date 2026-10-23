@@ -5,3 +5,4 @@
 #include "Prelude/Atomics.hpp"
 #include "Prelude/WarpAndHints.hpp"
 #include "Prelude/ErrorChannel.hpp"
+#include "StackLinq.cuh"

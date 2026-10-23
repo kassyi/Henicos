@@ -8,4 +8,10 @@ internal static class TranspilerDialectExtensions
     /// </summary>
     public static bool EmulatesThreadsWithStateMachine(this ITranspilerDialect dialect) =>
         (dialect.Capabilities & DialectCapabilities.HardwareThreadScheduling) == 0;
+
+    /// <summary>
+    /// Whether the dialect provides the CUDA Thrust library for device-side range algorithms.
+    /// </summary>
+    public static bool HasThrustAlgorithms(this ITranspilerDialect dialect) =>
+        (dialect.Capabilities & DialectCapabilities.ThrustAlgorithms) != 0;
 }
