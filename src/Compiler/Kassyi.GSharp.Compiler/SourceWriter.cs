@@ -236,15 +236,21 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public override int GetHashCode() => _myDepth;
 
+    /// <summary>Write custom scopes: { anything }</summary>
     public SourceWriterScope Scope(string openingText = "{", string closingText = "}") =>
         new(this, openingText, closingText);
 
+    /// <summary>Write custom inline scopes: { anything }</summary>
     public SourceWriterInlineScope InlineScope(string openingText, string closingText) =>
         new(this, openingText, closingText);
 
+    /// <summary>Write ()</summary>
     public SourceWriterInlineScope Parentheses() => new(this, "(", ")");
+    /// <summary>Write []</summary>
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
+    /// <summary>Write {}</summary>
     public SourceWriterInlineScope Braces() => new(this, "{", "}");
+
     public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda(string? returnType = null) => new(this, returnType);
 
     /// <summary>Name recorded in the <c>GeneratedCodeAttribute</c> of generated types.</summary>

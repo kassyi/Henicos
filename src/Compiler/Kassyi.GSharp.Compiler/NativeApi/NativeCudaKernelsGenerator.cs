@@ -85,21 +85,21 @@ public class NativeCudaKernelsGenerator : IIncrementalGenerator
             writer.AppendGeneratedFileHeader(enableNullable: false);
             writer.AppendLine();
             writer.AppendLine("internal static partial class NativeCudaKernels");
-            writer.AppendLine("{");
-
-            var generated = new HashSet<string>();
-            foreach (var array in arrays)
+            using (writer.Scope())
             {
-                foreach (var kernelName in array)
+                var generated = new HashSet<string>();
+                foreach (var array in arrays)
                 {
-                    if (generated.Add(kernelName))
+                    foreach (var kernelName in array)
                     {
-                        writer.AppendLine($"public const string {kernelName} = \"{kernelName}\";");
+                        if (generated.Add(kernelName))
+                        {
+                            writer.AppendLine($"public const string {kernelName} = \"{kernelName}\";");
+                        }
                     }
                 }
             }
 
-            writer.AppendLine("}");
             spc.AddSource("NativeCudaKernels.g.cs", writer.ToString());
         });
     }
