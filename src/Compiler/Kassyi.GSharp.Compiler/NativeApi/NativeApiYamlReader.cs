@@ -4,9 +4,24 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 /// Maps a YAML native API definition onto <see cref="NativeApiDefinition"/> and validates its schema.
 /// </summary>
 /// <remarks>
-/// Unknown keys are ignored so that definitions stay forward-compatible. String values that end up in
+/// <para>Unknown keys are ignored so that definitions stay forward-compatible. String values that end up in
 /// generated code are validated as C# identifiers where they name a symbol; free-form values such as
-/// types and descriptions are passed through and escaped by the emitter.
+/// types and descriptions are passed through and escaped by the emitter.</para>
+/// <para>A parameter or return <c>type</c> is the C# spelling, modifiers included (<c>ref T</c>, <c>in T</c>,
+/// <c>out T</c>, <c>ref readonly T</c>, <c>WmmaMatrixA&lt;TShape, T, TLayout&gt;</c>). Intrinsic definitions (neither
+/// <c>libraryName</c> nor <c>moduleName</c>) can also declare a generic method and a nested class:</para>
+/// <code>
+/// - name: CopyAsync
+///   nativeName: __gsharp_cp_async
+///   className: Gpu.Unsafe          # dotted path: a static class nested in Gpu
+///   typeParameters:
+///     - name: T
+///       constraints: unmanaged     # a scalar or a sequence, emitted in order after "where T :"
+///       description: The element type.
+///   parameters:
+///     - { name: sharedDst, type: ref T }
+///     - { name: globalSrc, type: ref readonly T }
+/// </code>
 /// </remarks>
 internal static class NativeApiYamlReader
 {
@@ -122,9 +137,10 @@ internal static class NativeApiYamlReader
         };
 
         ValidateIdentifier(mapping, "name", method.Name);
-        if (method.ClassName is not null)
+        if (method.ClassName is not null && !IsValidDottedName(method.ClassName))
         {
-            ValidateIdentifier(mapping, "className", method.ClassName);
+            throw Schema(LineOf(mapping, "className"),
+                $"'className' value '{method.ClassName}' is not a valid C# class name or nested class path.");
         }
 
         if (method.StringMarshalling is not null)
@@ -152,6 +168,11 @@ internal static class NativeApiYamlReader
             };
         }
 
+        if (mapping.TryGetValue("typeParameters", out var typeParametersNode) && !IsNull(typeParametersNode))
+        {
+            method.TypeParameters = ReadTypeParameters(typeParametersNode, method, bindingKind);
+        }
+
         if (mapping.TryGetValue("parameters", out var parametersNode) && !IsNull(parametersNode))
         {
             if (parametersNode is not YamlSequence parameters)
@@ -169,6 +190,63 @@ internal static class NativeApiYamlReader
         }
 
         return method;
+    }
+
+    private static ImmutableArray<TypeParameterDefinition> ReadTypeParameters(
+        YamlNode node, ApiMethodDefinition method, NativeApiBindingKind bindingKind)
+    {
+        if (bindingKind != NativeApiBindingKind.Intrinsic)
+        {
+            throw Schema(node.Line,
+                $"'typeParameters' is supported only by intrinsic definitions, but method '{method.Name}' binds a host library or a kernel module.");
+        }
+
+        if (node is not YamlSequence sequence)
+        {
+            throw Schema(node.Line, "'typeParameters' must be a sequence.");
+        }
+
+        var builder = ImmutableArray.CreateBuilder<TypeParameterDefinition>(sequence.Items.Count);
+        foreach (var item in sequence.Items)
+        {
+            var typeParameter = ReadTypeParameter(item);
+            if (typeParameter.Name == method.TypeTemplate?.Placeholder)
+            {
+                throw Schema(item.Line,
+                    $"'typeParameters' entry '{typeParameter.Name}' of method '{method.Name}' is also the 'typeTemplate' placeholder.");
+            }
+
+            foreach (var previous in builder)
+            {
+                if (previous.Name == typeParameter.Name)
+                {
+                    throw Schema(item.Line,
+                        $"'typeParameters' entry '{typeParameter.Name}' of method '{method.Name}' is declared twice.");
+                }
+            }
+
+            builder.Add(typeParameter);
+        }
+
+        return builder.MoveToImmutable();
+    }
+
+    private static TypeParameterDefinition ReadTypeParameter(YamlNode node)
+    {
+        if (node is not YamlMapping mapping)
+        {
+            throw Schema(node.Line, "Each entry of 'typeParameters' must be a mapping.");
+        }
+
+        var typeParameter = new TypeParameterDefinition
+        {
+            Name = RequireScalar(mapping, "name"),
+            Constraints = ReadStringList(mapping, "constraints"),
+            Description = OptionalScalar(mapping, "description"),
+        };
+
+        ValidateIdentifier(mapping, "name", typeParameter.Name);
+        return typeParameter;
     }
 
     private static ParameterDefinition ReadParameter(YamlNode node)
@@ -264,6 +342,15 @@ internal static class NativeApiYamlReader
 
     private static void ValidateNamespace(YamlMapping mapping, string value)
     {
+        if (!IsValidDottedName(value))
+        {
+            throw Schema(LineOf(mapping, "namespace"), $"'namespace' value '{value}' is not a valid C# namespace.");
+        }
+    }
+
+    /// <summary>Whether every dot-separated segment of <paramref name="value"/> is a C# identifier.</summary>
+    private static bool IsValidDottedName(string value)
+    {
         var start = 0;
         for (var i = 0; i <= value.Length; i++)
         {
@@ -274,11 +361,13 @@ internal static class NativeApiYamlReader
 
             if (!SyntaxFacts.IsValidIdentifier(value[start..i]))
             {
-                throw Schema(LineOf(mapping, "namespace"), $"'namespace' value '{value}' is not a valid C# namespace.");
+                return false;
             }
 
             start = i + 1;
         }
+
+        return true;
     }
 
     private static void ValidateIdentifier(YamlMapping mapping, string key, string value)

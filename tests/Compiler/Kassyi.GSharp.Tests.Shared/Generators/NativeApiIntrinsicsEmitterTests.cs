@@ -32,12 +32,62 @@ public class NativeApiIntrinsicsEmitterTests
             source.ReplaceLineEndings("\n"));
     }
 
-    private static string EmitPtxIntrinsics()
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public Task Test_GenericAndNestedDeclarations_EmitGenericMethodsAndNestedClasses()
     {
-        var path = RepositoryPaths.Combine("src", "NativeApi", "ptx_intrinsics.yml");
-        Assert.True(
-            NativeApiYamlReader.TryRead(File.ReadAllText(path), out var definition, out var error),
-            error?.Message);
+        var source = EmitGenericIntrinsics();
+
+        return Verifier.Verify(source, "cs")
+            .UseDirectory("Snapshots")
+            .UseFileName("Snap.Test_GenericAndNestedDeclarations_EmitGenericMethodsAndNestedClasses");
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_GenericAndNestedDeclarations_CompileWithTheirSupportingTypes()
+    {
+        var compilation = CreateGenericIntrinsicsCompilation();
+
+        Assert.Empty(compilation.GetDiagnostics()
+            .Where(d => d.Severity >= DiagnosticSeverity.Warning)
+            .Select(d => d.ToString()));
+    }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_TypeTemplate_ReplacesOnlyTheWholePlaceholderIdentifier()
+    {
+        var source = EmitGenericIntrinsics().ReplaceLineEndings("\n");
+
+        // T is replaced in TestFragment<TShape, T>; TShape keeps its name
+        Assert.Contains(
+            "public static TestFragment<TShape, float> Fill<TShape>(float value) where TShape : struct, ITestShape",
+            source);
+        Assert.Contains(
+            "public static TestFragment<TShape, int> Fill<TShape>(int value) where TShape : struct, ITestShape",
+            source);
+    }
+
+    /// <summary>
+    /// Compiles the stubs of <c>TestCases/NativeApi/GenericIntrinsics.yml</c> with the kernels and supporting types of
+    /// <c>TestCases/NativeApi/GenericIntrinsicCalls.cu.cs</c>.
+    /// </summary>
+    internal static Compilation CreateGenericIntrinsicsCompilation() =>
+        RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("NativeApi/GenericIntrinsicCalls.cu.cs"),
+            EmitGenericIntrinsics()
+        );
+
+    private static string EmitGenericIntrinsics() =>
+        Emit(RoslynTestUtility.ReadTestCase("NativeApi/GenericIntrinsics.yml"));
+
+    private static string EmitPtxIntrinsics() =>
+        Emit(File.ReadAllText(RepositoryPaths.Combine("src", "NativeApi", "ptx_intrinsics.yml")));
+
+    private static string Emit(string yaml)
+    {
+        Assert.True(NativeApiYamlReader.TryRead(yaml, out var definition, out var error), error?.Message);
         Assert.Equal(NativeApiBindingKind.Intrinsic, definition.BindingKind);
 
         return NativeIntrinsicEmitter.EmitIntrinsics(definition);

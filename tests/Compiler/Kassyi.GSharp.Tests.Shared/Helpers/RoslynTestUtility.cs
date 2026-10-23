@@ -113,15 +113,15 @@ public static class RoslynTestUtility
         return MegaCompilationCache.GetNamedTypeSymbol(typeName);
     }
 
-    /// <summary>Creates a Roslyn compilation by parsing source text and adding it to the mega compilation cache.</summary>
-    public static Compilation CreateCompilation(string source)
+    /// <summary>Creates a Roslyn compilation by parsing each source text and adding it to the mega compilation cache.</summary>
+    public static Compilation CreateCompilation(params string[] sources)
     {
         var parseOptions = new CSharpParseOptions(LanguageVersion.Preview);
 #pragma warning disable RS0030
-        var syntaxTree = CSharpSyntaxTree.ParseText(source, parseOptions);
+        var syntaxTrees = sources.Select(source => CSharpSyntaxTree.ParseText(source, parseOptions));
 #pragma warning restore RS0030
 
-        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTree);
+        return MegaCompilationCache.BaseCompilation.AddSyntaxTrees(syntaxTrees);
     }
 
     /// <summary>Creates a dummy semantic model and method symbol for testing analyzers or isolated transpiler nodes.</summary>
@@ -234,9 +234,13 @@ public static class RoslynTestUtility
 
     /// <summary>Executes the GpuKernelGenerator on the given source text and produces the output compilation and diagnostics.</summary>
     public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics)
-        RunGenerator(string source, string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null)
+        RunGenerator(string source, string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null) =>
+        RunGenerator(CreateCompilation(source), targetDialect, additionalOptions);
+
+    /// <summary>Executes the GpuKernelGenerator on the given compilation and produces the output compilation and diagnostics.</summary>
+    public static (GeneratorDriver Driver, Compilation Compilation, ImmutableArray<Diagnostic> Diagnostics)
+        RunGenerator(Compilation compilation, string targetDialect = "Cuda", Dictionary<string, string>? additionalOptions = null)
     {
-        var compilation = CreateCompilation(source);
         var generator = new GpuKernelGenerator();
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(

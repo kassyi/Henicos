@@ -65,6 +65,11 @@ internal sealed class ApiMethodDefinition
 
     public string? NativeName { get; set; }
 
+    /// <summary>
+    /// Gets or sets the class that declares the method, overriding the definition's <c>className</c>. A dotted path
+    /// (<c>Gpu.Unsafe</c>) declares the method in a nested static class; the outer classes are emitted as
+    /// <c>partial</c> wrappers.
+    /// </summary>
     public string? ClassName { get; set; }
 
     /// <summary>
@@ -79,7 +84,18 @@ internal sealed class ApiMethodDefinition
 
     public string? Summary { get; set; }
 
+    /// <summary>
+    /// Gets or sets the overloads to expand: one non-generic method per entry of <see cref="TypeTemplateDefinition.Types"/>,
+    /// with the placeholder replaced in every type.
+    /// </summary>
     public TypeTemplateDefinition? TypeTemplate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the type parameters of a generic method (<c>typeParameters</c>, intrinsic definitions only). Unlike
+    /// <see cref="TypeTemplate"/>, they produce a single generic method, called in C++ with explicit template arguments.
+    /// </summary>
+    public ImmutableArray<TypeParameterDefinition> TypeParameters { get; set; } =
+        ImmutableArray<TypeParameterDefinition>.Empty;
 
     public string ReturnType { get; set; } = "void";
 
@@ -93,6 +109,20 @@ internal sealed class TypeTemplateDefinition
     public string Placeholder { get; set; } = "T";
 
     public ImmutableArray<string> Types { get; set; } = ImmutableArray<string>.Empty;
+}
+
+/// <summary>
+/// A type parameter of a generic intrinsic method, emitted as <c>&lt;Name&gt;</c> and
+/// <c>where Name : Constraints</c>.
+/// </summary>
+internal sealed class TypeParameterDefinition
+{
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the constraints, in order (<c>struct</c>, <c>unmanaged</c>, an interface, ...).</summary>
+    public ImmutableArray<string> Constraints { get; set; } = ImmutableArray<string>.Empty;
+
+    public string? Description { get; set; }
 }
 
 internal sealed class ParameterDefinition

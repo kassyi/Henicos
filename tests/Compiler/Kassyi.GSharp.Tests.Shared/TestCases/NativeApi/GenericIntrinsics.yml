@@ -1,0 +1,66 @@
+# Test-only intrinsic definition: generic methods, nested classes, generic value types and ref readonly parameters.
+# The supporting types (ITestShape, TestShape, TestFragment<TShape, T>) are declared in GenericIntrinsicCalls.cu.cs.
+namespace: Kassyi.GSharp.Tests.NativeApi
+className: TestIntrinsics
+
+methods:
+  - name: CopyAsync
+    nativeName: test_copy_async
+    summary: Copies one element from global to shared memory without waiting for it.
+    typeParameters:
+      - name: T
+        constraints: unmanaged
+        description: The element type.
+    parameters:
+      - name: sharedDst
+        type: ref T
+        description: The destination element in shared memory.
+      - name: globalSrc
+        type: ref readonly T
+        description: The source element in global memory.
+
+  - name: Extract
+    nativeName: test_extract
+    summary: Reads one element of a fragment.
+    typeParameters:
+      - name: TShape
+        constraints: [struct, ITestShape]
+        description: The fragment shape.
+      - name: T
+        constraints: unmanaged
+    returnType: T
+    returnDescription: The element at the index.
+    parameters:
+      - name: fragment
+        type: ref readonly TestFragment<TShape, T>
+        description: The fragment to read.
+      - name: index
+        type: int
+
+  - name: Fill
+    nativeName: test_fill
+    summary: Fills a fragment of the given element type.
+    typeParameters:
+      - name: TShape
+        constraints: [struct, ITestShape]
+    typeTemplate:
+      placeholder: T
+      types: [float, int]
+    returnType: TestFragment<TShape, T>
+    returnDescription: The filled fragment.
+    parameters:
+      - name: value
+        type: T
+
+  - name: Release
+    nativeName: test_release
+    className: TestIntrinsics.Unsafe
+    summary: Releases a slot.
+    parameters:
+      - name: slot
+        type: int
+
+  - name: Count
+    nativeName: test_count
+    className: TestIntrinsics.Unsafe.Deep
+    returnType: int

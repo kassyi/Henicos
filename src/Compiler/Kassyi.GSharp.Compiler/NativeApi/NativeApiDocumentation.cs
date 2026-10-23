@@ -12,6 +12,14 @@ internal static class NativeApiDocumentation
             writer.Line($"/// <summary>{EscapeXml(m.Summary ?? string.Empty)}</summary>");
         }
 
+        foreach (var t in m.TypeParameters)
+        {
+            if (!string.IsNullOrEmpty(t.Description))
+            {
+                writer.Line($"/// <typeparam name=\"{t.Name}\">{EscapeXml(t.Description ?? string.Empty)}</typeparam>");
+            }
+        }
+
         foreach (var p in m.Parameters)
         {
             if (!string.IsNullOrEmpty(p.Description))
