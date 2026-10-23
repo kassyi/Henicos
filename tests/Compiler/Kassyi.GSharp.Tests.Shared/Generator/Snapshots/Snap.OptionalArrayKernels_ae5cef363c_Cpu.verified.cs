@@ -110,7 +110,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 }
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__IsNullBiasKernel(float[] x, float[] bias, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__IsNullBiasKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__IsNullBiasKernel(float[] x, float[]? bias, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__IsNullBiasKernel __gsharp_ctx) {
 {
     switch (__gsharp_ctx.__gsharp_state)
     {
@@ -301,7 +301,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 }
-public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__EqualsNullBiasKernel(float[] x, float[] bias, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__EqualsNullBiasKernel __gsharp_ctx) {
+public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__EqualsNullBiasKernel(float[] x, float[]? bias, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__OptionalArrayKernels__EqualsNullBiasKernel __gsharp_ctx) {
 {
     switch (__gsharp_ctx.__gsharp_state)
     {

@@ -376,7 +376,22 @@ internal static class SymbolExtensions
     /// and fully-qualified names for complex types. Keywords are also used inside arrays, pointers, nullable value types,
     /// and type arguments (e.g. "int?[]", "float*", "global::System.Span&lt;int&gt;").
     /// </summary>
+    /// <remarks>
+    /// A nullable reference type keeps its <c>?</c> (e.g. "float[]?"), because generated code is compiled with nullable
+    /// annotations enabled and dropping it makes every forwarded <c>null</c> a CS8604 warning.
+    /// </remarks>
     public static ref readonly SourceWriter AppendCsharpTypeName(this in SourceWriter writer, ITypeSymbol type)
+    {
+        writer.AppendCsharpTypeNameWithoutAnnotation(type);
+        if (type is { IsReferenceType: true, NullableAnnotation: NullableAnnotation.Annotated })
+        {
+            writer.Append('?');
+        }
+
+        return ref writer;
+    }
+
+    private static void AppendCsharpTypeNameWithoutAnnotation(this in SourceWriter writer, ITypeSymbol type)
     {
         switch (type)
         {
@@ -389,15 +404,15 @@ internal static class SymbolExtensions
                 }
 
                 writer.Append(']');
-                return ref writer;
+                return;
             case IPointerTypeSymbol pointerType:
                 writer.AppendCsharpTypeName(pointerType.PointedAtType);
                 writer.Append('*');
-                return ref writer;
+                return;
             case INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType:
                 writer.AppendCsharpTypeName(nullableType.TypeArguments[0]);
                 writer.Append('?');
-                return ref writer;
+                return;
             case INamedTypeSymbol { TypeArguments.Length: > 0 } genericType:
                 writer.Append("global::");
                 AppendContainingNamespaceOrType(writer, genericType.ContainingSymbol);
@@ -414,17 +429,17 @@ internal static class SymbolExtensions
                 }
 
                 writer.Append('>');
-                return ref writer;
+                return;
         }
 
         var keyword = type.SpecialType.GetCsharpKeyword();
         if (keyword != null)
         {
             writer.Append(keyword);
-            return ref writer;
+            return;
         }
 
-        return ref writer.AppendFullyQualifiedCsharpName(type);
+        writer.AppendFullyQualifiedCsharpName(type);
     }
 
     public static ref readonly SourceWriter AppendFullyQualifiedCsharpName(this in SourceWriter writer,
