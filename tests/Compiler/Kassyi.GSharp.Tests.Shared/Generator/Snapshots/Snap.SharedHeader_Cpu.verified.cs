@@ -172,6 +172,34 @@ if ((immLut >> idx) & 1) res |= (1U << i);
 }
 return res;
 }
+__forceinline__ unsigned int __brev(unsigned int val) {
+unsigned int res = 0;
+for (int i = 0; i < 32; i++) {
+if ((val >> i) & 1) res |= (1U << (31 - i));
+}
+return res;
+}
+// CUDA wraps the shift amount to 0-31
+__forceinline__ unsigned int __funnelshift_l(unsigned int lo, unsigned int hi, unsigned int shift) {
+unsigned long long pair = ((unsigned long long)hi << 32) | lo;
+return (unsigned int)((pair << (shift & 31)) >> 32);
+}
+__forceinline__ unsigned int __funnelshift_r(unsigned int lo, unsigned int hi, unsigned int shift) {
+unsigned long long pair = ((unsigned long long)hi << 32) | lo;
+return (unsigned int)(pair >> (shift & 31));
+}
+// Like the PTX add.cc / addc sequence of the CUDA prelude: any non-zero carry-in adds one
+__forceinline__ unsigned int __gsharp_add_cc(unsigned int a, unsigned int b, unsigned long long* carry) {
+unsigned long long sum = (unsigned long long)a + b + ((unsigned int)*carry != 0 ? 1 : 0);
+*carry = sum >> 32;
+return (unsigned int)sum;
+}
+// Like the PTX sub.cc / subc sequence of the CUDA prelude: any non-zero borrow-in subtracts one
+__forceinline__ unsigned int __gsharp_sub_cc(unsigned int a, unsigned int b, long long* borrow) {
+unsigned long long subtrahend = (unsigned long long)b + ((unsigned int)*borrow != 0 ? 1 : 0);
+*borrow = (unsigned long long)a < subtrahend ? 1 : 0;
+return (unsigned int)((unsigned long long)a - subtrahend);
+}
 __forceinline__ unsigned long long __brevll(unsigned long long val) {
 unsigned long long res = 0;
 for (int i = 0; i < 64; i++) {
