@@ -33,6 +33,26 @@ public class GeneratorOutputTests
         Assert.DoesNotContain("__o", wrapper, StringComparison.Ordinal);
     }
 
+    // An alias of the attribute marks a kernel as well as its spelled-out name (A-53)
+    [Theory]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData("Cuda", "UsingAliasKernels")]
+    [InlineData("Cpu", "UsingAliasKernels")]
+    [InlineData("Cuda", "GlobalAliasKernels")]
+    [InlineData("Cpu", "GlobalAliasKernels")]
+    public void Test_AliasedAttribute_GeneratesWrapper(string dialect, string className)
+    {
+        var compilation = CreateCompilation(
+            Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_GlobalAlias_Usings.cs"), "usings.cs"),
+            Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_UsingAlias.cu.cs"), "using.cs"),
+            Parse(RoslynTestUtility.ReadTestCase("Generators/GpuKernel_GlobalAlias.cu.cs"), "global.cs"));
+        var result = CreateDriver(dialect).RunGenerators(compilation).GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+
+        var wrapper = GetSource(result, $"{className}.g.cs");
+        Assert.Contains("LaunchFillKernel(", wrapper, StringComparison.Ordinal);
+    }
+
     // The warmups follow the kernels, not the classes: OuterKernels is split by MiddleKernels
     [Fact]
     [Scenario(TestScenario.Boundary)]

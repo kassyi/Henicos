@@ -130,12 +130,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         var aotTarget = context.CompilationProvider.Select(static (compilation, _) => AotTarget.Create(compilation));
 
-        // The predicate keeps the attribute's short name check of the syntax: an alias of the attribute is not a kernel
-        // to the generator, as before
+        // ForAttributeWithMetadataName resolves the attribute through the symbol, so an alias of it is found as well; the
+        // predicate only checks the node kind
         var kernelMethods = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 KnownAttributes.GpuKernelMetadataName,
-                predicate: static (node, _) => IsSyntaxTargetForGeneration(node, KnownAttributes.GpuKernel),
+                predicate: static (node, _) => node is MethodDeclarationSyntax,
                 transform: static (ctx, _) => TranspileKernel(ctx))
             .WithTrackingName(KernelTrackingName)
             .Where(static m => m.HasValue)
@@ -144,7 +144,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var deviceMethods = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 KnownAttributes.GpuDeviceFunctionMetadataName,
-                predicate: static (node, _) => IsSyntaxTargetForGeneration(node, KnownAttributes.GpuDeviceFunction),
+                predicate: static (node, _) => node is MethodDeclarationSyntax,
                 transform: static (ctx, _) => TranspileDeviceMethod(ctx))
             .WithTrackingName(DeviceFunctionTrackingName)
             .Where(static m => m.HasValue)
@@ -313,33 +313,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 "", errorSource, "", errorSource, new EquatableArray<string>(), new EquatableArray<string>(), ex.ToString());
         }
     }
-
-    private static bool IsSyntaxTargetForGeneration(SyntaxNode node, string attributeName)
-    {
-        if (node is not MethodDeclarationSyntax { AttributeLists.Count: > 0 } m)
-        {
-            return false;
-        }
-
-        return m.AttributeLists
-            .AsStackEnumerable()
-            .SelectMany(static list => list.Attributes
-                .AsStackEnumerable()
-            ).Any(
-                attributeName,
-                static (attribute, name) =>
-                    GetSimpleName(attribute.Name) is { } simpleName &&
-                    KnownAttributes.IsAttributeName(simpleName.Identifier.ValueText, name)
-            );
-    }
-
-    private static SimpleNameSyntax? GetSimpleName(NameSyntax name) => name switch
-    {
-        SimpleNameSyntax simple => simple,
-        QualifiedNameSyntax qualified => qualified.Right,
-        AliasQualifiedNameSyntax alias => alias.Name,
-        _ => null
-    };
 
     // The prelude and the device functions shared by every kernel, as C# constants for the JIT path
     private static void EmitSharedSources(SourceProductionContext context,
