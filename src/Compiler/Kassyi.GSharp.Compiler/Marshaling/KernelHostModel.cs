@@ -234,3 +234,63 @@ internal readonly record struct KernelClassModel(
         return false;
     }
 }
+
+/// <summary>A kernel whose function pointer the CUDA module context warms up.</summary>
+/// <param name="Class">The class that declares the warmup method.</param>
+/// <param name="MemberKey">The suffix of <c>WarmupFunctionPointer{key}</c>.</param>
+internal readonly record struct KernelWarmup(HostClassHeader Class, string MemberKey);
+
+/// <summary>The kernels of one compilation: the class models, and the warmups in the order of the kernels.</summary>
+internal readonly record struct KernelModuleModel(
+    EquatableArray<KernelClassModel> Classes,
+    EquatableArray<KernelWarmup> Warmups)
+{
+    /// <summary>Groups <paramref name="kernels"/> by class, in the order the classes first appear.</summary>
+    public static KernelModuleModel Create(ImmutableArray<TranspiledKernelResult> kernels)
+    {
+        var kernelsByClass = new Dictionary<string, ImmutableArray<TranspiledKernelResult>.Builder>(StringComparer.Ordinal);
+        var classIndices = new Dictionary<string, int>(StringComparer.Ordinal);
+        var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
+        foreach (var kernel in kernels)
+        {
+            if (!kernelsByClass.TryGetValue(kernel.Class.HintName, out var group))
+            {
+                group = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
+                kernelsByClass[kernel.Class.HintName] = group;
+                classIndices[kernel.Class.HintName] = classOrder.Count;
+                classOrder.Add(kernel.Class);
+            }
+
+            group.Add(kernel);
+        }
+
+        var classes = ImmutableArray.CreateBuilder<KernelClassModel>(classOrder.Count);
+        classOrder
+            .AsStackEnumerable()
+            .Select(kernelsByClass, static (header, groups) => KernelClassModel.Create(header, groups[header.HintName]))
+            .AddTo(classes);
+        var classModels = classes.MoveToImmutable();
+
+        // The module context warms the kernels up in their own order, which may interleave the classes
+        var positions = new Dictionary<string, int>(StringComparer.Ordinal);
+        var warmups = ImmutableArray.CreateBuilder<KernelWarmup>(kernels.Length);
+        foreach (var kernel in kernels)
+        {
+            var hintName = kernel.Class.HintName;
+            positions.TryGetValue(hintName, out var position);
+            positions[hintName] = position + 1;
+            var emission = classModels[classIndices[hintName]].Kernels[position];
+            if (!emission.IsIndistinguishable)
+            {
+                warmups.Add(new KernelWarmup(kernel.Class, emission.MemberKey));
+            }
+        }
+
+        return new KernelModuleModel(classModels.AsEquatableArray(), warmups.ToImmutable().AsEquatableArray());
+    }
+}
+
+/// <summary>The managed state machines of the device functions of one class that may suspend.</summary>
+/// <param name="Class">The class that the state machines go into.</param>
+/// <param name="Sources">The state machines, in declaration order.</param>
+internal readonly record struct DeviceStateMachineGroup(HostClassHeader Class, EquatableArray<string> Sources);

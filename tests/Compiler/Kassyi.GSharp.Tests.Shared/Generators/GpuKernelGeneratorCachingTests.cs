@@ -1,4 +1,5 @@
 using System.Text;
+using Kassyi.GSharp.Compiler.Marshaling;
 using Kassyi.GSharp.Compiler.Models;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 
@@ -25,6 +26,12 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
 
     private static readonly string s_overloadC =
         RoslynTestUtility.ReadTestCase("Generators/GpuKernel_SplitOverload_C.cu.cs");
+
+    private static readonly string s_twoClasses =
+        RoslynTestUtility.ReadTestCase("Generators/GpuKernel_TwoClasses.cu.cs");
+
+    private static readonly string s_deviceFunctionsOnly =
+        RoslynTestUtility.ReadTestCase("Generators/GpuDevice_FunctionsOnly.cu.cs");
 
     private static readonly CSharpParseOptions s_parseOptions = new(LanguageVersion.Preview);
 
@@ -71,6 +78,52 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
         Assert.Single(wrappers);
         // The embedded kernel source is the edited one (emitted operators have no spaces)
         Assert.Contains("factor+1", wrappers[0].SourceText.ToString(), StringComparison.Ordinal);
+    }
+
+    // An edit to one class's kernel reruns that class's wrapper only: each class model compares on its own
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_EditingOneClass_LeavesTheOtherWrapperCached(string dialect)
+    {
+        var compilation = CreateCompilation(s_twoClasses);
+        var tree = compilation.SyntaxTrees.Single();
+        var text = tree.GetText().ToString();
+        var editedText = text.Replace("data[i] * 2f", "data[i] * 3f", StringComparison.Ordinal);
+        Assert.NotEqual(text, editedText);
+        var edited = compilation.ReplaceSyntaxTree(tree, CSharpSyntaxTree.ParseText(editedText, s_parseOptions));
+
+        var driver = CreateDriver(dialect).RunGenerators(compilation).RunGenerators(edited);
+
+        var result = driver.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+        var reasons = result.TrackedOutputSteps["SourceOutput"]
+            .Where(static run => run.Inputs[0].Source.Name == GpuKernelGenerator.KernelWrapperTrackingName)
+            .ToDictionary(
+                static run => GetInputValue<(KernelClassModel Model, HostEmitOptions Options)>(run).Model.Class.Name,
+                static run => Assert.Single(run.Outputs).Reason);
+        Assert.Equal(IncrementalStepRunReason.Modified, reasons["FirstKernels"]);
+        Assert.Equal(IncrementalStepRunReason.Cached, reasons["SecondKernels"]);
+    }
+
+    // The generator emits nothing for a project without kernels: no shared sources, no state machines, no artifact
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_DeviceFunctionsOnly_EmitNothing(string dialect)
+    {
+        var driver = CreateDriver(dialect).RunGenerators(CreateCompilation(s_deviceFunctionsOnly));
+
+        var result = driver.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+        Assert.Empty(result.Diagnostics);
+        Assert.Empty(result.GeneratedSources);
+        // The device functions were transpiled; only the outputs are gated
+        Assert.Equal(2, result.TrackedSteps[GpuKernelGenerator.DeviceFunctionTrackingName]
+            .SelectMany(static run => run.Outputs)
+            .Count());
     }
 
     // #383: the overload check derives from the kernels of one compilation, never from a cached kernel's symbol.
@@ -229,9 +282,15 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
             report.AppendLine($"Generator failed: {exception.GetType().Name}: {exception.Message}");
         }
 
+        // Each output is named after the tracking name of its input, so the report shows which outputs reran
+        var outputs = result.TrackedOutputSteps["SourceOutput"]
+            .GroupBy(static run => run.Inputs[0].Source.Name ?? "SourceOutput")
+            .Select(static g => new KeyValuePair<string, ImmutableArray<IncrementalGeneratorRunStep>>(
+                "SourceOutput(" + g.Key + ")", [.. g]));
         var steps = result.TrackedSteps
-            .Where(static s => s.Key is GpuKernelGenerator.KernelTrackingName or GpuKernelGenerator.DeviceFunctionTrackingName)
-            .Concat(result.TrackedOutputSteps)
+            .Where(static s => s.Key is GpuKernelGenerator.KernelTrackingName or GpuKernelGenerator.DeviceFunctionTrackingName
+                or GpuKernelGenerator.KernelClassTrackingName)
+            .Concat(outputs)
             .OrderBy(static s => s.Key, StringComparer.Ordinal);
         foreach (var (name, runs) in steps)
         {
@@ -247,6 +306,12 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
         }
 
         report.AppendLine();
+    }
+
+    private static T GetInputValue<T>(IncrementalGeneratorRunStep run)
+    {
+        var (source, index) = run.Inputs[0];
+        return Assert.IsType<T>(source.Outputs[index].Value);
     }
 
     private static CSharpCompilation CreateCompilation() => CreateCompilation(s_sourceCode);

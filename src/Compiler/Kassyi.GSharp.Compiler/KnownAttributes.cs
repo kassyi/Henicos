@@ -8,7 +8,9 @@ internal static class KnownAttributes
     private const string AttributeSuffix = "Attribute";
 
     public const string GpuKernel = nameof(GpuKernel);
+    public const string GpuKernelMetadataName = $"{TypeConstants.CoreNamespace}.{GpuKernel}Attribute";
     public const string GpuDeviceFunction = nameof(GpuDeviceFunction);
+    public const string GpuDeviceFunctionMetadataName = $"{TypeConstants.CoreNamespace}.{GpuDeviceFunction}Attribute";
     public const string GpuReadOnly = nameof(GpuReadOnly);
     public const string GpuInline = nameof(GpuInline);
     public const string GpuNoInline = nameof(GpuNoInline);

@@ -145,7 +145,7 @@ internal static class CudaHostLaunchEmitter
     }
 
     public static string GenerateModuleContextClass(string assemblyName,
-        IEnumerable<(HostClassHeader Class, KernelEmission Kernel)> kernels)
+        EquatableArray<KernelWarmup> warmups)
     {
         var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
         var moduleContextName = AotHostNames.GetModuleContextName(assemblyName);
@@ -198,20 +198,15 @@ internal static class CudaHostLaunchEmitter
             GetOrLoadModule();
             """);
 
-        foreach (var (header, kernel) in kernels)
+        foreach (var warmup in warmups)
         {
-            if (kernel.IsIndistinguishable)
-            {
-                continue;
-            }
-
             writer.Append("global::");
-            if (!header.IsGlobalNamespace)
+            if (!warmup.Class.IsGlobalNamespace)
             {
-                writer.Append($"{header.Namespace}.");
+                writer.Append($"{warmup.Class.Namespace}.");
             }
 
-            writer.AppendLine($"{header.Name}.WarmupFunctionPointer{kernel.MemberKey}();");
+            writer.AppendLine($"{warmup.Class.Name}.WarmupFunctionPointer{warmup.MemberKey}();");
         }
 
         writer.AppendLine("}}}");

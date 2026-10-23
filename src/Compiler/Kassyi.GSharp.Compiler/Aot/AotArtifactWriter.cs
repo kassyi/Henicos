@@ -10,15 +10,15 @@ namespace Kassyi.GSharp.Compiler.Aot;
 internal static class AotArtifactWriter
 {
     /// <summary>Writes the artifact for <paramref name="bodySource"/>, unless this is an IDE design-time compilation.</summary>
-    public static void Write(Compilation compilation, GeneratorConfig config, string bodySource,
+    public static void Write(in AotTarget target, GeneratorConfig config, string bodySource,
         SourceProductionContext context)
     {
-        if (IsDesignTimeCompilation(compilation))
+        if (target.IsDesignTimeCompilation)
         {
             return;
         }
 
-        var safeAssemblyName = AotHostNames.ToSafeIdentifier(compilation.AssemblyName ?? "UnknownAssembly");
+        var safeAssemblyName = AotHostNames.ToSafeIdentifier(target.AssemblyName);
         var sourceHash = GSharpNameEncoding.ComputeSourceHash(bodySource);
         var fullSource = GSharpNameEncoding.FormatSymbolHeaderLine(sourceHash) + "\n" + bodySource;
         var dialectName = config.IsCuda ? "Cuda" : "Cpu";
@@ -59,7 +59,8 @@ internal static class AotArtifactWriter
 #pragma warning restore RS1035
     }
 
-    private static bool IsDesignTimeCompilation(Compilation compilation)
+    /// <summary>Whether <paramref name="compilation"/> runs in an IDE worker, which must not overwrite the artifacts.</summary>
+    public static bool IsDesignTimeCompilation(Compilation compilation)
     {
         var domainName = AppDomain.CurrentDomain.FriendlyName;
         if ((domainName.IndexOf("Roslyn.Worker", StringComparison.OrdinalIgnoreCase) >= 0 ||

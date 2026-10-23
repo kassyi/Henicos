@@ -13,6 +13,24 @@ public class GpuKernelGenerator : IIncrementalGenerator
     /// <summary>The tracking name of the step that transpiles each <c>[GpuDeviceFunction]</c>.</summary>
     public const string DeviceFunctionTrackingName = "GpuDeviceFunction";
 
+    /// <summary>The tracking name of the step that builds the model of each kernel class, which its wrapper is emitted from.</summary>
+    public const string KernelClassTrackingName = "GpuKernelClass";
+
+    /// <summary>The tracking name of the input of the output that emits the shared prelude and device function sources.</summary>
+    public const string SharedSourcesTrackingName = "GpuSharedSourcesInput";
+
+    /// <summary>The tracking name of the input of the output that emits each kernel class's wrapper.</summary>
+    public const string KernelWrapperTrackingName = "GpuKernelWrapperInput";
+
+    /// <summary>The tracking name of the input of the output that emits each class's managed device state machines.</summary>
+    public const string DeviceStateMachinesTrackingName = "GpuDeviceStateMachinesInput";
+
+    /// <summary>The tracking name of the input of the output that writes the AOT artifact.</summary>
+    public const string AotArtifactTrackingName = "GpuAotArtifactInput";
+
+    /// <summary>The tracking name of the input of the output that emits the CUDA module context.</summary>
+    public const string ModuleContextTrackingName = "GpuModuleContextInput";
+
     /// <summary>
     /// Collects what one dialect's transpilation could not emit (<see cref="TranspileFailure"/>), each reason once, and
     /// states the reasons in place of that dialect's output.
@@ -103,35 +121,71 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 return new GeneratorConfig(dialect, emitSource, intermediatePath);
             });
 
+        // The wrappers take only the assembly names from the compilation, so this value compares equal across edits and
+        // the steps after it stay cached; the compilation itself is never combined with an output
+        var hostOptions = context.CompilationProvider
+            .Select(static (compilation, _) => (compilation.Assembly.Name, compilation.AssemblyName))
+            .Combine(configProvider)
+            .Select(static (input, _) => HostEmitOptions.Create(input.Right, input.Left.Item1, input.Left.Item2));
+
+        var aotTarget = context.CompilationProvider.Select(static (compilation, _) => AotTarget.Create(compilation));
+
+        // The predicate keeps the attribute's short name check of the syntax: an alias of the attribute is not a kernel
+        // to the generator, as before
         var kernelMethods = context.SyntaxProvider
-            .CreateSyntaxProvider(
-                predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuKernel),
-                transform: static (ctx, _) => TranspileKernel(ctx, KnownAttributes.GpuKernel))
+            .ForAttributeWithMetadataName(
+                KnownAttributes.GpuKernelMetadataName,
+                predicate: static (node, _) => IsSyntaxTargetForGeneration(node, KnownAttributes.GpuKernel),
+                transform: static (ctx, _) => TranspileKernel(ctx))
             .WithTrackingName(KernelTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
 
         var deviceMethods = context.SyntaxProvider
-            .CreateSyntaxProvider(
-                predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuDeviceFunction),
-                transform: static (ctx, _) => TranspileDeviceMethod(ctx, KnownAttributes.GpuDeviceFunction))
+            .ForAttributeWithMetadataName(
+                KnownAttributes.GpuDeviceFunctionMetadataName,
+                predicate: static (node, _) => IsSyntaxTargetForGeneration(node, KnownAttributes.GpuDeviceFunction),
+                transform: static (ctx, _) => TranspileDeviceMethod(ctx))
             .WithTrackingName(DeviceFunctionTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
 
-        var kernelsAndDevices = kernelMethods.Collect().Combine(deviceMethods.Collect());
-        var compilationAndAll = context.CompilationProvider.Combine(kernelsAndDevices.Combine(configProvider));
+        var allKernels = kernelMethods.Collect();
+        var allDevices = deviceMethods.Collect();
 
-        context.RegisterSourceOutput(compilationAndAll,
-            static (spc, source) => Execute(source.Left, source.Right.Left.Left, source.Right.Left.Right,
-                source.Right.Right, spc));
+        // A project without kernels gets nothing, not even the sources of its device functions
+        var hasKernels = allKernels.Select(static (kernels, _) => !kernels.IsDefaultOrEmpty);
+
+        // The class models come from the kernels of one compilation (#383); each class and the warmup list compare on
+        // their own, so an edit reruns only the outputs whose model changed
+        var kernelModule = allKernels.Select(static (kernels, _) => KernelModuleModel.Create(kernels));
+        var kernelClasses = kernelModule
+            .SelectMany(static (module, _) => module.Classes.AsImmutableArray())
+            .WithTrackingName(KernelClassTrackingName);
+        var warmups = kernelModule.Select(static (module, _) => module.Warmups);
+        var stateMachines = allDevices
+            .SelectMany(static (devices, _) => GroupDeviceStateMachines(devices));
+
+        context.RegisterSourceOutput(
+            allDevices.Combine(configProvider).Combine(hasKernels).WithTrackingName(SharedSourcesTrackingName),
+            static (spc, input) => EmitSharedSources(spc, input.Left.Left, input.Left.Right, input.Right));
+        context.RegisterSourceOutput(kernelClasses.Combine(hostOptions).WithTrackingName(KernelWrapperTrackingName),
+            static (spc, input) => EmitKernelClass(spc, input.Left, input.Right));
+        context.RegisterSourceOutput(
+            stateMachines.Combine(configProvider).Combine(hasKernels).WithTrackingName(DeviceStateMachinesTrackingName),
+            static (spc, input) => EmitDeviceStateMachines(spc, input.Left.Left, input.Left.Right, input.Right));
+        context.RegisterSourceOutput(
+            aotTarget.Combine(allKernels).Combine(allDevices).Combine(configProvider).WithTrackingName(AotArtifactTrackingName),
+            static (spc, input) => WriteAot(spc, input.Left.Left.Left, input.Left.Left.Right, input.Left.Right, input.Right));
+        context.RegisterSourceOutput(
+            warmups.Combine(hostOptions).Combine(hasKernels).WithTrackingName(ModuleContextTrackingName),
+            static (spc, input) => EmitModuleContext(spc, input.Left.Left, input.Left.Right, input.Right));
     }
 
-    private static TranspiledKernelResult? TranspileKernel(GeneratorSyntaxContext context, string attributeName)
+    private static TranspiledKernelResult? TranspileKernel(GeneratorAttributeSyntaxContext context)
     {
-        var methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
-        if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+        if (context.TargetNode is not MethodDeclarationSyntax methodDeclaration ||
+            context.TargetSymbol is not IMethodSymbol methodSymbol)
         {
             return null;
         }
@@ -194,12 +248,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorSyntaxContext context,
-        string attributeName)
+    private static TranspiledDeviceMethodResult? TranspileDeviceMethod(GeneratorAttributeSyntaxContext context)
     {
-        var methodDeclaration = (MethodDeclarationSyntax)context.Node;
-        var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
-        if (methodSymbol == null || !methodSymbol.HasAttribute(attributeName))
+        if (context.TargetNode is not MethodDeclarationSyntax methodDeclaration ||
+            context.TargetSymbol is not IMethodSymbol methodSymbol)
         {
             return null;
         }
@@ -289,98 +341,28 @@ public class GpuKernelGenerator : IIncrementalGenerator
         _ => null
     };
 
-    private static void Execute(Compilation compilation, ImmutableArray<TranspiledKernelResult> kernelMethods,
-        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods, GeneratorConfig config,
-        SourceProductionContext context)
+    // The prelude and the device functions shared by every kernel, as C# constants for the JIT path
+    private static void EmitSharedSources(SourceProductionContext context,
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods, GeneratorConfig config, bool hasKernels)
     {
-        if (kernelMethods.IsDefaultOrEmpty)
+        if (!hasKernels)
         {
             return;
         }
 
-        var isCuda = config.IsCuda;
-        var dialect = config.CreateDialect();
-
-        var distinctDeviceMethods = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
-        deviceMethods
-            .AsStackEnumerable()
-            .AddIf(distinctDeviceMethods, new HashSet<TranspiledDeviceMethodResult>(), static (m, seen) => seen.Add(m));
-
+        var distinctDeviceMethods = GetDistinctDeviceMethods(deviceMethods);
         foreach (var method in distinctDeviceMethods)
         {
             ReportInternalError(context, method.InternalError);
         }
 
-        var commonDeviceSource = NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
-        var preludeSource = NativeModuleAssembler.GetPreludeSource(dialect);
-
-        EmitSharedSources(context, config, preludeSource, commonDeviceSource);
-
-        var allKernelsSource = new StringBuilder();
-        var seenKernelMethods = new HashSet<TranspiledKernelResult>();
-        var distinctKernelMethods = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
-
-        // Grouped by the hint name, which identifies the class; the class models are derived from the results of this
-        // compilation only (#472, #383)
-        var methodsByClass = new Dictionary<string, ImmutableArray<TranspiledKernelResult>.Builder>(StringComparer.Ordinal);
-        var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
-        foreach (var method in kernelMethods)
-        {
-            if (seenKernelMethods.Add(method))
-            {
-                distinctKernelMethods.Add(method);
-                var source = method.GetSource(isCuda);
-                allKernelsSource.AppendLine(source);
-
-                if (!methodsByClass.TryGetValue(method.Class.HintName, out var group))
-                {
-                    group = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
-                    methodsByClass[method.Class.HintName] = group;
-                    classOrder.Add(method.Class);
-                }
-
-                group.Add(method);
-            }
-        }
-
-        var assemblyName = compilation.Assembly.Name;
-        var classModels = new Dictionary<string, KernelClassModel>(StringComparer.Ordinal);
-        foreach (var header in classOrder)
-        {
-            var model = KernelClassModel.Create(header, methodsByClass[header.HintName]);
-            classModels.Add(header.HintName, model);
-            ProcessKernelClass(model, config, context, assemblyName);
-        }
-
-        if (!isCuda)
-        {
-            EmitManagedDeviceStateMachines(distinctDeviceMethods, context);
-        }
-
-        var requiredIncludes = NativeModuleAssembler.CollectIncludes(distinctKernelMethods, distinctDeviceMethods, isCuda);
-        var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
-            allKernelsSource.ToString());
-        AotArtifactWriter.Write(compilation, config, bodySource, context);
-
-        if (!isCuda)
-        {
-            return;
-        }
-
-        var moduleAssemblyName = compilation.AssemblyName ?? "UnknownAssembly";
-        var contextSource = CudaHostLaunchEmitter.GenerateModuleContextClass(moduleAssemblyName,
-            GetKernelsInOrder(distinctKernelMethods, classModels));
-        context.AddSource($"{AotHostNames.GetModuleContextName(moduleAssemblyName)}.g.cs",
-            SourceText.From(contextSource, Encoding.UTF8));
-    }
-
-    private static void EmitSharedSources(SourceProductionContext context, GeneratorConfig config, string preludeSource,
-        string commonDeviceSource)
-    {
         if (!config.EmitSource)
         {
             return;
         }
+
+        var commonDeviceSource = NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, config.IsCuda);
+        var preludeSource = NativeModuleAssembler.GetPreludeSource(config.CreateDialect());
 
         using var preludeWriter = new SourceWriter();
         preludeWriter.AppendGeneratedFileHeader(enableNullable: false);
@@ -419,36 +401,114 @@ public class GpuKernelGenerator : IIncrementalGenerator
             SourceText.From(deviceWriter.ToString(), Encoding.UTF8));
     }
 
+    // The wrapper of one kernel class. KernelClassAnalyzer reports the overloads and structs that it leaves out (GSH0059,
+    // GSH0058)
+    private static void EmitKernelClass(SourceProductionContext context, KernelClassModel model, HostEmitOptions options)
+    {
+        foreach (var kernel in model.Kernels)
+        {
+            ReportInternalError(context, kernel.InternalError);
+        }
+
+        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(model, options.Config, options.AssemblyName);
+        context.AddSource(model.Class.HintName, SourceText.From(wrapperSource, Encoding.UTF8));
+    }
+
     // The managed fallback runs the state machines of the device functions that may suspend; they are emitted into the
     // partial class that declares each function.
-    private static void EmitManagedDeviceStateMachines(IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods,
-        SourceProductionContext context)
+    private static void EmitDeviceStateMachines(SourceProductionContext context, DeviceStateMachineGroup group,
+        GeneratorConfig config, bool hasKernels)
     {
-        // Keyed by the hint name for the same reason as the kernels (#472)
-        var sourcesByClass =
-            new Dictionary<string, (HostClassHeader Class, ImmutableArray<string>.Builder Sources)>(StringComparer.Ordinal);
-        foreach (var method in deviceMethods)
+        if (!hasKernels || config.IsCuda)
+        {
+            return;
+        }
+
+        context.AddSource(group.Class.HintName[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
+            SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(group.Class, group.Sources), Encoding.UTF8));
+    }
+
+    // Keyed by the hint name, which identifies the class (#472)
+    private static ImmutableArray<DeviceStateMachineGroup> GroupDeviceStateMachines(
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods)
+    {
+        var sourcesByClass = new Dictionary<string, ImmutableArray<string>.Builder>(StringComparer.Ordinal);
+        var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
+        foreach (var method in GetDistinctDeviceMethods(deviceMethods))
         {
             if (method.ManagedCSharpSource.Length == 0)
             {
                 continue;
             }
 
-            if (!sourcesByClass.TryGetValue(method.Class.HintName, out var group))
+            if (!sourcesByClass.TryGetValue(method.Class.HintName, out var sources))
             {
-                group = (method.Class, ImmutableArray.CreateBuilder<string>());
-                sourcesByClass[method.Class.HintName] = group;
+                sources = ImmutableArray.CreateBuilder<string>();
+                sourcesByClass[method.Class.HintName] = sources;
+                classOrder.Add(method.Class);
             }
 
-            group.Sources.Add(method.ManagedCSharpSource);
+            sources.Add(method.ManagedCSharpSource);
         }
 
-        foreach (var kvp in sourcesByClass)
+        var groups = ImmutableArray.CreateBuilder<DeviceStateMachineGroup>(classOrder.Count);
+        classOrder
+            .AsStackEnumerable()
+            .Select(sourcesByClass, static (header, sources) =>
+                new DeviceStateMachineGroup(header, sources[header.HintName].ToImmutable().AsEquatableArray()))
+            .AddTo(groups);
+        return groups.MoveToImmutable();
+    }
+
+    // The native module of the assembly (.g.cu / .g.cpp), which the build compiles ahead of time
+    private static void WriteAot(SourceProductionContext context, AotTarget target,
+        ImmutableArray<TranspiledKernelResult> kernelMethods, ImmutableArray<TranspiledDeviceMethodResult> deviceMethods,
+        GeneratorConfig config)
+    {
+        if (kernelMethods.IsDefaultOrEmpty)
         {
-            context.AddSource(kvp.Key[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
-                SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(kvp.Value.Class, kvp.Value.Sources),
-                    Encoding.UTF8));
+            return;
         }
+
+        var isCuda = config.IsCuda;
+        var distinctDeviceMethods = GetDistinctDeviceMethods(deviceMethods);
+        var commonDeviceSource = NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
+        var preludeSource = NativeModuleAssembler.GetPreludeSource(config.CreateDialect());
+
+        var allKernelsSource = new StringBuilder();
+        foreach (var method in kernelMethods)
+        {
+            allKernelsSource.AppendLine(method.GetSource(isCuda));
+        }
+
+        var requiredIncludes = NativeModuleAssembler.CollectIncludes(kernelMethods, distinctDeviceMethods, isCuda);
+        var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
+            allKernelsSource.ToString());
+        AotArtifactWriter.Write(target, config, bodySource, context);
+    }
+
+    // The CUDA module context, which loads the fatbin and warms up every kernel's function pointer
+    private static void EmitModuleContext(SourceProductionContext context, EquatableArray<KernelWarmup> warmups,
+        HostEmitOptions options, bool hasKernels)
+    {
+        if (!hasKernels || !options.Config.IsCuda)
+        {
+            return;
+        }
+
+        var contextSource = CudaHostLaunchEmitter.GenerateModuleContextClass(options.ModuleAssemblyName, warmups);
+        context.AddSource($"{AotHostNames.GetModuleContextName(options.ModuleAssemblyName)}.g.cs",
+            SourceText.From(contextSource, Encoding.UTF8));
+    }
+
+    private static ImmutableArray<TranspiledDeviceMethodResult>.Builder GetDistinctDeviceMethods(
+        ImmutableArray<TranspiledDeviceMethodResult> deviceMethods)
+    {
+        var distinct = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
+        deviceMethods
+            .AsStackEnumerable()
+            .AddIf(distinct, new HashSet<TranspiledDeviceMethodResult>(), static (m, seen) => seen.Add(m));
+        return distinct;
     }
 
     // The generator reports only its own failure (GSH0048); the analyzers report the user's errors, and a construct the
@@ -460,37 +520,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
             context.ReportDiagnostic(Diagnostic.Create(GSharpDiagnostics.InternalCompilerError, Location.None, internalError));
         }
     }
-
-    private static void ProcessKernelClass(in KernelClassModel model, GeneratorConfig config,
-        SourceProductionContext context, string assemblyName)
-    {
-        foreach (var kernel in model.Kernels)
-        {
-            ReportInternalError(context, kernel.InternalError);
-        }
-
-        // KernelClassAnalyzer reports the overloads and structs that the wrappers leave out (GSH0059, GSH0058)
-        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(model, config, assemblyName);
-        context.AddSource(model.Class.HintName, SourceText.From(wrapperSource, Encoding.UTF8));
-    }
-
-    // The kernels in the order of the pipeline, each with the emission that its class model gave it
-    private static ImmutableArray<(HostClassHeader Class, KernelEmission Kernel)> GetKernelsInOrder(
-        IReadOnlyList<TranspiledKernelResult> kernels, Dictionary<string, KernelClassModel> classModels)
-    {
-        var positions = new Dictionary<string, int>(StringComparer.Ordinal);
-        var ordered = ImmutableArray.CreateBuilder<(HostClassHeader Class, KernelEmission Kernel)>(kernels.Count);
-        foreach (var kernel in kernels)
-        {
-            var hintName = kernel.Class.HintName;
-            positions.TryGetValue(hintName, out var position);
-            positions[hintName] = position + 1;
-            ordered.Add((kernel.Class, classModels[hintName].Kernels[position]));
-        }
-
-        return ordered.MoveToImmutable();
-    }
-
 
     private static EquatableArray<string> ToIncludes(HashSet<string> includes)
     {
