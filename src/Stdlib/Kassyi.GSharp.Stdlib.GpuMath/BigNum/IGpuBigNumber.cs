@@ -35,7 +35,7 @@ public interface IGpuBigNumber<TSelf> : IGpuNumber<TSelf>, IDisposable
     /// <param name="exponent">The base-2 exponent (must be 0 for integer types).</param>
     /// <param name="isNegative">The sign flag (must be <see langword="false"/> for unsigned types unless magnitude is zero).</param>
     /// <returns>A new <typeparamref name="TSelf"/> instance.</returns>
-    static abstract TSelf Create(GpuBigUInt magnitude, int exponent, bool isNegative);
+    static abstract TSelf Create([TakesOwnership] GpuBigUInt magnitude, int exponent, bool isNegative);
 
     /// <summary>
     /// Adds two <typeparamref name="TSelf"/> instances and returns the evaluated result in GPU memory.
