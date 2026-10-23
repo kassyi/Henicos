@@ -21,11 +21,30 @@ internal static class TranspilerFailureCheck
     private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
 
     /// <summary>Adds a diagnostic for each failure of the CUDA transpilation that the generator runs for <paramref name="method"/>.</summary>
+    /// <remarks>
+    /// When the transpiler throws, the failures of this method are dropped and nothing is added for it: the generator runs
+    /// the same transpilation, catches the same exception and reports it as an internal error (GSH0048).
+    /// </remarks>
     public static void AddFailures(MethodDeclarationSyntax declaration, IMethodSymbol method, SemanticModel semanticModel,
         ImmutableArray<Diagnostic>.Builder diagnostics)
     {
-        var sink = new FailureSink(diagnostics);
+        var reportedBefore = diagnostics.Count;
+        try
+        {
+            Transpile(declaration, method, semanticModel, new FailureSink(diagnostics));
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // [WHY] Not swallowed: GpuKernelGenerator reports this exception for the same method as GSH0048. Letting it
+            // escape would fail the whole analyzer (AD0001) and lose the rules' diagnostics of every other method, and a
+            // transpilation that stopped half way has no complete list of failures, so the partial one is withdrawn.
+            diagnostics.Count = reportedBefore;
+        }
+    }
 
+    private static void Transpile(MethodDeclarationSyntax declaration, IMethodSymbol method, SemanticModel semanticModel,
+        FailureSink sink)
+    {
         if (method.HasAttribute(KnownAttributes.GpuKernel))
         {
             var plan = MethodEmissionPlan.Create(declaration, semanticModel, isKernel: true);
