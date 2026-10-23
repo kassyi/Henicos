@@ -6,7 +6,8 @@ using Xunit;
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
 
 /// <summary>
-/// The StackLinq overloads that pass a state value to their lambda run on the host only; a kernel reports them.
+/// StackLinq operators that run on the host only (state overloads, AddTo, Do, SelectMany, TryFirst, IndexOf ...);
+/// a kernel reports them.
 /// </summary>
 public class StackLinqStateOverloadTests : TranspilerTestBase
 {
@@ -22,5 +23,17 @@ public class StackLinqStateOverloadTests : TranspilerTestBase
         var diag = Assert.Single(diagnostics);
         Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diag.Id);
         Assert.Contains("Count", diag.GetMessage());
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task HostOnlyOperator_InKernel_ReportsGSH0003Once()
+    {
+        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/StackLinqState/StackLinqHostOnlyOperatorKernels.cu.cs", s_analyzer)
+                                                 .GetDiagnosticsAsync();
+        var diag = Assert.Single(diagnostics);
+        Assert.Equal(GSharpDiagnostics.UnsupportedSyntax.Id, diag.Id);
+        Assert.Contains("IndexOf", diag.GetMessage());
     }
 }

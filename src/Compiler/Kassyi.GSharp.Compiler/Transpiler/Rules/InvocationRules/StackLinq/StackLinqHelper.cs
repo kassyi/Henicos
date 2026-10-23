@@ -19,14 +19,16 @@ internal static class StackLinqHelper
         };
 
     /// <summary>
-    /// Is it an overload that passes a state value to its lambda (<c>Any(state, static (x, s) => ...)</c>)? Those exist
-    /// so that host code avoids a closure; they are host-only because a kernel lambda reads outer values directly.
+    /// Is it a StackLinq operator that runs on the host only? That is every overload passing a state value to its lambda
+    /// (<c>Any(state, static (x, s) => ...)</c>; a kernel lambda reads outer values directly), and every
+    /// operator in <c>StackLinqExtensions.HostOnly.cs</c>. The kernel transpiler rules have no strategy for them.
     /// </summary>
-    public static bool TakesState(IMethodSymbol symbol) =>
+    public static bool IsHostOnly(IMethodSymbol symbol) =>
         IsStackLinqMethod(symbol) &&
-        symbol.Parameters
-            .AsStackEnumerable()
-            .Any(static p => p.Name == "state");
+        (symbol.Name is "AddTo" or "AddIf" or "Do" or "DoIf" or "SelectMany" or "TryFirst" or "IndexOf" ||
+         symbol.Parameters
+             .AsStackEnumerable()
+             .Any(static p => p.Name == "state"));
 
     public static ArgumentSyntax GetLambdaArgument(InvocationExpressionSyntax invocation, IMethodSymbol symbol)
     {
