@@ -14,6 +14,7 @@ public static class ModuleInitializer
         VerifySourceGenerators.Initialize();
         Verifier.UseProjectRelativeDirectory("Snapshots");
         Kassyi.GSharp.Core.Logger.WriteToConsole = false;
+        TestConsole.Silence();
     }
 }
 
