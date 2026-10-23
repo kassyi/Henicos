@@ -15,6 +15,7 @@ internal static class DiagnosticRuleRegistry
         ParamsModifierNotSupportedRule.Instance,
         ProhibitedApiRule.Instance,
         RuntimeOnlyTypeRule.Instance,
+        SharedMemoryDisposableRule.Instance,
         SharedMemorySizeRule.Instance,
         StaticMemberAccessRule.Instance,
         UnsupportedConstructRule.Instance,

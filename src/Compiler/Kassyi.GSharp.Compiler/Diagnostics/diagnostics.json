@@ -624,6 +624,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "SharedMemoryDisposableNotSupported",
+    "id": "GSH0069",
+    "title": "SharedMemory element type must not be disposable",
+    "messageFormat": "SharedMemory<T> cannot hold the disposable type '{0}'. Shared memory is released with the thread block, so its elements are never disposed.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

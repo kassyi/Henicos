@@ -67,7 +67,11 @@ public class KernelDiagnosticsInventoryTests
         "Analyzers/StaticMemberAccess_SadPath.cs",
         "Diagnostics/StaticMemberAccessTwice.cu.cs",
         // GSH0066
-        "Analyzers/InstanceDeviceFunction_SadPath.cs"
+        "Analyzers/InstanceDeviceFunction_SadPath.cs",
+        // GSH0069
+        "Analyzers/SharedMemoryDisposable_SadPath.cs",
+        // GSH0001 (new List<T>)
+        "Analyzers/NewList_SadPath.cs"
     ];
 
     [Theory]
