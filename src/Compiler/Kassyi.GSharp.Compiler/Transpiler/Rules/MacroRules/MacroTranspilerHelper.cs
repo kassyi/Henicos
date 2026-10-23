@@ -110,20 +110,4 @@ internal static class MacroTranspilerHelper
             _ => null
         };
     }
-
-    public static bool HasExecutableStatements(IReadOnlyList<CSharpSyntaxNode> statements)
-    {
-        for (var i = 0; i < statements.Count; i++)
-        {
-            if (statements[i] is not EmptyStatementSyntax)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static void EmitFlattenedSyncGridBlock(IReadOnlyList<CSharpSyntaxNode> flatStatements, ref TranspileContext context) =>
-        AutoSyncGrid.VisitStatements(flatStatements, ref context);
 }

@@ -28,7 +28,7 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
         {
             case BlockSyntax block:
                 var flatStatements = AutoSyncGrid.Flatten(block.Statements, context.Query.SemanticModel);
-                if (MacroTranspilerHelper.HasExecutableStatements(flatStatements))
+                if (AutoSyncGrid.HasExecutableStatements(flatStatements))
                 {
                     EmitSyncGridBody(ref context, flatStatements, expr: null);
                 }
@@ -50,15 +50,15 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
         IReadOnlyList<CSharpSyntaxNode>? flatStatements,
         ExpressionSyntax? expr)
     {
-        var isNested = context.Emitter.AutoSyncGridDepth > 0;
-        context.Emitter.AutoSyncGridDepth++;
+        var previousDepth = AutoSyncGrid.Enter(ref context);
         try
         {
-            using (isNested ? default : context.Emitter.Writer.Scope())
+            // A nested body joins the statement list of the enclosing one, so it opens no scope of its own
+            using (previousDepth > 0 ? default : context.Emitter.Writer.Scope())
             {
                 if (flatStatements != null)
                 {
-                    MacroTranspilerHelper.EmitFlattenedSyncGridBlock(flatStatements, ref context);
+                    AutoSyncGrid.VisitStatements(flatStatements, ref context);
                 }
                 else if (expr != null)
                 {
@@ -69,7 +69,7 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
         }
         finally
         {
-            context.Emitter.AutoSyncGridDepth--;
+            AutoSyncGrid.Restore(ref context, previousDepth);
         }
     }
 }

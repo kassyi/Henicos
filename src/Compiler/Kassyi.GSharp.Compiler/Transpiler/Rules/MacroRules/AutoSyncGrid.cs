@@ -6,9 +6,48 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 /// <remarks>
 /// Nested <c>Gpu.SyncGrid</c> lambdas are flattened into the enclosing statement list, and explicit parameterless
 /// <c>Gpu.SyncGrid()</c> calls suppress the automatic sync next to them. Active while <see cref="Emitter.AutoSyncGridDepth"/> is positive.
+/// Only this class writes the depth: rules enter, suppress and restore it through <see cref="Enter"/>,
+/// <see cref="Suppress"/> and <see cref="Restore"/>, in a <c>try</c> / <c>finally</c> because the depth lives in a struct
+/// that a scope object cannot reach.
 /// </remarks>
 internal static class AutoSyncGrid
 {
+    /// <summary>Whether statements are emitted in auto-sync mode.</summary>
+    public static bool IsActive(in TranspileContext context) => context.Emitter.AutoSyncGridDepth > 0;
+
+    /// <summary>Enters the body of a <c>Gpu.SyncGrid</c> lambda.</summary>
+    /// <returns>The depth to pass to <see cref="Restore"/>; positive when the body is nested in another one.</returns>
+    public static int Enter(ref TranspileContext context) => context.Emitter.AutoSyncGridDepth++;
+
+    /// <summary>
+    /// Turns auto-sync off, for a region that only some threads run: a grid sync there would deadlock, because it waits
+    /// for every thread of the grid.
+    /// </summary>
+    /// <returns>The depth to pass to <see cref="Restore"/>.</returns>
+    public static int Suppress(ref TranspileContext context)
+    {
+        var previous = context.Emitter.AutoSyncGridDepth;
+        context.Emitter.AutoSyncGridDepth = 0;
+        return previous;
+    }
+
+    /// <summary>Restores the depth returned by <see cref="Enter"/> or <see cref="Suppress"/>.</summary>
+    public static void Restore(ref TranspileContext context, int depth) => context.Emitter.AutoSyncGridDepth = depth;
+
+    /// <summary>Whether <paramref name="statements"/> holds anything other than empty statements.</summary>
+    public static bool HasExecutableStatements(IReadOnlyList<CSharpSyntaxNode> statements)
+    {
+        foreach (var t in statements)
+        {
+            if (t is not EmptyStatementSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>
     /// Emits the statements of <paramref name="node"/> in auto-sync mode.
     /// </summary>
@@ -51,7 +90,7 @@ internal static class AutoSyncGrid
         int currentIndex,
         ref TranspileContext context)
     {
-        if (context.Emitter.AutoSyncGridDepth <= 0 || currentIndex >= statements.Count - 1)
+        if (!IsActive(context) || currentIndex >= statements.Count - 1)
         {
             return false;
         }

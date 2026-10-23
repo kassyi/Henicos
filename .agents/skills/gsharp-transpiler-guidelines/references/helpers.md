@@ -86,6 +86,7 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 | Branch on the target (CUDA or not, threads run as state machines) | `ITranspilerDialect.IsCuda`, `.EmulatesThreadsWithStateMachine` (from the YAML `Backend` and capabilities), not `dialect is ...` or a name comparison |
 | Pass a `ref` / `out` argument | `RefSyntaxHelper.TranspileAsByRefArgument` |
 | Transpile a lambda body inline | `LambdaTranspilerHelper.TranspileLambdaBody` |
+| Enter or suppress automatic grid sync (`Gpu.SyncGrid` bodies, single-thread regions) | `AutoSyncGrid.Enter`, `AutoSyncGrid.Suppress`, `AutoSyncGrid.Restore` in `try` / `finally`; `AutoSyncGrid.IsActive` to read it. Never write `Emitter.AutoSyncGridDepth` directly |
 | Null test of an array-like value, `??`, `??=` | `NullRepresentation.IsArrayNullComparable`, `NullRepresentation.AppendArrayNullTest`, `NullRepresentation.AppendCoalesce`, `NullRepresentation.AppendCoalesceAssignment` |
 
 The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressionTranspilerRule.cs`.

@@ -30,16 +30,14 @@ internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
 
         context.Emitter.Writer.AppendLine();
 
-        // Suppress AutoSyncGrid in SingleThread blocks to prevent GPU deadlock (grid sync requires all threads)
-        var prevDepth = context.Emitter.AutoSyncGridDepth;
-        context.Emitter.AutoSyncGridDepth = 0;
+        var previousDepth = AutoSyncGrid.Suppress(ref context);
         try
         {
             MacroTranspilerHelper.EmitUnrolledBody(ref context, lambdaExpr.Body);
         }
         finally
         {
-            context.Emitter.AutoSyncGridDepth = prevDepth;
+            AutoSyncGrid.Restore(ref context, previousDepth);
         }
 
         return true;

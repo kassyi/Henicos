@@ -233,7 +233,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
     public override void VisitBlock(BlockSyntax node)
     {
-        if (Context.Emitter.AutoSyncGridDepth > 0)
+        if (AutoSyncGrid.IsActive(Context))
         {
             AutoSyncGrid.VisitBlock(node, ref Context);
             return;
