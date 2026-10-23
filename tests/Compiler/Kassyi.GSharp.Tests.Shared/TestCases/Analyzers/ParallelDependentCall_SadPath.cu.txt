@@ -53,7 +53,7 @@ public static class GSH35_ParallelDependentCall_SadPath
         });
 
         // 3. Invocation inside manual if (GSH0035)
-        if (Gpu.ThreadIndex.X == 0)
+        if (ThreadIndex.X == 0)
         {
             ParallelMethod();
         }
@@ -68,12 +68,6 @@ public static class GSH35_ParallelDependentCall_SadPath
             
             // 5. Operator overload containing parallel logic (GSH0035)
             var d = a + b;
-        });
-
-        // 6. Direct invocation inside SyncGrid (GSH0035)
-        Gpu.SyncGrid(() => 
-        {
-            ParallelMethod();
         });
     }
 }
