@@ -25,6 +25,9 @@ internal static class StackLinqSourceExtensions
     )
         where TNode : SyntaxNode =>
         new(new SeparatedSyntaxListEnumerator<TNode>(source));
+
+    public static StackEnumerable<SyntaxTokenListEnumerator, SyntaxToken> AsStackEnumerable(this SyntaxTokenList source) =>
+        new(new SyntaxTokenListEnumerator(source));
 }
 
 internal struct ImmutableArrayEnumerator<T>(ImmutableArray<T> source) : IStackEnumerator<T>
@@ -93,6 +96,23 @@ internal struct SeparatedSyntaxListEnumerator<TNode>(SeparatedSyntaxList<TNode> 
         }
 
         current = default!; // Not read when TryGetNext returns false
+        return false;
+    }
+}
+
+internal struct SyntaxTokenListEnumerator(SyntaxTokenList source) : IStackEnumerator<SyntaxToken>
+{
+    private int _index;
+
+    public bool TryGetNext(out SyntaxToken current)
+    {
+        if (_index < source.Count)
+        {
+            current = source[_index++];
+            return true;
+        }
+
+        current = default;
         return false;
     }
 }

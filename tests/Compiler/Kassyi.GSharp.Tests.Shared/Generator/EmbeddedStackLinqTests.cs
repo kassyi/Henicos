@@ -87,6 +87,26 @@ public class EmbeddedStackLinqTests
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
+    public void Test_SyntaxTokenList_FindsModifier()
+    {
+        var modifiers = SyntaxFactory.TokenList(
+            SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+            SyntaxFactory.Token(SyntaxKind.RefKeyword)
+        );
+
+        bool hasRef = modifiers
+            .AsStackEnumerable()
+            .Any(static m => m.IsKind(SyntaxKind.RefKeyword));
+        int count = default(SyntaxTokenList)
+            .AsStackEnumerable()
+            .Count();
+
+        Assert.True(hasRef);
+        Assert.Equal(0, count);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_SeparatedSyntaxList_ElementAtAndLast()
     {
         var arguments = SyntaxFactory.SeparatedList(
