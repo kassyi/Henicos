@@ -159,14 +159,13 @@ static bool dropMembersThatNoLongerBuild(List<SyntaxTree> trees)
 
 /// <summary>
 /// Rewrites one StackLinq file for netstandard2.0: no <c>allows ref struct</c> (it needs .NET 9 runtime support), so the
-/// enumerators become plain structs; members that only work with span enumerators, parallel enumeration or generic math
+/// ref structs become plain structs; members that only work with span enumerators, parallel enumeration or generic math
 /// are dropped; the types become internal in <see cref="ExportedNamespace"/>.
 /// </summary>
 internal sealed class NetStandardRewriter() : CSharpSyntaxRewriter(visitIntoStructuredTrivia: false)
 {
     // A different namespace keeps the copy apart from the real assembly in projects that reference both
     private const string ExportedNamespace = "Kassyi.ZeroAlloc.Linq.Embedded";
-    private const string EnumeratorInterface = "IStackEnumerator";
 
     // Types that hold a span, so they must stay ref structs and cannot be type arguments without 'allows ref struct'
     private static readonly HashSet<string> s_droppedTypes = ["SpanEnumerator", "ParallelStackEnumerable"];
@@ -205,14 +204,10 @@ internal sealed class NetStandardRewriter() : CSharpSyntaxRewriter(visitIntoStru
             return null;
         }
 
+        // Every struct left holds enumerators and delegates only (span holders are dropped above), so all of them become
+        // plain structs: StackEnumerable too, which SelectMany's selector returns through Func<T, TResult>
         var visited = (StructDeclarationSyntax)base.VisitStructDeclaration(node)!;
-        var modifiers = MakeInternal(visited.Modifiers);
-        if (ImplementsEnumerator(visited))
-        {
-            modifiers = Remove(modifiers, SyntaxKind.RefKeyword);
-        }
-
-        return visited.WithModifiers(modifiers);
+        return visited.WithModifiers(Remove(MakeInternal(visited.Modifiers), SyntaxKind.RefKeyword));
     }
 
     public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node)
@@ -310,24 +305,6 @@ internal sealed class NetStandardRewriter() : CSharpSyntaxRewriter(visitIntoStru
         foreach (var descendant in node.DescendantNodes())
         {
             if (descendant is SimpleNameSyntax name && s_droppedReferences.Contains(name.Identifier.ValueText))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool ImplementsEnumerator(StructDeclarationSyntax node)
-    {
-        if (node.BaseList is null)
-        {
-            return false;
-        }
-
-        foreach (var baseType in node.BaseList.Types)
-        {
-            if (baseType.Type is GenericNameSyntax { Identifier.ValueText: EnumeratorInterface })
             {
                 return true;
             }
