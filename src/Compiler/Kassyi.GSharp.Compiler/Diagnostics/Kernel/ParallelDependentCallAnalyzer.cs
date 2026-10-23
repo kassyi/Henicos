@@ -24,7 +24,8 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, ConcurrentDictionary<IMethodSymbol, bool> inferenceCache)
+    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context,
+        ConcurrentDictionary<IMethodSymbol, bool> inferenceCache)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDeclaration);
@@ -56,7 +57,8 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
             // SyncGrid runs its body on one thread only in the form that takes a body
             var isSingleThreadMacro = symbol != null &&
                                       GpuMacroClassifier.Classify(symbol) is
-                                          { Kind: GpuMacroKind.SingleThread } or { Kind: GpuMacroKind.SyncGrid, HasBody: true };
+                                          { Kind: GpuMacroKind.SingleThread } or
+                                          { Kind: GpuMacroKind.SyncGrid, HasBody: true };
 
             if (isSingleThreadMacro)
             {
@@ -83,6 +85,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
                     CheckAndReportIfParallelDependent(node, symbol);
                 }
             }
+
             base.VisitObjectCreationExpression(node);
         }
 
@@ -90,11 +93,15 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             if (_singleThreadDepth > 0)
             {
-                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
+                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol
+                    {
+                        MethodKind: MethodKind.UserDefinedOperator
+                    } symbol)
                 {
                     CheckAndReportIfParallelDependent(node, symbol);
                 }
             }
+
             base.VisitBinaryExpression(node);
         }
 
@@ -102,17 +109,24 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
         {
             if (_singleThreadDepth > 0)
             {
-                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } symbol)
+                if (context.SemanticModel.GetSymbol(node) is IMethodSymbol
+                    {
+                        MethodKind: MethodKind.UserDefinedOperator
+                    } symbol)
                 {
                     CheckAndReportIfParallelDependent(node, symbol);
                 }
 
                 // Check property setter
-                if (context.SemanticModel.GetSymbol(node.Left) is IPropertySymbol { SetMethod: not null } propertySymbol)
+                if (context.SemanticModel.GetSymbol(node.Left) is IPropertySymbol
+                    {
+                        SetMethod: not null
+                    } propertySymbol)
                 {
                     CheckAndReportIfParallelDependent(node, propertySymbol.SetMethod);
                 }
             }
+
             base.VisitAssignmentExpression(node);
         }
 
@@ -126,6 +140,7 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
                     CheckAndReportIfParallelDependent(node, propertySymbol.GetMethod);
                 }
             }
+
             base.VisitMemberAccessExpression(node);
         }
 
@@ -154,11 +169,11 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
             }
 
             ExpressionSyntax targetExpr;
-            if (IsZeroLiteral(binary.Left))
+            if (isZeroLiteral(binary.Left))
             {
                 targetExpr = binary.Right;
             }
-            else if (IsZeroLiteral(binary.Right))
+            else if (isZeroLiteral(binary.Right))
             {
                 targetExpr = binary.Left;
             }
@@ -167,18 +182,15 @@ public class ParallelDependentCallAnalyzer : DiagnosticAnalyzer
                 return false;
             }
 
-            foreach (var node in targetExpr.DescendantNodesAndSelf())
-            {
-                if (node is IdentifierNameSyntax identifier &&
-                    identifier.Identifier.ValueText is "ThreadIndex" or "GlobalThreadIndex" or "BlockIndex")
-                {
-                    return true;
-                }
-            }
+            return targetExpr.DescendantNodesAndSelf()
+                .AsStackEnumerable()
+                .Any(static node =>
+                    node is IdentifierNameSyntax
+                    {
+                        Identifier.ValueText: "ThreadIndex" or "GlobalThreadIndex" or "BlockIndex"
+                    });
 
-            return false;
-
-            static bool IsZeroLiteral(ExpressionSyntax expr) =>
+            static bool isZeroLiteral(ExpressionSyntax expr) =>
                 expr is LiteralExpressionSyntax { Token.ValueText: "0" };
         }
 

@@ -80,9 +80,12 @@ internal static class SymbolExtensions
             return true;
         }
 
-        if (type is INamedTypeSymbol { IsGenericType: true } genericType &&
-            genericType.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or "Memory" or "ReadOnlyMemory"
-                or "ArraySegment" or "ImmutableArray" &&
+        if (type is INamedTypeSymbol
+            {
+                IsGenericType: true, Name: TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or "Memory"
+                or "ReadOnlyMemory"
+                or "ArraySegment" or "ImmutableArray"
+            } genericType &&
             (genericType.ContainingNamespace.IsSystemNamespace() ||
              genericType.ContainingNamespace.IsSystemCollectionsImmutable()))
         {
@@ -221,27 +224,17 @@ internal static class SymbolExtensions
     /// <summary>Gets a positive [StructLayout(Pack = n)] value; returns false when absent or 0.</summary>
     public static bool TryGetStructLayoutPack(this INamedTypeSymbol type, out int pack)
     {
-        foreach (var attr in type.GetAttributes())
-        {
-            if (!attr.IsStructLayoutAttribute())
-            {
-                continue;
-            }
-
-            foreach (var kvp in attr.NamedArguments)
-            {
-                if (kvp is { Key: "Pack", Value: { IsNull: false, Value: int p and > 0 } })
-                {
-                    pack = p;
-                    return true;
-                }
-            }
-
-            break;
-        }
-
-        pack = 0;
-        return false;
+        // Only the first [StructLayout] counts
+        pack = type.GetAttributes()
+                   .AsStackEnumerable()
+                   .TryFirst(static attr => attr.IsStructLayoutAttribute(), out var layout) &&
+               layout.NamedArguments
+                   .AsStackEnumerable()
+                   .TryFirst(static kvp => kvp is { Key: "Pack", Value.IsNull: false }, out var packArgument) &&
+               packArgument.Value.Value is int p and > 0
+            ? p
+            : 0;
+        return pack > 0;
     }
 
     /// <summary>

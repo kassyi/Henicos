@@ -39,10 +39,9 @@ internal static class StructMarshalingEmitter
         var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         foreach (var (method, _, _) in methods)
         {
-            foreach (var parameter in method.Parameters)
-            {
-                CudaLayoutRules.CollectStructs(parameter.Type, structTypes);
-            }
+            method.Parameters
+                .AsStackEnumerable()
+                .Do(structTypes, static (parameter, structs) => CudaLayoutRules.CollectStructs(parameter.Type, structs));
         }
 
         var byName = new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);

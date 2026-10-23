@@ -172,15 +172,12 @@ internal static class CppNameResolver
             return null;
         }
 
-        foreach (var reference in container.DeclaringSyntaxReferences)
-        {
-            if (reference.SyntaxTree == tree && reference.Span.Contains(span))
-            {
-                return reference.GetSyntax();
-            }
-        }
-
-        return null;
+        return container.DeclaringSyntaxReferences
+            .AsStackEnumerable()
+            .FirstOrDefault(
+                (Tree: tree, Span: span),
+                static (reference, s) => reference.SyntaxTree == s.Tree && reference.Span.Contains(s.Span)
+            )?.GetSyntax();
     }
 
     // [WHY] Ordinals come from identifier positions rather than from symbols, because symbols obtained from different

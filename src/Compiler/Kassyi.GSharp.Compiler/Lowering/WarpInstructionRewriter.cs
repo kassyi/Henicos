@@ -64,18 +64,10 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
     private static bool IsWarpPrimitive(InvocationExpressionSyntax inv) =>
         BarrierHelper.IsWarpShuffle(inv) || BarrierHelper.IsSuspendingCall(inv);
 
-    private static bool ContainsWarpPrimitive(SyntaxNode node)
-    {
-        foreach (var descendant in node.DescendantNodes())
-        {
-            if (descendant is InvocationExpressionSyntax inv && IsWarpPrimitive(inv))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool ContainsWarpPrimitive(SyntaxNode node) =>
+        node.DescendantNodes()
+            .AsStackEnumerable()
+            .Any(static descendant => descendant is InvocationExpressionSyntax inv && IsWarpPrimitive(inv));
 
     private class StatementRewriter(
         WarpInstructionRewriter parent,

@@ -137,12 +137,13 @@ internal static class GlobalCppNames
         }
 
         Array.Sort(candidates, 0, count, DeclarationOrderComparer.Instance);
-        for (var i = 0; i < count; i++)
+        var ordinal = candidates
+            .AsStackEnumerable()
+            .Take(count)
+            .IndexOf(method, static (candidate, target) => candidate.IsEqualTo(target));
+        if (ordinal >= 0)
         {
-            if (SymbolEqualityComparer.Default.Equals(candidates[i], method))
-            {
-                return i;
-            }
+            return ordinal;
         }
 
         throw new InvalidOperationException(
@@ -200,12 +201,13 @@ internal static class GlobalCppNames
         }
 
         Array.Sort<INamedTypeSymbol>(candidates, 0, count, DeclarationOrderComparer.Instance);
-        for (var i = 0; i < count; i++)
+        var ordinal = candidates
+            .AsStackEnumerable()
+            .Take(count)
+            .IndexOf(type, static (candidate, target) => candidate.IsEqualTo(target));
+        if (ordinal >= 0)
         {
-            if (SymbolEqualityComparer.Default.Equals(candidates[i], type))
-            {
-                return i;
-            }
+            return ordinal;
         }
 
         throw new InvalidOperationException(

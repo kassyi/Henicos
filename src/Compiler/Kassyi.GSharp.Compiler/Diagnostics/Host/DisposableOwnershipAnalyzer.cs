@@ -92,19 +92,14 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         IReadOnlyList<ISymbol> DisposableMembers,
         HashSet<string> BorrowedFields);
 
-    private static void CollectBorrowedParameterNames(INamedTypeSymbol namedType, HashSet<string> borrowedParamNames)
-    {
-        foreach (var ctor in namedType.Constructors)
-        {
-            foreach (var p in ctor.Parameters)
-            {
-                if (DisposableAnalyzerHelper.IsDisposable(p.Type) && !HasTakesOwnershipAttribute(p))
-                {
-                    borrowedParamNames.Add(p.Name);
-                }
-            }
-        }
-    }
+    private static void CollectBorrowedParameterNames(INamedTypeSymbol namedType, HashSet<string> borrowedParamNames) =>
+        namedType.Constructors
+            .AsStackEnumerable()
+            .SelectMany(static ctor => ctor.Parameters
+                .AsStackEnumerable()
+            ).Where(static p => DisposableAnalyzerHelper.IsDisposable(p.Type) && !HasTakesOwnershipAttribute(p))
+            .Select(static p => p.Name)
+            .AddTo(borrowedParamNames);
 
     private static bool HasTakesOwnershipAttribute(IParameterSymbol param) =>
         param.HasAttribute(KnownAttributes.TakesOwnership);
@@ -187,7 +182,8 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             .AsStackEnumerable()
             .Any(static ctor => ctor.Parameters
                 .AsStackEnumerable()
-                .Any(HasTakesOwnershipAttribute));
+                .Any(HasTakesOwnershipAttribute)
+            );
 
         if (!hasOwnedDisposableField && !hasTakesOwnership)
         {
@@ -328,24 +324,14 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var disposes = false;
         var root = (SyntaxNode?)method.Body ?? method.ExpressionBody;
-        if (root != null)
-        {
-            foreach (var node in root.DescendantNodes())
-            {
-                if (node is not InvocationExpressionSyntax
-                    {
-                        Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" }
-                    })
+        var disposes = root != null &&
+            root.DescendantNodes()
+                .AsStackEnumerable()
+                .Any(static node => node is InvocationExpressionSyntax
                 {
-                    continue;
-                }
-
-                disposes = true;
-                break;
-            }
-        }
+                    Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" }
+                });
 
         if (disposes)
         {

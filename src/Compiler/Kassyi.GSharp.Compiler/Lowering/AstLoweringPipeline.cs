@@ -100,13 +100,11 @@ public static class AstLoweringPipeline
     private static ImmutableArray<string> FindAssignedValueParameters(SyntaxNode body, IMethodSymbol deviceFunction)
     {
         var candidates = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var parameter in deviceFunction.Parameters)
-        {
-            if (parameter.RefKind == RefKind.None && !parameter.Type.IsRefLikeType)
-            {
-                candidates.Add(parameter.Name);
-            }
-        }
+        deviceFunction.Parameters
+            .AsStackEnumerable()
+            .Where(static parameter => parameter.RefKind == RefKind.None && !parameter.Type.IsRefLikeType)
+            .Select(static parameter => parameter.Name)
+            .AddTo(candidates);
 
         var assigned = ImmutableArray.CreateBuilder<string>();
         foreach (var node in body.DescendantNodes())
@@ -140,7 +138,7 @@ public static class AstLoweringPipeline
                 return null;
             }
 
-            var visited = (base.Visit(node) ?? node).WithAdditionalAnnotations(
+            var visited = (base.Visit(node)).WithAdditionalAnnotations(
                 new SyntaxAnnotation(LoweringAnnotations.OriginalSpanAnnotationKind, $"{node.SpanStart},{node.Span.Length}"));
 
             if (node is not InvocationExpressionSyntax || !suspendingCalls.TryGetValue(node.Span, out var returnsValue))

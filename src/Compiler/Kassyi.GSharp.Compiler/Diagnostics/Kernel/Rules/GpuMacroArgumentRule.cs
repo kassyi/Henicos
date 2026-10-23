@@ -270,15 +270,17 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         var nextInsideLoop = insideNestedLoop || (!isRoot && IsLoop(node));
         var nextInsideSwitch = insideNestedSwitch || (!isRoot && IsSwitch(node));
 
-        foreach (var child in node.ChildNodes())
-        {
-            if (HasDynamicControlFlow(child, isRoot: false, insideNestedLoop: nextInsideLoop, insideNestedSwitch: nextInsideSwitch))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return node.ChildNodes()
+            .AsStackEnumerable()
+            .Any(
+                (Loop: nextInsideLoop, Switch: nextInsideSwitch),
+                static (child, inside) => HasDynamicControlFlow(
+                    child,
+                    isRoot: false,
+                    insideNestedLoop: inside.Loop,
+                    insideNestedSwitch: inside.Switch
+                )
+            );
     }
 
     private static bool IsLoop(SyntaxNode node) =>

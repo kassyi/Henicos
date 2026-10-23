@@ -63,17 +63,11 @@ internal readonly ref struct KernelBarrierValidator(
     private void ValidateKernelHeader()
     {
         // GSH0046: async keyword on [GpuKernel]
-        foreach (var modifier in methodDecl.Modifiers)
+        if (methodDecl.Modifiers.Any(SyntaxKind.AsyncKeyword))
         {
-            if (!modifier.IsKind(SyntaxKind.AsyncKeyword))
-            {
-                continue;
-            }
-
             context.ReportDiagnostic(
                 GSharpDiagnostics.AsyncYieldInKernelProhibited,
                 methodDecl.Identifier.GetLocation());
-            break;
         }
 
         // GSH0044: ref, out, in, and ref struct parameters on [GpuKernel]; a device function receives them from its caller
@@ -178,24 +172,15 @@ internal readonly ref struct KernelBarrierValidator(
         }
 
         var isRefLikeOrRef = (localSym.Type.IsRefLikeType && !localSym.Type.IsSharedMemoryType()) || localSym.IsRef;
-        var isLocalPointer = false;
-
-        if (localSym.Type is IPointerTypeSymbol && varDecl.Initializer != null)
-        {
-            foreach (var initChild in varDecl.Initializer.DescendantNodes())
-            {
-                if (initChild is not (StackAllocArrayCreationExpressionSyntax
-                        or ImplicitStackAllocArrayCreationExpressionSyntax) &&
-                    (initChild is not PrefixUnaryExpressionSyntax prefix ||
-                     !prefix.IsKind(SyntaxKind.AddressOfExpression)))
-                {
-                    continue;
-                }
-
-                isLocalPointer = true;
-                break;
-            }
-        }
+        var isLocalPointer = localSym.Type is IPointerTypeSymbol &&
+            varDecl.Initializer != null &&
+            varDecl.Initializer.DescendantNodes()
+                .AsStackEnumerable()
+                .Any(static initChild =>
+                    initChild is StackAllocArrayCreationExpressionSyntax
+                        or ImplicitStackAllocArrayCreationExpressionSyntax ||
+                    initChild.IsKind(SyntaxKind.AddressOfExpression)
+                );
 
         if (isRefLikeOrRef || isLocalPointer)
         {
@@ -274,23 +259,14 @@ internal readonly ref struct KernelBarrierValidator(
                 continue;
             }
 
-            var isRecursive = false;
-            foreach (var innerNode in localFunc.DescendantNodes())
-            {
-                if (innerNode is not InvocationExpressionSyntax innerInv)
-                {
-                    continue;
-                }
-
-                var calledSym = semanticModel.GetSymbol(innerInv);
-                if (!calledSym.IsEqualTo(localFuncSymbol))
-                {
-                    continue;
-                }
-
-                isRecursive = true;
-                break;
-            }
+            var isRecursive = localFunc.DescendantNodes()
+                .AsStackEnumerable()
+                .Any(
+                    (Model: semanticModel, Target: localFuncSymbol),
+                    static (innerNode, s) =>
+                        innerNode is InvocationExpressionSyntax innerInv &&
+                        s.Model.GetSymbol(innerInv).IsEqualTo(s.Target)
+                );
 
             if (isRecursive)
             {
@@ -371,34 +347,33 @@ internal readonly ref struct KernelBarrierValidator(
 
             var scopeNode = tracked.Declarator.Parent?.Parent?.Parent ?? methodDecl;
 
-            foreach (var childNode in scopeNode.DescendantNodes())
+            var usedAfterBarrier = scopeNode.DescendantNodes()
+                .AsStackEnumerable()
+                .Any(
+                    (Model: semanticModel, Tracked: tracked, After: firstBarrierAfterEnd),
+                    static (childNode, s) =>
+                        childNode is IdentifierNameSyntax id &&
+                        id.SpanStart > s.After &&
+                        id.Identifier.ValueText == s.Tracked.IdentifierText &&
+                        s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
+                );
+            if (!usedAfterBarrier)
             {
-                if (childNode is IdentifierNameSyntax id &&
-                    id.SpanStart > firstBarrierAfterEnd &&
-                    id.Identifier.ValueText == tracked.IdentifierText)
-                {
-                    var idSym = semanticModel.GetSymbol(id);
-                    if (!idSym.IsEqualTo(tracked.Symbol))
-                    {
-                        continue;
-                    }
+                continue;
+            }
 
-                    if (tracked.IsRefLikeOrRef)
-                    {
-                        context.ReportDiagnostic(
-                            GSharpDiagnostics.CrossBarrierRefStructProhibited,
-                            tracked.Declarator.Identifier.GetLocation(),
-                            tracked.IdentifierText);
-                    }
-                    else if (tracked.IsLocalPointer)
-                    {
-                        context.ReportDiagnostic(
-                            GSharpDiagnostics.CrossBarrierLocalPointerProhibited,
-                            tracked.Declarator.Identifier.GetLocation());
-                    }
-
-                    break;
-                }
+            if (tracked.IsRefLikeOrRef)
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.CrossBarrierRefStructProhibited,
+                    tracked.Declarator.Identifier.GetLocation(),
+                    tracked.IdentifierText);
+            }
+            else if (tracked.IsLocalPointer)
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.CrossBarrierLocalPointerProhibited,
+                    tracked.Declarator.Identifier.GetLocation());
             }
         }
     }

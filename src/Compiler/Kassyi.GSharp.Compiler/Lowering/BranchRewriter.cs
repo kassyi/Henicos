@@ -5,23 +5,10 @@ public class BranchRewriter : CSharpSyntaxRewriter
 {
     private int _labelCounter;
 
-    private static bool ContainsBarrier(SyntaxNode node)
-    {
-        foreach (var descendant in node.DescendantNodesAndSelf())
-        {
-            if (descendant is not InvocationExpressionSyntax inv)
-            {
-                continue;
-            }
-
-            if (BarrierHelper.IsPhaseBarrier(inv))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool ContainsBarrier(SyntaxNode node) =>
+        node.DescendantNodesAndSelf()
+            .AsStackEnumerable()
+            .Any(static descendant => descendant is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv));
 
     /// <summary>Rewrites branching statements within the block into flat goto sequences.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) =>

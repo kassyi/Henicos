@@ -13,25 +13,23 @@ public class GpuKernelGenerator : IIncrementalGenerator
         public EquatableArray<EquatableDiagnostic> GetDiagnostics()
         {
             var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>(_diagnostics.Count);
-            foreach (var d in _diagnostics)
-            {
-                builder.Add(d.AsEquatable());
-            }
+            _diagnostics
+                .AsStackEnumerable()
+                .Select(static d => d.AsEquatable())
+                .AddTo(builder);
 
             return builder.MoveToImmutable().AsEquatableArray();
         }
 
         public void Report(Diagnostic d)
         {
-            foreach (var existing in _diagnostics)
+            var isDuplicate = _diagnostics
+                .AsStackEnumerable()
+                .Any(d, static (existing, reported) => existing.Id == reported.Id && existing.Location == reported.Location);
+            if (!isDuplicate)
             {
-                if (existing.Id == d.Id && existing.Location == d.Location)
-                {
-                    return;
-                }
+                _diagnostics.Add(d);
             }
-
-            _diagnostics.Add(d);
         }
     }
 
@@ -288,20 +286,16 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return false;
         }
 
-        foreach (var attributeList in m.AttributeLists)
-        {
-            foreach (var attribute in attributeList.Attributes)
-            {
-                var simpleName = GetSimpleName(attribute.Name);
-                if (simpleName != null &&
-                    KnownAttributes.IsAttributeName(simpleName.Identifier.ValueText, attributeName))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return m.AttributeLists
+            .AsStackEnumerable()
+            .SelectMany(static list => list.Attributes
+                .AsStackEnumerable()
+            ).Any(
+                attributeName,
+                static (attribute, name) =>
+                    GetSimpleName(attribute.Name) is { } simpleName &&
+                    KnownAttributes.IsAttributeName(simpleName.Identifier.ValueText, name)
+            );
     }
 
     private static SimpleNameSyntax? GetSimpleName(NameSyntax name) => name switch
@@ -325,14 +319,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var dialect = config.CreateDialect();
 
         var distinctDeviceMethods = ImmutableArray.CreateBuilder<TranspiledDeviceMethodResult>();
-        var seenDeviceMethods = new HashSet<TranspiledDeviceMethodResult>();
-        foreach (var m in deviceMethods)
-        {
-            if (seenDeviceMethods.Add(m))
-            {
-                distinctDeviceMethods.Add(m);
-            }
-        }
+        deviceMethods
+            .AsStackEnumerable()
+            .AddIf(distinctDeviceMethods, new HashSet<TranspiledDeviceMethodResult>(), static (m, seen) => seen.Add(m));
 
         var commonDeviceSource =
             GenerateCommonDeviceSource(distinctDeviceMethods, context, isCuda);
@@ -365,10 +354,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
         }
 
-        foreach (var kvp in methodsByClass)
-        {
-            ProcessKernelClass(kvp.Key, kvp.Value, config, context, isCuda);
-        }
+        methodsByClass
+            .AsStackEnumerable()
+            .Do(
+                (Config: config, Context: context, IsCuda: isCuda),
+                static (kvp, s) => ProcessKernelClass(kvp.Key, kvp.Value, s.Config, s.Context, s.IsCuda)
+            );
 
         if (!isCuda)
         {
@@ -378,20 +369,16 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
         var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
         var requiredIncludes = new HashSet<string>();
-        foreach (var method in distinctKernelMethods)
-        {
-            foreach (var inc in method.RequiredIncludes)
-            {
-                requiredIncludes.Add(inc);
-            }
-        }
-        foreach (var method in distinctDeviceMethods)
-        {
-            foreach (var inc in method.RequiredIncludes)
-            {
-                requiredIncludes.Add(inc);
-            }
-        }
+        distinctKernelMethods
+            .AsStackEnumerable()
+            .SelectMany(static method => method.RequiredIncludes
+                .AsStackEnumerable()
+            ).AddTo(requiredIncludes);
+        distinctDeviceMethods
+            .AsStackEnumerable()
+            .SelectMany(static method => method.RequiredIncludes
+                .AsStackEnumerable()
+            ).AddTo(requiredIncludes);
 
         if (!IsDesignTimeCompilation(compilation))
         {
@@ -493,10 +480,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
             ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>();
         foreach (var method in methods)
         {
-            foreach (var diag in method.Diagnostics)
-            {
-                context.ReportDiagnostic(diag.Diagnostic);
-            }
+            method.Diagnostics
+                .AsStackEnumerable()
+                .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
 
             if (KernelHostNames.TryFindIndistinguishableOverload(method.MethodSymbol, out var earlier, out var wrapper))
             {
@@ -629,10 +615,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
         // Pass 1: Forward declarations
         foreach (var method in deviceMethods)
         {
-            foreach (var diag in method.Diagnostics)
-            {
-                context.ReportDiagnostic(diag.Diagnostic);
-            }
+            method.Diagnostics
+                .AsStackEnumerable()
+                .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
 
             deviceSourceBuilder.AppendLine(method.GetSignature(isCuda));
         }
@@ -650,12 +635,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var emitted = new bool[deviceMethods.Count];
         for (var i = 0; i < deviceMethods.Count; i++)
         {
-            AppendBody(i);
+            appendBody(i);
         }
 
         return deviceSourceBuilder.ToString();
 
-        void AppendBody(int index)
+        void appendBody(int index)
         {
             if (emitted[index])
             {
@@ -670,7 +655,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 {
                     if (methodsByFrame.TryGetValue(dependency, out var dependencyIndex))
                     {
-                        AppendBody(dependencyIndex);
+                        appendBody(dependencyIndex);
                     }
                 }
             }
@@ -685,19 +670,12 @@ public class GpuKernelGenerator : IIncrementalGenerator
     private static ImmutableArray<string> CombineIncludes(HashSet<string> a, HashSet<string> b)
     {
         var builder = ImmutableArray.CreateBuilder<string>();
-        foreach (var item in a)
-        {
-            builder.Add(item);
-        }
-        foreach (var item in b)
-        {
-            if (a.Contains(item))
-            {
-                continue;
-            }
-
-            builder.Add(item);
-        }
+        a
+            .AsStackEnumerable()
+            .AddTo(builder);
+        b
+            .AsStackEnumerable()
+            .AddIf(builder, a, static (item, first) => !first.Contains(item));
         return builder.ToImmutable();
     }
 }

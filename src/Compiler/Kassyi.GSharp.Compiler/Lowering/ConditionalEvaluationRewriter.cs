@@ -165,19 +165,13 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
         return null;
     }
 
-    private static bool ContainsWarpPrimitive(SyntaxNode node)
-    {
-        foreach (var descendant in node.DescendantNodesAndSelf())
-        {
-            if (descendant is InvocationExpressionSyntax invocation &&
-                (BarrierHelper.IsWarpShuffle(invocation) || BarrierHelper.IsSuspendingCall(invocation)))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool ContainsWarpPrimitive(SyntaxNode node) =>
+        node.DescendantNodesAndSelf()
+            .AsStackEnumerable()
+            .Any(static descendant =>
+                descendant is InvocationExpressionSyntax invocation &&
+                (BarrierHelper.IsWarpShuffle(invocation) || BarrierHelper.IsSuspendingCall(invocation))
+            );
 
     // <target> = <value>;
     private static ExpressionStatementSyntax Assign(IdentifierNameSyntax target, ExpressionSyntax value) =>

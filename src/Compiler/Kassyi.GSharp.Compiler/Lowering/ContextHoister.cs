@@ -29,10 +29,7 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
 
         if (copiedParameters != null)
         {
-            foreach (var parameter in copiedParameters)
-            {
-                _hoistedVariables.Add(parameter);
-            }
+            _hoistedVariables.UnionWith(copiedParameters);
         }
 
         var barrierCount = analyzer.BarrierSpans.Count;

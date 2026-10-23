@@ -45,7 +45,7 @@ public static class MethodTranspiler
         using var session = TranspilationSession.Begin(methodDecl, semanticModel, reportDiagnostic, dialect);
         if (session.ErrorMessage != null)
         {
-            requiredIncludes = new HashSet<string>();
+            requiredIncludes = [];
             return session.ErrorMessage;
         }
 
@@ -273,16 +273,14 @@ public static class MethodTranspiler
             return parameters.ToImmutable();
         }
 
-        foreach (var name in lowered.CopiedParameters)
-        {
-            foreach (var parameter in methodSymbol.Parameters)
-            {
-                if (parameter.Name == name)
-                {
-                    parameters.Add(parameter);
-                }
-            }
-        }
+        lowered.CopiedParameters
+            .AsStackEnumerable()
+            .Do(
+                (Method: methodSymbol, Result: parameters),
+                static (name, s) => s.Method.Parameters
+                    .AsStackEnumerable()
+                    .AddIf(s.Result, name, static (parameter, target) => parameter.Name == target)
+            );
 
         return parameters.ToImmutable();
     }

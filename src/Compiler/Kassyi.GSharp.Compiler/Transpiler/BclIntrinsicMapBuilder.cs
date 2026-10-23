@@ -186,14 +186,15 @@ internal static class BclIntrinsicMapBuilder
             return true;
         }
 
+        // Modules is a lazy IEnumerable, so the outer loop stays
         foreach (var module in assembly.Modules)
         {
-            foreach (var refAsm in module.ReferencedAssemblies)
+            var referencesTarget = module.ReferencedAssemblies
+                .AsStackEnumerable()
+                .Any(targetAssemblyName, static (refAsm, name) => refAsm.Name == name);
+            if (referencesTarget)
             {
-                if (refAsm.Name == targetAssemblyName)
-                {
-                    return true;
-                }
+                return true;
             }
         }
 

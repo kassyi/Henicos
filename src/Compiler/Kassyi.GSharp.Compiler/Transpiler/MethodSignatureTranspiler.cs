@@ -218,7 +218,7 @@ internal static class MethodSignatureTranspiler
 
             var paramSymbol = paramSemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
 
-            var (isRefPointer, isPointerType, hasRestrict) =
+            var (_, isPointerType, hasRestrict) =
                 WriteParameterDeclaration(p, typeSymbol, paramSymbol, ref context);
 
             if (!isDevice && isPointerType && !hasRestrict)
@@ -333,15 +333,11 @@ internal static class MethodSignatureTranspiler
             return (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
         }
 
-        foreach (var namedArg in attr.NamedArguments)
-        {
-            if (namedArg is { Key: "Value", Value.Value: int or short })
-            {
-                return (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
-            }
-        }
+        var hasValue = attr.NamedArguments
+            .AsStackEnumerable()
+            .TryFirst(static namedArg => namedArg is { Key: "Value", Value.Value: int or short }, out var valueArg);
 
-        return default;
+        return hasValue ? (MethodImplOptions)Convert.ToInt32(valueArg.Value.Value) : default;
     }
 
     private static void WriteKernelMethodPrefix(ref TranspileContext context)
