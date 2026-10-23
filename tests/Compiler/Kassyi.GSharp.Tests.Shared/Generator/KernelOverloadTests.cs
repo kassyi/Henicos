@@ -14,6 +14,10 @@ public class KernelOverloadTests
     private static readonly string s_indistinguishableKernels =
         RoslynTestUtility.ReadTestCase("Generator/KernelOverload_Indistinguishable.cu.cs");
 
+    // The overloads differ only by in, which Launch{Name} drops.
+    private static readonly string s_inModifierKernels =
+        RoslynTestUtility.ReadTestCase("Generator/KernelOverload_InModifier.cu.cs");
+
     [Theory]
     [Scenario(TestScenario.HappyPath)]
     [InlineData("Cpu")]
@@ -53,6 +57,25 @@ public class KernelOverloadTests
 
         var (_, output, _) = RoslynTestUtility.RunGenerator(s_indistinguishableKernels, dialect);
         // The reported overload gets no wrappers, so the generated code itself stays valid.
+        Assert.DoesNotContain(output.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.SadPath)]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    public async Task Test_OverloadsThatDifferOnlyByIn_ReportGsh0059ForLaunch(string dialect)
+    {
+        // The later overload duplicates the managed Launch{Name}, which the message names
+        var diagnostics = await KernelDiagnostics.RunAsync(s_inModifierKernels, dialect);
+        var reported = Assert.Single(diagnostics, d => d.Id == GSharpDiagnostics.IndistinguishableKernelOverloads.Id);
+        Assert.Equal(
+            (DiagnosticOrigin.Analyzer, 12, 28, 12, 31),
+            (reported.Origin, reported.StartLine, reported.StartColumn, reported.EndLine, reported.EndColumn));
+        Assert.Contains("LaunchRun", reported.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("LaunchRunPtr", reported.Message, StringComparison.Ordinal);
+
+        var (_, output, _) = RoslynTestUtility.RunGenerator(s_inModifierKernels, dialect);
         Assert.DoesNotContain(output.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
     }
 }

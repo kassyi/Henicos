@@ -6,54 +6,54 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 internal static class CudaHostLaunchEmitter
 {
     /// <summary>Emits the function pointer field, warmup method and launch wrappers of one kernel.</summary>
-    public static void WriteKernelMembers(SourceWriter writer, IMethodSymbol method)
+    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName)
     {
-        writer.AppendLine($"private static IntPtr? s_hfunc_{KernelHostNames.GetMemberKey(method)};");
-        WriteWarmupFunctionPointerMethod(writer, method);
-        WriteLaunchMethod(writer, method, false);
-        WriteLaunchMethod(writer, method, true);
-        if (KernelHostNames.IsOverloadedKernel(method))
+        writer.AppendLine($"private static IntPtr? s_hfunc_{kernel.MemberKey};");
+        WriteWarmupFunctionPointerMethod(writer, kernel, assemblyName);
+        WriteLaunchMethod(writer, kernel, false);
+        WriteLaunchMethod(writer, kernel, true);
+        if (kernel.IsOverloaded)
         {
-            WriteTypedPointerLaunchMethod(writer, method);
+            WriteTypedPointerLaunchMethod(writer, kernel);
         }
     }
 
-    private static void WriteLaunchMethod(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
+    private static void WriteLaunchMethod(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr)
     {
         writer.AppendLine(
             "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
-        WrapperEmitter.WriteLaunchMethodSignature(writer, method, isDevicePtr);
+        WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, isDevicePtr);
         using (writer.Scope())
         {
             if (!isDevicePtr)
             {
-                WrapperEmitter.WriteOutParameterDefaults(writer, method);
-                WrapperEmitter.WriteArrayArgumentChecks(writer, method);
+                WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
+                WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
             }
 
-            WrapperEmitter.WriteAutoResultAllocation(writer, method);
+            WrapperEmitter.WriteAutoResultAllocation(writer, kernel.Host);
 
             writer.AppendLine(
                 $"using (var {GSharpInternalNames.Launcher.CudaContextScope} = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())");
             using (writer.Scope())
             {
-                WriteCudaKernelCompilationCall(writer, method);
-                KernelLaunchEmitter.WriteVariablesInitialization(writer, method, isDevicePtr);
+                WriteCudaKernelCompilationCall(writer, kernel);
+                KernelLaunchEmitter.WriteVariablesInitialization(writer, kernel.Host, isDevicePtr);
 
                 writer.AppendLine("try");
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, method, isDevicePtr);
+                    KernelLaunchEmitter.WriteMarshalAndLaunchKernel(writer, kernel.Host, isDevicePtr);
                 }
 
                 writer.AppendLine("finally");
                 using (writer.Scope())
                 {
-                    KernelLaunchEmitter.WriteCleanup(writer, method, isDevicePtr);
+                    KernelLaunchEmitter.WriteCleanup(writer, kernel.Host, isDevicePtr);
                 }
             }
 
-            WrapperEmitter.WriteAutoResultReturn(writer, method);
+            WrapperEmitter.WriteAutoResultReturn(writer, kernel.Host);
         }
 
         writer.AppendLine("#pragma warning restore CS8500");
@@ -64,20 +64,20 @@ internal static class CudaHostLaunchEmitter
 
     // The public Launch{Name}Ptr of an overloaded kernel: device pointers are typed GpuBuffer<T>, so C# selects the
     // overload, and the wrapper forwards their device pointers to the private IntPtr implementation.
-    private static void WriteTypedPointerLaunchMethod(SourceWriter writer, IMethodSymbol method)
+    private static void WriteTypedPointerLaunchMethod(SourceWriter writer, in KernelEmission kernel)
     {
         writer.AppendGeneratedCodeAttributes();
         writer.Append("public static unsafe ");
-        WrapperEmitter.WriteLaunchReturnType(writer, method);
-        writer.Append(KernelHostNames.GetTypedPointerLaunchName(method));
+        WrapperEmitter.WriteLaunchReturnType(writer, kernel.Host);
+        writer.Append(KernelHostNames.GetTypedPointerLaunchName(kernel.Host));
         using (writer.Parentheses())
         {
-            foreach (var p in method.Parameters)
+            foreach (var p in kernel.Host.Parameters)
             {
-                if (KernelHostNames.TryAppendTypedBuffer(writer, p))
+                if (p.TryAppendTypedBuffer(writer))
                 {
-                    var isOptional = p.HasExplicitDefaultValue;
-                    writer.Append(isOptional ? "? " : " ").Append(p.Name.ToCSharpIdentifier());
+                    var isOptional = p.HasExplicitDefault;
+                    writer.Append(isOptional ? "? " : " ").Append(p.Identifier);
                     if (isOptional)
                     {
                         writer.Append(" = null");
@@ -85,7 +85,7 @@ internal static class CudaHostLaunchEmitter
                 }
                 else
                 {
-                    WrapperEmitter.GetInteropParameterInfo(p, true).WriteTo(writer, p.Name.ToCSharpIdentifier());
+                    WrapperEmitter.GetInteropParameterInfo(p, true).WriteTo(writer, p.Identifier);
                 }
 
                 writer.Append(", ");
@@ -95,15 +95,15 @@ internal static class CudaHostLaunchEmitter
         }
 
         writer.AppendLine();
-        writer.Append("=> ").Append(KernelHostNames.GetPointerLaunchName(method));
+        writer.Append("=> ").Append(KernelHostNames.GetPointerLaunchName(kernel));
         using (writer.Parentheses())
         {
-            foreach (var p in method.Parameters)
+            foreach (var p in kernel.Host.Parameters)
             {
-                writer.Append(p.Name.ToCSharpIdentifier());
-                if (KernelHostNames.TryGetBufferElementType(p, out _))
+                writer.Append(p.Identifier);
+                if (p.BufferElementTypeName is not null)
                 {
-                    writer.Append(p.HasExplicitDefaultValue ? "?.DevicePointer ?? IntPtr.Zero" : ".DevicePointer");
+                    writer.Append(p.HasExplicitDefault ? "?.DevicePointer ?? IntPtr.Zero" : ".DevicePointer");
                 }
 
                 writer.Append(", ");
@@ -116,9 +116,10 @@ internal static class CudaHostLaunchEmitter
         writer.AppendLine();
     }
 
-    private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, IMethodSymbol method)
+    private static void WriteWarmupFunctionPointerMethod(SourceWriter writer, in KernelEmission kernel,
+        string assemblyName)
     {
-        var key = KernelHostNames.GetMemberKey(method);
+        var key = kernel.MemberKey;
         writer.AppendLine(
             "/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>");
         writer.AppendLine($"public static void WarmupFunctionPointer{key}()");
@@ -126,25 +127,25 @@ internal static class CudaHostLaunchEmitter
         {
             writer.AppendLine($"if (s_hfunc_{key}.HasValue) return;");
             writer.Append("IntPtr hModule = global::Kassyi.GSharp.Generated.");
-            writer.Append(AotHostNames.GetModuleContextName(method.ContainingAssembly.Name));
+            writer.Append(AotHostNames.GetModuleContextName(assemblyName));
             writer.AppendLine(".GetOrLoadModule();");
             writer.AppendLine(
-                $"s_hfunc_{key} = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, \"{GlobalCppNames.GetKernelName(method)}\");");
+                $"s_hfunc_{key} = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, \"{kernel.Host.KernelName}\");");
         }
 
         writer.AppendLine();
     }
 
-    private static void WriteCudaKernelCompilationCall(SourceWriter writer, IMethodSymbol method)
+    private static void WriteCudaKernelCompilationCall(SourceWriter writer, in KernelEmission kernel)
     {
-        var key = KernelHostNames.GetMemberKey(method);
+        var key = kernel.MemberKey;
         writer.AppendLine($"WarmupFunctionPointer{key}();");
         writer.AppendLine($"IntPtr hfunc = s_hfunc_{key}!.Value;");
         writer.AppendLine();
     }
 
     public static string GenerateModuleContextClass(string assemblyName,
-        IEnumerable<TranspiledKernelResult> kernelMethods)
+        IEnumerable<(HostClassHeader Class, KernelEmission Kernel)> kernels)
     {
         var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
         var moduleContextName = AotHostNames.GetModuleContextName(assemblyName);
@@ -197,22 +198,20 @@ internal static class CudaHostLaunchEmitter
             GetOrLoadModule();
             """);
 
-        foreach (var methodResult in kernelMethods)
+        foreach (var (header, kernel) in kernels)
         {
-            var method = methodResult.MethodSymbol;
-            if (KernelHostNames.TryFindIndistinguishableOverload(method, out _, out _))
+            if (kernel.IsIndistinguishable)
             {
                 continue;
             }
 
             writer.Append("global::");
-            writer.AppendNamespace(method.ContainingNamespace);
-            if (!method.ContainingNamespace.IsGlobalNamespace)
+            if (!header.IsGlobalNamespace)
             {
-                writer.Append('.');
+                writer.Append($"{header.Namespace}.");
             }
-            writer.Append(method.ContainingType.Name);
-            writer.AppendLine($".WarmupFunctionPointer{KernelHostNames.GetMemberKey(method)}();");
+
+            writer.AppendLine($"{header.Name}.WarmupFunctionPointer{kernel.MemberKey}();");
         }
 
         writer.AppendLine("}}}");

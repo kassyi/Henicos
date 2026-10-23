@@ -67,9 +67,9 @@ fixed text (separators, keywords, `;`) is a literal. The other helpers:
 | ----- | ----- | ----- |
 | Text with values in it | `$""` passed straight to `.Append` / `.AppendLine` / `.Line` (zero allocation via `SourceWriterInterpolatedStringHandler`) | a chain of `Append` calls for one line, a separate `StringBuilder`, or `var s = $"..."` then `Append(s)` |
 | Conditional text | `.AppendIf`, `.AppendLineIf` | `if (x) writer.Append(...)` |
-| C# type name in generated host code | `.AppendCsharpTypeName`, `.AppendFullyQualifiedCsharpName` | `ToDisplayString()` |
+| C# type name in generated host code | `.AppendCsharpTypeName`, `.AppendFullyQualifiedCsharpName` (`.GetFullyQualifiedCsharpName` for a value of the pipeline model) | `ToDisplayString()` |
 | C# namespace name in generated host code | `.AppendNamespace`, `.GetFullNamespaceName` | `ToDisplayString()` |
-| How a kernel parameter crosses to the device (array-like, user struct, `ref` / `out`, container, length / span expression) | `KernelParameterShape.Classify` | `GetMarshaledType` plus `IsArrayLikeType` / `IsCustomStruct` / `RefKind` checks, `Name == "ArraySegment"` |
+| How a kernel parameter crosses to the device (array-like, user struct, `ref` / `out`, container, copy direction, length / span expression); a value of the pipeline model, built in the transform. The kernel and its class: `KernelHostModel.Create`, `KernelClassModel.Create` (overloads, member keys) | `KernelParameterShape.Classify` | `GetMarshaledType` plus `IsArrayLikeType` / `IsCustomStruct` / `RefKind` checks, `Name == "ArraySegment"` |
 | User identifier in generated host C# | `.ToCSharpIdentifier` | prefixing `@` by hand |
 | C++ name of a user symbol (declaration / reference) | `CppNameResolver.AppendDeclaredName`, `CppNameResolver.AppendReferencedName`, `CppNameResolver.AppendSymbolName` | `identifier.ValueText` written directly |
 | Compiler-internal name (`__gsharp_*`) | `GSharpInternalNames` (add new names to `Resources/InternalNames.yml`) | a `"__gsharp_..."` literal |

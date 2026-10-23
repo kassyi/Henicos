@@ -1,5 +1,3 @@
-using Kassyi.GSharp.Compiler.Models;
-
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
 /// <summary>Emits the CPU host launch members of a kernel wrapper class: delegate, managed fallback and native call.</summary>
@@ -12,74 +10,64 @@ internal static class CpuHostLaunchEmitter
         $"{GSharpInternalNames.Launcher.Contexts}[{GSharpInternalNames.Launcher.LinearThreadIndex}]";
 
     /// <summary>Emits the managed source, the delegate declaration and the launch wrapper of one kernel.</summary>
-    public static void WriteKernelMembers(SourceWriter writer, IMethodSymbol method, string managedCSharpSource)
+    public static void WriteKernelMembers(SourceWriter writer, in KernelEmission kernel, string assemblyName)
     {
-        writer.AppendLine(managedCSharpSource);
-        WriteCpuDelegateDeclaration(writer, method);
-        WriteLaunchMethodCpu(writer, method);
+        writer.AppendLine(kernel.ManagedCSharpSource);
+        WriteCpuDelegateDeclaration(writer, kernel);
+        WriteLaunchMethodCpu(writer, kernel, assemblyName);
     }
 
-    private static void WriteLaunchMethodCpu(SourceWriter writer, IMethodSymbol method)
+    private static void WriteLaunchMethodCpu(SourceWriter writer, in KernelEmission kernel, string assemblyName)
     {
         writer.AppendLine("#pragma warning disable CS8500");
-        WrapperEmitter.WriteLaunchMethodSignature(writer, method, false);
+        WrapperEmitter.WriteLaunchMethodSignature(writer, kernel, false);
         using (writer.Scope())
         {
-            WrapperEmitter.WriteOutParameterDefaults(writer, method);
-            WrapperEmitter.WriteArrayArgumentChecks(writer, method);
-            WrapperEmitter.WriteAutoResultAllocation(writer, method);
-            WriteManagedExecutionFallback(writer, method);
-            WriteCpuDelegateGetOrCompile(writer, method);
-            WriteCpuFixedBlocksAndInvoke(writer, method);
+            WrapperEmitter.WriteOutParameterDefaults(writer, kernel.Host);
+            WrapperEmitter.WriteArrayArgumentChecks(writer, kernel.Host);
+            WrapperEmitter.WriteAutoResultAllocation(writer, kernel.Host);
+            WriteManagedExecutionFallback(writer, kernel.Host, assemblyName);
+            WriteCpuDelegateGetOrCompile(writer, kernel);
+            WriteCpuFixedBlocksAndInvoke(writer, kernel.Host);
         }
 
         writer.AppendLine("#pragma warning restore CS8500");
     }
 
-    private static void WriteCpuDelegateDeclaration(SourceWriter writer, IMethodSymbol method)
+    private static void WriteCpuDelegateDeclaration(SourceWriter writer, in KernelEmission kernel)
     {
         // Generate Delegate
         writer.AppendLine(
             "[System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]");
         writer.Append("private unsafe delegate void ");
-        writer.Append(KernelHostNames.GetMemberKey(method));
+        writer.Append(kernel.MemberKey);
         writer.Append("_Delegate");
         using (writer.Parentheses())
         {
             writer.Append(
                 "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ");
-            foreach (var p in method.Parameters)
+            foreach (var p in kernel.Host.Parameters)
             {
-                if (p.IsConstantParameter())
+                if (p.IsConstant)
                 {
                     continue;
                 }
 
                 writer.Append(", ");
 
-                if (KernelParameterShape.Classify(p).IsArray)
+                if (p.IsArray)
                 {
-                    writer.Append("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ");
-                    writer.Append(p.Name.ToCSharpIdentifier());
+                    writer.Append($"global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {p.Identifier}");
                 }
                 else
                 {
-                    writer.AppendFullyQualifiedCsharpName(p.Type);
-                    if (p.RefKind is RefKind.Ref or RefKind.Out)
-                    {
-                        writer.Append("*");
-                    }
-
-                    writer.Append(' ');
-                    writer.Append(p.Name.ToCSharpIdentifier());
+                    writer.Append($"{p.TypeName}{(p.IsByRef ? "*" : "")} {p.Identifier}");
                 }
             }
 
-            if (method.ReturnType.SpecialType != SpecialType.System_Void)
+            if (kernel.Host.ReturnTypeName is { } returnType)
             {
-                writer.Append(", ");
-                writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-                writer.Append($"* {GSharpInternalNames.ReturnValue.Buffer}");
+                writer.Append($", {returnType}* {GSharpInternalNames.ReturnValue.Buffer}");
             }
         }
 
@@ -87,11 +75,11 @@ internal static class CpuHostLaunchEmitter
         writer.AppendLine();
     }
 
-    private static void WriteManagedExecutionFallback(SourceWriter writer, IMethodSymbol method)
+    private static void WriteManagedExecutionFallback(SourceWriter writer, in KernelHostModel kernel, string assemblyName)
     {
-        var safeAssemblyName = AotHostNames.ToSafeIdentifier(method.ContainingAssembly.Name);
-        var contextName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, method);
-        var stateMachineName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, method);
+        var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
+        var contextName = kernel.ContextName;
+        var stateMachineName = kernel.StateMachineName;
 
         writer.AppendLine(
             "var archSuffix = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==" +
@@ -176,7 +164,7 @@ internal static class CpuHostLaunchEmitter
 
                                 writer.Append($"{stateMachineName}(");
                                 bool isFirst = true;
-                                foreach (var p in method.Parameters)
+                                foreach (var p in kernel.Parameters)
                                 {
                                     if (!isFirst)
                                     {
@@ -193,7 +181,7 @@ internal static class CpuHostLaunchEmitter
                                         writer.Append("out ");
                                     }
 
-                                    writer.Append(p.Name.ToCSharpIdentifier());
+                                    writer.Append(p.Identifier);
                                 }
 
                                 if (!isFirst)
@@ -202,7 +190,7 @@ internal static class CpuHostLaunchEmitter
                                 }
 
                                 writer.Append(LinearContext);
-                                if (method.ReturnType.SpecialType != SpecialType.System_Void)
+                                if (kernel.ReturnsValue)
                                 {
                                     writer.Append($", ref {GSharpInternalNames.ReturnValue.Buffer}[{GSharpInternalNames.Launcher.LinearThreadIndex}]");
                                 }
@@ -233,50 +221,43 @@ internal static class CpuHostLaunchEmitter
                 }
             }
 
-            WrapperEmitter.WriteAutoResultReturn(writer, method);
-            if (method.ReturnType.SpecialType == SpecialType.System_Void)
+            WrapperEmitter.WriteAutoResultReturn(writer, kernel);
+            if (!kernel.ReturnsValue)
             {
                 writer.AppendLine("return;");
             }
         }
     }
 
-    private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, IMethodSymbol method)
+    private static void WriteCpuDelegateGetOrCompile(SourceWriter writer, in KernelEmission kernel)
     {
-        var exportName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.LaunchExportPrefix, method);
+        var exportName = kernel.Host.LaunchExportName;
 
         writer.AppendLine(
-            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{KernelHostNames.GetMemberKey(method)}_Delegate>(\"{exportName}\", dllPath);");
+            $"var hfunc = global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.LoadAotKernel<{kernel.MemberKey}_Delegate>(\"{exportName}\", dllPath);");
     }
 
-    private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, IMethodSymbol method)
+    private static void WriteCpuFixedBlocksAndInvoke(SourceWriter writer, in KernelHostModel kernel)
     {
         var hasFixed = false;
 
-        foreach (var p in method.Parameters)
+        foreach (var shape in kernel.Parameters)
         {
-            var shape = KernelParameterShape.Classify(p);
-            if (shape is { IsArray: true, ElementType: { } elementType })
+            if (shape is { IsArray: true, ElementTypeName: { } elementType })
             {
-                writer.Append("fixed (");
-                writer.AppendFullyQualifiedCsharpName(elementType);
-                writer.AppendLine($"* p_{p.Name} = {shape.SpanExpression})");
+                writer.AppendLine($"fixed ({elementType}* p_{shape.Name} = {shape.SpanExpression})");
                 hasFixed = true;
             }
             else if (shape.IsByRef)
             {
-                writer.Append("fixed (");
-                writer.AppendFullyQualifiedCsharpName(p.Type);
-                writer.AppendLine($"* p_{p.Name} = &{p.Name.ToCSharpIdentifier()})");
+                writer.AppendLine($"fixed ({shape.TypeName}* p_{shape.Name} = &{shape.Identifier})");
                 hasFixed = true;
             }
         }
 
-        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        if (kernel.ReturnTypeName is { } returnType)
         {
-            writer.Append("fixed (");
-            writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-            writer.AppendLine($"* {PinnedAutoResult} = {GSharpInternalNames.ReturnValue.Buffer})");
+            writer.AppendLine($"fixed ({returnType}* {PinnedAutoResult} = {GSharpInternalNames.ReturnValue.Buffer})");
             hasFixed = true;
         }
 
@@ -284,50 +265,49 @@ internal static class CpuHostLaunchEmitter
         {
             using (writer.Scope())
             {
-                WriteDelegateInvocation(writer, method);
+                WriteDelegateInvocation(writer, kernel);
             }
         }
         else
         {
-            WriteDelegateInvocation(writer, method);
+            WriteDelegateInvocation(writer, kernel);
         }
 
-        WrapperEmitter.WriteAutoResultReturn(writer, method);
+        WrapperEmitter.WriteAutoResultReturn(writer, kernel);
     }
 
-    private static void WriteDelegateInvocation(SourceWriter writer, IMethodSymbol method)
+    private static void WriteDelegateInvocation(SourceWriter writer, in KernelHostModel kernel)
     {
         writer.Append("hfunc");
         using (writer.Parentheses())
         {
             writer.Append("gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ");
 
-            foreach (var p in method.Parameters)
+            foreach (var shape in kernel.Parameters)
             {
-                if (p.IsConstantParameter())
+                if (shape.IsConstant)
                 {
                     continue;
                 }
 
                 writer.Append(", ");
 
-                var shape = KernelParameterShape.Classify(p);
                 if (shape.IsArray)
                 {
                     writer.Append(
-                        $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{p.Name}, Length = {shape.LengthExpression} }}");
+                        $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{shape.Name}, Length = {shape.LengthExpression} }}");
                 }
                 else if (shape.IsByRef)
                 {
-                    writer.Append($"p_{p.Name}");
+                    writer.Append($"p_{shape.Name}");
                 }
                 else
                 {
-                    writer.Append(p.Name.ToCSharpIdentifier());
+                    writer.Append(shape.Identifier);
                 }
             }
 
-            if (method.ReturnType.SpecialType != SpecialType.System_Void)
+            if (kernel.ReturnsValue)
             {
                 writer.Append(", ");
                 writer.Append(PinnedAutoResult);

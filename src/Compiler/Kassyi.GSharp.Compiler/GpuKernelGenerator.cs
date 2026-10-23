@@ -136,6 +136,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return null;
         }
 
+        // The values that the host wrappers need are read here, from this compilation, so that a result taken from the
+        // cache never refers to an earlier one (#383)
+        var header = HostClassHeader.Create(methodSymbol.ContainingType);
+        var host = KernelHostModel.Create(methodSymbol, StructMarshalingEmitter.RenderStructs(methodSymbol));
+
         try
         {
             var cudaFailures = new FailureCollector();
@@ -154,10 +159,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             if (!CheckSuppressGs0001(methodDeclaration))
             {
                 return new TranspiledKernelResult(
-                    methodSymbol,
-                    methodSymbol.Name,
-                    methodSymbol.ContainingType.Name,
-                    methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+                    header,
+                    host,
                     cudaSource,
                     cppSource,
                     managedCSharpSource,
@@ -171,10 +174,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             cppSource = "// gsharp:suppress GS0001\n" + cppSource;
 
             return new TranspiledKernelResult(
-                methodSymbol,
-                methodSymbol.Name,
-                methodSymbol.ContainingType.Name,
-                methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+                header,
+                host,
                 cudaSource,
                 cppSource,
                 managedCSharpSource,
@@ -186,10 +187,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
         catch (Exception ex)
         {
             return new TranspiledKernelResult(
-                methodSymbol,
-                methodSymbol.Name,
-                methodSymbol.ContainingType.Name,
-                methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
+                header,
+                host,
                 "", "", $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n",
                 new EquatableArray<string>(), new EquatableArray<string>(), ex.ToString());
         }
@@ -239,10 +238,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             return new TranspiledDeviceMethodResult(
-                methodSymbol,
+                HostClassHeader.Create(methodSymbol.ContainingType),
                 methodSymbol.Name,
-                methodSymbol.ContainingType.Name,
-                methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
                 cudaSignature,
                 cudaBody,
                 cppSignature,
@@ -259,10 +256,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var errorSource = $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n";
 
             return new TranspiledDeviceMethodResult(
-                methodSymbol,
+                HostClassHeader.Create(methodSymbol.ContainingType),
                 methodSymbol.Name,
-                methodSymbol.ContainingType.Name,
-                null,
                 "", errorSource, "", errorSource, new EquatableArray<string>(), new EquatableArray<string>(), ex.ToString());
         }
     }
@@ -325,11 +320,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var seenKernelMethods = new HashSet<TranspiledKernelResult>();
         var distinctKernelMethods = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
 
-        // Keyed by the hint name, not the class symbol: a cached result keeps the symbol of an earlier compilation, which
-        // never equals the same class in the current one (#472)
-        var methodsByClass =
-            new Dictionary<string, (INamedTypeSymbol Class, ImmutableArray<TranspiledKernelResult>.Builder Methods)>(
-                StringComparer.Ordinal);
+        // Grouped by the hint name, which identifies the class; the class models are derived from the results of this
+        // compilation only (#472, #383)
+        var methodsByClass = new Dictionary<string, ImmutableArray<TranspiledKernelResult>.Builder>(StringComparer.Ordinal);
+        var classOrder = ImmutableArray.CreateBuilder<HostClassHeader>();
         foreach (var method in kernelMethods)
         {
             if (seenKernelMethods.Add(method))
@@ -338,24 +332,25 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 var source = method.GetSource(isCuda);
                 allKernelsSource.AppendLine(source);
 
-                var classSymbol = method.MethodSymbol.ContainingType;
-                var hintName = GlobalCppNames.GetHintName(classSymbol);
-                if (!methodsByClass.TryGetValue(hintName, out var group))
+                if (!methodsByClass.TryGetValue(method.Class.HintName, out var group))
                 {
-                    group = (classSymbol, ImmutableArray.CreateBuilder<TranspiledKernelResult>());
-                    methodsByClass[hintName] = group;
+                    group = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
+                    methodsByClass[method.Class.HintName] = group;
+                    classOrder.Add(method.Class);
                 }
 
-                group.Methods.Add(method);
+                group.Add(method);
             }
         }
 
-        methodsByClass
-            .AsStackEnumerable()
-            .Do(
-                (Config: config, Context: context, IsCuda: isCuda),
-                static (kvp, s) => ProcessKernelClass(kvp.Value.Class, kvp.Value.Methods, s.Config, s.Context, s.IsCuda)
-            );
+        var assemblyName = compilation.Assembly.Name;
+        var classModels = new Dictionary<string, KernelClassModel>(StringComparer.Ordinal);
+        foreach (var header in classOrder)
+        {
+            var model = KernelClassModel.Create(header, methodsByClass[header.HintName]);
+            classModels.Add(header.HintName, model);
+            ProcessKernelClass(model, config, context, assemblyName);
+        }
 
         if (!isCuda)
         {
@@ -372,9 +367,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return;
         }
 
-        var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
-        var contextSource = CudaHostLaunchEmitter.GenerateModuleContextClass(assemblyName, distinctKernelMethods);
-        context.AddSource($"{AotHostNames.GetModuleContextName(assemblyName)}.g.cs",
+        var moduleAssemblyName = compilation.AssemblyName ?? "UnknownAssembly";
+        var contextSource = CudaHostLaunchEmitter.GenerateModuleContextClass(moduleAssemblyName,
+            GetKernelsInOrder(distinctKernelMethods, classModels));
+        context.AddSource($"{AotHostNames.GetModuleContextName(moduleAssemblyName)}.g.cs",
             SourceText.From(contextSource, Encoding.UTF8));
     }
 
@@ -430,7 +426,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         // Keyed by the hint name for the same reason as the kernels (#472)
         var sourcesByClass =
-            new Dictionary<string, (INamedTypeSymbol Class, ImmutableArray<string>.Builder Sources)>(StringComparer.Ordinal);
+            new Dictionary<string, (HostClassHeader Class, ImmutableArray<string>.Builder Sources)>(StringComparer.Ordinal);
         foreach (var method in deviceMethods)
         {
             if (method.ManagedCSharpSource.Length == 0)
@@ -438,12 +434,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 continue;
             }
 
-            var classSymbol = method.MethodSymbol.ContainingType;
-            var hintName = GlobalCppNames.GetHintName(classSymbol);
-            if (!sourcesByClass.TryGetValue(hintName, out var group))
+            if (!sourcesByClass.TryGetValue(method.Class.HintName, out var group))
             {
-                group = (classSymbol, ImmutableArray.CreateBuilder<string>());
-                sourcesByClass[hintName] = group;
+                group = (method.Class, ImmutableArray.CreateBuilder<string>());
+                sourcesByClass[method.Class.HintName] = group;
             }
 
             group.Sources.Add(method.ManagedCSharpSource);
@@ -467,24 +461,34 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
-    private static void ProcessKernelClass(INamedTypeSymbol classSymbol, IEnumerable<TranspiledKernelResult> methods,
-        GeneratorConfig config,
-        SourceProductionContext context, bool isCuda)
+    private static void ProcessKernelClass(in KernelClassModel model, GeneratorConfig config,
+        SourceProductionContext context, string assemblyName)
     {
-        var methodsData =
-            ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>();
-        foreach (var method in methods)
+        foreach (var kernel in model.Kernels)
         {
-            ReportInternalError(context, method.InternalError);
-
-            var source = method.GetSource(isCuda);
-            methodsData.Add((method.MethodSymbol, source, method.ManagedCSharpSource));
+            ReportInternalError(context, kernel.InternalError);
         }
 
         // KernelClassAnalyzer reports the overloads and structs that the wrappers leave out (GSH0059, GSH0058)
-        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(classSymbol, methodsData, config);
-        context.AddSource(GlobalCppNames.GetHintName(classSymbol),
-            SourceText.From(wrapperSource, Encoding.UTF8));
+        var wrapperSource = WrapperEmitter.GenerateKernelExtensions(model, config, assemblyName);
+        context.AddSource(model.Class.HintName, SourceText.From(wrapperSource, Encoding.UTF8));
+    }
+
+    // The kernels in the order of the pipeline, each with the emission that its class model gave it
+    private static ImmutableArray<(HostClassHeader Class, KernelEmission Kernel)> GetKernelsInOrder(
+        IReadOnlyList<TranspiledKernelResult> kernels, Dictionary<string, KernelClassModel> classModels)
+    {
+        var positions = new Dictionary<string, int>(StringComparer.Ordinal);
+        var ordered = ImmutableArray.CreateBuilder<(HostClassHeader Class, KernelEmission Kernel)>(kernels.Count);
+        foreach (var kernel in kernels)
+        {
+            var hintName = kernel.Class.HintName;
+            positions.TryGetValue(hintName, out var position);
+            positions[hintName] = position + 1;
+            ordered.Add((kernel.Class, classModels[hintName].Kernels[position]));
+        }
+
+        return ordered.MoveToImmutable();
     }
 
 

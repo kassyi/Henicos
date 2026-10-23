@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// </summary>
 /// <remarks>
 /// The generator leaves the reported overload and struct out of the generated code with the same helpers
-/// (<see cref="KernelHostNames.TryFindIndistinguishableOverload"/>, <see cref="StructMarshalingEmitter.CollectUniqueStructs"/>),
+/// (<see cref="KernelClassModel.TryFindIndistinguishableOverload"/>, <see cref="StructMarshalingEmitter.CollectUniqueStructs"/>),
 /// so the generated code stays valid while this analyzer reports why.
 /// </remarks>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -26,27 +26,34 @@ public class KernelClassAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeType(SymbolAnalysisContext context)
     {
         var type = (INamedTypeSymbol)context.Symbol;
-        var kernels = ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>();
+        var kernels = ImmutableArray.CreateBuilder<IMethodSymbol>();
         type.GetMembers()
             .AsStackEnumerable()
             .OfType<IMethodSymbol>()
             .Where(static method => method.HasAttribute(KnownAttributes.GpuKernel))
-            .Select(static method => (method, "", ""))
             .AddTo(kernels);
         if (kernels.Count == 0)
         {
             return;
         }
 
-        foreach (var (kernel, _, _) in kernels)
+        // The structs are not needed for the overload check
+        var hosts = ImmutableArray.CreateBuilder<KernelHostModel>(kernels.Count);
+        kernels
+            .AsStackEnumerable()
+            .Select(static kernel => KernelHostModel.Create(kernel, default))
+            .AddTo(hosts);
+
+        for (var i = 0; i < kernels.Count; i++)
         {
-            if (KernelHostNames.TryFindIndistinguishableOverload(kernel, out var earlier, out var wrapper))
+            if (KernelClassModel.TryFindIndistinguishableOverload(hosts, i, out var earlier, out var wrapper))
             {
+                var kernel = kernels[i];
                 context.ReportDiagnostic(
                     GSharpDiagnostics.IndistinguishableKernelOverloads,
                     kernel.Locations.Length > 0 ? kernel.Locations[0] : Location.None,
-                    KernelHostNames.FormatSignature(earlier),
-                    KernelHostNames.FormatSignature(kernel),
+                    hosts[earlier].DisplaySignature,
+                    hosts[i].DisplaySignature,
                     wrapper);
             }
         }
@@ -59,17 +66,10 @@ public class KernelClassAnalyzer : DiagnosticAnalyzer
             context.ReportDiagnostic(
                 GSharpDiagnostics.DuplicateAotContextName,
                 duplicate.Locations.Length > 0 ? duplicate.Locations[0] : Location.None,
-                FormatStructName(kept),
-                FormatStructName(duplicate),
+                kept.GetFullyQualifiedCsharpName(),
+                duplicate.GetFullyQualifiedCsharpName(),
                 name,
                 type.Name);
         }
-    }
-
-    private static string FormatStructName(INamedTypeSymbol type)
-    {
-        using var writer = new SourceWriter();
-        writer.AppendFullyQualifiedCsharpName(type);
-        return writer.ToString();
     }
 }

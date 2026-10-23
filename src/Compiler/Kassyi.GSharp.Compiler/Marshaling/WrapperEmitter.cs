@@ -11,16 +11,14 @@ internal static class WrapperEmitter
 
     internal readonly struct InteropParameterInfo(
         string modifier,
-        ITypeSymbol? type,
+        string? typeName,
         bool isIntPtr,
-        string? defaultValue = null,
-        string? rawTypeName = null)
+        string? defaultValue = null)
     {
         private string Modifier { get; } = modifier;
-        private ITypeSymbol? Type { get; } = type;
+        private string? TypeName { get; } = typeName;
         private bool IsIntPtr { get; } = isIntPtr;
         private string? DefaultValue { get; } = defaultValue;
-        private string? RawTypeName { get; } = rawTypeName;
 
         public void WriteTo(SourceWriter writer, string name)
         {
@@ -36,18 +34,9 @@ internal static class WrapperEmitter
                     writer.Append(' ');
                 }
 
-                if (RawTypeName != null)
+                if (TypeName != null)
                 {
-                    writer.Append(RawTypeName);
-                    writer.Append(' ');
-                }
-                else if (Type != null)
-                {
-                    writer.AppendFullyQualifiedCsharpName(Type);
-                    if (Type.IsReferenceType && Type.NullableAnnotation == NullableAnnotation.Annotated)
-                    {
-                        writer.Append("?");
-                    }
+                    writer.Append(TypeName);
                     writer.Append(' ');
                 }
             }
@@ -64,70 +53,51 @@ internal static class WrapperEmitter
         }
     }
 
-    internal static InteropParameterInfo GetInteropParameterInfo(IParameterSymbol p, bool isDevicePtr)
+    internal static InteropParameterInfo GetInteropParameterInfo(in KernelParameterShape shape, bool isDevicePtr)
     {
-        string? defaultValue = null;
-        if (p.HasExplicitDefaultValue)
-        {
-            var val = p.ExplicitDefaultValue;
-            defaultValue = val switch
-            {
-                null => "default",
-                bool b => b ? "true" : "false",
-                float f => f.ToString(CultureInfo.InvariantCulture) + "f",
-                double d => d.ToString(CultureInfo.InvariantCulture) + "d",
-                string s => SymbolDisplay.FormatLiteral(s, true),
-                _ => val.ToString()
-            };
-        }
-
-        var shape = KernelParameterShape.Classify(p);
         switch (isDevicePtr)
         {
             case true when shape.IsDevicePointer:
-            {
-                if (p.HasExplicitDefaultValue)
-                {
-                    defaultValue = "default";
-                }
-
-                return new InteropParameterInfo(string.Empty, null, true, defaultValue);
-            }
+                return new InteropParameterInfo(string.Empty, null, true, shape.HasExplicitDefault ? "default" : null);
             case true when shape.IsCustomStruct:
-            {
-                var tempWriter = new SourceWriter();
-                tempWriter.AppendAotStructPath(shape.MarshaledType);
-                var rawTypeName = tempWriter.ToString();
-                return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
-            }
+                return new InteropParameterInfo(string.Empty, shape.AotStructPath, false, shape.DefaultValueLiteral);
             default:
             {
-                var modifier = p.RefKind switch
+                var modifier = shape.RefKind switch
                 {
                     RefKind.Ref => "ref",
                     RefKind.Out => "out",
                     _ => string.Empty
                 };
 
-                return new InteropParameterInfo(modifier, p.Type, false, defaultValue);
+                return new InteropParameterInfo(modifier, shape.DeclaredTypeName, false, shape.DefaultValueLiteral);
             }
         }
     }
 
-    // The generated part must declare the accessibility of the user's part, or the compiler reports CS0262.
-    private static string GetClassAccessibility(INamedTypeSymbol classSymbol) =>
-        SyntaxFacts.GetText(classSymbol.DeclaredAccessibility);
-
     // A context or frame field that a kernel never assigns is reported (CS0649) unless the field is visible outside the
     // assembly, which it is only in a public class.
-    private static void WriteUnassignedFieldSuppression(SourceWriter writer, INamedTypeSymbol classSymbol) =>
-        writer.AppendLineIf(classSymbol.DeclaredAccessibility != Accessibility.Public, "#pragma warning disable CS0649");
+    private static void WriteUnassignedFieldSuppression(SourceWriter writer, in HostClassHeader header) =>
+        writer.AppendLineIf(!header.IsPublic, "#pragma warning disable CS0649");
+
+    // namespace <namespace> { <accessibility> partial class <name>, without the namespace for the global namespace. The
+    // generated part must declare the accessibility of the user's part, or the compiler reports CS0262.
+    private static void WriteClassDeclaration(SourceWriter writer, in HostClassHeader header)
+    {
+        if (!header.IsGlobalNamespace)
+        {
+            writer.AppendLine($"namespace {header.Namespace}");
+            writer.AppendLine("{");
+        }
+
+        writer.AppendLine($"{header.Accessibility} partial class {header.Name}");
+    }
 
     /// <summary>
-    /// Emits the managed state machines and frames of the device functions in <paramref name="classSymbol"/> that may
-    /// suspend, as a part of that partial class.
+    /// Emits the managed state machines and frames of the device functions in <paramref name="header"/>'s class that
+    /// may suspend, as a part of that partial class.
     /// </summary>
-    public static string GenerateDeviceStateMachines(INamedTypeSymbol classSymbol, IEnumerable<string> sources)
+    public static string GenerateDeviceStateMachines(in HostClassHeader header, IEnumerable<string> sources)
     {
         var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();
@@ -137,19 +107,10 @@ internal static class WrapperEmitter
             using static global::Kassyi.GSharp.Core.ManagedGpuContext;
             using global::Kassyi.ZeroAlloc.Linq;
             """);
-        WriteUnassignedFieldSuppression(writer, classSymbol);
+        WriteUnassignedFieldSuppression(writer, header);
         writer.AppendLine();
 
-        var isGlobalNamespace = classSymbol.ContainingNamespace.IsGlobalNamespace;
-        if (!isGlobalNamespace)
-        {
-            writer.Append("namespace ");
-            writer.AppendNamespace(classSymbol.ContainingNamespace);
-            writer.AppendLine();
-            writer.AppendLine("{");
-        }
-
-        writer.AppendLine($"{GetClassAccessibility(classSymbol)} partial class {classSymbol.Name}");
+        WriteClassDeclaration(writer, header);
         using (writer.Scope())
         {
             foreach (var source in sources)
@@ -158,19 +119,16 @@ internal static class WrapperEmitter
             }
         }
 
-        if (!isGlobalNamespace)
-        {
-            writer.AppendLine("}");
-        }
-
+        writer.AppendLineIf(!header.IsGlobalNamespace, "}");
         return writer.ToString();
     }
 
-    public static string GenerateKernelExtensions(INamedTypeSymbol classSymbol,
-        IEnumerable<(IMethodSymbol Method, string Source, string ManagedCSharpSource)> methods, GeneratorConfig config)
+    /// <summary>Emits the wrapper source of one kernel class.</summary>
+    /// <param name="model">The kernels of the class.</param>
+    /// <param name="config">The generator options.</param>
+    /// <param name="assemblyName">The name of the assembly that declares the kernels.</param>
+    public static string GenerateKernelExtensions(in KernelClassModel model, GeneratorConfig config, string assemblyName)
     {
-        var className = classSymbol.Name;
-
         var writer = new SourceWriter();
         writer.AppendGeneratedFileHeader();
         writer.AppendLine("""
@@ -185,71 +143,55 @@ internal static class WrapperEmitter
             using static global::Kassyi.GSharp.Core.ManagedGpuContext;
             using global::Kassyi.ZeroAlloc.Linq;
             """);
-        WriteUnassignedFieldSuppression(writer, classSymbol);
+        WriteUnassignedFieldSuppression(writer, model.Class);
 
         writer.AppendLine();
 
-        var isGlobalNamespace = classSymbol.ContainingNamespace.IsGlobalNamespace;
-        if (!isGlobalNamespace)
-        {
-            writer.Append("namespace ");
-            writer.AppendNamespace(classSymbol.ContainingNamespace);
-            writer.AppendLine();
-            writer.AppendLine("{");
-        }
-
-        writer.AppendLine($"{GetClassAccessibility(classSymbol)} partial class {className}");
+        WriteClassDeclaration(writer, model.Class);
         using (writer.Scope())
         {
             writer.AppendGeneratedCodeAttributes();
             writer.AppendLine($"public static partial class {AotHostNames.AotContextsClassName}");
             using (writer.Scope())
             {
-                // ReSharper disable once PossibleMultipleEnumeration
-                StructMarshalingEmitter.WriteStructMarshaling(writer, methods);
+                StructMarshalingEmitter.WriteStructMarshaling(writer, model.Structs);
             }
 
-            // ReSharper disable once PossibleMultipleEnumeration
-            foreach (var (method, source, managedCSharpSource) in methods)
+            foreach (var kernel in model.Kernels)
             {
-                // GSH0059: the generator reports the overload; its wrappers would duplicate an earlier overload's.
-                if (KernelHostNames.TryFindIndistinguishableOverload(method, out _, out _))
+                // GSH0059: the analyzer reports the overload; its wrappers would duplicate an earlier overload's.
+                if (kernel.IsIndistinguishable)
                 {
                     continue;
                 }
 
-                WriteKernelSource(writer, method, source, config);
+                WriteKernelSource(writer, kernel, config);
 
                 if (config.IsCuda)
                 {
-                    CudaHostLaunchEmitter.WriteKernelMembers(writer, method);
+                    CudaHostLaunchEmitter.WriteKernelMembers(writer, kernel, assemblyName);
                 }
                 else
                 {
-                    CpuHostLaunchEmitter.WriteKernelMembers(writer, method, managedCSharpSource);
+                    CpuHostLaunchEmitter.WriteKernelMembers(writer, kernel, assemblyName);
                 }
             }
         }
 
-        if (!isGlobalNamespace)
-        {
-            writer.AppendLine("}");
-        }
-
+        writer.AppendLineIf(!model.Class.IsGlobalNamespace, "}");
         return writer.ToString();
     }
 
-    private static void WriteKernelSource(SourceWriter writer, IMethodSymbol method, string source,
-        GeneratorConfig config)
+    private static void WriteKernelSource(SourceWriter writer, in KernelEmission kernel, GeneratorConfig config)
     {
         if (!config.EmitSource)
         {
             return;
         }
 
-        var key = KernelHostNames.GetMemberKey(method);
+        var key = kernel.MemberKey;
         writer.Append($"public const string {key}_Source = @\"");
-        writer.AppendVerbatimLiteral(source);
+        writer.AppendVerbatimLiteral(kernel.GetSource(config.IsCuda));
         writer.AppendLine("\";");
         writer.AppendLine(
             $"public static readonly string {key}_FullSource=" +
@@ -259,42 +201,23 @@ internal static class WrapperEmitter
         writer.AppendLine();
     }
 
-    internal static void WriteLaunchMethodSignature(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
+    internal static void WriteLaunchMethodSignature(SourceWriter writer, in KernelEmission kernel, bool isDevicePtr)
     {
         writer.AppendGeneratedCodeAttributes();
         // An overloaded kernel's IntPtr wrapper is private: callers select the overload through the typed wrapper.
-        writer.Append(isDevicePtr && KernelHostNames.IsOverloadedKernel(method)
+        writer.Append(isDevicePtr && kernel.IsOverloaded
             ? "private static unsafe "
             : "public static unsafe ");
-        WriteLaunchReturnType(writer, method);
-
-        if (isDevicePtr)
-        {
-            writer.Append(KernelHostNames.GetPointerLaunchName(method));
-        }
-        else
-        {
-            writer.Append(KernelHostNames.GetLaunchName(method));
-        }
+        WriteLaunchReturnType(writer, kernel.Host);
+        writer.Append(isDevicePtr
+            ? KernelHostNames.GetPointerLaunchName(kernel)
+            : KernelHostNames.GetLaunchName(kernel.Host));
 
         using (writer.Parentheses())
         {
-            var isFirst = true;
-            foreach (var p in method.Parameters)
+            foreach (var p in kernel.Host.Parameters)
             {
-                if (!isFirst)
-                {
-                    writer.Append(", ");
-                }
-
-                var info = GetInteropParameterInfo(p, isDevicePtr);
-                info.WriteTo(writer, p.Name.ToCSharpIdentifier());
-
-                isFirst = false;
-            }
-
-            if (!isFirst)
-            {
+                GetInteropParameterInfo(p, isDevicePtr).WriteTo(writer, p.Identifier);
                 writer.Append(", ");
             }
 
@@ -309,12 +232,11 @@ internal static class WrapperEmitter
         "uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, " +
         "System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default";
 
-    internal static void WriteLaunchReturnType(SourceWriter writer, IMethodSymbol method)
+    internal static void WriteLaunchReturnType(SourceWriter writer, in KernelHostModel kernel)
     {
-        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        if (kernel.ReturnTypeName is { } returnType)
         {
-            writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-            writer.Append("[] ");
+            writer.Append($"{returnType}[] ");
         }
         else
         {
@@ -322,41 +244,40 @@ internal static class WrapperEmitter
         }
     }
 
-    internal static void WriteOutParameterDefaults(SourceWriter writer, IMethodSymbol method)
+    internal static void WriteOutParameterDefaults(SourceWriter writer, in KernelHostModel kernel)
     {
-        foreach (var p in method.Parameters)
+        foreach (var p in kernel.Parameters)
         {
-            if (p.RefKind is not RefKind.Out || KernelParameterShape.Classify(p).IsArray)
+            if (p.RefKind is not RefKind.Out || p.IsArray)
             {
                 continue;
             }
 
-            writer.Append(p.Name.ToCSharpIdentifier());
-            writer.AppendLine(" = default;");
+            writer.AppendLine($"{p.Identifier} = default;");
         }
     }
 
-    internal static void WriteArrayArgumentChecks(SourceWriter writer, IMethodSymbol method)
+    internal static void WriteArrayArgumentChecks(SourceWriter writer, in KernelHostModel kernel)
     {
-        foreach (var p in method.Parameters)
+        foreach (var shape in kernel.Parameters)
         {
-            var shape = KernelParameterShape.Classify(p);
             if (!shape.IsArray)
             {
                 continue;
             }
 
+            var name = shape.Identifier;
             if (shape.IsOptional)
             {
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{p.Name.ToCSharpIdentifier()} is {{ {shape.LengthMember}: 0 }}");
+                    writer.Append($"{name} is {{ {shape.LengthMember}: 0 }}");
                 }
 
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"{p.Name.ToCSharpIdentifier()} = null;");
+                    writer.AppendLine($"{name} = null;");
                 }
             }
             else if (shape.Container == ArrayContainerKind.Array)
@@ -364,85 +285,68 @@ internal static class WrapperEmitter
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{p.Name.ToCSharpIdentifier()} is null");
+                    writer.Append($"{name} is null");
                 }
 
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({p.Name.ToCSharpIdentifier()}));");
+                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
                 }
 
-                writer.Append("if ");
-                using (writer.Parentheses())
-                {
-                    writer.Append($"{p.Name.ToCSharpIdentifier()}.Length == 0");
-                }
-
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name.ToCSharpIdentifier()}));");
-                }
+                WriteEmptyArrayCheck(writer, $"{name}.Length", name);
             }
             else if (shape.Container == ArrayContainerKind.ImmutableArray)
             {
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{p.Name.ToCSharpIdentifier()}.IsDefault");
+                    writer.Append($"{name}.IsDefault");
                 }
 
                 using (writer.Scope())
                 {
-                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({p.Name.ToCSharpIdentifier()}));");
+                    writer.AppendLine($"throw new global::System.ArgumentNullException(nameof({name}));");
                 }
 
-                writer.Append("if ");
-                using (writer.Parentheses())
-                {
-                    writer.Append($"{p.Name.ToCSharpIdentifier()}.Length == 0");
-                }
-
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name.ToCSharpIdentifier()}));");
-                }
+                WriteEmptyArrayCheck(writer, $"{name}.Length", name);
             }
             else
             {
-                writer.Append("if ");
-                using (writer.Parentheses())
-                {
-                    writer.Append($"{shape.LengthExpression} == 0");
-                }
-
-                using (writer.Scope())
-                {
-                    writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name.ToCSharpIdentifier()}));");
-                }
+                WriteEmptyArrayCheck(writer, shape.LengthExpression, name);
             }
         }
     }
 
-    internal static void WriteAutoResultAllocation(SourceWriter writer, IMethodSymbol method)
+    // if (<length> == 0) { throw new ArgumentException(<message>, nameof(<name>)); }
+    private static void WriteEmptyArrayCheck(SourceWriter writer, string length, string name)
     {
-        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        writer.Append("if ");
+        using (writer.Parentheses())
         {
-            writer.AppendLine(
-                "if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0)" +
-                " throw new global::System.ArgumentOutOfRangeException(\"Dimensions\", \"Launch dimensions must be greater than 0.\");");
-            writer.AppendLine(
-                $"uint {TotalThreads}; checked {{ {TotalThreads} = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }}");
-            writer.Append($"var {GSharpInternalNames.ReturnValue.Buffer} = new ");
-            writer.AppendFullyQualifiedCsharpName(method.ReturnType);
-            writer.AppendLine($"[{TotalThreads}];");
+            writer.Append($"{length} == 0");
+        }
+
+        using (writer.Scope())
+        {
+            writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({name}));");
         }
     }
 
-    internal static void WriteAutoResultReturn(SourceWriter writer, IMethodSymbol method)
+    internal static void WriteAutoResultAllocation(SourceWriter writer, in KernelHostModel kernel)
     {
-        if (method.ReturnType.SpecialType != SpecialType.System_Void)
+        if (kernel.ReturnTypeName is not { } returnType)
         {
-            writer.AppendLine($"return {GSharpInternalNames.ReturnValue.Buffer};");
+            return;
         }
+
+        writer.AppendLine(
+            "if (gridDimX == 0 || gridDimY == 0 || gridDimZ == 0 || blockDimX == 0 || blockDimY == 0 || blockDimZ == 0)" +
+            " throw new global::System.ArgumentOutOfRangeException(\"Dimensions\", \"Launch dimensions must be greater than 0.\");");
+        writer.AppendLine(
+            $"uint {TotalThreads}; checked {{ {TotalThreads} = (gridDimX * gridDimY * gridDimZ) * (blockDimX * blockDimY * blockDimZ); }}");
+        writer.AppendLine($"var {GSharpInternalNames.ReturnValue.Buffer} = new {returnType}[{TotalThreads}];");
     }
+
+    internal static void WriteAutoResultReturn(SourceWriter writer, in KernelHostModel kernel) =>
+        writer.AppendLineIf(kernel.ReturnsValue, $"return {GSharpInternalNames.ReturnValue.Buffer};");
 }
