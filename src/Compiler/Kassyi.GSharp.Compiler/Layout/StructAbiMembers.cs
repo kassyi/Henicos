@@ -41,14 +41,10 @@ internal readonly record struct StructAbiMember(
 /// The set holds instance fields, auto-properties (through the backing field, under the property name), <c>fixed</c>
 /// buffers and the element of an <c>[InlineArray(N)]</c> struct, in declaration order, each with its element count.
 /// The device definition declares a computed property as a member too (pinned by <c>StructAbiTests</c>), which the host
-/// does not have, so it is listed only when <c>includeComputedProperties</c> is set. The host side does not use
-/// <see cref="StructAbiMember.ElementCount"/> yet, so it still differs from the device in these places (#468, pinned by
-/// <c>StructAbiTests</c>):
-/// <list type="bullet">
-///   <item><description>An <c>[InlineArray(N)]</c> field is sized as one element, and a private element field does not compile in the marshaling code.</description></item>
-///   <item><description>A <c>fixed</c> buffer is sized as one element, and its marshaling does not compile.</description></item>
-///   <item><description>A computed property is a device member without a host counterpart.</description></item>
-/// </list>
+/// does not have, so it is listed only when <c>includeComputedProperties</c> is set. The layout, the shadow struct and
+/// the marshaling size a member as element layout times <see cref="StructAbiMember.ElementCount"/> and copy an
+/// <c>[InlineArray(N)]</c> struct or a <c>fixed</c> buffer as one block. A computed property is a device member without a
+/// host counterpart (pinned by <c>StructAbiTests</c>).
 /// </remarks>
 internal static class StructAbiMembers
 {
@@ -76,7 +72,7 @@ internal static class StructAbiMembers
         {
             _members = structType.GetMembers();
             _includeComputedProperties = includeComputedProperties;
-            _inlineArrayLength = structType.GetAttribute(KnownAttributes.InlineArray) is { } attribute
+            _inlineArrayLength = structType.GetAttribute(KnownAttributes.InlineArray) is { ConstructorArguments.Length: > 0 } attribute
                 ? (int)(attribute.ConstructorArguments[0].Value ?? 0)
                 : 0;
         }

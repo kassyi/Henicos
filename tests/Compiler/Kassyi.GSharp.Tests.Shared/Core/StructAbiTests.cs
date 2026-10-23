@@ -45,14 +45,108 @@ public class StructAbiTests
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void InlineArrayField_ShadowHoldsOneElement()
+    public void InlineArrayField_ShadowMatchesDevice()
     {
         var device = MeasureOnDevice(static layout => StructAbiKernels.LaunchMeasureInlineArrayKernel(layout));
 
         Assert.Equal((20, 24), device);
-        // Known mismatch (#468): the shadow struct sizes the inline array by its one declared field
-        Assert.Equal(8, (int)Marshal.OffsetOf<StructAbiKernels.AotContexts.AbiInlineArrayStruct>("C"));
-        Assert.Equal(12, Marshal.SizeOf<StructAbiKernels.AotContexts.AbiInlineArrayStruct>());
+        Assert.Equal(20, (int)Marshal.OffsetOf<StructAbiKernels.AotContexts.AbiInlineArrayStruct>("C"));
+        Assert.Equal(24, Marshal.SizeOf<StructAbiKernels.AotContexts.AbiInlineArrayStruct>());
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void InlineArrayField_RoundtripsThroughShadow()
+    {
+        var data = new AbiInlineArrayStruct { A = 1, C = 7 };
+        data.B[2] = 5;
+
+        StructAbiKernels.LaunchRoundtripInlineArrayKernel(ref data);
+
+        Assert.Equal(2, data.A);
+        Assert.Equal(5, data.B[2]);
+        Assert.Equal(8, data.C);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void PrivateInlineArrayField_ShadowMatchesDevice()
+    {
+        var device = MeasureOnDevice(static layout => StructAbiKernels.LaunchMeasurePrivateInlineArrayKernel(layout));
+
+        Assert.Equal((20, 24), device);
+        Assert.Equal(20, (int)Marshal.OffsetOf<StructAbiKernels.AotContexts.AbiPrivateInlineArrayStruct>("C"));
+        Assert.Equal(24, Marshal.SizeOf<StructAbiKernels.AotContexts.AbiPrivateInlineArrayStruct>());
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void PrivateInlineArrayField_RoundtripsThroughShadow()
+    {
+        var data = new AbiPrivateInlineArrayStruct { A = 1, C = 7 };
+        data.B[3] = 9;
+
+        StructAbiKernels.LaunchRoundtripPrivateInlineArrayKernel(ref data);
+
+        Assert.Equal(2, data.A);
+        Assert.Equal(9, data.B[3]);
+        Assert.Equal(8, data.C);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void FixedBuffer_ShadowMatchesDevice()
+    {
+        var device = MeasureOnDevice(static layout => StructAbiKernels.LaunchMeasureFixedBufferKernel(layout));
+
+        Assert.Equal((20, 24), device);
+        Assert.Equal(20, (int)Marshal.OffsetOf<StructAbiKernels.AotContexts.AbiFixedBufferStruct>("C"));
+        Assert.Equal(24, Marshal.SizeOf<StructAbiKernels.AotContexts.AbiFixedBufferStruct>());
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public unsafe void FixedBuffer_RoundtripsThroughShadow()
+    {
+        var data = new AbiFixedBufferStruct { A = 1, C = 7 };
+        data.B[1] = 6;
+
+        StructAbiKernels.LaunchRoundtripFixedBufferKernel(ref data);
+
+        Assert.Equal(2, data.A);
+        Assert.Equal(6, data.B[1]);
+        Assert.Equal(8, data.C);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void AutoProperty_ShadowMatchesDevice()
+    {
+        var device = MeasureOnDevice(static layout => StructAbiKernels.LaunchMeasureAutoPropertyKernel(layout));
+
+        Assert.Equal((16, 24), device);
+        Assert.Equal(16, (int)Marshal.OffsetOf<StructAbiKernels.AotContexts.AbiAutoPropertyStruct>("C"));
+        Assert.Equal(24, Marshal.SizeOf<StructAbiKernels.AotContexts.AbiAutoPropertyStruct>());
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void AutoProperty_RoundtripsThroughShadow()
+    {
+        var data = new AbiAutoPropertyStruct { A = 1, B = 2.5, C = 7 };
+
+        StructAbiKernels.LaunchRoundtripAutoPropertyKernel(ref data);
+
+        Assert.Equal(2, data.A);
+        Assert.Equal(3.5, data.B);
+        Assert.Equal(8, data.C);
     }
 
     [Fact]

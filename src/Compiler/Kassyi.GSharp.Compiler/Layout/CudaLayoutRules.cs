@@ -96,7 +96,8 @@ internal static class CudaLayoutRules
             }
 
             var member = _members.Current;
-            var layout = GetCudaLayout(member.Type);
+            var elementLayout = GetCudaLayout(member.Type);
+            var layout = elementLayout with { Size = elementLayout.Size * member.ElementCount };
             var alignment = _pack > 0 ? Math.Min(layout.Alignment, _pack) : layout.Alignment;
             var offset = AlignUp(_end, alignment);
             _end = offset + layout.Size;

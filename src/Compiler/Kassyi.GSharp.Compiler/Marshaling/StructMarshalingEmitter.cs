@@ -91,8 +91,51 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
     }
 
+    // [WHY] An [InlineArray(N)] struct and a fixed buffer are copied as one block of ElementCount elements: the element
+    // field of an inline array is usually private, and a fixed buffer cannot be assigned. The inline array's host value
+    // is the whole struct, so it is copied by its own address (Unsafe.Copy infers its type from host).
+    private static bool WriteBlockCopy(SourceWriter writer, StructAbiMember member, bool toNative)
+    {
+        var name = member.Name.ToCSharpIdentifier();
+        switch (member.Kind)
+        {
+            case StructAbiMemberKind.InlineArrayElement:
+                writer.AppendLine($"fixed (byte* pField = native.{name})");
+                using (writer.Scope())
+                {
+                    writer.AppendLine(toNative
+                        ? "System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);"
+                        : "System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);");
+                }
+
+                return true;
+            case StructAbiMemberKind.FixedBuffer:
+                // C# allows a fixed buffer only of a primitive type, so the element always has a keyword
+                var element = member.Type.SpecialType.GetCsharpKeyword() ?? "byte";
+                var byteCount = $"{member.ElementCount} * sizeof({element})";
+                writer.AppendLine($"fixed (byte* pField = native.{name})");
+                using (writer.Scope())
+                {
+                    writer.AppendLine($"fixed ({element}* pHost = host.{name})");
+                    using (writer.Scope())
+                    {
+                        writer.AppendLine($"System.Buffer.MemoryCopy({(toNative ? "pHost, pField" : "pField, pHost")}, {byteCount}, {byteCount});");
+                    }
+                }
+
+                return true;
+            default:
+                return false;
+        }
+    }
+
     private static void WriteMarshalMember(SourceWriter writer, StructAbiMember member)
     {
+        if (WriteBlockCopy(writer, member, toNative: true))
+        {
+            return;
+        }
+
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
             WriteMarshalArrayMember(writer, member, elementType);
@@ -230,6 +273,11 @@ internal static class StructMarshalingEmitter
 
     private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member)
     {
+        if (WriteBlockCopy(writer, member, toNative: false))
+        {
+            return;
+        }
+
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
             WriteUnmarshalArrayMember(writer, member, elementType);

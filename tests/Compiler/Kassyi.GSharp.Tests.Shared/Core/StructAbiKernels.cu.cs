@@ -32,6 +32,34 @@ public struct AbiCoreFieldStruct
     public int C;
 }
 
+// Private element, as a real [InlineArray] struct declares it (#468).
+[InlineArray(4)]
+public struct AbiPrivateFourInts
+{
+    private int _element0;
+}
+
+public struct AbiPrivateInlineArrayStruct
+{
+    public byte A;
+    public AbiPrivateFourInts B;
+    public int C;
+}
+
+public unsafe struct AbiFixedBufferStruct
+{
+    public byte A;
+    public fixed int B[4];
+    public int C;
+}
+
+public struct AbiAutoPropertyStruct
+{
+    public byte A;
+    public double B { get; set; }
+    public int C;
+}
+
 // A computed property has no backing field, so it is no part of the host layout. Whether the device declares it as a
 // member is pinned by StructAbiTests.ComputedPropertyStruct_DeviceDeclaresTheComputedProperty (#468).
 public struct AbiComputedPropertyStruct
@@ -99,6 +127,64 @@ public static partial class StructAbiKernels
     public static void RoundtripCoreFieldKernel(ref AbiCoreFieldStruct data)
     {
         data.A = (byte)(data.A + 1);
+        data.C = data.C + 1;
+    }
+
+    [GpuKernel]
+    public static void MeasurePrivateInlineArrayKernel(int[] layout)
+    {
+        unsafe
+        {
+            AbiPrivateInlineArrayStruct s = default;
+            AbiPrivateInlineArrayStruct* p = &s;
+            layout[0] = (int)((byte*)&s.C - (byte*)p);
+            layout[1] = (int)((byte*)(p + 1) - (byte*)p);
+        }
+    }
+
+    [GpuKernel]
+    public static void RoundtripPrivateInlineArrayKernel(ref AbiPrivateInlineArrayStruct data)
+    {
+        data.A = (byte)(data.A + 1);
+        data.C = data.C + 1;
+    }
+
+    [GpuKernel]
+    public static void MeasureFixedBufferKernel(int[] layout)
+    {
+        unsafe
+        {
+            AbiFixedBufferStruct s = default;
+            AbiFixedBufferStruct* p = &s;
+            layout[0] = (int)((byte*)&s.C - (byte*)p);
+            layout[1] = (int)((byte*)(p + 1) - (byte*)p);
+        }
+    }
+
+    [GpuKernel]
+    public static void RoundtripFixedBufferKernel(ref AbiFixedBufferStruct data)
+    {
+        data.A = (byte)(data.A + 1);
+        data.C = data.C + 1;
+    }
+
+    [GpuKernel]
+    public static void MeasureAutoPropertyKernel(int[] layout)
+    {
+        unsafe
+        {
+            AbiAutoPropertyStruct s = default;
+            AbiAutoPropertyStruct* p = &s;
+            layout[0] = (int)((byte*)&s.C - (byte*)p);
+            layout[1] = (int)((byte*)(p + 1) - (byte*)p);
+        }
+    }
+
+    [GpuKernel]
+    public static void RoundtripAutoPropertyKernel(ref AbiAutoPropertyStruct data)
+    {
+        data.A = (byte)(data.A + 1);
+        data.B = data.B + 1.0;
         data.C = data.C + 1;
     }
 
