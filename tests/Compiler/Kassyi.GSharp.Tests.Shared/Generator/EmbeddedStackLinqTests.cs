@@ -20,8 +20,16 @@ public class EmbeddedStackLinqTests
     {
         var source = ImmutableArray.Create(1, 2, 3, 4, 5);
 
-        Assert.Equal(2, source.AsStackEnumerable().Where(static x => x % 2 == 0).Count());
-        Assert.Equal([2, 4, 6], source.AsStackEnumerable().Select(static x => x * 2).Take(3).ToArray());
+        int evenCount = source.AsStackEnumerable()
+            .Where(static x => x % 2 == 0)
+            .Count();
+        int[] doubled = source.AsStackEnumerable()
+            .Select(static x => x * 2)
+            .Take(3)
+            .ToArray();
+
+        Assert.Equal(2, evenCount);
+        Assert.Equal([2, 4, 6], doubled);
         Assert.Equal(4, source.AsStackEnumerable().First(static x => x > 3));
     }
 

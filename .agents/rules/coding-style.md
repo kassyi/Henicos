@@ -93,7 +93,14 @@ While .NET Framework Design Guidelines (FDG) generally avoid abbreviations, spec
                   .Sum();
     ```
   - For detailed architecture, API reference, and benchmarks, see: [StackLinq Architecture & Specification](../../docs/spec/en/03_bcl_api/linq/00_index.md).
-  - **In the G# compiler** (`src/Compiler/Kassyi.GSharp.Compiler`, a netstandard2.0 analyzer): use the copy built into the compiler, `Kassyi.ZeroAlloc.Linq.Embedded` (globally imported). `Kassyi.ZeroAlloc.Linq.Export` generates it from the net10.0 sources on every StackLinq build, so only those sources are maintained. It has no span enumerators, `AsParallel` or generic-math `Sum`. Start a query with `.AsStackEnumerable()` on an array, `ImmutableArray<T>`, `IReadOnlyList<T>`, `SyntaxList<T>` or `SeparatedSyntaxList<T>`, and prefer it to a hand-written loop for a query (`Any`, `All`, `Count`, `First`, `Where` / `Select` chains). Use `static` lambdas so that no closure is allocated.
+  - **In the G# compiler** (`src/Compiler/Kassyi.GSharp.Compiler`, a netstandard2.0 analyzer): use the copy built into the compiler, `Kassyi.ZeroAlloc.Linq.Embedded` (globally imported). `Kassyi.ZeroAlloc.Linq.Export` generates it from the net10.0 sources on every StackLinq build, so only those sources are maintained. It has no span enumerators, `AsParallel` or generic-math `Sum`. Start a query with `.AsStackEnumerable()` on an array, `ImmutableArray<T>`, `IReadOnlyList<T>`, `SyntaxList<T>` or `SeparatedSyntaxList<T>`, and prefer it to a hand-written loop for a query (`Any`, `All`, `Count`, `First`, `Where` / `Select` chains), whether the loop is a `foreach` or an indexed `for`. Use `static` lambdas so that no closure is allocated; when the lambda needs an outer value, pass it through the state overload (`Where`, `Select`, `Count`, `Any`, `All`, `First`, `FirstOrDefault`): `attributes.AsStackEnumerable().Any(shortName, static (a, name) => a.IsAttribute(name))`. Pass several values as a tuple. The state overloads are host-only; inside a kernel, a lambda reads outer values directly.
+  - **Chain layout**: when a query chains two or more operators after the source, put each `.Operator(...)` on its own line, one level deeper than the statement. A single call stays on one line (`x.AsStackEnumerable().Any(static ...)`).
+    ```csharp
+    int count = parameters.AsStackEnumerable()
+        .Where(static p => !p.IsConstantParameter())
+        .Select(static p => p.Type)
+        .Count();
+    ```
 - **Prohibited Over-Refactoring (Preserve Imperative Loops)**:
   - **GPU Kernels (`*.cu`, `*.cu.cs`)**: Never use LINQ. Keep imperative `for` loops so AST lowering can map cleanly to native unrolling (`#pragma unroll`).
   - **Benchmark Measurement Loops**: Keep raw imperative loops in CPU baseline comparisons (e.g., `SgemmBenchmark`, `BlackScholesBenchmark`) to avoid skewing benchmark overhead.

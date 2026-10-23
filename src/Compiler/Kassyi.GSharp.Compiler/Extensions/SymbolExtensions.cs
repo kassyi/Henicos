@@ -236,18 +236,8 @@ internal static class SymbolExtensions
     /// <summary>
     /// Determines whether the symbol has an attribute matching the specified short name.
     /// </summary>
-    public static bool HasAttribute(this ISymbol symbol, string shortName)
-    {
-        foreach (var attr in symbol.GetAttributes())
-        {
-            if (attr.IsAttribute(shortName))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    public static bool HasAttribute(this ISymbol symbol, string shortName) =>
+        symbol.GetAttributes().AsStackEnumerable().Any(shortName, static (a, name) => a.IsAttribute(name));
 
     /// <summary>
     /// Whether <paramref name="parameter"/> is a <c>[Constant]</c> parameter, which the launcher injects as a macro
@@ -259,16 +249,6 @@ internal static class SymbolExtensions
     /// <summary>
     /// Gets the first attribute matching the specified short name, or null if none found.
     /// </summary>
-    public static AttributeData? GetAttribute(this ISymbol symbol, string shortName)
-    {
-        foreach (var attr in symbol.GetAttributes())
-        {
-            if (attr.IsAttribute(shortName))
-            {
-                return attr;
-            }
-        }
-
-        return null;
-    }
+    public static AttributeData? GetAttribute(this ISymbol symbol, string shortName) =>
+        symbol.GetAttributes().AsStackEnumerable().FirstOrDefault(shortName, static (a, name) => a.IsAttribute(name));
 }
