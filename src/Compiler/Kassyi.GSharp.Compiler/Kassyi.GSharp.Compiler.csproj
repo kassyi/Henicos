@@ -45,6 +45,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" ExcludeAssets="all" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
     <ProjectReference Include="..\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" ReferenceOutputAssembly="false" />
+    <!-- Builds StackLinq first, which exports its netstandard2.0 sources for IncludeEmbeddedStackLinq -->
+    <ProjectReference Include="..\..\ZeroAlloc\Kassyi.ZeroAlloc.Linq\Kassyi.ZeroAlloc.Linq.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" ExcludeAssets="all" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -107,6 +109,13 @@
     <MakeDir Directories="$(IntermediateOutputPath)GeneratedInternalNames" />
     <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; internal-names &quot;$(MSBuildThisFileDirectory)Resources/InternalNames.yml&quot; &quot;$(MSBuildThisFileDirectory)Resources/Prelude&quot; &quot;$(MSBuildThisFileDirectory)../../Core/Kassyi.GSharp.Core&quot; &quot;$(IntermediateOutputPath)GeneratedInternalNames&quot;" />
     <Touch Files="$(IntermediateOutputPath)GeneratedInternalNames.stamp" AlwaysCreate="true" />
+  </Target>
+
+  <!-- StackLinq as internal types in Kassyi.ZeroAlloc.Linq.Embedded; the analyzer ships no extra assembly -->
+  <Target Name="IncludeEmbeddedStackLinq" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Compile Include="$(MSBuildThisFileDirectory)..\..\ZeroAlloc\Kassyi.ZeroAlloc.Linq\$(BaseOutputPath)$(Configuration)\net10.0\export\netstandard2.0\*.cs" />
+    </ItemGroup>
   </Target>
 
   <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects;GenerateDiagnostics;GeneratePrelude;GenerateInternalNames">

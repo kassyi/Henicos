@@ -19,6 +19,7 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | Get the attribute data | `.GetAttribute` | `GetAttributes()` plus a loop |
 | Is this a `[Constant]` (macro-injected) parameter? | `.IsConstantParameter` | `p.HasAttribute(KnownAttributes.Constant)` |
 | Compare symbols | `.IsEqualTo` | `SymbolEqualityComparer.Default.Equals` spelled out |
+| Query a collection (`Any`, `All`, `Count`, `First`, `Where` / `Select`) | `.AsStackEnumerable` on an array, `ImmutableArray`, `IReadOnlyList`, `SyntaxList` or `SeparatedSyntaxList`, then the StackLinq operator with a `static` lambda (`Kassyi.ZeroAlloc.Linq.Embedded`) | a hand-written search loop, `System.Linq` |
 | Is the namespace `Kassyi.GSharp.Core` / `System` / `System.Numerics` / `System.Runtime.*`? | `.IsCoreNamespace`, `.IsSystemNamespace`, `.IsSystemOrNumerics`, `.IsSystemRuntimeCompilerServices`, `.IsSystemRuntimeInteropServices` | `ToDisplayString() == "System"` |
 | Element type of `T[]`, `Span<T>`, `Memory<T>`, `ImmutableArray<T>` ... | `.TryGetArrayLikeElementType` | a switch over type names |
 | Is it `SharedMemory<T>` / `System.Numerics.Vector*`? | `.IsSharedMemoryType`, `.IsSystemNumericsVector` | `Name == "SharedMemory"` |

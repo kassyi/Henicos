@@ -32,3 +32,4 @@ global using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 global using System.Globalization;
 global using Kassyi.GSharp.Compiler.Layout;
 global using Kassyi.GSharp.Naming;
+global using Kassyi.ZeroAlloc.Linq.Embedded;
