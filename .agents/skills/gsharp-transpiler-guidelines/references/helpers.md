@@ -53,7 +53,7 @@ The binding rules are in `.agents/rules/transpiler-emission.md`. The helpers:
 | Text with values in it | `$""` passed straight to `SourceWriter.Append` / `SourceWriter.AppendLine` / `SourceWriter.Line` (zero allocation via `SourceWriterInterpolatedStringHandler`) | a chain of `Append` calls for one line, a separate `StringBuilder`, or `var s = $"..."` then `Append(s)` |
 | Separators and keywords | `SourceWriter.AppendComma`, `SourceWriter.AppendOperator`, `SourceWriter.AppendKeyword`, `SourceWriter.AppendSemiColonLine` | `Append(", ")`, `Append(" = ")` |
 | Conditional text | `SourceWriter.AppendIf`, `SourceWriter.AppendLineIf` | `if (x) writer.Append(...)` |
-| C# type name in generated host code | `SymbolExtensions.AppendCsharpTypeName`, `SymbolExtensions.AppendFullyQualifiedCsharpName` | `ToDisplayString()` |
+| C# type name in generated host code | `CSharpTypeNameWriter.AppendCsharpTypeName`, `CSharpTypeNameWriter.AppendFullyQualifiedCsharpName` | `ToDisplayString()` |
 | User identifier in generated host C# | `CSharpIdentifierExtensions.ToCSharpIdentifier` | prefixing `@` by hand |
 | C++ name of a user symbol (declaration / reference) | `CppNameResolver.AppendDeclaredName`, `CppNameResolver.AppendReferencedName`, `CppNameResolver.AppendSymbolName` | `identifier.ValueText` written directly |
 | Compiler-internal name (`__gsharp_*`) | `GSharpInternalNames` (add new names to `Resources/InternalNames.yml`) | a `"__gsharp_..."` literal |

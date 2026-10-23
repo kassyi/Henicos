@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// Transpiles a C# method declaration into a pure C# managed state machine and wrapper for host-side debugging.
 /// </summary>
 /// <remarks>
-/// Types named from symbols go through <see cref="SymbolExtensions.AppendCsharpTypeName"/>; syntax nodes become text only in <see cref="ToSource"/>.
+/// Types named from symbols go through <see cref="CSharpTypeNameWriter.AppendCsharpTypeName"/>; syntax nodes become text only in <see cref="ToSource"/>.
 /// </remarks>
 internal static class ManagedCSharpTranspiler
 {
