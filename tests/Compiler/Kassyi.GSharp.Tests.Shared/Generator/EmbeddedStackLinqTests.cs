@@ -20,24 +20,33 @@ public class EmbeddedStackLinqTests
     {
         var source = ImmutableArray.Create(1, 2, 3, 4, 5);
 
-        int evenCount = source.AsStackEnumerable()
+        int evenCount = source
+            .AsStackEnumerable()
             .Where(static x => x % 2 == 0)
             .Count();
-        int[] doubled = source.AsStackEnumerable()
+        int[] doubled = source
+            .AsStackEnumerable()
             .Select(static x => x * 2)
             .Take(3)
             .ToArray();
+        int firstAboveThree = source
+            .AsStackEnumerable()
+            .First(static x => x > 3);
 
         Assert.Equal(2, evenCount);
         Assert.Equal([2, 4, 6], doubled);
-        Assert.Equal(4, source.AsStackEnumerable().First(static x => x > 3));
+        Assert.Equal(4, firstAboveThree);
     }
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Test_DefaultImmutableArray_IsEmpty()
     {
-        Assert.False(default(ImmutableArray<int>).AsStackEnumerable().Any());
+        bool any = default(ImmutableArray<int>)
+            .AsStackEnumerable()
+            .Any();
+
+        Assert.False(any);
     }
 
     [Fact]
@@ -46,8 +55,15 @@ public class EmbeddedStackLinqTests
     {
         IReadOnlyList<string> source = new List<string> { "a", "bb", "ccc" };
 
-        Assert.True(source.AsStackEnumerable().Any(static s => s.Length == 2));
-        Assert.False(source.AsStackEnumerable().All(static s => s.Length < 3));
+        bool anyOfLengthTwo = source
+            .AsStackEnumerable()
+            .Any(static s => s.Length == 2);
+        bool allShorterThanThree = source
+            .AsStackEnumerable()
+            .All(static s => s.Length < 3);
+
+        Assert.True(anyOfLengthTwo);
+        Assert.False(allShorterThanThree);
     }
 
     [Fact]
@@ -58,8 +74,15 @@ public class EmbeddedStackLinqTests
             [SyntaxFactory.EmptyStatement(), SyntaxFactory.ReturnStatement(), SyntaxFactory.EmptyStatement()]
         );
 
-        Assert.True(statements.AsStackEnumerable().Any(static s => s is not EmptyStatementSyntax));
-        Assert.Equal(2, statements.AsStackEnumerable().Count(static s => s.IsKind(SyntaxKind.EmptyStatement)));
+        bool hasExecutable = statements
+            .AsStackEnumerable()
+            .Any(static s => s is not EmptyStatementSyntax);
+        int emptyCount = statements
+            .AsStackEnumerable()
+            .Count(static s => s.IsKind(SyntaxKind.EmptyStatement));
+
+        Assert.True(hasExecutable);
+        Assert.Equal(2, emptyCount);
     }
 
     [Fact]
@@ -70,7 +93,14 @@ public class EmbeddedStackLinqTests
             [SyntaxFactory.Argument(SyntaxFactory.IdentifierName("a")), SyntaxFactory.Argument(SyntaxFactory.IdentifierName("b"))]
         );
 
-        Assert.Same(arguments[1], arguments.AsStackEnumerable().ElementAt(1));
-        Assert.Same(arguments[1], arguments.AsStackEnumerable().Last());
+        var second = arguments
+            .AsStackEnumerable()
+            .ElementAt(1);
+        var last = arguments
+            .AsStackEnumerable()
+            .Last();
+
+        Assert.Same(arguments[1], second);
+        Assert.Same(arguments[1], last);
     }
 }

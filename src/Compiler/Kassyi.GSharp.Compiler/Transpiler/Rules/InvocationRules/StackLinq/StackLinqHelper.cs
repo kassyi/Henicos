@@ -23,7 +23,10 @@ internal static class StackLinqHelper
     /// so that host code avoids a closure; they are host-only because a kernel lambda reads outer values directly.
     /// </summary>
     public static bool TakesState(IMethodSymbol symbol) =>
-        IsStackLinqMethod(symbol) && symbol.Parameters.AsStackEnumerable().Any(static p => p.Name == "state");
+        IsStackLinqMethod(symbol) &&
+        symbol.Parameters
+            .AsStackEnumerable()
+            .Any(static p => p.Name == "state");
 
     public static ArgumentSyntax GetLambdaArgument(InvocationExpressionSyntax invocation, IMethodSymbol symbol)
     {

@@ -9,11 +9,11 @@ internal static class SymbolExtensions
     public static bool IsSystemOrNumerics(this INamespaceSymbol? ns) =>
         ns is { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
             or
-        {
-            Name: TypeConstants.NumericsNamespace,
-            ContainingNamespace:
-            { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
-        };
+            {
+                Name: TypeConstants.NumericsNamespace,
+                ContainingNamespace:
+                { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+            };
 
     public static bool IsSystemThreading(this INamespaceSymbol? ns) =>
         ns is
@@ -38,7 +38,8 @@ internal static class SymbolExtensions
             ContainingNamespace:
             {
                 Name: "Runtime",
-                ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+                ContainingNamespace:
+                { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
             }
         };
 
@@ -49,7 +50,8 @@ internal static class SymbolExtensions
             ContainingNamespace:
             {
                 Name: "Runtime",
-                ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+                ContainingNamespace:
+                { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
             }
         };
 
@@ -61,14 +63,16 @@ internal static class SymbolExtensions
             ContainingNamespace:
             {
                 Name: "Collections",
-                ContainingNamespace: { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
+                ContainingNamespace:
+                { Name: TypeConstants.SystemNamespace, ContainingNamespace.IsGlobalNamespace: true }
             }
         };
 
     /// <summary>
     /// Attempts to get the element type of an array-like type (T[], Span, ReadOnlySpan, Memory, ReadOnlyMemory, ArraySegment, ImmutableArray).
     /// </summary>
-    public static bool TryGetArrayLikeElementType(this ITypeSymbol? type, [NotNullWhen(true)] out ITypeSymbol? elementType)
+    public static bool TryGetArrayLikeElementType(this ITypeSymbol? type,
+        [NotNullWhen(true)] out ITypeSymbol? elementType)
     {
         if (type is IArrayTypeSymbol arrayType)
         {
@@ -77,7 +81,8 @@ internal static class SymbolExtensions
         }
 
         if (type is INamedTypeSymbol { IsGenericType: true } genericType &&
-            genericType.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or "Memory" or "ReadOnlyMemory" or "ArraySegment" or "ImmutableArray" &&
+            genericType.Name is TypeConstants.SpanType or TypeConstants.ReadOnlySpanType or "Memory" or "ReadOnlyMemory"
+                or "ArraySegment" or "ImmutableArray" &&
             (genericType.ContainingNamespace.IsSystemNamespace() ||
              genericType.ContainingNamespace.IsSystemCollectionsImmutable()))
         {
@@ -99,7 +104,10 @@ internal static class SymbolExtensions
     /// </summary>
     public static ITypeSymbol? UnwrapNullableArrayLike(this ITypeSymbol? type)
     {
-        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1 } nullableType &&
+        if (type is INamedTypeSymbol
+            {
+                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
+            } nullableType &&
             nullableType.TypeArguments[0].IsArrayLikeType())
         {
             return nullableType.TypeArguments[0];
@@ -112,7 +120,10 @@ internal static class SymbolExtensions
     /// Returns true exactly when UnwrapNullableArrayLike would unwrap.
     /// </summary>
     public static bool IsNullableArrayLike(this ITypeSymbol? type) =>
-        type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1 } nullableType &&
+        type is INamedTypeSymbol
+        {
+            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments.Length: 1
+        } nullableType &&
         nullableType.TypeArguments[0].IsArrayLikeType();
 
     public static bool IsCoreNamespace(this INamespaceSymbol? ns) =>
@@ -140,7 +151,7 @@ internal static class SymbolExtensions
         if (typeSymbol.Name is TypeConstants.Vector2Type or TypeConstants.Vector3Type or TypeConstants.Vector4Type &&
             typeSymbol.ContainingNamespace.Name == TypeConstants.NumericsNamespace &&
             typeSymbol.ContainingNamespace.ContainingNamespace is
-            { Name: TypeConstants.SystemNamespace, IsGlobalNamespace: false } sysNs &&
+                { Name: TypeConstants.SystemNamespace, IsGlobalNamespace: false } sysNs &&
             sysNs.ContainingNamespace.IsGlobalNamespace)
         {
             return true;
@@ -237,7 +248,9 @@ internal static class SymbolExtensions
     /// Determines whether the symbol has an attribute matching the specified short name.
     /// </summary>
     public static bool HasAttribute(this ISymbol symbol, string shortName) =>
-        symbol.GetAttributes().AsStackEnumerable().Any(shortName, static (a, name) => a.IsAttribute(name));
+        symbol.GetAttributes()
+            .AsStackEnumerable()
+            .Any(shortName, static (a, name) => a.IsAttribute(name));
 
     /// <summary>
     /// Whether <paramref name="parameter"/> is a <c>[Constant]</c> parameter, which the launcher injects as a macro
@@ -250,5 +263,7 @@ internal static class SymbolExtensions
     /// Gets the first attribute matching the specified short name, or null if none found.
     /// </summary>
     public static AttributeData? GetAttribute(this ISymbol symbol, string shortName) =>
-        symbol.GetAttributes().AsStackEnumerable().FirstOrDefault(shortName, static (a, name) => a.IsAttribute(name));
+        symbol.GetAttributes()
+            .AsStackEnumerable()
+            .FirstOrDefault(shortName, static (a, name) => a.IsAttribute(name));
 }
