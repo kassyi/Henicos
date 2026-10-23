@@ -1,42 +1,147 @@
 namespace Kassyi.GSharp.Compiler.Layout;
 
+/// <summary>The kind of a <see cref="StructAbiMember"/>.</summary>
+internal enum StructAbiMemberKind
+{
+    /// <summary>An ordinary instance field.</summary>
+    Field,
+
+    /// <summary>An auto-property, found through its backing field and named after the property.</summary>
+    AutoProperty,
+
+    /// <summary>A <c>fixed</c> buffer: <c>T name[N]</c>.</summary>
+    FixedBuffer,
+
+    /// <summary>The one field of an <c>[InlineArray(N)]</c> struct: <c>T element[N]</c>.</summary>
+    InlineArrayElement,
+
+    /// <summary>A property without a backing field. Listed only when asked for (see <see cref="StructAbiMembers.Get"/>).</summary>
+    ComputedProperty
+}
+
+/// <summary>One member of a user struct's native layout.</summary>
+/// <param name="Symbol">The symbol that names the member: the field, or the property for an auto-property.</param>
+/// <param name="Name">The declared name; an auto-property keeps the name of the property.</param>
+/// <param name="Type">The type of one element: the pointed-at type of a <c>fixed</c> buffer, the field type otherwise.</param>
+/// <param name="ElementCount">The number of elements: 1, or N for a <c>fixed</c> buffer or the element of an <c>[InlineArray(N)]</c> struct.</param>
+/// <param name="Kind">What the member was declared as.</param>
+internal readonly record struct StructAbiMember(
+    ISymbol Symbol,
+    string Name,
+    ITypeSymbol Type,
+    int ElementCount,
+    StructAbiMemberKind Kind);
+
 /// <summary>
 /// The members that make up the native layout of a user struct. The device definition (<c>StructTranspiler</c>), the
 /// host shadow struct (<c>NativeStructEmitter</c>), its marshaling (<c>StructMarshalingEmitter</c>) and the layout
 /// computation (<see cref="CudaLayoutRules"/>) walk this one set so that both sides agree on the offsets.
 /// </summary>
 /// <remarks>
-/// The device definition does not use this set yet: it declares the non-static members as written (an
-/// auto-property under its own name, an <c>[InlineArray(N)]</c> struct as <c>T element[N]</c>, a <c>fixed</c> buffer as
-/// <c>T name[N]</c>). The host differs from it in these places (#468, pinned by <c>StructAbiTests</c>):
-/// <list type="bullet">
-///   <item><description>An <c>[InlineArray(N)]</c> field is sized as one element, and a private element field does not compile in the marshaling code.</description></item>
-///   <item><description>A <c>fixed</c> buffer is sized as the pointer Roslyn types it with, and its marshaling does not compile.</description></item>
-///   <item><description>An auto-property appears as its backing field, whose name does not compile in the shadow struct.</description></item>
-/// </list>
+/// The set holds instance fields, auto-properties (through the backing field, under the property name), <c>fixed</c>
+/// buffers and the element of an <c>[InlineArray(N)]</c> struct, in declaration order, each with its element count.
+/// The device definition declares a computed property as a member too (pinned by <c>StructAbiTests</c>), which the host
+/// does not have, so it is listed only when <c>includeComputedProperties</c> is set. The layout, the shadow struct and
+/// the marshaling size a member as element layout times <see cref="StructAbiMember.ElementCount"/> and copy an
+/// <c>[InlineArray(N)]</c> struct or a <c>fixed</c> buffer as one block. A computed property is a device member without a
+/// host counterpart (pinned by <c>StructAbiTests</c>).
 /// </remarks>
 internal static class StructAbiMembers
 {
-    /// <summary>The instance fields of <paramref name="structType"/> in declaration order, backing fields included.</summary>
-    public static InstanceFields GetInstanceFields(INamedTypeSymbol structType) => new(structType.GetMembers());
+    /// <summary>The members of <paramref name="structType"/> in declaration order.</summary>
+    /// <param name="structType">The struct.</param>
+    /// <param name="includeComputedProperties">Also list the properties that have no backing field (the device declares them).</param>
+    public static MemberSet Get(INamedTypeSymbol structType, bool includeComputedProperties = false) =>
+        new(structType, includeComputedProperties);
 
-    /// <summary>A <c>foreach</c>-able view of the instance fields that allocates nothing.</summary>
-    internal readonly struct InstanceFields(ImmutableArray<ISymbol> members)
+    /// <summary>A <c>foreach</c>-able view of the members that allocates nothing.</summary>
+    internal readonly struct MemberSet(INamedTypeSymbol structType, bool includeComputedProperties)
     {
-        public InstanceFieldEnumerator GetEnumerator() => new(members);
+        public MemberEnumerator GetEnumerator() => new(structType, includeComputedProperties);
     }
 
-    internal struct InstanceFieldEnumerator(ImmutableArray<ISymbol> members)
+    internal struct MemberEnumerator
     {
+        private readonly ImmutableArray<ISymbol> _members;
+        private readonly bool _includeComputedProperties;
+        private readonly int _inlineArrayLength;
         private int _index = -1;
+        private bool _inlineElementTaken;
 
-        public readonly IFieldSymbol Current => (IFieldSymbol)members[_index];
+        public MemberEnumerator(INamedTypeSymbol structType, bool includeComputedProperties)
+        {
+            _members = structType.GetMembers();
+            _includeComputedProperties = includeComputedProperties;
+            _inlineArrayLength = structType.GetAttribute(KnownAttributes.InlineArray) is { ConstructorArguments.Length: > 0 } attribute
+                ? (int)(attribute.ConstructorArguments[0].Value ?? 0)
+                : 0;
+        }
+
+        public StructAbiMember Current { get; private set; }
 
         public bool MoveNext()
         {
-            while (++_index < members.Length)
+            while (++_index < _members.Length)
             {
-                if (members[_index] is IFieldSymbol { IsStatic: false })
+                var member = _members[_index];
+                if (member is IFieldSymbol { IsStatic: false } field)
+                {
+                    if (TryCreate(field, out var created))
+                    {
+                        Current = created;
+                        return true;
+                    }
+                }
+                else if (_includeComputedProperties && member is IPropertySymbol { IsStatic: false, IsImplicitlyDeclared: false } property &&
+                         !HasBackingField(property))
+                {
+                    Current = new StructAbiMember(property, property.Name, property.Type, 1,
+                        StructAbiMemberKind.ComputedProperty);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool TryCreate(IFieldSymbol field, out StructAbiMember member)
+        {
+            member = default;
+            if (field.AssociatedSymbol is IPropertySymbol property)
+            {
+                member = new StructAbiMember(property, property.Name, field.Type, 1, StructAbiMemberKind.AutoProperty);
+                return true;
+            }
+
+            if (field.IsImplicitlyDeclared)
+            {
+                return false;
+            }
+
+            if (field is { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol pointer })
+            {
+                member = new StructAbiMember(field, field.Name, pointer.PointedAtType, field.FixedSize,
+                    StructAbiMemberKind.FixedBuffer);
+                return true;
+            }
+
+            if (_inlineArrayLength > 0 && !_inlineElementTaken)
+            {
+                _inlineElementTaken = true;
+                member = new StructAbiMember(field, field.Name, field.Type, _inlineArrayLength,
+                    StructAbiMemberKind.InlineArrayElement);
+                return true;
+            }
+
+            member = new StructAbiMember(field, field.Name, field.Type, 1, StructAbiMemberKind.Field);
+            return true;
+        }
+
+        private readonly bool HasBackingField(IPropertySymbol property)
+        {
+            foreach (var member in _members)
+            {
+                if (member is IFieldSymbol field && SymbolEqualityComparer.Default.Equals(field.AssociatedSymbol, property))
                 {
                     return true;
                 }

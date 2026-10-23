@@ -18,9 +18,9 @@ internal static class StructTranspiler
             return;
         }
 
-        foreach (var field in StructAbiMembers.GetInstanceFields(namedStruct))
+        foreach (var member in StructAbiMembers.Get(namedStruct))
         {
-            RegisterUsedStructIfApplicable(field.Type, ref context);
+            RegisterUsedStructIfApplicable(member.Type, ref context);
         }
     }
 
@@ -62,9 +62,9 @@ internal static class StructTranspiler
                 return;
             }
 
-            foreach (var field in StructAbiMembers.GetInstanceFields(s))
+            foreach (var member in StructAbiMembers.Get(s))
             {
-                if (TryGetUserStruct(field.Type, out var dep) && structSet.Contains(dep))
+                if (TryGetUserStruct(member.Type, out var dep) && structSet.Contains(dep))
                 {
                     visit(dep);
                 }
@@ -121,17 +121,16 @@ internal static class StructTranspiler
         ref TranspileContext context)
     {
         var length = (int)(inlineArrayAttr.ConstructorArguments[0].Value ?? 0);
-        var firstField = GetFirstInstanceField(structSym);
-        if (firstField == null)
+        if (!TryGetFirstMember(structSym, out var firstMember))
         {
             return;
         }
 
-        var element = GetMemberName(firstField, ref context);
+        var element = GetMemberName(firstMember.Symbol, ref context);
         WriteStructHeader(ref context, structSym);
         using (context.Emitter.Writer.Scope())
         {
-            context.Emitter.Dialect.AppendType(ref context, firstField.Type);
+            context.Emitter.Dialect.AppendType(ref context, firstMember.Type);
             context.Emitter.Writer.Append($" {element}");
             using (context.Emitter.Writer.Brackets())
             {
@@ -140,9 +139,9 @@ internal static class StructTranspiler
 
             context.Emitter.Writer.AppendLine(";");
 
-            WriteInlineArrayIndexer(ref context, firstField.Type, element, isConst: false);
-            WriteInlineArrayIndexer(ref context, firstField.Type, element, isConst: true);
-            WriteInlineArrayIterators(ref context, firstField.Type, element, length);
+            WriteInlineArrayIndexer(ref context, firstMember.Type, element, isConst: false);
+            WriteInlineArrayIndexer(ref context, firstMember.Type, element, isConst: true);
+            WriteInlineArrayIterators(ref context, firstMember.Type, element, length);
         }
 
         WriteStructFooter(ref context);
@@ -206,12 +205,10 @@ internal static class StructTranspiler
 
         using (context.Emitter.Writer.Scope())
         {
-            foreach (var member in structSym.GetMembers())
+            // [WHY] The device still declares a computed property as a member, so it takes part here although the host layout does not (pinned by StructAbiTests).
+            foreach (var member in StructAbiMembers.Get(structSym, includeComputedProperties: true))
             {
-                if (member is { IsStatic: false, IsImplicitlyDeclared: false })
-                {
-                    WriteStructMember(ref context, member);
-                }
+                WriteStructMember(ref context, member);
             }
 
             foreach (var member in structSym.GetMembers())
@@ -268,7 +265,7 @@ internal static class StructTranspiler
     private static void WriteImplicitConversionOperator(INamedTypeSymbol structSym, ref TranspileContext context,
         IMethodSymbol conv)
     {
-        var firstField = GetFirstInstanceField(structSym);
+        var hasFirstMember = TryGetFirstMember(structSym, out var firstMember);
 
         if (conv.ReturnType.IsEqualTo(structSym))
         {
@@ -286,9 +283,9 @@ internal static class StructTranspiler
             context.Emitter.Writer.Append(' ');
             using (context.Emitter.Writer.Scope())
             {
-                if (firstField != null)
+                if (hasFirstMember)
                 {
-                    context.Emitter.Writer.AppendLine($"this->{GetMemberName(firstField, ref context)} = v;");
+                    context.Emitter.Writer.AppendLine($"this->{GetMemberName(firstMember.Symbol, ref context)} = v;");
                 }
             }
         }
@@ -300,12 +297,12 @@ internal static class StructTranspiler
             context.Emitter.Writer.Append("() const ");
             using (context.Emitter.Writer.Scope())
             {
-                if (firstField == null)
+                if (!hasFirstMember)
                 {
                     return;
                 }
 
-                context.Emitter.Writer.Append($"return this->{GetMemberName(firstField, ref context)}");
+                context.Emitter.Writer.Append($"return this->{GetMemberName(firstMember.Symbol, ref context)}");
                 context.Emitter.Writer.AppendLine(";");
             }
         }
@@ -314,57 +311,52 @@ internal static class StructTranspiler
     private static string GetMemberName(ISymbol member, ref TranspileContext context) =>
         CppNameResolver.Resolve(member, member.Name, context.Emitter.Dialect).ToString();
 
-    private static IFieldSymbol? GetFirstInstanceField(INamedTypeSymbol structSym)
+    private static bool TryGetFirstMember(INamedTypeSymbol structSym, out StructAbiMember firstMember)
     {
-        foreach (var field in StructAbiMembers.GetInstanceFields(structSym))
+        foreach (var member in StructAbiMembers.Get(structSym))
         {
-            return field;
+            firstMember = member;
+            return true;
         }
 
-        return null;
+        firstMember = default;
+        return false;
     }
 
-    private static void WriteStructMember(ref TranspileContext context, ISymbol member)
+    private static void WriteStructMember(ref TranspileContext context, StructAbiMember member)
     {
-        switch (member)
+        if (member is { Kind: StructAbiMemberKind.FixedBuffer, Symbol: IFieldSymbol field })
         {
-            case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
+            field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
+
+            ExpressionSyntax? sizeExp = null;
+            if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
             {
-                field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
-
-                ExpressionSyntax? sizeExp = null;
-                if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
-                {
-                    sizeExp = argList.Arguments[0].Expression;
-                }
-
-                if (sizeExp != null)
-                {
-                    context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
-                    context.Emitter.Writer.Append($" {GetMemberName(field, ref context)}");
-                    using (context.Emitter.Writer.Brackets())
-                    {
-                        context.Visitor.Visit(sizeExp);
-                    }
-
-                    context.Emitter.Writer.AppendLine(";");
-                }
-                else
-                {
-                    context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
-                    context.Emitter.Writer.AppendLine(
-                        $"* {GetMemberName(field, ref context)}; // ERROR: fixed size not found");
-                }
-
-                break;
+                sizeExp = argList.Arguments[0].Expression;
             }
-            case IFieldSymbol field:
-                WriteMemberDeclaration(field.Type, GetMemberName(field, ref context), field, ref context);
-                break;
-            case IPropertySymbol prop:
-                WriteMemberDeclaration(prop.Type, GetMemberName(prop, ref context), prop, ref context);
-                break;
+
+            if (sizeExp != null)
+            {
+                context.Emitter.Dialect.AppendType(ref context, member.Type);
+                context.Emitter.Writer.Append($" {GetMemberName(field, ref context)}");
+                using (context.Emitter.Writer.Brackets())
+                {
+                    context.Visitor.Visit(sizeExp);
+                }
+
+                context.Emitter.Writer.AppendLine(";");
+            }
+            else
+            {
+                context.Emitter.Dialect.AppendType(ref context, member.Type);
+                context.Emitter.Writer.AppendLine(
+                    $"* {GetMemberName(field, ref context)}; // ERROR: fixed size not found");
+            }
+
+            return;
         }
+
+        WriteMemberDeclaration(member.Type, GetMemberName(member.Symbol, ref context), member.Symbol, ref context);
     }
 
     private static void WriteMemberDeclaration(ITypeSymbol type, string name, ISymbol memberSymbol,

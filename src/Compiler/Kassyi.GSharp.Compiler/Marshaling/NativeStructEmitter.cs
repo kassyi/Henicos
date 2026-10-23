@@ -42,9 +42,14 @@ internal static class NativeStructEmitter
         writer.AppendLine();
     }
 
-    private static void MapToNativeField(SourceWriter writer, IFieldSymbol field, int fieldSize)
+    private static void MapToNativeField(SourceWriter writer, StructAbiMember field, int fieldSize)
     {
-        if (field.Type.IsArrayLikeType())
+        if (field.Kind is StructAbiMemberKind.FixedBuffer or StructAbiMemberKind.InlineArrayElement)
+        {
+            // [WHY] An element block is copied as bytes, so the shadow holds all ElementCount elements and never names the (possibly private) element field's type.
+            writer.AppendLine($"public fixed byte {field.Name.ToCSharpIdentifier()}[{fieldSize}];");
+        }
+        else if (field.Type.IsArrayLikeType())
         {
             writer.AppendLine($"public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {field.Name.ToCSharpIdentifier()};");
         }

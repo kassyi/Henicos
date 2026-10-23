@@ -113,32 +113,21 @@ internal sealed class CppReservedIdentifierRule :
         const int MaxDepth = 8;
 
         memberPath = null;
-        if (depth > MaxDepth || !CudaLayoutRules.IsCustomStruct(type))
+        if (depth > MaxDepth || !CudaLayoutRules.IsCustomStruct(type) || type is not INamedTypeSymbol structType)
         {
             return false;
         }
 
-        foreach (var member in type.GetMembers())
+        // [WHY] Computed properties are listed because the device declares them as members.
+        foreach (var member in StructAbiMembers.Get(structType, includeComputedProperties: true))
         {
-            var memberType = member switch
-            {
-                IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } field => field.Type,
-                IPropertySymbol { IsStatic: false } property => property.Type,
-                _ => null
-            };
-
-            if (memberType is null)
-            {
-                continue;
-            }
-
             if (IsReserved(member.Name))
             {
                 memberPath = member.Name;
                 return true;
             }
 
-            if (TryFindReservedMember(UnwrapElementType(memberType), depth + 1, out var nestedPath))
+            if (TryFindReservedMember(UnwrapElementType(member.Type), depth + 1, out var nestedPath))
             {
                 memberPath = $"{member.Name}.{nestedPath}";
                 return true;
