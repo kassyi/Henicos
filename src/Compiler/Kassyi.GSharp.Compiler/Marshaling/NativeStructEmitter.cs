@@ -24,13 +24,8 @@ internal static class NativeStructEmitter
         using (writer.Scope())
         {
             var currentOffset = 0;
-            foreach (var member in s.GetMembers())
+            foreach (var field in StructAbiMembers.GetInstanceFields(s))
             {
-                if (member is not IFieldSymbol { IsStatic: false } field)
-                {
-                    continue;
-                }
-
                 var fieldLayout = CudaLayoutRules.GetCudaLayout(field.Type);
                 currentOffset = CudaLayoutRules.AlignUp(currentOffset, fieldLayout.Alignment);
 
@@ -45,7 +40,7 @@ internal static class NativeStructEmitter
             }
         }
 
-        foreach (var p in parents)
+        foreach (var dummy in parents)
         {
             writer.AppendLine("}");
         }

@@ -18,12 +18,9 @@ internal static class StructTranspiler
             return;
         }
 
-        foreach (var member in namedStruct.GetMembers())
+        foreach (var field in StructAbiMembers.GetInstanceFields(namedStruct))
         {
-            if (member is IFieldSymbol { IsStatic: false } field)
-            {
-                RegisterUsedStructIfApplicable(field.Type, ref context);
-            }
+            RegisterUsedStructIfApplicable(field.Type, ref context);
         }
     }
 
@@ -65,11 +62,9 @@ internal static class StructTranspiler
                 return;
             }
 
-            foreach (var member in s.GetMembers())
+            foreach (var field in StructAbiMembers.GetInstanceFields(s))
             {
-                if (member is IFieldSymbol { IsStatic: false } field &&
-                    TryGetUserStruct(field.Type, out var dep) &&
-                    structSet.Contains(dep))
+                if (TryGetUserStruct(field.Type, out var dep) && structSet.Contains(dep))
                 {
                     visit(dep);
                 }
@@ -319,11 +314,15 @@ internal static class StructTranspiler
     private static string GetMemberName(ISymbol member, ref TranspileContext context) =>
         CppNameResolver.Resolve(member, member.Name, context.Emitter.Dialect).ToString();
 
-    private static IFieldSymbol? GetFirstInstanceField(INamedTypeSymbol structSym) =>
-        structSym.GetMembers()
-            .AsStackEnumerable()
-            .Select(static member => member as IFieldSymbol)
-            .FirstOrDefault(static field => field is { IsStatic: false });
+    private static IFieldSymbol? GetFirstInstanceField(INamedTypeSymbol structSym)
+    {
+        foreach (var field in StructAbiMembers.GetInstanceFields(structSym))
+        {
+            return field;
+        }
+
+        return null;
+    }
 
     private static void WriteStructMember(ref TranspileContext context, ISymbol member)
     {

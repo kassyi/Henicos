@@ -34,12 +34,9 @@ internal static class CudaLayoutRules
             return;
         }
 
-        foreach (var member in named.GetMembers())
+        foreach (var field in StructAbiMembers.GetInstanceFields(named))
         {
-            if (member is IFieldSymbol { IsStatic: false } field)
-            {
-                CollectStructs(field.Type, structs);
-            }
+            CollectStructs(field.Type, structs);
         }
     }
 
@@ -61,13 +58,8 @@ internal static class CudaLayoutRules
         var maxAlign = 1;
         var pack = namedStruct.TryGetStructLayoutPack(out var p) ? p : 0;
 
-        foreach (var member in namedStruct.GetMembers())
+        foreach (var structField in StructAbiMembers.GetInstanceFields(namedStruct))
         {
-            if (member is not IFieldSymbol { IsStatic: false } structField)
-            {
-                continue;
-            }
-
             var fieldLayout = GetCudaLayout(structField.Type);
             var effectiveAlign = pack > 0 ? Math.Min(fieldLayout.Alignment, pack) : fieldLayout.Alignment;
 

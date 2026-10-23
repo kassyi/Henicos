@@ -82,12 +82,9 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            foreach (var member in s.GetMembers())
+            foreach (var field in StructAbiMembers.GetInstanceFields(s))
             {
-                if (member is IFieldSymbol { IsStatic: false } field)
-                {
-                    WriteMarshalMember(writer, field);
-                }
+                WriteMarshalMember(writer, field);
             }
         }
 
@@ -222,12 +219,9 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            foreach (var member in s.GetMembers())
+            foreach (var field in StructAbiMembers.GetInstanceFields(s))
             {
-                if (member is IFieldSymbol { IsStatic: false } field)
-                {
-                    WriteUnmarshalMember(writer, field);
-                }
+                WriteUnmarshalMember(writer, field);
             }
         }
 
