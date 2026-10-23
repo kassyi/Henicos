@@ -6,8 +6,7 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
             GSharpDiagnostics.UnguardedMultiAllocation,
-            GSharpDiagnostics.StaticDisposableAllocation,
-            GSharpDiagnostics.ManualUnmanagedAllocation
+            GSharpDiagnostics.StaticDisposableAllocation
         );
 
     public override void Initialize(AnalysisContext context)
@@ -17,7 +16,6 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
 
         context.RegisterSyntaxNodeAction(AnalyzeConstructor, SyntaxKind.ConstructorDeclaration);
         context.RegisterSymbolAction(AnalyzeField, SymbolKind.Field);
-        context.RegisterSyntaxNodeAction(AnalyzeInvocation, SyntaxKind.InvocationExpression);
     }
 
     private static void AnalyzeField(SymbolAnalysisContext context)
@@ -74,21 +72,6 @@ public class AllocationAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnguardedMultiAllocation,
                 ctor.Identifier.GetLocation());
-        }
-    }
-
-    private static void AnalyzeInvocation(SyntaxNodeAnalysisContext context)
-    {
-        var invocation = (InvocationExpressionSyntax)context.Node;
-        if (context.SemanticModel.GetSymbol(invocation) is IMethodSymbol
-            {
-                Name: "Malloc",
-                ContainingType: { Name: "Unsafe", ContainingType: { Name: TypeConstants.GpuType } gpuType }
-            } &&
-            gpuType.ContainingNamespace.IsCoreNamespace())
-        {
-            context.ReportDiagnostic(GSharpDiagnostics.ManualUnmanagedAllocation,
-                invocation.GetLocation());
         }
     }
 }
