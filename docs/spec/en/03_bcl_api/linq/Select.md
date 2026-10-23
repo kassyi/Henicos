@@ -97,3 +97,4 @@ This extension method guarantees zero heap allocations by returning a `ref struc
 ### BCL API > LINQ
 
 - [LINQ Architecture and Overview](00_index.md)
+- [SelectWithStateEnumerator&lt;TEnumerator, TSource, TState, TResult&gt; Struct](SelectWithStateEnumerator.md)
