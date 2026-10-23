@@ -49,4 +49,5 @@ export const DOMAIN_LABELS: Record<string, string> = {
   GBI: 'GBI (GpuBigInteger)',
   GBF: 'GBF (GpuBigFloat)',
   BCL: 'BCL (基本クラスライブラリ)',
+  MEM: 'MEM (メモリ管理)',
 };

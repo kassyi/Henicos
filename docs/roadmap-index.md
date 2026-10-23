@@ -18,10 +18,11 @@
 | ドキュメント | 担当領域 | 主な対象タスク | パス |
 | :--- | :--- | :--- | :--- |
 | **ジェネレータ・コア基盤** | Roslyn Source Generator、PTX/JIT エンジン、Vector 型マッピング、マーシャリング | `GEN-01` 〜 `GEN-19` | [`roadmaps/gsharp_generator_core.md`](roadmaps/gsharp_generator_core.md) |
-| **C# 構文・シンタックスシュガー** | 制御構文、型推論、パターンマッチ、演算子、永久非対応構文 (`UNS-01`〜`14`) | `SYN-01` 〜 `SYN-94` | [`roadmaps/gsharp_syntax_support.md`](roadmaps/gsharp_syntax_support.md) |
+| **C# 構文・シンタックスシュガー** | 制御構文、型推論、パターンマッチ、演算子、永久非対応構文 (`UNS-01`〜`14`) | `SYN-01` 〜 `SYN-96` | [`roadmaps/gsharp_syntax_support.md`](roadmaps/gsharp_syntax_support.md) |
 | **トランスパイラ & ランタイム課題** | AST 走査、型解決、JIT キャッシュ、プロセス制御、デバッグ行マッピング | `GSH-01` 〜 `GSH-09` | [`roadmaps/gsharp_transpiler_issues.md`](roadmaps/gsharp_transpiler_issues.md) |
 | **GpuBigInt (GBI) 基盤** | 多倍長整数 GPU 演算、NTT 乗算、Lehmer's GCD、メモリプール、演算子 | `GBI-01` 〜 `GBI-28` | [`roadmaps/gbi_roadmap.md`](roadmaps/gbi_roadmap.md) |
 | **GpuBigFloat (GBF) 基盤** | 任意精度GPU浮動小数点演算、正規化、IEEE 754丸め | `GBF-01` 〜 | [`roadmaps/gbf_roadmap.md`](roadmaps/gbf_roadmap.md) |
+| **GPUメモリ管理・所有権 (MEM)** | GPUリソースのゼロリーク静的解析、IDisposable/using、所有権移動、コレクション | `MEM-01` 〜 `MEM-07` | [`spec/en/04_guides/02_memory_safety_patterns.md`](spec/en/04_guides/02_memory_safety_patterns.md) |
 
 ---
 
