@@ -67,8 +67,8 @@ Lifecycle of resources allocated and scoped within a single method execution.
 
 | Pattern | Code Example | Analyzer Evaluation & Diagnostics |
 | :--- | :--- | :--- |
-| **Discarded Allocation** | `new GpuWorkspace();` | ❌ **Error**: Immediate leak. Instantiated without binding or scope management. |
-| **Undisposed Local** | `var ctx = new GpuWorkspace();` | ❌ **Error**: Local variable leaves scope without invoking `Dispose()`. |
+| **Discarded Allocation** | `new GpuWorkspace();` | ❌ **Error (`GSH0067`)**: Immediate leak. Instantiated without binding or scope management. |
+| **Undisposed Local** | `var ctx = new GpuWorkspace();` | ❌ **Error (`GSH0068`)**: Local variable leaves scope without invoking `Dispose()`. |
 | **Scoped Disposal (Standard)** | `using var ctx = new GpuWorkspace();` | ⭕ **OK**: Guaranteed automatic disposal upon scope exit. |
 | **Explicit Manual Disposal** | `var ctx = ...; ctx.Dispose();` | ⭕ **OK**: Satisfies disposal criteria (Warning may suggest `using` preference). |
 
@@ -96,6 +96,9 @@ void ManualScope() {
     ctx.Dispose();
 }
 ```
+
+> [!NOTE]
+> **Limits of the Layer 1 check.** The check is not flow-sensitive: one `Dispose()` (or `using`) anywhere in the method satisfies it, so a disposal that only some paths reach is not reported. It tracks only resources created in place with `new` (a discarded `new` expression, or a local initialized with one), not a local assigned later, nor a discarded call result. A local that is returned, assigned, captured by a lambda, passed to a constructor (`new T(..., ctx, ...)`, following Roslyn CA2000 `dispose_ownership_transfer_at_constructor`), or passed to a `[TakesOwnership]` / `ref` / `out` parameter counts as moved (Layer 2). See [GSH0067](../03_bcl_api/diagnostics/GSH0067.md) and [GSH0068](../03_bcl_api/diagnostics/GSH0068.md).
 
 ---
 

@@ -606,6 +606,24 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "DiscardedDisposableAllocation",
+    "id": "GSH0067",
+    "title": "Disposable resource is created and discarded",
+    "messageFormat": "The '{0}' created here is discarded without being bound to a variable, so it can never be disposed",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "UndisposedDisposableLocal",
+    "id": "GSH0068",
+    "title": "Disposable local is never disposed",
+    "messageFormat": "The local '{0}' owns a disposable resource but leaves its scope without being disposed. Use 'using', call Dispose(), or transfer ownership.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

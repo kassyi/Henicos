@@ -74,6 +74,8 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0064](GSH0064.md) | Warning | Kernel parameters exceed the parameter space limit |
 | [GSH0065](GSH0065.md) | Error | Non-const static fields and properties are not supported in GPU code |
 | [GSH0066](GSH0066.md) | Error | Instance [GpuDeviceFunction] methods are not supported |
+| [GSH0067](GSH0067.md) | Error | Disposable resource is created and discarded |
+| [GSH0068](GSH0068.md) | Error | Disposable local is never disposed |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 
