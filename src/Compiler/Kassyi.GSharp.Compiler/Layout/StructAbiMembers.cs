@@ -10,7 +10,6 @@ namespace Kassyi.GSharp.Compiler.Layout;
 /// auto-property under its own name, an <c>[InlineArray(N)]</c> struct as <c>T element[N]</c>, a <c>fixed</c> buffer as
 /// <c>T name[N]</c>). The host differs from it in these places (#468, pinned by <c>StructAbiTests</c>):
 /// <list type="bullet">
-///   <item><description>The shadow offsets ignore <c>[StructLayout(Pack = n)]</c>, which the size honours.</description></item>
 ///   <item><description>An <c>[InlineArray(N)]</c> field is sized as one element, and a private element field does not compile in the marshaling code.</description></item>
 ///   <item><description>A <c>fixed</c> buffer is sized as the pointer Roslyn types it with, and its marshaling does not compile.</description></item>
 ///   <item><description>An auto-property appears as its backing field, whose name does not compile in the shadow struct.</description></item>

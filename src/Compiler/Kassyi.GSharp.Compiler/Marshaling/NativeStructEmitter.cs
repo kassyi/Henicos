@@ -23,20 +23,14 @@ internal static class NativeStructEmitter
 
         using (writer.Scope())
         {
-            var currentOffset = 0;
-            foreach (var field in StructAbiMembers.GetInstanceFields(s))
+            foreach (var (field, offset, fieldLayout) in CudaLayoutRules.GetFieldLayouts(s))
             {
-                var fieldLayout = CudaLayoutRules.GetCudaLayout(field.Type);
-                currentOffset = CudaLayoutRules.AlignUp(currentOffset, fieldLayout.Alignment);
-
                 writer.Append($"public const string DebugName_{field.Name} = \"");
                 writer.AppendFullyQualifiedCsharpName(field.Type);
                 writer.AppendLine("\";");
-                writer.AppendLine($"[System.Runtime.InteropServices.FieldOffset({currentOffset})]");
+                writer.AppendLine($"[System.Runtime.InteropServices.FieldOffset({offset})]");
 
                 MapToNativeField(writer, field, fieldLayout.Size);
-
-                currentOffset += fieldLayout.Size;
             }
         }
 

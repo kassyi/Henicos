@@ -54,21 +54,56 @@ internal static class CudaLayoutRules
             return new CudaLayoutInfo(4, 4);
         }
 
-        var size = 0;
+        var end = 0;
         var maxAlign = 1;
-        var pack = namedStruct.TryGetStructLayoutPack(out var p) ? p : 0;
-
-        foreach (var structField in StructAbiMembers.GetInstanceFields(namedStruct))
+        foreach (var field in GetFieldLayouts(namedStruct))
         {
-            var fieldLayout = GetCudaLayout(structField.Type);
-            var effectiveAlign = pack > 0 ? Math.Min(fieldLayout.Alignment, pack) : fieldLayout.Alignment;
-
-            size = AlignUp(size, effectiveAlign) + fieldLayout.Size;
-            maxAlign = Math.Max(maxAlign, effectiveAlign);
+            end = field.Offset + field.Layout.Size;
+            maxAlign = Math.Max(maxAlign, field.Layout.Alignment);
         }
 
-        size = AlignUp(size, maxAlign);
-        return new CudaLayoutInfo(Math.Max(size, 1), maxAlign);
+        return new CudaLayoutInfo(Math.Max(AlignUp(end, maxAlign), 1), maxAlign);
+    }
+
+    /// <summary>
+    /// The instance fields of <paramref name="structType"/> with their offsets, <c>[StructLayout(Pack = n)]</c> applied.
+    /// The struct size (<see cref="GetCudaLayout"/>) and the host shadow struct both take the offsets from here.
+    /// </summary>
+    internal static FieldLayouts GetFieldLayouts(INamedTypeSymbol structType) => new(structType);
+
+    /// <summary>A field at <paramref name="Offset"/>; <paramref name="Layout"/> has the alignment capped by the Pack.</summary>
+    internal readonly record struct CudaFieldLayout(IFieldSymbol Field, int Offset, CudaLayoutInfo Layout);
+
+    /// <summary>A <c>foreach</c>-able view of the field offsets that allocates nothing.</summary>
+    internal readonly struct FieldLayouts(INamedTypeSymbol structType)
+    {
+        public FieldLayoutEnumerator GetEnumerator() => new(structType);
+    }
+
+    internal struct FieldLayoutEnumerator(INamedTypeSymbol structType)
+    {
+        private StructAbiMembers.InstanceFieldEnumerator _fields =
+            StructAbiMembers.GetInstanceFields(structType).GetEnumerator();
+        private readonly int _pack = structType.TryGetStructLayoutPack(out var pack) ? pack : 0;
+        private int _end;
+
+        public CudaFieldLayout Current { get; private set; }
+
+        public bool MoveNext()
+        {
+            if (!_fields.MoveNext())
+            {
+                return false;
+            }
+
+            var field = _fields.Current;
+            var layout = GetCudaLayout(field.Type);
+            var alignment = _pack > 0 ? Math.Min(layout.Alignment, _pack) : layout.Alignment;
+            var offset = AlignUp(_end, alignment);
+            _end = offset + layout.Size;
+            Current = new CudaFieldLayout(field, offset, layout with { Alignment = alignment });
+            return true;
+        }
     }
 
     /// <summary>Aligns a given byte offset up to the specified boundary.</summary>

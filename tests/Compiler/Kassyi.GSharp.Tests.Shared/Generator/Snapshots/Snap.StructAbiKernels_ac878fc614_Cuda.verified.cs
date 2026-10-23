@@ -95,10 +95,10 @@ public const string DebugName_A = "global::System.Byte";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Byte A;
 public const string DebugName_B = "global::System.Double";
-[System.Runtime.InteropServices.FieldOffset(8)]
+[System.Runtime.InteropServices.FieldOffset(1)]
 public global::System.Double B;
 public const string DebugName_C = "global::System.Int32";
-[System.Runtime.InteropServices.FieldOffset(16)]
+[System.Runtime.InteropServices.FieldOffset(9)]
 public global::System.Int32 C;
 }
 public static unsafe void Marshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)

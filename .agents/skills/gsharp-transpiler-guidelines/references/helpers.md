@@ -28,6 +28,7 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | Is this a user struct that G# defines on the device? | `GlobalCppNames.IsEmittedUserType` (definition), `GlobalCppNames.IsEncodedUserType` (references, gives way to the dialect type map) | `TypeKind == Struct && !IsSystemOrNumerics() && !IsSharedMemoryType()` spelled out |
 | Does a struct need a native shadow struct on the host? | `CudaLayoutRules.IsCustomStruct` (a different classification: also leaves out array-like and Core types) | reusing the device predicate |
 | Fields that make up a struct's native layout (used struct discovery, shadow struct, marshaling, `CudaLayoutRules`) | `StructAbiMembers.GetInstanceFields` (a `foreach` that allocates nothing; its remarks list where the host and the device still disagree) | `GetMembers()` plus `is IFieldSymbol { IsStatic: false }` |
+| Native offsets of a struct's fields (`[StructLayout(Pack = n)]` applied) | `CudaLayoutRules.GetFieldLayouts`; the size and alignment of a whole type: `CudaLayoutRules.GetCudaLayout` | an `AlignUp` loop over the fields |
 | `[StructLayout(Pack = n)]` | `.TryGetStructLayoutPack` | reading `NamedArguments` by hand |
 | First declaring syntax of a symbol | `.TryGetDeclaringSyntax` | `DeclaringSyntaxReferences[0].GetSyntax()` |
 | Which `Gpu` macro is this call (`SyncGrid`, `SingleThread`, `ForUnroll` ...)? | `GpuMacroClassifier.Classify` | `symbol.Name == "SyncGrid"` |

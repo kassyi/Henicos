@@ -19,13 +19,27 @@ public class StructAbiTests
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void PackedStruct_ShadowIgnoresPack()
+    public void PackedStruct_ShadowMatchesDevice()
     {
         var device = MeasureOnDevice(static layout => StructAbiKernels.LaunchMeasurePackedKernel(layout));
 
         Assert.Equal((9, 13), device);
-        // Known mismatch: the shadow struct aligns the fields as if Pack were absent
-        Assert.Equal(16, (int)Marshal.OffsetOf<StructAbiKernels.AotContexts.AbiPackedStruct>("C"));
+        Assert.Equal(9, (int)Marshal.OffsetOf<StructAbiKernels.AotContexts.AbiPackedStruct>("C"));
+        Assert.Equal(13, Marshal.SizeOf<StructAbiKernels.AotContexts.AbiPackedStruct>());
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void PackedStruct_RoundtripsThroughShadow()
+    {
+        var data = new AbiPackedStruct { A = 1, B = 2.5, C = 7 };
+
+        StructAbiKernels.LaunchRoundtripPackedKernel(ref data);
+
+        Assert.Equal(2, data.A);
+        Assert.Equal(2.5, data.B);
+        Assert.Equal(8, data.C);
     }
 
     [Fact]
