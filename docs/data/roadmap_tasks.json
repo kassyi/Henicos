@@ -8049,7 +8049,7 @@
     },
     "score": 33,
     "files": [
-      "src/Compiler/Kassyi.GSharp.Compiler/WrapperEmitter.cs",
+      "src/Compiler/Kassyi.GSharp.Compiler/Marshaling/WrapperEmitter.cs",
       "src/Compiler/Kassyi.GSharp.Compiler/MarshalingEmitter.cs"
     ],
     "pr": [
