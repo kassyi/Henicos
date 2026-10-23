@@ -336,7 +336,7 @@ internal static class StructTranspiler
         var reporter = context.Reporter;
         var model = compilation.GetSemanticModel(declaration.SyntaxTree);
         context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
-        context.Reporter = new Reporter(reporter.ReportDiagnostic, model);
+        context.Reporter = reporter.WithSemanticModel(model);
 
         try
         {

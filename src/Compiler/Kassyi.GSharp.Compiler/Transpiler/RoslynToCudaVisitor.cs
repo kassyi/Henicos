@@ -33,9 +33,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// </summary>
     /// <param name="dialect">The target language and hardware dialect controlling code emission.</param>
     /// <param name="semanticModel">The Roslyn semantic model bound to the active compilation unit.</param>
-    /// <param name="reportDiagnostic">An optional callback delegate to report compiler warnings or errors.</param>
+    /// <param name="reportFailure">An optional callback that receives the constructs that could not be emitted (<see cref="TranspileFailure"/>).</param>
     /// <param name="bclIntrinsicMap">An optional lookup dictionary mapping BCL method symbols to target intrinsics.</param>
-    /// <param name="reportFailure">An optional callback that receives why a construct could not be emitted (<see cref="TranspileFailure"/>).</param>
     /// <returns>A pooled and initialized <see cref="RoslynToCudaVisitor"/> instance ready for traversal.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="dialect"/> or <paramref name="semanticModel"/> is <see langword="null"/>.</exception>
     /// <remarks>
@@ -43,9 +42,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     /// </remarks>
     public static RoslynToCudaVisitor Rent(
         ITranspilerDialect dialect,
-        SemanticModel semanticModel, Action<Diagnostic>? reportDiagnostic = null,
-        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null,
-        Action<string>? reportFailure = null)
+        SemanticModel semanticModel, Action<TranspileFailure>? reportFailure = null,
+        ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>? bclIntrinsicMap = null)
     {
         if (dialect is null)
         {
@@ -74,7 +72,6 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             visitor._localVariableOverrides,
             visitor._activeSwitchIds,
             semanticModel,
-            reportDiagnostic,
             reportFailure,
             visitor,
             bclIntrinsicMap ?? ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo>.Empty,
@@ -116,9 +113,13 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// The boundary of the syntax G# emits: a kind that no rule and no override handles, including a kind that a newer C#
+    /// adds, becomes a GSH0003 failure, which the analyzer reports (no list of rejected kinds to keep up to date).
+    /// </remarks>
     public override void DefaultVisit(SyntaxNode node)
     {
-        Context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
+        Context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
         AppendUnsupportedPlaceholder(node);
     }
 
@@ -369,7 +370,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 // [WHY] Lowering rewrites hoisted locals into references that carry the declarator's original span.
                 symbol ??= Context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(node);
 
-                if (symbol != null && GpuCodeConstraints.IsHostStaticMember(symbol, Context.Emitter.Dialect))
+                if (symbol != null &&
+                    GpuCodeConstraints.IsHostStaticMemberReference(node, symbol, Context.Query.SemanticModel, Context.Emitter.Dialect))
                 {
                     Context.Reporter.Fail(
                         GSharpDiagnostics.StaticMemberAccessNotSupported,

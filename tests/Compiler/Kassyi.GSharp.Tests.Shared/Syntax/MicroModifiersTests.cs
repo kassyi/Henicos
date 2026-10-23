@@ -192,9 +192,10 @@ public class MicroModifiersTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<MicroModifiersTarget>(
             nameof(MicroModifiersTarget.ForeachTupleDeconstruction), isDevice: false, dialect: CurrentDialect);
 
-        // Tuple deconstruction is unsupported by spec; it must be reported exactly once without leaking raw tokens.
-        Assert.Single(diagnostics);
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "ForEachVariableStatement");
+        // Tuple deconstruction is unsupported by spec; the analyzer reports it once (UnsupportedSyntaxKindDiagnosticsTests)
+        // and the transpiler writes a placeholder without leaking raw tokens.
+        Assert.Empty(diagnostics);
+        Assert.Contains("/*unsupported:ForEachVariableStatement*/", cudaSource);
         await Verify(Report(cudaSource, diagnostics));
 
         int[] output = [0];

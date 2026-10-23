@@ -30,34 +30,12 @@ internal sealed class StaticMemberAccessRule : ISyntaxValidationRule<MemberAcces
     private static void CheckSymbol(ISymbol? symbol, Location location, SyntaxNode node, ref ValidationContext context)
     {
         if (symbol == null ||
-            !GpuCodeConstraints.IsHostStaticMember(symbol, context.Dialect) ||
-            IsInsideNameof(node, context.SemanticModel))
+            !GpuCodeConstraints.IsHostStaticMemberReference(node, symbol, context.SemanticModel, context.Dialect))
         {
             return;
         }
 
         var containingTypeName = symbol.ContainingType?.Name ?? string.Empty;
         context.ReportDiagnostic(GSharpDiagnostics.StaticMemberAccessNotSupported, location, containingTypeName, symbol.Name);
-    }
-
-    private static bool IsInsideNameof(SyntaxNode node, SemanticModel semanticModel)
-    {
-        var curr = node.Parent;
-        while (curr != null)
-        {
-            if (curr is InvocationExpressionSyntax inv)
-            {
-                if (inv.Expression is IdentifierNameSyntax id &&
-                    id.Identifier.ValueText == "nameof" &&
-                    semanticModel.GetSymbol(inv) == null)
-                {
-                    return true;
-                }
-            }
-
-            curr = curr.Parent;
-        }
-
-        return false;
     }
 }

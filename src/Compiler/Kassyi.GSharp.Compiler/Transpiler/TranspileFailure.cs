@@ -1,30 +1,46 @@
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
-/// Formats why the transpiler could not emit a construct. The analyzers report the matching diagnostic; the transpiler
-/// keeps only this text, which the generated source carries so that a check the analyzers miss still fails the native
-/// build instead of passing silently.
+/// A construct that the transpiler could not emit: the diagnostic that describes it, its place in the user's source and
+/// the message arguments.
 /// </summary>
-internal static class TranspileFailure
+/// <remarks>
+/// The transpiler reports nothing itself. The analyzer runs the transpiler as the generator does and reports each failure
+/// as a diagnostic; the generator states the failures in the native source (<see cref="Format"/>), so a failure the
+/// analyzer misses still stops the native build.
+/// </remarks>
+/// <param name="descriptor">The diagnostic that the analyzer reports for the failure.</param>
+/// <param name="location">
+/// The place in the user's source. A node of a lowered tree is mapped to its original span; a node without one (a
+/// lowering bug) gives <see cref="Location.None"/>.
+/// </param>
+/// <param name="messageArgs">The arguments of the diagnostic's message.</param>
+public readonly struct TranspileFailure(DiagnosticDescriptor descriptor, Location location, object?[] messageArgs)
 {
     /// <summary>Stands for the position of a node that a lowering pass rebuilt without its original-span annotation.</summary>
     public const string NoOriginalSpan = "<no original span>";
 
-    // <file>(<line>,<column>): <id>: <message>
-    public static string Format(DiagnosticDescriptor descriptor, Location? location, object?[]? messageArgs)
+    public DiagnosticDescriptor Descriptor { get; } = descriptor;
+
+    public Location Location { get; } = location;
+
+    public object?[] MessageArgs { get; } = messageArgs;
+
+    /// <summary>The failure as the generated source states it: <c>file(line,column): ID: message</c>.</summary>
+    public string Format()
     {
-        var format = descriptor.MessageFormat.ToString(CultureInfo.InvariantCulture);
-        var message = messageArgs is { Length: > 0 }
-            ? string.Format(CultureInfo.InvariantCulture, format, messageArgs)
+        var format = Descriptor.MessageFormat.ToString(CultureInfo.InvariantCulture);
+        var message = MessageArgs is { Length: > 0 }
+            ? string.Format(CultureInfo.InvariantCulture, format, MessageArgs)
             : format;
 
-        if (location is not { IsInSource: true })
+        if (!Location.IsInSource)
         {
-            return $"{NoOriginalSpan}: {descriptor.Id}: {message}";
+            return $"{NoOriginalSpan}: {Descriptor.Id}: {message}";
         }
 
-        var span = location.GetLineSpan();
+        var span = Location.GetLineSpan();
         var start = span.StartLinePosition;
-        return $"{span.Path}({start.Line + 1},{start.Character + 1}): {descriptor.Id}: {message}";
+        return $"{span.Path}({start.Line + 1},{start.Character + 1}): {Descriptor.Id}: {message}";
     }
 }

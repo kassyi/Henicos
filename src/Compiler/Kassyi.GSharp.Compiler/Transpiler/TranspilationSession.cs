@@ -29,15 +29,14 @@ internal readonly ref struct TranspilationSession
 
     public static TranspilationSession Begin(
         in MethodEmissionPlan plan,
-        Action<Diagnostic>? reportDiagnostic,
-        Action<string>? reportFailure,
+        Action<TranspileFailure>? reportFailure,
         ITranspilerDialect dialect)
     {
         var semanticModel = plan.SemanticModel;
         var methodSymbol = plan.Symbol;
         if (methodSymbol != null && !GpuCodeConstraints.HasSupportedReturnType(methodSymbol))
         {
-            reportFailure?.Invoke(TranspileFailure.Format(
+            reportFailure?.Invoke(new TranspileFailure(
                 GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable,
                 methodSymbol.Locations.Length > 0 ? methodSymbol.Locations[0] : Location.None,
                 [methodSymbol.Name, GpuCodeConstraints.FormatReturnType(methodSymbol)]
@@ -50,7 +49,7 @@ internal readonly ref struct TranspilationSession
         }
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap, reportFailure);
+        var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportFailure, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
         if (methodSymbol != null)

@@ -18,8 +18,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
     {
         private readonly ImmutableArray<string>.Builder _failures = ImmutableArray.CreateBuilder<string>();
 
-        public void Fail(string reason)
+        // The text is what the generated source states, so a failure found by both the signature and the body is one
+        public void Fail(TranspileFailure failure)
         {
+            var reason = failure.Format();
             if (!_failures.Contains(reason))
             {
                 _failures.Add(reason);
@@ -173,8 +175,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         try
         {
-            var cudaCollector = new DiagnosticCollector();
-            var cppCollector = new DiagnosticCollector();
             var cudaFailures = new FailureCollector();
             var cppFailures = new FailureCollector();
             var cudaDialect = new GSharpCudaDialect();
@@ -182,10 +182,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: true);
 
-            var cudaSource = MethodTranspiler.GenerateCudaSource(in plan, cudaCollector.Report, cudaFailures.Fail,
-                cudaDialect, out var requiredIncludesCuda);
-            var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppCollector.Report, cppFailures.Fail,
-                cppDialect, out var requiredIncludesCpp);
+            var cudaSource = MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
+                out var requiredIncludesCuda);
+            var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
+                out var requiredIncludesCpp);
             var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
 
             if (!CheckSuppressGs0001(methodDeclaration))
@@ -199,8 +199,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     cppSource,
                     managedCSharpSource,
                     new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                    cudaCollector.GetDiagnostics(),
-                    cppCollector.GetDiagnosticsNotIn(cudaCollector),
+                    new EquatableArray<EquatableDiagnostic>(),
+                    new EquatableArray<EquatableDiagnostic>(),
                     cudaFailures.GetFailures(),
                     cppFailures.GetFailures()
                 );
@@ -218,8 +218,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cppSource,
                 managedCSharpSource,
                 new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                cudaCollector.GetDiagnostics(),
-                cppCollector.GetDiagnosticsNotIn(cudaCollector),
+                new EquatableArray<EquatableDiagnostic>(),
+                new EquatableArray<EquatableDiagnostic>(),
                 cudaFailures.GetFailures(),
                 cppFailures.GetFailures()
             );
@@ -255,8 +255,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         try
         {
-            var cudaCollector = new DiagnosticCollector();
-            var cppCollector = new DiagnosticCollector();
             var cudaFailures = new FailureCollector();
             var cppFailures = new FailureCollector();
             var cudaDialect = new GSharpCudaDialect();
@@ -264,15 +262,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
             var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: false);
 
-            var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaCollector.Report, cudaFailures.Fail,
-                cudaDialect);
-            var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppCollector.Report, cppFailures.Fail,
-                cppDialect);
+            var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaFailures.Fail, cudaDialect);
+            var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppFailures.Fail, cppDialect);
 
-            var cudaBody = MethodTranspiler.GenerateCudaSource(in plan, cudaCollector.Report, cudaFailures.Fail,
-                cudaDialect, out var requiredIncludesCuda);
-            var cppBody = MethodTranspiler.GenerateCudaSource(in plan, cppCollector.Report, cppFailures.Fail,
-                cppDialect, out var requiredIncludesCpp);
+            var cudaBody = MethodTranspiler.GenerateCudaSource(in plan, cudaFailures.Fail, cudaDialect,
+                out var requiredIncludesCuda);
+            var cppBody = MethodTranspiler.GenerateCudaSource(in plan, cppFailures.Fail, cppDialect,
+                out var requiredIncludesCpp);
 
             // A device function that may suspend has a frame, which embeds the frames of the calls it makes
             var frameName = "";
@@ -300,8 +296,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cppSignature,
                 cppBody,
                 new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                cudaCollector.GetDiagnostics(),
-                cppCollector.GetDiagnosticsNotIn(cudaCollector),
+                new EquatableArray<EquatableDiagnostic>(),
+                new EquatableArray<EquatableDiagnostic>(),
                 cudaFailures.GetFailures(),
                 cppFailures.GetFailures(),
                 frameName,

@@ -138,11 +138,13 @@ public class OperatorsAndInterfacesTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Test_CheckedUnchecked_Transpilation()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<OperatorsAndInterfacesTarget>(
             nameof(OperatorsAndInterfacesTarget.CheckedUnchecked), isDevice: false, dialect: CurrentDialect);
 
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "CheckedExpression");
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "UncheckedStatement");
+        // The analyzer reports the construct (UnsupportedSyntaxKindDiagnosticsTests); the transpiler writes a placeholder
+        Assert.Empty(diagnostics);
+        Assert.Contains("/*unsupported:CheckedExpression*/", cudaSource);
+        Assert.Contains("/*unsupported:UncheckedStatement*/", cudaSource);
     }
 
     [Fact]

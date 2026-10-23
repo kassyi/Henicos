@@ -114,6 +114,28 @@ internal static class GpuCodeConstraints
     }
 
     /// <summary>
+    /// Whether <paramref name="reference"/>, a reference to <paramref name="symbol"/>, reads a host static member
+    /// (<see cref="IsHostStaticMember"/>); a reference inside <c>nameof</c> reads nothing (GSH0065).
+    /// </summary>
+    public static bool IsHostStaticMemberReference(SyntaxNode reference, ISymbol symbol, SemanticModel semanticModel,
+        ITranspilerDialect dialect) =>
+        IsHostStaticMember(symbol, dialect) && !IsInsideNameof(reference, semanticModel);
+
+    private static bool IsInsideNameof(SyntaxNode node, SemanticModel semanticModel)
+    {
+        for (var current = node.Parent; current != null; current = current.Parent)
+        {
+            if (current is InvocationExpressionSyntax { Expression: IdentifierNameSyntax { Identifier.ValueText: "nameof" } } invocation &&
+                semanticModel.GetSymbol(invocation) == null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
     /// Whether the argument of <c>Gpu.InlinePtx</c> is text known at compile time: a constant string or an interpolated
     /// string (GSH0006).
     /// </summary>

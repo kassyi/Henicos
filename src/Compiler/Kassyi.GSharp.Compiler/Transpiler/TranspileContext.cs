@@ -61,27 +61,28 @@ public readonly struct Query(
     public HashSet<INamedTypeSymbol> UsedStructs { get; } = usedStructs;
 }
 
-public readonly struct Reporter(Action<Diagnostic>? reportDiagnostic, Action<string>? reportFailure, SemanticModel semanticModel)
+/// <summary>Collects the constructs that the transpilation could not emit (<see cref="TranspileFailure"/>).</summary>
+/// <param name="reportFailure">Receives each failure; the analyzer reports it, the generator states it in the output.</param>
+/// <param name="semanticModel">The semantic model that maps a node of a lowered body to its original location.</param>
+public readonly struct Reporter(Action<TranspileFailure>? reportFailure, SemanticModel semanticModel)
 {
-    public Action<Diagnostic>? ReportDiagnostic { get; } = reportDiagnostic;
-
-    // A node of a lowered body is reported at its original location (SemanticModelExtensions.GetReportLocation)
-    public void Report(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[]? messageArgs) =>
-        ReportDiagnostic.ReportDiagnostic(descriptor, semanticModel.GetReportLocation(node), messageArgs);
-
-    public void Report(DiagnosticDescriptor descriptor, Location? location, params object?[]? messageArgs) =>
-        ReportDiagnostic.ReportDiagnostic(descriptor, location, messageArgs);
-
     /// <summary>
-    /// Records that the output is incomplete because of a construct the analyzers report with <paramref name="descriptor"/>
-    /// (<see cref="TranspileFailure"/>). A node of a lowered body is placed at its original location.
+    /// Records that the output is incomplete because of <paramref name="node"/>, which the analyzer reports with
+    /// <paramref name="descriptor"/>. A node of a lowered body is placed at its original location
+    /// (<see cref="SemanticModelExtensions.GetReportLocation"/>).
     /// </summary>
-    public void Fail(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[]? messageArgs) =>
-        reportFailure?.Invoke(TranspileFailure.Format(descriptor, semanticModel.GetReportLocation(node), messageArgs));
+    public void Fail(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[] messageArgs) =>
+        reportFailure?.Invoke(new TranspileFailure(descriptor, semanticModel.GetReportLocation(node), messageArgs));
 
     /// <inheritdoc cref="Fail(DiagnosticDescriptor, SyntaxNode, object?[])"/>
-    public void Fail(DiagnosticDescriptor descriptor, Location? location, params object?[]? messageArgs) =>
-        reportFailure?.Invoke(TranspileFailure.Format(descriptor, location, messageArgs));
+    public void Fail(DiagnosticDescriptor descriptor, Location location, params object?[] messageArgs) =>
+        reportFailure?.Invoke(new TranspileFailure(descriptor, location, messageArgs));
+
+    /// <summary>
+    /// The same sink with another semantic model, for a body bound in another tree (a struct's computed property getter);
+    /// its failures reach the same transpilation.
+    /// </summary>
+    public Reporter WithSemanticModel(SemanticModel model) => new(reportFailure, model);
 }
 
 public struct TranspileContext(
@@ -90,15 +91,14 @@ public struct TranspileContext(
     OverrideScopeStack localVariableOverrides,
     Stack<int> activeSwitchIds,
     SemanticModel semanticModel,
-    Action<Diagnostic>? reportDiagnostic,
-    Action<string>? reportFailure,
+    Action<TranspileFailure>? reportFailure,
     RoslynToCudaVisitor visitor,
     ImmutableDictionary<IMethodSymbol, IntrinsicMappingInfo> bclIntrinsicMap,
     ITranspilerDialect dialect)
 {
     public Emitter Emitter = new(writer, localVariableOverrides, activeSwitchIds, dialect);
     public Query Query = new(semanticModel, bclIntrinsicMap, usedStructs);
-    public Reporter Reporter = new(reportDiagnostic, reportFailure, semanticModel);
+    public Reporter Reporter = new(reportFailure, semanticModel);
 
     public RoslynToCudaVisitor Visitor { get; } = visitor;
     internal TranspilerRuleRegistry RuleRegistry => TranspilerRuleRegistry.Default;

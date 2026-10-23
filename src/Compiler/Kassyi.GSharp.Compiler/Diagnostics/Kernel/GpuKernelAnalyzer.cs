@@ -47,10 +47,22 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        // Single-pass traversal of the AST to minimize time complexity and zero allocations
-        var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, context.ReportDiagnostic, dialect);
-        using var walker = GpuKernelValidationWalker.Rent(validationContext);
+        var diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
 
-        walker.Visit(methodDeclaration);
+        // Single-pass traversal of the AST to minimize time complexity and zero allocations
+        var validationContext = new ValidationContext(context.SemanticModel, methodSymbol, diagnostics.Add, dialect);
+        using (var walker = GpuKernelValidationWalker.Rent(validationContext))
+        {
+            walker.Visit(methodDeclaration);
+        }
+
+        TranspilerFailureCheck.AddFailures(methodDeclaration, methodSymbol, context.SemanticModel, diagnostics);
+
+        // A rule and the transpiler, or the two dialects, find the same construct: one diagnostic per ID and location
+        var reported = new HashSet<(string Id, Location Location)>();
+        diagnostics
+            .AsStackEnumerable()
+            .Where(reported, static (diagnostic, seen) => seen.Add((diagnostic.Id, diagnostic.Location)))
+            .Do(context, static (diagnostic, analysis) => analysis.ReportDiagnostic(diagnostic));
     }
 }

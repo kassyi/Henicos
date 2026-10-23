@@ -90,10 +90,12 @@ public class ModernPatternsTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Test_PositionalPatterns_Transpilation()
     {
-        var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
+        var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.PositionalPatterns), isDevice: false, dialect: CurrentDialect);
 
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax);
+        // The analyzer reports the construct (UnsupportedSyntaxKindDiagnosticsTests); the transpiler writes a placeholder
+        Assert.Empty(diagnostics);
+        Assert.Contains("/*unsupported:TupleExpression*/", cudaSource);
     }
 
     [Fact]

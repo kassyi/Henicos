@@ -37,7 +37,8 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
                 return;
             }
 
-            if (symbol != null && GpuCodeConstraints.IsHostStaticMember(symbol, context.Emitter.Dialect))
+            if (symbol != null &&
+                GpuCodeConstraints.IsHostStaticMemberReference(node, symbol, context.Query.SemanticModel, context.Emitter.Dialect))
             {
                 context.Reporter.Fail(
                     GSharpDiagnostics.StaticMemberAccessNotSupported,

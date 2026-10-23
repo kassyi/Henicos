@@ -23,6 +23,7 @@ public class KernelDiagnosticsInventoryTests
         "Analyzers/DelegateEscapeSadPath.cs",
         // GSH0002 (implicitly typed variable), GSH0003 (syntax without a rule, function pointer parameter and variable)
         "Diagnostics/UnsupportedSyntaxNodes.cu.cs",
+        "Diagnostics/UnsupportedSyntaxKinds.cu.cs",
         // GSH0003 (dynamic array size)
         "Analyzers/DynamicStackAllocSadPath.cs",
         // GSH0003 (switch expression)
