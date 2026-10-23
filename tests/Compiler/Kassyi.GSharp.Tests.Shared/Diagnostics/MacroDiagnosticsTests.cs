@@ -49,6 +49,21 @@ public class MacroDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant.Id));
     }
 
+    // Loop macro bodies with and without a context, and an unroll hint inside a switch section
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_SupportedMacroForms_ReportNothing(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/SupportedMacroAndArrayForms.cu.cs", dialect);
+
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.MacroLambdaRequiresParameter.Id));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.MacroArgumentMustBeConstant.Id));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnrollHintMustPrecedeLoop.Id));
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant.Id));
+    }
+
     // A loop macro body without a loop variable does not bind to the macro (CS1593), so nothing reports GSH0011
     [Theory]
     [InlineData("Cpu")]

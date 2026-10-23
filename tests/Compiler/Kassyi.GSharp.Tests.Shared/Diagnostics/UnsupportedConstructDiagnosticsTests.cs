@@ -55,6 +55,35 @@ public class UnsupportedConstructDiagnosticsTests
         Assert.Equal([(Analyzer, 53, 9, 53, 12)], diagnostics.Ranges(GSharpDiagnostics.StringNotSupported.Id));
     }
 
+    // default(string) on line 13 and the type argument on line 14; the lambda parameter and the local function's return
+    // type are a signature
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public async Task Test_StringTypesInABody_ReportGsh0002OutsideSignatures(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/StringTypeUsages.cu.cs", dialect);
+
+        Assert.Equal(
+            [
+                (Analyzer, 13, 27, 13, 33),
+                (Analyzer, 14, 14, 14, 20)
+            ],
+            diagnostics.Ranges(GSharpDiagnostics.StringNotSupported.Id));
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_StackArrayWithInitializer_IsNotReported(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/SupportedMacroAndArrayForms.cu.cs", dialect);
+
+        Assert.Empty(diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id));
+    }
+
     [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
