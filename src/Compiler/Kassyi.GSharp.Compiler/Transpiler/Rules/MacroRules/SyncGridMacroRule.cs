@@ -18,8 +18,9 @@ internal sealed class SyncGridMacroRule : IMacroTranspilerRule
 
         if (!GpuCodeConstraints.TryGetSyncGridBody(invocation, out var lambdaExpr))
         {
-            context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, invocation,
-                "Gpu.SyncGrid requires a single lambda expression argument");
+            var args = invocation.ArgumentList.Arguments;
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, args.Count > 0 ? args[0] : invocation,
+                GpuCodeConstraints.SyncGridRequiresLambda);
             return false;
         }
 

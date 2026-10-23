@@ -18,7 +18,7 @@ internal sealed class HintUnrollMacroRule : IMacroTranspilerRule
 
         if (GpuCodeConstraints.GetUnrolledLoop(statement) == null)
         {
-            context.Reporter.Report(GSharpDiagnostics.UnrollHintMustPrecedeLoop, invocation);
+            context.Reporter.Fail(GSharpDiagnostics.UnrollHintMustPrecedeLoop, invocation);
             return true;
         }
 
@@ -29,7 +29,7 @@ internal sealed class HintUnrollMacroRule : IMacroTranspilerRule
             var factorExpr = args[0].Expression;
             if (!GpuCodeConstraints.TryGetUnrollFactor(factorExpr, context.Query.SemanticModel, out factor))
             {
-                context.Reporter.Report(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
+                context.Reporter.Fail(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
                 return true;
             }
         }

@@ -8,6 +8,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
         GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral,
         GSharpDiagnostics.MacroArgumentMustBeConstant,
+        GSharpDiagnostics.MacroLambdaRequiresParameter,
         GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant,
         GSharpDiagnostics.UnrollHintMustPrecedeLoop,
         GSharpDiagnostics.UnrolledLoopMustBeStatic,
@@ -36,6 +37,11 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
 
             case GpuMacroKind.ForUnroll:
                 CheckForUnroll(invocation, call, ref context);
+                CheckLoopBody(invocation, call, TypeConstants.GpuMacros.ForUnroll, ref context);
+                break;
+
+            case GpuMacroKind.GridStrideLoop:
+                CheckLoopBody(invocation, call, TypeConstants.GpuMacros.GridStrideLoop, ref context);
                 break;
 
             case GpuMacroKind.InlinePtx:
@@ -61,6 +67,18 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         CheckConstant(args[offset + 1].Expression, "count", TypeConstants.GpuMacros.ForUnroll, ref context);
     }
 
+    private static void CheckLoopBody(InvocationExpressionSyntax invocation, GpuMacroCall call, string macroName,
+        ref ValidationContext context)
+    {
+        var args = invocation.ArgumentList.Arguments;
+        if (args.Count > call.LambdaArgumentIndex &&
+            args[call.LambdaArgumentIndex].Expression is LambdaExpressionSyntax body &&
+            GpuCodeConstraints.GetMacroLoopParameter(body, call.HasContext) == null)
+        {
+            context.ReportDiagnostic(GSharpDiagnostics.MacroLambdaRequiresParameter, invocation, macroName);
+        }
+    }
+
     private void CheckInlinePtx(InvocationExpressionSyntax invocation, ref ValidationContext context)
     {
         var args = invocation.ArgumentList.Arguments;
@@ -80,7 +98,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
                 context.ReportDiagnostic(
                     GSharpDiagnostics.UnsupportedSyntax,
                     args[0],
-                    "Gpu.SyncGrid requires a lambda expression argument");
+                    GpuCodeConstraints.SyncGridRequiresLambda);
             }
         }
 
@@ -278,8 +296,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
 
     private void CheckConstant(ExpressionSyntax expr, string paramName, string macroName, ref ValidationContext context)
     {
-        var constant = context.SemanticModel.GetSafeConstantValue(expr);
-        if (constant.HasValue)
+        if (GpuCodeConstraints.TryGetMacroConstantInt(expr, context.SemanticModel, out _))
         {
             return;
         }

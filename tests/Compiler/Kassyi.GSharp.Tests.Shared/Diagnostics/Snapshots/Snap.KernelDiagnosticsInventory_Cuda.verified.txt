@@ -45,12 +45,10 @@
 
 ## Analyzers/MacroArgumentSadPath.cs
 (5,14)-(5,41) GSH0036 analyzer: The class 'GEN_36_MacroArgumentSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(14,9)-(17,11) GSH0003 generator: The syntax 'ForUnroll arguments must be constants' is not supported in GSharp GPU kernels
 (14,26)-(14,31) GSH0012 analyzer: The argument 'count' of macro 'ForUnroll' must be a compile-time constant
 (19,9)-(19,15) GSH0002 analyzer: The string type is not supported in GPU kernels
 (21,9)-(21,30) GSH0006 generator: The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal
 (21,23)-(21,29) GSH0006 analyzer: The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal
-(25,9)-(25,28) GSH0003 generator: The syntax 'Gpu.SyncGrid requires a single lambda expression argument' is not supported in GSharp GPU kernels
 (25,9)-(25,28) GSH0030 analyzer: The method 'MyKernel' calls Gpu.SyncGrid but is not marked with [GpuKernel(Cooperative = true)]. Grid synchronization requires a cooperative kernel launch.
 (25,22)-(25,27) GSH0003 analyzer: The syntax 'Gpu.SyncGrid requires a lambda expression argument' is not supported in GSharp GPU kernels
 
@@ -59,9 +57,7 @@
 ## Analyzers/UnrollHintSadPath.cs
 (5,14)-(5,31) GSH0036 analyzer: The class 'UnrollHintSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (11,9)-(11,26) GSH0017 analyzer: Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop
-(11,9)-(11,26) GSH0017 generator: Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop
 (15,25)-(15,27) GSH0016 analyzer: The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer
-(15,25)-(15,27) GSH0016 generator: The argument 'factor' of Gpu.Hint.Unroll must be a compile-time non-negative integer
 
 ## Generator/KernelReturnTypes_SadPath.cs
 (6,14)-(6,42) GSH0036 analyzer: The class 'TestKernelReturnTypesSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.

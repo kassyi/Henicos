@@ -38,7 +38,7 @@ internal sealed class GridStrideLoopMacroRule : IMacroTranspilerRule
         using var scopeDisposer = macroScope;
 
         // TryBeginMacroScope has already rejected lambdas without a loop parameter.
-        var loopVariable = MacroTranspilerHelper.ExtractUnrollLoopParameter(lambdaExpr, call.HasContext);
+        var loopVariable = GpuCodeConstraints.GetMacroLoopParameter(lambdaExpr, call.HasContext);
         if (loopVariable == null)
         {
             return false;

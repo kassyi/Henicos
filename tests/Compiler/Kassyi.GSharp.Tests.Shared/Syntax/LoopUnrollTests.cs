@@ -4,7 +4,21 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public class LoopUnrollTests : TranspilerTestBase
 {
+    private const string TestCasePath = "Analyzers/LoopUnrollStatements.cs";
 
+    // The analyzers run once for the whole file; each case reads the unroll diagnostics inside its own method
+    private static readonly Lazy<Task<ImmutableArray<Diagnostic>>> s_analyzerDiagnostics = new(GetAnalyzerDiagnosticsAsync);
+
+    private static async Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync()
+    {
+        var (_, analyzer, generator) =
+            await KernelDiagnostics.GetDiagnosticsAsync(RoslynTestUtility.ReadTestCase(TestCasePath), "Cuda");
+        Assert.DoesNotContain(generator, static d => IsUnrollDiagnostic(d.Id));
+        return analyzer;
+    }
+
+    private static bool IsUnrollDiagnostic(string id) =>
+        id == GSharpDiagnostics.UnrollHintMustPrecedeLoop.Id || id == GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant.Id;
 
     private static (string CudaSource, List<Diagnostic> Diagnostics) TranspileTestCaseMethod(string methodName)
     {
@@ -94,7 +108,12 @@ public class LoopUnrollTests : TranspilerTestBase
 
         var (cudaSource, diagnostics) = TranspileTestCaseMethod(methodName);
 
-        LoopUnrollAudit.Audit(methodDecl, semanticModel, cudaSource, diagnostics);
+        // The analyzer reports a misplaced hint or a bad factor (S-46); the transpiler reports nothing
+        Assert.Empty(diagnostics);
+        var analyzerDiagnostics = (await s_analyzerDiagnostics.Value)
+            .Where(d => IsUnrollDiagnostic(d.Id) && methodDecl.Span.Contains(d.Location.SourceSpan))
+            .ToList();
+        LoopUnrollAudit.Audit(methodDecl, semanticModel, cudaSource, analyzerDiagnostics);
 
         var report = cudaSource + string.Concat(diagnostics.Select(d => $"\n// {d.Id}"));
         await Verify(report, $"LoopUnroll_{methodName}");

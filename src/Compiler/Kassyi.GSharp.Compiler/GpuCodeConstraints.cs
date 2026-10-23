@@ -96,9 +96,16 @@ internal static class GpuCodeConstraints
         semanticModel.GetSafeConstantValue(argument) is { HasValue: true, Value: string };
 
     /// <summary>The factor of <c>Gpu.Hint.Unroll(factor)</c>, when it is a non-negative <see cref="int"/> constant (GSH0016).</summary>
-    public static bool TryGetUnrollFactor(ExpressionSyntax factor, SemanticModel semanticModel, out int value)
+    public static bool TryGetUnrollFactor(ExpressionSyntax factor, SemanticModel semanticModel, out int value) =>
+        TryGetMacroConstantInt(factor, semanticModel, out value) && value >= 0;
+
+    /// <summary>
+    /// The value of a macro argument that the transpiler expands at compile time (the start and count of
+    /// <c>Gpu.ForUnroll</c>), when it is an <see cref="int"/> constant (GSH0012).
+    /// </summary>
+    public static bool TryGetMacroConstantInt(ExpressionSyntax argument, SemanticModel semanticModel, out int value)
     {
-        if (semanticModel.GetSafeConstantValue(factor) is { HasValue: true, Value: int constant } && constant >= 0)
+        if (semanticModel.GetSafeConstantValue(argument) is { HasValue: true, Value: int constant })
         {
             value = constant;
             return true;
@@ -107,6 +114,23 @@ internal static class GpuCodeConstraints
         value = 0;
         return false;
     }
+
+    /// <summary>
+    /// The loop variable of the body of <c>Gpu.ForUnroll</c> or <c>Gpu.GridStrideLoop</c>: <c>i =&gt; ...</c>, or
+    /// <c>(ref ctx, i) =&gt; ...</c> for the overload that takes a context (GSH0011).
+    /// </summary>
+    public static ParameterSyntax? GetMacroLoopParameter(LambdaExpressionSyntax body, bool hasContext) => body switch
+    {
+        SimpleLambdaExpressionSyntax simpleLambda => simpleLambda.Parameter,
+        ParenthesizedLambdaExpressionSyntax parenLambda when hasContext && parenLambda.ParameterList.Parameters.Count == 2 =>
+            parenLambda.ParameterList.Parameters[1],
+        ParenthesizedLambdaExpressionSyntax parenLambda when !hasContext && parenLambda.ParameterList.Parameters.Count == 1 =>
+            parenLambda.ParameterList.Parameters[0],
+        _ => null
+    };
+
+    /// <summary>The GSH0003 text for a <c>Gpu.SyncGrid(body)</c> call whose argument is not a lambda.</summary>
+    public const string SyncGridRequiresLambda = "Gpu.SyncGrid requires a lambda expression argument";
 
     /// <summary>
     /// The loop that the <c>Gpu.Hint.Unroll</c> statement <paramref name="hint"/> applies to: the next statement of the same
