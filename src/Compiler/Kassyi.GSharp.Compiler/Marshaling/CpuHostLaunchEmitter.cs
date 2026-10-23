@@ -319,8 +319,7 @@ internal static class CpuHostLaunchEmitter
                 }
                 else if (shape.IsByRef)
                 {
-                    writer.Append("p_");
-                    writer.Append(p.Name.ToCSharpIdentifier());
+                    writer.Append($"p_{p.Name}");
                 }
                 else
                 {
