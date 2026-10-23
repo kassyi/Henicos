@@ -61,12 +61,13 @@ public readonly struct Query(
     public HashSet<INamedTypeSymbol> UsedStructs { get; } = usedStructs;
 }
 
-public readonly struct Reporter(Action<Diagnostic>? reportDiagnostic)
+public readonly struct Reporter(Action<Diagnostic>? reportDiagnostic, SemanticModel semanticModel)
 {
     public Action<Diagnostic>? ReportDiagnostic { get; } = reportDiagnostic;
 
+    // A node of a lowered body is reported at its original location (SemanticModelExtensions.GetReportLocation)
     public void Report(DiagnosticDescriptor descriptor, SyntaxNode node, params object?[]? messageArgs) =>
-        ReportDiagnostic.ReportDiagnostic(descriptor, node, messageArgs);
+        ReportDiagnostic.ReportDiagnostic(descriptor, semanticModel.GetReportLocation(node), messageArgs);
 
     public void Report(DiagnosticDescriptor descriptor, Location? location, params object?[]? messageArgs) =>
         ReportDiagnostic.ReportDiagnostic(descriptor, location, messageArgs);
@@ -85,7 +86,7 @@ public struct TranspileContext(
 {
     public Emitter Emitter = new(writer, localVariableOverrides, activeSwitchIds, dialect);
     public Query Query = new(semanticModel, bclIntrinsicMap, usedStructs);
-    public Reporter Reporter = new(reportDiagnostic);
+    public Reporter Reporter = new(reportDiagnostic, semanticModel);
 
     public RoslynToCudaVisitor Visitor { get; } = visitor;
     internal TranspilerRuleRegistry RuleRegistry => TranspilerRuleRegistry.Default;

@@ -51,6 +51,7 @@ checked the namespace, suppress it with `#pragma warning disable HNT0003 // <the
 | Declared symbol of a given kind | `.GetDeclaredSymbol` (`GetDeclaredSymbol<IMethodSymbol>(decl)`) | `GetDeclaredSymbol(decl) as IMethodSymbol` |
 | Constant value / operation that may not resolve | `.GetSafeConstantValue`, `.GetSafeOperation` | try/catch around Roslyn calls |
 | Location in the user's source after lowering rewrote the tree | `.GetOriginalLocation` | `node.GetLocation()` on a rewritten node |
+| Location to report a diagnostic at, for a node that may be in a lowered tree (falls back to the nearest mapped ancestor, then `Location.None`) | `.GetReportLocation` (`context.Reporter.Report(descriptor, node)` uses it) | `node.GetLocation()`: a generator may not report a location outside the compilation |
 | Attach or read a lowering annotation (original span, suspending call, state machine `return`) | `LoweringAnnotations.OriginalSpanAnnotationKind`, `LoweringAnnotations.SuspendingCallAnnotationKind`, `LoweringAnnotations.StateMachineReturnAnnotationKind` | `node.HasAnnotations("StateMachineReturn")` |
 | Method body, block or `=>` | `.GetBodyNode`, `.HasBody` | `Body ?? (SyntaxNode?)ExpressionBody` |
 | Node or token is one of 2-3 kinds | `.IsKind` (`node.IsKind(a, b)`) | `IsKind(a) \|\| IsKind(b)` |

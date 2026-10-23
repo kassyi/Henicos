@@ -19,6 +19,26 @@
         DefaultSeverity: Warning,
         IsEnabledByDefault: true
       }
+    },
+    {
+      Location: /*
+            // 11.5 Inline PTX
+            Gpu.InlinePtx("/* test ptx inline */");
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+*/
+ : (222,12)-(222,50),
+      Message: Gpu.InlinePtx is not supported by the 'StandardCppDialect' dialect; the call is replaced with a runtime failure,
+      Severity: Warning,
+      WarningLevel: 1,
+      Descriptor: {
+        Id: GSH0054,
+        Title: Gpu.InlinePtx is not supported by the target dialect,
+        MessageFormat: Gpu.InlinePtx is not supported by the '{0}' dialect; the call is replaced with a runtime failure,
+        Category: GSharpTranspiler,
+        DefaultSeverity: Warning,
+        IsEnabledByDefault: true
+      }
     }
   ]
-}
+}

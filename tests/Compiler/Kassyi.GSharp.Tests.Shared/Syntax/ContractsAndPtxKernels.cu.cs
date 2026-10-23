@@ -1,6 +1,9 @@
 // ReSharper disable All
 using Kassyi.GSharp.Core;
 
+// On the C++ dialects these kernels test the runtime failure that replaces Gpu.InlinePtx, so its warning is expected
+#pragma warning disable GSH0054
+
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
 public static partial class ContractsAndPtxKernels

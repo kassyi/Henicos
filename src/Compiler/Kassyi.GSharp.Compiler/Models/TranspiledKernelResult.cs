@@ -9,7 +9,8 @@ internal readonly struct TranspiledKernelResult(
     string cppSource,
     string managedCSharpSource,
     EquatableArray<string> requiredIncludes,
-    EquatableArray<EquatableDiagnostic> diagnostics) : IEquatable<TranspiledKernelResult>
+    EquatableArray<EquatableDiagnostic> diagnostics,
+    EquatableArray<EquatableDiagnostic> cppOnlyDiagnostics) : IEquatable<TranspiledKernelResult>
 {
     public IMethodSymbol MethodSymbol { get; } = methodSymbol;
     public string MethodName { get; } = methodName;
@@ -20,7 +21,11 @@ internal readonly struct TranspiledKernelResult(
     public string GetSource(bool isCuda) => isCuda ? CudaSource : CppSource;
     public string ManagedCSharpSource { get; } = managedCSharpSource;
     public EquatableArray<string> RequiredIncludes { get; } = requiredIncludes;
+    /// <summary>The diagnostics of the CUDA transpilation, reported for every dialect.</summary>
     public EquatableArray<EquatableDiagnostic> Diagnostics { get; } = diagnostics;
+
+    /// <summary>The diagnostics that only the C++ transpilation reports (e.g. GSH0054), reported for the C++ dialects.</summary>
+    public EquatableArray<EquatableDiagnostic> CppOnlyDiagnostics { get; } = cppOnlyDiagnostics;
 
     public bool Equals(TranspiledKernelResult other)
     {
@@ -31,13 +36,14 @@ internal readonly struct TranspiledKernelResult(
                CppSource == other.CppSource &&
                ManagedCSharpSource == other.ManagedCSharpSource &&
                RequiredIncludes.Equals(other.RequiredIncludes) &&
-               Diagnostics.Equals(other.Diagnostics);
+               Diagnostics.Equals(other.Diagnostics) &&
+               CppOnlyDiagnostics.Equals(other.CppOnlyDiagnostics);
     }
 
     public override bool Equals(object? obj) => obj is TranspiledKernelResult other && Equals(other);
 
     public override int GetHashCode() => HashHelper.Combine(MethodName, ClassName, Namespace, CudaSource, CppSource,
-        ManagedCSharpSource, RequiredIncludes, Diagnostics);
+        ManagedCSharpSource, RequiredIncludes, Diagnostics, CppOnlyDiagnostics);
 
     public static bool operator ==(TranspiledKernelResult left, TranspiledKernelResult right) => left.Equals(right);
     public static bool operator !=(TranspiledKernelResult left, TranspiledKernelResult right) => !left.Equals(right);

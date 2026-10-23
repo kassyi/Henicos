@@ -22,16 +22,30 @@ public class GpuKernelGenerator : IIncrementalGenerator
             return builder.MoveToImmutable().AsEquatableArray();
         }
 
+        /// <summary>The diagnostics that <paramref name="other"/> has not collected (same ID at the same location).</summary>
+        public EquatableArray<EquatableDiagnostic> GetDiagnosticsNotIn(DiagnosticCollector other)
+        {
+            var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>();
+            _diagnostics
+                .AsStackEnumerable()
+                .Where(other, static (d, collector) => !collector.Contains(d))
+                .Select(static d => d.AsEquatable())
+                .AddTo(builder);
+
+            return builder.ToImmutable().AsEquatableArray();
+        }
+
         public void Report(Diagnostic d)
         {
-            var isDuplicate = _diagnostics
-                .AsStackEnumerable()
-                .Any(d, static (existing, reported) => existing.Id == reported.Id && existing.Location == reported.Location);
-            if (!isDuplicate)
+            if (!Contains(d))
             {
                 _diagnostics.Add(d);
             }
         }
+
+        private bool Contains(Diagnostic d) => _diagnostics
+            .AsStackEnumerable()
+            .Any(d, static (existing, reported) => existing.Id == reported.Id && existing.Location == reported.Location);
     }
 
     private static bool CheckSuppressGs0001(MethodDeclarationSyntax methodDeclaration)
@@ -132,21 +146,21 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         try
         {
-            var collector = new DiagnosticCollector();
+            var cudaCollector = new DiagnosticCollector();
+            var cppCollector = new DiagnosticCollector();
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
             var cudaSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
-                collector.Report,
+                cudaCollector.Report,
                 isDevice: false, cudaDialect, out var requiredIncludesCuda);
 
             var lowered = methodDeclaration.HasBody()
                 ? AstLoweringPipeline.Lower(methodDeclaration, context.SemanticModel)
                 : null;
 
-            var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
-            {
-            }, isDevice: false, cppDialect, out var requiredIncludesCpp, lowered);
+            var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
+                cppCollector.Report, isDevice: false, cppDialect, out var requiredIncludesCpp, lowered);
 
             var managedCSharpSource =
                 MethodTranspiler.GenerateManagedCSharpSource(methodDeclaration, context.SemanticModel, lowered);
@@ -162,7 +176,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     cppSource,
                     managedCSharpSource,
                     new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                    collector.GetDiagnostics()
+                    cudaCollector.GetDiagnostics(),
+                    cppCollector.GetDiagnosticsNotIn(cudaCollector)
                 );
             }
 
@@ -178,7 +193,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cppSource,
                 managedCSharpSource,
                 new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                collector.GetDiagnostics()
+                cudaCollector.GetDiagnostics(),
+                cppCollector.GetDiagnosticsNotIn(cudaCollector)
             );
         }
         catch (Exception ex)
@@ -195,7 +211,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 methodSymbol.ContainingType.Name,
                 methodSymbol.ContainingNamespace?.GetFullNamespaceName(),
                 "", "", $"/*\n{ex}\n*/\n#error \"Internal Compiler Error: Check comments for details\"\n",
-                new EquatableArray<string>(), collector.GetDiagnostics());
+                new EquatableArray<string>(), collector.GetDiagnostics(),
+                new EquatableArray<EquatableDiagnostic>());
         }
     }
 
@@ -211,22 +228,21 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         try
         {
-            var collector = new DiagnosticCollector();
+            var cudaCollector = new DiagnosticCollector();
+            var cppCollector = new DiagnosticCollector();
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
             var cudaSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel,
-                collector.Report, isDevice: true, cudaDialect);
-            var cppSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel, _ =>
-            {
-            }, isDevice: true, cppDialect);
+                cudaCollector.Report, isDevice: true, cudaDialect);
+            var cppSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel,
+                cppCollector.Report, isDevice: true, cppDialect);
 
             var cudaBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
-                collector.Report,
+                cudaCollector.Report,
                 isDevice: true, cudaDialect, out var requiredIncludesCuda);
-            var cppBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel, _ =>
-            {
-            }, isDevice: true, cppDialect, out var requiredIncludesCpp);
+            var cppBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
+                cppCollector.Report, isDevice: true, cppDialect, out var requiredIncludesCpp);
 
             // A device function that may suspend has a frame, which embeds the frames of the calls it makes
             var frameName = "";
@@ -256,7 +272,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 cppSignature,
                 cppBody,
                 new EquatableArray<string>(CombineIncludes(requiredIncludesCuda, requiredIncludesCpp)),
-                collector.GetDiagnostics(),
+                cudaCollector.GetDiagnostics(),
+                cppCollector.GetDiagnosticsNotIn(cudaCollector),
                 frameName,
                 new EquatableArray<string>(frameDependencies.ToImmutable()),
                 managedCSharpSource);
@@ -276,7 +293,8 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 methodSymbol.Name,
                 methodSymbol.ContainingType.Name,
                 null,
-                "", errorSource, "", errorSource, new EquatableArray<string>(), collector.GetDiagnostics());
+                "", errorSource, "", errorSource, new EquatableArray<string>(), collector.GetDiagnostics(),
+                new EquatableArray<EquatableDiagnostic>());
         }
     }
 
@@ -326,9 +344,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
 
         foreach (var method in distinctDeviceMethods)
         {
-            method.Diagnostics
-                .AsStackEnumerable()
-                .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
+            ReportDiagnostics(context, method.Diagnostics, method.CppOnlyDiagnostics, isCuda);
         }
 
         var commonDeviceSource = NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
@@ -465,6 +481,22 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
     }
 
+    // The CUDA transpilation's diagnostics hold the dialect-independent ones; a C++ build adds what only the C++
+    // transpilation found, such as a CUDA-only call it replaced with a runtime failure (GSH0054)
+    private static void ReportDiagnostics(SourceProductionContext context, EquatableArray<EquatableDiagnostic> diagnostics,
+        EquatableArray<EquatableDiagnostic> cppOnlyDiagnostics, bool isCuda)
+    {
+        diagnostics
+            .AsStackEnumerable()
+            .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
+        if (!isCuda)
+        {
+            cppOnlyDiagnostics
+                .AsStackEnumerable()
+                .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
+        }
+    }
+
     private static void ProcessKernelClass(INamedTypeSymbol classSymbol, IEnumerable<TranspiledKernelResult> methods,
         GeneratorConfig config,
         SourceProductionContext context, bool isCuda)
@@ -473,9 +505,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             ImmutableArray.CreateBuilder<(IMethodSymbol Method, string Source, string ManagedCSharpSource)>();
         foreach (var method in methods)
         {
-            method.Diagnostics
-                .AsStackEnumerable()
-                .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
+            ReportDiagnostics(context, method.Diagnostics, method.CppOnlyDiagnostics, isCuda);
 
             if (KernelHostNames.TryFindIndistinguishableOverload(method.MethodSymbol, out var earlier, out var wrapper))
             {
