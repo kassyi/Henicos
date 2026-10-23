@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
 
 /// <summary>

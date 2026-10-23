@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Emits CUDA C++ struct definitions, operator overloads, and handles InlineArray structures.</summary>

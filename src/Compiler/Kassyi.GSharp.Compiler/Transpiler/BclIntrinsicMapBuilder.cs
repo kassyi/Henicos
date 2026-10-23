@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Discovers assembly attributes and builds immutable mappings from BCL methods to CUDA intrinsic functions.</summary>

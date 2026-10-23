@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>Diagnostic rule that verifies required arguments to GPU macro methods are compile-time constants.</summary>

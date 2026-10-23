@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>A zero-allocation writer that builds source text using a pooled thread-static <see cref="StringBuilder"/>.</summary>

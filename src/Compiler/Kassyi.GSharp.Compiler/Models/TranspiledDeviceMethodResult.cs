@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Models;
 
 internal readonly struct TranspiledDeviceMethodResult(

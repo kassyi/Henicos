@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Hoists local variables that cross execution barriers into a shared context struct.</summary>

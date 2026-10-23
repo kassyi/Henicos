@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Dialects;
 
 public abstract class YamlDialectBase : ITranspilerDialect

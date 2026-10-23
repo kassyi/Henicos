@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<MemberAccessExpressionSyntax>

@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;/// <summary>
 /// Transpiles anonymous function syntax nodes (simple lambdas, parenthesized lambdas, and anonymous methods)
 /// into target dialect C++ capture-by-reference lambdas (<c>[&amp;](...) { ... }</c>).

@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# control-flow statements (if, for, while, do-while, switch, return) to CUDA C++.</summary>

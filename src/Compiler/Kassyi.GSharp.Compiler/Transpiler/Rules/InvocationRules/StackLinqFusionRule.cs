@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 
 public sealed class StackLinqFusionRule : IInvocationTranspilerRule

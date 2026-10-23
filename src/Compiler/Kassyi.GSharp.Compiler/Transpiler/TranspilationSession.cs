@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 internal readonly ref struct TranspilationSession

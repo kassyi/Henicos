@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Analysis;
 
 public static class ContextInferenceEngine
