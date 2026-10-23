@@ -5,5 +5,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- netstandard2.0 copy of these sources, built into the G# compiler (see Kassyi.ZeroAlloc.Linq.Export) -->
+    <StackLinqExportTool>$(MSBuildThisFileDirectory)..\Kassyi.ZeroAlloc.Linq.Export\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.ZeroAlloc.Linq.Export.dll</StackLinqExportTool>
+    <StackLinqExportDir>$(MSBuildThisFileDirectory)$(BaseOutputPath)$(Configuration)\$(TargetFramework)\export\netstandard2.0\</StackLinqExportDir>
   </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kassyi.ZeroAlloc.Linq.Export\Kassyi.ZeroAlloc.Linq.Export.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+  </ItemGroup>
+
+  <Target Name="ExportNetStandardSources" AfterTargets="Build" Inputs="@(Compile);$(StackLinqExportTool)" Outputs="$(StackLinqExportDir)export.stamp">
+    <Exec Command="dotnet &quot;$(StackLinqExportTool)&quot; &quot;$(MSBuildThisFileDirectory.TrimEnd('\'))&quot; &quot;$(StackLinqExportDir.TrimEnd('\'))&quot;" />
+    <Touch Files="$(StackLinqExportDir)export.stamp" AlwaysCreate="true" />
+  </Target>
 </Project>
