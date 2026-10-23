@@ -65,20 +65,26 @@ public static ArrayEnumerator<T> AsStackEnumerable<T>(this T[] source);
 ## Examples
 
 ```csharp
+using Kassyi.GSharp.Core;
+using Kassyi.ZeroAlloc.Linq;
+
 // CPU
 ReadOnlySpan<int> span = stackalloc int[] { 10, 20, 30 };
 var enumSpan = span.AsStackEnumerable();
 
 // GPU Kernel
-[GpuKernel]
-public static void Kernel(int[] data, int[] output)
+public static partial class StackLinqKernels
 {
-    int tid = ThreadIndex.X;
-    int sum = data
-        .AsStackEnumerable()
-        .Take(10)
-        .Sum();
-    output[tid] = sum;
+    [GpuKernel]
+    public static void Kernel(int[] data, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        int sum = data
+            .AsStackEnumerable()
+            .Take(10)
+            .Sum();
+        output[tid] = sum;
+    }
 }
 ```
 

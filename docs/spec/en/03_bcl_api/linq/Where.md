@@ -73,6 +73,8 @@ var result = names
 ## Examples
 
 ```csharp
+using Kassyi.ZeroAlloc.Linq;
+
 int[] numbers = [1, 2, 3, 4, 5, 6];
 
 // Standard predicate

@@ -73,6 +73,8 @@ var lengths = names
 ## Examples
 
 ```csharp
+using Kassyi.ZeroAlloc.Linq;
+
 int[] numbers = [1, 2, 3];
 
 // Multiply by 10

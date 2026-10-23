@@ -39,6 +39,8 @@ public static TakeEnumerator<TEnumerator, TSource> Take<TEnumerator, TSource>(th
 ## Examples
 
 ```csharp
+using Kassyi.ZeroAlloc.Linq;
+
 int[] numbers = [1, 2, 3, 4, 5];
 var taken = numbers
     .AsStackEnumerable()
