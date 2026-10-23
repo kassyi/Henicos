@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using YamlDotNet.RepresentationModel;
 
 namespace Kassyi.GSharp.Compiler.Generators;
@@ -121,12 +120,30 @@ public static class InternalNamesGenerator
     private static void CheckDeclared(string path, string value, string directory, string file, string label)
     {
         var filePath = Path.Combine(directory, file);
-        if (!File.Exists(filePath) ||
-            !Regex.IsMatch(File.ReadAllText(filePath), $@"(?<![A-Za-z0-9_]){Regex.Escape(value)}(?![A-Za-z0-9_])"))
+        if (!File.Exists(filePath) || !ContainsIdentifier(File.ReadAllText(filePath), value))
         {
             throw Fail($"{path} = '{value}' is not declared in {label}/{file}.");
         }
     }
+
+    /// <summary>Whether <paramref name="identifier"/> occurs in <paramref name="text"/> as a whole identifier.</summary>
+    private static bool ContainsIdentifier(string text, string identifier)
+    {
+        for (var index = text.IndexOf(identifier, StringComparison.Ordinal);
+             index >= 0;
+             index = text.IndexOf(identifier, index + 1, StringComparison.Ordinal))
+        {
+            var end = index + identifier.Length;
+            if ((index == 0 || !IsIdentifierChar(text[index - 1])) && (end == text.Length || !IsIdentifierChar(text[end])))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsIdentifierChar(char c) => char.IsAsciiLetterOrDigit(c) || c == '_';
 
     private static string Generate(List<NameGroup> groups)
     {
@@ -172,8 +189,35 @@ public static class InternalNamesGenerator
         return writer.ToString();
     }
 
-    private static string EscapeXml(string text) =>
-        text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+    private static string EscapeXml(string text)
+    {
+        if (text.AsSpan().IndexOfAny("&<>") < 0)
+        {
+            return text;
+        }
+
+        var builder = new StringBuilder(text.Length + 16);
+        foreach (var c in text)
+        {
+            switch (c)
+            {
+                case '&':
+                    builder.Append("&amp;");
+                    break;
+                case '<':
+                    builder.Append("&lt;");
+                    break;
+                case '>':
+                    builder.Append("&gt;");
+                    break;
+                default:
+                    builder.Append(c);
+                    break;
+            }
+        }
+
+        return builder.ToString();
+    }
 
     private static InvalidOperationException Fail(string message) => new($"InternalNames.yml: {message}");
 }
