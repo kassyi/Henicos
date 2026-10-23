@@ -669,7 +669,7 @@ internal static class WrapperEmitter
                 "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ");
             foreach (var p in method.Parameters)
             {
-                if (p.HasAttribute(KnownAttributes.Constant))
+                if (p.IsConstantParameter())
                 {
                     continue;
                 }
@@ -925,7 +925,7 @@ internal static class WrapperEmitter
 
             foreach (var p in method.Parameters)
             {
-                if (p.HasAttribute(KnownAttributes.Constant))
+                if (p.IsConstantParameter())
                 {
                     continue;
                 }

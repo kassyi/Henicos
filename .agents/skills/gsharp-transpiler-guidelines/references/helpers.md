@@ -14,6 +14,7 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | Is this position inside device code (lambdas and local functions included)? | `GpuExecutionSpace.IsWithinGpuFunction` on `GetEnclosingSymbol(...)` | a hand-written `ContainingSymbol` loop |
 | Does a symbol carry a G# attribute? | `SymbolExtensions.HasAttribute` with a `KnownAttributes` constant | `AttributeClass?.Name == "GpuKernelAttribute"` |
 | Get the attribute data | `SymbolExtensions.GetAttribute` | `GetAttributes()` plus a loop |
+| Is this a `[Constant]` (macro-injected) parameter? | `SymbolExtensions.IsConstantParameter` | `p.HasAttribute(KnownAttributes.Constant)` |
 | Compare symbols | `SymbolExtensions.IsEqualTo` | `SymbolEqualityComparer.Default.Equals` spelled out |
 | Is the namespace `Kassyi.GSharp.Core` / `System` / `System.Numerics`? | `SymbolExtensions.IsCoreNamespace`, `SymbolExtensions.IsSystemNamespace`, `SymbolExtensions.IsSystemOrNumerics` | `ToDisplayString() == "System"` |
 | Element type of `T[]`, `Span<T>`, `Memory<T>`, `ImmutableArray<T>` ... | `SymbolExtensions.TryGetArrayLikeElementType` | a switch over type names |

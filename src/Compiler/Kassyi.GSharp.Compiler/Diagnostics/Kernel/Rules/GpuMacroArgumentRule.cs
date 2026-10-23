@@ -208,7 +208,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
                 case IdentifierNameSyntax idName:
                     {
                         var symbol = context.SemanticModel.GetSymbol(idName);
-                        if (symbol is IParameterSymbol paramSymbol && paramSymbol.HasAttribute(KnownAttributes.Constant))
+                        if (symbol is IParameterSymbol paramSymbol && paramSymbol.IsConstantParameter())
                         {
                             return true;
                         }

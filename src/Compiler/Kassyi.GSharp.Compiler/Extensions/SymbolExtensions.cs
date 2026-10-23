@@ -250,6 +250,13 @@ internal static class SymbolExtensions
     }
 
     /// <summary>
+    /// Whether <paramref name="parameter"/> is a <c>[Constant]</c> parameter, which the launcher injects as a macro
+    /// (<c>#define</c>) instead of passing it as an argument.
+    /// </summary>
+    public static bool IsConstantParameter(this IParameterSymbol parameter) =>
+        parameter.HasAttribute(KnownAttributes.Constant);
+
+    /// <summary>
     /// Gets the first attribute matching the specified short name, or null if none found.
     /// </summary>
     public static AttributeData? GetAttribute(this ISymbol symbol, string shortName)

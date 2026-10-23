@@ -3,7 +3,7 @@
 Architectural constraints enforced by the GSharp generator pipeline. Abide by these when modifying transpiler/generator logic. For anything not listed, consult `docs/spec/` before assuming.
 
 ## 1. `[Constant]` Signature Exclusion
-`[Constant]` parameters exist only for runtime macro injection (`#define`). Exclude them from the generated `__global__ void` signature and host-side array marshaling. Filter with `p.HasAttribute(KnownAttributes.Constant)`.
+`[Constant]` parameters exist only for runtime macro injection (`#define`). Exclude them from the generated `__global__ void` signature and host-side array marshaling. Filter with `p.IsConstantParameter()` (`SymbolExtensions`), not `HasAttribute(KnownAttributes.Constant)` spelled out.
 
 ## 2. No Silent Failures (Strict Diagnostics)
 Unsupported C# syntax (`new`, `string`, LINQ, recursion, ...) must not be ignored, emitted as empty strings, or thrown as raw exceptions. Report via `context.ReportDiagnostic` with the matching `GSharpDiagnostics` (e.g. `GSH0001`, `GSH0003`). How to define and report one from an analyzer, the transpiler or a kernel validation rule: [helpers.md §5](../skills/gsharp-transpiler-guidelines/references/helpers.md#5-diagnostics).
