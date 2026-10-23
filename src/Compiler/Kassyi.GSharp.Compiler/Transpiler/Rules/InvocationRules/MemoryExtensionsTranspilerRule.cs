@@ -27,11 +27,16 @@ public sealed class MemoryExtensionsTranspilerRule : IInvocationTranspilerRule
             return false;
         }
 
-        // Register the required thrust include for this specific kernel
-        context.Emitter.RequiredIncludes.Add("<thrust/sort.h>");
-        context.Emitter.RequiredIncludes.Add("<thrust/execution_policy.h>");
-
-        context.Emitter.Writer.Append("thrust::sort(thrust::device, ");
+        if (context.Emitter.Dialect.HasThrustAlgorithms())
+        {
+            context.Emitter.RequiredIncludes.Add("<thrust/sort.h>");
+            context.Emitter.RequiredIncludes.Add("<thrust/execution_policy.h>");
+            context.Emitter.Writer.Append("thrust::sort(thrust::device, ");
+        }
+        else
+        {
+            context.Emitter.Writer.Append("std::sort(");
+        }
 
         context.Visitor.Visit(spanExpr);
         context.Emitter.Writer.Append(".begin(), ");

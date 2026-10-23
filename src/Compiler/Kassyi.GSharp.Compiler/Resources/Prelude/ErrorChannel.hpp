@@ -3,7 +3,8 @@ enum class GSharpErrorCode : int32_t {
     None = 0,
     NotSupported = 1,
     InvalidOperation = 2,
-    IndexOutOfRange = 3
+    IndexOutOfRange = 3,
+    ArgumentOutOfRange = 4
 };
 
 struct GSharpErrorSlot {
@@ -51,5 +52,16 @@ inline void __gsharp_unsupported(const char* message)
         __gsharp_active_error_slot->Report(GSharpErrorCode::NotSupported, message);
     } else {
         __gsharp_host_last_error.Report(GSharpErrorCode::NotSupported, message);
+    }
+}
+
+// Records a portable trap failure (e.g. empty sequence or out-of-range index in StackLinq).
+// First writer wins across OpenMP threads; the managed launch wrapper inspects the slot and throws.
+inline void __gsharp_trap(GSharpErrorCode code, const char* message)
+{
+    if (__gsharp_active_error_slot != nullptr) {
+        __gsharp_active_error_slot->Report(code, message);
+    } else {
+        __gsharp_host_last_error.Report(code, message);
     }
 }

@@ -7,8 +7,6 @@ namespace Kassyi.GSharp.Tests.Shared.Generators;
 [Category(TestCategory.Compiler)]
 public class CpuDialectPreludeTests
 {
-    private const string KnownBugSkipReason = "The CPU dialect emits CUDA-only library calls (#475)";
-
     private static string GeneratedText(string testCase, string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase(testCase);
@@ -16,7 +14,7 @@ public class CpuDialectPreludeTests
         return string.Join("\n", driver.GetRunResult().GeneratedTrees.Select(static t => t.GetText().ToString()));
     }
 
-    [Fact(Skip = KnownBugSkipReason)]
+    [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Test_CpuDialect_StackLinqCall_IsDeclaredByCpuPrelude()
     {
@@ -29,7 +27,7 @@ public class CpuDialectPreludeTests
         Assert.True(declared, "Cpu output calls Kassyi::ZeroAlloc::Linq::StackLinq::* but nothing includes StackLinq.cuh.");
     }
 
-    [Fact(Skip = KnownBugSkipReason)]
+    [Fact]
     [Scenario(TestScenario.SadPath)]
     public void Test_CpuDialect_MemoryExtensionsSort_DoesNotEmitThrustDevicePolicy()
     {

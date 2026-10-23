@@ -48,9 +48,14 @@ public enum DialectCapabilities
     HardwareThreadScheduling = 1 << 4,
 
     /// <summary>
-    /// Aggregates all standard GPU hardware features (warp intrinsics, atomics, shared memory, inline assembly, and hardware
-    /// thread scheduling).
+    /// Indicates that the dialect compiles against the CUDA Thrust library, so device-side range algorithms can be
+    /// emitted as <c>thrust::*(thrust::device, ...)</c> instead of portable <c>&lt;algorithm&gt;</c> equivalents.
     /// </summary>
-    AllGpuFeatures = WarpIntrinsics | HardwareAtomics | SharedMemory | InlineAssembly | HardwareThreadScheduling
-}
+    ThrustAlgorithms = 1 << 5,
 
+    /// <summary>
+    /// Aggregates all standard GPU hardware features (warp intrinsics, atomics, shared memory, inline assembly, hardware
+    /// thread scheduling, and Thrust algorithms).
+    /// </summary>
+    AllGpuFeatures = WarpIntrinsics | HardwareAtomics | SharedMemory | InlineAssembly | HardwareThreadScheduling | ThrustAlgorithms
+}

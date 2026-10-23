@@ -236,6 +236,16 @@ __forceinline__ __device__ int __gsharp_atomicAdd(int* address, int val) { retur
 __forceinline__ __device__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }
 __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
 
+// --- Runtime Error / Trap ---
+enum class GSharpErrorCode : int {
+None = 0,
+NotSupported = 1,
+InvalidOperation = 2,
+IndexOutOfRange = 3,
+ArgumentOutOfRange = 4
+};
+__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm(""trap;""); }
+
 // --- ZeroAlloc.Linq (StackLinq) ---
 #pragma once
 
@@ -312,10 +322,16 @@ TSource source;
 TSelector selector;
 int index;
 
-__device__ inline SelectAtEnumerator(TSource src, TSelector sel) : source(src), selector(sel), index(0) {}
+__device__ inline SelectAtEnumerator(TSource src, TSelector sel) : source(src), selector(sel), index(-1) {}
 
-__device__ inline bool MoveNext() { return source.MoveNext(); }
-__device__ inline auto Current() const { return selector(source.Current(), index++); }
+__device__ inline bool MoveNext() {
+if (source.MoveNext()) {
+index++;
+return true;
+}
+return false;
+}
+__device__ inline auto Current() const { return selector(source.Current(), index); }
 };
 
 template <typename TSource>
@@ -545,12 +561,14 @@ return false;
 
 template <typename TSource>
 __device__ static inline auto ElementAt(TSource source, int index) {
+if (index >= 0) {
 int count = 0;
 while (source.MoveNext()) {
 if (count == index) return source.Current();
 count++;
 }
-asm(""trap;"");
+}
+__gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, ""Index was out of range."");
 return decltype(source.Current())();
 }
 
@@ -567,7 +585,7 @@ return decltype(source.Current())();
 template <typename TSource>
 __device__ static inline auto First(TSource source) {
 if (source.MoveNext()) return source.Current();
-asm(""trap;"");
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 return decltype(source.Current())();
 }
 
@@ -576,7 +594,7 @@ __device__ static inline auto First(TSource source, TPredicate predicate) {
 while (source.MoveNext()) {
 if (predicate(source.Current())) return source.Current();
 }
-asm(""trap;"");
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no matching element"");
 return decltype(source.Current())();
 }
 
@@ -597,12 +615,12 @@ return decltype(source.Current())();
 template <typename TSource>
 __device__ static inline auto Single(TSource source) {
 if (!source.MoveNext()) {
-asm(""trap;"");
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 return decltype(source.Current())();
 }
 auto result = source.Current();
 if (source.MoveNext()) {
-asm(""trap;"");
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one element"");
 }
 return result;
 }
@@ -614,14 +632,15 @@ bool found = false;
 while (source.MoveNext()) {
 if (predicate(source.Current())) {
 if (found) {
-asm(""trap;"");
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one matching element"");
+return result;
 }
 result = source.Current();
 found = true;
 }
 }
 if (!found) {
-asm(""trap;"");
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no matching element"");
 }
 return result;
 }
@@ -631,7 +650,7 @@ __device__ static inline auto SingleOrDefault(TSource source) {
 if (!source.MoveNext()) return decltype(source.Current())();
 auto result = source.Current();
 if (source.MoveNext()) {
-asm(""trap;"");
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one element"");
 }
 return result;
 }
@@ -643,7 +662,8 @@ bool found = false;
 while (source.MoveNext()) {
 if (predicate(source.Current())) {
 if (found) {
-asm(""trap;"");
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains more than one matching element"");
+return result;
 }
 result = source.Current();
 found = true;
@@ -661,7 +681,7 @@ result = source.Current();
 found = true;
 }
 if (!found) {
-asm(""trap;"");
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
 }
 return result;
 }
@@ -684,6 +704,19 @@ sum += source.Current();
 return sum;
 }
 
+template <typename TSource, typename TFunc>
+__device__ static inline auto Aggregate(TSource source, TFunc func) {
+if (!source.MoveNext()) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+return decltype(source.Current())();
+}
+auto result = source.Current();
+while (source.MoveNext()) {
+result = func(result, source.Current());
+}
+return result;
+}
+
 template <typename TSource, typename TAccumulate, typename TFunc>
 __device__ static inline TAccumulate Aggregate(TSource source, TAccumulate seed, TFunc func) {
 TAccumulate result = seed;
@@ -695,7 +728,10 @@ return result;
 
 template <typename TSource>
 __device__ static inline auto Max(TSource source) {
-if (!source.MoveNext()) return decltype(source.Current())();
+if (!source.MoveNext()) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+return decltype(source.Current())();
+}
 auto max_val = source.Current();
 while (source.MoveNext()) {
 if (source.Current() > max_val) max_val = source.Current();
@@ -705,7 +741,10 @@ return max_val;
 
 template <typename TSource>
 __device__ static inline auto Min(TSource source) {
-if (!source.MoveNext()) return decltype(source.Current())();
+if (!source.MoveNext()) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+return decltype(source.Current())();
+}
 auto min_val = source.Current();
 while (source.MoveNext()) {
 if (source.Current() < min_val) min_val = source.Current();
@@ -721,11 +760,14 @@ while (source.MoveNext()) {
 sum += (double)source.Current();
 count++;
 }
-return count > 0 ? (sum / count) : 0;
+if (count == 0) {
+__gsharp_trap(GSharpErrorCode::InvalidOperation, ""Sequence contains no elements"");
+return 0.0;
+}
+return sum / count;
 }
 };
 }}}
-
 
 
 ";

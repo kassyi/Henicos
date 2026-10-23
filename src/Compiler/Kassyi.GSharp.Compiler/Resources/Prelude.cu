@@ -229,6 +229,15 @@ __forceinline__ __device__ int __gsharp_atomicAdd(int* address, int val) { retur
 __forceinline__ __device__ unsigned int __gsharp_atomicAdd(unsigned int* address, unsigned int val) { return atomicAdd(address, val) + val; }
 __forceinline__ __device__ unsigned long long __gsharp_atomicAdd(unsigned long long* address, unsigned long long val) { return atomicAdd(address, val) + val; }
 
+// --- Runtime Error / Trap ---
+enum class GSharpErrorCode : int {
+    None = 0,
+    NotSupported = 1,
+    InvalidOperation = 2,
+    IndexOutOfRange = 3,
+    ArgumentOutOfRange = 4
+};
+__device__ __forceinline__ void __gsharp_trap(GSharpErrorCode, const char*) { asm("trap;"); }
+
 // --- ZeroAlloc.Linq (StackLinq) ---
 #include "StackLinq.cuh"
-

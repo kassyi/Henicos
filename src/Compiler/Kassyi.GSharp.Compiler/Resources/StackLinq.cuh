@@ -73,10 +73,16 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         TSelector selector;
         int index;
         
-        __device__ inline SelectAtEnumerator(TSource src, TSelector sel) : source(src), selector(sel), index(0) {}
+        __device__ inline SelectAtEnumerator(TSource src, TSelector sel) : source(src), selector(sel), index(-1) {}
         
-        __device__ inline bool MoveNext() { return source.MoveNext(); }
-        __device__ inline auto Current() const { return selector(source.Current(), index++); }
+        __device__ inline bool MoveNext() {
+            if (source.MoveNext()) {
+                index++;
+                return true;
+            }
+            return false;
+        }
+        __device__ inline auto Current() const { return selector(source.Current(), index); }
     };
 
     template <typename TSource>
@@ -306,12 +312,14 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
         template <typename TSource>
         __device__ static inline auto ElementAt(TSource source, int index) {
-            int count = 0;
-            while (source.MoveNext()) {
-                if (count == index) return source.Current();
-                count++;
+            if (index >= 0) {
+                int count = 0;
+                while (source.MoveNext()) {
+                    if (count == index) return source.Current();
+                    count++;
+                }
             }
-            asm("trap;");
+            __gsharp_trap(GSharpErrorCode::ArgumentOutOfRange, "Index was out of range.");
             return decltype(source.Current())();
         }
 
@@ -328,7 +336,7 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         template <typename TSource>
         __device__ static inline auto First(TSource source) {
             if (source.MoveNext()) return source.Current();
-            asm("trap;");
+            __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
             return decltype(source.Current())();
         }
 
@@ -337,7 +345,7 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             while (source.MoveNext()) {
                 if (predicate(source.Current())) return source.Current();
             }
-            asm("trap;");
+            __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no matching element");
             return decltype(source.Current())();
         }
 
@@ -358,12 +366,12 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
         template <typename TSource>
         __device__ static inline auto Single(TSource source) {
             if (!source.MoveNext()) {
-                asm("trap;");
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
                 return decltype(source.Current())();
             }
             auto result = source.Current();
             if (source.MoveNext()) {
-                asm("trap;");
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one element");
             }
             return result;
         }
@@ -375,14 +383,15 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             while (source.MoveNext()) {
                 if (predicate(source.Current())) {
                     if (found) {
-                        asm("trap;");
+                        __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one matching element");
+                        return result;
                     }
                     result = source.Current();
                     found = true;
                 }
             }
             if (!found) {
-                asm("trap;");
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no matching element");
             }
             return result;
         }
@@ -392,7 +401,7 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             if (!source.MoveNext()) return decltype(source.Current())();
             auto result = source.Current();
             if (source.MoveNext()) {
-                asm("trap;");
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one element");
             }
             return result;
         }
@@ -404,7 +413,8 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             while (source.MoveNext()) {
                 if (predicate(source.Current())) {
                     if (found) {
-                        asm("trap;");
+                        __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains more than one matching element");
+                        return result;
                     }
                     result = source.Current();
                     found = true;
@@ -422,7 +432,7 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 found = true;
             }
             if (!found) {
-                asm("trap;");
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
             }
             return result;
         }
@@ -445,6 +455,19 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
             return sum;
         }
 
+        template <typename TSource, typename TFunc>
+        __device__ static inline auto Aggregate(TSource source, TFunc func) {
+            if (!source.MoveNext()) {
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                return decltype(source.Current())();
+            }
+            auto result = source.Current();
+            while (source.MoveNext()) {
+                result = func(result, source.Current());
+            }
+            return result;
+        }
+
         template <typename TSource, typename TAccumulate, typename TFunc>
         __device__ static inline TAccumulate Aggregate(TSource source, TAccumulate seed, TFunc func) {
             TAccumulate result = seed;
@@ -456,7 +479,10 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
         template <typename TSource>
         __device__ static inline auto Max(TSource source) {
-            if (!source.MoveNext()) return decltype(source.Current())();
+            if (!source.MoveNext()) {
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                return decltype(source.Current())();
+            }
             auto max_val = source.Current();
             while (source.MoveNext()) {
                 if (source.Current() > max_val) max_val = source.Current();
@@ -466,7 +492,10 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
 
         template <typename TSource>
         __device__ static inline auto Min(TSource source) {
-            if (!source.MoveNext()) return decltype(source.Current())();
+            if (!source.MoveNext()) {
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                return decltype(source.Current())();
+            }
             auto min_val = source.Current();
             while (source.MoveNext()) {
                 if (source.Current() < min_val) min_val = source.Current();
@@ -482,7 +511,11 @@ namespace Kassyi { namespace ZeroAlloc { namespace Linq {
                 sum += (double)source.Current();
                 count++;
             }
-            return count > 0 ? (sum / count) : 0;
+            if (count == 0) {
+                __gsharp_trap(GSharpErrorCode::InvalidOperation, "Sequence contains no elements");
+                return 0.0;
+            }
+            return sum / count;
         }
     };
 }}}

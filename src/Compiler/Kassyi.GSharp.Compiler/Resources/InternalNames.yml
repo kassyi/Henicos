@@ -100,6 +100,7 @@ Prelude:
     HostLastError: { Value: __gsharp_host_last_error, Prelude: ErrorChannel.hpp }
     ActiveErrorSlot: { Value: __gsharp_active_error_slot, Prelude: ErrorChannel.hpp }
     Unsupported: { Value: __gsharp_unsupported, Prelude: ErrorChannel.hpp }
+    Trap: { Value: __gsharp_trap, Prelude: ErrorChannel.hpp }
     ConsumeLastError: { Value: __gsharp_consume_last_error, Prelude: ErrorChannel.hpp }
     SetThreadIndex: { Value: __gsharp_set_thread_idx, Prelude: ThreadAndMemory.hpp }
     DynamicSharedMemory: { Value: __gsharp_dynamic_smem, Prelude: ThreadAndMemory.hpp }
