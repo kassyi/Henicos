@@ -32,6 +32,20 @@ public class NativeModuleAssemblyTests
         Assert.Contains("#include <thrust/sort.h>", aotSource);
     }
 
+    // A line break in a reason (a message argument) would end the directive and leave the rest as C++ code
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_TranspileFailureWithLineBreaks_StaysOnOneErrorLine()
+    {
+        var source = Kassyi.GSharp.Compiler.Aot.NativeModuleAssembler.FormatTranspileFailures(
+            ["k.cs(1,2): GSH0003: first\r\nsecond\nthird \"quoted\" C:\\dir", "k.cs(3,4): GSH0001: other"]);
+
+        Assert.Equal(
+            "#error \"k.cs(1,2): GSH0003: first  second third \\\"quoted\\\" C:\\\\dir\"" + Environment.NewLine +
+            "#error \"k.cs(3,4): GSH0001: other\"" + Environment.NewLine,
+            source);
+    }
+
     [Fact]
     [Scenario(TestScenario.HappyPath)]
     public void Test_CpuDialect_EmitsCalleeBodyBeforeEmbeddingCaller()

@@ -98,7 +98,8 @@ internal static class NativeModuleAssembler
 
     /// <summary>
     /// The source that stands for a method that a dialect could not transpile: one <c>#error</c> per reason
-    /// (<see cref="TranspileFailure.Format"/>).
+    /// (<see cref="TranspileFailure.Format"/>). A line break in a reason (from a message argument) becomes a space, so that
+    /// each reason stays on its own directive line.
     /// </summary>
     public static string FormatTranspileFailures(IReadOnlyList<string> reasons)
     {
@@ -108,6 +109,12 @@ internal static class NativeModuleAssembler
             writer.Append("#error \"");
             foreach (var c in reason)
             {
+                if (c is '\r' or '\n')
+                {
+                    writer.Append(' ');
+                    continue;
+                }
+
                 writer.AppendIf(c is '\\' or '"', "\\");
                 writer.Append(c);
             }
