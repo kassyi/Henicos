@@ -64,6 +64,7 @@ public static class KernelDiagnostics
     public static ImmutableArray<DiagnosticAnalyzer> Analyzers { get; } =
     [
         new GpuKernelAnalyzer(),
+        new KernelClassAnalyzer(),
         new BarrierUsageAnalyzer(),
         new ParallelDependentCallAnalyzer()
     ];

@@ -77,16 +77,16 @@
 ## Generator/DialectDiagnostics.cu.cs
 
 ## Generator/AotContextName_Namespaces.cs
-(4,30)-(4,34) GSH0058 generator: The structs 'global::N1.Pair' and 'global::N2.Pair' both map to 'AotContexts.Pair' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
+(4,30)-(4,34) GSH0058 analyzer: The structs 'global::N1.Pair' and 'global::N2.Pair' both map to 'AotContexts.Pair' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
 
 ## Generator/AotContextName_ContextSuffix.cs
-(7,19)-(7,22) GSH0058 generator: The structs 'global::AotNameTest.FooContext' and 'global::AotNameTest.Foo' both map to 'AotContexts.Foo' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
+(7,19)-(7,22) GSH0058 analyzer: The structs 'global::AotNameTest.FooContext' and 'global::AotNameTest.Foo' both map to 'AotContexts.Foo' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
 
 ## Generator/AotContextName_GenericConstructions.cs
-(5,19)-(5,22) GSH0058 generator: The structs 'global::AotNameTest.Box<global::System.Int32>' and 'global::AotNameTest.Box<global::System.Int64>' both map to 'AotContexts.Box' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
+(5,19)-(5,22) GSH0058 analyzer: The structs 'global::AotNameTest.Box<global::System.Int32>' and 'global::AotNameTest.Box<global::System.Int64>' both map to 'AotContexts.Box' in 'K'. Rename one of the structs; AotContexts drops a trailing 'Context', namespaces and type arguments.
 
 ## Generator/KernelOverload_Indistinguishable.cu.cs
-(12,28)-(12,31) GSH0059 generator: The [GpuKernel] overloads 'Run(global::System.Int32[])' and 'Run(ref global::System.Int32)' produce the same LaunchRunPtr launch wrapper signature. Rename one of the kernels.
+(12,28)-(12,31) GSH0059 analyzer: The [GpuKernel] overloads 'Run(global::System.Int32[])' and 'Run(ref global::System.Int32)' produce the same LaunchRunPtr launch wrapper signature. Rename one of the kernels.
 (12,32)-(12,45) GSH0044 analyzer: The parameter 'value' uses a prohibited modifier (ref/out/in) or type (ref struct). These cannot be saved to the state machine context across barriers.
 
 ## Analyzers/StaticMemberAccess_SadPath.cs

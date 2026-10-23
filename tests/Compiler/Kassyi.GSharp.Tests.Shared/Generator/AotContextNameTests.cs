@@ -9,23 +9,28 @@ namespace Kassyi.GSharp.Tests.Shared.Generator;
 [Category(TestCategory.Compiler)]
 public class AotContextNameTests
 {
-    // The sources are test cases that must not build with the test project, so they are read from TestCases.
+    // The sources are test cases that must not build with the test project, so they are read from TestCases. The
+    // analyzer reports the second struct at its declaration; the generator reports nothing.
     [Theory]
     [Scenario(TestScenario.SadPath)]
-    [InlineData("AotContextName_Namespaces.cs", "Cpu")]
-    [InlineData("AotContextName_Namespaces.cs", "Cuda")]
-    [InlineData("AotContextName_ContextSuffix.cs", "Cpu")]
-    [InlineData("AotContextName_ContextSuffix.cs", "Cuda")]
-    [InlineData("AotContextName_GenericConstructions.cs", "Cpu")]
-    [InlineData("AotContextName_GenericConstructions.cs", "Cuda")]
-    public void Test_StructsWithSameName_ReportGsh0060(string file, string dialect)
+    [InlineData("AotContextName_Namespaces.cs", "Cpu", 4, 30, 4, 34)]
+    [InlineData("AotContextName_Namespaces.cs", "Cuda", 4, 30, 4, 34)]
+    [InlineData("AotContextName_ContextSuffix.cs", "Cpu", 7, 19, 7, 22)]
+    [InlineData("AotContextName_ContextSuffix.cs", "Cuda", 7, 19, 7, 22)]
+    [InlineData("AotContextName_GenericConstructions.cs", "Cpu", 5, 19, 5, 22)]
+    [InlineData("AotContextName_GenericConstructions.cs", "Cuda", 5, 19, 5, 22)]
+    public async Task Test_StructsWithSameName_ReportGsh0058(string file, string dialect, int startLine, int startColumn,
+        int endLine, int endColumn)
     {
-        var source = File.ReadAllText(Path.Combine(RoslynTestUtility.GetTestCasesDirectory(), "Generator", file));
+        var source = RoslynTestUtility.ReadTestCase(Path.Combine("Generator", file));
 
-        var (_, output, diagnostics) = RoslynTestUtility.RunGenerator(source, dialect);
+        var diagnostics = await KernelDiagnostics.RunAsync(source, dialect);
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, startLine, startColumn, endLine, endColumn)],
+            diagnostics.Ranges(GSharpDiagnostics.DuplicateAotContextName.Id));
 
-        diagnostics.AssertContains(GSharpDiagnostics.DuplicateAotContextName);
         // The second struct gets no helper, so the generated code does not add CS0102 on top of the report.
+        var (_, output, _) = RoslynTestUtility.RunGenerator(source, dialect);
         Assert.DoesNotContain(output.GetDiagnostics(), d => d.Id == "CS0102");
     }
 

@@ -43,11 +43,15 @@ public class KernelOverloadTests
     [Scenario(TestScenario.SadPath)]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
-    public void Test_IndistinguishableOverloads_ReportGsh0061(string dialect)
+    public async Task Test_IndistinguishableOverloads_ReportGsh0059(string dialect)
     {
-        var (_, output, diagnostics) = RoslynTestUtility.RunGenerator(s_indistinguishableKernels, dialect);
+        // The analyzer reports the later overload at its name; the generator reports nothing
+        var diagnostics = await KernelDiagnostics.RunAsync(s_indistinguishableKernels, dialect);
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, 12, 28, 12, 31)],
+            diagnostics.Ranges(GSharpDiagnostics.IndistinguishableKernelOverloads.Id));
 
-        diagnostics.AssertContains(GSharpDiagnostics.IndistinguishableKernelOverloads);
+        var (_, output, _) = RoslynTestUtility.RunGenerator(s_indistinguishableKernels, dialect);
         // The reported overload gets no wrappers, so the generated code itself stays valid.
         Assert.DoesNotContain(output.GetDiagnostics(), d => d.Severity == DiagnosticSeverity.Error);
     }
