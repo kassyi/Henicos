@@ -58,7 +58,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
 
         TranspilerFailureCheck.AddFailures(methodDeclaration, methodSymbol, context.SemanticModel, diagnostics);
 
-        // A rule and the transpiler, or the two dialects, find the same construct: one diagnostic per ID and location
+        // A rule and the transpiler, or the signature and the body, find the same construct: one diagnostic per ID and location
         var reported = new HashSet<(string Id, Location Location)>();
         diagnostics
             .AsStackEnumerable()

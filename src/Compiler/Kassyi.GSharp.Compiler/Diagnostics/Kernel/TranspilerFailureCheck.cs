@@ -1,8 +1,8 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>
-/// Runs the transpiler on a kernel or device function as <see cref="GpuKernelGenerator"/> does, for both dialects, and
-/// turns what it could not emit (<see cref="TranspileFailure"/>) into diagnostics.
+/// Runs the transpiler on a kernel or device function as <see cref="GpuKernelGenerator"/> does, for the CUDA dialect on
+/// the user's own tree, and turns what it could not emit (<see cref="TranspileFailure"/>) into diagnostics.
 /// </summary>
 /// <remarks>
 /// [WHY] The same approach as the LibraryImport analyzer of dotnet/runtime, which runs the stub generator and keeps only its
@@ -10,14 +10,17 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// handles, including one that a newer C# adds, reaches <see cref="RoslynToCudaVisitor.DefaultVisit"/> and is reported as
 /// GSH0003 without a list of rejected kinds; a check that depends on the context or the type is decided as the transpiler
 /// decides it. The output is dropped.
+/// <para>
+/// Only the CUDA dialect runs: it transpiles the user's tree, so the plan is never lowered, which keeps the analyzer within
+/// the generator's time. A failure that only the C++ dialect's lowered tree has is stated by the generator as
+/// <c>#error</c> in the C++ output, and KernelDiagnosticsLeakTests checks that no such failure exists today.
+/// </para>
 /// </remarks>
 internal static class TranspilerFailureCheck
 {
     private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
 
-    private static readonly ITranspilerDialect s_cppDialect = new StandardCppDialect();
-
-    /// <summary>Adds a diagnostic for each failure of the transpilations that the generator runs for <paramref name="method"/>.</summary>
+    /// <summary>Adds a diagnostic for each failure of the CUDA transpilation that the generator runs for <paramref name="method"/>.</summary>
     public static void AddFailures(MethodDeclarationSyntax declaration, IMethodSymbol method, SemanticModel semanticModel,
         ImmutableArray<Diagnostic>.Builder diagnostics)
     {
@@ -27,16 +30,13 @@ internal static class TranspilerFailureCheck
         {
             var plan = MethodEmissionPlan.Create(declaration, semanticModel, isKernel: true);
             MethodTranspiler.GenerateCudaSource(in plan, sink.Add, s_cudaDialect, out _);
-            MethodTranspiler.GenerateCudaSource(in plan, sink.Add, s_cppDialect, out _);
         }
 
         if (method.HasAttribute(KnownAttributes.GpuDeviceFunction))
         {
             var plan = MethodEmissionPlan.Create(declaration, semanticModel, isKernel: false);
             MethodTranspiler.GenerateCudaSignature(in plan, sink.Add, s_cudaDialect);
-            MethodTranspiler.GenerateCudaSignature(in plan, sink.Add, s_cppDialect);
             MethodTranspiler.GenerateCudaSource(in plan, sink.Add, s_cudaDialect, out _);
-            MethodTranspiler.GenerateCudaSource(in plan, sink.Add, s_cppDialect, out _);
         }
     }
 

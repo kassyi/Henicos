@@ -20,22 +20,35 @@ internal enum MethodEmissionKind
 /// The classification and the lowered state machine of one method, shared by the CUDA, CPU C++ and managed C# outputs.
 /// </summary>
 /// <remarks>
-/// <see cref="Create"/> is the only place that decides whether a device function suspends and the only place that lowers a
-/// method, so every output sees the same decision and the method is lowered at most once. A plan lives within one
-/// generator transform; it is not part of the incremental pipeline models.
+/// <see cref="Create"/> is the only place that decides whether a device function suspends and the only place that decides
+/// to lower a method, so every output sees the same decision and the method is lowered at most once. The lowering runs
+/// when an output first needs the state machine, so a caller that emits only for hardware threads (the analyzer,
+/// <see cref="TranspilerFailureCheck"/>) never lowers. A plan lives within one generator transform or analyzer callback; it
+/// is not part of the incremental pipeline models.
 /// </remarks>
 internal readonly struct MethodEmissionPlan
 {
+    private readonly DeferredLowering? _lowering;
+
     private MethodEmissionPlan(MethodDeclarationSyntax declaration, SemanticModel semanticModel, MethodEmissionKind kind,
-        IMethodSymbol? symbol, LoweredStateMachine? lowered, bool isGpuKernelEntry, bool hasAutoResult)
+        IMethodSymbol? symbol, DeferredLowering? lowering, bool isGpuKernelEntry, bool hasAutoResult)
     {
         Declaration = declaration;
         SemanticModel = semanticModel;
         Kind = kind;
         Symbol = symbol;
-        Lowered = lowered;
+        _lowering = lowering;
         IsGpuKernelEntry = isGpuKernelEntry;
         HasAutoResult = hasAutoResult;
+    }
+
+    // Shared by the copies of the plan (it is passed by value), so the method is lowered once
+    private sealed class DeferredLowering(MethodDeclarationSyntax declaration, SemanticModel semanticModel,
+        IMethodSymbol? deviceFunction)
+    {
+        private LoweredStateMachine? _lowered;
+
+        public LoweredStateMachine Value => _lowered ??= AstLoweringPipeline.Lower(declaration, semanticModel, deviceFunction);
     }
 
     public MethodDeclarationSyntax Declaration { get; }
@@ -49,9 +62,10 @@ internal readonly struct MethodEmissionPlan
 
     /// <summary>
     /// The state machine of a kernel with a body, or of a <see cref="MethodEmissionKind.SuspendingDeviceFunction"/>;
-    /// <see langword="null"/> otherwise. The dialects with hardware threads do not use it.
+    /// <see langword="null"/> otherwise. The dialects with hardware threads do not use it. Reading it lowers the method the
+    /// first time.
     /// </summary>
-    public LoweredStateMachine? Lowered { get; }
+    public LoweredStateMachine? Lowered => _lowering?.Value;
 
     /// <summary>The method has <c>[GpuKernel]</c>.</summary>
     public bool IsGpuKernelEntry { get; }
@@ -124,10 +138,10 @@ internal readonly struct MethodEmissionPlan
 
         if (isKernel)
         {
-            var kernelLowered = isGpuKernelEntry && declaration.HasBody()
-                ? AstLoweringPipeline.Lower(declaration, semanticModel)
+            var kernelLowering = isGpuKernelEntry && declaration.HasBody()
+                ? new DeferredLowering(declaration, semanticModel, deviceFunction: null)
                 : null;
-            return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.Kernel, symbol, kernelLowered,
+            return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.Kernel, symbol, kernelLowering,
                 isGpuKernelEntry, hasAutoResult);
         }
 
@@ -138,8 +152,7 @@ internal readonly struct MethodEmissionPlan
                 isGpuKernelEntry, hasAutoResult);
         }
 
-        var lowered = AstLoweringPipeline.Lower(declaration, semanticModel, symbol);
         return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.SuspendingDeviceFunction, symbol,
-            lowered, isGpuKernelEntry, hasAutoResult);
+            new DeferredLowering(declaration, semanticModel, symbol), isGpuKernelEntry, hasAutoResult);
     }
 }
