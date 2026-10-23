@@ -65,6 +65,8 @@ Intrinsics:
   System.Math.Floor(double): "floor"
   System.Math.Ceiling(double): "ceil"
   System.Math.Pow(double, double): "pow"
+  System.Math.Round(double): "rint"
   System.MathF.Floor(float): "floorf"
   System.MathF.Ceiling(float): "ceilf"
   System.MathF.Pow(float, float): "powf"
+  System.MathF.Round(float): "rintf"

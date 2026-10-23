@@ -82,10 +82,12 @@ _(Note: These functions adhere to IEEE-754 precision. For raw, uncompromised spe
 | `Math.Sin` / `MathF.Sin` | `sinf` | `sin` |
 | `Math.Cos` / `MathF.Cos` | `cosf` | `cos` |
 | `Math.Tan` / `MathF.Tan` | `tanf` | `tan` |
-| `Math.Round` / `MathF.Round` | `roundf` | `round` |
+| `Math.Round(double)` / `MathF.Round(float)` | `rintf` | `rint` |
 | `Math.Ceiling` / `MathF.Ceiling` | `ceilf` | `ceil` |
 | `Math.Floor` / `MathF.Floor` | `floorf` | `floor` |
 | `Math.Pow` / `MathF.Pow` | `powf` | `pow` |
+
+`Math.Round` and `MathF.Round` round half to even, like the C# default (`Math.Round(2.5)` is `2`). They map to `rint` / `rintf`, not to `round`, which rounds half away from zero. Only the single-argument `double` and `float` overloads are supported. The overloads with a digits argument or a `MidpointRounding` argument, and `decimal`, are reported as `GSH0003`.
 
 ## See also
 

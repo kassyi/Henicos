@@ -68,4 +68,35 @@ public class MathFloorCeilingTests : TranspilerTestBase
             Assert.Equal(MathF.Pow(floatBases[i], floatExponents[i]), floatResults[i], precision: 4);
         }
     }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.Boundary)]
+    public void Round_RoundsHalfToEvenLikeCSharp()
+    {
+        // halfway cases of both parities and signs, values off the halfway, zero, and a value near 2^50 plus a half
+        double[] values = [0.5, 1.5, 2.5, 3.5, -0.5, -1.5, -2.5, 2.4, 2.6, -2.6, 0.0, 1e15 + 0.5];
+        int n = values.Length;
+        float[] floatInputs = new float[n];
+        for (int i = 0; i < n; i++)
+        {
+            floatInputs[i] = (float)values[i];
+        }
+
+        double[] doubleResults = new double[n];
+        float[] floatResults = new float[n];
+
+        MathFloorCeilingKernels.LaunchRoundKernel(values, doubleResults, floatInputs, floatResults, blockDimX: (uint)n);
+
+        for (int i = 0; i < n; i++)
+        {
+            Assert.Equal(Math.Round(values[i]), doubleResults[i]);
+            Assert.Equal(MathF.Round(floatInputs[i]), floatResults[i]);
+        }
+
+        // 2.5 must give 2 (half to even), not 3 (half away from zero)
+        Assert.Equal(2.0, doubleResults[2]);
+        Assert.Equal(2.0f, floatResults[2]);
+    }
 }

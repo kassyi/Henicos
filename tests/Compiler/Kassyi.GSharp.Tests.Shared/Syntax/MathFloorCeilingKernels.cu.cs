@@ -25,4 +25,13 @@ public static partial class MathFloorCeilingKernels
         doubleResults[tid] = Math.Pow(doubleBases[tid], doubleExponents[tid]);
         floatResults[tid] = MathF.Pow(floatBases[tid], floatExponents[tid]);
     }
+
+    [GpuKernel]
+    public static void RoundKernel(
+        double[] doubleInputs, double[] doubleResults, float[] floatInputs, float[] floatResults)
+    {
+        int tid = ThreadIndex.X;
+        doubleResults[tid] = Math.Round(doubleInputs[tid]);
+        floatResults[tid] = MathF.Round(floatInputs[tid]);
+    }
 }
