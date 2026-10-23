@@ -404,7 +404,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
-        var contextSource = WrapperEmitter.GenerateModuleContextClass(assemblyName, distinctKernelMethods);
+        var contextSource = CudaHostLaunchEmitter.GenerateModuleContextClass(assemblyName, distinctKernelMethods);
         context.AddSource($"{AotHostNames.GetModuleContextName(assemblyName)}.g.cs",
             SourceText.From(contextSource, Encoding.UTF8));
     }
