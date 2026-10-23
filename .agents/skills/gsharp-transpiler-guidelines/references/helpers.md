@@ -36,6 +36,12 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 Type and namespace names: `TypeConstants` (`TypeConstants.GpuType`, `TypeConstants.GpuMacros`). Attribute short names:
 `KnownAttributes`. Never spell `"Gpu"`, `"SharedMemory"` or an attribute name as a literal.
 
+A name alone also matches a user type of the same name. The repository-internal analyzer HNT0003
+(`TypeNameCheckAnalyzer` in `tests/Shared/Kassyi.GSharp.Tests.Generators`, run on the compiler build) warns when a
+`TypeConstants` type name or a `KnownAttributes` name is compared with a symbol's `Name` and the same member never
+looks at a namespace (`ContainingNamespace`, `IsCoreNamespace`, `IsSystem*`, `HasAttribute` ...). When a caller already
+checked the namespace, suppress it with `#pragma warning disable HNT0003 // <the caller that checks>`.
+
 ## 2. Semantic model and syntax
 
 | Intent | Use | Do not write |

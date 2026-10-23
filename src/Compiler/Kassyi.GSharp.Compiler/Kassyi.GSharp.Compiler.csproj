@@ -47,6 +47,8 @@
     <ProjectReference Include="..\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" ReferenceOutputAssembly="false" />
     <!-- Builds StackLinq first, which exports its netstandard2.0 sources for IncludeEmbeddedStackLinq -->
     <ProjectReference Include="..\..\ZeroAlloc\Kassyi.ZeroAlloc.Linq\Kassyi.ZeroAlloc.Linq.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" ExcludeAssets="all" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
+    <!-- Repository-internal analyzers (HNT0003: a type matched by name without its namespace); not packed -->
+    <ProjectReference Include="..\..\..\tests\Shared\Kassyi.GSharp.Tests.Generators\Kassyi.GSharp.Tests.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

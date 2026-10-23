@@ -142,6 +142,7 @@ internal readonly struct KernelParameterShape
     }
 
     // Only reached for an array-like type, which TryGetArrayLikeElementType has already checked by namespace
+#pragma warning disable HNT0003 // The namespace check is in TryGetArrayLikeElementType, the caller's guard
     private static ArrayContainerKind GetContainer(ITypeSymbol arrayLike) => arrayLike switch
     {
         IArrayTypeSymbol => ArrayContainerKind.Array,
@@ -153,4 +154,5 @@ internal readonly struct KernelParameterShape
         { Name: "ImmutableArray" } => ArrayContainerKind.ImmutableArray,
         _ => throw new InvalidOperationException($"'{arrayLike.Name}' is not an array-like type.")
     };
+#pragma warning restore HNT0003
 }
