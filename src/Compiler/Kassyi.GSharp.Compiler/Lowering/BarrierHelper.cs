@@ -32,8 +32,7 @@ internal static class BarrierHelper
             return true;
         }
 
-        return (className == TypeConstants.WarpType && name.StartsWith("Shuffle")) ||
-               (className == TypeConstants.GpuType && name.StartsWith(TypeConstants.WarpType));
+        return IsWarpShuffle(inv);
     }
 
     /// <summary>Determines whether the specified invocation is a block barrier (<c>Gpu.SyncThreads()</c> or <c>Gpu.SyncGrid()</c>).</summary>
@@ -65,24 +64,36 @@ internal static class BarrierHelper
         return false;
     }
 
-    /// <summary>Determines whether the specified invocation represents a warp shuffle operation.</summary>
-    public static bool IsWarpShuffle(InvocationExpressionSyntax inv)
-    {
-        var name = "";
-        var className = "";
-        switch (inv.Expression)
-        {
-            case MemberAccessExpressionSyntax ma:
-                name = ma.Name.Identifier.ValueText;
-                className = (ma.Expression as IdentifierNameSyntax)?.Identifier.ValueText ?? "";
-                break;
-            case IdentifierNameSyntax id:
-                name = id.Identifier.ValueText;
-                break;
-        }
+    /// <summary>
+    /// Determines whether the specified invocation is a warp shuffle (<c>Warp.ShuffleSync</c>, <c>ShuffleDownSync</c>,
+    /// <c>ShuffleUpSync</c> or <c>ShuffleXorSync</c>).
+    /// </summary>
+    /// <remarks>
+    /// Other <c>Warp</c> / <c>Gpu</c> members (<c>Gpu.WarpId()</c>, <c>Gpu.LaneId()</c>) are plain intrinsics and do not
+    /// split the state machine.
+    /// </remarks>
+    public static bool IsWarpShuffle(InvocationExpressionSyntax inv) => TryGetWarpShuffleRead(inv, out _);
 
-        return (className == TypeConstants.WarpType && name.StartsWith("Shuffle")) ||
-               (className == TypeConstants.GpuType && name.StartsWith(TypeConstants.WarpType));
+    /// <summary>
+    /// Gets the Prelude function that reads the result of a warp shuffle after the state machine resumes
+    /// (<c>__gsharp_warp_shuffle_read_down_sync</c> for <c>Warp.ShuffleDownSync</c>, ...).
+    /// </summary>
+    public static bool TryGetWarpShuffleRead(InvocationExpressionSyntax inv, [NotNullWhen(true)] out string? readFunction)
+    {
+        readFunction = inv.Expression is MemberAccessExpressionSyntax
+        {
+            Expression: IdentifierNameSyntax { Identifier.ValueText: TypeConstants.WarpType }
+        } ma
+            ? ma.Name.Identifier.ValueText switch
+            {
+                "ShuffleSync" => GSharpInternalNames.Prelude.WarpShuffleReadSync,
+                "ShuffleDownSync" => GSharpInternalNames.Prelude.WarpShuffleReadDownSync,
+                "ShuffleUpSync" => GSharpInternalNames.Prelude.WarpShuffleReadUpSync,
+                "ShuffleXorSync" => GSharpInternalNames.Prelude.WarpShuffleReadXorSync,
+                _ => null
+            }
+            : null;
+        return readFunction is not null;
     }
 
     /// <summary>Extracts the phase barrier invocation expression from a statement if present.</summary>

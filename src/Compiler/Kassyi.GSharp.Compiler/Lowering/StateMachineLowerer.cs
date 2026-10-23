@@ -7,8 +7,6 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// </param>
 public class StateMachineLowerer(bool isDeviceFunction = false)
 {
-    private const string WarpShuffleRead = "__gsharp_warp_shuffle_read";
-
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
 
@@ -65,7 +63,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
                     commitState(state + 1, isBarrier: false);
                     currentCaseStatements.Add(CreateResumeStatement(stmt, barrierInv, state));
                 }
-                else if (BarrierHelper.IsWarpShuffle(barrierInv))
+                else if (BarrierHelper.TryGetWarpShuffleRead(barrierInv, out var readFunction))
                 {
                     // 1. Publish val to the context's warp exchange slot (__gsharp_warp_exchange_assign(val))
                     var valArg = barrierInv.ArgumentList.Arguments[1].Expression;
@@ -84,7 +82,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
                     commitState(state + 1, isBarrier: true);
 
                     // 3. Rewrite original Warp.ShuffleXXX(...) to __gsharp_warp_shuffle_read_XXX(...)
-                    var readStmt = RewriteWarpShuffleRead(stmt, barrierInv);
+                    var readStmt = RewriteWarpShuffleRead(stmt, barrierInv, readFunction);
                     currentCaseStatements.Add(RewriteGoto(readStmt, labelStates));
                 }
                 else
@@ -254,19 +252,9 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
         );
     }
 
-    private static StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv)
+    private static StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv,
+        string readFunction)
     {
-        var methodName = (barrierInv.Expression as MemberAccessExpressionSyntax)?.Name.Identifier.ValueText ??
-                         "ShuffleDownSync";
-        var readMethodName = methodName switch
-        {
-            "ShuffleDownSync" => GSharpInternalNames.Prelude.WarpShuffleReadDownSync,
-            "ShuffleUpSync" => GSharpInternalNames.Prelude.WarpShuffleReadUpSync,
-            "ShuffleXorSync" => GSharpInternalNames.Prelude.WarpShuffleReadXorSync,
-            "ShuffleSync" => GSharpInternalNames.Prelude.WarpShuffleReadSync,
-            _ => WarpShuffleRead
-        };
-
         var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>();
         // Arguments are: context, mask, val, delta, width [optional]
         // The root context owns the warp exchange, also when the shuffle is in a device function
@@ -282,7 +270,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
 
         // __gsharp_warp_shuffle_read_<kind>(__gsharp_root, mask, val, delta[, width])
         var rewrittenInv = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.IdentifierName(readMethodName),
+            SyntaxFactory.IdentifierName(readFunction),
             SyntaxFactory.ArgumentList(newArgs)
         );
 
