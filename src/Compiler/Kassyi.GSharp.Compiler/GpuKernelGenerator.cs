@@ -1,5 +1,4 @@
 using Kassyi.GSharp.Compiler.Models;
-using Kassyi.GSharp.Naming;
 
 namespace Kassyi.GSharp.Compiler;
 

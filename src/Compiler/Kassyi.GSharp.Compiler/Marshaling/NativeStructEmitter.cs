@@ -1,7 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-using Kassyi.GSharp.Compiler.Layout;
-
 /// <summary>Emits explicit layout shadow structs representing C# structs in native CUDA memory.</summary>
 internal static class NativeStructEmitter
 {

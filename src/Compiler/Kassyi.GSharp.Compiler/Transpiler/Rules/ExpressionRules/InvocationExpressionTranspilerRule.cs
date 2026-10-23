@@ -1,4 +1,3 @@
-using System.Globalization;
 
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 

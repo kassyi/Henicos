@@ -1,7 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-using Kassyi.GSharp.Compiler.Layout;
-
 /// <summary>Emits custom struct marshal and unmarshal helper methods between managed and native shadow representations.</summary>
 internal static class StructMarshalingEmitter
 {

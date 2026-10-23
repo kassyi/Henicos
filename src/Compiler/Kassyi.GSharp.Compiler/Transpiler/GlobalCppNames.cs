@@ -1,6 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using Kassyi.GSharp.Naming;
 
 namespace Kassyi.GSharp.Compiler.Transpiler;
 

@@ -29,3 +29,6 @@ global using Microsoft.CodeAnalysis.Diagnostics;
 global using Microsoft.CodeAnalysis.Text;
 global using Kassyi.GSharp.Compiler.Lowering;
 global using Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
+global using System.Globalization;
+global using Kassyi.GSharp.Compiler.Layout;
+global using Kassyi.GSharp.Naming;

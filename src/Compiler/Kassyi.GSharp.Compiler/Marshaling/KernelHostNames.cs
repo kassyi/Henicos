@@ -1,8 +1,5 @@
-using System.Globalization;
 
 namespace Kassyi.GSharp.Compiler.Marshaling;
-
-using Kassyi.GSharp.Compiler.Layout;
 
 /// <summary>
 /// Names and signatures of the host members that the generator emits for one kernel, so that overloaded kernels get

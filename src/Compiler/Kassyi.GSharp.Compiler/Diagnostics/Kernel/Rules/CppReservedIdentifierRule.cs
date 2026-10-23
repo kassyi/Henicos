@@ -1,7 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
-using Kassyi.GSharp.Compiler.Layout;
-
 /// <summary>
 /// Rejects identifiers declared in GPU code that contain <c>__</c> (GSH0055), including members of custom structs
 /// reachable from a declaration's type.

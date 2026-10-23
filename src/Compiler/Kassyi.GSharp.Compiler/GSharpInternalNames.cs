@@ -1,4 +1,3 @@
-using Kassyi.GSharp.Naming;
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>Identifiers the compiler emits into generated host and device code.</summary>
