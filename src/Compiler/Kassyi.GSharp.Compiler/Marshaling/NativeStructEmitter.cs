@@ -42,7 +42,7 @@ internal static class NativeStructEmitter
         writer.AppendLine();
     }
 
-    private static void MapToNativeField(SourceWriter writer, IFieldSymbol field, int fieldSize)
+    private static void MapToNativeField(SourceWriter writer, StructAbiMember field, int fieldSize)
     {
         if (field.Type.IsArrayLikeType())
         {

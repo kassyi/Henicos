@@ -34,9 +34,9 @@ internal static class CudaLayoutRules
             return;
         }
 
-        foreach (var field in StructAbiMembers.GetInstanceFields(named))
+        foreach (var member in StructAbiMembers.Get(named))
         {
-            CollectStructs(field.Type, structs);
+            CollectStructs(member.Type, structs);
         }
     }
 
@@ -66,13 +66,13 @@ internal static class CudaLayoutRules
     }
 
     /// <summary>
-    /// The instance fields of <paramref name="structType"/> with their offsets, <c>[StructLayout(Pack = n)]</c> applied.
+    /// The members of <paramref name="structType"/> (<see cref="StructAbiMembers"/>) with their offsets, <c>[StructLayout(Pack = n)]</c> applied.
     /// The struct size (<see cref="GetCudaLayout"/>) and the host shadow struct both take the offsets from here.
     /// </summary>
     internal static FieldLayouts GetFieldLayouts(INamedTypeSymbol structType) => new(structType);
 
-    /// <summary>A field at <paramref name="Offset"/>; <paramref name="Layout"/> has the alignment capped by the Pack.</summary>
-    internal readonly record struct CudaFieldLayout(IFieldSymbol Field, int Offset, CudaLayoutInfo Layout);
+    /// <summary>A member at <paramref name="Offset"/>; <paramref name="Layout"/> has the alignment capped by the Pack.</summary>
+    internal readonly record struct CudaFieldLayout(StructAbiMember Member, int Offset, CudaLayoutInfo Layout);
 
     /// <summary>A <c>foreach</c>-able view of the field offsets that allocates nothing.</summary>
     internal readonly struct FieldLayouts(INamedTypeSymbol structType)
@@ -82,8 +82,7 @@ internal static class CudaLayoutRules
 
     internal struct FieldLayoutEnumerator(INamedTypeSymbol structType)
     {
-        private StructAbiMembers.InstanceFieldEnumerator _fields =
-            StructAbiMembers.GetInstanceFields(structType).GetEnumerator();
+        private StructAbiMembers.MemberEnumerator _members = StructAbiMembers.Get(structType).GetEnumerator();
         private readonly int _pack = structType.TryGetStructLayoutPack(out var pack) ? pack : 0;
         private int _end;
 
@@ -91,17 +90,17 @@ internal static class CudaLayoutRules
 
         public bool MoveNext()
         {
-            if (!_fields.MoveNext())
+            if (!_members.MoveNext())
             {
                 return false;
             }
 
-            var field = _fields.Current;
-            var layout = GetCudaLayout(field.Type);
+            var member = _members.Current;
+            var layout = GetCudaLayout(member.Type);
             var alignment = _pack > 0 ? Math.Min(layout.Alignment, _pack) : layout.Alignment;
             var offset = AlignUp(_end, alignment);
             _end = offset + layout.Size;
-            Current = new CudaFieldLayout(field, offset, layout with { Alignment = alignment });
+            Current = new CudaFieldLayout(member, offset, layout with { Alignment = alignment });
             return true;
         }
     }

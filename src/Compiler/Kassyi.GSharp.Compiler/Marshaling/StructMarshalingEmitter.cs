@@ -82,16 +82,16 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            foreach (var field in StructAbiMembers.GetInstanceFields(s))
+            foreach (var member in StructAbiMembers.Get(s))
             {
-                WriteMarshalMember(writer, field);
+                WriteMarshalMember(writer, member);
             }
         }
 
         writer.AppendLine();
     }
 
-    private static void WriteMarshalMember(SourceWriter writer, IFieldSymbol member)
+    private static void WriteMarshalMember(SourceWriter writer, StructAbiMember member)
     {
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
@@ -126,7 +126,7 @@ internal static class StructMarshalingEmitter
         }
     }
 
-    private static void WriteMarshalArrayMember(SourceWriter writer, IFieldSymbol member, ITypeSymbol elementType)
+    private static void WriteMarshalArrayMember(SourceWriter writer, StructAbiMember member, ITypeSymbol elementType)
     {
         writer.AppendLine($"if (host.{member.Name.ToCSharpIdentifier()} != null)");
         using (writer.Scope())
@@ -219,16 +219,16 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            foreach (var field in StructAbiMembers.GetInstanceFields(s))
+            foreach (var member in StructAbiMembers.Get(s))
             {
-                WriteUnmarshalMember(writer, field);
+                WriteUnmarshalMember(writer, member);
             }
         }
 
         writer.AppendLine();
     }
 
-    private static void WriteUnmarshalMember(SourceWriter writer, IFieldSymbol member)
+    private static void WriteUnmarshalMember(SourceWriter writer, StructAbiMember member)
     {
         if (member.Type.TryGetArrayLikeElementType(out var elementType))
         {
@@ -263,7 +263,7 @@ internal static class StructMarshalingEmitter
         }
     }
 
-    private static void WriteUnmarshalArrayMember(SourceWriter writer, IFieldSymbol member, ITypeSymbol elementType)
+    private static void WriteUnmarshalArrayMember(SourceWriter writer, StructAbiMember member, ITypeSymbol elementType)
     {
         writer.AppendLine(
             $"if (host.{member.Name.ToCSharpIdentifier()} != null && !isDevicePtr && native.{member.Name.ToCSharpIdentifier()}.Data != IntPtr.Zero)");
