@@ -23,6 +23,10 @@ public class GpuKernelGenerator : IIncrementalGenerator
         }
 
         /// <summary>The diagnostics that <paramref name="other"/> has not collected (same ID at the same location).</summary>
+        /// <remarks>
+        /// Diagnostics without a location (<see cref="Location.None"/>) match by ID alone; see
+        /// <see cref="SemanticModelExtensions.GetReportLocation"/> for when a lowered node has none.
+        /// </remarks>
         public EquatableArray<EquatableDiagnostic> GetDiagnosticsNotIn(DiagnosticCollector other)
         {
             var builder = ImmutableArray.CreateBuilder<EquatableDiagnostic>();

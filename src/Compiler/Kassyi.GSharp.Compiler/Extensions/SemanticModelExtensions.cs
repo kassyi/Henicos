@@ -75,7 +75,10 @@ internal static class SemanticModelExtensions
     /// </summary>
     /// <remarks>
     /// A source generator may not report a location in a tree outside the compilation, which is where every node of a
-    /// lowered body is.
+    /// lowered body is. The mapping relies on the original-span annotation that lowering puts on every node it copies
+    /// (<see cref="LoweringAnnotations.OriginalSpanAnnotationKind"/>). A node with no annotated ancestor is reported
+    /// without a location, and the generator treats all location-less diagnostics with the same ID as one when it drops
+    /// the C++ diagnostics that the CUDA run already reported, so such a C++-only diagnostic can be lost.
     /// </remarks>
     public static Location GetReportLocation(this SemanticModel semanticModel, SyntaxNode node)
     {

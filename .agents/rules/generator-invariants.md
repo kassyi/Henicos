@@ -7,6 +7,7 @@ Architectural constraints enforced by the GSharp generator pipeline. Abide by th
 
 ## 2. No Silent Failures (Strict Diagnostics)
 Unsupported C# syntax (`new`, `string`, LINQ, recursion, ...) must not be ignored, emitted as empty strings, or thrown as raw exceptions. Report via `context.ReportDiagnostic` with the matching `GSharpDiagnostics` (e.g. `GSH0001`, `GSH0003`). How to define and report one from an analyzer, the transpiler or a kernel validation rule: [helpers.md §5](../skills/gsharp-transpiler-guidelines/references/helpers.md#5-diagnostics).
+- **Lowered trees keep their original spans**: The C++ kernels and suspending device functions are transpiled from a lowered tree outside the compilation. `Reporter.Report` maps a node back to the user's source through the original-span annotation (`LoweringAnnotations.OriginalSpanAnnotationKind`) of the node or its nearest annotated ancestor (`GetReportLocation`). A lowering pass must keep that annotation on the nodes it copies or rebuilds. A node without one is reported with `Location.None`. A C++ build drops C++ diagnostics that the CUDA run already reported (same ID, same location), so a location-less one is lost whenever the CUDA run has the same ID without a location.
 
 ## 3. C++ Header Guards for Structs
 C++ definitions for C# `struct`s (e.g. `StructTranspiler`) must be wrapped in an include guard (`#ifndef __GSHARP_STRUCT_{structName}__`) to avoid redefinition when kernels sharing a struct are JIT-compiled together.
