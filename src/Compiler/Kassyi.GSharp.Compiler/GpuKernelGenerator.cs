@@ -7,6 +7,12 @@ namespace Kassyi.GSharp.Compiler;
 [Generator]
 public class GpuKernelGenerator : IIncrementalGenerator
 {
+    /// <summary>The tracking name of the step that transpiles each <c>[GpuKernel]</c>, for incremental-caching tests.</summary>
+    public const string KernelTrackingName = "GpuKernelMethod";
+
+    /// <summary>The tracking name of the step that transpiles each <c>[GpuDeviceFunction]</c>.</summary>
+    public const string DeviceFunctionTrackingName = "GpuDeviceFunction";
+
     private sealed class DiagnosticCollector
     {
         private readonly ImmutableArray<Diagnostic>.Builder _diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
@@ -121,6 +127,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuKernel),
                 transform: static (ctx, _) => TranspileKernel(ctx, KnownAttributes.GpuKernel))
+            .WithTrackingName(KernelTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
 
@@ -128,6 +135,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s, KnownAttributes.GpuDeviceFunction),
                 transform: static (ctx, _) => TranspileDeviceMethod(ctx, KnownAttributes.GpuDeviceFunction))
+            .WithTrackingName(DeviceFunctionTrackingName)
             .Where(static m => m.HasValue)
             .Select(static (m, _) => m.GetValueOrDefault());
 

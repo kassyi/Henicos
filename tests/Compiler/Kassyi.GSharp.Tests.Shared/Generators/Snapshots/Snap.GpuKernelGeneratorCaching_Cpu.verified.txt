@@ -1,0 +1,13 @@
+﻿## First run
+GpuDeviceFunction: New x1
+GpuKernelMethod: New x3
+SourceOutput: New x1
+
+## After adding an unrelated file
+GpuDeviceFunction: Unchanged x1
+GpuKernelMethod: Unchanged x3
+SourceOutput: Modified x1
+
+## After editing one kernel body
+Generator failed: ArgumentException: The hintName 'TestNamespace__Caching__CachingKernels.g.cs' of the added source file must be unique within a generator. (Parameter 'hintName')
+
