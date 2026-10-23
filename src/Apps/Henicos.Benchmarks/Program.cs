@@ -44,6 +44,7 @@ internal class Program
             "prp" => RunFermatPrp(args[1..]),
             "bbp" => RunBbp(args[1..]),
             "compute-bench" => RunComputeBench(args[1..]),
+            "gpu-metrics" => RunGpuMetricsBench(args[1..]),
             "arithmetic" => RunArithmeticBench(args[1..]),
             "stacklinq" => RunStackLinqBench(args[1..]),
             "stacklinq-gpu" => RunStackLinqGpuBench(args[1..]),
@@ -70,9 +71,12 @@ internal class Program
               tf [exponent] [maxP]       Mersenne trial factoring benchmark (default: 71428571, 4000000000)
               prp [exponent] [iters]     Fermat probable prime test benchmark (default: 71428571, 10)
               bbp [offset] [count]       Extract hexadecimal Pi digits via BBP (default: offset 0, count 16)
-              compute-bench [suite]      Run compute performance benchmark (sgemm, sha256, bs, reduce, all) (default: all)
+              compute-bench [suite]      Run compute performance benchmark (sgemm, sha256, bs, reduce, mandelbrot,
+                                         empty, fma, branch, memcopy, transpose, micro, all) (default: all)
                                          Options:
                                            --json              Output benchmark results in JSON format
+              gpu-metrics [name]         Run a kernel benchmark under BenchmarkDotNet with GPU event timing
+                                         (mandelbrot, empty, fma, branch, memcopy, transpose)
               arithmetic [words] [iters] Run GpuBigFloat arithmetic benchmark (default: 2048 words, 1000 iters)
               gbi-linq [elements] [words] Run GpuBigInt + StackLinq + CUDA Graph benchmark
                                          Options:
@@ -141,6 +145,33 @@ internal class Program
         }
 
         return allSuccess ? 0 : 1;
+    }
+
+    private static int RunGpuMetricsBench(string[] args)
+    {
+#pragma warning disable RS0030 // CLI argument normalization
+        var target = args.Length > 0 ? args[0].ToLowerInvariant() : "";
+#pragma warning restore RS0030
+
+        Type? adapter = target switch
+        {
+            "mandelbrot" => typeof(MandelbrotAdapter),
+            "empty" => typeof(EmptyKernelAdapter),
+            "fma" => typeof(MathFmaAdapter),
+            "branch" => typeof(BranchDivergenceAdapter),
+            "memcopy" => typeof(MemoryCopyAdapter),
+            "transpose" => typeof(TransposeAdapter),
+            _ => null
+        };
+
+        if (adapter is null)
+        {
+            Logger<Program>.Warning("Usage: gpu-metrics <mandelbrot|empty|fma|branch|memcopy|transpose>");
+            return 1;
+        }
+
+        BenchmarkRunner.Run(adapter);
+        return 0;
     }
 
     private static int RunArithmeticBench(string[] args)

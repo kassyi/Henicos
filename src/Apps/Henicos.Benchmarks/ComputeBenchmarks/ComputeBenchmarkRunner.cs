@@ -9,7 +9,19 @@ public static class ComputeBenchmarkRunner
             { "sgemm", () => new SgemmBenchmark() },
             { "sha256", () => new Sha256Benchmark() },
             { "bs", () => new BlackScholesBenchmark() },
-            { "reduce", () => new ReductionBenchmark() }
+            { "reduce", () => new ReductionBenchmark() },
+            { "mandelbrot", () => new MandelbrotBenchmark() }
+        };
+
+    // Kernel micro-benchmarks: launch overhead, FMA throughput, branch divergence and memory bandwidth.
+    private static readonly Dictionary<string, Func<IComputeBenchmark>> s_microBenchmarkFactories =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            { "empty", () => new EmptyKernelBenchmark() },
+            { "fma", () => new MathFmaBenchmark() },
+            { "branch", () => new BranchDivergenceBenchmark() },
+            { "memcopy", () => new MemoryCopyBenchmark() },
+            { "transpose", () => new TransposeBenchmark() }
         };
 
     public static List<IComputeBenchmark> GetBenchmarksForSuite(string suiteName)
@@ -22,10 +34,26 @@ public static class ComputeBenchmarkRunner
             {
                 benchmarks.Add(factory());
             }
+
+            foreach (var factory in s_microBenchmarkFactories.Values)
+            {
+                benchmarks.Add(factory());
+            }
+        }
+        else if (suiteName.Equals("micro", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var factory in s_microBenchmarkFactories.Values)
+            {
+                benchmarks.Add(factory());
+            }
         }
         else if (s_benchmarkFactories.TryGetValue(suiteName, out var factory))
         {
             benchmarks.Add(factory());
+        }
+        else if (s_microBenchmarkFactories.TryGetValue(suiteName, out var microFactory))
+        {
+            benchmarks.Add(microFactory());
         }
 
         return benchmarks;
@@ -75,7 +103,7 @@ public static class ComputeBenchmarkRunner
 
         if (benchmarks.Count == 0)
         {
-            logOut.WriteLine($"No benchmarks found for suite '{suiteName}'. Available: sgemm, sha256, bs, reduce, all");
+            logOut.WriteLine($"No benchmarks found for suite '{suiteName}'. Available: sgemm, sha256, bs, reduce, mandelbrot, micro (empty, fma, branch, memcopy, transpose), all");
             return [];
         }
 
