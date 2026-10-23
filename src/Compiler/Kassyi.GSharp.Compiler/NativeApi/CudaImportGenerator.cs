@@ -60,18 +60,8 @@ public class CudaImportGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(classGroups, GenerateCudaImportForClass);
     }
 
-    private static bool HasPartialModifier(MethodDeclarationSyntax method)
-    {
-        foreach (var modifier in method.Modifiers)
-        {
-            if (modifier.IsKind(SyntaxKind.PartialKeyword))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool HasPartialModifier(MethodDeclarationSyntax method) =>
+        method.Modifiers.Any(SyntaxKind.PartialKeyword);
 
     private static CudaImportMethodModel? TransformMethod(GeneratorAttributeSyntaxContext ctx)
     {
@@ -88,15 +78,9 @@ public class CudaImportGenerator : IIncrementalGenerator
 
         var methodSyntax = (MethodDeclarationSyntax)ctx.TargetNode;
 
-        AttributeData? attributeData = null;
-        foreach (var a in ctx.Attributes)
-        {
-            if (a.IsAttribute(KnownAttributes.CudaImport))
-            {
-                attributeData = a;
-                break;
-            }
-        }
+        var attributeData = ctx.Attributes
+            .AsStackEnumerable()
+            .FirstOrDefault(static a => a.IsAttribute(KnownAttributes.CudaImport));
 
         if (attributeData == null)
         {
@@ -225,7 +209,7 @@ public class CudaImportGenerator : IIncrementalGenerator
 
                 if (hasAnyModifier)
                 {
-                    writer.AppendSpace();
+                    writer.Append(' ');
                 }
 
                 writer.Append(modifier.Text);
@@ -253,7 +237,7 @@ public class CudaImportGenerator : IIncrementalGenerator
         foreach (var modifier in methodSyntax.Modifiers)
         {
             writer.Append(modifier.Text);
-            writer.AppendSpace();
+            writer.Append(' ');
         }
 
         writer.Append($"void {methodSymbol.Name}(");
@@ -320,13 +304,11 @@ public class CudaImportGenerator : IIncrementalGenerator
                 return;
             }
 
-            foreach (var arg in attributeSyntax.ArgumentList.Arguments)
+            var hasEntryPoint = attributeSyntax.ArgumentList.Arguments
+                .AsStackEnumerable()
+                .TryFirst(static arg => arg.NameEquals?.Name.Identifier.ValueText == "EntryPoint", out var arg);
+            if (hasEntryPoint)
             {
-                if (arg.NameEquals?.Name.Identifier.ValueText != "EntryPoint")
-                {
-                    continue;
-                }
-
                 entryPoint = arg.Expression switch
                 {
                     LiteralExpressionSyntax entryLit when entryLit.IsKind(SyntaxKind.StringLiteralExpression) =>
@@ -343,27 +325,16 @@ public class CudaImportGenerator : IIncrementalGenerator
                     IdentifierNameSyntax idSyntax => idSyntax.Identifier.ValueText,
                     _ => entryPoint
                 };
-
-                break;
             }
         }
     }
 
-    private static AttributeSyntax? FindCudaImportAttribute(MethodDeclarationSyntax methodSyntax)
-    {
-        foreach (var attributeList in methodSyntax.AttributeLists)
-        {
-            foreach (var attribute in attributeList.Attributes)
-            {
-                if (IsCudaImportAttributeName(attribute.Name))
-                {
-                    return attribute;
-                }
-            }
-        }
-
-        return null;
-    }
+    private static AttributeSyntax? FindCudaImportAttribute(MethodDeclarationSyntax methodSyntax) =>
+        methodSyntax.AttributeLists
+            .AsStackEnumerable()
+            .SelectMany(static list => list.Attributes
+                .AsStackEnumerable()
+            ).FirstOrDefault(static attribute => IsCudaImportAttributeName(attribute.Name));
 
     private static bool IsCudaImportAttributeName(NameSyntax name)
     {

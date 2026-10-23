@@ -20,7 +20,8 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
 
     /// <summary>Rewrites the conditional operators in the block that need it.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) =>
-        Visit(block) as BlockSyntax ?? throw new InvalidOperationException("Conditional evaluation lowering removed the block.");
+        Visit(block) as BlockSyntax ??
+        throw new InvalidOperationException("Conditional evaluation lowering removed the block.");
 
     public override SyntaxNode VisitBlock(BlockSyntax node) => node.WithStatements(RewriteStatements(node.Statements));
 
@@ -73,7 +74,8 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
             if (FindConditional(statement) is not { } conditional)
             {
                 newStatements.Add(Visit(statement) as StatementSyntax
-                                  ?? throw new InvalidOperationException("Conditional evaluation lowering removed a statement."));
+                                  ?? throw new InvalidOperationException(
+                                      "Conditional evaluation lowering removed a statement."));
                 continue;
             }
 
@@ -90,35 +92,41 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
 
     private (ImmutableArray<StatementSyntax> Prefix, IdentifierNameSyntax Temp) Lower(ExpressionSyntax conditional)
     {
-        var name = $"{GSharpInternalNames.ConditionTempPrefix}{_tempCounter++}";
+        var name = $"{GSharpInternalNames.Lowering.ConditionTempPrefix}{_tempCounter++}";
         var temp = SyntaxFactory.IdentifierName(name);
 
         switch (conditional)
         {
             case BinaryExpressionSyntax binary:
-                {
-                    // var t = left; if (t) / if (!t) { t = right; }
-                    ExpressionSyntax guard = binary.IsKind(SyntaxKind.LogicalAndExpression)
-                        ? temp
-                        : SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, temp);
-                    return (ImmutableArray.Create<StatementSyntax>(
-                        CreateTempDeclaration(name, binary.Left.WithoutTrivia()),
-                        SyntaxFactory.IfStatement(guard, SyntaxFactory.Block(Assign(temp, binary.Right)))), temp);
-                }
+            {
+                // var t = left; if (t) / if (!t) { t = right; }
+                ExpressionSyntax guard = binary.IsKind(SyntaxKind.LogicalAndExpression)
+                    ? temp
+                    : SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, temp);
+                var statements = ImmutableArray.Create<StatementSyntax>(
+                    CreateTempDeclaration(name, binary.Left.WithoutTrivia()),
+                    SyntaxFactory.IfStatement(guard, SyntaxFactory.Block(Assign(temp, binary.Right)))
+                );
+                return (statements, temp);
+            }
             case ConditionalExpressionSyntax ternary:
-                {
-                    // var t = default; if (c) { t = whenTrue; } else { t = whenFalse; }
-                    var typedDefault = SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression)
-                        .WithAdditionalAnnotations(ternary.GetAnnotations(AstLoweringPipeline.OriginalSpanAnnotationKind));
-                    return (ImmutableArray.Create<StatementSyntax>(
-                        CreateTempDeclaration(name, typedDefault),
-                        SyntaxFactory.IfStatement(
-                            ternary.Condition.WithoutTrivia(),
-                            SyntaxFactory.Block(Assign(temp, ternary.WhenTrue)),
-                            SyntaxFactory.ElseClause(SyntaxFactory.Block(Assign(temp, ternary.WhenFalse))))), temp);
-                }
+            {
+                // var t = default; if (c) { t = whenTrue; } else { t = whenFalse; }
+                var typedDefault = SyntaxFactory.LiteralExpression(SyntaxKind.DefaultLiteralExpression)
+                    .WithAdditionalAnnotations(ternary.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind));
+                var statements = ImmutableArray.Create<StatementSyntax>(
+                    CreateTempDeclaration(name, typedDefault),
+                    SyntaxFactory.IfStatement(
+                        ternary.Condition.WithoutTrivia(),
+                        SyntaxFactory.Block(Assign(temp, ternary.WhenTrue)),
+                        SyntaxFactory.ElseClause(SyntaxFactory.Block(Assign(temp, ternary.WhenFalse)))
+                    )
+                );
+                return (statements, temp);
+            }
             default:
-                throw new InvalidOperationException($"Cannot lower a conditional expression of kind '{conditional.Kind()}'.");
+                throw new InvalidOperationException(
+                    $"Cannot lower a conditional expression of kind '{conditional.Kind()}'.");
         }
     }
 
@@ -157,29 +165,29 @@ public class ConditionalEvaluationRewriter : CSharpSyntaxRewriter
         return null;
     }
 
-    private static bool ContainsWarpPrimitive(SyntaxNode node)
-    {
-        foreach (var descendant in node.DescendantNodesAndSelf())
-        {
-            if (descendant is InvocationExpressionSyntax invocation &&
-                (BarrierHelper.IsWarpShuffle(invocation) || BarrierHelper.IsSuspendingCall(invocation)))
-            {
-                return true;
-            }
-        }
+    private static bool ContainsWarpPrimitive(SyntaxNode node) =>
+        node.DescendantNodesAndSelf()
+            .AsStackEnumerable()
+            .Any(static descendant =>
+                descendant is InvocationExpressionSyntax invocation &&
+                (BarrierHelper.IsWarpShuffle(invocation) || BarrierHelper.IsSuspendingCall(invocation))
+            );
 
-        return false;
-    }
-
+    // <target> = <value>;
     private static ExpressionStatementSyntax Assign(IdentifierNameSyntax target, ExpressionSyntax value) =>
-        SyntaxFactory.ExpressionStatement(SyntaxFactory.AssignmentExpression(
-            SyntaxKind.SimpleAssignmentExpression, target, value.WithoutTrivia()));
+        SyntaxFactory.ExpressionStatement(
+            SyntaxFactory.AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, target, value.WithoutTrivia())
+        );
 
+    // var <name> = <value>;
     private static LocalDeclarationStatementSyntax CreateTempDeclaration(string name, ExpressionSyntax value) =>
         SyntaxFactory.LocalDeclarationStatement(
             SyntaxFactory.VariableDeclaration(
                 SyntaxFactory.IdentifierName("var"),
                 SyntaxFactory.SingletonSeparatedList(
                     SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(name))
-                        .WithInitializer(SyntaxFactory.EqualsValueClause(value)))));
+                        .WithInitializer(SyntaxFactory.EqualsValueClause(value))
+                )
+            )
+        );
 }

@@ -20,6 +20,7 @@ Determines whether all elements of a sequence satisfy a condition.
 | Name | Description |
 | --- | --- |
 | [All<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)](#alltenumeratortsourcetenumeratorfunctsourcebool) | Determines whether all elements satisfy a condition. |
+| [All<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)](#alltenumeratortsourcetstatetenumeratortstatefunctsourcetstatebool) | Determines whether all elements satisfy a condition that receives a state value. Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly. |
 
 
 ## All<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)
@@ -35,6 +36,26 @@ public static bool All<TEnumerator, TSource>(this TEnumerator source, Func<TSour
 <i>bool</i>
 
 
+
+## All<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)
+
+Determines whether all elements satisfy a condition that receives a state value. Pass the outer value as `state` so that the lambda can be `static` and no closure is allocated.
+
+```csharp
+public static bool All<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+```
+
+```csharp
+var result = names
+    .AsStackEnumerable()
+    .All(prefix, static (n, p) => n.StartsWith(p));
+```
+
+#### Returns
+
+<i>bool</i>
+
+**Execution Target:** Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly.
 
 ## Remarks
 

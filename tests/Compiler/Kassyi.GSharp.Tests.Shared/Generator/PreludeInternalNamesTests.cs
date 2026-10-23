@@ -14,18 +14,40 @@ public partial class PreludeInternalNamesTests
     private static bool ContainsIdentifier(string source, string identifier) =>
         Regex.IsMatch(source, $"(?<![A-Za-z0-9_]){Regex.Escape(identifier)}(?![A-Za-z0-9_])");
 
+    // The names that InternalNames.yml marks as declared by the Prelude.
+    public static TheoryData<string, string> PreludeDeclaredNames()
+    {
+        var data = new TheoryData<string, string>();
+        foreach (var (path, value, preludeFile) in GSharpInternalNames.All)
+        {
+            if (preludeFile != null)
+            {
+                data.Add(path, value);
+            }
+        }
+
+        return data;
+    }
+
     [Theory]
     [Category(TestCategory.Compiler)]
     [Scenario(TestScenario.HappyPath)]
-    [InlineData(GSharpInternalNames.Context)]
-    [InlineData(GSharpInternalNames.WarpExchange)]
-    [InlineData(GSharpInternalNames.WarpShuffleCount)]
-    [InlineData(GSharpInternalNames.AllContexts)]
-    [InlineData(GSharpInternalNames.Root)]
-    public void CppPrelude_ReferencesInternalName(string identifier)
+    [MemberData(nameof(PreludeDeclaredNames))]
+    public void Prelude_DeclaresInternalName(string path, string identifier)
     {
-        Assert.True(ContainsIdentifier(GSharpPreludeResources.Cpp, identifier),
-            $"The CPU prelude no longer references '{identifier}'; update WarpAndHints.hpp or GSharpInternalNames.");
+        Assert.True(ContainsIdentifier(GSharpPreludeResources.Cpp, identifier) || ContainsIdentifier(GSharpPreludeResources.Cuda, identifier),
+            $"No prelude declares '{identifier}' ({path}); update Resources/Prelude or InternalNames.yml.");
+    }
+
+    // The runtime cannot see GSharpInternalNames, so it spells the exported error accessor itself.
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void CpuKernelLoader_LoadsThePreludeErrorAccessor()
+    {
+        var loader = File.ReadAllText(RepositoryPaths.Combine("src", "Runtime", "Kassyi.GSharp.Runtime", "Aot", "CpuKernelLoader.cs"));
+
+        Assert.Contains($"\"{GSharpInternalNames.Prelude.ConsumeLastError}\"", loader);
     }
 
     [Fact]

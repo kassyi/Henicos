@@ -14,12 +14,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Dialects;
 public interface ITranspilerDialect
 {
     /// <summary>
-    /// Gets the collection of C/C++ header include directives required by the emitted code.
+    /// Gets the name of the dialect as shown in diagnostics (e.g., <c>StandardCppDialect</c>).
     /// </summary>
-    /// <value>
-    /// An enumerable of header include paths (e.g., <c>&lt;cuda_runtime.h&gt;</c>).
-    /// </value>
-    IEnumerable<string> RequiredHeaders
+    string Name
     {
         get;
     }
@@ -42,28 +39,6 @@ public interface ITranspilerDialect
     /// A <see cref="DialectCapabilities"/> value indicating supported runtime features.
     /// </value>
     DialectCapabilities Capabilities
-    {
-        get;
-    }
-
-    /// <summary>
-    /// Gets the language prefix prepended to all emitted struct definitions.
-    /// </summary>
-    /// <value>
-    /// The prefix string (e.g., <c>"__device__ "</c> in CUDA, or empty string in host C++).
-    /// </value>
-    string StructPrefix
-    {
-        get;
-    }
-
-    /// <summary>
-    /// Gets the language prefix prepended to all emitted function and method definitions.
-    /// </summary>
-    /// <value>
-    /// The prefix string (e.g., <c>"__device__ inline "</c> in CUDA).
-    /// </value>
-    string MethodPrefix
     {
         get;
     }

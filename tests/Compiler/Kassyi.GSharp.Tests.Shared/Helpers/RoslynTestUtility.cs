@@ -26,6 +26,10 @@ public static class RoslynTestUtility
         return testCasesDir;
     }
 
+    /// <summary>Reads the source of a test case file, given relative to the TestCases directory.</summary>
+    public static string ReadTestCase(string relativePathToTestCases) =>
+        File.ReadAllText(RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "TestCases", relativePathToTestCases));
+
     /// <summary>Attempts to resolve the companion .cu.cs kernel file for a given test file without throwing when absent.</summary>
     public static bool TryResolveKernelFilePath(string callerFilePath, out string? kernelFilePath)
     {

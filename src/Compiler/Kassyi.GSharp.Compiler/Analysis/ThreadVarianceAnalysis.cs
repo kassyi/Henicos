@@ -279,46 +279,31 @@ internal sealed class ThreadVarianceAnalysis(
         return cache.GetOrAdd(mask, variance);
     }
 
-    private static int FindParameter(IMethodSymbol method, string name)
-    {
-        foreach (var parameter in method.Parameters)
-        {
-            if (parameter.Name == name)
-            {
-                return parameter.Ordinal;
-            }
-        }
-
-        return -1;
-    }
+    // The position in Parameters is the ordinal
+    private static int FindParameter(IMethodSymbol method, string name) =>
+        method.Parameters
+            .AsStackEnumerable()
+            .IndexOf(name, static (parameter, target) => parameter.Name == target);
 
     private CalleeVariance AnalyzeAsCallee()
     {
         _propagated = true;
         Propagate();
 
-        var returnsVariant = method.ExpressionBody is { } arrow && ReadsVariant(arrow.Expression);
-        foreach (var node in method.DescendantNodes(static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
-        {
-            if (returnsVariant)
-            {
-                break;
-            }
+        var returnsVariant = (method.ExpressionBody is { } arrow && ReadsVariant(arrow.Expression)) ||
+            method.DescendantNodes(static n => n is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax))
+                .AsStackEnumerable()
+                .Any(this, static (node, self) =>
+                    node is ReturnStatementSyntax { Expression: { } value } returnStatement &&
+                    (self.ReadsVariant(value) || self.IsInVariantRegion(returnStatement))
+                );
 
-            returnsVariant = node is ReturnStatementSyntax { Expression: { } value } returnStatement &&
-                             (ReadsVariant(value) || IsInVariantRegion(returnStatement));
-        }
-
-        var writesVariantByReference = false;
-        foreach (var symbol in _variantSymbols)
-        {
-            if (symbol is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } parameter &&
-                SymbolEqualityComparer.Default.Equals(parameter.ContainingSymbol, semanticModel.GetDeclaredSymbol(method)))
-            {
-                writesVariantByReference = true;
-                break;
-            }
-        }
+        var writesVariantByReference = _variantSymbols
+            .AsStackEnumerable()
+            .Any(semanticModel.GetDeclaredSymbol(method), static (symbol, declared) =>
+                symbol is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } parameter &&
+                parameter.ContainingSymbol.IsEqualTo(declared)
+            );
 
         return new CalleeVariance(returnsVariant, writesVariantByReference);
     }

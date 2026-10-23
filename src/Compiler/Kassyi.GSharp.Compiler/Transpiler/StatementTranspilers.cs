@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Transpiles C# control-flow statements (if, for, while, do-while, switch, return) to CUDA C++.</summary>
@@ -13,11 +12,11 @@ internal static class StatementTranspilers
         CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
         context.Emitter.Writer.Append(" = [&]");
         context.Visitor.Visit(node.ParameterList);
-        context.Emitter.Writer.AppendSpace();
+        context.Emitter.Writer.Append(' ');
 
         LambdaTranspilerHelper.TranspileLambdaBody(ref context, node.Body, node.ExpressionBody?.Expression);
 
-        context.Emitter.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendLine(";");
     }
 
     /// <summary>
@@ -26,7 +25,7 @@ internal static class StatementTranspilers
     public static void TranspileIfStatement(IfStatementSyntax node, ref TranspileContext context)
     {
         DeclarationHoistingHelper.HoistDeclarationExpressions(node.Condition, ref context);
-        context.Emitter.Writer.AppendKeyword("if");
+        context.Emitter.Writer.Append("if");
         using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(node.Condition);
@@ -49,14 +48,14 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileForStatement(ForStatementSyntax node, ref TranspileContext context)
     {
-        context.Emitter.Writer.AppendKeyword("for");
+        context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
         {
             TranspileForInitializers(node, ref context);
-            context.Emitter.Writer.AppendSemiColon();
+            context.Emitter.Writer.Append(';');
 
             TranspileForCondition(node, ref context);
-            context.Emitter.Writer.AppendSemiColon();
+            context.Emitter.Writer.Append(';');
 
             TranspileForIncrementors(node, ref context);
         }
@@ -71,7 +70,7 @@ internal static class StatementTranspilers
     public static void TranspileForEachStatement(ForEachStatementSyntax node, ref TranspileContext context)
     {
         DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
-        context.Emitter.Writer.AppendKeyword("for");
+        context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
         {
             if (node.Type.IsVar)
@@ -82,7 +81,7 @@ internal static class StatementTranspilers
             {
                 var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Type);
                 context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-                context.Emitter.Writer.AppendSpace();
+                context.Emitter.Writer.Append(' ');
             }
 
             CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
@@ -128,7 +127,7 @@ internal static class StatementTranspilers
             context.Visitor.Visit(expressions[i]);
             if (i < expressions.Count - 1)
             {
-                context.Emitter.Writer.AppendComma();
+                context.Emitter.Writer.Append(',');
             }
         }
     }
@@ -139,7 +138,7 @@ internal static class StatementTranspilers
     public static void TranspileWhileStatement(WhileStatementSyntax node, ref TranspileContext context)
     {
         DeclarationHoistingHelper.HoistDeclarationExpressions(node.Condition, ref context);
-        context.Emitter.Writer.AppendKeyword("while");
+        context.Emitter.Writer.Append("while");
         using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(node.Condition);
@@ -155,16 +154,16 @@ internal static class StatementTranspilers
     public static void TranspileDoStatement(DoStatementSyntax node, ref TranspileContext context)
     {
         context.Emitter.Writer
-            .AppendKeyword("do")
+            .Append("do")
             .AppendLine();
         context.Visitor.VisitStatementOrBlock(node.Statement);
-        context.Emitter.Writer.AppendKeyword("while");
+        context.Emitter.Writer.Append("while");
         using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(node.Condition);
         }
 
-        context.Emitter.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendLine(";");
     }
 
     /// <summary>
@@ -175,7 +174,7 @@ internal static class StatementTranspilers
         var switchId = ++context.Emitter.SwitchIdCounter;
         context.Emitter.ActiveSwitchIds.Push(switchId);
 
-        context.Emitter.Writer.AppendKeyword("switch");
+        context.Emitter.Writer.Append("switch");
         using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(node.Expression);
@@ -230,14 +229,14 @@ internal static class StatementTranspilers
     {
         if (node.IsKind(SyntaxKind.GotoCaseStatement))
         {
-            context.Emitter.Writer.Append($"goto __gsharp_switch_{context.Emitter.CurrentSwitchId}_state_");
+            context.Emitter.Writer.Append($"goto {GSharpInternalNames.Lowering.SwitchStatePrefix}{context.Emitter.CurrentSwitchId}_state_");
             context.Visitor.Visit(node.Expression);
-            context.Emitter.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendLine(";");
             return;
         }
         else if (node.IsKind(SyntaxKind.GotoDefaultStatement))
         {
-            context.Emitter.Writer.AppendLine($"goto __gsharp_switch_{context.Emitter.CurrentSwitchId}_state_default;");
+            context.Emitter.Writer.AppendLine($"goto {GSharpInternalNames.Lowering.SwitchStatePrefix}{context.Emitter.CurrentSwitchId}_state_default;");
             return;
         }
 
@@ -252,7 +251,7 @@ internal static class StatementTranspilers
             context.Visitor.Visit(node.Expression);
         }
 
-        context.Emitter.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendLine(";");
     }
 
     public static void TranspileLabeledStatement(LabeledStatementSyntax node, ref TranspileContext context)
@@ -272,14 +271,14 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileReturnStatement(ReturnStatementSyntax node, ref TranspileContext context)
     {
-        var isStateMachineReturn = node.HasAnnotations("StateMachineReturn");
+        var isStateMachineReturn = node.HasAnnotations(LoweringAnnotations.StateMachineReturnAnnotationKind);
 
         if (context.Emitter is { IsSuspendingDeviceFunction: true, CallableDepth: 0 })
         {
             TranspileSuspendingDeviceFunctionReturn(node, isStateMachineReturn, ref context);
             return;
         }
-        var emitStateTermination = !isStateMachineReturn && !context.Emitter.Dialect.IsCuda
+        var emitStateTermination = !isStateMachineReturn && context.Emitter.Dialect.EmulatesThreadsWithStateMachine()
                                    && context.Emitter is { IsGpuKernelEntry: true, CallableDepth: 0 };
 
         if (node.Expression != null)
@@ -288,36 +287,36 @@ internal static class StatementTranspilers
 
             if (context.Emitter is { IsGpuKernelEntry: true, IsVoidReturn: false, CallableDepth: 0 })
             {
-                context.Emitter.Writer.Append("__gsharp_auto_result[__gsharp_global_tid] = ");
+                context.Emitter.Writer.Append($"{GSharpInternalNames.ReturnValue.Buffer}[{GSharpInternalNames.ReturnValue.GlobalThreadIndex}] = ");
                 context.Visitor.Visit(node.Expression);
-                context.Emitter.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendLine(";");
 
                 if (emitStateTermination)
                 {
-                    context.Emitter.Writer.Append(GSharpInternalNames.StateTermination);
+                    context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.Termination);
                 }
 
-                context.Emitter.Writer.AppendKeyword("return;");
+                context.Emitter.Writer.Append("return;");
                 return;
             }
 
             if (emitStateTermination)
             {
-                context.Emitter.Writer.Append(GSharpInternalNames.StateTermination);
+                context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.Termination);
             }
 
             context.Emitter.Writer.Append("return ");
             context.Visitor.Visit(node.Expression);
-            context.Emitter.Writer.AppendSemiColon();
+            context.Emitter.Writer.Append(';');
             return;
         }
 
         if (emitStateTermination)
         {
-            context.Emitter.Writer.Append(GSharpInternalNames.StateTermination);
+            context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.Termination);
         }
 
-        context.Emitter.Writer.AppendKeyword("return;");
+        context.Emitter.Writer.Append("return;");
     }
 
     // A suspension reports "not completed"; a return of the user's code writes the result, resets the frame for the next
@@ -327,20 +326,20 @@ internal static class StatementTranspilers
     {
         if (isStateMachineReturn)
         {
-            context.Emitter.Writer.AppendKeyword("return false;");
+            context.Emitter.Writer.Append("return false;");
             return;
         }
 
         if (node.Expression != null)
         {
             DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
-            context.Emitter.Writer.Append($"*{GSharpInternalNames.SuspendingCallResult} = ");
+            context.Emitter.Writer.Append($"*{GSharpInternalNames.SuspendingCall.Result} = ");
             context.Visitor.Visit(node.Expression);
-            context.Emitter.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendLine(";");
         }
 
-        context.Emitter.Writer.Append($"{GSharpInternalNames.State} = 0;");
-        context.Emitter.Writer.AppendKeyword("return true;");
+        context.Emitter.Writer.Append($"{GSharpInternalNames.StateMachine.State} = 0;");
+        context.Emitter.Writer.Append("return true;");
     }
 }
 

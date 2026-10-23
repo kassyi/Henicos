@@ -89,7 +89,9 @@ using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> numbers = [10, 20, 30];
 StackEnumerable<SelectAtEnumerator<SpanEnumerator<int>, int, int>, int> projected =
-    numbers.AsStackEnumerable().Select((x, index) => x + index);
+    numbers
+        .AsStackEnumerable()
+        .Select((x, index) => x + index);
 
 Console.WriteLine($"Projected sum: {projected.Sum()}");
 ```

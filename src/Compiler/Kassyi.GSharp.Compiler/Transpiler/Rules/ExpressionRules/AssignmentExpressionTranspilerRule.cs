@@ -27,17 +27,17 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             {
                 for (var i = 0; i < rightTuple.Arguments.Count; i++)
                 {
-                    context.Emitter.Writer.Append($"auto {GSharpInternalNames.TupleTempPrefix}{i} = ");
+                    context.Emitter.Writer.Append($"auto {GSharpInternalNames.Lowering.TupleTempPrefix}{i} = ");
                     context.Visitor.Visit(rightTuple.Arguments[i].Expression);
-                    context.Emitter.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendLine(";");
                 }
 
                 for (var i = 0; i < leftTuple.Arguments.Count; i++)
                 {
                     context.Visitor.Visit(leftTuple.Arguments[i].Expression);
                     context.Emitter.Writer
-                        .Append($" = {GSharpInternalNames.TupleTempPrefix}{i}")
-                        .AppendSemiColonLine();
+                        .Append($" = {GSharpInternalNames.Lowering.TupleTempPrefix}{i}")
+                        .AppendLine(";");
                 }
             }
 
@@ -46,27 +46,12 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
-            using (context.Emitter.Writer.ImmediatelyInvokedLambda("decltype(auto)"))
-            {
-                context.Emitter.Writer.Append($"auto& {GSharpInternalNames.CoalesceTarget} = ");
-                context.Visitor.Visit(node.Left);
-                context.Emitter.Writer.AppendSemiColonLine();
-
-                context.Emitter.Writer.Append($"return !{GSharpInternalNames.CoalesceTarget}.HasValue ? ");
-                using (context.Emitter.Writer.Parentheses())
-                {
-                    context.Emitter.Writer.Append($"{GSharpInternalNames.CoalesceTarget} = ");
-                    context.Visitor.Visit(node.Right);
-                }
-
-                context.Emitter.Writer.AppendLine($" : {GSharpInternalNames.CoalesceTarget}.Value;");
-            }
-
+            NullRepresentation.AppendCoalesceAssignment(node.Left, node.Right, ref context);
             return;
         }
 
         context.Visitor.Visit(node.Left);
-        context.Emitter.Writer.AppendOperator(node.OperatorToken.Text);
+        context.Emitter.Writer.Append(node.OperatorToken.Text);
         context.Visitor.Visit(node.Right);
     }
 }

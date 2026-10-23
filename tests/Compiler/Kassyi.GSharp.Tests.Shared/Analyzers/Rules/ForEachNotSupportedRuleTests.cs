@@ -18,19 +18,8 @@ public class ForEachNotSupportedRuleTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public void Validate_GSH01_ReportsDiagnostic_OnForEachStatement()
     {
-        const string source = """
-            using System.Collections.Generic;
-
-            public class TestContainer
-            {
-                public void TestMethod(IEnumerable<int> items)
-                {
-                    foreach (var item in items) { }
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/ForEachNotSupported/ForEachOverEnumerable.cs"));
         var tree = compilation.SyntaxTrees.First();
         var model = compilation.GetSemanticModel(tree);
         var forEachNode = tree.GetRoot().DescendantNodes().OfType<ForEachStatementSyntax>().First();
@@ -53,27 +42,8 @@ public class ForEachNotSupportedRuleTests : TranspilerTestBase
     [Scenario(TestScenario.SadPath)]
     public void Validate_UserDefinedList_ReportsDiagnostic()
     {
-        const string source = """
-            using System;
-
-            namespace CustomNamespace
-            {
-                public class List<T>
-                {
-                    public System.Collections.Generic.IEnumerator<T> GetEnumerator() => throw new NotImplementedException();
-                }
-            }
-
-            public class TestContainer
-            {
-                public void TestMethod(CustomNamespace.List<int> list)
-                {
-                    foreach (var item in list) { }
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/ForEachNotSupported/ForEachOverUserDefinedList.cs"));
         var tree = compilation.SyntaxTrees.First();
         var model = compilation.GetSemanticModel(tree);
         var forEachNode = tree.GetRoot().DescendantNodes().OfType<ForEachStatementSyntax>().First();
@@ -95,20 +65,8 @@ public class ForEachNotSupportedRuleTests : TranspilerTestBase
     [Scenario(TestScenario.HappyPath)]
     public void Validate_ArrayAndSpan_DoesNotReportDiagnostic()
     {
-        const string source = """
-            using System;
-
-            public class TestContainer
-            {
-                public void TestMethod(int[] arr, Span<int> span)
-                {
-                    foreach (var item in arr) { }
-                    foreach (var item in span) { }
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Analyzers/ForEachNotSupported/ForEachOverArrayAndSpan.cs"));
         var tree = compilation.SyntaxTrees.First();
         var model = compilation.GetSemanticModel(tree);
         var forEachNodes = tree.GetRoot().DescendantNodes().OfType<ForEachStatementSyntax>().ToList();

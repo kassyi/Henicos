@@ -80,7 +80,7 @@ internal static class CppNameResolver
         ITypeParameterSymbol parameter => CppName.Global(GlobalCppNames.GetTypeParameterName(parameter)),
         IMethodSymbol method when IsEmittedDeviceFunction(method, dialect) =>
             CppName.Global(GlobalCppNames.GetFunctionName(method)),
-        INamedTypeSymbol type when GlobalCppNames.IsEmittedUserType(type) && !dialect.IsMappedType(type) =>
+        INamedTypeSymbol type when GlobalCppNames.IsEncodedUserType(type, dialect) =>
             CppName.Global(GlobalCppNames.GetTypeName(type)),
         _ => CppName.Verbatim(fallbackName)
     };
@@ -113,7 +113,7 @@ internal static class CppNameResolver
         switch (name.Kind)
         {
             case CppNameKind.FunctionScope:
-                writer.Append(GSharpInternalNames.RenamedIdentifierPrefix);
+                writer.Append(GSharpInternalNames.Renamed.IdentifierPrefix);
                 if (name.Ordinal >= 0)
                 {
                     writer.Append(name.Ordinal).Append('_');
@@ -121,7 +121,7 @@ internal static class CppNameResolver
 
                 break;
             case CppNameKind.Member:
-                writer.Append(GSharpInternalNames.RenamedMemberPrefix);
+                writer.Append(GSharpInternalNames.Renamed.MemberPrefix);
                 break;
         }
 
@@ -139,10 +139,7 @@ internal static class CppNameResolver
         !dialect.TryMapIntrinsic(method, out _);
 
     private static bool IsEmittedStructMember(ISymbol member, ITranspilerDialect dialect) =>
-        member.ContainingType is { TypeKind: TypeKind.Struct } type &&
-        !type.ContainingNamespace.IsSystemOrNumerics() &&
-        !type.IsSharedMemoryType() &&
-        !dialect.IsMappedType(type);
+        member.ContainingType is { } type && GlobalCppNames.IsEncodedUserType(type, dialect);
 
     private static int GetDeclarationOrdinal(ISymbol symbol)
     {
@@ -175,15 +172,12 @@ internal static class CppNameResolver
             return null;
         }
 
-        foreach (var reference in container.DeclaringSyntaxReferences)
-        {
-            if (reference.SyntaxTree == tree && reference.Span.Contains(span))
-            {
-                return reference.GetSyntax();
-            }
-        }
-
-        return null;
+        return container.DeclaringSyntaxReferences
+            .AsStackEnumerable()
+            .FirstOrDefault(
+                (Tree: tree, Span: span),
+                static (reference, s) => reference.SyntaxTree == s.Tree && reference.Span.Contains(s.Span)
+            )?.GetSyntax();
     }
 
     // [WHY] Ordinals come from identifier positions rather than from symbols, because symbols obtained from different
@@ -191,28 +185,30 @@ internal static class CppNameResolver
     private static int[] CollectDeclarationPositions(SyntaxNode method)
     {
         var positions = ImmutableArray.CreateBuilder<int>();
-        foreach (var node in method.DescendantNodesAndSelf())
-        {
-            var identifier = node switch
-            {
-                ParameterSyntax p => p.Identifier,
-                VariableDeclaratorSyntax v => v.Identifier,
-                SingleVariableDesignationSyntax d => d.Identifier,
-                ForEachStatementSyntax f => f.Identifier,
-                LocalFunctionStatementSyntax l => l.Identifier,
-                LabeledStatementSyntax l => l.Identifier,
-                CatchDeclarationSyntax c => c.Identifier,
-                _ => default
-            };
-
-            if (!identifier.IsKind(SyntaxKind.None) && !identifier.IsMissing)
-            {
-                positions.Add(identifier.SpanStart);
-            }
-        }
+        method.DescendantNodesAndSelf()
+            .AsStackEnumerable()
+            .Select(GetDeclaredIdentifier)
+            .Where(static identifier => !identifier.IsKind(SyntaxKind.None) && !identifier.IsMissing)
+            .Select(static identifier => identifier.SpanStart)
+            .AddTo(positions);
 
         var result = positions.ToArray();
         Array.Sort(result);
         return result;
     }
+
+    // The name a declaration introduces (parameter, local, pattern variable, foreach variable, local function, label,
+    // catch variable); default for any other node
+    private static SyntaxToken GetDeclaredIdentifier(SyntaxNode node) =>
+        node switch
+        {
+            ParameterSyntax p => p.Identifier,
+            VariableDeclaratorSyntax v => v.Identifier,
+            SingleVariableDesignationSyntax d => d.Identifier,
+            ForEachStatementSyntax f => f.Identifier,
+            LocalFunctionStatementSyntax l => l.Identifier,
+            LabeledStatementSyntax l => l.Identifier,
+            CatchDeclarationSyntax c => c.Identifier,
+            _ => default
+        };
 }

@@ -1,7 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-using Kassyi.GSharp.Compiler.Layout;
-
 /// <summary>Emits custom struct marshal and unmarshal helper methods between managed and native shadow representations.</summary>
 internal static class StructMarshalingEmitter
 {
@@ -41,10 +39,9 @@ internal static class StructMarshalingEmitter
         var structTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         foreach (var (method, _, _) in methods)
         {
-            foreach (var parameter in method.Parameters)
-            {
-                CudaLayoutRules.CollectStructs(parameter.Type, structTypes);
-            }
+            method.Parameters
+                .AsStackEnumerable()
+                .Do(structTypes, static (parameter, structs) => CudaLayoutRules.CollectStructs(parameter.Type, structs));
         }
 
         var byName = new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
@@ -85,12 +82,9 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            foreach (var member in s.GetMembers())
+            foreach (var field in StructAbiMembers.GetInstanceFields(s))
             {
-                if (member is IFieldSymbol { IsStatic: false } field)
-                {
-                    WriteMarshalMember(writer, field);
-                }
+                WriteMarshalMember(writer, field);
             }
         }
 
@@ -225,12 +219,9 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            foreach (var member in s.GetMembers())
+            foreach (var field in StructAbiMembers.GetInstanceFields(s))
             {
-                if (member is IFieldSymbol { IsStatic: false } field)
-                {
-                    WriteUnmarshalMember(writer, field);
-                }
+                WriteUnmarshalMember(writer, field);
             }
         }
 

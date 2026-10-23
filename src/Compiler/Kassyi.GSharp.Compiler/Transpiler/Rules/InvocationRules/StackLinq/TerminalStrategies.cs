@@ -26,7 +26,7 @@ internal sealed class CountStrategy : IStackLinqTerminalStrategy
             var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append("if ((");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__gsharp_val_{valIndex}))");
+            context.Emitter.Writer.AppendLine($")({StackLinqHelper.ValuePrefix}{valIndex}))");
             using (context.Emitter.Writer.Braces())
             {
                 context.Emitter.Writer.AppendLine($"{resultVar}++;");
@@ -53,7 +53,7 @@ internal sealed class AnyStrategy : IStackLinqTerminalStrategy
             var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append("if ((");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__gsharp_val_{valIndex}))");
+            context.Emitter.Writer.AppendLine($")({StackLinqHelper.ValuePrefix}{valIndex}))");
             using (context.Emitter.Writer.Braces())
             {
                 context.Emitter.Writer.AppendLine($"{resultVar} = true; break;");
@@ -78,7 +78,7 @@ internal sealed class AllStrategy : IStackLinqTerminalStrategy
         var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
         context.Emitter.Writer.Append("if (!((");
         context.Visitor.Visit(arg.Expression);
-        context.Emitter.Writer.AppendLine($")(__gsharp_val_{valIndex})))");
+        context.Emitter.Writer.AppendLine($")({StackLinqHelper.ValuePrefix}{valIndex})))");
         using (context.Emitter.Writer.Braces())
         {
             context.Emitter.Writer.AppendLine($"{resultVar} = false; break;");
@@ -107,15 +107,15 @@ internal sealed class ElementSelectionStrategy(bool stopOnFirstMatch) : IStackLi
             var arg = StackLinqHelper.GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append("if ((");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__gsharp_val_{valIndex}))");
+            context.Emitter.Writer.AppendLine($")({StackLinqHelper.ValuePrefix}{valIndex}))");
             using (context.Emitter.Writer.Braces())
             {
-                context.Emitter.Writer.AppendLine($"{resultVar} = __gsharp_val_{valIndex}{statementSuffix}");
+                context.Emitter.Writer.AppendLine($"{resultVar} = {StackLinqHelper.ValuePrefix}{valIndex}{statementSuffix}");
             }
         }
         else
         {
-            context.Emitter.Writer.AppendLine($"{resultVar} = __gsharp_val_{valIndex}{statementSuffix}");
+            context.Emitter.Writer.AppendLine($"{resultVar} = {StackLinqHelper.ValuePrefix}{valIndex}{statementSuffix}");
         }
     }
 
@@ -139,16 +139,16 @@ internal sealed class ExtremaStrategy(string comparisonOperator) : IStackLinqTer
         context.Emitter.Writer.AppendLine($"if (!{resultVar}_init)");
         using (context.Emitter.Writer.Braces())
         {
-            context.Emitter.Writer.AppendLine($"{resultVar} = __gsharp_val_{valIndex};");
+            context.Emitter.Writer.AppendLine($"{resultVar} = {StackLinqHelper.ValuePrefix}{valIndex};");
             context.Emitter.Writer.AppendLine($"{resultVar}_init = true;");
         }
         context.Emitter.Writer.AppendLine("else");
         using (context.Emitter.Writer.Braces())
         {
-            context.Emitter.Writer.AppendLine($"if (__gsharp_val_{valIndex} {comparisonOperator} {resultVar})");
+            context.Emitter.Writer.AppendLine($"if ({StackLinqHelper.ValuePrefix}{valIndex} {comparisonOperator} {resultVar})");
             using (context.Emitter.Writer.Braces())
             {
-                context.Emitter.Writer.AppendLine($"{resultVar} = __gsharp_val_{valIndex};");
+                context.Emitter.Writer.AppendLine($"{resultVar} = {StackLinqHelper.ValuePrefix}{valIndex};");
             }
         }
     }
@@ -164,7 +164,7 @@ internal sealed class ContainsStrategy : IStackLinqTerminalStrategy
     public void Emit(ref TranspileContext context, in LinqStage stage, string resultVar, int valIndex)
     {
         var arg = stage.Invocation.ArgumentList.Arguments[0].Expression;
-        context.Emitter.Writer.Append($"if (__gsharp_val_{valIndex} == (");
+        context.Emitter.Writer.Append($"if ({StackLinqHelper.ValuePrefix}{valIndex} == (");
         context.Visitor.Visit(arg);
         context.Emitter.Writer.AppendLine("))");
         using (context.Emitter.Writer.Braces())
@@ -228,7 +228,7 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
             context.Emitter.Writer.AppendLine($"if (!{resultVar}_init)");
             using (context.Emitter.Writer.Braces())
             {
-                context.Emitter.Writer.AppendLine($"{resultVar} = __gsharp_val_{valIndex};");
+                context.Emitter.Writer.AppendLine($"{resultVar} = {StackLinqHelper.ValuePrefix}{valIndex};");
                 context.Emitter.Writer.AppendLine($"{resultVar}_init = true;");
             }
             context.Emitter.Writer.AppendLine("else");
@@ -236,14 +236,14 @@ internal sealed class AggregateStrategy : IStackLinqTerminalStrategy
             {
                 context.Emitter.Writer.Append($"{resultVar} = (");
                 context.Visitor.Visit(funcArg);
-                context.Emitter.Writer.AppendLine($")({resultVar}, __gsharp_val_{valIndex});");
+                context.Emitter.Writer.AppendLine($")({resultVar}, {StackLinqHelper.ValuePrefix}{valIndex});");
             }
         }
         else
         {
             context.Emitter.Writer.Append($"{resultVar} = (");
             context.Visitor.Visit(funcArg);
-            context.Emitter.Writer.AppendLine($")({resultVar}, __gsharp_val_{valIndex});");
+            context.Emitter.Writer.AppendLine($")({resultVar}, {StackLinqHelper.ValuePrefix}{valIndex});");
         }
     }
 

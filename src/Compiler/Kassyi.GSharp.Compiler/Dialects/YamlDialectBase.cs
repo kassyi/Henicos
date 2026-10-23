@@ -1,12 +1,9 @@
-
 namespace Kassyi.GSharp.Compiler.Dialects;
 
 public abstract class YamlDialectBase : ITranspilerDialect
 {
-    public virtual IEnumerable<string> RequiredHeaders => Array.Empty<string>();
-    public virtual string StructPrefix => string.Empty;
-    public virtual string MethodPrefix => string.Empty;
-    public virtual bool IsCuda => GetType().Name.Contains("Cuda");
+    public abstract string Name { get; }
+    public virtual bool IsCuda => false;
 
     public virtual DialectCapabilities Capabilities =>
         DialectCapabilities.AllGpuFeatures;

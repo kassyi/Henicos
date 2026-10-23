@@ -29,7 +29,6 @@ internal static class TypeConstants
 
     public static class GpuMacros
     {
-        public const string Gpu = nameof(Gpu);
         public const string Hint = nameof(Hint);
         public const string ForUnroll = nameof(ForUnroll);
         public const string InlinePtx = nameof(InlinePtx);

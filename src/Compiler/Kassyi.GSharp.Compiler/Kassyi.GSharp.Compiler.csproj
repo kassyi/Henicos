@@ -45,6 +45,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Kassyi.GSharp.Compiler.Generators\Kassyi.GSharp.Compiler.Generators.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" ExcludeAssets="all" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
     <ProjectReference Include="..\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" ReferenceOutputAssembly="false" />
+    <!-- Builds StackLinq first, which exports its netstandard2.0 sources for IncludeEmbeddedStackLinq -->
+    <ProjectReference Include="..\..\ZeroAlloc\Kassyi.ZeroAlloc.Linq\Kassyi.ZeroAlloc.Linq.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" ExcludeAssets="all" SkipGetTargetFrameworkProperties="true" SetConfiguration="Configuration=$(Configuration)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -77,10 +79,12 @@
     <Compile Remove="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
     <Compile Remove="$(IntermediateOutputPath)GeneratedNativeApi\**\*.g.cs" />
     <Compile Remove="$(IntermediateOutputPath)GeneratedPrelude\**\*.g.cs" />
+    <Compile Remove="$(IntermediateOutputPath)GeneratedInternalNames\**\*.g.cs" />
     <Compile Remove="**\GeneratedDialects\**\*.g.cs" />
     <Compile Remove="**\GeneratedDiagnostics\**\*.g.cs" />
     <Compile Remove="**\GeneratedNativeApi\**\*.g.cs" />
     <Compile Remove="**\GeneratedPrelude\**\*.g.cs" />
+    <Compile Remove="**\GeneratedInternalNames\**\*.g.cs" />
   </ItemGroup>
 
   <Target Name="GenerateYamlDialects" BeforeTargets="CoreCompile" Inputs="@(DialectYamlFiles)" Outputs="$(IntermediateOutputPath)GeneratedDialects.stamp">
@@ -101,17 +105,33 @@
     <Touch Files="$(IntermediateOutputPath)GeneratedPrelude.stamp" AlwaysCreate="true" />
   </Target>
 
-  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects;GenerateDiagnostics;GeneratePrelude">
+  <Target Name="GenerateInternalNames" BeforeTargets="CoreCompile" Inputs="$(MSBuildThisFileDirectory)Resources\InternalNames.yml;@(PreludeResourceFiles);$(MSBuildThisFileDirectory)..\..\Core\Kassyi.GSharp.Core\ManagedGpuContext.cs;$(MSBuildThisFileDirectory)..\Kassyi.GSharp.Compiler.Generators\$(BaseOutputPath)$(Configuration)\net10.0\Kassyi.GSharp.Compiler.Generators.dll" Outputs="$(IntermediateOutputPath)GeneratedInternalNames.stamp">
+    <MakeDir Directories="$(IntermediateOutputPath)GeneratedInternalNames" />
+    <Exec Command="dotnet &quot;$(MSBuildThisFileDirectory)../Kassyi.GSharp.Compiler.Generators/$(BaseOutputPath)$(Configuration)/net10.0/Kassyi.GSharp.Compiler.Generators.dll&quot; internal-names &quot;$(MSBuildThisFileDirectory)Resources/InternalNames.yml&quot; &quot;$(MSBuildThisFileDirectory)Resources/Prelude&quot; &quot;$(MSBuildThisFileDirectory)../../Core/Kassyi.GSharp.Core&quot; &quot;$(IntermediateOutputPath)GeneratedInternalNames&quot;" />
+    <Touch Files="$(IntermediateOutputPath)GeneratedInternalNames.stamp" AlwaysCreate="true" />
+  </Target>
+
+  <!-- StackLinq as internal types in Kassyi.ZeroAlloc.Linq.Embedded; the analyzer ships no extra assembly -->
+  <Target Name="IncludeEmbeddedStackLinq" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <Compile Include="$(MSBuildThisFileDirectory)..\..\ZeroAlloc\Kassyi.ZeroAlloc.Linq\$(BaseOutputPath)$(Configuration)\net10.0\export\netstandard2.0\*.cs" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="IncludeYamlDialects" BeforeTargets="CoreCompile" DependsOnTargets="GenerateYamlDialects;GenerateDiagnostics;GeneratePrelude;GenerateInternalNames">
     <ItemGroup>
       <Compile Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
       <Compile Include="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
       <Compile Include="$(IntermediateOutputPath)GeneratedPrelude\**\*.g.cs" />
+      <Compile Include="$(IntermediateOutputPath)GeneratedInternalNames\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDiagnostics\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedPrelude\**\*.g.cs" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedInternalNames\**\*.g.cs" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDialects.stamp" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedDiagnostics.stamp" />
       <FileWrites Include="$(IntermediateOutputPath)GeneratedPrelude.stamp" />
+      <FileWrites Include="$(IntermediateOutputPath)GeneratedInternalNames.stamp" />
     </ItemGroup>
   </Target>
 

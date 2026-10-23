@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;/// <summary>
 /// Transpiles anonymous function syntax nodes (simple lambdas, parenthesized lambdas, and anonymous methods)
 /// into target dialect C++ capture-by-reference lambdas (<c>[&amp;](...) { ... }</c>).
@@ -60,10 +59,10 @@ public sealed class LambdaExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
         }
         else
         {
-            context.Emitter.Writer.AppendParentheses();
+            context.Emitter.Writer.Append("()");
         }
 
-        context.Emitter.Writer.AppendSpace();
+        context.Emitter.Writer.Append(' ');
 
         LambdaTranspilerHelper.TranspileLambdaBody(ref context, block, expressionBody);
     }

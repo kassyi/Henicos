@@ -1,10 +1,7 @@
 Dialect: GSharpCuda
+Backend: Cuda
 Inherits: StandardCpp
 Capabilities: AllGpuFeatures
-RequiredHeaders:
-  - "<cuda_runtime.h>"
-StructPrefix: "__device__ "
-MethodPrefix: "__device__ inline "
 Types:
   Kassyi.GSharp.Core.Float2: "float2"
   Kassyi.GSharp.Core.Float3: "float3"

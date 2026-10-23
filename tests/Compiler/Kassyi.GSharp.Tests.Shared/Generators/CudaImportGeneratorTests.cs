@@ -7,24 +7,14 @@ namespace Kassyi.GSharp.Tests.Shared.Generators;
 [Category(TestCategory.Compiler)]
 public class CudaImportGeneratorTests
 {
-    private const string SourceCode = """
-        using Kassyi.GSharp.Core;
-        using System.Runtime.InteropServices;
-
-        namespace TestNamespace;
-
-        public static partial class TestClass
-        {
-            [CudaImport("my_module", EntryPoint = "MyKernel")]
-            public static partial void MyMethod([In] float[] input, float scalar);
-        }
-        """;
+    private static readonly string s_sourceCode =
+        RoslynTestUtility.ReadTestCase("Generators/CudaImport_CachedStep.cu.cs");
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Test_UnrelatedSourceChange_KeepsCudaImportStepCached()
     {
-        var compilation = CreateCompilation(SourceCode);
+        var compilation = CreateCompilation(s_sourceCode);
         var driver = CreateDriver();
 
         driver = driver.RunGenerators(compilation);

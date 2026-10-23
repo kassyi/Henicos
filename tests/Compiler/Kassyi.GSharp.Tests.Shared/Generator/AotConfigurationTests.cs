@@ -14,15 +14,7 @@ public class AotConfigurationTests
     [Category(TestCategory.Compiler)]
     public void Test_AotConfiguration_AlwaysProducesAotWrapper()
     {
-        var sourceCode = """
-            using Kassyi.GSharp.Core;
-            namespace AotTest {
-                public partial class MyKernel {
-                    [GpuKernel]
-                    public static void Run(float[] data) {}
-                }
-            }
-            """;
+        var sourceCode = RoslynTestUtility.ReadTestCase("Generator/AotConfiguration_MyKernel.cu.cs");
         var (_, outputCompilation, _) = RoslynTestUtility.RunGenerator(sourceCode);
         var generatedTrees = outputCompilation.SyntaxTrees.Where(t => t.FilePath.EndsWith(".g.cs")).ToList();
 
@@ -46,15 +38,7 @@ public class AotConfigurationTests
         var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
         try
         {
-            var sourceCode = """
-                using Kassyi.GSharp.Core;
-                namespace AotTest {
-                    public partial class MyKernel {
-                        [GpuKernel]
-                        public static void Run(float[] data) {}
-                    }
-                }
-                """;
+            var sourceCode = RoslynTestUtility.ReadTestCase("Generator/AotConfiguration_MyKernel.cu.cs");
 
             var additionalOptions = new Dictionary<string, string>
             {
@@ -89,21 +73,7 @@ public class AotConfigurationTests
         var tempDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), System.IO.Path.GetRandomFileName());
         try
         {
-            var sourceCode = """
-                using Kassyi.GSharp.Core;
-                namespace AotTest {
-                    public struct UserDataStruct {
-                        public int FieldA;
-                    }
-
-                    public partial class ExtremelyLongClassNameToTriggerShorteningThresholdInGlobalCppNames_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789 {
-                        [GpuKernel]
-                        public static void ExtremelyLongMethodNameToTriggerShorteningThresholdInGlobalCppNames_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789(UserDataStruct[] data, int paramX) {
-                            var localVal = paramX;
-                        }
-                    }
-                }
-                """;
+            var sourceCode = RoslynTestUtility.ReadTestCase("Generator/AotConfiguration_LongNames.cu.cs");
 
             var additionalOptions = new Dictionary<string, string>
             {

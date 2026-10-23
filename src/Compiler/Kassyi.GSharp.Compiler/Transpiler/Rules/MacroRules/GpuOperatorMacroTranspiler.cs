@@ -81,7 +81,7 @@ internal static class GpuOperatorMacroTranspiler
             EmitMacroArguments(targetMethod, resultOp, leftOp, rightOp, extraArg, hasContext, ref context);
         }
 
-        context.Emitter.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendLine(";");
         return true;
     }
 
@@ -104,17 +104,15 @@ internal static class GpuOperatorMacroTranspiler
         var expectedMethodParamsMin = rightNode is BinaryExpressionSyntax ? 3 : 2; // result + left + (right/extraArg)
         expectedMethodParamsMax = expectedMethodParamsMin + 1; // + context
 
-        foreach (var member in targetType.GetMembers(targetMethodName))
-        {
-            if (member is IMethodSymbol m &&
-                (m.Parameters.Length == expectedMethodParamsMin ||
-                 (m.Parameters.Length == expectedMethodParamsMax && m.Parameters[0].Type.IsValueType)))
-            {
-                return m;
-            }
-        }
-
-        return null;
+        return targetType.GetMembers(targetMethodName)
+            .AsStackEnumerable()
+            .Select(static member => member as IMethodSymbol)
+            .FirstOrDefault(
+                (Min: expectedMethodParamsMin, Max: expectedMethodParamsMax),
+                static (m, expected) => m is not null &&
+                    (m.Parameters.Length == expected.Min ||
+                     (m.Parameters.Length == expected.Max && m.Parameters[0].Type.IsValueType))
+            );
     }
 
     private static (ExpressionSyntax? Left, ExpressionSyntax? Right, ExpressionSyntax? Extra) ExtractOperands(
@@ -168,7 +166,7 @@ internal static class GpuOperatorMacroTranspiler
         {
             if (!isFirst)
             {
-                localContext.Emitter.Writer.AppendComma();
+                localContext.Emitter.Writer.Append(',');
             }
 
             isFirst = false;

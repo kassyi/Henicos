@@ -164,23 +164,8 @@ public class WarpShuffleTests : TranspilerTestBase
     [Category(TestCategory.Syntax)]
     public void Test_95_Transpilation_MapsToCudaNativeShuffle()
     {
-        const string code = """
-            using Kassyi.GSharp.Core ;
-            public static class TestClass
-            {
-                [GpuKernel]
-                public static void Kernel(int[] input, int[] output)
-                {
-                    int tid = ThreadIndex.X;
-                    uint mask = 0xffffffff;
-                    int val = input[tid];
-                    int res = Warp.ShuffleDownSync(mask, val, 16);
-                    output[tid] = res;
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(code);
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Syntax/WarpShuffleNativeShuffleKernels.cu.cs"));
         var syntaxTree = compilation.SyntaxTrees.First();
         var model = compilation.GetSemanticModel(syntaxTree);
 

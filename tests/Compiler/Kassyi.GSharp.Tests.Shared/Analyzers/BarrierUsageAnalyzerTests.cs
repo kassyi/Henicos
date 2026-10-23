@@ -216,4 +216,24 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/LockStatementInKernelKernels.cu.cs", s_analyzer)
                                .ReportsErrorsAsync("GSH0047");
     }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_UserDefinedGpuType_IsNotTakenForTheBarrier()
+    {
+        await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/LookalikeGpuTypeKernels.cu.cs", s_analyzer)
+                               .ReportsNoDiagnosticsAsync();
+    }
+
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_UserDefinedGpuKernelAttribute_IsNotTakenForAKernel()
+    {
+        var diagnostics = await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/LookalikeGpuKernelAttributeKernels.cu.cs", s_analyzer)
+                                                 .GetDiagnosticsAsync();
+
+        // The barrier is reported as called from host code, not as divergent inside a kernel
+        Assert.Contains(diagnostics, d => d.Id == "GSH0042");
+        Assert.DoesNotContain(diagnostics, d => d.Id == "GSH0037");
+    }
 }

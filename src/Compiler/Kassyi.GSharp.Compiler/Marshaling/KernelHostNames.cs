@@ -1,8 +1,4 @@
-using System.Globalization;
-
 namespace Kassyi.GSharp.Compiler.Marshaling;
-
-using Kassyi.GSharp.Compiler.Layout;
 
 /// <summary>
 /// Names and signatures of the host members that the generator emits for one kernel, so that overloaded kernels get
@@ -24,14 +20,9 @@ internal static class KernelHostNames
     /// <summary>Whether another <c>[GpuKernel]</c> in the containing type has the same name.</summary>
     public static bool IsOverloadedKernel(IMethodSymbol kernel)
     {
-        var count = 0;
-        foreach (var member in kernel.ContainingType.GetMembers(kernel.Name))
-        {
-            if (member is IMethodSymbol method && method.HasAttribute(KnownAttributes.GpuKernel))
-            {
-                count++;
-            }
-        }
+        var count = kernel.ContainingType.GetMembers(kernel.Name)
+            .AsStackEnumerable()
+            .Count(static member => member is IMethodSymbol method && method.HasAttribute(KnownAttributes.GpuKernel));
 
         return count > 1;
     }
@@ -52,7 +43,8 @@ internal static class KernelHostNames
     public static string GetTypedPointerLaunchName(IMethodSymbol kernel) => GetLaunchName(kernel) + PointerSuffix;
 
     /// <summary>The name of the <c>IntPtr</c> launch wrapper: public for a kernel that is not overloaded, private otherwise.</summary>
-    public static string GetPointerLaunchName(IMethodSymbol kernel) => LaunchPrefix + GetMemberKey(kernel) + PointerSuffix;
+    public static string GetPointerLaunchName(IMethodSymbol kernel) =>
+        LaunchPrefix + GetMemberKey(kernel) + PointerSuffix;
 
     /// <summary>
     /// Gets the element type <c>T</c> of the <c>GpuBuffer&lt;T&gt;</c> that the typed wrapper takes for a parameter
@@ -61,9 +53,9 @@ internal static class KernelHostNames
     /// <returns><see langword="false"/> when the parameter is not a device pointer or its element type is not unmanaged.</returns>
     public static bool TryGetBufferElementType(IParameterSymbol parameter, [NotNullWhen(true)] out ITypeSymbol? element)
     {
-        var marshaled = KernelLaunchEmitter.GetMarshaledType(parameter);
-        element = marshaled.TryGetArrayLikeElementType(out var arrayElement) ? arrayElement
-            : parameter.RefKind is RefKind.Ref or RefKind.Out ? parameter.Type
+        var shape = KernelParameterShape.Classify(parameter);
+        element = shape.IsArray ? shape.ElementType
+            : shape.IsByRef ? parameter.Type
             : null;
         return element is { IsUnmanagedType: true };
     }
@@ -95,7 +87,8 @@ internal static class KernelHostNames
     /// Finds an earlier overload of <paramref name="kernel"/> whose <c>Launch{Name}</c> or typed <c>Launch{Name}Ptr</c>
     /// has the same parameter list, which C# would reject as a duplicate member.
     /// </summary>
-    public static bool TryFindIndistinguishableOverload(IMethodSymbol kernel, [NotNullWhen(true)] out IMethodSymbol? earlier,
+    public static bool TryFindIndistinguishableOverload(IMethodSymbol kernel,
+        [NotNullWhen(true)] out IMethodSymbol? earlier,
         out string wrapperName)
     {
         earlier = null;

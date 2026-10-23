@@ -32,7 +32,7 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
 
                 if (i < node.ArgumentList.Arguments.Count - 1)
                 {
-                    context.Emitter.Writer.AppendComma();
+                    context.Emitter.Writer.Append(',');
                 }
             }
         }

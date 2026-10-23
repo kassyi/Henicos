@@ -86,7 +86,9 @@ using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> numbers = [5, 10, 25, 15];
 StackEnumerable<TakeWhileEnumerator<SpanEnumerator<int>, int>, int> prefix =
-    numbers.AsStackEnumerable().TakeWhile(x => x < 20);
+    numbers
+        .AsStackEnumerable()
+        .TakeWhile(x => x < 20);
 
 Console.WriteLine($"Prefix sum: {prefix.Sum()}");
 ```

@@ -8,10 +8,10 @@ internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
     public bool TryTranspile(
         InvocationExpressionSyntax invocation,
         ExpressionStatementSyntax statement,
-        IMethodSymbol symbol,
+        GpuMacroCall call,
         ref TranspileContext context)
     {
-        if (symbol.Name != TypeConstants.GpuMacros.SingleThread || symbol.ContainingType.Name != TypeConstants.GpuType)
+        if (call.Kind != GpuMacroKind.SingleThread)
         {
             return false;
         }
@@ -22,7 +22,7 @@ internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
             return false;
         }
 
-        context.Emitter.Writer.AppendKeyword("if");
+        context.Emitter.Writer.Append("if");
         using (context.Emitter.Writer.Parentheses())
         {
             context.Emitter.Writer.Append("threadIdx.x == 0 && blockIdx.x == 0");
@@ -30,16 +30,14 @@ internal sealed class SingleThreadMacroRule : IMacroTranspilerRule
 
         context.Emitter.Writer.AppendLine();
 
-        // Suppress AutoSyncGrid in SingleThread blocks to prevent GPU deadlock (grid sync requires all threads)
-        var prevDepth = context.Emitter.AutoSyncGridDepth;
-        context.Emitter.AutoSyncGridDepth = 0;
+        var previousDepth = AutoSyncGrid.Suppress(ref context);
         try
         {
             MacroTranspilerHelper.EmitUnrolledBody(ref context, lambdaExpr.Body);
         }
         finally
         {
-            context.Emitter.AutoSyncGridDepth = prevDepth;
+            AutoSyncGrid.Restore(ref context, previousDepth);
         }
 
         return true;

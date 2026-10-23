@@ -130,6 +130,28 @@ public class StackLinqTests
     }
 
     [Fact]
+    public void Sum_LongerThanVector_AddsWholeVectorsAndLeftovers()
+    {
+        // 101 elements: several whole vectors at any vector width, plus elements left over
+        var intData = new int[101];
+        var floatData = new float[101];
+        var doubleData = new double[101];
+        for (var i = 0; i < intData.Length; i++)
+        {
+            intData[i] = i + 1;
+            floatData[i] = i + 1;
+            doubleData[i] = i + 1;
+        }
+
+        Assert.Equal(5151, intData.AsStackEnumerable().Sum());
+        Assert.Equal(5151f, floatData.AsStackEnumerable().Sum());
+        Assert.Equal(5151d, doubleData.AsStackEnumerable().Sum());
+        Assert.Equal(5151, new ReadOnlySpan<int>(intData).AsStackEnumerable().Sum());
+        Assert.Equal(5151f, new ReadOnlySpan<float>(floatData).AsStackEnumerable().Sum());
+        Assert.Equal(5151d, new ReadOnlySpan<double>(doubleData).AsStackEnumerable().Sum());
+    }
+
+    [Fact]
     public void ToArray_ShouldReturnArrayOfElements()
     {
         int[] data = { 1, 2, 3, 4, 5 };

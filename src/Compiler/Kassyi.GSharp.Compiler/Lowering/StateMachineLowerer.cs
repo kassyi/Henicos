@@ -63,23 +63,26 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
                     commitState(state + 1, isBarrier: false);
                     currentCaseStatements.Add(CreateResumeStatement(stmt, barrierInv, state));
                 }
-                else if (BarrierHelper.IsWarpShuffle(barrierInv))
+                else if (BarrierHelper.TryGetWarpShuffleRead(barrierInv, out var readFunction))
                 {
                     // 1. Publish val to the context's warp exchange slot (__gsharp_warp_exchange_assign(val))
                     var valArg = barrierInv.ArgumentList.Arguments[1].Expression;
-                    currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
-                        SyntaxFactory.InvocationExpression(
-                            SyntaxFactory.IdentifierName("__gsharp_warp_exchange_assign"),
-                            SyntaxFactory.ArgumentList(
-                                SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(valArg)))
+                    currentCaseStatements.Add(
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.InvocationExpression(
+                                SyntaxFactory.IdentifierName(GSharpInternalNames.Prelude.WarpExchangeAssign),
+                                SyntaxFactory.ArgumentList(
+                                    SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Argument(valArg))
+                                )
+                            )
                         )
-                    ));
+                    );
 
                     // 2. State Split & Return
                     commitState(state + 1, isBarrier: true);
 
                     // 3. Rewrite original Warp.ShuffleXXX(...) to __gsharp_warp_shuffle_read_XXX(...)
-                    var readStmt = RewriteWarpShuffleRead(stmt, barrierInv);
+                    var readStmt = RewriteWarpShuffleRead(stmt, barrierInv, readFunction);
                     currentCaseStatements.Add(RewriteGoto(readStmt, labelStates));
                 }
                 else
@@ -89,13 +92,16 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
 
                     if (name == TypeConstants.GpuMacros.SyncGrid)
                     {
-                        currentCaseStatements.Add(SyntaxFactory.ExpressionStatement(
-                            SyntaxFactory.AssignmentExpression(
-                                SyntaxKind.SimpleAssignmentExpression,
-                                SyntaxFactory.IdentifierName(GSharpInternalNames.YieldedForGridSync),
-                                SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
+                        // __gsharp_yielded_for_grid_sync = true;
+                        currentCaseStatements.Add(
+                            SyntaxFactory.ExpressionStatement(
+                                SyntaxFactory.AssignmentExpression(
+                                    SyntaxKind.SimpleAssignmentExpression,
+                                    SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.YieldedForGridSync),
+                                    SyntaxFactory.LiteralExpression(SyntaxKind.TrueLiteralExpression)
+                                )
                             )
-                        ));
+                        );
                     }
 
                     commitState(state + 1, isBarrier: true);
@@ -119,8 +125,9 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
             commitState(-1, isBarrier: true);
         }
 
+        // switch (__gsharp_state) { case 0: { ... } case 1: { ... } ... }
         var switchStmt = SyntaxFactory.SwitchStatement(
-            SyntaxFactory.IdentifierName(GSharpInternalNames.State),
+            SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State),
             SyntaxFactory.List(cases)
         );
 
@@ -130,9 +137,9 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
         {
             if (isBarrier)
             {
+                // __gsharp_state = <next state>; return;
                 currentCaseStatements.Add(CreateStateAssignment(nextState));
-                currentCaseStatements.Add(SyntaxFactory.ReturnStatement()
-                    .WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn")));
+                currentCaseStatements.Add(CreateSuspendingReturn());
             }
             else
             {
@@ -147,12 +154,16 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
 
         void commitSection()
         {
-            cases.Add(SyntaxFactory.SwitchSection(
-                SyntaxFactory.SingletonList<SwitchLabelSyntax>(SyntaxFactory.CaseSwitchLabel(
-                    SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state))
-                )),
-                SyntaxFactory.SingletonList<StatementSyntax>(SyntaxFactory.Block(currentCaseStatements))
-            ));
+            // case <state>: { <statements> }
+            var label = SyntaxFactory.CaseSwitchLabel(
+                SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(state))
+            );
+            cases.Add(
+                SyntaxFactory.SwitchSection(
+                    SyntaxFactory.SingletonList<SwitchLabelSyntax>(label),
+                    SyntaxFactory.SingletonList<StatementSyntax>(SyntaxFactory.Block(currentCaseStatements))
+                )
+            );
 
             currentCaseStatements.Clear();
         }
@@ -176,25 +187,36 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
         var frameIndex = _callSites.Count;
         _callSites.Add(call);
 
+        var frameIndexLiteral =
+            SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(frameIndex));
         var arguments = SyntaxFactory.SeparatedList<ArgumentSyntax>()
             .Add(SyntaxFactory.Argument(call))
-            .Add(SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
-                SyntaxFactory.Literal(frameIndex))));
+            .Add(SyntaxFactory.Argument(frameIndexLiteral));
         if (resultTarget != null)
         {
             arguments = arguments.Add(SyntaxFactory.Argument(resultTarget));
         }
 
+        // __gsharp_resume(<call>, <frame index>[, <result target>])
         var resume = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.IdentifierName(GSharpInternalNames.ResumeCall),
-            SyntaxFactory.ArgumentList(arguments));
+            SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.ResumeCall),
+            SyntaxFactory.ArgumentList(arguments)
+        );
 
         return SyntaxFactory.IfStatement(
             SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, resume),
             SyntaxFactory.Block(
                 CreateStateAssignment(resumeState),
-                SyntaxFactory.ReturnStatement().WithAdditionalAnnotations(new SyntaxAnnotation("StateMachineReturn"))));
+                CreateSuspendingReturn()
+            )
+        );
     }
+
+    // return; marked so that the emitters treat it as a suspension, not as a return of the user's code
+    private static ReturnStatementSyntax CreateSuspendingReturn() =>
+        SyntaxFactory.ReturnStatement().WithAdditionalAnnotations(
+            new SyntaxAnnotation(LoweringAnnotations.StateMachineReturnAnnotationKind)
+        );
 
     private static StatementSyntax RewriteGoto(StatementSyntax stmt, Dictionary<string, int> labelStates) =>
         (StatementSyntax)new GotoRewriter(labelStates).Visit(stmt);
@@ -218,34 +240,26 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
         }
     }
 
+    // __gsharp_state = <stateValue>;
     private static StatementSyntax CreateStateAssignment(int stateValue)
     {
         return SyntaxFactory.ExpressionStatement(
             SyntaxFactory.AssignmentExpression(
                 SyntaxKind.SimpleAssignmentExpression,
-                SyntaxFactory.IdentifierName(GSharpInternalNames.State),
+                SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.State),
                 SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal(stateValue))
             )
         );
     }
 
-    private static StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv)
+    private static StatementSyntax RewriteWarpShuffleRead(StatementSyntax stmt, InvocationExpressionSyntax barrierInv,
+        string readFunction)
     {
-        var methodName = (barrierInv.Expression as MemberAccessExpressionSyntax)?.Name.Identifier.ValueText ??
-                         "ShuffleDownSync";
-        var readMethodName = methodName switch
-        {
-            "ShuffleDownSync" => "__gsharp_warp_shuffle_read_down_sync",
-            "ShuffleUpSync" => "__gsharp_warp_shuffle_read_up_sync",
-            "ShuffleXorSync" => "__gsharp_warp_shuffle_read_xor_sync",
-            "ShuffleSync" => "__gsharp_warp_shuffle_read_sync",
-            _ => "__gsharp_warp_shuffle_read"
-        };
-
         var newArgs = SyntaxFactory.SeparatedList<ArgumentSyntax>();
         // Arguments are: context, mask, val, delta, width [optional]
         // The root context owns the warp exchange, also when the shuffle is in a device function
-        newArgs = newArgs.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.Root)));
+        newArgs = newArgs.Add(
+            SyntaxFactory.Argument(SyntaxFactory.IdentifierName(GSharpInternalNames.SuspendingCall.Root)));
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[0]);
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[1]); // pass val for type inference
         newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[2]);
@@ -254,8 +268,9 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
             newArgs = newArgs.Add(barrierInv.ArgumentList.Arguments[3]);
         }
 
+        // __gsharp_warp_shuffle_read_<kind>(__gsharp_root, mask, val, delta[, width])
         var rewrittenInv = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.IdentifierName(readMethodName),
+            SyntaxFactory.IdentifierName(readFunction),
             SyntaxFactory.ArgumentList(newArgs)
         );
 

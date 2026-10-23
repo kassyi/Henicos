@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Helpers;
 
 /// <summary>

@@ -103,12 +103,12 @@ internal static class SuspensionAnalysis
             return false;
         }
 
-        foreach (var node in declaration.DescendantNodes())
+        var callsBarrier = declaration.DescendantNodes()
+            .AsStackEnumerable()
+            .Any(isBarrier, static (node, barrier) => node is InvocationExpressionSyntax invocation && barrier(invocation));
+        if (callsBarrier)
         {
-            if (node is InvocationExpressionSyntax invocation && isBarrier(invocation))
-            {
-                return true;
-            }
+            return true;
         }
 
         foreach (var callee in GetDeviceFunctionCallees(declaration, compilation))

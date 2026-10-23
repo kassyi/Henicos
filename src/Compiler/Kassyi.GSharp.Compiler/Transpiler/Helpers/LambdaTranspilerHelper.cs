@@ -23,7 +23,7 @@ internal static class LambdaTranspilerHelper
                 {
                     context.Emitter.Writer.Append("return ");
                     context.Visitor.Visit(expressionBody);
-                    context.Emitter.Writer.AppendSemiColonLine();
+                    context.Emitter.Writer.AppendLine(";");
                 }
             }
         }

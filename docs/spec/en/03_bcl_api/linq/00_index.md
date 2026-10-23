@@ -82,17 +82,19 @@ using Kassyi.ZeroAlloc.Linq;
 
 // 1. From ReadOnlySpan<T> / Span<T> (CPU & Stack-only)
 ReadOnlySpan<int> span = stackalloc int[] { 1, 2, 3, 4, 5 };
-int spanSum = span.AsStackEnumerable()
-                  .Where(x => x % 2 == 0)
-                  .Select(x => x * 10)
-                  .Sum();
+int spanSum = span
+    .AsStackEnumerable()
+    .Where(x => x % 2 == 0)
+    .Select(x => x * 10)
+    .Sum();
 
 // 2. From standard T[] arrays (CPU and GPU Device Kernels)
 int[] array = new int[] { 1, 2, 3, 4, 5 };
-int arraySum = array.AsStackEnumerable()
-                    .Skip(1)
-                    .Take(3)
-                    .Sum();
+int arraySum = array
+    .AsStackEnumerable()
+    .Skip(1)
+    .Take(3)
+    .Sum();
 ```
 
 ---
@@ -124,6 +126,8 @@ StackLinq implements an extensive suite of standard query operators optimized fo
 | **Quantifiers & Search** | `Any()`, `All()`, `Contains(value)` |
 | **Element Selection** | `First()`, `FirstOrDefault()`, `Last()`, `LastOrDefault()`, `Single()`, `SingleOrDefault()`, `ElementAt(index)`, `ElementAtOrDefault(index)` |
 | **Materialization & Parallel** | `CopyTo(Span<T>)`, `ToArray()`, `AsParallel()` |
+| **State overloads (host-only)** | `Where(state, (item, state) => ...)` (`WhereWithStateEnumerator`), `Select(state, ...)` (`SelectWithStateEnumerator`), `Count`, `Any`, `All`, `First`, `FirstOrDefault` with `(state, predicate)`. The outer value goes in `state` so the lambda can be `static` and allocate no closure. A kernel reports `GSH0003` for them; a kernel lambda reads outer values directly. |
+| **Collect, act & search (host-only)** | `AddTo(collection)`, `AddIf(collection, predicate)`, `Do(action)`, `DoIf(predicate, action)`, `SelectMany(selector)` (`SelectManyEnumerator`), `TryFirst(predicate, out value)`, `IndexOf(predicate)`; all but `AddTo` and `SelectMany` also take a state value. `OfType<TResult>()` (`OfTypeEnumerator`, an instance method of `StackEnumerable`) keeps the elements of a type and drops `null`. They replace host loops that add to a caller-owned collection, run an action per element or search with a "found" result. A kernel reports `GSH0003` for them. |
 
 For full method signatures and examples, refer to [StackLinqExtensions Class](StackLinqExtensions.md) and the individual method/enumerator reference pages below.
 
@@ -158,6 +162,9 @@ GSharp provides the compile-time diagnostic **[`SLQ0001`](../diagnostics/SLQ0001
 * [TakeEnumerator&lt;TEnumerator, TSource&gt; Struct](TakeEnumerator.md) / [SkipEnumerator&lt;TEnumerator, TSource&gt; Struct](SkipEnumerator.md)
 * [TakeWhileEnumerator&lt;TEnumerator, TSource&gt; Struct](TakeWhileEnumerator.md) / [TakeWhileAtEnumerator&lt;TEnumerator, TSource&gt; Struct](TakeWhileAtEnumerator.md)
 * [SkipWhileEnumerator&lt;TEnumerator, TSource&gt; Struct](SkipWhileEnumerator.md) / [SkipWhileAtEnumerator&lt;TEnumerator, TSource&gt; Struct](SkipWhileAtEnumerator.md)
+* [WhereWithStateEnumerator&lt;TEnumerator, TSource, TState&gt; Struct](WhereWithStateEnumerator.md) / [SelectWithStateEnumerator&lt;TEnumerator, TSource, TState, TResult&gt; Struct](SelectWithStateEnumerator.md)
+* [SelectManyEnumerator&lt;TEnumerator, TSource, TInnerEnumerator, TResult&gt; Struct](SelectManyEnumerator.md)
+* [OfTypeEnumerator&lt;TEnumerator, TSource, TResult&gt; Struct](OfTypeEnumerator.md)
 
 ### Extension Method Pages
 
@@ -178,5 +185,10 @@ GSharp provides the compile-time diagnostic **[`SLQ0001`](../diagnostics/SLQ0001
 * [Any Method](Any.md)
 * [All Method](All.md)
 * [Contains Method](Contains.md)
+* [AddTo Method](AddTo.md) / [AddIf Method](AddIf.md)
+* [Do Method](Do.md) / [DoIf Method](DoIf.md)
+* [SelectMany Method](SelectMany.md)
+* [TryFirst Method](TryFirst.md) / [IndexOf Method](IndexOf.md)
+* [OfType Method](OfType.md)
 * [Diagnostic SLQ0001: Excessive StackLinq Chain Depth](../diagnostics/SLQ0001.md)
 * [Transpiler Architecture & Lowering Rules](../../02_architecture/00_index.md)

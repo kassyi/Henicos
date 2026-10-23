@@ -95,7 +95,9 @@ using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> numbers = [1, 2, 3, 4, 5, 6];
 StackEnumerable<WhereEnumerator<SpanEnumerator<int>, int>, int> evens =
-    numbers.AsStackEnumerable().Where(x => x % 2 == 0);
+    numbers
+        .AsStackEnumerable()
+        .Where(x => x % 2 == 0);
 
 Console.WriteLine($"Evens sum: {evens.Sum()}");
 ```

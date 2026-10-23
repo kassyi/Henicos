@@ -3,10 +3,10 @@
 Architectural constraints enforced by the GSharp generator pipeline. Abide by these when modifying transpiler/generator logic. For anything not listed, consult `docs/spec/` before assuming.
 
 ## 1. `[Constant]` Signature Exclusion
-`[Constant]` parameters exist only for runtime macro injection (`#define`). Exclude them from the generated `__global__ void` signature and host-side array marshaling. Filter with `!WrapperEmitter.IsConstant(p)`.
+`[Constant]` parameters exist only for runtime macro injection (`#define`). Exclude them from the generated `__global__ void` signature and host-side array marshaling. Filter with `p.IsConstantParameter()` (`SymbolExtensions`), not `HasAttribute(KnownAttributes.Constant)` spelled out.
 
 ## 2. No Silent Failures (Strict Diagnostics)
-Unsupported C# syntax (`new`, `string`, LINQ, recursion, ...) must not be ignored, emitted as empty strings, or thrown as raw exceptions. Report via `context.ReportDiagnostic` with the matching `GSharpDiagnostics` (e.g. `GSH0001`, `GSH0003`).
+Unsupported C# syntax (`new`, `string`, LINQ, recursion, ...) must not be ignored, emitted as empty strings, or thrown as raw exceptions. Report via `context.ReportDiagnostic` with the matching `GSharpDiagnostics` (e.g. `GSH0001`, `GSH0003`). How to define and report one from an analyzer, the transpiler or a kernel validation rule: [helpers.md §5](../skills/gsharp-transpiler-guidelines/references/helpers.md#5-diagnostics).
 
 ## 3. C++ Header Guards for Structs
 C++ definitions for C# `struct`s (e.g. `StructTranspiler`) must be wrapped in an include guard (`#ifndef __GSHARP_STRUCT_{structName}__`) to avoid redefinition when kernels sharing a struct are JIT-compiled together.
@@ -15,7 +15,7 @@ C++ definitions for C# `struct`s (e.g. `StructTranspiler`) must be wrapped in an
 `T[]` fields inside structs become unmanaged `IntPtr` fields in native shadow structs (`__Native_Name`). On the device side treat them as raw pointers, not managed objects.
 
 ## 5. Semantic-Aware Pointer Cascading (`ref` / `out`)
-When transpiling variable references (esp. `ref`/`out` arguments), query the `SemanticModel` to determine whether the symbol is already a pointer/reference in CUDA. This prevents `&(&val)` and ensures member access `.` on `ref` structs becomes `->`.
+When transpiling variable references (esp. `ref`/`out` arguments), query the `SemanticModel` to determine whether the symbol is already a pointer/reference in CUDA. This prevents `&(&val)` and ensures member access `.` on `ref` structs becomes `->`. `RefSyntaxHelper` implements this for arguments ([helpers.md §4](../skills/gsharp-transpiler-guidelines/references/helpers.md#4-transpiler-rules)).
 
 ## 6. Strict `var` Initialization (`ImplicitVarNeedsSuffixRule`)
 `var` maps to `auto`. Never allow `var` initialized from an untyped bare integer literal (`var x = 0;`); require explicit suffixes (`0u`, `1L`) to avoid NVCC/Roslyn signedness divergence. Literals with a decimal point or exponent are exempt.

@@ -1,8 +1,6 @@
 Dialect: StandardCpp
+Backend: Cpp
 Capabilities: HardwareAtomics, SharedMemory
-RequiredHeaders: []
-StructPrefix: ""
-MethodPrefix: "__device__ "
 Types:
   System.Void: "void"
   System.Boolean: "bool"

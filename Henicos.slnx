@@ -23,6 +23,7 @@
   </Folder>
   <Folder Name="/src/ZeroAlloc/">
     <Project Path="src/ZeroAlloc/Kassyi.ZeroAlloc.Linq/Kassyi.ZeroAlloc.Linq.csproj" />
+    <Project Path="src/ZeroAlloc/Kassyi.ZeroAlloc.Linq.Export/Kassyi.ZeroAlloc.Linq.Export.csproj" />
   </Folder>
   <Folder Name="/tests/Apps/">
     <Project Path="tests/Apps/Henicos.Benchmarks.Tests/Henicos.Benchmarks.Tests.csproj" />

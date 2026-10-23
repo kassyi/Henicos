@@ -244,18 +244,23 @@ internal static class NativeBindingEmitter
     private static ImmutableArray<ModuleKernelLaunchParameter> CreateLaunchParameters(ApiMethodDefinition method)
     {
         var builder = ImmutableArray.CreateBuilder<ModuleKernelLaunchParameter>(method.Parameters.Length);
-        foreach (var p in method.Parameters)
-        {
-            var type = p.Type.AsSpan().Trim().ToString();
-            string? elementType = null;
-            if (type.EndsWith("[]", StringComparison.Ordinal))
-            {
-                elementType = type.AsSpan(0, type.Length - 2).TrimEnd().ToString();
-            }
-
-            builder.Add(new ModuleKernelLaunchParameter(p.Name, type, elementType, CopyIn: true, CopyOut: true));
-        }
+        method.Parameters
+            .AsStackEnumerable()
+            .Select(CreateLaunchParameter)
+            .AddTo(builder);
 
         return builder.MoveToImmutable();
+    }
+
+    private static ModuleKernelLaunchParameter CreateLaunchParameter(ParameterDefinition p)
+    {
+        var type = p.Type.AsSpan().Trim().ToString();
+        string? elementType = null;
+        if (type.EndsWith("[]", StringComparison.Ordinal))
+        {
+            elementType = type.AsSpan(0, type.Length - 2).TrimEnd().ToString();
+        }
+
+        return new ModuleKernelLaunchParameter(p.Name, type, elementType, CopyIn: true, CopyOut: true);
     }
 }

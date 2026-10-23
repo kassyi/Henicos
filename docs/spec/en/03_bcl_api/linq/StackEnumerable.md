@@ -61,6 +61,12 @@ The underlying enumerator that drives this sequence.
 public readonly TEnumerator Enumerator;
 ```
 
+## Methods
+
+| Name | Description |
+| --- | --- |
+| [OfType&lt;TResult&gt;()](OfType.md) | Filters the sequence down to the elements of type `TResult` (`OfTypeEnumerator`). Host-only: a kernel reports `GSH0003`. |
+
 ## Remarks
 
 `StackEnumerable<TEnumerator, T>` is a `readonly ref struct` wrapper returned by [AsStackEnumerable](AsStackEnumerable.md) and intermediate StackLinq operators (`Where`, `Select`, `Skip`, `Take`, etc.). Because it is a `ref struct`, it cannot be boxed or stored on the managed heap, guaranteeing zero GC pressure.

@@ -1,7 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
-using Kassyi.GSharp.Naming;
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -35,8 +31,22 @@ internal static class GlobalCppNames
     /// Whether <paramref name="type"/> is a user struct whose definition G# emits itself. Other types
     /// (<c>System_Nullable</c>, shared memory) are defined by the prelude under their legacy spelling.
     /// </summary>
+    /// <remarks>
+    /// Used for the definition: collecting the structs to define and naming the definition. References use
+    /// <see cref="IsEncodedUserType"/>, which also gives way to the dialect's type map. The definition side does not
+    /// consult the map, so a mapped user struct would still be defined under its encoded name; no mapped user struct
+    /// exists today.
+    /// </remarks>
     public static bool IsEmittedUserType(INamedTypeSymbol type) =>
         type.TypeKind == TypeKind.Struct && !type.ContainingNamespace.IsSystemOrNumerics() && !type.IsSharedMemoryType();
+
+    /// <summary>
+    /// Whether a reference to <paramref name="type"/> or to one of its instance members uses the encoded name: an
+    /// <see cref="IsEmittedUserType">emitted user struct</see> that <paramref name="dialect"/> does not map to a type of
+    /// its own.
+    /// </summary>
+    public static bool IsEncodedUserType(INamedTypeSymbol type, ITranspilerDialect dialect) =>
+        IsEmittedUserType(type) && !dialect.IsMappedType(type);
 
     /// <summary>Returns <c>__gsharp_ty_{path}</c> for the definition of <paramref name="type"/>.</summary>
     /// <remarks>
@@ -127,12 +137,13 @@ internal static class GlobalCppNames
         }
 
         Array.Sort(candidates, 0, count, DeclarationOrderComparer.Instance);
-        for (var i = 0; i < count; i++)
+        var ordinal = candidates
+            .AsStackEnumerable()
+            .Take(count)
+            .IndexOf(method, static (candidate, target) => candidate.IsEqualTo(target));
+        if (ordinal >= 0)
         {
-            if (SymbolEqualityComparer.Default.Equals(candidates[i], method))
-            {
-                return i;
-            }
+            return ordinal;
         }
 
         throw new InvalidOperationException(
@@ -190,12 +201,13 @@ internal static class GlobalCppNames
         }
 
         Array.Sort<INamedTypeSymbol>(candidates, 0, count, DeclarationOrderComparer.Instance);
-        for (var i = 0; i < count; i++)
+        var ordinal = candidates
+            .AsStackEnumerable()
+            .Take(count)
+            .IndexOf(type, static (candidate, target) => candidate.IsEqualTo(target));
+        if (ordinal >= 0)
         {
-            if (SymbolEqualityComparer.Default.Equals(candidates[i], type))
-            {
-                return i;
-            }
+            return ordinal;
         }
 
         throw new InvalidOperationException(

@@ -28,17 +28,9 @@ public class SideEffectAnalyzer : DiagnosticAnalyzer
         }
         else if (property.AccessorList != null)
         {
-            AccessorDeclarationSyntax? getter = null;
-            foreach (var a in property.AccessorList.Accessors)
-            {
-                if (a.Kind() != SyntaxKind.GetAccessorDeclaration)
-                {
-                    continue;
-                }
-
-                getter = a;
-                break;
-            }
+            var getter = property.AccessorList.Accessors
+                .AsStackEnumerable()
+                .FirstOrDefault(static a => a.IsKind(SyntaxKind.GetAccessorDeclaration));
 
             if (getter == null)
             {
@@ -73,28 +65,24 @@ public class SideEffectAnalyzer : DiagnosticAnalyzer
 
     private static void CheckForAllocationInExpression(SyntaxNodeAnalysisContext context,
         ExpressionSyntax expression,
-        DiagnosticDescriptor descriptor)
-    {
-        foreach (var node in expression.DescendantNodesAndSelf())
-        {
-            if (node is BaseObjectCreationExpressionSyntax oce &&
-                DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeSymbol(oce)))
-            {
-                context.ReportDiagnostic(descriptor, oce);
-            }
-        }
-    }
+        DiagnosticDescriptor descriptor) =>
+        ReportDisposableCreations(context, expression.DescendantNodesAndSelf(), descriptor);
 
     private static void CheckForAllocationInBlock(SyntaxNodeAnalysisContext context, BlockSyntax block,
-        DiagnosticDescriptor descriptor)
-    {
-        foreach (var node in block.DescendantNodes())
-        {
-            if (node is BaseObjectCreationExpressionSyntax oce &&
-                DisposableAnalyzerHelper.IsDisposable(context.SemanticModel.GetTypeSymbol(oce)))
-            {
-                context.ReportDiagnostic(descriptor, oce);
-            }
-        }
-    }
+        DiagnosticDescriptor descriptor) =>
+        ReportDisposableCreations(context, block.DescendantNodes(), descriptor);
+
+    private static void ReportDisposableCreations(
+        SyntaxNodeAnalysisContext context,
+        IEnumerable<SyntaxNode> nodes,
+        DiagnosticDescriptor descriptor) =>
+        nodes
+            .AsStackEnumerable()
+            .DoIf(
+                (Context: context, Descriptor: descriptor),
+                static (node, s) =>
+                    node is BaseObjectCreationExpressionSyntax creation &&
+                    DisposableAnalyzerHelper.IsDisposable(s.Context.SemanticModel.GetTypeSymbol(creation)),
+                static (node, s) => s.Context.ReportDiagnostic(s.Descriptor, node)
+            );
 }

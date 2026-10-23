@@ -10,12 +10,12 @@ internal interface IMacroTranspilerRule
     /// </summary>
     /// <param name="invocation">The invocation expression syntax node to evaluate.</param>
     /// <param name="statement">The containing expression statement syntax node.</param>
-    /// <param name="symbol">The resolved method symbol of the invocation.</param>
+    /// <param name="call">The macro and overload the invocation resolved to.</param>
     /// <param name="context">The active transpilation context.</param>
     /// <returns><see langword="true"/> if the macro was successfully intercepted and transpiled; otherwise, <see langword="false"/>.</returns>
     bool TryTranspile(
         InvocationExpressionSyntax invocation,
         ExpressionStatementSyntax statement,
-        IMethodSymbol symbol,
+        GpuMacroCall call,
         ref TranspileContext context);
 }

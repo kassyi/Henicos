@@ -110,12 +110,13 @@ internal static class HoistedFieldTypeResolver
             case IPointerTypeSymbol pointerType:
                 return FindTypeParameter(pointerType.PointedAtType);
             case INamedTypeSymbol namedType:
-                foreach (var typeArgument in namedType.TypeArguments)
+                var fromTypeArguments = namedType.TypeArguments
+                    .AsStackEnumerable()
+                    .Select(FindTypeParameter)
+                    .FirstOrDefault(static found => found is not null);
+                if (fromTypeArguments is not null)
                 {
-                    if (FindTypeParameter(typeArgument) is { } found)
-                    {
-                        return found;
-                    }
+                    return fromTypeArguments;
                 }
 
                 return namedType.ContainingType != null ? FindTypeParameter(namedType.ContainingType) : null;

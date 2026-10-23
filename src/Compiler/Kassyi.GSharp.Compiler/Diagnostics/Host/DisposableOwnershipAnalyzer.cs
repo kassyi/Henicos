@@ -38,25 +38,11 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         }
 
         var disposableMembers = ImmutableArray.CreateBuilder<ISymbol>();
-
-        foreach (var m in namedType.GetMembers())
-        {
-            var (memberSymbol, type) = m switch
-            {
-                IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } f => ((ISymbol)f, f.Type),
-                IFieldSymbol
-                {
-                    IsStatic: false, IsImplicitlyDeclared: true,
-                    AssociatedSymbol: IPropertySymbol { IsStatic: false } p
-                } => (p, p.Type),
-                _ => (null, null)
-            };
-
-            if (memberSymbol != null && type != null && DisposableAnalyzerHelper.IsDisposable(type))
-            {
-                disposableMembers.Add(memberSymbol);
-            }
-        }
+        namedType.GetMembers()
+            .AsStackEnumerable()
+            .Select(GetDisposableInstanceMember)
+            .OfType<ISymbol>()
+            .AddTo(disposableMembers);
 
         if (disposableMembers.Count == 0)
         {
@@ -86,25 +72,34 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
         ValidateDisposeImplementation(in validationCtx, disposedMemberNames);
     }
 
+    // An instance field, or the property behind a backing field, whose type is disposable; null for any other member
+    private static ISymbol? GetDisposableInstanceMember(ISymbol member) =>
+        member switch
+        {
+            IFieldSymbol { IsStatic: false, IsImplicitlyDeclared: false } f
+                when DisposableAnalyzerHelper.IsDisposable(f.Type) => f,
+            IFieldSymbol
+            {
+                IsStatic: false, IsImplicitlyDeclared: true,
+                AssociatedSymbol: IPropertySymbol { IsStatic: false } p
+            } when DisposableAnalyzerHelper.IsDisposable(p.Type) => p,
+            _ => null
+        };
+
     private readonly record struct OwnershipValidationContext(
         SymbolAnalysisContext AnalysisContext,
         INamedTypeSymbol NamedType,
         IReadOnlyList<ISymbol> DisposableMembers,
         HashSet<string> BorrowedFields);
 
-    private static void CollectBorrowedParameterNames(INamedTypeSymbol namedType, HashSet<string> borrowedParamNames)
-    {
-        foreach (var ctor in namedType.Constructors)
-        {
-            foreach (var p in ctor.Parameters)
-            {
-                if (DisposableAnalyzerHelper.IsDisposable(p.Type) && !HasTakesOwnershipAttribute(p))
-                {
-                    borrowedParamNames.Add(p.Name);
-                }
-            }
-        }
-    }
+    private static void CollectBorrowedParameterNames(INamedTypeSymbol namedType, HashSet<string> borrowedParamNames) =>
+        namedType.Constructors
+            .AsStackEnumerable()
+            .SelectMany(static ctor => ctor.Parameters
+                .AsStackEnumerable()
+            ).Where(static p => DisposableAnalyzerHelper.IsDisposable(p.Type) && !HasTakesOwnershipAttribute(p))
+            .Select(static p => p.Name)
+            .AddTo(borrowedParamNames);
 
     private static bool HasTakesOwnershipAttribute(IParameterSymbol param) =>
         param.HasAttribute(KnownAttributes.TakesOwnership);
@@ -119,55 +114,53 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        foreach (var p in borrowedParamNames)
-        {
-            borrowedFields.Add(p);
-            borrowedFields.Add("_" + p);
-        }
+        borrowedParamNames
+            .AsStackEnumerable()
+            .Do(borrowedFields, static (p, fields) =>
+                {
+                    fields.Add(p);
+                    fields.Add("_" + p);
+                }
+            );
 
         // Direct lookup via symbol constructors reduces member search from O(Members) to O(Constructors).
-        foreach (var ctor in namedType.Constructors)
+        namedType.Constructors
+            .AsStackEnumerable()
+            .SelectMany(static ctor => ctor.DeclaringSyntaxReferences
+                .AsStackEnumerable()
+            ).Select(static r => r.GetSyntax())
+            .OfType<ConstructorDeclarationSyntax>()
+            .Select(static ctorDecl => (SyntaxNode?)ctorDecl.Body ?? ctorDecl.ExpressionBody)
+            .OfType<SyntaxNode>()
+            // Prune traversal into nested scopes (local functions, lambdas, type declarations) to minimize worst-case
+            // AST exploration.
+            .SelectMany(static root => root
+                .DescendantNodes(descendIntoChildren: static n =>
+                    n is not (TypeDeclarationSyntax or LocalFunctionStatementSyntax
+                        or AnonymousFunctionExpressionSyntax)
+                ).AsStackEnumerable()
+            ).OfType<AssignmentExpressionSyntax>()
+            .Select(borrowedParamNames, GetBorrowedAssignmentTarget)
+            .OfType<string>()
+            .AddTo(borrowedFields);
+    }
+
+    // The member that a constructor assigns a borrowed parameter to (x = p, this.x = p); null for any other assignment
+    private static string? GetBorrowedAssignmentTarget(
+        AssignmentExpressionSyntax assign,
+        HashSet<string> borrowedParamNames)
+    {
+        if (assign.Right is not IdentifierNameSyntax id || !borrowedParamNames.Contains(id.Identifier.Text))
         {
-            foreach (var r in ctor.DeclaringSyntaxReferences)
-            {
-                if (r.GetSyntax() is not ConstructorDeclarationSyntax ctorDecl)
-                {
-                    continue;
-                }
-
-                var root = (SyntaxNode?)ctorDecl.Body ?? ctorDecl.ExpressionBody;
-                if (root == null)
-                {
-                    continue;
-                }
-
-                // Prune traversal into nested scopes (local functions, lambdas, type declarations) to minimize worst-case AST exploration.
-                foreach (var node in root.DescendantNodes(descendIntoChildren: static n =>
-                             n is not (TypeDeclarationSyntax or LocalFunctionStatementSyntax
-                                 or AnonymousFunctionExpressionSyntax)))
-                {
-                    if (node is not AssignmentExpressionSyntax assign ||
-                        assign.Right is not IdentifierNameSyntax id ||
-                        !borrowedParamNames.Contains(id.Identifier.Text))
-                    {
-                        continue;
-                    }
-
-                    var leftName = assign.Left switch
-                    {
-                        IdentifierNameSyntax idLeft => idLeft.Identifier.Text,
-                        MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } maLeft => maLeft.Name
-                            .Identifier.Text,
-                        _ => null
-                    };
-
-                    if (leftName != null)
-                    {
-                        borrowedFields.Add(leftName);
-                    }
-                }
-            }
+            return null;
         }
+
+        return assign.Left switch
+        {
+            IdentifierNameSyntax idLeft => idLeft.Identifier.Text,
+            MemberAccessExpressionSyntax { Expression: ThisExpressionSyntax } maLeft => maLeft.Name.Identifier.Text,
+            _ => null
+        };
     }
 
     private static void ValidateMissingIDisposable(
@@ -179,37 +172,16 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var hasOwnedDisposableField = false;
-        foreach (var member in ctx.DisposableMembers)
-        {
-            if (ctx.BorrowedFields.Contains(member.Name))
-            {
-                continue;
-            }
+        var hasOwnedDisposableField = ctx.DisposableMembers
+            .AsStackEnumerable()
+            .Any(ctx.BorrowedFields, static (member, borrowed) => !borrowed.Contains(member.Name));
 
-            hasOwnedDisposableField = true;
-            break;
-        }
-
-        var hasTakesOwnership = false;
-        foreach (var ctor in ctx.NamedType.Constructors)
-        {
-            foreach (var p in ctor.Parameters)
-            {
-                if (!HasTakesOwnershipAttribute(p))
-                {
-                    continue;
-                }
-
-                hasTakesOwnership = true;
-                break;
-            }
-
-            if (hasTakesOwnership)
-            {
-                break;
-            }
-        }
+        var hasTakesOwnership = ctx.NamedType.Constructors
+            .AsStackEnumerable()
+            .Any(static ctor => ctor.Parameters
+                .AsStackEnumerable()
+                .Any(HasTakesOwnershipAttribute)
+            );
 
         if (!hasOwnedDisposableField && !hasTakesOwnership)
         {
@@ -350,24 +322,14 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var disposes = false;
         var root = (SyntaxNode?)method.Body ?? method.ExpressionBody;
-        if (root != null)
-        {
-            foreach (var node in root.DescendantNodes())
-            {
-                if (node is not InvocationExpressionSyntax
-                    {
-                        Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" }
-                    })
+        var disposes = root != null &&
+            root.DescendantNodes()
+                .AsStackEnumerable()
+                .Any(static node => node is InvocationExpressionSyntax
                 {
-                    continue;
-                }
-
-                disposes = true;
-                break;
-            }
-        }
+                    Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "Dispose" }
+                });
 
         if (disposes)
         {

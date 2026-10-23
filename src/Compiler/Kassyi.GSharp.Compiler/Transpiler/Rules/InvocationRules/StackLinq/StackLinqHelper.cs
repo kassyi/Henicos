@@ -2,12 +2,34 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules.StackLinq;
 
 internal static class StackLinqHelper
 {
+    /// <summary>Prefix of the per-stage element variable, followed by the stage index.</summary>
+    internal const string ValuePrefix = "__gsharp_val_";
+
+    /// <summary>The loop index of a fused pipeline.</summary>
+    internal const string LoopIndex = "__gsharp_i";
+
+    /// <summary>The length of the source array of a fused pipeline.</summary>
+    internal const string FusionLength = "__gsharp_fusion_length";
+
     public static bool IsStackLinqMethod(IMethodSymbol symbol) =>
         symbol.ContainingNamespace is
         {
             Name: "Linq",
             ContainingNamespace: { Name: "ZeroAlloc", ContainingNamespace.Name: "Kassyi" }
         };
+
+    /// <summary>
+    /// Is it a StackLinq operator that runs on the host only? That is every overload passing a state value to its lambda
+    /// (<c>Any(state, static (x, s) => ...)</c>; a kernel lambda reads outer values directly), and every
+    /// operator in <c>StackLinqExtensions.HostOnly.cs</c>, plus <c>StackEnumerable.OfType</c>. The kernel transpiler
+    /// rules have no strategy for them.
+    /// </summary>
+    public static bool IsHostOnly(IMethodSymbol symbol) =>
+        IsStackLinqMethod(symbol) &&
+        (symbol.Name is "AddTo" or "AddIf" or "Do" or "DoIf" or "SelectMany" or "TryFirst" or "IndexOf" or "OfType" ||
+         symbol.Parameters
+             .AsStackEnumerable()
+             .Any(static p => p.Name == "state"));
 
     public static ArgumentSyntax GetLambdaArgument(InvocationExpressionSyntax invocation, IMethodSymbol symbol)
     {
@@ -40,11 +62,11 @@ internal static class StackLinqHelper
             var arg = GetLambdaArgument(stage.Invocation, stage.Symbol);
             context.Emitter.Writer.Append($"{resultVar} += (");
             context.Visitor.Visit(arg.Expression);
-            context.Emitter.Writer.AppendLine($")(__gsharp_val_{valIndex});");
+            context.Emitter.Writer.AppendLine($")({ValuePrefix}{valIndex});");
         }
         else
         {
-            context.Emitter.Writer.AppendLine($"{resultVar} += __gsharp_val_{valIndex};");
+            context.Emitter.Writer.AppendLine($"{resultVar} += {ValuePrefix}{valIndex};");
         }
     }
 }

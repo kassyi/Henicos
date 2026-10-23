@@ -4,9 +4,9 @@
 {
     for (int offset = 1; offset < 32; offset <<= 1)
     {
-        var __gsharp_warp_temp_0 = Gpu.WarpShuffle(value, offset);
+        var __gsharp_warp_temp_0 = Warp.ShuffleSync(mask, value, offset);
         int neighbor = __gsharp_warp_temp_0 + 1;
         value += neighbor;
     }
 }
-}
+}

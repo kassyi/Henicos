@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Analysis;
 
 public static class ContextInferenceEngine
@@ -35,14 +34,10 @@ public static class ContextInferenceEngine
         }
 
         // Direct check: Does the method symbol belong to Gpu.GridStrideLoop or Gpu.SyncGrid?
-        if (methodSymbol.ContainingType?.Name == TypeConstants.GpuType &&
-            methodSymbol.ContainingType?.ContainingNamespace.IsCoreNamespace() == true)
+        if (GpuMacroClassifier.Classify(methodSymbol).Kind is GpuMacroKind.GridStrideLoop or GpuMacroKind.SyncGrid)
         {
-            if (methodSymbol.Name == TypeConstants.GpuMacros.GridStrideLoop || methodSymbol.Name == TypeConstants.GpuMacros.SyncGrid)
-            {
-                cache[methodSymbol] = true;
-                return true;
-            }
+            cache[methodSymbol] = true;
+            return true;
         }
 
 

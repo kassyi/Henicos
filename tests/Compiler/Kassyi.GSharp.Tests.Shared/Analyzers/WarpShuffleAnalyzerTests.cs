@@ -27,5 +27,13 @@ public class WarpShuffleAnalyzerTests : TranspilerTestBase
         await RoslynTestUtility.TestAnalyzer("Analyzers/WarpShuffleHappyPath.cs", s_analyzer)
                                .ReportsNoDiagnosticsAsync();
     }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public async Task Test_IntrinsicInLambdaNestedInGpuFunction_ReportsNoError()
+    {
+        await RoslynTestUtility.TestAnalyzer("Analyzers/HostIntrinsicNestedHappyPath.cs", s_analyzer)
+                               .ReportsNoDiagnosticsAsync();
+    }
 }
 

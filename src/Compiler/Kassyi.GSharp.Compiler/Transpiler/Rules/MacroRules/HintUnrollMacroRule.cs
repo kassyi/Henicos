@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.MacroRules;
 
 /// <summary>
@@ -9,12 +8,10 @@ internal sealed class HintUnrollMacroRule : IMacroTranspilerRule
     public bool TryTranspile(
         InvocationExpressionSyntax invocation,
         ExpressionStatementSyntax statement,
-        IMethodSymbol symbol,
+        GpuMacroCall call,
         ref TranspileContext context)
     {
-        if (symbol.Name != TypeConstants.GpuMacros.Unroll ||
-            symbol.ContainingType.Name != TypeConstants.GpuMacros.Hint ||
-            symbol.ContainingType.ContainingType?.Name != TypeConstants.GpuType)
+        if (call.Kind != GpuMacroKind.HintUnroll)
         {
             return false;
         }

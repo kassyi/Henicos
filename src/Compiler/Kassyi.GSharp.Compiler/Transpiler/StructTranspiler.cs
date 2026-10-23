@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Emits CUDA C++ struct definitions, operator overloads, and handles InlineArray structures.</summary>
@@ -14,22 +13,14 @@ internal static class StructTranspiler
             return;
         }
 
-        if (namedStruct.IsSharedMemoryType())
-        {
-            return;
-        }
-
         if (!context.Query.UsedStructs.Add(namedStruct))
         {
             return;
         }
 
-        foreach (var member in namedStruct.GetMembers())
+        foreach (var field in StructAbiMembers.GetInstanceFields(namedStruct))
         {
-            if (member is IFieldSymbol { IsStatic: false } field)
-            {
-                RegisterUsedStructIfApplicable(field.Type, ref context);
-            }
+            RegisterUsedStructIfApplicable(field.Type, ref context);
         }
     }
 
@@ -42,11 +33,13 @@ internal static class StructTranspiler
     /// <summary>
     /// Topologically sorts referenced structs so that dependent nested structs are declared first in C++.
     /// </summary>
-    public static ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(IEnumerable<INamedTypeSymbol> usedStructs)
+    public static ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(
+        IEnumerable<INamedTypeSymbol> usedStructs)
     {
         // [WHY] CUDA C++ requires full struct definitions in dependency order before value-type usage as fields.
         var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
-        var structSet = usedStructs as ISet<INamedTypeSymbol> ?? new HashSet<INamedTypeSymbol>(usedStructs, SymbolEqualityComparer.Default);
+        var structSet = usedStructs as ISet<INamedTypeSymbol> ??
+                        new HashSet<INamedTypeSymbol>(usedStructs, SymbolEqualityComparer.Default);
         var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         var visiting = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
 
@@ -69,11 +62,9 @@ internal static class StructTranspiler
                 return;
             }
 
-            foreach (var member in s.GetMembers())
+            foreach (var field in StructAbiMembers.GetInstanceFields(s))
             {
-                if (member is IFieldSymbol { IsStatic: false } field &&
-                    TryGetUserStruct(field.Type, out var dep) &&
-                    structSet.Contains(dep))
+                if (TryGetUserStruct(field.Type, out var dep) && structSet.Contains(dep))
                 {
                     visit(dep);
                 }
@@ -89,8 +80,7 @@ internal static class StructTranspiler
     {
         // [WHY] Array-like wrappers (T[], Memory<T>, ImmutableArray<T>, ...) reach the device as GSharpArray<T>; only their element type can be a user struct.
         var structType = typeSymbol.TryGetArrayLikeElementType(out var elementType) ? elementType : typeSymbol;
-        if (structType is INamedTypeSymbol { TypeKind: TypeKind.Struct } candidate &&
-            !candidate.ContainingNamespace.IsSystemOrNumerics())
+        if (structType is INamedTypeSymbol candidate && GlobalCppNames.IsEmittedUserType(candidate))
         {
             namedStruct = candidate;
             return true;
@@ -148,7 +138,7 @@ internal static class StructTranspiler
                 context.Emitter.Writer.Append(length);
             }
 
-            context.Emitter.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendLine(";");
 
             WriteInlineArrayIndexer(ref context, firstField.Type, element, isConst: false);
             WriteInlineArrayIndexer(ref context, firstField.Type, element, isConst: true);
@@ -206,7 +196,7 @@ internal static class StructTranspiler
                 context.Emitter.Writer.Append("index");
             }
 
-            context.Emitter.Writer.AppendSemiColonLine();
+            context.Emitter.Writer.AppendLine(";");
         }
     }
 
@@ -270,7 +260,7 @@ internal static class StructTranspiler
     private static void WriteStructFooter(ref TranspileContext context)
     {
         context.Emitter.Writer
-            .AppendSemiColonLine()
+            .AppendLine(";")
             .AppendLine("#endif")
             .AppendLine();
     }
@@ -293,7 +283,7 @@ internal static class StructTranspiler
                 context.Emitter.Writer.Append(" v");
             }
 
-            context.Emitter.Writer.AppendSpace();
+            context.Emitter.Writer.Append(' ');
             using (context.Emitter.Writer.Scope())
             {
                 if (firstField != null)
@@ -316,7 +306,7 @@ internal static class StructTranspiler
                 }
 
                 context.Emitter.Writer.Append($"return this->{GetMemberName(firstField, ref context)}");
-                context.Emitter.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendLine(";");
             }
         }
     }
@@ -326,12 +316,9 @@ internal static class StructTranspiler
 
     private static IFieldSymbol? GetFirstInstanceField(INamedTypeSymbol structSym)
     {
-        foreach (var member in structSym.GetMembers())
+        foreach (var field in StructAbiMembers.GetInstanceFields(structSym))
         {
-            if (member is IFieldSymbol { IsStatic: false } field)
-            {
-                return field;
-            }
+            return field;
         }
 
         return null;
@@ -342,34 +329,35 @@ internal static class StructTranspiler
         switch (member)
         {
             case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
+            {
+                field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
+
+                ExpressionSyntax? sizeExp = null;
+                if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
                 {
-                    field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
-
-                    ExpressionSyntax? sizeExp = null;
-                    if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
-                    {
-                        sizeExp = argList.Arguments[0].Expression;
-                    }
-
-                    if (sizeExp != null)
-                    {
-                        context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
-                        context.Emitter.Writer.Append($" {GetMemberName(field, ref context)}");
-                        using (context.Emitter.Writer.Brackets())
-                        {
-                            context.Visitor.Visit(sizeExp);
-                        }
-
-                        context.Emitter.Writer.AppendSemiColonLine();
-                    }
-                    else
-                    {
-                        context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
-                        context.Emitter.Writer.AppendLine($"* {GetMemberName(field, ref context)}; // ERROR: fixed size not found");
-                    }
-
-                    break;
+                    sizeExp = argList.Arguments[0].Expression;
                 }
+
+                if (sizeExp != null)
+                {
+                    context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
+                    context.Emitter.Writer.Append($" {GetMemberName(field, ref context)}");
+                    using (context.Emitter.Writer.Brackets())
+                    {
+                        context.Visitor.Visit(sizeExp);
+                    }
+
+                    context.Emitter.Writer.AppendLine(";");
+                }
+                else
+                {
+                    context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
+                    context.Emitter.Writer.AppendLine(
+                        $"* {GetMemberName(field, ref context)}; // ERROR: fixed size not found");
+                }
+
+                break;
+            }
             case IFieldSymbol field:
                 WriteMemberDeclaration(field.Type, GetMemberName(field, ref context), field, ref context);
                 break;
@@ -403,6 +391,7 @@ internal static class StructTranspiler
             {
                 context.Emitter.Writer.Append("const ");
             }
+
             context.Emitter.Dialect.AppendType(ref context, elementType);
             context.Emitter.Writer.Append(">");
         }

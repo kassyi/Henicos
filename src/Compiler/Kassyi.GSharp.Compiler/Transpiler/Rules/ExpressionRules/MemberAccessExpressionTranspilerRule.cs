@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 
 public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<MemberAccessExpressionSyntax>
@@ -93,12 +92,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
             if (memberName == "HasValue")
             {
-                using (context.Emitter.Writer.Parentheses())
-                {
-                    context.Visitor.Visit(node.Expression);
-                    context.Emitter.Writer.Append(".data != nullptr");
-                }
-
+                NullRepresentation.AppendArrayNullTest(node.Expression, isNull: false, ref context);
                 return true;
             }
         }
@@ -155,7 +149,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         {
             if (isMethodCall)
             {
-                context.Emitter.Writer.Append(mappedName).AppendParentheses();
+                context.Emitter.Writer.Append(mappedName).Append("()");
             }
             else
             {

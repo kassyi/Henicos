@@ -21,6 +21,8 @@ Returns the first element of a sequence.
 | --- | --- |
 | [First<TEnumerator, TSource>(TEnumerator)](#firsttenumeratortsourcetenumerator) | Returns the first element. |
 | [First<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)](#firsttenumeratortsourcetenumeratorfunctsourcebool) | Returns the first element that satisfies a specified condition. |
+| [First<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)](#firsttenumeratortsourcetstatetenumeratortstatefunctsourcetstatebool) | Returns the first element that satisfies a condition that receives a state value. Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly. |
+| [FirstOrDefault<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)](#firstordefaulttenumeratortsourcetstatetenumeratortstatefunctsourcetstatebool) | Returns the first element that satisfies a condition that receives a state value, or the default value. Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly. |
 
 
 ## First<TEnumerator, TSource>(TEnumerator)
@@ -48,6 +50,46 @@ public static TSource First<TEnumerator, TSource>(this TEnumerator source, Func<
 <i>TSource</i>
 
 
+
+## First<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)
+
+Returns the first element that satisfies a condition that receives a state value. Pass the outer value as `state` so that the lambda can be `static` and no closure is allocated.
+
+```csharp
+public static TSource First<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+```
+
+```csharp
+var result = names
+    .AsStackEnumerable()
+    .First(prefix, static (n, p) => n.StartsWith(p));
+```
+
+#### Returns
+
+<i>TSource</i>
+
+**Execution Target:** Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly.
+
+## FirstOrDefault<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)
+
+Returns the first element that satisfies a condition that receives a state value, or the default value. Pass the outer value as `state` so that the lambda can be `static` and no closure is allocated.
+
+```csharp
+public static TSource? FirstOrDefault<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+```
+
+```csharp
+var result = names
+    .AsStackEnumerable()
+    .FirstOrDefault(prefix, static (n, p) => n.StartsWith(p));
+```
+
+#### Returns
+
+<i>TSource?</i>
+
+**Execution Target:** Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly.
 
 ## Remarks
 

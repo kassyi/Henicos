@@ -1,7 +1,4 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
-
-using Kassyi.GSharp.Compiler.Layout;
 
 /// <summary>
 /// Provides code emission services for method signatures, parameter qualifiers, and target-specific function prefixes.
@@ -63,8 +60,8 @@ internal static class MethodSignatureTranspiler
                 }
 
                 context.Emitter.Writer
-                    .Append(GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix, method, methodSymbol))
-                    .Append("* ").Append(GSharpInternalNames.Context);
+                    .Append(GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix, method, methodSymbol))
+                    .Append("* ").Append(GSharpInternalNames.StateMachine.Context);
             }
 
             if (isDevice || methodSymbol is null || !methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
@@ -79,7 +76,7 @@ internal static class MethodSignatureTranspiler
             }
 
             context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
-            context.Emitter.Writer.Append("* __restrict__ __gsharp_auto_result");
+            context.Emitter.Writer.Append($"* __restrict__ {GSharpInternalNames.ReturnValue.Buffer}");
         }
     }
 
@@ -107,14 +104,14 @@ internal static class MethodSignatureTranspiler
             }
 
             context.Emitter.Writer
-                .Append(GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, method, methodSymbol))
-                .Append($"* {GSharpInternalNames.Context}, TRoot* {GSharpInternalNames.Root}");
+                .Append(GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, method, methodSymbol))
+                .Append($"* {GSharpInternalNames.StateMachine.Context}, TRoot* {GSharpInternalNames.SuspendingCall.Root}");
 
             if (methodSymbol is { ReturnsVoid: false })
             {
                 context.Emitter.Writer.Append(", ");
                 context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
-                context.Emitter.Writer.Append($"* {GSharpInternalNames.SuspendingCallResult}");
+                context.Emitter.Writer.Append($"* {GSharpInternalNames.SuspendingCall.Result}");
             }
         }
     }
@@ -221,7 +218,7 @@ internal static class MethodSignatureTranspiler
 
             var paramSymbol = paramSemanticModel.GetDeclaredSymbol<IParameterSymbol>(p);
 
-            var (isRefPointer, isPointerType, hasRestrict) =
+            var (_, isPointerType, hasRestrict) =
                 WriteParameterDeclaration(p, typeSymbol, paramSymbol, ref context);
 
             if (!isDevice && isPointerType && !hasRestrict)
@@ -229,10 +226,10 @@ internal static class MethodSignatureTranspiler
                 context.Emitter.Writer.Append(" __restrict__");
             }
 
-            context.Emitter.Writer.AppendSpace();
+            context.Emitter.Writer.Append(' ');
             if (copiedParameters != null && Contains(copiedParameters, p.Identifier.ValueText))
             {
-                context.Emitter.Writer.Append(GSharpInternalNames.CopiedParameterPrefix);
+                context.Emitter.Writer.Append(GSharpInternalNames.SuspendingCall.CopiedParameterPrefix);
             }
 
             context.Emitter.Writer.AppendCppName(
@@ -288,7 +285,7 @@ internal static class MethodSignatureTranspiler
         }
         else
         {
-            context.Emitter.Writer.AppendKeyword("void");
+            context.Emitter.Writer.Append("void");
         }
     }
 
@@ -336,21 +333,17 @@ internal static class MethodSignatureTranspiler
             return (MethodImplOptions)Convert.ToInt32(attr.ConstructorArguments[0].Value);
         }
 
-        foreach (var namedArg in attr.NamedArguments)
-        {
-            if (namedArg is { Key: "Value", Value.Value: int or short })
-            {
-                return (MethodImplOptions)Convert.ToInt32(namedArg.Value.Value);
-            }
-        }
+        var hasValue = attr.NamedArguments
+            .AsStackEnumerable()
+            .TryFirst(static namedArg => namedArg is { Key: "Value", Value.Value: int or short }, out var valueArg);
 
-        return default;
+        return hasValue ? (MethodImplOptions)Convert.ToInt32(valueArg.Value.Value) : default;
     }
 
     private static void WriteKernelMethodPrefix(ref TranspileContext context)
     {
         // Auto-allocate feature: GpuKernel methods are now allowed to return values.
-        context.Emitter.Writer.AppendKeyword(context.Emitter.Dialect.IsCuda
+        context.Emitter.Writer.Append(context.Emitter.Dialect.IsCuda
             ? "extern \"C\" __global__ void"
             : "extern \"C\" __declspec(dllexport) void");
     }

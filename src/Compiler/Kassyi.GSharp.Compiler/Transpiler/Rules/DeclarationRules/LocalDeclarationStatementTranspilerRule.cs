@@ -1,7 +1,4 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler.Rules.DeclarationRules;
-
-using Kassyi.GSharp.Compiler.Layout;
 
 /// <summary>
 /// Transpiles C# local declaration statements into target dialect variable definitions,
@@ -14,6 +11,9 @@ using Kassyi.GSharp.Compiler.Layout;
 public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspilerRuleBase<LocalDeclarationStatementSyntax>
 {
     private const int MaxSharedMemoryWarningBytes = 32768;
+
+    // The running byte offset into the dynamic shared memory buffer; declared and advanced only by this rule.
+    private const string SharedMemoryOffset = "__gsharp_smem_offset";
 
     private readonly struct SharedMemoryAllocation(
         VariableDeclaratorSyntax declarator,
@@ -41,7 +41,7 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
 
         // Dispatch inner variable declaration transpilation to the visitor (which will use VariableDeclarationTranspilerRule)
         context.Visitor.Visit(node.Declaration);
-        context.Emitter.Writer.AppendSemiColon();
+        context.Emitter.Writer.Append(';');
     }
 
     private static void ProcessSharedMemoryDeclaration(LocalDeclarationStatementSyntax node,
@@ -94,7 +94,7 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
 
         context.Emitter.Writer.Append("__shared__ ");
         context.Emitter.Dialect.AppendType(ref context, typeArg);
-        context.Emitter.Writer.AppendSpace();
+        context.Emitter.Writer.Append(' ');
         CppNameResolver.AppendDeclaredName(alloc.Declarator, alloc.Declarator.Identifier, ref context);
         using (context.Emitter.Writer.Brackets())
         {
@@ -140,18 +140,18 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             return;
         }
 
-        context.Emitter.Writer.AppendLine("extern __shared__ char __gsharp_dynamic_smem[];");
-        context.Emitter.Writer.AppendLine("size_t __gsharp_smem_offset = 0;");
+        context.Emitter.Writer.AppendLine($"extern __shared__ char {GSharpInternalNames.Prelude.DynamicSharedMemory}[];");
+        context.Emitter.Writer.AppendLine($"size_t {SharedMemoryOffset} = 0;");
         context.Emitter.HasEmittedDynamicSmemBase = true;
     }
 
     private static void AlignDynamicSharedMemoryOffset(ITypeSymbol typeArg, ref TranspileContext context)
     {
         // [WHY] Computes aligned offset: (offset + align - 1) & ~(align - 1) to avoid CUDA unaligned memory access faults.
-        context.Emitter.Writer.Append("__gsharp_smem_offset = ");
+        context.Emitter.Writer.Append($"{SharedMemoryOffset} = ");
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.Writer.Append("__gsharp_smem_offset + ");
+            context.Emitter.Writer.Append($"{SharedMemoryOffset} + ");
             AppendAlignmentMask(typeArg, ref context);
         }
 
@@ -161,7 +161,7 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             AppendAlignmentMask(typeArg, ref context);
         }
 
-        context.Emitter.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendLine(";");
     }
 
     private static void AppendAlignmentMask(ITypeSymbol typeArg, ref TranspileContext context)
@@ -188,10 +188,10 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             context.Emitter.Writer.Append("*");
         }
 
-        context.Emitter.Writer.Append("(__gsharp_dynamic_smem + __gsharp_smem_offset)");
+        context.Emitter.Writer.Append($"({GSharpInternalNames.Prelude.DynamicSharedMemory} + {SharedMemoryOffset})");
 
         context.Emitter.Writer.AppendLine(";");
-        context.Emitter.Writer.Append("__gsharp_smem_offset += ");
+        context.Emitter.Writer.Append($"{SharedMemoryOffset} += ");
         using (context.Emitter.Writer.Parentheses())
         {
             context.Visitor.Visit(alloc.SizeArgument);
@@ -203,6 +203,6 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             context.Emitter.Dialect.AppendType(ref context, typeArg);
         }
 
-        context.Emitter.Writer.AppendSemiColon();
+        context.Emitter.Writer.Append(';');
     }
 }

@@ -1,7 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-using Kassyi.GSharp.Compiler.Layout;
-
 /// <summary>
 /// The single source of the names that the generated host C# uses for the native shadow structs, their marshaling
 /// methods and the per-assembly module context. The side that declares a name and the side that refers to it both go

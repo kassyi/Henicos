@@ -86,7 +86,9 @@ using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> numbers = [10, 20, 30, 40, 50];
 StackEnumerable<TakeEnumerator<SpanEnumerator<int>, int>, int> firstThree =
-    numbers.AsStackEnumerable().Take(3);
+    numbers
+        .AsStackEnumerable()
+        .Take(3);
 
 Console.WriteLine($"Sum of first 3: {firstThree.Sum()}");
 ```

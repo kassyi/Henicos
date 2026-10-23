@@ -29,6 +29,9 @@ internal readonly record struct ModuleKernelLaunchParameter(
 /// </remarks>
 internal static class ModuleKernelLaunchEmitter
 {
+    // The launcher-local struct that packs the kernel arguments for cuLaunchKernel; followed by the method name.
+    private const string NativeContextPrefix = "__gsharp_native_context_";
+
     public static bool IsLaunchParameter(string name) =>
         name is "gridDimX" or "gridDimY" or "gridDimZ"
             or "blockDimX" or "blockDimY" or "blockDimZ"
@@ -48,7 +51,7 @@ internal static class ModuleKernelLaunchEmitter
         ImmutableArray<ModuleKernelLaunchParameter> parameters)
     {
         writer.AppendLine("[StructLayout(LayoutKind.Sequential)]");
-        writer.AppendLine($"private struct __NativeContext_{methodName}");
+        writer.AppendLine($"private struct {NativeContextPrefix}{methodName}");
         using (writer.Scope())
         {
             foreach (var param in parameters)
@@ -163,7 +166,7 @@ internal static class ModuleKernelLaunchEmitter
     private static void EmitContextInitialization(SourceWriter writer, string methodName,
         ImmutableArray<ModuleKernelLaunchParameter> parameters)
     {
-        writer.AppendLine($"var ctx = new __NativeContext_{methodName}");
+        writer.AppendLine($"var ctx = new {NativeContextPrefix}{methodName}");
         using (writer.Scope())
         {
             for (var i = 0; i < parameters.Length; i++)
@@ -178,15 +181,10 @@ internal static class ModuleKernelLaunchEmitter
                     ? $"{param.Name} = d_{param.Name}.DevicePointer"
                     : $"{param.Name} = {param.Name}");
 
-                var isLast = true;
-                for (var j = i + 1; j < parameters.Length; j++)
-                {
-                    if (!IsLaunchParameter(parameters[j].Name))
-                    {
-                        isLast = false;
-                        break;
-                    }
-                }
+                var isLast = parameters
+                    .AsStackEnumerable()
+                    .Skip(i + 1)
+                    .All(static p => IsLaunchParameter(p.Name));
 
                 if (!isLast)
                 {
@@ -206,14 +204,9 @@ internal static class ModuleKernelLaunchEmitter
     private static void EmitKernelLaunch(SourceWriter writer, ImmutableArray<ModuleKernelLaunchParameter> parameters,
         bool packContext)
     {
-        var kernelArgsCount = 0;
-        foreach (var param in parameters)
-        {
-            if (!IsLaunchParameter(param.Name))
-            {
-                kernelArgsCount++;
-            }
-        }
+        var kernelArgsCount = parameters
+            .AsStackEnumerable()
+            .Count(static param => !IsLaunchParameter(param.Name));
 
         var stream = GetLaunchParamOrValue(parameters, "stream", "IntPtr.Zero");
 
@@ -301,18 +294,10 @@ internal static class ModuleKernelLaunchEmitter
         }
     }
 
-    private static bool HasLaunchParameter(ImmutableArray<ModuleKernelLaunchParameter> parameters, string name)
-    {
-        foreach (var p in parameters)
-        {
-            if (p.Name == name)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool HasLaunchParameter(ImmutableArray<ModuleKernelLaunchParameter> parameters, string name) =>
+        parameters
+            .AsStackEnumerable()
+            .Any(name, static (p, target) => p.Name == target);
 
     private static string GetLaunchParamOrValue(ImmutableArray<ModuleKernelLaunchParameter> parameters, string name,
         string defaultValue) =>

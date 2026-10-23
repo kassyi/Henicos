@@ -42,8 +42,15 @@ public enum DialectCapabilities
     InlineAssembly = 1 << 3,
 
     /// <summary>
-    /// Aggregates all standard GPU hardware acceleration features (warp intrinsics, atomics, shared memory, and inline assembly).
+    /// Indicates that the threads of a block run concurrently in hardware, so barriers need no emulation. Dialects without
+    /// this capability run the threads one after another and lower kernels that reach a barrier into state machines.
     /// </summary>
-    AllGpuFeatures = WarpIntrinsics | HardwareAtomics | SharedMemory | InlineAssembly
+    HardwareThreadScheduling = 1 << 4,
+
+    /// <summary>
+    /// Aggregates all standard GPU hardware features (warp intrinsics, atomics, shared memory, inline assembly, and hardware
+    /// thread scheduling).
+    /// </summary>
+    AllGpuFeatures = WarpIntrinsics | HardwareAtomics | SharedMemory | InlineAssembly | HardwareThreadScheduling
 }
 

@@ -16,7 +16,7 @@ description: "Provides static extension methods for zero-allocation, stack-based
 Provides a set of `static` extension methods for zero-allocation, stack-based LINQ operations over arrays, spans, lists, and struct enumerators.
 
 ```csharp
-public static class StackLinqExtensions
+public static partial class StackLinqExtensions
 ```
 
 ## Methods
@@ -81,6 +81,22 @@ public static class StackLinqExtensions
 | `CopyTo<TEnumerator, TSource>(StackEnumerable<TEnumerator, TSource>, Span<TSource>)` | Copies the elements of the sequence into a destination `Span<TSource>` with zero heap allocation and returns the number of elements written. |
 | `ToArray<TEnumerator, TSource>(StackEnumerable<TEnumerator, TSource>)` | Materializes the sequence into a new managed array on the host CPU. |
 
+### Host-Only Operations
+
+These operators replace host-side loops that collect, act on each element or search with a "found" result. A G# kernel reports `GSH0003` for them.
+
+| Name | Description |
+| --- | --- |
+| [AddTo&lt;TEnumerator, TSource&gt;(StackEnumerable&lt;TEnumerator, TSource&gt;, ICollection&lt;TSource&gt;)](AddTo.md) | Adds every element to a collection the caller owns and returns the number added. |
+| [AddIf&lt;TEnumerator, TSource&gt;(...)](AddIf.md) | Adds the elements that satisfy a condition to a collection the caller owns (with or without a state value). |
+| [Do&lt;TEnumerator, TSource&gt;(...)](Do.md) | Runs an action on every element (with or without a state value). |
+| [DoIf&lt;TEnumerator, TSource&gt;(...)](DoIf.md) | Runs an action on the elements that satisfy a condition (with or without a state value). |
+| [SelectMany&lt;TEnumerator, TSource, TInnerEnumerator, TResult&gt;(StackEnumerable&lt;TEnumerator, TSource&gt;, Func&lt;TSource, StackEnumerable&lt;TInnerEnumerator, TResult&gt;&gt;)](SelectMany.md) | Flattens the inner sequence of each element into one sequence (`SelectManyEnumerator`). |
+| [TryFirst&lt;TEnumerator, TSource&gt;(...)](TryFirst.md) | Finds the first element that satisfies a condition and reports whether one was found (with or without a state value). |
+| [IndexOf&lt;TEnumerator, TSource&gt;(...)](IndexOf.md) | Returns the position of the first element that satisfies a condition, or `-1` (with or without a state value). |
+
+The state overloads of `Where`, `Select`, `Count`, `Any`, `All`, `First` and `FirstOrDefault` are host-only as well, and so is [OfType&lt;TResult&gt;()](OfType.md), an instance method of `StackEnumerable<TEnumerator, T>` so that a call names only `TResult`.
+
 ## Remarks
 
 All intermediate operators in `StackLinqExtensions` return a [StackEnumerable&lt;TEnumerator, T&gt;](StackEnumerable.md) value-type wrapper around a specialized `ref struct` enumerator. This design avoids boxing, interface virtual dispatch, and GC heap allocations on the host CPU while allowing the G# Source Generator to lower pipelines directly into register-bound CUDA C++ loops inside `[GpuKernel]` methods.
@@ -97,7 +113,8 @@ using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> source = [3, 1, 4, 1, 5, 9, 2, 6];
 
-var query = source.AsStackEnumerable()
+var query = source
+    .AsStackEnumerable()
     .Where(x => x > 2)
     .Skip(1)
     .Take(3)
@@ -106,7 +123,10 @@ var query = source.AsStackEnumerable()
 Span<int> buffer = stackalloc int[3];
 int count = query.CopyTo(buffer);
 
-Console.WriteLine($"Copied {count} items: [{buffer[0]}, {buffer[1]}, {buffer[2]}], Max={source.AsStackEnumerable().Max()}");
+int max = source
+    .AsStackEnumerable()
+    .Max();
+Console.WriteLine($"Copied {count} items: [{buffer[0]}, {buffer[1]}, {buffer[2]}], Max={max}");
 ```
 
 ## See also

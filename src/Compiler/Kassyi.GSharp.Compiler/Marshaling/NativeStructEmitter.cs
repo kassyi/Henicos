@@ -1,7 +1,5 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-using Kassyi.GSharp.Compiler.Layout;
-
 /// <summary>Emits explicit layout shadow structs representing C# structs in native CUDA memory.</summary>
 internal static class NativeStructEmitter
 {
@@ -25,29 +23,18 @@ internal static class NativeStructEmitter
 
         using (writer.Scope())
         {
-            var currentOffset = 0;
-            foreach (var member in s.GetMembers())
+            foreach (var (field, offset, fieldLayout) in CudaLayoutRules.GetFieldLayouts(s))
             {
-                if (member is not IFieldSymbol { IsStatic: false } field)
-                {
-                    continue;
-                }
-
-                var fieldLayout = CudaLayoutRules.GetCudaLayout(field.Type);
-                currentOffset = CudaLayoutRules.AlignUp(currentOffset, fieldLayout.Alignment);
-
                 writer.Append($"public const string DebugName_{field.Name} = \"");
                 writer.AppendFullyQualifiedCsharpName(field.Type);
                 writer.AppendLine("\";");
-                writer.AppendLine($"[System.Runtime.InteropServices.FieldOffset({currentOffset})]");
+                writer.AppendLine($"[System.Runtime.InteropServices.FieldOffset({offset})]");
 
                 MapToNativeField(writer, field, fieldLayout.Size);
-
-                currentOffset += fieldLayout.Size;
             }
         }
 
-        foreach (var p in parents)
+        foreach (var dummy in parents)
         {
             writer.AppendLine("}");
         }

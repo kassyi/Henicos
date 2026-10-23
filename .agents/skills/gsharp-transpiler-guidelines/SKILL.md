@@ -15,15 +15,21 @@ This skill is the **procedure**. The binding **rules** live in `.agents/rules/`;
 | `[GpuReadOnly]`, diagnostics, struct guards, ref/out, `var` suffix, design-time I/O, MSBuild wildcard | [generator-invariants.md](../../rules/generator-invariants.md) |
 | `just` test categories, DiffEngine hang prevention | [test-execution.md](../../rules/test-execution.md) |
 | TDD methodology, snapshot hierarchy | [test-architecture.md](../../rules/test-architecture.md) |
+| C# naming, `!` ban, `StackLinq` / `System.Linq` policy | [coding-style.md](../../rules/coding-style.md) |
+| Kernel / device function / launcher names | [gsharp-naming-conventions.md](../../rules/gsharp-naming-conventions.md) |
+| Helper scripts and `dotnet run ... -- <mode>` tools | [agent-scripts.md](../../rules/agent-scripts.md) |
+| Existing helpers to reuse (queries, emission, diagnostics) | [references/helpers.md](references/helpers.md) |
 
 ## Procedure: Adding a New Syntax / Operator / Transpiler Feature
 
 1. **Test first.** Create the snapshot test and verify the expected CUDA C++ output *before* implementing emission.
-   1. Add a `.cs` case under `tests/Compiler/Kassyi.GSharp.Tests.Shared/TestCases/`.
-   2. Add `[InlineData("YourTestCase.cs")]` to `GeneratorSnapshots` in `GEN-08_GeneratorSnapshotTests.cs`.
+   1. Add a `.cs` case under `tests/Compiler/Kassyi.GSharp.Tests.Shared/TestCases/`. `SnapshotTestCaseGenerator` collects it into `Test_GeneratorSnapshots` (`Generator/GeneratorSnapshotTests.cs`); no registration is needed. A case that exists only to drive an analyzer test is marked `[SkipSnapshotConsistency("...")]`.
+   2. The generator does not re-run when only a file under `TestCases/` changes; touch any compiled `.cs` in the test project (or rebuild) so the new case is picked up.
    3. Run the relevant `just` command (see test-execution.md) and review the `.verified` snapshot.
 2. **Branch by AST lane** to allow parallel work without interference: `Statement`, `Expression`, `Declaration`.
 3. **Implement** using `SourceWriter` scopes per transpiler-emission.md, resolving symbols through `SemanticModel`.
+   - **Before writing any query, check, or emission code, read [references/helpers.md](references/helpers.md)** and use the helper it lists instead of writing the logic again.
+   - When you add, rename, or move a helper, update helpers.md in the same change and run `node .agents/skills/gsharp-transpiler-guidelines/scripts/check-helpers.js`.
 4. **Report unsupported constructs** via diagnostics (generator-invariants.md §2), never silently.
 5. **Re-run** the relevant test category.
 

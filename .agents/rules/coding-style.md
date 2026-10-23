@@ -87,12 +87,40 @@ While .NET Framework Design Guidelines (FDG) generally avoid abbreviations, spec
     using Kassyi.ZeroAlloc.Linq;
 
     // Fluent pipeline executed purely on stack/registers (0 B heap allocation)
-    int sum = data.AsStackEnumerable()
-                  .Where(x => x > 0)
-                  .Select(x => x * 2)
-                  .Sum();
+    int sum = data
+        .AsStackEnumerable()
+        .Where(x => x > 0)
+        .Select(x => x * 2)
+        .Sum();
     ```
   - For detailed architecture, API reference, and benchmarks, see: [StackLinq Architecture & Specification](../../docs/spec/en/03_bcl_api/linq/00_index.md).
+  - **In the G# compiler** (`src/Compiler/Kassyi.GSharp.Compiler`, a netstandard2.0 analyzer): use the copy built into the compiler, `Kassyi.ZeroAlloc.Linq.Embedded` (globally imported). `Kassyi.ZeroAlloc.Linq.Export` generates it from the net10.0 sources on every StackLinq build, so only those sources are maintained. It has no span enumerators, `AsParallel` or generic-math `Sum`. Start a query with `.AsStackEnumerable()` on an array, `ImmutableArray<T>`, `EquatableArray<T>`, `IReadOnlyList<T>`, `HashSet<T>`, `Dictionary<TKey, TValue>`, `SyntaxList<T>`, `SeparatedSyntaxList<T>`, `SyntaxTokenList` or a node walk (`DescendantNodes()` and other `IEnumerable<SyntaxNode>`; no other lazy `IEnumerable`), and prefer it to a hand-written loop for a query (`Any`, `All`, `Count`, `First`, `Where` / `Select` chains), whether the loop is a `foreach` or an indexed `for`. The host-only operators cover the loops that collect or act on each element: `AddTo` / `AddIf` (add to a collection the caller owns), `Do` / `DoIf` (run an action per element), `SelectMany` (flatten), `TryFirst` (first match and whether one was found), `IndexOf` and `OfType<T>()` (keep the elements of a type; after `Select(x => x as T)` it drops the `null`s and narrows `T?` to `T`). A kernel reports them with GSH0003. Keep a loop when it emits output while iterating, passes a `ref` local, returns several values through `out`, looks at neighbouring elements or groups into a dictionary. Files that `Kassyi.GSharp.Compiler.Generators` (a net10.0 tool) also links (`SourceWriter.cs`, `YamlSubsetParser.cs`, `NativeApiYamlReader.cs`, `NativeApiDefinition.cs`, `NativeApiDocumentation.cs`, `NativeIntrinsicEmitter.cs`) cannot use the embedded copy; keep their loops. Use `static` lambdas so that no closure is allocated; when the lambda needs an outer value, pass it through the state overload (`Where`, `Select`, `Count`, `Any`, `All`, `First`, `FirstOrDefault`), as in `.Any(shortName, static (a, name) => a.IsAttribute(name))`. Pass several values as a tuple. The state overloads are host-only; inside a kernel, a lambda reads outer values directly.
+  - **Chain layout**: put every call of the chain on its own line, `.AsStackEnumerable()` included, one level deeper than the source, even when only one operator follows. A long condition then grows downward instead of to the right. When an argument spans several lines (a multi-line lambda, a nested chain), close the call on its own line, aligned with the `.Operator(` that opened it; never stack closers (`)))`). A call that follows such a closer continues on the closer line (`).AddTo(names);`).
+    ```csharp
+    bool hasAttribute = symbol.GetAttributes()
+        .AsStackEnumerable()
+        .Any(shortName, static (a, name) => a.IsAttribute(name));
+
+    int count = parameters
+        .AsStackEnumerable()
+        .Where(static p => !p.IsConstantParameter())
+        .Select(static p => p.Type)
+        .Count();
+
+    bool takesOwnership = type.Constructors
+        .AsStackEnumerable()
+        .Any(static ctor => ctor.Parameters
+            .AsStackEnumerable()
+            .Any(HasTakesOwnershipAttribute)
+        );
+
+    type.Constructors
+        .AsStackEnumerable()
+        .SelectMany(static ctor => ctor.Parameters
+            .AsStackEnumerable()
+        ).Select(static p => p.Name)
+        .AddTo(names);
+    ```
 - **Prohibited Over-Refactoring (Preserve Imperative Loops)**:
   - **GPU Kernels (`*.cu`, `*.cu.cs`)**: Never use LINQ. Keep imperative `for` loops so AST lowering can map cleanly to native unrolling (`#pragma unroll`).
   - **Benchmark Measurement Loops**: Keep raw imperative loops in CPU baseline comparisons (e.g., `SgemmBenchmark`, `BlackScholesBenchmark`) to avoid skewing benchmark overhead.

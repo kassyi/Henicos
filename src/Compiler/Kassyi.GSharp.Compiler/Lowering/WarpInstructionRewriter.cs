@@ -35,8 +35,9 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             var statement = StoreDiscardedResult(original);
 
             // Rewrite the statement and capture any hoisted warp instructions
-            var rewrittenStatement = new StatementRewriter(this, statement, hoistedAssignments).Visit(statement) as StatementSyntax
-                                     ?? throw new InvalidOperationException("Warp instruction hoisting removed a statement.");
+            var rewrittenStatement =
+                new StatementRewriter(this, statement, hoistedAssignments).Visit(statement) as StatementSyntax
+                ?? throw new InvalidOperationException("Warp instruction hoisting removed a statement.");
 
             newStatements.AddRange(hoistedAssignments);
             newStatements.Add(rewrittenStatement);
@@ -50,30 +51,23 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
     private StatementSyntax StoreDiscardedResult(StatementSyntax statement) =>
         statement is ExpressionStatementSyntax { Expression: InvocationExpressionSyntax call } &&
         BarrierHelper.IsValueReturningSuspendingCall(call)
-            ? StatementRewriter.CreateTempDeclaration(GetNextCallTempName(), call.WithoutTrivia()).WithTriviaFrom(statement)
+            ? StatementRewriter.CreateTempDeclaration(GetNextCallTempName(), call.WithoutTrivia())
+                .WithTriviaFrom(statement)
             : statement;
 
-    private string GetNextTempName() => $"{GSharpInternalNames.WarpTempPrefix}{_tempCounter++}";
+    private string GetNextTempName() => $"{GSharpInternalNames.Lowering.WarpTempPrefix}{_tempCounter++}";
 
-    private string GetNextCallTempName() => $"{GSharpInternalNames.CallTempPrefix}{_tempCounter++}";
+    private string GetNextCallTempName() => $"{GSharpInternalNames.Lowering.CallTempPrefix}{_tempCounter++}";
 
-    private string GetNextArgumentTempName() => $"{GSharpInternalNames.ArgumentTempPrefix}{_tempCounter++}";
+    private string GetNextArgumentTempName() => $"{GSharpInternalNames.Lowering.ArgumentTempPrefix}{_tempCounter++}";
 
     private static bool IsWarpPrimitive(InvocationExpressionSyntax inv) =>
         BarrierHelper.IsWarpShuffle(inv) || BarrierHelper.IsSuspendingCall(inv);
 
-    private static bool ContainsWarpPrimitive(SyntaxNode node)
-    {
-        foreach (var descendant in node.DescendantNodes())
-        {
-            if (descendant is InvocationExpressionSyntax inv && IsWarpPrimitive(inv))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool ContainsWarpPrimitive(SyntaxNode node) =>
+        node.DescendantNodes()
+            .AsStackEnumerable()
+            .Any(static descendant => descendant is InvocationExpressionSyntax inv && IsWarpPrimitive(inv));
 
     private class StatementRewriter(
         WarpInstructionRewriter parent,
@@ -98,7 +92,8 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             node.WithStatement(VisitLoopBody(node.Statement));
 
         private StatementSyntax VisitLoopBody(StatementSyntax body) =>
-            Visit(body) as StatementSyntax ?? throw new InvalidOperationException("Warp instruction hoisting removed a loop body.");
+            Visit(body) as StatementSyntax ??
+            throw new InvalidOperationException("Warp instruction hoisting removed a loop body.");
 
         public override SyntaxNode? Visit(SyntaxNode? node)
         {
@@ -140,8 +135,10 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
                 case ExpressionStatementSyntax:
                 // If it's already perfectly hoisted, skip
                 case EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax vd } when
-                    vd.Identifier.Text.StartsWith(GSharpInternalNames.WarpTempPrefix, StringComparison.Ordinal) ||
-                    vd.Identifier.Text.StartsWith(GSharpInternalNames.CallTempPrefix, StringComparison.Ordinal):
+                    vd.Identifier.Text.StartsWith(GSharpInternalNames.Lowering.WarpTempPrefix,
+                        StringComparison.Ordinal) ||
+                    vd.Identifier.Text.StartsWith(GSharpInternalNames.Lowering.CallTempPrefix,
+                        StringComparison.Ordinal):
 
                     return visitedNode;
             }
@@ -183,14 +180,20 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             {
                 // 'out int x' declares a local that the callee writes on its last resume, so it is declared before the
                 // call. The declarator and the reference keep the span of the designation, which names the local.
-                var annotations = designation.GetAnnotations(AstLoweringPipeline.OriginalSpanAnnotationKind);
+                var annotations = ImmutableArray.CreateRange(
+                    designation.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
+                );
                 var identifier = designation.Identifier.WithoutTrivia();
-                hoistedAssignments.Add(SyntaxFactory.LocalDeclarationStatement(
-                    SyntaxFactory.VariableDeclaration(
-                        declarationExpression.Type.WithoutTrivia(),
-                        SyntaxFactory.SingletonSeparatedList(
-                            SyntaxFactory.VariableDeclarator(identifier).WithAdditionalAnnotations(annotations)))
-                ).NormalizeWhitespace());
+                // <type> x;
+                var declarator = SyntaxFactory.VariableDeclarator(identifier).WithAdditionalAnnotations(annotations);
+                hoistedAssignments.Add(
+                    SyntaxFactory.LocalDeclarationStatement(
+                        SyntaxFactory.VariableDeclaration(
+                            declarationExpression.Type.WithoutTrivia(),
+                            SyntaxFactory.SingletonSeparatedList(declarator)
+                        )
+                    ).NormalizeWhitespace()
+                );
 
                 return argument.WithExpression(SyntaxFactory.IdentifierName(identifier)
                     .WithAdditionalAnnotations(annotations)
@@ -239,19 +242,18 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             return SyntaxFactory.IdentifierName(tempName).WithTriviaFrom(expression);
         }
 
-        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value) =>
-            SyntaxFactory.LocalDeclarationStatement(
+        // var <tempName> = <value>;
+        internal static LocalDeclarationStatementSyntax CreateTempDeclaration(string tempName, ExpressionSyntax value)
+        {
+            var declarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(tempName))
+                .WithInitializer(SyntaxFactory.EqualsValueClause(value));
+            return SyntaxFactory.LocalDeclarationStatement(
                 SyntaxFactory.VariableDeclaration(
                     SyntaxFactory.IdentifierName("var"),
-                    SyntaxFactory.SingletonSeparatedList(
-                        SyntaxFactory.VariableDeclarator(
-                            SyntaxFactory.Identifier(tempName)
-                        ).WithInitializer(
-                            SyntaxFactory.EqualsValueClause(value)
-                        )
-                    )
+                    SyntaxFactory.SingletonSeparatedList(declarator)
                 )
             ).NormalizeWhitespace();
+        }
     }
 }
 

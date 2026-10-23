@@ -74,7 +74,10 @@ static int SumAll<TEnumerator>(TEnumerator enumerator)
 }
 
 ReadOnlySpan<int> data = [1, 2, 3, 4];
-Console.WriteLine($"Total: {SumAll(data.AsStackEnumerable().Enumerator)}");
+var enumerator = data
+    .AsStackEnumerable()
+    .Enumerator;
+Console.WriteLine($"Total: {SumAll(enumerator)}");
 ```
 
 ## See also

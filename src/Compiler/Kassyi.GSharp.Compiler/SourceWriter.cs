@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler;
 
 /// <summary>A zero-allocation writer that builds source text using a pooled thread-static <see cref="StringBuilder"/>.</summary>
@@ -75,49 +74,6 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
         Builder.Append(value);
         return ref this;
     }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendComma()
-    {
-        Builder.Append(',');
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendSpace()
-    {
-        Builder.Append(' ');
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendSemiColon()
-    {
-        Builder.Append(';');
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendSemiColonLine()
-    {
-        Builder.AppendLine(";");
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendOperator(string op)
-    {
-        Builder.Append(op);
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendKeyword(string keyword)
-    {
-        Builder.Append(keyword);
-        return ref this;
-    }
-
 
 #pragma warning disable CA1822 // Mark members as static
     [UnscopedRef]
@@ -280,37 +236,22 @@ public readonly struct SourceWriter : IDisposable, IEquatable<SourceWriter>
 
     public override int GetHashCode() => _myDepth;
 
+    /// <summary>Write custom scopes: { anything }</summary>
     public SourceWriterScope Scope(string openingText = "{", string closingText = "}") =>
         new(this, openingText, closingText);
 
+    /// <summary>Write custom inline scopes: { anything }</summary>
     public SourceWriterInlineScope InlineScope(string openingText, string closingText) =>
         new(this, openingText, closingText);
 
+    /// <summary>Write ()</summary>
     public SourceWriterInlineScope Parentheses() => new(this, "(", ")");
+    /// <summary>Write []</summary>
     public SourceWriterInlineScope Brackets() => new(this, "[", "]");
+    /// <summary>Write {}</summary>
     public SourceWriterInlineScope Braces() => new(this, "{", "}");
+
     public SourceWriterImmediatelyInvokedLambdaScope ImmediatelyInvokedLambda(string? returnType = null) => new(this, returnType);
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendParentheses()
-    {
-        Append("()");
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendBrackets()
-    {
-        Append("[]");
-        return ref this;
-    }
-
-    [UnscopedRef]
-    public ref readonly SourceWriter AppendEmptyScope()
-    {
-        Append("{}");
-        return ref this;
-    }
 
     /// <summary>Name recorded in the <c>GeneratedCodeAttribute</c> of generated types.</summary>
     public const string GeneratorName = "Kassyi.GSharp.Compiler";

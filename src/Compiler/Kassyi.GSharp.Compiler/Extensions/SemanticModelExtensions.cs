@@ -8,12 +8,12 @@ internal static class SemanticModelExtensions
 
     private static SyntaxNode? FindOriginalNode(SemanticModel semanticModel, SyntaxNode node)
     {
-        if (!node.HasAnnotations(AstLoweringPipeline.OriginalSpanAnnotationKind))
+        if (!node.HasAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
         {
             return null;
         }
 
-        foreach (var ann in node.GetAnnotations(AstLoweringPipeline.OriginalSpanAnnotationKind))
+        foreach (var ann in node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
         {
             if (ann.Data is { } data)
             {

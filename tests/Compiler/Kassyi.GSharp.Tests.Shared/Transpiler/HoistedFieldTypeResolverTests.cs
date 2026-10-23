@@ -34,17 +34,8 @@ public class HoistedFieldTypeResolverTests
     [Scenario(TestScenario.Boundary)]
     public void Resolve_TypeWithGenericTypeParameter_ThrowsInvalidOperationException()
     {
-        const string code = """
-            public class TestClass
-            {
-                public static void K<T>()
-                {
-                    T x = default;
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(code);
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Transpiler/HoistedFieldTypeResolver/GenericTypeParameterLocal.cs"));
         var tree = compilation.SyntaxTrees.First();
         var model = compilation.GetSemanticModel(tree);
 
@@ -64,17 +55,8 @@ public class HoistedFieldTypeResolverTests
     [Scenario(TestScenario.HappyPath)]
     public void Resolve_ExplicitOrInferredLocal_ResolvesToCorrectTypeSymbol()
     {
-        const string code = """
-            public class TestClass
-            {
-                public static void K()
-                {
-                    var y = 1u;
-                }
-            }
-            """;
-
-        var compilation = RoslynTestUtility.CreateCompilation(code);
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Transpiler/HoistedFieldTypeResolver/InferredLocal.cs"));
         var tree = compilation.SyntaxTrees.First();
         var model = compilation.GetSemanticModel(tree);
 

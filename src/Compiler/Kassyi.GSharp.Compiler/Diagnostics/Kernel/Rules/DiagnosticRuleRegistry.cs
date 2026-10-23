@@ -20,16 +20,11 @@ internal static class DiagnosticRuleRegistry
     private static ImmutableArray<DiagnosticDescriptor> CreateAllSupportedDiagnostics()
     {
         var builder = ImmutableArray.CreateBuilder<DiagnosticDescriptor>();
-        foreach (var rule in Rules)
-        {
-            foreach (var diag in rule.SupportedDiagnostics)
-            {
-                if (!builder.Contains(diag))
-                {
-                    builder.Add(diag);
-                }
-            }
-        }
+        Rules
+            .AsStackEnumerable()
+            .SelectMany(static rule => rule.SupportedDiagnostics
+                .AsStackEnumerable()
+            ).AddIf(builder, builder, static (diag, added) => !added.Contains(diag));
         return builder.ToImmutable();
     }
 }

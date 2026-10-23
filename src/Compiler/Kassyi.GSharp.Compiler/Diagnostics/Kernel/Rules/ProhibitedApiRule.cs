@@ -50,5 +50,12 @@ internal sealed class ProhibitedApiRule : ISyntaxValidationRule<MemberAccessExpr
                 locationNode,
                 $"{symbol.ContainingType.Name}.{symbol.Name}");
         }
+        else if (symbol is IMethodSymbol method && StackLinqHelper.IsHostOnly(method))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.UnsupportedSyntax,
+                locationNode,
+                $"{method.Name} (host-only StackLinq operator)");
+        }
     }
 }

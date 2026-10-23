@@ -11,9 +11,10 @@ public class WarpInstructionTests : StateMachineTestBase
     public Task Hoist_WarpInstruction_FromAssignment()
     {
         int x = 0, y = 0, z = 0;
+        uint mask = uint.MaxValue;
         return VerifyWarpRewrite(() =>
         {
-            int a = x + Gpu.WarpShuffle(y, 0) * z;
+            int a = x + Warp.ShuffleSync(mask, y, 0) * z;
         });
     }
 
@@ -22,9 +23,10 @@ public class WarpInstructionTests : StateMachineTestBase
     public Task Hoist_MultipleWarpInstructions_FromSameStatement()
     {
         int x = 0, y = 0;
+        uint mask = uint.MaxValue;
         return VerifyWarpRewrite(() =>
         {
-            var a = Gpu.WarpShuffle(x, 1) + Gpu.WarpReduceSum(y);
+            var a = Warp.ShuffleSync(mask, x, 1) + Warp.ShuffleXorSync(mask, y, 1);
         });
     }
 
@@ -40,9 +42,10 @@ public class WarpInstructionTests : StateMachineTestBase
     public Task Hoist_NestedWarpInstructions()
     {
         int x = 0;
+        uint mask = uint.MaxValue;
         return VerifyWarpRewrite(() =>
         {
-            var a = Gpu.WarpShuffle(Gpu.WarpShuffle(x, 1), 2);
+            var a = Warp.ShuffleSync(mask, Warp.ShuffleSync(mask, x, 1), 2);
         });
     }
 
@@ -53,11 +56,12 @@ public class WarpInstructionTests : StateMachineTestBase
     public Task Hoist_WarpInstruction_InsideLoopBody()
     {
         int value = 0;
+        uint mask = uint.MaxValue;
         return VerifyWarpRewrite(() =>
         {
             for (int offset = 1; offset < 32; offset <<= 1)
             {
-                int neighbor = Gpu.WarpShuffle(value, offset) + 1;
+                int neighbor = Warp.ShuffleSync(mask, value, offset) + 1;
                 value += neighbor;
             }
         });
@@ -69,11 +73,12 @@ public class WarpInstructionTests : StateMachineTestBase
     public Task Hoist_WarpInstruction_InsideIfBlock()
     {
         int value = 0, lane = 0;
+        uint mask = uint.MaxValue;
         return VerifyWarpRewrite(() =>
         {
             if (lane > 0)
             {
-                value = Gpu.WarpShuffle(value, lane) * 2;
+                value = Warp.ShuffleSync(mask, value, lane) * 2;
             }
         });
     }
@@ -85,10 +90,11 @@ public class WarpInstructionTests : StateMachineTestBase
     public Task Hoist_WarpInstruction_InsideEmbeddedStatement()
     {
         int value = 0;
+        uint mask = uint.MaxValue;
         return VerifyWarpRewrite(() =>
         {
             for (int offset = 1; offset < 32; offset <<= 1)
-                value += Gpu.WarpShuffle(value, offset);
+                value += Warp.ShuffleSync(mask, value, offset);
         });
     }
 
@@ -98,12 +104,13 @@ public class WarpInstructionTests : StateMachineTestBase
     public Task Hoist_WarpInstruction_InsideSwitchSection()
     {
         int value = 0, mode = 0;
+        uint mask = uint.MaxValue;
         return VerifyWarpRewrite(() =>
         {
             switch (mode)
             {
                 case 0:
-                    value = Gpu.WarpShuffle(value, 1) + 1;
+                    value = Warp.ShuffleSync(mask, value, 1) + 1;
                     break;
             }
         });
@@ -115,13 +122,14 @@ public class WarpInstructionTests : StateMachineTestBase
     public Task Hoist_WarpInstruction_InsideNestedLoops()
     {
         int value = 0;
+        uint mask = uint.MaxValue;
         return VerifyWarpRewrite(() =>
         {
             for (int outer = 0; outer < 2; outer++)
             {
                 for (int offset = 1; offset < 32; offset <<= 1)
                 {
-                    value += Gpu.WarpShuffle(value, offset + outer);
+                    value += Warp.ShuffleSync(mask, value, offset + outer);
                 }
             }
         });

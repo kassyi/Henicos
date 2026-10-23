@@ -28,14 +28,14 @@ internal static class MacroTranspiler
         ref TranspileContext context)
     {
         if (context.Query.SemanticModel.GetSymbol(invocation) is not IMethodSymbol symbol ||
-            !symbol.ContainingNamespace.IsCoreNamespace())
+            GpuMacroClassifier.Classify(symbol) is not { Kind: not GpuMacroKind.None } call)
         {
             return false;
         }
 
         foreach (var rule in context.RuleRegistry.MacroRules)
         {
-            if (rule.TryTranspile(invocation, statement, symbol, ref context))
+            if (rule.TryTranspile(invocation, statement, call, ref context))
             {
                 return true;
             }

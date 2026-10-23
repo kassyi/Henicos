@@ -193,19 +193,19 @@ From the Greek _hén_ (_ἕν_), meaning unity. The framework was born from a sp
 
 ## Documentation
 
-Specs, guides, and API references are available in [`docs/spec/en/`](https://www.google.com/search?q=docs/spec/en/&utm_source=gemini):
+Specs, guides, and API references are available in [`docs/spec/en/`](docs/spec/en/):
 
-- [1. Getting Started & Philosophy](https://www.google.com/search?q=docs/spec/en/00_getting_started/00_index.md&utm_source=gemini)
-- [2. Language Specification](https://www.google.com/search?q=docs/spec/en/01_language/00_index.md&utm_source=gemini)
-- [3. Compiler & Runtime Architecture](https://www.google.com/search?q=docs/spec/en/02_architecture/00_index.md&utm_source=gemini)
-- [4. BCL API & Intrinsics](https://www.google.com/search?q=docs/spec/en/03_bcl_api/00_index.md&utm_source=gemini)
-- [5. Guides & Best Practices](https://www.google.com/search?q=docs/spec/en/04_guides/00_index.md&utm_source=gemini)
+- [1. Getting Started & Philosophy](docs/spec/en/00_getting_started/00_index.md)
+- [2. Language Specification](docs/spec/en/01_language/00_index.md)
+- [3. Compiler & Runtime Architecture](docs/spec/en/02_architecture/00_index.md)
+- [4. BCL API & Intrinsics](docs/spec/en/03_bcl_api/00_index.md)
+- [5. Guides & Best Practices](docs/spec/en/04_guides/00_index.md)
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](https://www.google.com/search?q=LICENSE&utm_source=gemini) for details.
+MIT License. See [LICENSE](LICENSE) for details.
 
 ## Trademark Notice
 CUDA and NVIDIA are trademarks or registered trademarks of NVIDIA Corporation. Henicos (G#) is an independent open-source project and is not affiliated with, sponsored, or endorsed by NVIDIA Corporation.

@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>Diagnostic rule that verifies required arguments to GPU macro methods are compile-time constants.</summary>
@@ -28,52 +27,30 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
             return;
         }
 
-        var containingType = invocationSymbol.ContainingType;
-        if (containingType is { Name: TypeConstants.GpuMacros.Hint, ContainingType.Name: TypeConstants.GpuMacros.Gpu })
+        var call = GpuMacroClassifier.Classify(invocationSymbol);
+        switch (call.Kind)
         {
-            AnalyzeHintMacro(invocation, invocationSymbol, ref context);
-            return;
-        }
-
-        if (containingType?.Name == TypeConstants.GpuMacros.Gpu)
-        {
-            AnalyzeGpuMacro(invocation, invocationSymbol, ref context);
-        }
-    }
-
-    private void AnalyzeHintMacro(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
-        ref ValidationContext context)
-    {
-        if (invocationSymbol.Name == TypeConstants.GpuMacros.Unroll)
-        {
-            CheckUnrollHint(invocation, ref context);
-        }
-    }
-
-    private void AnalyzeGpuMacro(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
-        ref ValidationContext context)
-    {
-        switch (invocationSymbol.Name)
-        {
-            case TypeConstants.GpuMacros.ForUnroll:
-                CheckForUnroll(invocation, invocationSymbol, ref context);
+            case GpuMacroKind.HintUnroll:
+                CheckUnrollHint(invocation, ref context);
                 break;
 
-            case TypeConstants.GpuMacros.InlinePtx:
+            case GpuMacroKind.ForUnroll:
+                CheckForUnroll(invocation, call, ref context);
+                break;
+
+            case GpuMacroKind.InlinePtx:
                 CheckInlinePtx(invocation, ref context);
                 break;
 
-            case TypeConstants.GpuMacros.SyncGrid:
-                CheckSyncGrid(invocation, invocationSymbol, ref context);
+            case GpuMacroKind.SyncGrid:
+                CheckSyncGrid(invocation, call, ref context);
                 break;
         }
     }
 
-    private void CheckForUnroll(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
-        ref ValidationContext context)
+    private void CheckForUnroll(InvocationExpressionSyntax invocation, GpuMacroCall call, ref ValidationContext context)
     {
-        var hasContext = invocationSymbol.Parameters.Length == 4;
-        var offset = hasContext ? 1 : 0;
+        var offset = call.ArgumentOffset;
         var args = invocation.ArgumentList.Arguments;
         if (args.Count < offset + 2)
         {
@@ -93,10 +70,9 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         }
     }
 
-    private void CheckSyncGrid(InvocationExpressionSyntax invocation, IMethodSymbol invocationSymbol,
-        ref ValidationContext context)
+    private void CheckSyncGrid(InvocationExpressionSyntax invocation, GpuMacroCall call, ref ValidationContext context)
     {
-        if (invocationSymbol.Parameters.Length == 1)
+        if (call.HasBody)
         {
             var args = invocation.ArgumentList.Arguments;
             if (args.Count >= 1 && args[0].Expression is not LambdaExpressionSyntax)
@@ -109,7 +85,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         }
 
         if (context.MethodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
-            !IsCooperativeKernel(context.MethodSymbol))
+            !context.MethodSymbol.IsCooperativeKernel())
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
@@ -232,7 +208,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
                 case IdentifierNameSyntax idName:
                     {
                         var symbol = context.SemanticModel.GetSymbol(idName);
-                        if (symbol is IParameterSymbol paramSymbol && paramSymbol.HasAttribute(KnownAttributes.Constant))
+                        if (symbol is IParameterSymbol paramSymbol && paramSymbol.IsConstantParameter())
                         {
                             return true;
                         }
@@ -294,15 +270,17 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         var nextInsideLoop = insideNestedLoop || (!isRoot && IsLoop(node));
         var nextInsideSwitch = insideNestedSwitch || (!isRoot && IsSwitch(node));
 
-        foreach (var child in node.ChildNodes())
-        {
-            if (HasDynamicControlFlow(child, isRoot: false, insideNestedLoop: nextInsideLoop, insideNestedSwitch: nextInsideSwitch))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return node.ChildNodes()
+            .AsStackEnumerable()
+            .Any(
+                (Loop: nextInsideLoop, Switch: nextInsideSwitch),
+                static (child, inside) => HasDynamicControlFlow(
+                    child,
+                    isRoot: false,
+                    insideNestedLoop: inside.Loop,
+                    insideNestedSwitch: inside.Switch
+                )
+            );
     }
 
     private static bool IsLoop(SyntaxNode node) =>
@@ -339,24 +317,5 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
             expr,
             paramName,
             macroName);
-    }
-
-    private static bool IsCooperativeKernel(IMethodSymbol methodSymbol)
-    {
-        var kernelAttr = methodSymbol.GetAttribute(KnownAttributes.GpuKernel);
-        if (kernelAttr == null)
-        {
-            return false;
-        }
-
-        foreach (var namedArg in kernelAttr.NamedArguments)
-        {
-            if (namedArg is { Key: "Cooperative", Value.Value: true })
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

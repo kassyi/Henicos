@@ -76,7 +76,9 @@ using System;
 using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> values = [10, 20, 30, 40];
-ParallelStackEnumerable<SpanEnumerator<int>, int> parallelSeq = values.AsStackEnumerable().AsParallel();
+ParallelStackEnumerable<SpanEnumerator<int>, int> parallelSeq = values
+    .AsStackEnumerable()
+    .AsParallel();
 
 int sum = parallelSeq.Sum();
 Console.WriteLine($"Parallel sum: {sum}");

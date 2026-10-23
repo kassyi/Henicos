@@ -59,7 +59,7 @@ internal static class ObjectCreationHelper
             {
                 context.Emitter.Writer.Append(" (");
                 context.Emitter.Dialect.AppendType(ref context, typeArg);
-                context.Emitter.Writer.Append($"*)__gsharp_allocate_smem({siteKey}, ");
+                context.Emitter.Writer.Append($"*){GSharpInternalNames.Prelude.AllocateSharedMemory}({siteKey}, ");
 
                 using (context.Emitter.Writer.Parentheses())
                 {
@@ -131,11 +131,11 @@ internal static class ObjectCreationHelper
             using (context.Emitter.Writer.Scope())
             {
                 context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-                context.Emitter.Writer.AppendSpace().Append(GSharpInternalNames.AggregateTemp);
+                context.Emitter.Writer.Append(' ').Append(GSharpInternalNames.Lowering.AggregateTemp);
                 TranspileArgumentListAsBraces(argumentList, ref context);
 
-                context.Emitter.Writer.AppendSemiColon();
-                context.Emitter.Writer.AppendSpace();
+                context.Emitter.Writer.Append(';');
+                context.Emitter.Writer.Append(' ');
 
                 foreach (var expr in initializer.Expressions)
                 {
@@ -144,17 +144,17 @@ internal static class ObjectCreationHelper
                         continue;
                     }
 
-                    context.Emitter.Writer.Append($"{GSharpInternalNames.AggregateTemp}.");
+                    context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.AggregateTemp}.");
                     context.Visitor.Visit(assignment.Left);
                     context.Emitter.Writer.Append(" = ");
                     context.Visitor.Visit(assignment.Right);
                     context.Emitter.Writer.Append("; ");
                 }
 
-                context.Emitter.Writer.Append($"return {GSharpInternalNames.AggregateTemp}; ");
+                context.Emitter.Writer.Append($"return {GSharpInternalNames.Lowering.AggregateTemp}; ");
             }
 
-            context.Emitter.Writer.AppendParentheses();
+            context.Emitter.Writer.Append("()");
         }
     }
 
@@ -170,8 +170,7 @@ internal static class ObjectCreationHelper
                     if (!first)
                     {
                         context.Emitter.Writer
-                            .AppendComma()
-                            .AppendSpace();
+                            .Append(", ");
                     }
 
                     context.Visitor.Visit(arg);
@@ -181,7 +180,7 @@ internal static class ObjectCreationHelper
         }
         else
         {
-            context.Emitter.Writer.AppendEmptyScope();
+            context.Emitter.Writer.Append("{}");
         }
     }
 }

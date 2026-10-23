@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 
 /// <summary>Roslyn analyzer that validates C# syntax rules inside GPU kernel and device methods.</summary>
@@ -26,11 +25,7 @@ public class GpuKernelAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Check if the method is a GPU kernel or device method
-        var isGpuKernel = methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
-                          methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction);
-
-        if (!isGpuKernel)
+        if (!GpuExecutionSpace.IsGpuFunction(methodSymbol))
         {
             return;
         }

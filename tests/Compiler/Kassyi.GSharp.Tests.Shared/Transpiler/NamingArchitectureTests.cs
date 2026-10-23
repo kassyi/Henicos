@@ -30,7 +30,7 @@ public partial class NamingArchitectureTests
     };
 
     // C++ / CUDA spellings that legitimately start with "__" and are not compiler-internal names.
-    [GeneratedRegex(@"^__(device__|global__|shared__|forceinline__|noinline__|restrict__|declspec|launch_bounds__|syncthreads\w*|syncwarp|shfl\w*|ballot_sync|any_sync|all_sync|activemask|threadfence\w*|popc\w*|clz\w*|ffs\w*|brev\w*|ldg|nanosleep|GSHARP_\w*|NativeContext_\w*)")]
+    [GeneratedRegex(@"^__(device__|global__|shared__|forceinline__|noinline__|restrict__|declspec|launch_bounds__|syncthreads\w*|syncwarp|shfl\w*|ballot_sync|any_sync|all_sync|activemask|threadfence\w*|popc\w*|clz\w*|ffs\w*|brev\w*|ldg|nanosleep|GSHARP_\w*)")]
     private static partial Regex AllowedDoubleUnderscoreRegex();
 
     [GeneratedRegex(@"(?<![A-Za-z0-9_])__[A-Za-z]\w*")]
@@ -111,26 +111,88 @@ public partial class NamingArchitectureTests
     [Scenario(TestScenario.SadPath)]
     public void Test_InternalNames_DoNotUseRenamedFamilyPrefixes()
     {
-        var path = Path.Combine(RepositoryPaths.CompilerProject, "GSharpInternalNames.cs");
-        var root = CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
-
-        foreach (var literal in root.DescendantNodes().OfType<LiteralExpressionSyntax>())
+        foreach (var (path, value, _) in GSharpInternalNames.All)
         {
-            if (!literal.IsKind(SyntaxKind.StringLiteralExpression))
+            Assert.False(
+                value.StartsWith(GSharpInternalNames.Renamed.IdentifierPrefix, StringComparison.Ordinal) ||
+                value.StartsWith(GSharpInternalNames.Renamed.MemberPrefix, StringComparison.Ordinal),
+                $"{path} = '{value}' collides with the renamed user identifier families.");
+        }
+
+        Assert.DoesNotContain(GSharpInternalNames.Renamed.IdentifierPrefix, GSharpPreludeResources.Cpp);
+        Assert.DoesNotContain(GSharpInternalNames.Renamed.IdentifierPrefix, GSharpPreludeResources.Cuda);
+        Assert.DoesNotContain(GSharpInternalNames.Renamed.MemberPrefix, GSharpPreludeResources.Cpp);
+        Assert.DoesNotContain(GSharpInternalNames.Renamed.MemberPrefix, GSharpPreludeResources.Cuda);
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_Compiler_DoesNotRespellInternalNames()
+    {
+        var names = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (namePath, value, _) in GSharpInternalNames.All)
+        {
+            // LabelPrefix is a prefix by design and would match unrelated text.
+            if (value != GSharpInternalNames.Lowering.LabelPrefix)
+            {
+                names[value] = namePath;
+            }
+        }
+
+        Assert.NotEmpty(names);
+
+        var violations = new List<string>();
+        foreach (var (path, root) in ParseCompilerSources())
+        {
+            if (Path.GetFileName(path) == "GSharpInternalNames.cs")
             {
                 continue;
             }
 
-            Assert.False(
-                literal.Token.ValueText.StartsWith(GSharpInternalNames.RenamedIdentifierPrefix, StringComparison.Ordinal) ||
-                literal.Token.ValueText.StartsWith(GSharpInternalNames.RenamedMemberPrefix, StringComparison.Ordinal),
-                $"'{literal.Token.ValueText}' collides with the renamed user identifier families.");
+            foreach (var (text, token) in EnumerateStringTexts(root))
+            {
+                if (names.TryGetValue(text, out var constant))
+                {
+                    var line = token.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+                    violations.Add($"{Path.GetFileName(path)}:{line}: \"{text}\" is GSharpInternalNames.{constant}");
+                }
+            }
         }
 
-        Assert.DoesNotContain(GSharpInternalNames.RenamedIdentifierPrefix, GSharpPreludeResources.Cpp);
-        Assert.DoesNotContain(GSharpInternalNames.RenamedIdentifierPrefix, GSharpPreludeResources.Cuda);
-        Assert.DoesNotContain(GSharpInternalNames.RenamedMemberPrefix, GSharpPreludeResources.Cpp);
-        Assert.DoesNotContain(GSharpInternalNames.RenamedMemberPrefix, GSharpPreludeResources.Cuda);
+        Assert.True(violations.Count == 0,
+            "Use the GSharpInternalNames constant instead of spelling the name again:" +
+            Environment.NewLine + string.Join(Environment.NewLine, violations));
+    }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_Compiler_StringsDoNotUseRenamedFamilyPrefixes()
+    {
+        var violations = new List<string>();
+        foreach (var (path, root) in ParseCompilerSources())
+        {
+            // These files encode and decode the renamed families themselves.
+            if (Path.GetFileName(path) is "CppNameResolver.cs" or "GSharpInternalNames.cs")
+            {
+                continue;
+            }
+
+            foreach (var (text, token) in EnumerateStringTexts(root))
+            {
+                if (text.StartsWith(GSharpInternalNames.Renamed.IdentifierPrefix, StringComparison.Ordinal) ||
+                    text.StartsWith(GSharpInternalNames.Renamed.MemberPrefix, StringComparison.Ordinal))
+                {
+                    var line = token.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+                    violations.Add($"{Path.GetFileName(path)}:{line}: \"{text}\"");
+                }
+            }
+        }
+
+        Assert.True(violations.Count == 0,
+            "Compiler-internal names must not collide with the renamed user identifier families:" +
+            Environment.NewLine + string.Join(Environment.NewLine, violations));
     }
 
     private static bool IsRawIdentifierRead(MemberAccessExpressionSyntax memberAccess) =>
@@ -165,6 +227,41 @@ public partial class NamingArchitectureTests
                     yield return interpolation.Expression;
                     break;
             }
+        }
+    }
+
+    // Text of string literals and of the literal parts of interpolated strings.
+    private static IEnumerable<(string Text, SyntaxToken Token)> EnumerateStringTexts(SyntaxNode root)
+    {
+        foreach (var node in root.DescendantNodes())
+        {
+            switch (node)
+            {
+                case LiteralExpressionSyntax literal when literal.IsKind(SyntaxKind.StringLiteralExpression):
+                    yield return (literal.Token.ValueText, literal.Token);
+                    break;
+                case InterpolatedStringTextSyntax text:
+                    yield return (text.TextToken.ValueText, text.TextToken);
+                    break;
+            }
+        }
+    }
+
+    private static SyntaxNode ParseCompilerSource(string path) => CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
+
+    private static IEnumerable<(string Path, SyntaxNode Root)> ParseCompilerSources()
+    {
+        var compilerRoot = RepositoryPaths.CompilerProject;
+        foreach (var path in Directory.EnumerateFiles(compilerRoot, "*.cs", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(compilerRoot, path);
+            var firstSegment = relative.Split(Path.DirectorySeparatorChar)[0];
+            if (firstSegment is "obj" or "bin")
+            {
+                continue;
+            }
+
+            yield return (path, ParseCompilerSource(path));
         }
     }
 

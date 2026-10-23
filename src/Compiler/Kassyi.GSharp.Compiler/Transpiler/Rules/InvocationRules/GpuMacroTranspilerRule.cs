@@ -3,27 +3,22 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.InvocationRules;
 /// <summary>Invocation transpiler rule that handles Gpu.InlinePtx and Gpu.Constant macro expansions.</summary>
 internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 {
+
     public bool TryTranspile(InvocationExpressionSyntax node, ref TranspileContext context, IMethodSymbol symbol)
     {
-        if (symbol.ContainingType.Name != TypeConstants.GpuType ||
-            !symbol.ContainingNamespace.IsCoreNamespace())
+        switch (GpuMacroClassifier.Classify(symbol).Kind)
         {
-            return false;
-        }
+            case GpuMacroKind.InlinePtx:
+                TranspileInlinePtx(node, ref context);
+                return true;
 
-        if (symbol.Name == TypeConstants.GpuMacros.InlinePtx)
-        {
-            TranspileInlinePtx(node, ref context);
-            return true;
-        }
+            case GpuMacroKind.Constant:
+                TranspileConstant(node, ref context);
+                return true;
 
-        if (symbol.Name == TypeConstants.GpuMacros.Constant)
-        {
-            TranspileConstant(node, ref context);
-            return true;
+            default:
+                return false;
         }
-
-        return false;
     }
 
     private static void TranspileInlinePtx(InvocationExpressionSyntax node, ref TranspileContext context)
@@ -35,16 +30,16 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 
         if (!context.Emitter.Dialect.Capabilities.HasFlag(DialectCapabilities.InlineAssembly))
         {
-            var dialectName = context.Emitter.Dialect.GetType().Name;
+            var dialectName = context.Emitter.Dialect.Name;
             context.Reporter.Report(GSharpDiagnostics.InlinePtxNotSupportedByDialect, node, dialectName);
-            context.Emitter.Writer.Append($"__gsharp_unsupported(\"Gpu.InlinePtx is not supported by the {dialectName} dialect\");");
+            context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.Unsupported}(\"Gpu.InlinePtx is not supported by the {dialectName} dialect\");");
             context.Emitter.Writer.AppendLine();
-            if (context.Emitter.Dialect.IsCuda || !context.Emitter.IsGpuKernelEntry)
+            if (!context.Emitter.Dialect.EmulatesThreadsWithStateMachine() || !context.Emitter.IsGpuKernelEntry)
             {
                 return;
             }
 
-            context.Emitter.Writer.AppendLine(GSharpInternalNames.StateTermination);
+            context.Emitter.Writer.AppendLine(GSharpInternalNames.StateMachine.Termination);
             context.Emitter.Writer.AppendLine("return;");
             return;
         }

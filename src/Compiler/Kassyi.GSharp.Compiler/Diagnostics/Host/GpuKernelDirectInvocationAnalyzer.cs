@@ -30,20 +30,11 @@ public class GpuKernelDirectInvocationAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        // Check if the caller itself is a GPU kernel or device function
-        var enclosingSymbol = context.SemanticModel.GetEnclosingSymbol(invocation.SpanStart, context.CancellationToken);
-        while (enclosingSymbol != null)
+        // Device-to-device call is allowed
+        if (GpuExecutionSpace.IsWithinGpuFunction(
+                context.SemanticModel.GetEnclosingSymbol(invocation.SpanStart, context.CancellationToken)))
         {
-            var isEnclosingGpuFunction = enclosingSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
-                                         enclosingSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction);
-
-            if (isEnclosingGpuFunction)
-            {
-                // Device-to-device call is allowed
-                return;
-            }
-
-            enclosingSymbol = enclosingSymbol.ContainingSymbol;
+            return;
         }
 
         context.ReportDiagnostic(

@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Discovers assembly attributes and builds immutable mappings from BCL methods to CUDA intrinsic functions.</summary>
@@ -144,13 +143,14 @@ internal static class BclIntrinsicMapBuilder
             var is32Bit = compilation.Options.Platform is Platform.X86 or Platform.Arm;
             if (is32Bit)
             {
+                // Core maps the UIntPtr overloads to the 64-bit functions; switch to their 32-bit counterparts.
                 cudaIntrinsicName = cudaIntrinsicName switch
                 {
-                    "__gsharp_rotate_left_64" => "__gsharp_rotate_left_32",
-                    "__gsharp_rotate_right_64" => "__gsharp_rotate_right_32",
-                    "__gsharp_trailing_zero_count_64" => "__gsharp_trailing_zero_count_32",
-                    "__gsharp_log2_64" => "__gsharp_log2_32",
-                    "__gsharp_leading_zero_count_64" => "__gsharp_leading_zero_count_32",
+                    GSharpInternalNames.Prelude.RotateLeftFor64 => GSharpInternalNames.Prelude.RotateLeftFor32,
+                    GSharpInternalNames.Prelude.RotateRightFor64 => GSharpInternalNames.Prelude.RotateRightFor32,
+                    GSharpInternalNames.Prelude.TrailingZeroCountFor64 => GSharpInternalNames.Prelude.TrailingZeroCountFor32,
+                    GSharpInternalNames.Prelude.Log2For64 => GSharpInternalNames.Prelude.Log2For32,
+                    GSharpInternalNames.Prelude.LeadingZeroCountFor64 => GSharpInternalNames.Prelude.LeadingZeroCountFor32,
                     "__popcll" => "__popc",
                     _ => cudaIntrinsicName
                 };
@@ -186,14 +186,15 @@ internal static class BclIntrinsicMapBuilder
             return true;
         }
 
+        // Modules is a lazy IEnumerable, so the outer loop stays
         foreach (var module in assembly.Modules)
         {
-            foreach (var refAsm in module.ReferencedAssemblies)
+            var referencesTarget = module.ReferencedAssemblies
+                .AsStackEnumerable()
+                .Any(targetAssemblyName, static (refAsm, name) => refAsm.Name == name);
+            if (referencesTarget)
             {
-                if (refAsm.Name == targetAssemblyName)
-                {
-                    return true;
-                }
+                return true;
             }
         }
 

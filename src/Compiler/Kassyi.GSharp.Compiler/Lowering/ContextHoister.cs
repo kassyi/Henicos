@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Hoists local variables that cross execution barriers into a shared context struct.</summary>
@@ -30,10 +29,7 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
 
         if (copiedParameters != null)
         {
-            foreach (var parameter in copiedParameters)
-            {
-                _hoistedVariables.Add(parameter);
-            }
+            _hoistedVariables.UnionWith(copiedParameters);
         }
 
         var barrierCount = analyzer.BarrierSpans.Count;
@@ -96,7 +92,10 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
             {
                 // [WHY] Hoisted variables reside in the context struct, so initializations must become explicit member assignments.
                 var typeSyntax = (variable.Parent as VariableDeclarationSyntax)?.Type;
-                var isSharedMemory = typeSyntax is GenericNameSyntax { Identifier.ValueText: TypeConstants.SharedMemoryType };
+                var isSharedMemory = typeSyntax is GenericNameSyntax
+                {
+                    Identifier.ValueText: TypeConstants.SharedMemoryType
+                };
 
                 if (variable.Initializer == null || (isSharedMemory && !isDeviceFunction))
                 {
@@ -158,9 +157,11 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
     {
         return SyntaxFactory.MemberAccessExpression(
             SyntaxKind.PointerMemberAccessExpression,
-            SyntaxFactory.IdentifierName(GSharpInternalNames.Context),
+            SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
             SyntaxFactory.IdentifierName(identifier.WithoutTrivia())
-                .WithAdditionalAnnotations(original.GetAnnotations(AstLoweringPipeline.OriginalSpanAnnotationKind))
+                .WithAdditionalAnnotations(
+                    original.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
+                )
         );
     }
 

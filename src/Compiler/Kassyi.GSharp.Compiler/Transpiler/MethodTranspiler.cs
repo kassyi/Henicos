@@ -1,4 +1,3 @@
-
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
@@ -46,7 +45,7 @@ public static class MethodTranspiler
         using var session = TranspilationSession.Begin(methodDecl, semanticModel, reportDiagnostic, dialect);
         if (session.ErrorMessage != null)
         {
-            requiredIncludes = new HashSet<string>();
+            requiredIncludes = [];
             return session.ErrorMessage;
         }
 
@@ -58,7 +57,7 @@ public static class MethodTranspiler
         context.Emitter.IsSuspendingDeviceFunction = isSuspendingDevice;
 
         LoweredStateMachine? lowered = null;
-        if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
+        if (!isDevice && context.Emitter.Dialect.EmulatesThreadsWithStateMachine() && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
         {
             lowered = preLowered ?? AstLoweringPipeline.Lower(methodDecl, semanticModel);
         }
@@ -74,7 +73,7 @@ public static class MethodTranspiler
 
         if (lowered != null)
         {
-            var prefix = isSuspendingDevice ? GSharpInternalNames.FrameTypePrefix : GSharpInternalNames.KernelContextPrefix;
+            var prefix = isSuspendingDevice ? GSharpInternalNames.SuspendingCall.FrameTypePrefix : GSharpInternalNames.Kernel.ContextPrefix;
             var frameName = MethodSignatureTranspiler.GetKernelDerivedName(prefix, methodDecl, methodSymbol);
             WriteContextStruct(frameName, methodDecl.Identifier.ValueText, lowered, methodSymbol, isSuspendingDevice,
                 ref context);
@@ -142,7 +141,7 @@ public static class MethodTranspiler
         var isSuspendingDevice = isDevice && IsLoweredSuspendingDeviceFunction(methodDecl, methodSymbol, ref context);
 
         LoweredStateMachine? lowered = null;
-        if (!isDevice && !context.Emitter.Dialect.IsCuda && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
+        if (!isDevice && context.Emitter.Dialect.EmulatesThreadsWithStateMachine() && context.Emitter.IsGpuKernelEntry && methodDecl.HasBody())
         {
             lowered = AstLoweringPipeline.Lower(methodDecl, semanticModel);
         }
@@ -154,7 +153,7 @@ public static class MethodTranspiler
 
         if (lowered != null)
         {
-            var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.KernelContextPrefix,
+            var contextName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.Kernel.ContextPrefix,
                 methodDecl, methodSymbol);
             WriteContextStruct(contextName, methodDecl.Identifier.ValueText, lowered, methodSymbol, isFrame: false,
                 ref context);
@@ -163,7 +162,7 @@ public static class MethodTranspiler
         if (isSuspendingDevice)
         {
             // The frame is defined with the body; the declaration only needs its name
-            var frameName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix,
+            var frameName = MethodSignatureTranspiler.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix,
                 methodDecl, methodSymbol);
             context.Emitter.Writer.AppendLine($"struct {frameName};");
             MethodSignatureTranspiler.WriteSuspendingDeviceSignature(methodDecl, [], ref context);
@@ -173,7 +172,7 @@ public static class MethodTranspiler
             MethodSignatureTranspiler.WriteMethodSignature(methodDecl, isDevice, lowered != null, ref context);
         }
 
-        context.Emitter.Writer.AppendSemiColonLine();
+        context.Emitter.Writer.AppendLine(";");
 
         context.Emitter.Writer = mainWriter;
         foreach (var structSym in StructTranspiler.GetTopologicallySortedStructs(ref context))
@@ -212,7 +211,7 @@ public static class MethodTranspiler
     /// </summary>
     internal static bool IsLoweredSuspendingDeviceFunction(MethodDeclarationSyntax methodDecl, IMethodSymbol? methodSymbol,
         ref TranspileContext context) =>
-        !context.Emitter.Dialect.IsCuda && methodDecl.HasBody() && methodSymbol != null &&
+        context.Emitter.Dialect.EmulatesThreadsWithStateMachine() && methodDecl.HasBody() && methodSymbol != null &&
         SuspensionAnalysis.RequiresStateMachine(methodSymbol, context.Query.SemanticModel.Compilation);
 
     // kernelName is the C# name, used only in internal-error reports. A kernel context also holds the warp exchange of the
@@ -221,24 +220,24 @@ public static class MethodTranspiler
         IMethodSymbol? methodSymbol, bool isFrame, ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine($"struct {contextName} {{");
-        context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.State} = 0;");
+        context.Emitter.Writer.AppendLine($"int {GSharpInternalNames.StateMachine.State} = 0;");
         if (!isFrame)
         {
-            context.Emitter.Writer.AppendLine($"{contextName}* {GSharpInternalNames.AllContexts} = nullptr;");
+            context.Emitter.Writer.AppendLine($"{contextName}* {GSharpInternalNames.StateMachine.AllContexts} = nullptr;");
             // Two exchange slots alternate per shuffle, so a lane that has already published its next shuffle does not
             // overwrite the value a slower lane is still reading
-            context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.WarpExchange}[2] = {{}};");
-            context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.WarpShuffleCount} = 0;");
-            context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.YieldedForGridSync} = false;");
+            context.Emitter.Writer.AppendLine($"uint64_t {GSharpInternalNames.StateMachine.WarpExchange}[2] = {{}};");
+            context.Emitter.Writer.AppendLine($"uint32_t {GSharpInternalNames.StateMachine.WarpShuffleCount} = 0;");
+            context.Emitter.Writer.AppendLine($"bool {GSharpInternalNames.StateMachine.YieldedForGridSync} = false;");
         }
 
         foreach (var parameter in GetCopiedParameters(lowered, methodSymbol))
         {
             StructTranspiler.RegisterUsedStructIfApplicable(parameter.Type, ref context);
             context.Emitter.Dialect.AppendType(ref context, parameter.Type);
-            context.Emitter.Writer.AppendSpace()
+            context.Emitter.Writer.Append(' ')
                 .AppendCppName(CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect))
-                .AppendSemiColon().AppendLine();
+                .AppendLine(";");
         }
 
         foreach (var field in lowered.ContextFields)
@@ -255,7 +254,7 @@ public static class MethodTranspiler
         {
             var callee = GetSuspendingCallee(lowered.CallSites[i], ref context);
             context.Emitter.Writer.AppendLine(
-                $"{GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.FrameTypePrefix, callee)} {GSharpInternalNames.CallFramePrefix}{i};");
+                $"{GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee)} {GSharpInternalNames.SuspendingCall.CallFramePrefix}{i};");
         }
 
         context.Emitter.Writer.AppendLine("};");
@@ -274,25 +273,23 @@ public static class MethodTranspiler
             return parameters.ToImmutable();
         }
 
-        foreach (var name in lowered.CopiedParameters)
-        {
-            foreach (var parameter in methodSymbol.Parameters)
-            {
-                if (parameter.Name == name)
-                {
-                    parameters.Add(parameter);
-                }
-            }
-        }
+        lowered.CopiedParameters
+            .AsStackEnumerable()
+            .Do(
+                (Method: methodSymbol, Result: parameters),
+                static (name, s) => s.Method.Parameters
+                    .AsStackEnumerable()
+                    .AddIf(s.Result, name, static (parameter, target) => parameter.Name == target)
+            );
 
         return parameters.ToImmutable();
     }
 
     private static void WriteContextFieldName(VariableDeclaratorSyntax field, ref TranspileContext context)
     {
-        context.Emitter.Writer.AppendSpace();
+        context.Emitter.Writer.Append(' ');
         CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
-        context.Emitter.Writer.AppendSemiColon().AppendLine();
+        context.Emitter.Writer.AppendLine(";");
     }
 
     private static void WriteMethodBody(MethodDeclarationSyntax method, LoweredStateMachine? lowered,
@@ -308,7 +305,7 @@ public static class MethodTranspiler
             if (isKernelWithReturn)
             {
                 context.Emitter.Writer.AppendLine(
-                    "unsigned int __gsharp_global_tid = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
+                    $"unsigned int {GSharpInternalNames.ReturnValue.GlobalThreadIndex} = (blockIdx.z * gridDim.y * gridDim.x + blockIdx.y * gridDim.x + blockIdx.x)" +
                     " * (blockDim.x * blockDim.y * blockDim.z) +" +
                     " threadIdx.z * blockDim.y * blockDim.x + threadIdx.y * blockDim.x + threadIdx.x;");
             }
@@ -316,16 +313,16 @@ public static class MethodTranspiler
             if (lowered != null)
             {
                 // The grid sync flag belongs to the thread, so a device function sets it on the root
-                var gridSyncOwner = isFrame ? GSharpInternalNames.Root : GSharpInternalNames.Context;
+                var gridSyncOwner = isFrame ? GSharpInternalNames.SuspendingCall.Root : GSharpInternalNames.StateMachine.Context;
                 context.Emitter.Writer.AppendLine(
-                    $"#define {GSharpInternalNames.State} {GSharpInternalNames.Context}->{GSharpInternalNames.State}");
+                    $"#define {GSharpInternalNames.StateMachine.State} {GSharpInternalNames.StateMachine.Context}->{GSharpInternalNames.StateMachine.State}");
                 context.Emitter.Writer.AppendLine(
-                    $"#define {GSharpInternalNames.YieldedForGridSync} {gridSyncOwner}->{GSharpInternalNames.YieldedForGridSync}");
+                    $"#define {GSharpInternalNames.StateMachine.YieldedForGridSync} {gridSyncOwner}->{GSharpInternalNames.StateMachine.YieldedForGridSync}");
 
                 if (!isFrame)
                 {
                     // A kernel is the root of its own thread
-                    context.Emitter.Writer.AppendLine($"auto* {GSharpInternalNames.Root} = {GSharpInternalNames.Context};");
+                    context.Emitter.Writer.AppendLine($"auto* {GSharpInternalNames.SuspendingCall.Root} = {GSharpInternalNames.StateMachine.Context};");
                 }
 
                 WriteCopiedParameterInitialization(lowered, methodSymbol, ref context);
@@ -337,8 +334,8 @@ public static class MethodTranspiler
                     context.Emitter.Writer.AppendLine("return false;");
                 }
 
-                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.State}");
-                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.YieldedForGridSync}");
+                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.State}");
+                context.Emitter.Writer.AppendLine($"#undef {GSharpInternalNames.StateMachine.YieldedForGridSync}");
                 return;
             }
 
@@ -351,16 +348,16 @@ public static class MethodTranspiler
                 if (methodSymbol is { ReturnsVoid: false })
                 {
                     context.Emitter.Writer.Append(isKernelWithReturn
-                        ? "__gsharp_auto_result[__gsharp_global_tid] = "
+                        ? $"{GSharpInternalNames.ReturnValue.Buffer}[{GSharpInternalNames.ReturnValue.GlobalThreadIndex}] = "
                         : "return ");
                 }
 
                 context.Visitor.Visit(method.ExpressionBody.Expression);
-                context.Emitter.Writer.AppendSemiColonLine();
+                context.Emitter.Writer.AppendLine(";");
 
                 if (isKernelWithReturn)
                 {
-                    context.Emitter.Writer.AppendKeyword("return").AppendSemiColonLine();
+                    context.Emitter.Writer.AppendLine("return;");
                 }
             }
         }
@@ -376,10 +373,10 @@ public static class MethodTranspiler
             return;
         }
 
-        context.Emitter.Writer.AppendKeyword("if");
+        context.Emitter.Writer.Append("if");
         using (context.Emitter.Writer.Parentheses())
         {
-            context.Emitter.Writer.Append($"{GSharpInternalNames.State}==0");
+            context.Emitter.Writer.Append($"{GSharpInternalNames.StateMachine.State}==0");
         }
 
         using (context.Emitter.Writer.Scope())
@@ -387,9 +384,9 @@ public static class MethodTranspiler
             foreach (var parameter in parameters)
             {
                 var name = CppNameResolver.Resolve(parameter, parameter.Name, context.Emitter.Dialect);
-                context.Emitter.Writer.Append($"{GSharpInternalNames.Context}->").AppendCppName(name)
-                    .Append($"={GSharpInternalNames.CopiedParameterPrefix}").AppendCppName(name)
-                    .AppendSemiColon().AppendLine();
+                context.Emitter.Writer.Append($"{GSharpInternalNames.StateMachine.Context}->").AppendCppName(name)
+                    .Append($"={GSharpInternalNames.SuspendingCall.CopiedParameterPrefix}").AppendCppName(name)
+                    .AppendLine(";");
             }
         }
     }
