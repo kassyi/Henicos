@@ -122,6 +122,7 @@ dist-ssr/
 /.claude/skills/file-enumerator/
 /.claude/skills/gpu-code-review/
 /.claude/skills/gsharp-transpiler-guidelines/
+/.claude/skills/jules-wave-orchestration/
 /.claude/skills/jules-wave-spec/
 /.claude/skills/phased-session-manager/
 /.claude/skills/qa-testing-guidelines/
