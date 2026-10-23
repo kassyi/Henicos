@@ -47,6 +47,7 @@ Lowering:
     AggregateTemp: __gsharp_tmp
     TupleTempPrefix: __gsharp_tuple_
     CoalesceTarget: __gsharp_coalesce_target
+    CoalesceTemp: __gsharp_coalesce_tmp
     SwitchStatePrefix: __gsharp_switch_
 
 Launcher:

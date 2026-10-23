@@ -12,8 +12,6 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// </remarks>
 public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<BinaryExpressionSyntax>
 {
-    private const string CoalesceTemp = "__gsharp_coalesce_tmp";
-
     /// <summary>
     /// Gets the singleton instance of the <see cref="BinaryExpressionTranspilerRule"/>.
     /// </summary>
@@ -26,49 +24,24 @@ public sealed class BinaryExpressionTranspilerRule : SyntaxNodeTranspilerRuleBas
     {
         if (node.IsKind(SyntaxKind.CoalesceExpression))
         {
-            using (context.Emitter.Writer.ImmediatelyInvokedLambda())
-            {
-                context.Emitter.Writer.Append($"auto {CoalesceTemp} = ");
-                context.Visitor.Visit(node.Left);
-                context.Emitter.Writer.AppendSemiColonLine();
-
-                context.Emitter.Writer.Append($"return {CoalesceTemp}.HasValue ? {CoalesceTemp}.Value : ");
-                context.Visitor.Visit(node.Right);
-                context.Emitter.Writer.AppendSemiColonLine();
-            }
-
+            NullRepresentation.AppendCoalesce(node.Left, node.Right, ref context);
             return;
         }
 
         if (node.IsKind(SyntaxKind.EqualsExpression) || node.IsKind(SyntaxKind.NotEqualsExpression))
         {
-            var leftType = context.Query.SemanticModel.GetTypeSymbol(node.Left);
-            var rightType = context.Query.SemanticModel.GetTypeSymbol(node.Right);
-
-            var leftIsNull = node.Left.IsKind(SyntaxKind.NullLiteralExpression);
-            var rightIsNull = node.Right.IsKind(SyntaxKind.NullLiteralExpression);
-
-            if (leftIsNull && (rightType != null && (rightType.IsArrayLikeType() || rightType.IsNullableArrayLike())))
+            var isNull = node.IsKind(SyntaxKind.EqualsExpression);
+            if (node.Left.IsKind(SyntaxKind.NullLiteralExpression) &&
+                NullRepresentation.IsArrayNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Right)))
             {
-                var op = node.IsKind(SyntaxKind.EqualsExpression) ? "==" : "!=";
-                using (context.Emitter.Writer.Parentheses())
-                {
-                    context.Visitor.Visit(node.Right);
-                    context.Emitter.Writer.Append($".data {op} nullptr");
-                }
-
+                NullRepresentation.AppendArrayNullTest(node.Right, isNull, ref context);
                 return;
             }
 
-            if (rightIsNull && (leftType != null && (leftType.IsArrayLikeType() || leftType.IsNullableArrayLike())))
+            if (node.Right.IsKind(SyntaxKind.NullLiteralExpression) &&
+                NullRepresentation.IsArrayNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Left)))
             {
-                var op = node.IsKind(SyntaxKind.EqualsExpression) ? "==" : "!=";
-                using (context.Emitter.Writer.Parentheses())
-                {
-                    context.Visitor.Visit(node.Left);
-                    context.Emitter.Writer.Append($".data {op} nullptr");
-                }
-
+                NullRepresentation.AppendArrayNullTest(node.Left, isNull, ref context);
                 return;
             }
         }

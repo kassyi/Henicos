@@ -7,18 +7,12 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
 {
     public override void Transpile(IsPatternExpressionSyntax node, ref TranspileContext context)
     {
-        var type = context.Query.SemanticModel.GetTypeSymbol(node.Expression);
-        if (type != null && (type.IsArrayLikeType() || type.IsNullableArrayLike()))
+        if (NullRepresentation.IsArrayNullComparable(context.Query.SemanticModel.GetTypeSymbol(node.Expression)))
         {
             if (node.Pattern is ConstantPatternSyntax { Expression: LiteralExpressionSyntax literal } &&
                 literal.IsKind(SyntaxKind.NullLiteralExpression))
             {
-                using (context.Emitter.Writer.Parentheses())
-                {
-                    context.Visitor.Visit(node.Expression);
-                    context.Emitter.Writer.Append(".data == nullptr");
-                }
-
+                NullRepresentation.AppendArrayNullTest(node.Expression, isNull: true, ref context);
                 return;
             }
 
@@ -26,12 +20,7 @@ public sealed class IsPatternExpressionTranspilerRule : SyntaxNodeTranspilerRule
                 notPattern.Pattern is ConstantPatternSyntax { Expression: LiteralExpressionSyntax notLiteral } &&
                 notLiteral.IsKind(SyntaxKind.NullLiteralExpression))
             {
-                using (context.Emitter.Writer.Parentheses())
-                {
-                    context.Visitor.Visit(node.Expression);
-                    context.Emitter.Writer.Append(".data != nullptr");
-                }
-
+                NullRepresentation.AppendArrayNullTest(node.Expression, isNull: false, ref context);
                 return;
             }
         }

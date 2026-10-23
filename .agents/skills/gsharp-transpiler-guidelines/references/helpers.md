@@ -83,6 +83,7 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 | Map a BCL method to a CUDA / C++ function | the dialect YAML under `Dialects/`, not a new rule |
 | Pass a `ref` / `out` argument | `RefSyntaxHelper.TranspileAsByRefArgument` |
 | Transpile a lambda body inline | `LambdaTranspilerHelper.TranspileLambdaBody` |
+| Null test of an array-like value, `??`, `??=` | `NullRepresentation.IsArrayNullComparable`, `NullRepresentation.AppendArrayNullTest`, `NullRepresentation.AppendCoalesce`, `NullRepresentation.AppendCoalesceAssignment` |
 
 The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressionTranspilerRule.cs`.
 

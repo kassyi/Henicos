@@ -92,12 +92,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
 
             if (memberName == "HasValue")
             {
-                using (context.Emitter.Writer.Parentheses())
-                {
-                    context.Visitor.Visit(node.Expression);
-                    context.Emitter.Writer.Append(".data != nullptr");
-                }
-
+                NullRepresentation.AppendArrayNullTest(node.Expression, isNull: false, ref context);
                 return true;
             }
         }

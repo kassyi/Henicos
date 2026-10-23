@@ -46,22 +46,7 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
         if (node.IsKind(SyntaxKind.CoalesceAssignmentExpression))
         {
-            using (context.Emitter.Writer.ImmediatelyInvokedLambda("decltype(auto)"))
-            {
-                context.Emitter.Writer.Append($"auto& {GSharpInternalNames.Lowering.CoalesceTarget} = ");
-                context.Visitor.Visit(node.Left);
-                context.Emitter.Writer.AppendSemiColonLine();
-
-                context.Emitter.Writer.Append($"return !{GSharpInternalNames.Lowering.CoalesceTarget}.HasValue ? ");
-                using (context.Emitter.Writer.Parentheses())
-                {
-                    context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.CoalesceTarget} = ");
-                    context.Visitor.Visit(node.Right);
-                }
-
-                context.Emitter.Writer.AppendLine($" : {GSharpInternalNames.Lowering.CoalesceTarget}.Value;");
-            }
-
+            NullRepresentation.AppendCoalesceAssignment(node.Left, node.Right, ref context);
             return;
         }
 
