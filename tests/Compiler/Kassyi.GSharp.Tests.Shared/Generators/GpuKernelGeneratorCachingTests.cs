@@ -33,18 +33,44 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
             CSharpSyntaxTree.ParseText("namespace Other { class Unrelated { } }", s_parseOptions));
         Record(report, "After adding an unrelated file", driver.RunGenerators(unrelated));
 
-        // One overload's body changes; the other kernels and the device function do not
-        var tree = compilation.SyntaxTrees.Single();
-        var editedText = tree.GetText().ToString().Replace("data[i] = data[i] * factor;", "data[i] = data[i] * factor + 1;");
-        Assert.NotEqual(tree.GetText().ToString(), editedText);
-        var edited = compilation.ReplaceSyntaxTree(tree, CSharpSyntaxTree.ParseText(editedText, s_parseOptions));
-        Record(report, "After editing one kernel body", driver.RunGenerators(edited));
+        Record(report, "After editing one kernel body", driver.RunGenerators(EditOneKernel(compilation)));
 
         var snapshots = RepositoryPaths.Combine("tests", "Compiler", "Kassyi.GSharp.Tests.Shared", "Generators", "Snapshots");
         Directory.CreateDirectory(snapshots);
         return Verifier.Verify(report.ToString(), "txt")
             .UseDirectory(snapshots)
             .UseFileName($"Snap.GpuKernelGeneratorCaching_{dialect}");
+    }
+
+    // #472: the unchanged kernels come from the cache with the previous compilation's class symbol, which used to split
+    // the class into two groups and add its wrapper file twice
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_EditingOneKernelOfAClass_EmitsTheClassOnce(string dialect)
+    {
+        var compilation = CreateCompilation();
+        var driver = CreateDriver(dialect).RunGenerators(compilation).RunGenerators(EditOneKernel(compilation));
+
+        var result = driver.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+        var wrappers = result.GeneratedSources
+            .Where(static s => s.HintName.EndsWith("CachingKernels.g.cs", StringComparison.Ordinal))
+            .ToList();
+        Assert.Single(wrappers);
+        // The embedded kernel source is the edited one (emitted operators have no spaces)
+        Assert.Contains("factor+1", wrappers[0].SourceText.ToString(), StringComparison.Ordinal);
+    }
+
+    // One overload's body changes; the other kernels and the device function do not
+    private static Compilation EditOneKernel(Compilation compilation)
+    {
+        var tree = compilation.SyntaxTrees.Single();
+        var text = tree.GetText().ToString();
+        var editedText = text.Replace("data[i] = data[i] * factor;", "data[i] = data[i] * factor + 1;");
+        Assert.NotEqual(text, editedText);
+        return compilation.ReplaceSyntaxTree(tree, CSharpSyntaxTree.ParseText(editedText, s_parseOptions));
     }
 
     // Writes the run reasons of each tracked step; the elapsed times vary by machine, so they go to the test output only

@@ -359,9 +359,11 @@ public class GpuKernelGenerator : IIncrementalGenerator
         var seenKernelMethods = new HashSet<TranspiledKernelResult>();
         var distinctKernelMethods = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
 
+        // Keyed by the hint name, not the class symbol: a cached result keeps the symbol of an earlier compilation, which
+        // never equals the same class in the current one (#472)
         var methodsByClass =
-            new Dictionary<INamedTypeSymbol, ImmutableArray<TranspiledKernelResult>.Builder>(SymbolEqualityComparer
-                .Default);
+            new Dictionary<string, (INamedTypeSymbol Class, ImmutableArray<TranspiledKernelResult>.Builder Methods)>(
+                StringComparer.Ordinal);
         foreach (var method in kernelMethods)
         {
             if (seenKernelMethods.Add(method))
@@ -370,13 +372,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 var source = method.GetSource(isCuda);
                 allKernelsSource.AppendLine(source);
 
-                if (!methodsByClass.TryGetValue(method.MethodSymbol.ContainingType, out var builder))
+                var classSymbol = method.MethodSymbol.ContainingType;
+                var hintName = GlobalCppNames.GetHintName(classSymbol);
+                if (!methodsByClass.TryGetValue(hintName, out var group))
                 {
-                    builder = ImmutableArray.CreateBuilder<TranspiledKernelResult>();
-                    methodsByClass[method.MethodSymbol.ContainingType] = builder;
+                    group = (classSymbol, ImmutableArray.CreateBuilder<TranspiledKernelResult>());
+                    methodsByClass[hintName] = group;
                 }
 
-                builder.Add(method);
+                group.Methods.Add(method);
             }
         }
 
@@ -384,7 +388,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .AsStackEnumerable()
             .Do(
                 (Config: config, Context: context, IsCuda: isCuda),
-                static (kvp, s) => ProcessKernelClass(kvp.Key, kvp.Value, s.Config, s.Context, s.IsCuda)
+                static (kvp, s) => ProcessKernelClass(kvp.Value.Class, kvp.Value.Methods, s.Config, s.Context, s.IsCuda)
             );
 
         if (!isCuda)
@@ -458,7 +462,9 @@ public class GpuKernelGenerator : IIncrementalGenerator
     private static void EmitManagedDeviceStateMachines(IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods,
         SourceProductionContext context)
     {
-        var sourcesByClass = new Dictionary<INamedTypeSymbol, ImmutableArray<string>.Builder>(SymbolEqualityComparer.Default);
+        // Keyed by the hint name for the same reason as the kernels (#472)
+        var sourcesByClass =
+            new Dictionary<string, (INamedTypeSymbol Class, ImmutableArray<string>.Builder Sources)>(StringComparer.Ordinal);
         foreach (var method in deviceMethods)
         {
             if (method.ManagedCSharpSource.Length == 0)
@@ -467,20 +473,21 @@ public class GpuKernelGenerator : IIncrementalGenerator
             }
 
             var classSymbol = method.MethodSymbol.ContainingType;
-            if (!sourcesByClass.TryGetValue(classSymbol, out var sources))
+            var hintName = GlobalCppNames.GetHintName(classSymbol);
+            if (!sourcesByClass.TryGetValue(hintName, out var group))
             {
-                sources = ImmutableArray.CreateBuilder<string>();
-                sourcesByClass[classSymbol] = sources;
+                group = (classSymbol, ImmutableArray.CreateBuilder<string>());
+                sourcesByClass[hintName] = group;
             }
 
-            sources.Add(method.ManagedCSharpSource);
+            group.Sources.Add(method.ManagedCSharpSource);
         }
 
         foreach (var kvp in sourcesByClass)
         {
-            var hintName = GlobalCppNames.GetHintName(kvp.Key);
-            context.AddSource(hintName[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
-                SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(kvp.Key, kvp.Value), Encoding.UTF8));
+            context.AddSource(kvp.Key[..^".g.cs".Length] + ".DeviceStateMachines.g.cs",
+                SourceText.From(WrapperEmitter.GenerateDeviceStateMachines(kvp.Value.Class, kvp.Value.Sources),
+                    Encoding.UTF8));
         }
     }
 
