@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Kassyi.GSharp.Hashing;
 #if GSHARP_COMPILER
 using Kassyi.GSharp.Compiler;
 #endif
@@ -49,23 +50,19 @@ internal static class GSharpNameEncoding
             startIndex = eolIndex >= 0 ? eolIndex + 1 : source.Length;
         }
 
-        unchecked
+        var hash = new Fnv1A64();
+        for (var i = startIndex; i < source.Length; i++)
         {
-            var hash = 14695981039346656037UL;
-            for (var i = startIndex; i < source.Length; i++)
+            var c = source[i];
+            if (c == '\r' && i + 1 < source.Length && source[i + 1] == '\n')
             {
-                var c = source[i];
-                if (c == '\r' && i + 1 < source.Length && source[i + 1] == '\n')
-                {
-                    continue;
-                }
-
-                hash ^= c;
-                hash *= 1099511628211UL;
+                continue;
             }
 
-            return hash.ToString("x16", CultureInfo.InvariantCulture);
+            hash.Append(c);
         }
+
+        return hash.Value.ToString("x16", CultureInfo.InvariantCulture);
     }
 
     /// <summary>

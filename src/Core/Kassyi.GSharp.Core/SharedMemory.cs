@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Kassyi.GSharp.Hashing;
 
 namespace Kassyi.GSharp.Core;
 
@@ -75,24 +76,10 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     // FNV-1a 64-bit over the path, the line and the method name; the compiler's keys share the same 64-bit space
     private static ulong ComputeSiteKey(string filePath, int lineNumber, string memberName)
     {
-        unchecked
-        {
-            var hash = 14695981039346656037UL;
-            foreach (var c in filePath)
-            {
-                hash ^= c;
-                hash *= 1099511628211UL;
-            }
-
-            hash ^= (uint)lineNumber;
-            hash *= 1099511628211UL;
-            foreach (var c in memberName)
-            {
-                hash ^= c;
-                hash *= 1099511628211UL;
-            }
-
-            return hash;
-        }
+        var hash = new Fnv1A64();
+        hash.Append(filePath);
+        hash.Append(unchecked((uint)lineNumber));
+        hash.Append(memberName);
+        return hash.Value;
     }
 }

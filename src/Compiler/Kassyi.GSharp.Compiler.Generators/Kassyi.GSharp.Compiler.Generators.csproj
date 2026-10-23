@@ -17,6 +17,7 @@
     <Compile Include="..\Kassyi.GSharp.Compiler\SourceWriter.cs" Link="SourceWriter.cs" />
     <!-- The demangle mode decodes with the same rules the compiler encodes with. -->
     <Compile Include="..\..\Shared\Naming\GSharpNameEncoding.cs" Link="Naming\GSharpNameEncoding.cs" />
+    <Compile Include="..\..\Shared\Hashing\Fnv1A64.cs" Link="Hashing\Fnv1A64.cs" />
     <Using Include="System.Collections.Immutable" />
     <Using Include="System.Diagnostics.CodeAnalysis" />
     <Using Include="System.Text" />

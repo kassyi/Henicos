@@ -112,6 +112,7 @@ The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressio
 | ----- | ----- | ----- |
 | Array field in a pipeline model | `EquatableArray` (`.AsEquatableArray`) | `ImmutableArray<T>` (compares by reference) |
 | Stable hash across processes | `HashHelper.ComputeFnv1AHash`, `HashHelper.ComputeFnv1A64`, `HashHelper.Combine` | `string.GetHashCode()` |
+| Persisted 64-bit FNV-1a with its own way of feeding input (skip `\r`, mix a line number) | `Fnv1A64` (`Append`, `Value`; `Fnv1A64.Compute` for a whole string) | a hand-written `hash ^= c; hash *= 1099511628211UL` loop |
 
 ## 7. Adding a helper
 
