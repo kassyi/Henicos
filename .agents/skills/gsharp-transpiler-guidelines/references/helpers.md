@@ -113,6 +113,7 @@ The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressio
 | Report from an analyzer | `.ReportDiagnostic` (`context.ReportDiagnostic(descriptor, node, args)`) | `Diagnostic.Create(...)` plus `context.ReportDiagnostic` |
 | Report from the transpiler | `context.Reporter.Report` | throwing, or emitting nothing |
 | Check a syntax rule inside kernels | implement `ISyntaxValidationRule` and register it in `DiagnosticRuleRegistry` | a new analyzer that walks kernel bodies again |
+| Decide a G# restriction that the analyzer reports and the transpiler must also respect (`Gpu.InlinePtx` text, unroll factor and loop, `Gpu.SyncGrid` body) | `GpuCodeConstraints.IsInlinePtxText`, `GpuCodeConstraints.TryGetUnrollFactor`, `GpuCodeConstraints.GetUnrolledLoop`, `GpuCodeConstraints.TryGetSyncGridBody` | the same condition written again in the rule and in the transpiler |
 | Diagnostic stored in an incremental pipeline model | `.AsEquatable` | a raw `Diagnostic` field |
 
 ## 6. Incremental generator models

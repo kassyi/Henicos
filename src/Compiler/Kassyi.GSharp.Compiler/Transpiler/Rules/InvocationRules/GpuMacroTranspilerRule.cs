@@ -46,21 +46,21 @@ internal sealed class GpuMacroTranspilerRule : IInvocationTranspilerRule
 
         var argExpr = node.ArgumentList.Arguments[0].Expression;
 
-        var constantValue = context.Query.SemanticModel.GetSafeConstantValue(argExpr);
-        if (constantValue is { HasValue: true, Value: string ptxString })
+        if (!GpuCodeConstraints.IsInlinePtxText(argExpr, context.Query.SemanticModel))
+        {
+            context.Reporter.Report(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node);
+            return;
+        }
+
+        if (context.Query.SemanticModel.GetSafeConstantValue(argExpr) is { HasValue: true, Value: string ptxString })
         {
             context.Emitter.Writer.Append(ptxString);
             context.Emitter.Writer.AppendLine();
             return;
         }
 
-        if (argExpr is InterpolatedStringExpressionSyntax interpolated)
-        {
-            TranspileInterpolatedInlinePtx(interpolated, ref context);
-            return;
-        }
-
-        context.Reporter.Report(GSharpDiagnostics.InlinePtxArgumentMustBeStringLiteral, node);
+        // IsInlinePtxText leaves only an interpolated string that is not constant
+        TranspileInterpolatedInlinePtx((InterpolatedStringExpressionSyntax)argExpr, ref context);
     }
 
     private static void TranspileInterpolatedInlinePtx(InterpolatedStringExpressionSyntax interpolated,

@@ -72,10 +72,10 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
 
     private void CheckSyncGrid(InvocationExpressionSyntax invocation, GpuMacroCall call, ref ValidationContext context)
     {
-        if (call.HasBody)
+        if (call.HasBody && !GpuCodeConstraints.TryGetSyncGridBody(invocation, out _))
         {
             var args = invocation.ArgumentList.Arguments;
-            if (args.Count >= 1 && args[0].Expression is not LambdaExpressionSyntax)
+            if (args.Count >= 1)
             {
                 context.ReportDiagnostic(
                     GSharpDiagnostics.UnsupportedSyntax,
@@ -102,8 +102,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         if (args.Count >= 1)
         {
             var factorExpr = args[0].Expression;
-            var constant = context.SemanticModel.GetSafeConstantValue(factorExpr);
-            if (!constant.HasValue || constant.Value is not int intVal || intVal < 0)
+            if (!GpuCodeConstraints.TryGetUnrollFactor(factorExpr, context.SemanticModel, out _))
             {
                 context.ReportDiagnostic(GSharpDiagnostics.UnrollFactorMustBeNonNegativeConstant, factorExpr);
             }
@@ -114,7 +113,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
             return;
         }
 
-        var loopStmt = GetSupportedLoop(exprStmt);
+        var loopStmt = GpuCodeConstraints.GetUnrolledLoop(exprStmt);
         if (loopStmt == null)
         {
             context.ReportDiagnostic(GSharpDiagnostics.UnrollHintMustPrecedeLoop, invocation);
@@ -128,31 +127,6 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
 
             CheckDynamicControlFlow(loopStmt, ref context);
         }
-    }
-
-    public static StatementSyntax? GetSupportedLoop(ExpressionStatementSyntax node)
-    {
-        SyntaxList<StatementSyntax> statements;
-        switch (node.Parent)
-        {
-            case BlockSyntax block:
-                statements = block.Statements;
-                break;
-            case SwitchSectionSyntax switchSection:
-                statements = switchSection.Statements;
-                break;
-            default:
-                return null;
-        }
-
-        var index = statements.IndexOf(node);
-        if (index < 0 || index + 1 >= statements.Count)
-        {
-            return null;
-        }
-
-        var nextStmt = statements[index + 1];
-        return nextStmt is ForStatementSyntax or WhileStatementSyntax or DoStatementSyntax ? nextStmt : null;
     }
 
     private void CheckStaticDeterminism(StatementSyntax loopStmt, ref ValidationContext context)
@@ -294,9 +268,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
 
     private void CheckStringLiteral(ExpressionSyntax expr, ref ValidationContext context)
     {
-        if ((expr is LiteralExpressionSyntax literal && literal.IsKind(SyntaxKind.StringLiteralExpression)) ||
-            expr is InterpolatedStringExpressionSyntax ||
-            context.SemanticModel.GetSafeConstantValue(expr) is { HasValue: true, Value: string })
+        if (GpuCodeConstraints.IsInlinePtxText(expr, context.SemanticModel))
         {
             return;
         }
