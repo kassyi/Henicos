@@ -90,7 +90,9 @@ using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> numbers = [10, 20, 30, 40, 50];
 StackEnumerable<SkipEnumerator<SpanEnumerator<int>, int>, int> skipped =
-    numbers.AsStackEnumerable().Skip(2);
+    numbers
+        .AsStackEnumerable()
+        .Skip(2);
 
 Console.WriteLine($"Sum after skipping 2: {skipped.Sum()}");
 ```

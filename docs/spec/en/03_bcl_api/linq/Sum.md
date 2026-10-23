@@ -40,7 +40,9 @@ public static int Sum<TEnumerator>(this TEnumerator source) where TEnumerator : 
 
 ```csharp
 int[] numbers = [1, 2, 3];
-int total = numbers.AsStackEnumerable().Sum();
+int total = numbers
+    .AsStackEnumerable()
+    .Sum();
 ```
 
 ## Remarks

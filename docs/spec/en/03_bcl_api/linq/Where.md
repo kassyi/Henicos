@@ -59,7 +59,9 @@ public static StackEnumerable<WhereWithStateEnumerator<TEnumerator, TSource, TSt
 ```
 
 ```csharp
-var result = names.AsStackEnumerable().Where(prefix, static (n, p) => n.StartsWith(p));
+var result = names
+    .AsStackEnumerable()
+    .Where(prefix, static (n, p) => n.StartsWith(p));
 ```
 
 #### Returns
@@ -74,10 +76,14 @@ var result = names.AsStackEnumerable().Where(prefix, static (n, p) => n.StartsWi
 int[] numbers = [1, 2, 3, 4, 5, 6];
 
 // Standard predicate
-var evens = numbers.AsStackEnumerable().Where(x => x % 2 == 0);
+var evens = numbers
+    .AsStackEnumerable()
+    .Where(x => x % 2 == 0);
 
 // Indexed predicate (keep even values at odd indices)
-var filtered = numbers.AsStackEnumerable().Where((val, index) => val % 2 == 0 && index % 2 != 0);
+var filtered = numbers
+    .AsStackEnumerable()
+    .Where((val, index) => val % 2 == 0 && index % 2 != 0);
 ```
 
 ## Remarks

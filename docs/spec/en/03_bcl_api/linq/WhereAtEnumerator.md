@@ -86,7 +86,9 @@ using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> numbers = [10, 20, 30, 40];
 StackEnumerable<WhereAtEnumerator<SpanEnumerator<int>, int>, int> evenIndexed =
-    numbers.AsStackEnumerable().Where((x, index) => index % 2 == 0);
+    numbers
+        .AsStackEnumerable()
+        .Where((x, index) => index % 2 == 0);
 
 Console.WriteLine($"Even-indexed sum: {evenIndexed.Sum()}");
 ```

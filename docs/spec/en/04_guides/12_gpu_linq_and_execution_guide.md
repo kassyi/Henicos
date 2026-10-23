@@ -43,10 +43,11 @@ Different GPU pipelines enforce specific constraints driven by hardware physics 
 
 ```csharp
 // Supported: Filters even numbers, doubles them, and sums sequentially on a single GPU thread
-var sumExpr = array.AsStackEnumerable()
-                   .Where(x => x % 2 == 0)
-                   .Select(x => x * 2)
-                   .Sum();
+var sumExpr = array
+    .AsStackEnumerable()
+    .Where(x => x % 2 == 0)
+    .Select(x => x * 2)
+    .Sum();
 
 GpuBigInt result = sumExpr.Evaluate();
 ```
@@ -57,10 +58,11 @@ GpuBigInt result = sumExpr.Evaluate();
 
 ```csharp
 // Supported: Filters even numbers, then executes parallel shared-memory reduction across the GPU grid
-var parallelSumExpr = array.AsStackEnumerable()
-                           .Where(x => x % 2 == 0)
-                           .AsParallel()
-                           .Sum();
+var parallelSumExpr = array
+    .AsStackEnumerable()
+    .Where(x => x % 2 == 0)
+    .AsParallel()
+    .Sum();
 
 GpuBigInt result = parallelSumExpr.Evaluate();
 ```

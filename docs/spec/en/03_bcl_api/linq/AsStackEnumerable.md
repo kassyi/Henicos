@@ -74,7 +74,10 @@ var enumSpan = span.AsStackEnumerable();
 public static void Kernel(int[] data, int[] output)
 {
     int tid = ThreadIndex.X;
-    int sum = data.AsStackEnumerable().Take(10).Sum();
+    int sum = data
+        .AsStackEnumerable()
+        .Take(10)
+        .Sum();
     output[tid] = sum;
 }
 ```

@@ -59,7 +59,9 @@ public static int Count<TEnumerator, TSource, TState>(this StackEnumerable<TEnum
 ```
 
 ```csharp
-var result = names.AsStackEnumerable().Count(prefix, static (n, p) => n.StartsWith(p));
+var result = names
+    .AsStackEnumerable()
+    .Count(prefix, static (n, p) => n.StartsWith(p));
 ```
 
 #### Returns

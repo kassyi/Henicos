@@ -82,17 +82,19 @@ using Kassyi.ZeroAlloc.Linq;
 
 // 1. From ReadOnlySpan<T> / Span<T> (CPU & Stack-only)
 ReadOnlySpan<int> span = stackalloc int[] { 1, 2, 3, 4, 5 };
-int spanSum = span.AsStackEnumerable()
-                  .Where(x => x % 2 == 0)
-                  .Select(x => x * 10)
-                  .Sum();
+int spanSum = span
+    .AsStackEnumerable()
+    .Where(x => x % 2 == 0)
+    .Select(x => x * 10)
+    .Sum();
 
 // 2. From standard T[] arrays (CPU and GPU Device Kernels)
 int[] array = new int[] { 1, 2, 3, 4, 5 };
-int arraySum = array.AsStackEnumerable()
-                    .Skip(1)
-                    .Take(3)
-                    .Sum();
+int arraySum = array
+    .AsStackEnumerable()
+    .Skip(1)
+    .Take(3)
+    .Sum();
 ```
 
 ---

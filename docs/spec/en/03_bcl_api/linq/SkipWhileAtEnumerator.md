@@ -86,7 +86,9 @@ using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> numbers = [10, 20, 30, 40];
 StackEnumerable<SkipWhileAtEnumerator<SpanEnumerator<int>, int>, int> remaining =
-    numbers.AsStackEnumerable().SkipWhile((x, index) => index < 2);
+    numbers
+        .AsStackEnumerable()
+        .SkipWhile((x, index) => index < 2);
 
 Console.WriteLine($"Remaining sum: {remaining.Sum()}");
 ```

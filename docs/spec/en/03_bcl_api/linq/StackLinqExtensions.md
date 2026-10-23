@@ -97,7 +97,8 @@ using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> source = [3, 1, 4, 1, 5, 9, 2, 6];
 
-var query = source.AsStackEnumerable()
+var query = source
+    .AsStackEnumerable()
     .Where(x => x > 2)
     .Skip(1)
     .Take(3)
@@ -106,7 +107,10 @@ var query = source.AsStackEnumerable()
 Span<int> buffer = stackalloc int[3];
 int count = query.CopyTo(buffer);
 
-Console.WriteLine($"Copied {count} items: [{buffer[0]}, {buffer[1]}, {buffer[2]}], Max={source.AsStackEnumerable().Max()}");
+int max = source
+    .AsStackEnumerable()
+    .Max();
+Console.WriteLine($"Copied {count} items: [{buffer[0]}, {buffer[1]}, {buffer[2]}], Max={max}");
 ```
 
 ## See also

@@ -59,7 +59,8 @@ public static StackEnumerable<SelectWithStateEnumerator<TEnumerator, TSource, TS
 ```
 
 ```csharp
-var lengths = names.AsStackEnumerable()
+var lengths = names
+    .AsStackEnumerable()
     .Select(prefix, static (n, p) => n.Length + p.Length);
 ```
 
@@ -75,10 +76,14 @@ var lengths = names.AsStackEnumerable()
 int[] numbers = [1, 2, 3];
 
 // Multiply by 10
-var tens = numbers.AsStackEnumerable().Select(x => x * 10);
+var tens = numbers
+    .AsStackEnumerable()
+    .Select(x => x * 10);
 
 // Offset by index
-var indexed = numbers.AsStackEnumerable().Select((x, i) => x + i);
+var indexed = numbers
+    .AsStackEnumerable()
+    .Select((x, i) => x + i);
 ```
 
 ## Remarks

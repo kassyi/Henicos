@@ -59,7 +59,9 @@ public static bool Any<TEnumerator, TSource, TState>(this StackEnumerable<TEnume
 ```
 
 ```csharp
-var result = names.AsStackEnumerable().Any(prefix, static (n, p) => n.StartsWith(p));
+var result = names
+    .AsStackEnumerable()
+    .Any(prefix, static (n, p) => n.StartsWith(p));
 ```
 
 #### Returns

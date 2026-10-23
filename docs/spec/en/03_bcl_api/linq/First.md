@@ -60,7 +60,9 @@ public static TSource First<TEnumerator, TSource, TState>(this StackEnumerable<T
 ```
 
 ```csharp
-var result = names.AsStackEnumerable().First(prefix, static (n, p) => n.StartsWith(p));
+var result = names
+    .AsStackEnumerable()
+    .First(prefix, static (n, p) => n.StartsWith(p));
 ```
 
 #### Returns
@@ -78,7 +80,9 @@ public static TSource? FirstOrDefault<TEnumerator, TSource, TState>(this StackEn
 ```
 
 ```csharp
-var result = names.AsStackEnumerable().FirstOrDefault(prefix, static (n, p) => n.StartsWith(p));
+var result = names
+    .AsStackEnumerable()
+    .FirstOrDefault(prefix, static (n, p) => n.StartsWith(p));
 ```
 
 #### Returns

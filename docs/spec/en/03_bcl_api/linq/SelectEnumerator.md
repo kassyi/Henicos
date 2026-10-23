@@ -98,7 +98,9 @@ using Kassyi.ZeroAlloc.Linq;
 
 ReadOnlySpan<int> numbers = [1, 2, 3, 4];
 StackEnumerable<SelectEnumerator<SpanEnumerator<int>, int, int>, int> doubled =
-    numbers.AsStackEnumerable().Select(x => x * 2);
+    numbers
+        .AsStackEnumerable()
+        .Select(x => x * 2);
 
 Console.WriteLine($"Doubled sum: {doubled.Sum()}");
 ```
