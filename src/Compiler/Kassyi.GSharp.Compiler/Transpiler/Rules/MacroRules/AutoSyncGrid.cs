@@ -35,18 +35,10 @@ internal static class AutoSyncGrid
     public static void Restore(ref TranspileContext context, int depth) => context.Emitter.AutoSyncGridDepth = depth;
 
     /// <summary>Whether <paramref name="statements"/> holds anything other than empty statements.</summary>
-    public static bool HasExecutableStatements(IReadOnlyList<CSharpSyntaxNode> statements)
-    {
-        foreach (var t in statements)
-        {
-            if (t is not EmptyStatementSyntax)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    public static bool HasExecutableStatements(IReadOnlyList<CSharpSyntaxNode> statements) =>
+        statements
+            .AsStackEnumerable()
+            .Any(static statement => statement is not EmptyStatementSyntax);
 
     /// <summary>
     /// Emits the statements of <paramref name="node"/> in auto-sync mode.

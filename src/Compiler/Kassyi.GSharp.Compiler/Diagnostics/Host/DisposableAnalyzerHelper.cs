@@ -30,15 +30,9 @@ internal static class DisposableAnalyzerHelper
             return true;
         }
 
-        foreach (var i in type.AllInterfaces)
-        {
-            if (IsSystemIDisposable(i))
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return type.AllInterfaces
+            .AsStackEnumerable()
+            .Any(IsSystemIDisposable);
     }
 
     public static bool IsGpuResourceScope(ITypeSymbol? type)
@@ -53,15 +47,9 @@ internal static class DisposableAnalyzerHelper
             return true;
         }
 
-        foreach (var i in type.AllInterfaces)
-        {
-            if (i.Name == "IGpuResourceScope")
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return type.AllInterfaces
+            .AsStackEnumerable()
+            .Any(static i => i.Name == "IGpuResourceScope");
     }
 
     public static bool HasGpuResourceAttribute(ITypeSymbol? type) =>

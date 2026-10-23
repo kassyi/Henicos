@@ -72,15 +72,9 @@ public class NativeCudaKernelsGenerator : IIncrementalGenerator
                 return;
             }
 
-            bool hasAny = false;
-            foreach (var array in arrays)
-            {
-                if (array.Length > 0)
-                {
-                    hasAny = true;
-                    break;
-                }
-            }
+            var hasAny = arrays
+                .AsStackEnumerable()
+                .Any(static array => array.Length > 0);
 
             if (!hasAny)
             {

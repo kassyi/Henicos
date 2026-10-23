@@ -28,17 +28,9 @@ public class SideEffectAnalyzer : DiagnosticAnalyzer
         }
         else if (property.AccessorList != null)
         {
-            AccessorDeclarationSyntax? getter = null;
-            foreach (var a in property.AccessorList.Accessors)
-            {
-                if (a.Kind() != SyntaxKind.GetAccessorDeclaration)
-                {
-                    continue;
-                }
-
-                getter = a;
-                break;
-            }
+            var getter = property.AccessorList.Accessors
+                .AsStackEnumerable()
+                .FirstOrDefault(static a => a.IsKind(SyntaxKind.GetAccessorDeclaration));
 
             if (getter == null)
             {

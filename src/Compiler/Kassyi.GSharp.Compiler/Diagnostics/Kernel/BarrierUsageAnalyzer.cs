@@ -109,7 +109,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
 
     // GSH0062: the state machine splits only the statements of a kernel or device function body, and the operands that
     // ConditionalEvaluationRewriter turns into statements. A call that suspends anywhere else cannot be resumed.
-    private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context, InvocationExpressionSyntax invocation)
+    private static void AnalyzeSuspendingCallContext(SyntaxNodeAnalysisContext context,
+        InvocationExpressionSyntax invocation)
     {
         var unsupportedContext = FindUnsupportedContext(invocation);
         var byReferenceArgument = FindNonVariableByReferenceArgument(invocation);
@@ -134,7 +135,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
         if (byReferenceArgument != null)
         {
             // [WHY] The callee is called again on every resume, which would compute the reference again
-            context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext, byReferenceArgument.GetLocation(),
+            context.ReportDiagnostic(GSharpDiagnostics.SuspendingCallInUnsupportedContext,
+                byReferenceArgument.GetLocation(),
                 callee.Name, "with a by-reference argument that is not a local, parameter, field or array element");
         }
     }
@@ -142,7 +144,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     private static string? FindUnsupportedContext(InvocationExpressionSyntax invocation)
     {
         SyntaxNode child = invocation;
-        for (var ancestor = invocation.Parent; ancestor is not (null or MemberDeclarationSyntax);
+        for (var ancestor = invocation.Parent;
+             ancestor is not (null or MemberDeclarationSyntax);
              child = ancestor, ancestor = ancestor.Parent)
         {
             switch (ancestor)
@@ -160,7 +163,8 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
                     return "in a 'when' clause";
                 case ConditionalAccessExpressionSyntax access when child == access.WhenNotNull:
                     return "after '?.'";
-                case BinaryExpressionSyntax binary when child == binary.Right && binary.IsKind(SyntaxKind.CoalesceExpression):
+                case BinaryExpressionSyntax binary
+                    when child == binary.Right && binary.IsKind(SyntaxKind.CoalesceExpression):
                     return "as the right operand of '??'";
             }
         }
@@ -169,26 +173,26 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsInlinedIntrinsicArgument(SyntaxNode lambda) =>
-        lambda.Parent is ArgumentSyntax { Parent.Parent: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax
+        lambda.Parent is ArgumentSyntax
         {
-            Expression: IdentifierNameSyntax { Identifier.ValueText: TypeConstants.GpuType },
-            Name.Identifier.ValueText: TypeConstants.GpuMacros.SyncGrid or "ForUnroll"
-        } } };
-
-    private static ArgumentSyntax? FindNonVariableByReferenceArgument(InvocationExpressionSyntax invocation)
-    {
-        foreach (var argument in invocation.ArgumentList.Arguments)
-        {
-            if (!argument.RefKindKeyword.IsKind(SyntaxKind.None) &&
-                argument.Expression is not (IdentifierNameSyntax or MemberAccessExpressionSyntax
-                    or ElementAccessExpressionSyntax or DeclarationExpressionSyntax))
+            Parent.Parent: InvocationExpressionSyntax
             {
-                return argument;
+                Expression: MemberAccessExpressionSyntax
+                {
+                    Expression: IdentifierNameSyntax { Identifier.ValueText: TypeConstants.GpuType },
+                    Name.Identifier.ValueText: TypeConstants.GpuMacros.SyncGrid or "ForUnroll"
+                }
             }
-        }
+        };
 
-        return null;
-    }
+    private static ArgumentSyntax? FindNonVariableByReferenceArgument(InvocationExpressionSyntax invocation) =>
+        invocation.ArgumentList.Arguments
+            .AsStackEnumerable()
+            .FirstOrDefault(static argument =>
+                !argument.RefKindKeyword.IsKind(SyntaxKind.None) &&
+                argument.Expression is not (IdentifierNameSyntax or MemberAccessExpressionSyntax
+                    or ElementAccessExpressionSyntax or DeclarationExpressionSyntax)
+            );
 
     private static bool IsInGpuMethod(ISymbol? symbol)
     {

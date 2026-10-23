@@ -84,17 +84,9 @@ internal readonly ref struct KernelBarrierValidator(
 
         foreach (var param in methodDecl.ParameterList.Parameters)
         {
-            var isByRef = false;
-            foreach (var mod in param.Modifiers)
-            {
-                if (!mod.IsKind(SyntaxKind.RefKeyword, SyntaxKind.OutKeyword, SyntaxKind.InKeyword))
-                {
-                    continue;
-                }
-
-                isByRef = true;
-                break;
-            }
+            var isByRef = param.Modifiers
+                .AsStackEnumerable()
+                .Any(static mod => mod.IsKind(SyntaxKind.RefKeyword, SyntaxKind.OutKeyword, SyntaxKind.InKeyword));
 
             if (isByRef)
             {
@@ -241,19 +233,7 @@ internal readonly ref struct KernelBarrierValidator(
                 // GSH0045: Queue local function containing barrier for recursion check
                 case LocalFunctionStatementSyntax localFunc:
                     {
-                        var alreadyQueued = false;
-                        foreach (var queued in _localFunctionsWithBarrier)
-                        {
-                            if (queued != localFunc)
-                            {
-                                continue;
-                            }
-
-                            alreadyQueued = true;
-                            break;
-                        }
-
-                        if (!alreadyQueued)
+                        if (!_localFunctionsWithBarrier.Contains(localFunc))
                         {
                             _localFunctionsWithBarrier.Add(localFunc);
                         }
@@ -342,17 +322,9 @@ internal readonly ref struct KernelBarrierValidator(
 
             var labelName = gotoId.Identifier.ValueText;
 
-            LabeledStatementSyntax? targetLabel = null;
-            foreach (var l in _labels)
-            {
-                if (l.Identifier.ValueText != labelName)
-                {
-                    continue;
-                }
-
-                targetLabel = l;
-                break;
-            }
+            var targetLabel = _labels
+                .AsStackEnumerable()
+                .FirstOrDefault(labelName, static (l, name) => l.Identifier.ValueText == name);
 
             if (targetLabel == null)
             {

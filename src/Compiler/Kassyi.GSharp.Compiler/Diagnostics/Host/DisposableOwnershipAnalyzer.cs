@@ -179,37 +179,15 @@ public class DisposableOwnershipAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        var hasOwnedDisposableField = false;
-        foreach (var member in ctx.DisposableMembers)
-        {
-            if (ctx.BorrowedFields.Contains(member.Name))
-            {
-                continue;
-            }
+        var hasOwnedDisposableField = ctx.DisposableMembers
+            .AsStackEnumerable()
+            .Any(ctx.BorrowedFields, static (member, borrowed) => !borrowed.Contains(member.Name));
 
-            hasOwnedDisposableField = true;
-            break;
-        }
-
-        var hasTakesOwnership = false;
-        foreach (var ctor in ctx.NamedType.Constructors)
-        {
-            foreach (var p in ctor.Parameters)
-            {
-                if (!HasTakesOwnershipAttribute(p))
-                {
-                    continue;
-                }
-
-                hasTakesOwnership = true;
-                break;
-            }
-
-            if (hasTakesOwnership)
-            {
-                break;
-            }
-        }
+        var hasTakesOwnership = ctx.NamedType.Constructors
+            .AsStackEnumerable()
+            .Any(static ctor => ctor.Parameters
+                .AsStackEnumerable()
+                .Any(HasTakesOwnershipAttribute));
 
         if (!hasOwnedDisposableField && !hasTakesOwnership)
         {

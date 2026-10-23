@@ -165,18 +165,10 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
 
     private static ArgumentSyntax? FindNamedArgument(
         SeparatedSyntaxList<ArgumentSyntax> arguments,
-        string parameterName)
-    {
-        foreach (var arg in arguments)
-        {
-            if (arg.NameColon != null && arg.NameColon.Name.Identifier.Text == parameterName)
-            {
-                return arg;
-            }
-        }
-
-        return null;
-    }
+        string parameterName) =>
+        arguments
+            .AsStackEnumerable()
+            .FirstOrDefault(parameterName, static (arg, name) => arg.NameColon?.Name.Identifier.Text == name);
 
     private static void EmitDefaultValue(IParameterSymbol parameter, ref TranspileContext context)
     {

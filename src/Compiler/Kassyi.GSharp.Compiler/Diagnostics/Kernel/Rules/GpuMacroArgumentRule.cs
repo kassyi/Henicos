@@ -325,14 +325,8 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
             return false;
         }
 
-        foreach (var namedArg in kernelAttr.NamedArguments)
-        {
-            if (namedArg is { Key: "Cooperative", Value.Value: true })
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return kernelAttr.NamedArguments
+            .AsStackEnumerable()
+            .Any(static namedArg => namedArg is { Key: "Cooperative", Value.Value: true });
     }
 }

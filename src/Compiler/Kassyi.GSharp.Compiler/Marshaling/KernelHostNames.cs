@@ -20,14 +20,9 @@ internal static class KernelHostNames
     /// <summary>Whether another <c>[GpuKernel]</c> in the containing type has the same name.</summary>
     public static bool IsOverloadedKernel(IMethodSymbol kernel)
     {
-        var count = 0;
-        foreach (var member in kernel.ContainingType.GetMembers(kernel.Name))
-        {
-            if (member is IMethodSymbol method && method.HasAttribute(KnownAttributes.GpuKernel))
-            {
-                count++;
-            }
-        }
+        var count = kernel.ContainingType.GetMembers(kernel.Name)
+            .AsStackEnumerable()
+            .Count(static member => member is IMethodSymbol method && method.HasAttribute(KnownAttributes.GpuKernel));
 
         return count > 1;
     }
@@ -48,7 +43,8 @@ internal static class KernelHostNames
     public static string GetTypedPointerLaunchName(IMethodSymbol kernel) => GetLaunchName(kernel) + PointerSuffix;
 
     /// <summary>The name of the <c>IntPtr</c> launch wrapper: public for a kernel that is not overloaded, private otherwise.</summary>
-    public static string GetPointerLaunchName(IMethodSymbol kernel) => LaunchPrefix + GetMemberKey(kernel) + PointerSuffix;
+    public static string GetPointerLaunchName(IMethodSymbol kernel) =>
+        LaunchPrefix + GetMemberKey(kernel) + PointerSuffix;
 
     /// <summary>
     /// Gets the element type <c>T</c> of the <c>GpuBuffer&lt;T&gt;</c> that the typed wrapper takes for a parameter
@@ -91,7 +87,8 @@ internal static class KernelHostNames
     /// Finds an earlier overload of <paramref name="kernel"/> whose <c>Launch{Name}</c> or typed <c>Launch{Name}Ptr</c>
     /// has the same parameter list, which C# would reject as a duplicate member.
     /// </summary>
-    public static bool TryFindIndistinguishableOverload(IMethodSymbol kernel, [NotNullWhen(true)] out IMethodSymbol? earlier,
+    public static bool TryFindIndistinguishableOverload(IMethodSymbol kernel,
+        [NotNullWhen(true)] out IMethodSymbol? earlier,
         out string wrapperName)
     {
         earlier = null;

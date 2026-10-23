@@ -36,11 +36,13 @@ internal static class StructTranspiler
     /// <summary>
     /// Topologically sorts referenced structs so that dependent nested structs are declared first in C++.
     /// </summary>
-    public static ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(IEnumerable<INamedTypeSymbol> usedStructs)
+    public static ImmutableArray<INamedTypeSymbol> GetTopologicallySortedStructs(
+        IEnumerable<INamedTypeSymbol> usedStructs)
     {
         // [WHY] CUDA C++ requires full struct definitions in dependency order before value-type usage as fields.
         var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>();
-        var structSet = usedStructs as ISet<INamedTypeSymbol> ?? new HashSet<INamedTypeSymbol>(usedStructs, SymbolEqualityComparer.Default);
+        var structSet = usedStructs as ISet<INamedTypeSymbol> ??
+                        new HashSet<INamedTypeSymbol>(usedStructs, SymbolEqualityComparer.Default);
         var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
         var visiting = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
 
@@ -317,52 +319,46 @@ internal static class StructTranspiler
     private static string GetMemberName(ISymbol member, ref TranspileContext context) =>
         CppNameResolver.Resolve(member, member.Name, context.Emitter.Dialect).ToString();
 
-    private static IFieldSymbol? GetFirstInstanceField(INamedTypeSymbol structSym)
-    {
-        foreach (var member in structSym.GetMembers())
-        {
-            if (member is IFieldSymbol { IsStatic: false } field)
-            {
-                return field;
-            }
-        }
-
-        return null;
-    }
+    private static IFieldSymbol? GetFirstInstanceField(INamedTypeSymbol structSym) =>
+        structSym.GetMembers()
+            .AsStackEnumerable()
+            .Select(static member => member as IFieldSymbol)
+            .FirstOrDefault(static field => field is { IsStatic: false });
 
     private static void WriteStructMember(ref TranspileContext context, ISymbol member)
     {
         switch (member)
         {
             case IFieldSymbol { IsFixedSizeBuffer: true, Type: IPointerTypeSymbol ptrType } field:
+            {
+                field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
+
+                ExpressionSyntax? sizeExp = null;
+                if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
                 {
-                    field.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var syntax);
-
-                    ExpressionSyntax? sizeExp = null;
-                    if (syntax?.ArgumentList is { Arguments.Count: > 0 } argList)
-                    {
-                        sizeExp = argList.Arguments[0].Expression;
-                    }
-
-                    if (sizeExp != null)
-                    {
-                        context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
-                        context.Emitter.Writer.Append($" {GetMemberName(field, ref context)}");
-                        using (context.Emitter.Writer.Brackets())
-                        {
-                            context.Visitor.Visit(sizeExp);
-                        }
-
-                        context.Emitter.Writer.AppendLine(";");
-                    }
-                    else
-                    {
-                        context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
-                        context.Emitter.Writer.AppendLine($"* {GetMemberName(field, ref context)}; // ERROR: fixed size not found");
-                    }
-
-                    break;
+                    sizeExp = argList.Arguments[0].Expression;
                 }
+
+                if (sizeExp != null)
+                {
+                    context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
+                    context.Emitter.Writer.Append($" {GetMemberName(field, ref context)}");
+                    using (context.Emitter.Writer.Brackets())
+                    {
+                        context.Visitor.Visit(sizeExp);
+                    }
+
+                    context.Emitter.Writer.AppendLine(";");
+                }
+                else
+                {
+                    context.Emitter.Dialect.AppendType(ref context, ptrType.PointedAtType);
+                    context.Emitter.Writer.AppendLine(
+                        $"* {GetMemberName(field, ref context)}; // ERROR: fixed size not found");
+                }
+
+                break;
+            }
             case IFieldSymbol field:
                 WriteMemberDeclaration(field.Type, GetMemberName(field, ref context), field, ref context);
                 break;
@@ -396,6 +392,7 @@ internal static class StructTranspiler
             {
                 context.Emitter.Writer.Append("const ");
             }
+
             context.Emitter.Dialect.AppendType(ref context, elementType);
             context.Emitter.Writer.Append(">");
         }

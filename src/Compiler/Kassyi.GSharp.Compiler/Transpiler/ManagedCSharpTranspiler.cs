@@ -328,18 +328,10 @@ internal static class ManagedCSharpTranspiler
         writer.AppendLine();
     }
 
-    private static bool IsCopied(ImmutableArray<IParameterSymbol> copiedParameters, IParameterSymbol parameter)
-    {
-        foreach (var copied in copiedParameters)
-        {
-            if (SymbolEqualityComparer.Default.Equals(copied, parameter))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool IsCopied(ImmutableArray<IParameterSymbol> copiedParameters, IParameterSymbol parameter) =>
+        copiedParameters
+            .AsStackEnumerable()
+            .Any(parameter, static (copied, target) => copied.IsEqualTo(target));
 
     private static void EmitStateMachineMethod(
         SourceWriter writer,

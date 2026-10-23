@@ -60,18 +60,8 @@ public class CudaImportGenerator : IIncrementalGenerator
         context.RegisterSourceOutput(classGroups, GenerateCudaImportForClass);
     }
 
-    private static bool HasPartialModifier(MethodDeclarationSyntax method)
-    {
-        foreach (var modifier in method.Modifiers)
-        {
-            if (modifier.IsKind(SyntaxKind.PartialKeyword))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static bool HasPartialModifier(MethodDeclarationSyntax method) =>
+        method.Modifiers.Any(SyntaxKind.PartialKeyword);
 
     private static CudaImportMethodModel? TransformMethod(GeneratorAttributeSyntaxContext ctx)
     {
@@ -88,15 +78,9 @@ public class CudaImportGenerator : IIncrementalGenerator
 
         var methodSyntax = (MethodDeclarationSyntax)ctx.TargetNode;
 
-        AttributeData? attributeData = null;
-        foreach (var a in ctx.Attributes)
-        {
-            if (a.IsAttribute(KnownAttributes.CudaImport))
-            {
-                attributeData = a;
-                break;
-            }
-        }
+        var attributeData = ctx.Attributes
+            .AsStackEnumerable()
+            .FirstOrDefault(static a => a.IsAttribute(KnownAttributes.CudaImport));
 
         if (attributeData == null)
         {
