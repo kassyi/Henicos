@@ -325,8 +325,10 @@ public class CompileCudaToFatbinTask : CompileKernelTaskBase
         args.Append("-std=c++17 ");
         if (Toolchain.IsWindows)
         {
-            args.Append("-DCCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING ");
-            args.Append("-Xcompiler \"/wd4819\" ");
+            // /Zc:preprocessor = conforming preprocessor; CCCL's _CCCL_PP_CAT cannot expand under cl.exe's traditional one
+            // (thrust headers fail with 'expected a "{"'). Silencing the CCCL #error instead leaves that failure in place.
+            // /wd4819 = Suppress the code page warning for non-ASCII characters in headers
+            args.Append("-Xcompiler \"/Zc:preprocessor /wd4819\" ");
         }
 
         args.Append("--ptxas-options=-v,--warn-on-spills ");

@@ -717,6 +717,22 @@ public class CompileTasksTests
                  i.Arguments.Contains("--fatbin") &&
                  !i.Arguments.Contains("/wd4819"));
     }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_CompileCudaToFatbinTask_MsvcToolchain_PassesConformingPreprocessor()
+    {
+        using var ctx = new CompileTaskTestContext();
+        ctx.CreateDummySource("kernel.cu", "// cuda source");
+
+        var task = ctx.CreateCudaTask(["kernel.cu"], combinedName: null, toolchain: ctx.CreateMsvcToolchain());
+        task.TargetArchitectures = "compute_86,sm_86";
+
+        Assert.True(task.Execute());
+        Assert.Contains(ctx.Runner.Invocations,
+            i => i.FileName.Contains("nvcc") &&
+                 i.Arguments.Contains("/Zc:preprocessor") &&
+                 !i.Arguments.Contains("CCCL_IGNORE_MSVC_TRADITIONAL_PREPROCESSOR_WARNING"));
+    }
 }
-
-
