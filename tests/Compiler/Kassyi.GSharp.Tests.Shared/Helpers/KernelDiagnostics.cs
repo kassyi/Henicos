@@ -1,4 +1,5 @@
 #nullable enable
+using System.Globalization;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Tests.Shared.Helpers;
@@ -50,6 +51,13 @@ public readonly record struct ReportedDiagnostic(
     }
 }
 
+/// <summary>One run of the kernel analyzers and the generator: the input and output compilations and each one's diagnostics.</summary>
+public sealed record KernelDiagnosticsRun(
+    Compilation Input,
+    Compilation Output,
+    ImmutableArray<Diagnostic> Analyzer,
+    ImmutableArray<Diagnostic> Generator);
+
 /// <summary>
 /// Runs the G# kernel analyzers and <see cref="GpuKernelGenerator"/> on one source, as a build of a project with the
 /// given <c>GSharpTargetDialect</c> does, and returns every diagnostic of both with its reporter.
@@ -77,6 +85,13 @@ public static class KernelDiagnostics
         GetDiagnosticsAsync(string source, string dialect)
     {
         var compilation = RoslynTestUtility.CreateCompilation(source);
+        var run = await RunCompilationAsync(compilation, dialect);
+        return (compilation.SyntaxTrees.Last(), run.Analyzer, run.Generator);
+    }
+
+    /// <summary>Runs the analyzers and the generator on <paramref name="compilation"/> for <paramref name="dialect"/>.</summary>
+    public static async Task<KernelDiagnosticsRun> RunCompilationAsync(Compilation compilation, string dialect)
+    {
         var options = new TestAnalyzerConfigOptionsProvider(dialect);
 
         var analyzerOptions = new AnalyzerOptions(ImmutableArray<AdditionalText>.Empty, options);
@@ -89,9 +104,51 @@ public static class KernelDiagnostics
             additionalTexts: null,
             parseOptions: new CSharpParseOptions(LanguageVersion.Preview),
             optionsProvider: options);
-        driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out var generatorDiagnostics);
+        driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out var generatorDiagnostics);
 
-        return (compilation.SyntaxTrees.Last(), analyzerDiagnostics, generatorDiagnostics);
+        return new KernelDiagnosticsRun(compilation, output, analyzerDiagnostics, generatorDiagnostics);
+    }
+
+    // #error ""<path>(<line>,<column>): <ID>: ..."" in a verbatim string of the generated C#, or <no original span>
+    private static readonly Regex s_statedFailure = new(
+        "#error \"\"(?:(?<path>[^\"\r\n]*?)\\((?<line>\\d+),(?<column>\\d+)\\)|(?<none><no original span>)): (?<id>GSH\\d{4}):",
+        RegexOptions.Compiled);
+
+    /// <summary>
+    /// The failures that the generator states as <c>#error</c> in its output (kernel sources and device code), as
+    /// <c>path(line,column): ID</c>, each paired with whether the analyzers report the same ID at the same place.
+    /// </summary>
+    public static IReadOnlyList<(string Failure, bool IsReported)> FindStatedFailures(KernelDiagnosticsRun run)
+    {
+        var inputTrees = run.Input.SyntaxTrees.ToHashSet();
+        var failures = new List<(string, bool)>();
+        foreach (var tree in run.Output.SyntaxTrees.Where(tree => !inputTrees.Contains(tree)))
+        {
+            foreach (Match match in s_statedFailure.Matches(tree.ToString()))
+            {
+                var id = match.Groups["id"].Value;
+                if (match.Groups["none"].Success)
+                {
+                    failures.Add(($"{TranspileFailure.NoOriginalSpan}: {id}", false));
+                    continue;
+                }
+
+                // The C++ string escapes a backslash of the path
+                var path = match.Groups["path"].Value.Replace("\\\\", "\\", StringComparison.Ordinal);
+                var line = int.Parse(match.Groups["line"].Value, CultureInfo.InvariantCulture);
+                var column = int.Parse(match.Groups["column"].Value, CultureInfo.InvariantCulture);
+                var isReported = run.Analyzer.Any(d =>
+                    d.Id == id &&
+                    d.Location.IsInSource &&
+                    d.Location.GetLineSpan() is var span &&
+                    span.Path == path &&
+                    span.StartLinePosition.Line + 1 == line &&
+                    span.StartLinePosition.Character + 1 == column);
+                failures.Add(($"{path}({line},{column}): {id}", isReported));
+            }
+        }
+
+        return failures.Distinct().ToList();
     }
 
     /// <summary>Runs the analyzers and the generator on <paramref name="source"/> for <paramref name="dialect"/>.</summary>

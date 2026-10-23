@@ -11,7 +11,7 @@ namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 public class KernelDiagnosticsInventoryTests
 {
     // Test cases, relative to the TestCases directory
-    private static readonly string[] s_inputs =
+    internal static readonly string[] Inputs =
     [
         // GSH0001, GSH0002, GSH0004
         "Generator/SadPathDiagnostics.cu.cs",
@@ -63,7 +63,7 @@ public class KernelDiagnosticsInventoryTests
     public async Task Test_SadPathInputs_RecordEveryDiagnostic(string dialect)
     {
         var report = new StringBuilder();
-        foreach (var input in s_inputs)
+        foreach (var input in Inputs)
         {
             report.AppendLine($"## {input}");
             var diagnostics = await KernelDiagnostics.RunTestCaseAsync(input, dialect);
