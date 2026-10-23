@@ -6,73 +6,25 @@ internal static class KernelLaunchEmitter
     /// <summary>The device copy of the auto result buffer in the generated launcher.</summary>
     private const string DeviceAutoResult = "d_" + GSharpInternalNames.ReturnValue.Buffer;
 
-    internal static ITypeSymbol GetMarshaledType(IParameterSymbol p) =>
-        p.Type.UnwrapNullableArrayLike() ?? p.Type;
-
-    internal static bool IsOptionalArray(IParameterSymbol p) =>
-        (p.Type.IsReferenceType && p.NullableAnnotation == NullableAnnotation.Annotated) ||
-        p.Type.IsNullableArrayLike();
-
-    internal static string GetValueExpression(IParameterSymbol p) =>
-        p.Type.IsNullableArrayLike() ? $"{p.Name.ToCSharpIdentifier()}.GetValueOrDefault()" : p.Name.ToCSharpIdentifier();
-
-    internal static string GetLengthExpression(IParameterSymbol p)
-    {
-        var marshaled = GetMarshaledType(p);
-        var member = marshaled is INamedTypeSymbol { Name: "ArraySegment" } ? "Count" : "Length";
-        if (p.Type.IsReferenceType && p.NullableAnnotation == NullableAnnotation.Annotated)
-        {
-            return $"({p.Name.ToCSharpIdentifier()}?.Length ?? 0)";
-        }
-
-        return $"{GetValueExpression(p)}.{member}";
-    }
-
-    internal static string GetSpanExpression(IParameterSymbol p)
-    {
-        var marshaled = GetMarshaledType(p);
-        var valExpr = GetValueExpression(p);
-
-        if (marshaled is INamedTypeSymbol { Name: "Memory" or "ReadOnlyMemory" })
-        {
-            return $"{valExpr}.Span";
-        }
-
-        if (marshaled is INamedTypeSymbol { Name: "ArraySegment" or "ImmutableArray" })
-        {
-            return $"{valExpr}.AsSpan()";
-        }
-
-        return valExpr;
-    }
-
     /// <summary>Emits local variable declarations for device pointers and tracking lists.</summary>
     internal static void WriteVariablesInitialization(SourceWriter writer, IMethodSymbol method, bool isDevicePtr)
     {
         foreach (var p in method.Parameters)
         {
-            var marshaledType = GetMarshaledType(p);
-            if (CudaLayoutRules.IsCustomStruct(marshaledType))
+            if (isDevicePtr)
             {
-                if (!isDevicePtr)
-                {
-                    writer.AppendLine(
-                        $"System.Collections.Generic.List<IntPtr> {p.Name}_allocatedPtrs =" +
-                        " new System.Collections.Generic.List<IntPtr>();");
-                }
-
-                if (p.RefKind is not (RefKind.Ref or RefKind.Out))
-                {
-                    continue;
-                }
-
-                if (!isDevicePtr)
-                {
-                    writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
-                }
+                continue;
             }
-            else if ((!isDevicePtr && marshaledType.IsArrayLikeType()) ||
-                     (!isDevicePtr && p.RefKind is RefKind.Ref or RefKind.Out))
+
+            var shape = KernelParameterShape.Classify(p);
+            if (shape.IsCustomStruct)
+            {
+                writer.AppendLine(
+                    $"System.Collections.Generic.List<IntPtr> {p.Name}_allocatedPtrs =" +
+                    " new System.Collections.Generic.List<IntPtr>();");
+            }
+
+            if (shape.IsArray || shape.IsByRef)
             {
                 writer.AppendLine($"IntPtr d_{p.Name} = IntPtr.Zero;");
             }
@@ -101,7 +53,7 @@ internal static class KernelLaunchEmitter
         var paramIndex = 0;
         foreach (var p in method.Parameters)
         {
-            WriteParameterMarshal(writer, p, paramIndex++, isDevicePtr);
+            WriteParameterMarshal(writer, KernelParameterShape.Classify(p), paramIndex++, isDevicePtr);
         }
 
         if (method.ReturnType.SpecialType != SpecialType.System_Void)
@@ -127,7 +79,7 @@ internal static class KernelLaunchEmitter
 
         foreach (var p in method.Parameters)
         {
-            WriteParameterUnmarshal(writer, p, isDevicePtr);
+            WriteParameterUnmarshal(writer, KernelParameterShape.Classify(p), isDevicePtr);
         }
 
         if (method.ReturnType.SpecialType == SpecialType.System_Void)
@@ -171,7 +123,7 @@ internal static class KernelLaunchEmitter
     {
         foreach (var p in method.Parameters)
         {
-            WriteParameterFree(writer, p, isDevicePtr);
+            WriteParameterFree(writer, KernelParameterShape.Classify(p), isDevicePtr);
         }
 
         if (method.ReturnType.SpecialType == SpecialType.System_Void)
@@ -187,52 +139,60 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void WriteParameterMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex, bool isDevicePtr)
+    // [WHY] The IntPtr wrapper receives device memory that the caller owns, so it forwards it without copying
+    private static bool IsPassedThrough(in KernelParameterShape shape, bool isDevicePtr) =>
+        isDevicePtr && (shape.IsArray || shape.IsCustomStruct || shape.IsByRef);
+
+    private static void WriteParameterMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex,
+        bool isDevicePtr)
     {
-        var marshaledType = GetMarshaledType(p);
-        if (isDevicePtr && (marshaledType.IsArrayLikeType() || CudaLayoutRules.IsCustomStruct(marshaledType) ||
-                            p.RefKind is RefKind.Ref or RefKind.Out))
+        var p = shape.Parameter;
+        if (IsPassedThrough(shape, isDevicePtr))
         {
-            var kind = marshaledType.IsArrayLikeType() ? "array" :
-                CudaLayoutRules.IsCustomStruct(marshaledType) ? "struct" : "scalar";
-            writer.AppendLine($"// Marshal device {kind}: {p.Name.ToCSharpIdentifier()}");
-            if (kind == "array")
+            var kind = shape.Kind switch
+            {
+                KernelParameterKind.Array => "array",
+                KernelParameterKind.CustomStruct => "struct",
+                _ => "scalar"
+            };
+            writer.AppendLine($"// Marshal device {kind}: {shape.Identifier}");
+            if (shape.IsArray)
             {
                 writer.AppendLine($"IntPtr* proxy_{p.Name} = stackalloc IntPtr[2];");
-                writer.AppendLine($"proxy_{p.Name}[0] = {p.Name.ToCSharpIdentifier()};");
+                writer.AppendLine($"proxy_{p.Name}[0] = {shape.Identifier};");
                 writer.AppendLine($"((int*)(proxy_{p.Name} + 1))[0] = 0; // Length is unknown for raw IntPtr");
                 writer.AppendLine($"kernelParams[{paramIndex}] = proxy_{p.Name};");
             }
             else
             {
-                writer.AppendLine($"kernelParams[{paramIndex}] = &{p.Name.ToCSharpIdentifier()};");
+                writer.AppendLine($"kernelParams[{paramIndex}] = &{shape.Identifier};");
             }
 
             return;
         }
 
-        if (CudaLayoutRules.IsCustomStruct(marshaledType))
+        switch (shape.Kind)
         {
-            WriteCustomStructMarshal(writer, p, paramIndex, isDevicePtr);
-        }
-        else if (marshaledType.TryGetArrayLikeElementType(out var elementType))
-        {
-            WriteArrayMarshal(writer, p, elementType, paramIndex);
-        }
-        else if (p.RefKind is RefKind.Ref or RefKind.Out)
-        {
-            WriteRefOrOutScalarMarshal(writer, p, paramIndex);
-        }
-        else
-        {
-            WriteScalarMarshal(writer, p, paramIndex);
+            case KernelParameterKind.CustomStruct:
+                WriteCustomStructMarshal(writer, shape, paramIndex, isDevicePtr);
+                break;
+            case KernelParameterKind.Array:
+                WriteArrayMarshal(writer, shape, paramIndex);
+                break;
+            case KernelParameterKind.RefScalar:
+                WriteRefOrOutScalarMarshal(writer, p, paramIndex);
+                break;
+            default:
+                WriteScalarMarshal(writer, p, paramIndex);
+                break;
         }
     }
 
-    private static void WriteCustomStructMarshal(SourceWriter writer, IParameterSymbol p, int paramIndex,
+    private static void WriteCustomStructMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex,
         bool isDevicePtr)
     {
-        var marshaledType = GetMarshaledType(p);
+        var p = shape.Parameter;
+        var marshaledType = shape.MarshaledType;
         writer.AppendAotStructPath(marshaledType);
         writer.AppendLine($" native_{p.Name} = default;");
         writer.AppendQualifiedMarshalMethodName(marshaledType);
@@ -271,13 +231,14 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void WriteArrayMarshal(SourceWriter writer, IParameterSymbol p, ITypeSymbol elementType,
-        int paramIndex)
+    private static void WriteArrayMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex)
     {
+        var p = shape.Parameter;
+        var elementType = GetElementType(shape);
         GetArrayDirection(p, out var hasIn, out var hasOut);
 
         var isOutOnly = hasOut && !hasIn;
-        var lenExpr = GetLengthExpression(p);
+        var lenExpr = shape.LengthExpression;
 
         writer.AppendLine($"// Marshal array: {p.Name.ToCSharpIdentifier()}");
         writer.Append($"int {p.Name}_size = {lenExpr} * sizeof(");
@@ -301,10 +262,9 @@ internal static class KernelLaunchEmitter
             }
             else
             {
-                var spanExpr = GetSpanExpression(p);
                 writer.Append("fixed (");
                 writer.AppendFullyQualifiedCsharpName(elementType);
-                writer.AppendLine($"* p_{p.Name} = {spanExpr})");
+                writer.AppendLine($"* p_{p.Name} = {shape.SpanExpression})");
                 using (writer.Scope())
                 {
                     writer.AppendLine(
@@ -397,37 +357,36 @@ internal static class KernelLaunchEmitter
         writer.AppendLine();
     }
 
-    public static void WriteParameterUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
+    private static void WriteParameterUnmarshal(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr)
     {
-        var marshaledType = GetMarshaledType(p);
-        if (isDevicePtr && (marshaledType.IsArrayLikeType() || CudaLayoutRules.IsCustomStruct(marshaledType) ||
-                            p.RefKind is RefKind.Ref or RefKind.Out))
+        if (IsPassedThrough(shape, isDevicePtr))
         {
             return;
         }
 
-        if (CudaLayoutRules.IsCustomStruct(marshaledType))
+        switch (shape.Kind)
         {
-            WriteCustomStructUnmarshal(writer, p, isDevicePtr);
-        }
-        else if (marshaledType.IsArrayLikeType())
-        {
-            WriteArrayUnmarshal(writer, p, isDevicePtr);
-        }
-        else if (p.RefKind is RefKind.Ref or RefKind.Out)
-        {
-            WriteRefOrOutScalarUnmarshal(writer, p, isDevicePtr);
+            case KernelParameterKind.CustomStruct:
+                WriteCustomStructUnmarshal(writer, shape, isDevicePtr);
+                break;
+            case KernelParameterKind.Array:
+                WriteArrayUnmarshal(writer, shape, isDevicePtr);
+                break;
+            case KernelParameterKind.RefScalar:
+                WriteRefOrOutScalarUnmarshal(writer, shape.Parameter, isDevicePtr);
+                break;
         }
     }
 
-    private static void WriteCustomStructUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
+    private static void WriteCustomStructUnmarshal(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr)
     {
-        if (isDevicePtr && (p.RefKind is RefKind.Ref or RefKind.Out))
+        var p = shape.Parameter;
+        if (isDevicePtr && shape.IsByRef)
         {
             return;
         }
 
-        if (p.RefKind is RefKind.Ref or RefKind.Out)
+        if (shape.IsByRef)
         {
             if (!isDevicePtr)
             {
@@ -439,8 +398,7 @@ internal static class KernelLaunchEmitter
             }
         }
 
-        var marshaledType = GetMarshaledType(p);
-        writer.AppendQualifiedUnmarshalMethodName(marshaledType);
+        writer.AppendQualifiedUnmarshalMethodName(shape.MarshaledType);
         using (writer.Parentheses())
         {
             writer.Append($"ref {p.Name.ToCSharpIdentifier()}, ref native_{p.Name}, {(isDevicePtr ? "true" : "false")}, hStream");
@@ -449,37 +407,30 @@ internal static class KernelLaunchEmitter
         writer.AppendLine(";");
     }
 
-    private static void WriteArrayUnmarshal(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
+    private static void WriteArrayUnmarshal(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr)
     {
         if (isDevicePtr)
         {
             return;
         }
 
+        var p = shape.Parameter;
         GetArrayDirection(p, out var hasIn, out var hasOut);
 
         var isInOnly = hasIn && !hasOut;
-        var marshaledType = GetMarshaledType(p);
-        var isReadOnlyArrayLike = marshaledType is INamedTypeSymbol { Name: "ReadOnlyMemory" or "ReadOnlySpan" or "ImmutableArray" };
-
-        if (isInOnly || isReadOnlyArrayLike)
+        if (isInOnly || shape.IsReadOnlyContainer)
         {
-            writer.AppendLine($"// Skip DtoH copy for [In] array: {p.Name.ToCSharpIdentifier()}");
+            writer.AppendLine($"// Skip DtoH copy for [In] array: {shape.Identifier}");
             return;
         }
 
-        writer.AppendLine($"// Copy back array: {p.Name.ToCSharpIdentifier()}");
+        writer.AppendLine($"// Copy back array: {shape.Identifier}");
         writer.AppendLine($"if ({p.Name}_size > 0 && d_{p.Name} != IntPtr.Zero)");
         using (writer.Scope())
         {
-            var spanExpr = GetSpanExpression(p);
             writer.Append("fixed (");
-            if (!marshaledType.TryGetArrayLikeElementType(out var elementType))
-            {
-                throw new InvalidOperationException($"Parameter '{p.Name.ToCSharpIdentifier()}' is not an array-like type.");
-            }
-            writer.AppendFullyQualifiedCsharpName(elementType);
-            writer.AppendLine($"* p_{p.Name} = {spanExpr})");
+            writer.AppendFullyQualifiedCsharpName(GetElementType(shape));
+            writer.AppendLine($"* p_{p.Name} = {shape.SpanExpression})");
             using (writer.Scope())
             {
                 writer.AppendLine(
@@ -514,25 +465,29 @@ internal static class KernelLaunchEmitter
         }
     }
 
-    private static void WriteParameterFree(SourceWriter writer, IParameterSymbol p, bool isDevicePtr)
+    private static void WriteParameterFree(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr)
     {
         if (isDevicePtr)
         {
             return;
         }
 
-        var marshaledType = GetMarshaledType(p);
-        if (CudaLayoutRules.IsCustomStruct(marshaledType))
+        var p = shape.Parameter;
+        if (shape.IsCustomStruct)
         {
             writer.AppendLine(
                 $"foreach (var ptr in {p.Name}_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);");
         }
 
-        if (marshaledType.IsArrayLikeType() || p.RefKind is RefKind.Ref or RefKind.Out)
+        if (shape.IsArray || shape.IsByRef)
         {
             writer.AppendLine($"if (d_{p.Name} != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_{p.Name}, hStream);");
         }
     }
+
+    private static ITypeSymbol GetElementType(in KernelParameterShape shape) =>
+        shape.ElementType ??
+        throw new InvalidOperationException($"Parameter '{shape.Identifier}' is not an array-like type.");
 
     private static void GetArrayDirection(IParameterSymbol p, out bool hasIn, out bool hasOut)
     {

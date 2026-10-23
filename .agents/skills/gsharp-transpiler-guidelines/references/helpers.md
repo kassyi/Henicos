@@ -55,6 +55,7 @@ The binding rules are in `.agents/rules/transpiler-emission.md`. The helpers:
 | Separators and keywords | `SourceWriter.AppendComma`, `SourceWriter.AppendOperator`, `SourceWriter.AppendKeyword`, `SourceWriter.AppendSemiColonLine` | `Append(", ")`, `Append(" = ")` |
 | Conditional text | `SourceWriter.AppendIf`, `SourceWriter.AppendLineIf` | `if (x) writer.Append(...)` |
 | C# type name in generated host code | `CSharpTypeNameWriter.AppendCsharpTypeName`, `CSharpTypeNameWriter.AppendFullyQualifiedCsharpName` | `ToDisplayString()` |
+| How a kernel parameter crosses to the device (array-like, user struct, `ref` / `out`, container, length / span expression) | `KernelParameterShape.Classify` | `GetMarshaledType` plus `IsArrayLikeType` / `IsCustomStruct` / `RefKind` checks, `Name == "ArraySegment"` |
 | User identifier in generated host C# | `CSharpIdentifierExtensions.ToCSharpIdentifier` | prefixing `@` by hand |
 | C++ name of a user symbol (declaration / reference) | `CppNameResolver.AppendDeclaredName`, `CppNameResolver.AppendReferencedName`, `CppNameResolver.AppendSymbolName` | `identifier.ValueText` written directly |
 | Compiler-internal name (`__gsharp_*`) | `GSharpInternalNames` (add new names to `Resources/InternalNames.yml`) | a `"__gsharp_..."` literal |

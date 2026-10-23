@@ -57,9 +57,9 @@ internal static class KernelHostNames
     /// <returns><see langword="false"/> when the parameter is not a device pointer or its element type is not unmanaged.</returns>
     public static bool TryGetBufferElementType(IParameterSymbol parameter, [NotNullWhen(true)] out ITypeSymbol? element)
     {
-        var marshaled = KernelLaunchEmitter.GetMarshaledType(parameter);
-        element = marshaled.TryGetArrayLikeElementType(out var arrayElement) ? arrayElement
-            : parameter.RefKind is RefKind.Ref or RefKind.Out ? parameter.Type
+        var shape = KernelParameterShape.Classify(parameter);
+        element = shape.IsArray ? shape.ElementType
+            : shape.IsByRef ? parameter.Type
             : null;
         return element is { IsUnmanagedType: true };
     }

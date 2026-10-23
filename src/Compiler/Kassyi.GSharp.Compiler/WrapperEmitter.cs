@@ -86,11 +86,10 @@ internal static class WrapperEmitter
             };
         }
 
-        var marshaledType = KernelLaunchEmitter.GetMarshaledType(p);
+        var shape = KernelParameterShape.Classify(p);
         switch (isDevicePtr)
         {
-            case true when (marshaledType.IsArrayLikeType() ||
-                            p.RefKind is RefKind.Ref or RefKind.Out):
+            case true when shape.IsDevicePointer:
             {
                 if (p.HasExplicitDefaultValue)
                 {
@@ -99,10 +98,10 @@ internal static class WrapperEmitter
 
                 return new InteropParameterInfo(string.Empty, null, true, defaultValue);
             }
-            case true when CudaLayoutRules.IsCustomStruct(marshaledType):
+            case true when shape.IsCustomStruct:
             {
                 var tempWriter = new SourceWriter();
-                tempWriter.AppendAotStructPath(marshaledType);
+                tempWriter.AppendAotStructPath(shape.MarshaledType);
                 var rawTypeName = tempWriter.ToString();
                 return new InteropParameterInfo(string.Empty, null, false, defaultValue, rawTypeName);
             }
@@ -450,7 +449,7 @@ internal static class WrapperEmitter
     {
         foreach (var p in method.Parameters)
         {
-            if (p.RefKind is not RefKind.Out || KernelLaunchEmitter.GetMarshaledType(p).IsArrayLikeType())
+            if (p.RefKind is not RefKind.Out || KernelParameterShape.Classify(p).IsArray)
             {
                 continue;
             }
@@ -464,19 +463,18 @@ internal static class WrapperEmitter
     {
         foreach (var p in method.Parameters)
         {
-            var marshaled = KernelLaunchEmitter.GetMarshaledType(p);
-            if (!marshaled.IsArrayLikeType())
+            var shape = KernelParameterShape.Classify(p);
+            if (!shape.IsArray)
             {
                 continue;
             }
 
-            if (KernelLaunchEmitter.IsOptionalArray(p))
+            if (shape.IsOptional)
             {
-                var lenMember = marshaled is INamedTypeSymbol { Name: "ArraySegment" } ? "Count" : "Length";
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{p.Name.ToCSharpIdentifier()} is {{ {lenMember}: 0 }}");
+                    writer.Append($"{p.Name.ToCSharpIdentifier()} is {{ {shape.LengthMember}: 0 }}");
                 }
 
                 using (writer.Scope())
@@ -484,7 +482,7 @@ internal static class WrapperEmitter
                     writer.AppendLine($"{p.Name.ToCSharpIdentifier()} = null;");
                 }
             }
-            else if (marshaled is IArrayTypeSymbol || marshaled.IsReferenceType)
+            else if (shape.Container == ArrayContainerKind.Array)
             {
                 writer.Append("if ");
                 using (writer.Parentheses())
@@ -508,7 +506,7 @@ internal static class WrapperEmitter
                     writer.AppendLine($"throw new global::System.ArgumentException(\"{EmptyArrayMessage}\", nameof({p.Name.ToCSharpIdentifier()}));");
                 }
             }
-            else if (marshaled is INamedTypeSymbol { Name: "ImmutableArray" })
+            else if (shape.Container == ArrayContainerKind.ImmutableArray)
             {
                 writer.Append("if ");
                 using (writer.Parentheses())
@@ -534,11 +532,10 @@ internal static class WrapperEmitter
             }
             else
             {
-                var lenExpr = KernelLaunchEmitter.GetLengthExpression(p);
                 writer.Append("if ");
                 using (writer.Parentheses())
                 {
-                    writer.Append($"{lenExpr} == 0");
+                    writer.Append($"{shape.LengthExpression} == 0");
                 }
 
                 using (writer.Scope())
@@ -677,8 +674,7 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
 
-                var marshaledType = KernelLaunchEmitter.GetMarshaledType(p);
-                if (marshaledType.IsArrayLikeType())
+                if (KernelParameterShape.Classify(p).IsArray)
                 {
                     writer.Append("global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy ");
                     writer.Append(p.Name.ToCSharpIdentifier());
@@ -875,16 +871,15 @@ internal static class WrapperEmitter
 
         foreach (var p in method.Parameters)
         {
-            var marshaledType = KernelLaunchEmitter.GetMarshaledType(p);
-            if (marshaledType.TryGetArrayLikeElementType(out var elementType))
+            var shape = KernelParameterShape.Classify(p);
+            if (shape is { IsArray: true, ElementType: { } elementType })
             {
                 writer.Append("fixed (");
                 writer.AppendFullyQualifiedCsharpName(elementType);
-                var spanExpr = KernelLaunchEmitter.GetSpanExpression(p);
-                writer.AppendLine($"* p_{p.Name} = {spanExpr})");
+                writer.AppendLine($"* p_{p.Name} = {shape.SpanExpression})");
                 hasFixed = true;
             }
-            else if (p.RefKind is RefKind.Ref or RefKind.Out)
+            else if (shape.IsByRef)
             {
                 writer.Append("fixed (");
                 writer.AppendFullyQualifiedCsharpName(p.Type);
@@ -933,14 +928,13 @@ internal static class WrapperEmitter
                 writer.AppendComma();
                 writer.AppendSpace();
 
-                var marshaledType = KernelLaunchEmitter.GetMarshaledType(p);
-                if (marshaledType.IsArrayLikeType())
+                var shape = KernelParameterShape.Classify(p);
+                if (shape.IsArray)
                 {
-                    var lenExpr = KernelLaunchEmitter.GetLengthExpression(p);
                     writer.Append(
-                        $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{p.Name}, Length = {lenExpr} }}");
+                        $"new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {{ Data = (IntPtr)p_{p.Name}, Length = {shape.LengthExpression} }}");
                 }
-                else if (p.RefKind is RefKind.Ref or RefKind.Out)
+                else if (shape.IsByRef)
                 {
                     writer.Append("p_");
                     writer.Append(p.Name.ToCSharpIdentifier());
