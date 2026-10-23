@@ -124,6 +124,7 @@ StackLinq implements an extensive suite of standard query operators optimized fo
 | **Quantifiers & Search** | `Any()`, `All()`, `Contains(value)` |
 | **Element Selection** | `First()`, `FirstOrDefault()`, `Last()`, `LastOrDefault()`, `Single()`, `SingleOrDefault()`, `ElementAt(index)`, `ElementAtOrDefault(index)` |
 | **Materialization & Parallel** | `CopyTo(Span<T>)`, `ToArray()`, `AsParallel()` |
+| **State overloads (host-only)** | `Where(state, (item, state) => ...)` (`WhereWithStateEnumerator`), `Select(state, ...)` (`SelectWithStateEnumerator`), `Count`, `Any`, `All`, `First`, `FirstOrDefault` with `(state, predicate)`. The outer value goes in `state` so the lambda can be `static` and allocate no closure. A kernel reports `GSH0003` for them; a kernel lambda reads outer values directly. |
 
 For full method signatures and examples, refer to [StackLinqExtensions Class](StackLinqExtensions.md) and the individual method/enumerator reference pages below.
 

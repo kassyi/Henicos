@@ -21,6 +21,7 @@ Returns the number of elements in a sequence.
 | --- | --- |
 | [Count<TEnumerator, TSource>(TEnumerator)](#counttenumeratortsourcetenumerator) | Returns the number of elements. |
 | [Count<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)](#counttenumeratortsourcetenumeratorfunctsourcebool) | Returns a number that represents how many elements satisfy a condition. |
+| [Count<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)](#counttenumeratortsourcetstatetenumeratortstatefunctsourcetstatebool) | Returns how many elements satisfy a condition that receives a state value. Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly. |
 
 
 ## Count<TEnumerator, TSource>(TEnumerator)
@@ -48,6 +49,24 @@ public static int Count<TEnumerator, TSource>(this TEnumerator source, Func<TSou
 <i>int</i>
 
 
+
+## Count<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)
+
+Returns how many elements satisfy a condition that receives a state value. Pass the outer value as `state` so that the lambda can be `static` and no closure is allocated.
+
+```csharp
+public static int Count<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+```
+
+```csharp
+var result = names.AsStackEnumerable().Count(prefix, static (n, p) => n.StartsWith(p));
+```
+
+#### Returns
+
+<i>int</i>
+
+**Execution Target:** Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly.
 
 ## Remarks
 

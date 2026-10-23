@@ -21,6 +21,7 @@ Filters a sequence of values based on a predicate.
 | --- | --- |
 | [Where<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)](#wheretenumeratortsourcetenumeratorfunctsourcebool) | Filters a sequence based on a predicate. |
 | [Where<TEnumerator, TSource>(TEnumerator, Func<TSource, int, bool>)](#wheretenumeratortsourcetenumeratorfunctsourceintbool) | Filters a sequence based on a predicate that incorporates the element's index. |
+| [Where<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)](#wheretenumeratortsourcetstatetenumeratortstatefunctsourcetstatebool) | Filters a sequence based on a predicate that receives a state value. Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly. |
 
 
 ## Where<TEnumerator, TSource>(TEnumerator, Func<TSource, bool>)
@@ -48,6 +49,24 @@ public static WhereAtEnumerator<TEnumerator, TSource> Where<TEnumerator, TSource
 <i>WhereAtEnumerator<TEnumerator, TSource></i>
 
 
+
+## Where<TEnumerator, TSource, TState>(TEnumerator, TState, Func<TSource, TState, bool>)
+
+Filters a sequence based on a predicate that receives a state value. Pass the outer value as `state` so that the lambda can be `static` and no closure is allocated.
+
+```csharp
+public static StackEnumerable<WhereWithStateEnumerator<TEnumerator, TSource, TState>, TSource> Where<TEnumerator, TSource, TState>(this StackEnumerable<TEnumerator, TSource> source, TState state, Func<TSource, TState, bool> predicate) where TEnumerator : struct, IStackEnumerator<TSource>, allows ref struct;
+```
+
+```csharp
+var result = names.AsStackEnumerable().Where(prefix, static (n, p) => n.StartsWith(p));
+```
+
+#### Returns
+
+<i>StackEnumerable&lt;WhereWithStateEnumerator&lt;TEnumerator, TSource, TState&gt;, TSource&gt;</i>
+
+**Execution Target:** Host-only: a kernel reports `GSH0003`; a kernel lambda reads outer values directly.
 
 ## Examples
 
