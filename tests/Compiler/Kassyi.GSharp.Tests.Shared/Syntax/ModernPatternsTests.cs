@@ -71,7 +71,8 @@ public class ModernPatternsTests : TranspilerTestBase
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.ListPatterns), isDevice: false, dialect: CurrentDialect);
 
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "Switch expression patterns other than constant and discard are not supported");
+        // The analyzer reports the pattern (UnsupportedConstructDiagnosticsTests); the transpiler reports nothing
+        Assert.Empty(diagnostics);
     }
 
     [Fact]
@@ -81,7 +82,8 @@ public class ModernPatternsTests : TranspilerTestBase
         var (_, diagnostics) = RoslynTestUtility.TranspileMethod<ModernPatternsTarget>(
             nameof(ModernPatternsTarget.PropertyPatterns), isDevice: false, dialect: CurrentDialect);
 
-        diagnostics.AssertContains(GSharpDiagnostics.UnsupportedSyntax, "Switch expression patterns other than constant and discard are not supported");
+        // The analyzer reports the pattern (UnsupportedConstructDiagnosticsTests); the transpiler reports nothing
+        Assert.Empty(diagnostics);
     }
 
     [Fact]

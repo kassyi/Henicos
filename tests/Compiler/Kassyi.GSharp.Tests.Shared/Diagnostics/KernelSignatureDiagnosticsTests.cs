@@ -47,15 +47,15 @@ public class KernelSignatureDiagnosticsTests
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_FunctionPointerParameter_ReportsGsh0003AtTheParameterType(string dialect)
+    public async Task Test_FunctionPointerTypes_ReportGsh0003AtTheType(string dialect)
     {
         var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/UnsupportedSyntaxNodes.cu.cs", dialect);
 
-        // Line 44 is a function pointer variable, which the transpiler still reports
+        // A parameter (line 35) and a variable (line 44, UnsupportedConstructRule)
         Assert.Equal(
             [
                 (Analyzer, 35, 35, 35, 54),
-                (DiagnosticOrigin.Generator, 44, 9, 44, 28)
+                (Analyzer, 44, 9, 44, 28)
             ],
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'FunctionPointerType'"));
     }

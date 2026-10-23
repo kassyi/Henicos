@@ -58,6 +58,24 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
     private static readonly ImmutableArray<ISyntaxValidationRule<PostfixUnaryExpressionSyntax>> s_postfixUnaryRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<PostfixUnaryExpressionSyntax>>().ToImmutableArray();
 
+    private static readonly ImmutableArray<ISyntaxValidationRule<VariableDeclarationSyntax>> s_variableDeclarationRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<VariableDeclarationSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<PredefinedTypeSyntax>> s_predefinedTypeRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<PredefinedTypeSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<ObjectCreationExpressionSyntax>> s_objectCreationRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<ObjectCreationExpressionSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<ImplicitObjectCreationExpressionSyntax>> s_implicitObjectCreationRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<ImplicitObjectCreationExpressionSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<SwitchExpressionArmSyntax>> s_switchArmRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<SwitchExpressionArmSyntax>>().ToImmutableArray();
+
+    private static readonly ImmutableArray<ISyntaxValidationRule<LocalDeclarationStatementSyntax>> s_localDeclarationRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<LocalDeclarationStatementSyntax>>().ToImmutableArray();
+
     public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
     {
         foreach (var rule in s_methodRules)
@@ -196,5 +214,65 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         }
 
         base.VisitPostfixUnaryExpression(node);
+    }
+
+    public override void VisitVariableDeclaration(VariableDeclarationSyntax node)
+    {
+        foreach (var rule in s_variableDeclarationRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitVariableDeclaration(node);
+    }
+
+    public override void VisitPredefinedType(PredefinedTypeSyntax node)
+    {
+        foreach (var rule in s_predefinedTypeRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitPredefinedType(node);
+    }
+
+    public override void VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
+    {
+        foreach (var rule in s_objectCreationRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitObjectCreationExpression(node);
+    }
+
+    public override void VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
+    {
+        foreach (var rule in s_implicitObjectCreationRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitImplicitObjectCreationExpression(node);
+    }
+
+    public override void VisitSwitchExpressionArm(SwitchExpressionArmSyntax node)
+    {
+        foreach (var rule in s_switchArmRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitSwitchExpressionArm(node);
+    }
+
+    public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
+    {
+        foreach (var rule in s_localDeclarationRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitLocalDeclarationStatement(node);
     }
 }

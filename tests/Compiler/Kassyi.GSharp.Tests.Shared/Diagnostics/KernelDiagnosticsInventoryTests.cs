@@ -21,12 +21,13 @@ public class KernelDiagnosticsInventoryTests
         "Analyzers/GpuKernel/StringTernary_InGpuKernel.cu.cs",
         // GSH0001, GSH0003 (syntax without a rule)
         "Analyzers/DelegateEscapeSadPath.cs",
-        // GSH0003 (syntax without a rule, function pointer parameter and variable)
+        // GSH0002 (implicitly typed variable), GSH0003 (syntax without a rule, function pointer parameter and variable)
         "Diagnostics/UnsupportedSyntaxNodes.cu.cs",
         // GSH0003 (dynamic array size)
         "Analyzers/DynamicStackAllocSadPath.cs",
         // GSH0003 (switch expression)
         "Analyzers/GpuKernel/UnsupportedSwitch_InGpuKernel.cu.cs",
+        "Diagnostics/UnsupportedSwitchPatterns.cu.cs",
         // GSH0003 (operator macro target)
         "Diagnostics/OperatorMacroMissingTarget.cu.cs",
         // GSH0003 (ForUnroll, SyncGrid), GSH0006, GSH0012

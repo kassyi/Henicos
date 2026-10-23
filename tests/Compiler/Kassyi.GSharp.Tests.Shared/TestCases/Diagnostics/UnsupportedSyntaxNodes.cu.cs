@@ -44,4 +44,13 @@ public static unsafe partial class UnsupportedSyntaxNodeKernels
         delegate*<int, int> fn = null;
         data[0] = CallPointer(fn, data[0]);
     }
+
+    // GSH0002: an implicitly typed string variable
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void StringVariableKernel(int[] data)
+    {
+        var text = "abc";
+        data[0] = 1;
+    }
 }

@@ -1,51 +1,53 @@
 ﻿## Generator/SadPathDiagnostics.cu.cs
 (5,25)-(5,40) GSH0036 analyzer: The class 'ErrorSpecKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(11,13)-(11,19) GSH0002 generator: The string type is not supported in GPU kernels
-(12,26)-(12,38) GSH0001 generator: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
-(12,26)-(12,38) GSH0003 generator: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels
+(11,13)-(11,19) GSH0002 analyzer: The string type is not supported in GPU kernels
+(12,26)-(12,38) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
 
 ## Analyzers/InvalidMappingSadPath.cs
 (12,21)-(12,52) GSH0036 analyzer: The class 'GEN_39_52_InvalidMappingSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (12,21)-(12,52) GSH0036 analyzer: The class 'GEN_39_52_InvalidMappingSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(28,19)-(28,31) GSH0001 generator: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
-(28,19)-(28,31) GSH0003 generator: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels
+(28,19)-(28,31) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
 
 ## Analyzers/GpuKernel/StringTernary_InGpuKernel.cu.cs
 (5,21)-(5,53) GSH0036 analyzer: The class 'GSH_01_StringTernary_InGpuKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(12,9)-(12,15) GSH0002 generator: The string type is not supported in GPU kernels
+(12,9)-(12,15) GSH0002 analyzer: The string type is not supported in GPU kernels
 
 ## Analyzers/DelegateEscapeSadPath.cs
 (11,21)-(11,52) GSH0036 analyzer: The class 'SYN08_DelegateEscapeSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (11,21)-(11,52) GSH0036 analyzer: The class 'SYN08_DelegateEscapeSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (21,9)-(21,24) GSH0065 analyzer: The static member 'SYN08_DelegateEscapeSadPathCase.EscapedDelegate' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
 (21,9)-(21,24) GSH0065 generator: The static member 'SYN08_DelegateEscapeSadPathCase.EscapedDelegate' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.
-(29,30)-(29,63) GSH0001 generator: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
-(29,30)-(29,63) GSH0003 generator: The syntax 'ObjectCreationExpression' is not supported in GSharp GPU kernels
+(29,30)-(29,63) GSH0001 analyzer: Object creation ('new') is not supported in GPU kernels. Only struct instantiation and SharedMemory<T> are allowed.
 
 ## Diagnostics/UnsupportedSyntaxNodes.cu.cs
 (18,19)-(18,39) GSH0003 generator: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
 (19,9)-(22,10) GSH0003 generator: The syntax 'UncheckedStatement' is not supported in GSharp GPU kernels
 (30,21)-(30,41) GSH0003 generator: The syntax 'WithExpression' is not supported in GSharp GPU kernels
 (35,35)-(35,54) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
-(44,9)-(44,28) GSH0003 generator: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
+(44,9)-(44,28) GSH0003 analyzer: The syntax 'FunctionPointerType' is not supported in GSharp GPU kernels
+(53,9)-(53,12) GSH0002 analyzer: The string type is not supported in GPU kernels
 
 ## Analyzers/DynamicStackAllocSadPath.cs
 (6,21)-(6,55) GSH0036 analyzer: The class 'SYN13_DynamicStackAllocSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(13,43)-(13,54) GSH0003 generator: The syntax 'dynamic array size' is not supported in GSharp GPU kernels
+(13,43)-(13,54) GSH0003 analyzer: The syntax 'dynamic array size' is not supported in GSharp GPU kernels
 
 ## Analyzers/GpuKernel/UnsupportedSwitch_InGpuKernel.cu.cs
 (5,21)-(5,57) GSH0036 analyzer: The class 'SYN_01_UnsupportedSwitch_InGpuKernel' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
-(16,15)-(16,28) GSH0003 generator: The syntax 'Switch expression arms with 'when' clauses are not supported' is not supported in GSharp GPU kernels
-(23,13)-(23,16) GSH0003 generator: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
+(16,15)-(16,28) GSH0003 analyzer: The syntax 'Switch expression arms with 'when' clauses are not supported' is not supported in GSharp GPU kernels
+(23,13)-(23,16) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
+
+## Diagnostics/UnsupportedSwitchPatterns.cu.cs
+(21,13)-(21,27) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
+(32,13)-(32,23) GSH0003 analyzer: The syntax 'Switch expression patterns other than constant and discard are not supported' is not supported in GSharp GPU kernels
 
 ## Diagnostics/OperatorMacroMissingTarget.cu.cs
-(36,9)-(36,18) GSH0003 generator: The syntax 'Macro target method 'OperatorMacroTargets.Missing' is missing or incompatible.' is not supported in GSharp GPU kernels
+(36,9)-(36,18) GSH0003 analyzer: The syntax 'Macro target method 'OperatorMacroTargets.Missing' is missing or incompatible.' is not supported in GSharp GPU kernels
 
 ## Analyzers/MacroArgumentSadPath.cs
 (5,14)-(5,41) GSH0036 analyzer: The class 'GEN_36_MacroArgumentSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (14,9)-(17,11) GSH0003 generator: The syntax 'ForUnroll arguments must be constants' is not supported in GSharp GPU kernels
 (14,26)-(14,31) GSH0012 analyzer: The argument 'count' of macro 'ForUnroll' must be a compile-time constant
-(19,9)-(19,15) GSH0002 generator: The string type is not supported in GPU kernels
+(19,9)-(19,15) GSH0002 analyzer: The string type is not supported in GPU kernels
 (21,9)-(21,30) GSH0006 generator: The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal
 (21,23)-(21,29) GSH0006 analyzer: The argument to Gpu.InlinePtx must be a string literal or an interpolated string literal
 (25,9)-(25,28) GSH0003 generator: The syntax 'Gpu.SyncGrid requires a single lambda expression argument' is not supported in GSharp GPU kernels
@@ -76,7 +78,7 @@
 (65,24)-(65,39) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.OverLimitKernel' take 4112 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
 (71,24)-(71,37) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.PaddingKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
 (78,23)-(78,35) GSH0064 analyzer: The parameters of kernel 'StructSizeDiagnosticKernels.ResultKernel' take 4104 bytes, which exceeds the 4096-byte kernel parameter limit. Pass large data through an array or a device buffer instead of by value.
-(104,63)-(104,67) GSH0013 generator: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
+(104,63)-(104,67) GSH0013 analyzer: The kernel allocates 40000 bytes of static shared memory, which exceeds the recommended limit of 32768 bytes. This may cause kernel launch failure or reduce occupancy.
 
 ## Generator/DialectDiagnostics.cu.cs
 

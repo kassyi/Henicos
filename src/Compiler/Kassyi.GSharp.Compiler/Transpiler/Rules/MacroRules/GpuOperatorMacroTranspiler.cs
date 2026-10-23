@@ -12,9 +12,45 @@ internal static class GpuOperatorMacroTranspiler
     /// </summary>
     public static bool TryTranspile(AssignmentExpressionSyntax assignment, ref TranspileContext context)
     {
-        var rightNode = UnwrapExpression(assignment.Right, context.Query.SemanticModel);
+        if (!TryResolve(assignment, context.Query.SemanticModel, out var macro))
+        {
+            return false;
+        }
 
-        if (context.Query.SemanticModel.GetSymbol(rightNode) is not IMethodSymbol methodSymbol)
+        if (macro.TargetMethod is not { } targetMethod)
+        {
+            if (macro.IsTargetMissing)
+            {
+                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, assignment, macro.FormatMissingTarget());
+            }
+
+            return false;
+        }
+
+        var (leftOp, rightOp, extraArg) = ExtractOperands(macro.OperatorCall);
+        var resultOp = assignment.Left;
+        var hasContext = targetMethod.Parameters.Length == macro.MaxParameterCount;
+
+        context.Emitter.Writer.Append(macro.TargetMethodName);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            EmitMacroArguments(targetMethod, resultOp, leftOp, rightOp, extraArg, hasContext, ref context);
+        }
+
+        context.Emitter.Writer.AppendLine(";");
+        return true;
+    }
+
+    /// <summary>
+    /// The <c>[GpuOperatorMacro]</c> operator that the right side of <paramref name="assignment"/> calls, and the method it
+    /// maps to. The analyzer reports a missing or incompatible target (GSH0003) from the same answer.
+    /// </summary>
+    public static bool TryResolve(AssignmentExpressionSyntax assignment, SemanticModel semanticModel, out OperatorMacro macro)
+    {
+        macro = default;
+        var rightNode = UnwrapExpression(assignment.Right, semanticModel);
+
+        if (semanticModel.GetSymbol(rightNode) is not IMethodSymbol methodSymbol)
         {
             return false;
         }
@@ -26,7 +62,42 @@ internal static class GpuOperatorMacroTranspiler
             return false;
         }
 
-        return EmitMacroOperatorAssignment(assignment, rightNode, macroAttr, ref context);
+        var targetMethod = ResolveTargetMethod(
+            macroAttr,
+            rightNode,
+            out var targetType,
+            out var targetMethodName,
+            out var expectedMethodParamsMax);
+        macro = new OperatorMacro(rightNode, targetType, targetMethodName, targetMethod, expectedMethodParamsMax);
+        return true;
+    }
+
+    /// <summary>A call of a <c>[GpuOperatorMacro]</c> operator and the method it maps to.</summary>
+    internal readonly struct OperatorMacro(
+        ExpressionSyntax operatorCall,
+        INamedTypeSymbol? targetType,
+        string? targetMethodName,
+        IMethodSymbol? targetMethod,
+        int maxParameterCount)
+    {
+        /// <summary>The operator expression, without the conversion around it.</summary>
+        public ExpressionSyntax OperatorCall { get; } = operatorCall;
+
+        public INamedTypeSymbol? TargetType { get; } = targetType;
+
+        public string? TargetMethodName { get; } = targetMethodName;
+
+        /// <summary>The method the operator maps to, or <see langword="null"/> when it is missing or incompatible.</summary>
+        public IMethodSymbol? TargetMethod { get; } = targetMethod;
+
+        /// <summary>The parameter count of a target that takes a context first.</summary>
+        public int MaxParameterCount { get; } = maxParameterCount;
+
+        /// <summary>The attribute names a target, but no method of that type fits the operator.</summary>
+        public bool IsTargetMissing => TargetMethod == null && TargetType != null && TargetMethodName != null;
+
+        public string FormatMissingTarget() =>
+            $"Macro target method '{TargetType?.Name}.{TargetMethodName}' is missing or incompatible.";
     }
 
     private static ExpressionSyntax UnwrapExpression(ExpressionSyntax expression, SemanticModel semanticModel)
@@ -43,46 +114,6 @@ internal static class GpuOperatorMacroTranspiler
         }
 
         return expression;
-    }
-
-    private static bool EmitMacroOperatorAssignment(
-        AssignmentExpressionSyntax assignment,
-        ExpressionSyntax rightNode,
-        AttributeData macroAttr,
-        ref TranspileContext context)
-    {
-        var targetMethod = ResolveTargetMethod(
-            macroAttr,
-            rightNode,
-            out var targetType,
-            out var targetMethodName,
-            out var expectedMethodParamsMax);
-
-        if (targetMethod == null)
-        {
-            if (targetType != null && targetMethodName != null)
-            {
-                context.Reporter.Report(
-                    GSharpDiagnostics.UnsupportedSyntax,
-                    assignment,
-                    $"Macro target method '{targetType.Name}.{targetMethodName}' is missing or incompatible.");
-            }
-
-            return false;
-        }
-
-        var (leftOp, rightOp, extraArg) = ExtractOperands(rightNode);
-        var resultOp = assignment.Left;
-        var hasContext = targetMethod.Parameters.Length == expectedMethodParamsMax;
-
-        context.Emitter.Writer.Append(targetMethodName);
-        using (context.Emitter.Writer.Parentheses())
-        {
-            EmitMacroArguments(targetMethod, resultOp, leftOp, rightOp, extraArg, hasContext, ref context);
-        }
-
-        context.Emitter.Writer.AppendLine(";");
-        return true;
     }
 
     private static IMethodSymbol? ResolveTargetMethod(

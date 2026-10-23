@@ -119,9 +119,16 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     public override void DefaultVisit(SyntaxNode node)
     {
         Context.Reporter.Report(GSharpDiagnostics.UnsupportedSyntax, node, node.Kind().ToString());
+        AppendUnsupportedPlaceholder(node);
+    }
 
-        // [WHY] Descending into the children would splice their raw tokens into the output (invalid C++)
-        // and re-report every nested node. A single diagnostic plus a placeholder keeps the output inspectable.
+    /// <summary>Writes a placeholder for a construct the transpiler cannot emit.</summary>
+    /// <remarks>
+    /// [WHY] Descending into the children would splice their raw tokens into the output (invalid C++)
+    /// and re-report every nested node. A single diagnostic plus a placeholder keeps the output inspectable.
+    /// </remarks>
+    internal void AppendUnsupportedPlaceholder(SyntaxNode node)
+    {
         Context.Emitter.Writer.Append("/*unsupported:");
         Context.Emitter.Writer.Append(node.Kind().ToString());
         Context.Emitter.Writer.Append("*/");
@@ -148,7 +155,7 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
     {
         if (node.Keyword.IsKind(SyntaxKind.StringKeyword))
         {
-            Context.Reporter.Report(GSharpDiagnostics.StringNotSupported, node);
+            Context.Reporter.Fail(GSharpDiagnostics.StringNotSupported, node);
         }
 
         var typeSymbol = Context.Query.SemanticModel.GetTypeSymbol(node);

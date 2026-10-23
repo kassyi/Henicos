@@ -30,6 +30,63 @@ internal static class GpuCodeConstraints
     /// </summary>
     public static bool IsFunctionPointer(ITypeSymbol? type) => type is IFunctionPointerTypeSymbol;
 
+    /// <summary>Whether <paramref name="type"/> is <see cref="string"/>, which device code cannot hold (GSH0002).</summary>
+    public static bool IsString(ITypeSymbol? type) => type is { SpecialType: SpecialType.System_String };
+
+    /// <summary>
+    /// Whether device code can create an object of <paramref name="type"/> with <c>new</c>: a struct or a
+    /// <c>SharedMemory&lt;T&gt;</c> (GSH0001). A type that does not resolve is the C# compiler's error, not this one.
+    /// </summary>
+    public static bool IsSupportedObjectCreation(ITypeSymbol? type) =>
+        type is null or IErrorTypeSymbol ||
+        type.TypeKind is TypeKind.Error or TypeKind.Struct ||
+        type.IsSharedMemoryType();
+
+    /// <summary>The GSH0003 text for a switch expression arm with a <c>when</c> clause.</summary>
+    public const string SwitchArmWhenClauseNotSupported = "Switch expression arms with 'when' clauses are not supported";
+
+    /// <summary>The GSH0003 text for a switch expression arm whose pattern is not a constant or a discard.</summary>
+    public const string SwitchArmPatternNotSupported =
+        "Switch expression patterns other than constant and discard are not supported";
+
+    /// <summary>Whether a switch expression arm's pattern is one the transpiler emits: a constant or a discard (GSH0003).</summary>
+    public static bool IsSupportedSwitchArmPattern(PatternSyntax pattern) =>
+        pattern is ConstantPatternSyntax or DiscardPatternSyntax;
+
+    /// <summary>The GSH0003 text for a stack array whose size is not a constant.</summary>
+    public const string DynamicArraySize = "dynamic array size";
+
+    /// <summary>Whether the size of a stack array is a constant, which a C++ array declaration needs (GSH0003).</summary>
+    public static bool IsConstantArraySize(ExpressionSyntax size, SemanticModel semanticModel) =>
+        semanticModel.GetSafeConstantValue(size).HasValue;
+
+    /// <summary>
+    /// The size of the stack array that <paramref name="variable"/> declares without an initializer list
+    /// (<c>Span&lt;int&gt; s = stackalloc int[n]</c>, <c>int[] a = new int[n]</c>), when it is not a constant (GSH0003).
+    /// </summary>
+    /// <param name="variable">A declarator of a local declaration or a <c>fixed</c> statement.</param>
+    /// <param name="declaredType">The type of the declaration.</param>
+    /// <param name="semanticModel">The semantic model of the declaration.</param>
+    public static ExpressionSyntax? FindDynamicArraySize(VariableDeclaratorSyntax variable, ITypeSymbol? declaredType,
+        SemanticModel semanticModel)
+    {
+        if (variable.Initializer == null ||
+            !InitializationSyntaxExtractor.TryGetArrayElementType(declaredType, out var elementType, out _) ||
+            elementType == null ||
+            !InitializationSyntaxExtractor.TryGetArrayInitialization(variable.Initializer.Value, out var count,
+                out var size, out var initializer))
+        {
+            return null;
+        }
+
+        if (initializer != null && count.HasValue)
+        {
+            return null;
+        }
+
+        return size != null && !IsConstantArraySize(size, semanticModel) ? size : null;
+    }
+
     /// <summary>
     /// Whether the argument of <c>Gpu.InlinePtx</c> is text known at compile time: a constant string or an interpolated
     /// string (GSH0006).

@@ -92,7 +92,8 @@ public class StringsAndAttributesTests : TranspilerTestBase
         var (cudaSource, diagnostics) = RoslynTestUtility.TranspileMethod<StringsAndAttributesTarget>(
             nameof(StringsAndAttributesTarget.NameOfExpression), isDevice: false, dialect: CurrentDialect);
 
-        diagnostics.AssertContains(GSharpDiagnostics.StringNotSupported);
+        // The analyzer reports the string variable (UnsupportedConstructDiagnosticsTests); the transpiler reports nothing
+        Assert.Empty(diagnostics);
         await Verify(Report(cudaSource, diagnostics));
     }
 

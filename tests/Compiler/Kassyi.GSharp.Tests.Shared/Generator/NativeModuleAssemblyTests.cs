@@ -11,13 +11,16 @@ public class NativeModuleAssemblyTests
 {
     private static readonly string s_source = RoslynTestUtility.ReadTestCase("Generator/NativeModuleAssembly.cu.cs");
 
+    // The analyzer reports a device function's error; the generator reports it no more
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public void Test_DeviceFunctionDiagnostic_IsReported()
+    public async Task Test_DeviceFunctionDiagnostic_IsReported()
     {
-        var (_, _, diagnostics) = RoslynTestUtility.RunGenerator(s_source);
+        var diagnostics = await KernelDiagnostics.RunAsync(s_source, "Cuda");
 
-        Assert.Contains(diagnostics, static d => d.Id == GSharpDiagnostics.StringNotSupported.Id);
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, 12, 13, 12, 19)],
+            diagnostics.Ranges(GSharpDiagnostics.StringNotSupported.Id));
     }
 
     [Fact]

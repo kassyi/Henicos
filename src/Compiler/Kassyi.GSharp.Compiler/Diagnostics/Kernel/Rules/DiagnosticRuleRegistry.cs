@@ -12,7 +12,9 @@ internal static class DiagnosticRuleRegistry
         ManualEnumeratorRule.Instance,
         ParamsModifierNotSupportedRule.Instance,
         ProhibitedApiRule.Instance,
+        SharedMemorySizeRule.Instance,
         StaticMemberAccessRule.Instance,
+        UnsupportedConstructRule.Instance,
         UserDefinedOperatorRule.Instance
     );
 

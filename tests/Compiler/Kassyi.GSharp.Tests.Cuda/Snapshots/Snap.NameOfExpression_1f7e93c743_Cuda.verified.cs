@@ -2,5 +2,3 @@
 System_String __gsharp_id_1_name = nameof(__gsharp_id_0_output);
 __gsharp_id_0_output[0]=__gsharp_id_1_name.length;
 }
-
-// GSH0002
