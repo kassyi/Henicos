@@ -60,13 +60,20 @@ public struct AbiAutoPropertyStruct
     public int C;
 }
 
-// A computed property has no backing field, so it is no part of the host layout. Whether the device declares it as a
-// member is pinned by StructAbiTests.ComputedPropertyStruct_DeviceDeclaresTheComputedProperty (#468).
+// A computed property has no backing field, so it is no part of the layout on either side (#471). The device reads it
+// through a getter; each form of getter body is here, and two of them read another computed property.
 public struct AbiComputedPropertyStruct
 {
     public byte A;
     public int Sum => A + 1;
     public int C;
+    public int Twice => Sum * 2;
+    public int Product { get => A * C; }
+
+    public int Difference
+    {
+        get { return this.C - this.Sum; }
+    }
 }
 
 // Each Measure kernel writes the device offset of C and the device size of the struct. A Roundtrip kernel takes the
@@ -204,5 +211,26 @@ public static partial class StructAbiKernels
     public static void RoundtripComputedPropertyKernel(ref AbiComputedPropertyStruct data)
     {
         data.C = data.C + 1;
+    }
+
+    [GpuKernel]
+    public static void ReadComputedPropertyKernel(int[] result)
+    {
+        AbiComputedPropertyStruct s = default;
+        s.A = 4;
+        s.C = 7;
+        result[0] = s.Sum;
+        result[1] = s.Twice;
+        result[2] = s.Product;
+        result[3] = s.Difference;
+    }
+
+    [GpuKernel]
+    public static void ReadComputedPropertyThroughRefKernel(ref AbiComputedPropertyStruct data, int[] result)
+    {
+        result[0] = data.Sum;
+        result[1] = data.Twice;
+        result[2] = data.Product;
+        result[3] = data.Difference;
     }
 }

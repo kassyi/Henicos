@@ -178,14 +178,53 @@ public class StructAbiTests
     [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.Boundary)]
-    public void ComputedPropertyStruct_DeviceDeclaresTheComputedProperty()
+    public void ComputedPropertyStruct_ShadowMatchesDevice()
     {
         var device = MeasureOnDevice(static layout => StructAbiKernels.LaunchMeasureComputedPropertyKernel(layout));
 
-        // Known mismatch (#468, to be fixed in the follow-up stage): the device declares the computed property Sum as
-        // a member (C at 8, size 12) while the host layout holds only the real fields A and C (C at 4, size 8).
-        Assert.Equal((8, 12), device);
+        Assert.Equal((4, 8), device);
         Assert.Equal(4, (int)Marshal.OffsetOf<StructAbiKernels.AotContexts.AbiComputedPropertyStruct>("C"));
         Assert.Equal(8, Marshal.SizeOf<StructAbiKernels.AotContexts.AbiComputedPropertyStruct>());
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void ComputedPropertyStruct_RoundtripsThroughShadow()
+    {
+        var data = new AbiComputedPropertyStruct { A = 1, C = 7 };
+
+        StructAbiKernels.LaunchRoundtripComputedPropertyKernel(ref data);
+
+        Assert.Equal(1, data.A);
+        Assert.Equal(8, data.C);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void ComputedProperty_ReadsOnDevice()
+    {
+        var result = new int[4];
+
+        StructAbiKernels.LaunchReadComputedPropertyKernel(result);
+
+        // A = 4, C = 7: Sum = A + 1, Twice = Sum * 2, Product = A * C, Difference = C - Sum
+        Assert.Equal([5, 10, 28, 2], result);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void ComputedProperty_ReadsThroughRefOnDevice()
+    {
+        var data = new AbiComputedPropertyStruct { A = 2, C = 9 };
+        var result = new int[4];
+
+        StructAbiKernels.LaunchReadComputedPropertyThroughRefKernel(ref data, result);
+
+        Assert.Equal([3, 6, 18, 6], result);
+        Assert.Equal(2, data.A);
+        Assert.Equal(9, data.C);
     }
 }
