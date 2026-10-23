@@ -13,11 +13,12 @@ internal static class HostLauncherTranspiler
 {
     private const string SharedMemoryBufferPrefix = "__gsharp_smem_buffer_";
 
-    public static void WriteCpuLauncher(MethodDeclarationSyntax method,
+    public static void WriteCpuLauncher(in MethodEmissionPlan plan,
         IReadOnlyList<VariableDeclaratorSyntax>? contextFields, ref TranspileContext context)
     {
         var hasContext = contextFields != null;
-        var methodSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IMethodSymbol>(method);
+        var method = plan.Declaration;
+        var methodSymbol = plan.Symbol;
         if (methodSymbol == null)
         {
             return;
@@ -25,10 +26,10 @@ internal static class HostLauncherTranspiler
 
         context.Emitter.Writer.AppendLine();
         context.Emitter.Writer.Append("extern \"C\" __declspec(dllexport) void");
-        var methodName = MethodSignatureTranspiler.GetKernelMethodName(method, methodSymbol);
-        var contextName = MethodSignatureTranspiler.GetKernelDerivedName(ContextPrefix, method, methodSymbol);
+        var methodName = GlobalCppNames.GetKernelName(methodSymbol);
+        var contextName = GlobalCppNames.GetKernelDerivedName(ContextPrefix, methodSymbol);
         context.Emitter.Writer.Append(' ')
-            .Append(MethodSignatureTranspiler.GetKernelDerivedName(LaunchExportPrefix, method, methodSymbol))
+            .Append(GlobalCppNames.GetKernelDerivedName(LaunchExportPrefix, methodSymbol))
             .Append('(');
 
         // Launch dimensions
@@ -44,9 +45,7 @@ internal static class HostLauncherTranspiler
 
         MethodSignatureTranspiler.WriteParameters(method.ParameterList.Parameters, false, ref context);
 
-        var isKernelWithReturn = methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
-                                 methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
-        if (isKernelWithReturn)
+        if (plan.HasAutoResult)
         {
             context.Emitter.Writer.Append(", ");
             context.Emitter.Dialect.AppendType(ref context, methodSymbol.ReturnType);
@@ -98,12 +97,12 @@ internal static class HostLauncherTranspiler
                     using (context.Emitter.Writer.Scope())
                     {
                         context.Emitter.Writer.AppendLine($"{AnyActive} = false;");
-                        WriteBlockLoop(method, methodSymbol, methodName, hasContext, ref context);
+                        WriteBlockLoop(method, methodName, hasContext, plan.HasAutoResult, ref context);
                     }
                 }
                 else
                 {
-                    WriteBlockLoop(method, methodSymbol, methodName, hasContext, ref context);
+                    WriteBlockLoop(method, methodName, hasContext, plan.HasAutoResult, ref context);
                 }
             }
 
@@ -178,8 +177,8 @@ internal static class HostLauncherTranspiler
         CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
     }
 
-    private static void WriteBlockLoop(MethodDeclarationSyntax method, IMethodSymbol methodSymbol, string methodName,
-        bool hasContext, ref TranspileContext context)
+    private static void WriteBlockLoop(MethodDeclarationSyntax method, string methodName, bool hasContext,
+        bool hasAutoResult, ref TranspileContext context)
     {
         context.Emitter.Writer.AppendLine(
             $"int32_t {ThreadsPerBlock} = (int32_t)({BlockDimX} * {BlockDimY} * {BlockDimZ});");
@@ -229,10 +228,7 @@ internal static class HostLauncherTranspiler
                         context.Emitter.Writer.Append($"&{Contexts}[{ContextThreadIndex}]");
                     }
 
-                    var isKernelWithReturn = methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
-                                             methodSymbol.ReturnType.SpecialType != SpecialType.System_Void;
-
-                    if (isKernelWithReturn)
+                    if (hasAutoResult)
                     {
                         AppendArgumentSeparator(ref isFirst, ref context);
                         context.Emitter.Writer.Append(Buffer);

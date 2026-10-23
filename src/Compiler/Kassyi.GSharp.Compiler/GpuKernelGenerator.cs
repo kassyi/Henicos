@@ -155,19 +155,13 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
-            var cudaSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
-                cudaCollector.Report,
-                isDevice: false, cudaDialect, out var requiredIncludesCuda);
+            var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: true);
 
-            var lowered = methodDeclaration.HasBody()
-                ? AstLoweringPipeline.Lower(methodDeclaration, context.SemanticModel)
-                : null;
-
-            var cppSource = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
-                cppCollector.Report, isDevice: false, cppDialect, out var requiredIncludesCpp, lowered);
-
-            var managedCSharpSource =
-                MethodTranspiler.GenerateManagedCSharpSource(methodDeclaration, context.SemanticModel, lowered);
+            var cudaSource = MethodTranspiler.GenerateCudaSource(in plan, cudaCollector.Report, cudaDialect,
+                out var requiredIncludesCuda);
+            var cppSource = MethodTranspiler.GenerateCudaSource(in plan, cppCollector.Report, cppDialect,
+                out var requiredIncludesCpp);
+            var managedCSharpSource = MethodTranspiler.GenerateManagedCSharpSource(in plan);
 
             if (!CheckSuppressGs0001(methodDeclaration))
             {
@@ -237,23 +231,21 @@ public class GpuKernelGenerator : IIncrementalGenerator
             var cudaDialect = new GSharpCudaDialect();
             var cppDialect = new StandardCppDialect();
 
-            var cudaSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel,
-                cudaCollector.Report, isDevice: true, cudaDialect);
-            var cppSignature = MethodTranspiler.GenerateCudaSignature(methodDeclaration, context.SemanticModel,
-                cppCollector.Report, isDevice: true, cppDialect);
+            var plan = MethodEmissionPlan.Create(methodDeclaration, context.SemanticModel, isKernel: false);
 
-            var cudaBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
-                cudaCollector.Report,
-                isDevice: true, cudaDialect, out var requiredIncludesCuda);
-            var cppBody = MethodTranspiler.GenerateCudaSource(methodDeclaration, context.SemanticModel,
-                cppCollector.Report, isDevice: true, cppDialect, out var requiredIncludesCpp);
+            var cudaSignature = MethodTranspiler.GenerateCudaSignature(in plan, cudaCollector.Report, cudaDialect);
+            var cppSignature = MethodTranspiler.GenerateCudaSignature(in plan, cppCollector.Report, cppDialect);
+
+            var cudaBody = MethodTranspiler.GenerateCudaSource(in plan, cudaCollector.Report, cudaDialect,
+                out var requiredIncludesCuda);
+            var cppBody = MethodTranspiler.GenerateCudaSource(in plan, cppCollector.Report, cppDialect,
+                out var requiredIncludesCpp);
 
             // A device function that may suspend has a frame, which embeds the frames of the calls it makes
             var frameName = "";
             var frameDependencies = ImmutableArray.CreateBuilder<string>();
             var managedCSharpSource = "";
-            if (methodDeclaration.GetBodyNode() is { } body &&
-                SuspensionAnalysis.RequiresStateMachine(methodSymbol, context.SemanticModel.Compilation))
+            if (plan.Kind == MethodEmissionKind.SuspendingDeviceFunction && methodDeclaration.GetBodyNode() is { } body)
             {
                 frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, methodSymbol);
                 foreach (var callee in SuspensionAnalysis.GetSuspendingCallees(body,
@@ -262,8 +254,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                     frameDependencies.Add(GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix, callee));
                 }
 
-                managedCSharpSource =
-                    MethodTranspiler.GenerateManagedDeviceFunctionSource(methodDeclaration, context.SemanticModel);
+                managedCSharpSource = MethodTranspiler.GenerateManagedDeviceFunctionSource(in plan);
             }
 
             return new TranspiledDeviceMethodResult(

@@ -28,22 +28,12 @@ internal readonly ref struct TranspilationSession
     }
 
     public static TranspilationSession Begin(
-        MethodDeclarationSyntax methodDecl,
-        SemanticModel semanticModel,
-        Action<Diagnostic>? reportDiagnostic = null,
-        ITranspilerDialect? dialect = null)
+        in MethodEmissionPlan plan,
+        Action<Diagnostic>? reportDiagnostic,
+        ITranspilerDialect dialect)
     {
-        if (methodDecl is null)
-        {
-            throw new ArgumentNullException(nameof(methodDecl));
-        }
-
-        if (semanticModel is null)
-        {
-            throw new ArgumentNullException(nameof(semanticModel));
-        }
-
-        var methodSymbol = semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl);
+        var semanticModel = plan.SemanticModel;
+        var methodSymbol = plan.Symbol;
         if (methodSymbol != null && !GSharpDiagnostics.ValidateKernelReturnType(methodSymbol, reportDiagnostic))
         {
 #pragma warning disable RS0030 // Allowed: Used for error message generation only (not a hot path).
@@ -54,8 +44,6 @@ internal readonly ref struct TranspilationSession
         }
 
         var bclIntrinsicMap = BclIntrinsicMapBuilder.GetOrBuildMap(semanticModel.Compilation);
-        dialect ??= new GSharpCudaDialect();
-
         var visitor = RoslynToCudaVisitor.Rent(dialect, semanticModel, reportDiagnostic, bclIntrinsicMap);
         ref var context = ref visitor.Context;
 
@@ -68,8 +56,8 @@ internal readonly ref struct TranspilationSession
                 context.Emitter.SkipLocalsInit = true;
             }
 
-            context.Emitter.IsGpuKernelEntry = methodSymbol.HasAttribute(KnownAttributes.GpuKernel);
-            context.Emitter.IsVoidReturn = methodSymbol.ReturnType.SpecialType == SpecialType.System_Void;
+            context.Emitter.IsGpuKernelEntry = plan.IsGpuKernelEntry;
+            context.Emitter.IsVoidReturn = plan.ReturnsVoid;
         }
 
         return new TranspilationSession(visitor, methodSymbol, null);
