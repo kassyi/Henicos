@@ -202,6 +202,7 @@ public class NativeApiYamlReaderTests
     [InlineData("ptx_intrinsics.yml")]
     [InlineData("cublas_api.yml")]
     [InlineData("curand_api.yml")]
+    [InlineData("device_heap_intrinsics.yml")]
     public void Test_TryRead_BuiltInDefinitions_ParseWithoutErrors(string fileName)
     {
         var path = RepositoryPaths.Combine("src", "NativeApi", fileName);
@@ -305,6 +306,13 @@ public class NativeApiYamlReaderTests
     [InlineData("namespace: A.B\nclassName: C\nmethods:\n  - name: f\n    typeParameters:\n      - name: 1T\n", "name")]
     [InlineData("namespace: A.B\nclassName: C\nmethods:\n  - name: f\n    typeParameters:\n      - name: T\n      - name: T\n", "typeParameters")]
     [InlineData("namespace: A.B\nclassName: C\nmethods:\n  - name: f\n    typeTemplate:\n      types: [int]\n    typeParameters:\n      - name: T\n", "typeParameters")]
+    [InlineData("namespace: A.B\nclassName: C\nmethods:\n  - name: f\n    summary: s\n    xmlDoc: <summary>s</summary>\n", "xmlDoc")]
+    [InlineData("namespace: A.B\nclassName: C\nmethods:\n  - name: f\n    xmlDoc: <summary>s</summary>\n    parameters:\n      - { name: p, type: int, description: d }\n", "xmlDoc")]
+    [InlineData("namespace: A.B\nclassName: C\nlibraryName: x\nclasses:\n  - { name: C, xmlDoc: <summary/> }\nmethods:\n  - name: f\n", "classes")]
+    [InlineData("namespace: A.B\nclassName: C\nclasses: nope\nmethods:\n  - name: f\n", "classes")]
+    [InlineData("namespace: A.B\nclassName: C\nclasses:\n  - { name: C.Other, xmlDoc: <summary/> }\nmethods:\n  - name: f\n", "classes")]
+    [InlineData("namespace: A.B\nclassName: C\nclasses:\n  - { name: C, xmlDoc: <summary/> }\n  - { name: C, xmlDoc: <summary/> }\nmethods:\n  - name: f\n", "classes")]
+    [InlineData("namespace: A.B\nclassName: C\nclasses:\n  - { name: C }\nmethods:\n  - name: f\n", "xmlDoc")]
     public void Test_TryRead_SchemaViolation_ReportsSchemaErrorNamingTheKey(string yaml, string expectedKey)
     {
         var success = NativeApiYamlReader.TryRead(yaml, out var definition, out var error);

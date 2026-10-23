@@ -7,6 +7,12 @@ internal static class NativeApiDocumentation
 {
     public static void EmitDocumentation(SourceWriter writer, ApiMethodDefinition m)
     {
+        if (m.XmlDoc is { } xmlDoc)
+        {
+            EmitXmlDoc(writer, xmlDoc);
+            return;
+        }
+
         if (!string.IsNullOrEmpty(m.Summary))
         {
             writer.Line($"/// <summary>{EscapeXml(m.Summary ?? string.Empty)}</summary>");
@@ -31,6 +37,25 @@ internal static class NativeApiDocumentation
         if (!string.IsNullOrEmpty(m.ReturnDescription))
         {
             writer.Line($"/// <returns>{EscapeXml(m.ReturnDescription ?? string.Empty)}</returns>");
+        }
+    }
+
+    /// <summary>
+    /// Writes each line of <paramref name="xmlDoc"/> unchanged after <c>///</c> (<c>xmlDoc</c> keys hold XML markup).
+    /// </summary>
+    public static void EmitXmlDoc(SourceWriter writer, string xmlDoc)
+    {
+        var start = 0;
+        while (start <= xmlDoc.Length)
+        {
+            var end = xmlDoc.IndexOf('\n', start);
+            if (end < 0)
+            {
+                end = xmlDoc.Length;
+            }
+
+            writer.Line($"/// {xmlDoc[start..end].TrimEnd('\r')}");
+            start = end + 1;
         }
     }
 

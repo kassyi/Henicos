@@ -35,6 +35,13 @@ internal sealed class NativeApiDefinition
 
     public ImmutableArray<ApiMethodDefinition> Methods { get; set; } = ImmutableArray<ApiMethodDefinition>.Empty;
 
+    /// <summary>
+    /// Gets or sets the documentation of the classes the methods are declared in (<c>classes</c>, intrinsic definitions
+    /// only), for a nested class that has no hand-written declaration of its own.
+    /// </summary>
+    public ImmutableArray<ClassDocumentationDefinition> Classes { get; set; } =
+        ImmutableArray<ClassDocumentationDefinition>.Empty;
+
     /// <summary>The line on which <c>className</c> is declared, for diagnostics.</summary>
     public int ClassNameLine { get; set; } = 1;
 
@@ -80,9 +87,17 @@ internal sealed class ApiMethodDefinition
 
     public string? StringMarshalling { get; set; }
 
+    /// <summary>Gets or sets whether the method is declared <c>unsafe</c> (it takes or returns a pointer).</summary>
     public bool IsUnsafe { get; set; }
 
     public string? Summary { get; set; }
+
+    /// <summary>
+    /// Gets or sets the whole XML documentation of the method (<c>xmlDoc</c>), written as is after <c>///</c>, for text
+    /// that needs markup (<c>&lt;c&gt;</c>, <c>&lt;see cref&gt;</c>, <c>&lt;exception&gt;</c>). It replaces the
+    /// plain-text <see cref="Summary"/> and descriptions, which are escaped.
+    /// </summary>
+    public string? XmlDoc { get; set; }
 
     /// <summary>
     /// Gets or sets the overloads to expand: one non-generic method per entry of <see cref="TypeTemplateDefinition.Types"/>,
@@ -102,6 +117,16 @@ internal sealed class ApiMethodDefinition
     public string? ReturnDescription { get; set; }
 
     public ImmutableArray<ParameterDefinition> Parameters { get; set; } = ImmutableArray<ParameterDefinition>.Empty;
+}
+
+/// <summary>The XML documentation of a class that methods are declared in.</summary>
+internal sealed class ClassDocumentationDefinition
+{
+    /// <summary>Gets or sets the class, as a method's <c>className</c> names it (<c>Gpu.Unsafe</c>).</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the XML documentation, written as is after <c>///</c>.</summary>
+    public string XmlDoc { get; set; } = string.Empty;
 }
 
 internal sealed class TypeTemplateDefinition

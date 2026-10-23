@@ -7,6 +7,55 @@ namespace Kassyi.GSharp.Compiler.NativeApi;
 internal static class NativeIntrinsicEmitter
 {
     /// <summary>
+    /// Merges the intrinsic definitions that declare the same class (namespace and <c>className</c>) into one, in the
+    /// given order, so that several YAML files can add members to one class (<c>Gpu</c>) and its nested classes.
+    /// Library and module definitions are dropped.
+    /// </summary>
+    public static ImmutableArray<NativeApiDefinition> MergeByClass(ImmutableArray<NativeApiDefinition> definitions)
+    {
+        var merged = ImmutableArray.CreateBuilder<NativeApiDefinition>();
+        foreach (var def in definitions)
+        {
+            if (def.BindingKind != NativeApiBindingKind.Intrinsic)
+            {
+                continue;
+            }
+
+            var target = FindClass(merged, def);
+            if (target is null)
+            {
+                merged.Add(new NativeApiDefinition
+                {
+                    Namespace = def.Namespace,
+                    ClassName = def.ClassName,
+                    ClassNameLine = def.ClassNameLine,
+                    Methods = def.Methods,
+                    Classes = def.Classes,
+                });
+                continue;
+            }
+
+            target.Methods = target.Methods.AddRange(def.Methods);
+            target.Classes = target.Classes.AddRange(def.Classes);
+        }
+
+        return merged.ToImmutable();
+    }
+
+    private static NativeApiDefinition? FindClass(ImmutableArray<NativeApiDefinition>.Builder merged, NativeApiDefinition def)
+    {
+        foreach (var candidate in merged)
+        {
+            if (candidate.Namespace == def.Namespace && candidate.ClassName == def.ClassName)
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Emits GPU-only intrinsic stubs.
     /// </summary>
     public static string EmitIntrinsics(NativeApiDefinition def)
@@ -57,6 +106,14 @@ internal static class NativeIntrinsicEmitter
             return;
         }
 
+        foreach (var documented in def.Classes)
+        {
+            if (documented.Name == classPath)
+            {
+                NativeApiDocumentation.EmitXmlDoc(writer, documented.XmlDoc);
+            }
+        }
+
         writer.AppendExcludeFromCodeCoverageAttribute();
         writer.Line($"public static partial class {classPath[segmentStart..]}");
         using (writer.Scope())
@@ -101,7 +158,9 @@ internal static class NativeIntrinsicEmitter
             var nativeName = m.NativeName ?? m.Name;
             writer.Line($"[Kassyi.GSharp.Core.CudaIntrinsic(\"{nativeName}\")]");
 
-            writer.Append($"public static {returnType} {m.Name}");
+            writer.Append("public static ");
+            writer.AppendIf(m.IsUnsafe, "unsafe ");
+            writer.Append($"{returnType} {m.Name}");
             AppendTypeParameterList(writer, m);
             using (writer.Parentheses())
             {
@@ -123,11 +182,31 @@ internal static class NativeIntrinsicEmitter
             }
 
             AppendConstraintClauses(writer, m, placeholder, t);
-            writer.AppendLine(returnType == "void"
-                ? " => Kassyi.GSharp.Core.GpuOnlyException.Throw();"
-                : $" => Kassyi.GSharp.Core.GpuOnlyException.Throw<{returnType}>();");
+            AppendThrowingBody(writer, returnType);
             writer.Line();
         }
+    }
+
+    //  => GpuOnlyException.Throw();  |  => GpuOnlyException.Throw<<return type>>();
+    //  => [(<pointer type>)]GpuOnlyException.Throw<nint>().ToPointer();
+    private static void AppendThrowingBody(SourceWriter writer, string returnType)
+    {
+        if (returnType == "void")
+        {
+            writer.AppendLine(" => Kassyi.GSharp.Core.GpuOnlyException.Throw();");
+            return;
+        }
+
+        // [WHY] A pointer type cannot be a type argument, so a pointer is made from a thrown nint.
+        if (returnType.EndsWith("*", StringComparison.Ordinal))
+        {
+            writer.Append(" => ");
+            writer.AppendIf(returnType != "void*", $"({returnType})");
+            writer.AppendLine("Kassyi.GSharp.Core.GpuOnlyException.Throw<nint>().ToPointer();");
+            return;
+        }
+
+        writer.AppendLine($" => Kassyi.GSharp.Core.GpuOnlyException.Throw<{returnType}>();");
     }
 
     // <T1, T2>
