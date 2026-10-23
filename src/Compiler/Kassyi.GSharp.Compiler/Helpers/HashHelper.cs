@@ -1,3 +1,5 @@
+using Kassyi.GSharp.Hashing;
+
 namespace Kassyi.GSharp.Compiler.Helpers;
 
 internal static class HashHelper
@@ -42,20 +44,7 @@ internal static class HashHelper
     /// <summary>
     /// Computes a stable 64-bit FNV-1a hash of a string, the same in every process and on every machine.
     /// </summary>
-    public static ulong ComputeFnv1A64(string text)
-    {
-        unchecked
-        {
-            var hash = 14695981039346656037UL;
-            foreach (var c in text)
-            {
-                hash ^= c;
-                hash *= 1099511628211UL;
-            }
-
-            return hash;
-        }
-    }
+    public static ulong ComputeFnv1A64(string text) => Fnv1A64.Compute(text);
 
     /// <summary>
     /// Combines multiple object hashes into a single deterministic hash.

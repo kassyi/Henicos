@@ -23,6 +23,7 @@
   <ItemGroup>
     <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Helpers\CudaCapability.cs" Link="Helpers\CudaCapability.cs" />
     <Compile Include="..\..\..\src\Compiler\Kassyi.GSharp.Compiler\Helpers\HashHelper.cs" Link="Helpers\CompilerHashHelper.cs" />
+    <Compile Include="..\..\..\src\Shared\Hashing\Fnv1A64.cs" Link="Helpers\Fnv1A64.cs" />
     <Compile Include="..\..\Compiler\Kassyi.GSharp.Tests.Shared\Helpers\SnapshotNamingHelper.cs" Link="Helpers\SnapshotNamingHelper.cs" />
   </ItemGroup>
   <ItemGroup>
