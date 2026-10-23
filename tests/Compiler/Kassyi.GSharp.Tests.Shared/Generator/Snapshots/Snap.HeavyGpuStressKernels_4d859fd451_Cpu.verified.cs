@@ -121,27 +121,27 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Runtime__HeavyGpuStressKernels__MatrixMultiplyStressKernel(float[] a, float[] b, float[] c, int n, __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__HeavyGpuStressKernels__MatrixMultiplyStressKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int row = BlockIndex.Y * BlockDimension.Y + ThreadIndex.Y;
-            int col = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-            if (row < n && col < n)
-            {
-                float sum = 0;
-                for (int k = 0; k < n; k++)
-                {
-                    sum += a[row * n + k] * b[k * n + col];
-                }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int row = BlockIndex.Y * BlockDimension.Y + ThreadIndex.Y;
+int col = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+if (row < n && col < n)
+{
+float sum = 0;
+for (int k = 0; k < n; k++)
+{
+sum += a[row * n + k] * b[k * n + col];
+}
 
-                c[row * n + col] = sum;
-            }
+c[row * n + col] = sum;
+}
 
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -178,8 +178,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__HeavyGpuStressKernels__MatrixMultiplyStressKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__HeavyGpuStressKernels__MatrixMultiplyStressKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Runtime__HeavyGpuStressKernels__MatrixMultiplyStressKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

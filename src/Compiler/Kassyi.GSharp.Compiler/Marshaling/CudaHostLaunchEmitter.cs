@@ -175,8 +175,7 @@ internal static class CudaHostLaunchEmitter
             {
             if (s_hModule.HasValue) return s_hModule.Value;
 
-            var baseDir = System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location) ??
-                System.AppContext.BaseDirectory;
+            var baseDir = System.IO.Path.GetDirectoryName(typeof({{moduleContextName}}).Assembly.Location) ?? System.AppContext.BaseDirectory;
             var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_{{safeAssemblyName}}.gfatbin");
             if (!System.IO.File.Exists(fatbinPath))
             {

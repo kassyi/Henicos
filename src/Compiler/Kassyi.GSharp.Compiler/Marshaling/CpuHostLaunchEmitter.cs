@@ -109,9 +109,11 @@ internal static class CpuHostLaunchEmitter
             writer.AppendLine($"int {GSharpInternalNames.Launcher.ThreadsPerBlock} = (int)(blockDimX * blockDimY * blockDimZ);");
             writer.AppendLine(
                 $"var {GSharpInternalNames.Launcher.Contexts} = new {contextName}[{GSharpInternalNames.Launcher.TotalBlocks} * {GSharpInternalNames.Launcher.ThreadsPerBlock}];");
-            writer.AppendLine($"for (int i = 0; i < {GSharpInternalNames.Launcher.Contexts}.Length; i++) {{");
-            writer.AppendLine($"  {GSharpInternalNames.Launcher.Contexts}[i] = new {contextName}();");
-            writer.AppendLine("}");
+            writer.AppendLine($"for (int i = 0; i < {GSharpInternalNames.Launcher.Contexts}.Length; i++)");
+            using (writer.Scope())
+            {
+                writer.AppendLine($"{GSharpInternalNames.Launcher.Contexts}[i] = new {contextName}();");
+            }
 
             writer.AppendLine(
                 $"global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid({GSharpInternalNames.Launcher.TotalBlocks});");

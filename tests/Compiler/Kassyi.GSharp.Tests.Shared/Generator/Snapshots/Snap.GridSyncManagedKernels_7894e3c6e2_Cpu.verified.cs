@@ -138,37 +138,37 @@ public int nextVal;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalBarrierKernel(int[] buffer, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalBarrierKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            __gsharp_ctx.tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-            __gsharp_ctx.totalThreads = GridDimension.X * BlockDimension.X;
-            // Every thread writes its ID + 1 to the buffer
-            buffer[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
-            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
-            __gsharp_ctx.__gsharp_state = 1;
-            return;
-        }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+__gsharp_ctx.totalThreads = GridDimension.X * BlockDimension.X;
+// Every thread writes its ID + 1 to the buffer
+buffer[__gsharp_ctx.tid] = __gsharp_ctx.tid + 1;
+__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+__gsharp_ctx.__gsharp_state = 1;
+return;
+}
 
-        case 1:
-        {
-            __gsharp_ctx.nextId = (__gsharp_ctx.tid + 1) % __gsharp_ctx.totalThreads;
-            __gsharp_ctx.nextVal = buffer[__gsharp_ctx.nextId];
-            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
-            __gsharp_ctx.__gsharp_state = 2;
-            return;
-        }
+case 1:
+{
+__gsharp_ctx.nextId = (__gsharp_ctx.tid + 1) % __gsharp_ctx.totalThreads;
+__gsharp_ctx.nextVal = buffer[__gsharp_ctx.nextId];
+__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+__gsharp_ctx.__gsharp_state = 2;
+return;
+}
 
-        case 2:
-        {
-            // Write the result back (so we can assert it from the host)
-            // We write nextVal to buffer[tid]
-            buffer[__gsharp_ctx.tid] = __gsharp_ctx.nextVal;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+case 2:
+{
+// Write the result back (so we can assert it from the host)
+// We write nextVal to buffer[tid]
+buffer[__gsharp_ctx.tid] = __gsharp_ctx.nextVal;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -193,8 +193,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalBarrierKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalBarrierKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalBarrierKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;
@@ -415,82 +416,82 @@ public int localTid;
 public int stride;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel(int[] input, int[] blockSums, int[] totalSum, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel __gsharp_ctx) {
-        global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256, 0x7b4c93522e9874b8UL);
+global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256, 0x7b4c93522e9874b8UL);
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            __gsharp_ctx.tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-            __gsharp_ctx.myVal = input[__gsharp_ctx.tid];
-            __gsharp_ctx.localTid = ThreadIndex.X;
-            shared[__gsharp_ctx.localTid] = __gsharp_ctx.myVal;
-            __gsharp_ctx.__gsharp_state = 1;
-            return;
-        }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.tid = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+__gsharp_ctx.myVal = input[__gsharp_ctx.tid];
+__gsharp_ctx.localTid = ThreadIndex.X;
+shared[__gsharp_ctx.localTid] = __gsharp_ctx.myVal;
+__gsharp_ctx.__gsharp_state = 1;
+return;
+}
 
-        case 1:
-        {
-            __gsharp_ctx.stride = BlockDimension.X / 2;
-            goto case 2;
-        }
+case 1:
+{
+__gsharp_ctx.stride = BlockDimension.X / 2;
+goto case 2;
+}
 
-        case 2:
-        {
-            if (!(__gsharp_ctx.stride > 0))
-                goto case 5;
-            if (__gsharp_ctx.localTid < __gsharp_ctx.stride)
-            {
-                shared[__gsharp_ctx.localTid] += shared[__gsharp_ctx.localTid + __gsharp_ctx.stride];
-            }
+case 2:
+{
+if (!(__gsharp_ctx.stride > 0))
+goto case 5;
+if (__gsharp_ctx.localTid < __gsharp_ctx.stride)
+{
+shared[__gsharp_ctx.localTid] += shared[__gsharp_ctx.localTid + __gsharp_ctx.stride];
+}
 
-            __gsharp_ctx.__gsharp_state = 3;
-            return;
-        }
+__gsharp_ctx.__gsharp_state = 3;
+return;
+}
 
-        case 3:
-        {
-            goto case 4;
-        }
+case 3:
+{
+goto case 4;
+}
 
-        case 4:
-        {
-            __gsharp_ctx.stride >>= 1;
-            goto case 2;
-            goto case 5;
-        }
+case 4:
+{
+__gsharp_ctx.stride >>= 1;
+goto case 2;
+goto case 5;
+}
 
-        case 5:
-        {
-            // 3. Block 0 of each grid writes to blockSums
-            if (__gsharp_ctx.localTid == 0)
-            {
-                blockSums[BlockIndex.X] = shared[0];
-            }
+case 5:
+{
+// 3. Block 0 of each grid writes to blockSums
+if (__gsharp_ctx.localTid == 0)
+{
+blockSums[BlockIndex.X] = shared[0];
+}
 
-            __gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
-            __gsharp_ctx.__gsharp_state = 6;
-            return;
-        }
+__gsharp_ctx.__gsharp_yielded_for_grid_sync = true;
+__gsharp_ctx.__gsharp_state = 6;
+return;
+}
 
-        case 6:
-        {
-            // 4. Block 0 does the final reduction
-            if (BlockIndex.X == 0 && __gsharp_ctx.localTid == 0)
-            {
-                int sum = 0;
-                for (int i = 0; i < GridDimension.X; i++)
-                {
-                    sum += blockSums[i];
-                }
+case 6:
+{
+// 4. Block 0 does the final reduction
+if (BlockIndex.X == 0 && __gsharp_ctx.localTid == 0)
+{
+int sum = 0;
+for (int i = 0; i < GridDimension.X; i++)
+{
+sum += blockSums[i];
+}
 
-                totalSum[0] = sum;
-            }
+totalSum[0] = sum;
+}
 
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -527,8 +528,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__GridSyncManagedKernels__GlobalReductionKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

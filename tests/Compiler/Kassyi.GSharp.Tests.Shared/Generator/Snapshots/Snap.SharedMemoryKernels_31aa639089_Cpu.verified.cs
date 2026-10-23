@@ -129,36 +129,36 @@ public bool __gsharp_yielded_for_grid_sync;
 public int tid;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel(int[] input, int[] output, int length, __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel __gsharp_ctx) {
-        global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256, 0x1fd6d4cf4ba521cfUL);
+global::Kassyi.GSharp.Core.SharedMemory<int> shared = new SharedMemory<int>(256, 0x1fd6d4cf4ba521cfUL);
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            __gsharp_ctx.tid = ThreadIndex.X;
-            // Load into shared memory
-            if (__gsharp_ctx.tid < length)
-            {
-                shared[__gsharp_ctx.tid] = input[__gsharp_ctx.tid];
-            }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+__gsharp_ctx.tid = ThreadIndex.X;
+// Load into shared memory
+if (__gsharp_ctx.tid < length)
+{
+shared[__gsharp_ctx.tid] = input[__gsharp_ctx.tid];
+}
 
-            __gsharp_ctx.__gsharp_state = 1;
-            return;
-        }
+__gsharp_ctx.__gsharp_state = 1;
+return;
+}
 
-        case 1:
-        {
-            // Write to output in reverse order
-            if (__gsharp_ctx.tid < length)
-            {
-                int reversedIndex = length - 1 - __gsharp_ctx.tid;
-                output[__gsharp_ctx.tid] = shared[reversedIndex];
-            }
+case 1:
+{
+// Write to output in reverse order
+if (__gsharp_ctx.tid < length)
+{
+int reversedIndex = length - 1 - __gsharp_ctx.tid;
+output[__gsharp_ctx.tid] = shared[reversedIndex];
+}
 
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -189,8 +189,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__SharedMemoryKernels__ReverseArrayWithSharedMemoryKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

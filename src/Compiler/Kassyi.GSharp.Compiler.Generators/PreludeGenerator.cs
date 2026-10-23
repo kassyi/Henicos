@@ -25,7 +25,27 @@ public static class PreludeGenerator
         var rootPath = Path.Combine(resourcesDir, rootFileName);
         using var reader = new StreamReader(rootPath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
         var content = reader.ReadToEnd() + "\n";
-        return ResolveEmbeddedIncludes(resourcesDir, content, isCuda);
+        return RemoveIndentation(ResolveEmbeddedIncludes(resourcesDir, content, isCuda));
+    }
+
+    // Generated code is left-aligned (transpiler-emission §3); the resources stay indented for reading. They contain no
+    // raw string literal, so the leading whitespace of a line is never part of a value.
+    private static string RemoveIndentation(string text)
+    {
+        var builder = new StringBuilder(text.Length);
+        var atLineStart = true;
+        foreach (var c in text)
+        {
+            if (atLineStart && c is ' ' or '\t')
+            {
+                continue;
+            }
+
+            builder.Append(c);
+            atLineStart = c == '\n';
+        }
+
+        return builder.ToString();
     }
 
     private static string ResolveEmbeddedIncludes(string resourcesDir, string content, bool isCuda)

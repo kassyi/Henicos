@@ -23,8 +23,7 @@ lock (s_lock)
 {
 if (s_hModule.HasValue) return s_hModule.Value;
 
-var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_MegaTestCompilationBase).Assembly.Location) ??
-    System.AppContext.BaseDirectory;
+var baseDir = System.IO.Path.GetDirectoryName(typeof(GSharpModuleContext_MegaTestCompilationBase).Assembly.Location) ?? System.AppContext.BaseDirectory;
 var fatbinPath = System.IO.Path.Combine(baseDir, "Kassyi.GSharp.Kernels_MegaTestCompilationBase.gfatbin");
 if (!System.IO.File.Exists(fatbinPath))
 {

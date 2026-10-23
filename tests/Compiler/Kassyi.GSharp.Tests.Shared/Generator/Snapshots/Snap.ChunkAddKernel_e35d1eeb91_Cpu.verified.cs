@@ -129,34 +129,34 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel(uint[] dA, uint[] dB, uint[] dResult, long[] carryBuffer, int numWords, int chunkSize, __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            int chunkIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
-            int start = chunkIdx * chunkSize;
-            if (start >= numWords)
-            {
-                __gsharp_ctx.__gsharp_state = -1;
-                return;
-            }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+int chunkIdx = BlockIndex.X * BlockDimension.X + ThreadIndex.X;
+int start = chunkIdx * chunkSize;
+if (start >= numWords)
+{
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
 
-            int end = start + chunkSize;
-            if (end > numWords)
-                end = numWords;
-            ulong localCarry = 0;
-            for (int i = start; i < end; i++)
-            {
-                ulong current = (ulong)dA[i] + (ulong)dB[i] + localCarry;
-                dResult[i] = (uint)(current & 0xFFFFFFFF);
-                localCarry = current >> 32;
-            }
+int end = start + chunkSize;
+if (end > numWords)
+end = numWords;
+ulong localCarry = 0;
+for (int i = start; i < end; i++)
+{
+ulong current = (ulong)dA[i] + (ulong)dB[i] + localCarry;
+dResult[i] = (uint)(current & 0xFFFFFFFF);
+localCarry = current >> 32;
+}
 
-            carryBuffer[chunkIdx + 1] = (long)localCarry;
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+carryBuffer[chunkIdx + 1] = (long)localCarry;
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -199,8 +199,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Stdlib__GpuMath__BigNum__GpuBigIntKernels__ChunkAddKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

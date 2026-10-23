@@ -347,137 +347,137 @@ public float foreachSum;
 public Func<float, float, float> multiplier;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(int[] intInput, float[] floatInput, float[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, ulong[] globalCounter, int count, int dynamicSharedSize, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_ctx) {
-        SharedMemory<float> dynamicSharedMem = new SharedMemory<float>(dynamicSharedSize, 0xf4a8b89f8fdf4f71UL);
+SharedMemory<float> dynamicSharedMem = new SharedMemory<float>(dynamicSharedSize, 0xf4a8b89f8fdf4f71UL);
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            // SYN-94: Macro DSL
-            for (int tid = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; tid < (count); tid += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
-            {
-                // Local function with AggressiveInlining
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                int LocalInlineFunc(int x) => x + 5 - 5; // effectively x
-                // Tuple, tuple swap, & Inline out var (SYN-03)
-                (int a, int b) = (LocalInlineFunc(tid), tid * 2);
-                (a, b) = (b, a); // Swap
-                (a, b) = (b, a); // Swap back
-                __gsharp_ctx.ok = TryProcess(intInput[tid], out var processed);
-                __gsharp_ctx.bitwise = (a << 1) | (b >> 1) ^ 0xFF;
-                __gsharp_ctx.bitwise &= ~1;
-                __gsharp_ctx.mag = HelperMath(floatInput[tid], (float)processed);
-                __gsharp_ctx.mag = HelperMathAggressive(__gsharp_ctx.mag); // SYN-28
-                __gsharp_ctx.mag = (float)Math.Max(__gsharp_ctx.mag, config.FloatVal);
-                // SYN-01: Switch expression
-                __gsharp_ctx.mag += (tid % 3) switch
-                {
-                    0 => 1.0f,
-                    1 => 2.0f,
-                    _ => 3.0f
-                };
-                __gsharp_ctx.arr = new Tier1FixedArray();
-                __gsharp_ctx.arr[0] = __gsharp_ctx.mag;
-                __gsharp_ctx.arr[1] = __gsharp_ctx.mag * 2.0f;
-                __gsharp_ctx.arr[2] = __gsharp_ctx.mag * 3.0f;
-                __gsharp_ctx.arr[3] = __gsharp_ctx.mag * 4.0f;
-                __gsharp_ctx.sum = 0;
-                Gpu.ForUnroll(0, 4, i =>
-                {
-                    if (i != 1)
-                    {
-                        __gsharp_ctx.sum += __gsharp_ctx.arr[i];
-                    }
-                });
-                __gsharp_ctx.foreachSum = 0;
-                foreach (var val in __gsharp_ctx.arr)
-                {
-                    __gsharp_ctx.foreachSum += val;
-                }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+// SYN-94: Macro DSL
+for (int tid = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; tid < (count); tid += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+{
+// Local function with AggressiveInlining
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+int LocalInlineFunc(int x) => x + 5 - 5; // effectively x
+// Tuple, tuple swap, & Inline out var (SYN-03)
+(int a, int b) = (LocalInlineFunc(tid), tid * 2);
+(a, b) = (b, a); // Swap
+(a, b) = (b, a); // Swap back
+__gsharp_ctx.ok = TryProcess(intInput[tid], out var processed);
+__gsharp_ctx.bitwise = (a << 1) | (b >> 1) ^ 0xFF;
+__gsharp_ctx.bitwise &= ~1;
+__gsharp_ctx.mag = HelperMath(floatInput[tid], (float)processed);
+__gsharp_ctx.mag = HelperMathAggressive(__gsharp_ctx.mag); // SYN-28
+__gsharp_ctx.mag = (float)Math.Max(__gsharp_ctx.mag, config.FloatVal);
+// SYN-01: Switch expression
+__gsharp_ctx.mag += (tid % 3) switch
+{
+0 => 1.0f,
+1 => 2.0f,
+_ => 3.0f
+};
+__gsharp_ctx.arr = new Tier1FixedArray();
+__gsharp_ctx.arr[0] = __gsharp_ctx.mag;
+__gsharp_ctx.arr[1] = __gsharp_ctx.mag * 2.0f;
+__gsharp_ctx.arr[2] = __gsharp_ctx.mag * 3.0f;
+__gsharp_ctx.arr[3] = __gsharp_ctx.mag * 4.0f;
+__gsharp_ctx.sum = 0;
+Gpu.ForUnroll(0, 4, i =>
+{
+if (i != 1)
+{
+__gsharp_ctx.sum += __gsharp_ctx.arr[i];
+}
+});
+__gsharp_ctx.foreachSum = 0;
+foreach (var val in __gsharp_ctx.arr)
+{
+__gsharp_ctx.foreachSum += val;
+}
 
-                __gsharp_ctx.sum += __gsharp_ctx.foreachSum;
-                {
-                    ReadOnlySpan<float> coll = [1.0f, 2.0f, 3.0f, 4.0f];
-                    float collSum = 0;
-                    foreach (var val in coll)
-                    {
-                        collSum += val;
-                    }
+__gsharp_ctx.sum += __gsharp_ctx.foreachSum;
+{
+ReadOnlySpan<float> coll = [1.0f, 2.0f, 3.0f, 4.0f];
+float collSum = 0;
+foreach (var val in coll)
+{
+collSum += val;
+}
 
-                    __gsharp_ctx.sum += collSum + coll.Length;
-                }
+__gsharp_ctx.sum += collSum + coll.Length;
+}
 
-                {
-                    Span<float> stackBuf = stackalloc float[]
-                    {
-                        5.0f,
-                        10.0f,
-                        15.0f,
-                        20.0f
-                    };
-                    float stackSum = 0;
-                    foreach (var val in stackBuf)
-                    {
-                        stackSum += val;
-                    }
+{
+Span<float> stackBuf = stackalloc float[]
+{
+5.0f,
+10.0f,
+15.0f,
+20.0f
+};
+float stackSum = 0;
+foreach (var val in stackBuf)
+{
+stackSum += val;
+}
 
-                    __gsharp_ctx.sum += stackSum + stackBuf.Length;
-                }
+__gsharp_ctx.sum += stackSum + stackBuf.Length;
+}
 
-                __gsharp_ctx.multiplier = (float x, float m) => x * m;
-                __gsharp_ctx.sum = __gsharp_ctx.multiplier(__gsharp_ctx.sum, 2.0f);
-                // Atomic Operations (SYN-49)
-                if (__gsharp_ctx.ok && config.BoolVal)
-                {
-                    Gpu.AtomicAdd(ref globalCounter[0], (ulong)__gsharp_ctx.bitwise);
-                }
+__gsharp_ctx.multiplier = (float x, float m) => x * m;
+__gsharp_ctx.sum = __gsharp_ctx.multiplier(__gsharp_ctx.sum, 2.0f);
+// Atomic Operations (SYN-49)
+if (__gsharp_ctx.ok && config.BoolVal)
+{
+Gpu.AtomicAdd(ref globalCounter[0], (ulong)__gsharp_ctx.bitwise);
+}
 
-                dynamicSharedMem[ThreadIndex.X] = __gsharp_ctx.sum;
-                Gpu.SyncThreads(); // GBI-31
-                // Complex ternary (GSH-01)
-                float finalVal = (__gsharp_ctx.bitwise > 0) ? (dynamicSharedMem[ThreadIndex.X] > 10.0f ? 10.0f : dynamicSharedMem[ThreadIndex.X]) : 0.0f;
-                // SYN-14: fixed buffers inside structs
-                unsafe
-                {
-                    Tier1FixedBufferStruct fbs = new Tier1FixedBufferStruct();
-                    fbs.Data[0] = __gsharp_ctx.bitwise;
-                    finalVal += fbs.Data[0];
-                }
+dynamicSharedMem[ThreadIndex.X] = __gsharp_ctx.sum;
+Gpu.SyncThreads(); // GBI-31
+// Complex ternary (GSH-01)
+float finalVal = (__gsharp_ctx.bitwise > 0) ? (dynamicSharedMem[ThreadIndex.X] > 10.0f ? 10.0f : dynamicSharedMem[ThreadIndex.X]) : 0.0f;
+// SYN-14: fixed buffers inside structs
+unsafe
+{
+Tier1FixedBufferStruct fbs = new Tier1FixedBufferStruct();
+fbs.Data[0] = __gsharp_ctx.bitwise;
+finalVal += fbs.Data[0];
+}
 
-                // SYN-04 Null coalescing
-                int? maybeVal = default;
-                int actualVal = maybeVal ?? 5; // Should be 5
-                finalVal += actualVal;
-                // BCL-01 & BCL-02: System.Numerics.BitOperations
-                int popCount = System.Numerics.BitOperations.PopCount((uint)__gsharp_ctx.bitwise);
-                int leadingZeroes = System.Numerics.BitOperations.LeadingZeroCount((uint)__gsharp_ctx.bitwise);
-                finalVal += popCount + leadingZeroes;
-                // SYN-90: Complex Control Flow
-                int loopCounter = 0;
-                do
-                {
-                    if (loopCounter % 2 == 0)
-                    {
-                        if (finalVal < 1000.0f)
-                        {
-                            finalVal += 1.0f;
-                        }
-                    }
-                    else
-                    {
-                        finalVal -= 0.5f;
-                    }
+// SYN-04 Null coalescing
+int? maybeVal = default;
+int actualVal = maybeVal ?? 5; // Should be 5
+finalVal += actualVal;
+// BCL-01 & BCL-02: System.Numerics.BitOperations
+int popCount = System.Numerics.BitOperations.PopCount((uint)__gsharp_ctx.bitwise);
+int leadingZeroes = System.Numerics.BitOperations.LeadingZeroCount((uint)__gsharp_ctx.bitwise);
+finalVal += popCount + leadingZeroes;
+// SYN-90: Complex Control Flow
+int loopCounter = 0;
+do
+{
+if (loopCounter % 2 == 0)
+{
+if (finalVal < 1000.0f)
+{
+finalVal += 1.0f;
+}
+}
+else
+{
+finalVal -= 0.5f;
+}
 
-                    loopCounter++;
-                }
-                while (loopCounter < 3);
-                results[tid] = finalVal;
-            }
+loopCounter++;
+}
+while (loopCounter < 3);
+results[tid] = finalVal;
+}
 
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -520,8 +520,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

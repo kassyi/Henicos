@@ -114,35 +114,35 @@ public bool __gsharp_yielded_for_grid_sync;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Generator__ArraySyntaxTestKernels__ImplicitArrayFormsKernel(__gsharp_context_Kassyi__GSharp__Tests__Shared__Generator__ArraySyntaxTestKernels__ImplicitArrayFormsKernel __gsharp_ctx) {
 {
-    switch (__gsharp_ctx.__gsharp_state)
-    {
-        case 0:
-        {
-            // Valid implicit stackalloc
-            Span<int> implicitStackAlloc = stackalloc[]
-            {
-                1,
-                2,
-                3
-            };
-            // Implicit array creation
-            int[] implicitArray = new[]
-            {
-                4,
-                5,
-                6
-            };
-            // Collection expression (C# 12)
-            Span<int> collectionExpr = [7, 8, 9];
-            // Single element
-            Span<int> singleStackAlloc = stackalloc[]
-            {
-                42
-            };
-            __gsharp_ctx.__gsharp_state = -1;
-            return;
-        }
-    }
+switch (__gsharp_ctx.__gsharp_state)
+{
+case 0:
+{
+// Valid implicit stackalloc
+Span<int> implicitStackAlloc = stackalloc[]
+{
+1,
+2,
+3
+};
+// Implicit array creation
+int[] implicitArray = new[]
+{
+4,
+5,
+6
+};
+// Collection expression (C# 12)
+Span<int> collectionExpr = [7, 8, 9];
+// Single element
+Span<int> singleStackAlloc = stackalloc[]
+{
+42
+};
+__gsharp_ctx.__gsharp_state = -1;
+return;
+}
+}
 }
 }
 
@@ -161,8 +161,9 @@ if (global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ShouldUseManagedExecution(
 int __gsharp_total_blocks = (int)(gridDimX * gridDimY * gridDimZ);
 int __gsharp_threads_per_block = (int)(blockDimX * blockDimY * blockDimZ);
 var __gsharp_contexts = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Generator__ArraySyntaxTestKernels__ImplicitArrayFormsKernel[__gsharp_total_blocks * __gsharp_threads_per_block];
-for (int i = 0; i < __gsharp_contexts.Length; i++) {
-  __gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Generator__ArraySyntaxTestKernels__ImplicitArrayFormsKernel();
+for (int i = 0; i < __gsharp_contexts.Length; i++)
+{
+__gsharp_contexts[i] = new __gsharp_context_Kassyi__GSharp__Tests__Shared__Generator__ArraySyntaxTestKernels__ImplicitArrayFormsKernel();
 }
 global::Kassyi.GSharp.Core.ManagedGpuContext.InitializeGrid(__gsharp_total_blocks);
 bool anyGridActive = true;

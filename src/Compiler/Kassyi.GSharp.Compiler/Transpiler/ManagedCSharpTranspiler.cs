@@ -90,7 +90,8 @@ internal static class ManagedCSharpTranspiler
     }
 
 #pragma warning disable RS0030 // Final emission of a node; the text is not parsed, compared, or edited afterwards
-    private static string ToSource(SyntaxNode node) => node.NormalizeWhitespace().ToFullString();
+    // Generated code is left-aligned (transpiler-emission §3), so the normalized source has no indentation
+    private static string ToSource(SyntaxNode node) => node.NormalizeWhitespace(indentation: "").ToFullString();
 #pragma warning restore RS0030
 
     private static string RewriteAndNormalizeBody(BlockSyntax loweredBody, SemanticModel semanticModel,
@@ -359,7 +360,6 @@ internal static class ManagedCSharpTranspiler
 
         foreach (var localInit in localInits)
         {
-            writer.Append("        ");
             AppendFieldType(writer, localInit);
             writer.Append($" {localInit.Name}");
             if (localInit.Declarator.Initializer is { } initializer)
