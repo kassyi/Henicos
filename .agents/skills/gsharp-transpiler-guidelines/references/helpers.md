@@ -18,6 +18,7 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | Does a symbol carry a G# attribute? | `.HasAttribute` with a `KnownAttributes` constant (also checks the declaring namespace, `KnownAttributes.IsDeclaredInOwnerNamespace`) | `AttributeClass?.Name == "GpuKernelAttribute"` |
 | Get the attribute data | `.GetAttribute` | `GetAttributes()` plus a loop |
 | Is this a `[Constant]` (macro-injected) parameter? | `.IsConstantParameter` | `p.HasAttribute(KnownAttributes.Constant)` |
+| Is this a cooperative kernel (`[GpuKernel(Cooperative = true)]`, launched with `cuLaunchCooperativeKernel`)? | `.IsCooperativeKernel` | `GetAttribute(GpuKernel)` plus a search of `NamedArguments` for `"Cooperative"` |
 | Compare symbols | `.IsEqualTo` | `SymbolEqualityComparer.Default.Equals` spelled out |
 | Query a collection (`Any`, `All`, `Count`, `First`, `Where` / `Select`) | `.AsStackEnumerable` on an array, `ImmutableArray`, `IReadOnlyList`, `SyntaxList`, `SeparatedSyntaxList` or `SyntaxTokenList`, then the StackLinq operator with a `static` lambda (`Kassyi.ZeroAlloc.Linq.Embedded`); an outer value goes through the state overload (`Any(shortName, static (a, name) => ...)`) | a hand-written search loop, `System.Linq`, a capturing lambda |
 | Is the namespace `Kassyi.GSharp.Core` / `System` / `System.Numerics` / `System.Runtime.*`? | `.IsCoreNamespace`, `.IsSystemNamespace`, `.IsSystemOrNumerics`, `.IsSystemRuntimeCompilerServices`, `.IsSystemRuntimeInteropServices` | `ToDisplayString() == "System"` |

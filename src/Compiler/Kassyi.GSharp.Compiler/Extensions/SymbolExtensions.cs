@@ -253,6 +253,16 @@ internal static class SymbolExtensions
         parameter.HasAttribute(KnownAttributes.Constant);
 
     /// <summary>
+    /// Whether <paramref name="method"/> is a <c>[GpuKernel(Cooperative = true)]</c> kernel, which the launcher starts
+    /// with <c>cuLaunchCooperativeKernel</c> and which alone may call <c>Gpu.SyncGrid</c>.
+    /// </summary>
+    public static bool IsCooperativeKernel(this IMethodSymbol method) =>
+        method.GetAttribute(KnownAttributes.GpuKernel) is { } kernelAttr &&
+        kernelAttr.NamedArguments
+            .AsStackEnumerable()
+            .Any(static namedArg => namedArg is { Key: "Cooperative", Value.Value: true });
+
+    /// <summary>
     /// Gets the first attribute matching the specified short name, or null if none found.
     /// </summary>
     public static AttributeData? GetAttribute(this ISymbol symbol, string shortName) =>

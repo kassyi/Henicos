@@ -313,11 +313,7 @@ internal static class KernelLaunchEmitter
 
     private static void WriteLaunchKernelCall(SourceWriter writer, IMethodSymbol method)
     {
-        var kernelAttr = method.GetAttribute(KnownAttributes.GpuKernel);
-        var isCooperative = kernelAttr != null &&
-            kernelAttr.NamedArguments
-                .AsStackEnumerable()
-                .Any(static namedArg => namedArg is { Key: "Cooperative", Value.Value: true });
+        var isCooperative = method.IsCooperativeKernel();
 
         writer.Append("CudaException.ThrowIfError");
         using (writer.Parentheses())

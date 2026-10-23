@@ -85,7 +85,7 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
         }
 
         if (context.MethodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
-            !IsCooperativeKernel(context.MethodSymbol))
+            !context.MethodSymbol.IsCooperativeKernel())
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.SyncGridRequiresCooperativeKernel,
@@ -317,18 +317,5 @@ internal sealed class GpuMacroArgumentRule : ISyntaxValidationRule<InvocationExp
             expr,
             paramName,
             macroName);
-    }
-
-    private static bool IsCooperativeKernel(IMethodSymbol methodSymbol)
-    {
-        var kernelAttr = methodSymbol.GetAttribute(KnownAttributes.GpuKernel);
-        if (kernelAttr == null)
-        {
-            return false;
-        }
-
-        return kernelAttr.NamedArguments
-            .AsStackEnumerable()
-            .Any(static namedArg => namedArg is { Key: "Cooperative", Value.Value: true });
     }
 }
