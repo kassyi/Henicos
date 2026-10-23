@@ -80,4 +80,18 @@ public class StructAbiTests
         Assert.Equal(new Kassyi.GSharp.Core.Float3(2f, 3f, 4f), data.B);
         Assert.Equal(8, data.C);
     }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void ComputedPropertyStruct_DeviceDeclaresTheComputedProperty()
+    {
+        var device = MeasureOnDevice(static layout => StructAbiKernels.LaunchMeasureComputedPropertyKernel(layout));
+
+        // Known mismatch (#468, to be fixed in the follow-up stage): the device declares the computed property Sum as
+        // a member (C at 8, size 12) while the host layout holds only the real fields A and C (C at 4, size 8).
+        Assert.Equal((8, 12), device);
+        Assert.Equal(4, (int)Marshal.OffsetOf<StructAbiKernels.AotContexts.AbiComputedPropertyStruct>("C"));
+        Assert.Equal(8, Marshal.SizeOf<StructAbiKernels.AotContexts.AbiComputedPropertyStruct>());
+    }
 }
