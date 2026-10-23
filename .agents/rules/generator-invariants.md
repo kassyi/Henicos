@@ -21,7 +21,7 @@ When transpiling variable references (esp. `ref`/`out` arguments), query the `Se
 `var` maps to `auto`. Never allow `var` initialized from an untyped bare integer literal (`var x = 0;`); require explicit suffixes (`0u`, `1L`) to avoid NVCC/Roslyn signedness divergence. Literals with a decimal point or exponent are exempt.
 
 ## 7. Guard Physical File I/O Against IDE Design-Time Workers
-When a generator writes AOT artifacts (`.g.cu` / `.g.cpp`, e.g. `GpuKernelGenerator.WriteUnityAotArtifact`) to `$(IntermediateOutputPath)`, skip the physical write when `IsDesignTimeCompilation(compilation)` is true.
+When a generator writes AOT artifacts (`.g.cu` / `.g.cpp`, written by `Aot/AotArtifactWriter.Write`) to `$(IntermediateOutputPath)`, skip the physical write when `IsDesignTimeCompilation(compilation)` is true.
 - **Why**: IDE workers (`JetBrains.Roslyn.Worker`, `ServiceHub.RoslynCodeAnalysisService`, `LanguageServer`, `OmniSharp`) read `build_property.IntermediateOutputPath` and run generators on every change. They race with `csc.exe`/`nvcc`/`cl.exe`/`g++` and overwrite valid artifacts using stale in-memory `CompilationReference`s (`CandidateReason.Ambiguous`).
 - **Pitfall**: A worker that loaded an older `Kassyi.GSharp.Compiler.dll` keeps overwriting `obj/` until restarted.
 

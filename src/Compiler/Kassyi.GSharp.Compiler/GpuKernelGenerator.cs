@@ -1,3 +1,4 @@
+using Kassyi.GSharp.Compiler.Aot;
 using Kassyi.GSharp.Compiler.Models;
 
 namespace Kassyi.GSharp.Compiler;
@@ -323,9 +324,15 @@ public class GpuKernelGenerator : IIncrementalGenerator
             .AsStackEnumerable()
             .AddIf(distinctDeviceMethods, new HashSet<TranspiledDeviceMethodResult>(), static (m, seen) => seen.Add(m));
 
-        var commonDeviceSource =
-            GenerateCommonDeviceSource(distinctDeviceMethods, context, isCuda);
-        var preludeSource = GetPreludeSource(dialect);
+        foreach (var method in distinctDeviceMethods)
+        {
+            method.Diagnostics
+                .AsStackEnumerable()
+                .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
+        }
+
+        var commonDeviceSource = NativeModuleAssembler.AssembleDeviceSource(distinctDeviceMethods, isCuda);
+        var preludeSource = NativeModuleAssembler.GetPreludeSource(dialect);
 
         EmitSharedSources(context, config, preludeSource, commonDeviceSource);
 
@@ -366,31 +373,17 @@ public class GpuKernelGenerator : IIncrementalGenerator
             EmitManagedDeviceStateMachines(distinctDeviceMethods, context);
         }
 
-        var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
-        var safeAssemblyName = AotHostNames.ToSafeIdentifier(assemblyName);
-        var requiredIncludes = new HashSet<string>();
-        distinctKernelMethods
-            .AsStackEnumerable()
-            .SelectMany(static method => method.RequiredIncludes
-                .AsStackEnumerable()
-            ).AddTo(requiredIncludes);
-        distinctDeviceMethods
-            .AsStackEnumerable()
-            .SelectMany(static method => method.RequiredIncludes
-                .AsStackEnumerable()
-            ).AddTo(requiredIncludes);
-
-        if (!IsDesignTimeCompilation(compilation))
-        {
-            WriteUnityAotArtifact(safeAssemblyName, config, preludeSource, commonDeviceSource,
-                allKernelsSource.ToString(), dialect, context, requiredIncludes);
-        }
+        var requiredIncludes = NativeModuleAssembler.CollectIncludes(distinctKernelMethods, distinctDeviceMethods);
+        var bodySource = NativeModuleAssembler.AssembleBody(requiredIncludes, preludeSource, commonDeviceSource,
+            allKernelsSource.ToString());
+        AotArtifactWriter.Write(compilation, config, bodySource, context);
 
         if (!isCuda)
         {
             return;
         }
 
+        var assemblyName = compilation.AssemblyName ?? "UnknownAssembly";
         var contextSource = WrapperEmitter.GenerateModuleContextClass(assemblyName, distinctKernelMethods);
         context.AddSource($"{AotHostNames.GetModuleContextName(assemblyName)}.g.cs",
             SourceText.From(contextSource, Encoding.UTF8));
@@ -525,147 +518,6 @@ public class GpuKernelGenerator : IIncrementalGenerator
         writer.AppendFullyQualifiedCsharpName(type);
         return writer.ToString();
     }
-
-    private static bool IsDesignTimeCompilation(Compilation compilation)
-    {
-        var domainName = AppDomain.CurrentDomain.FriendlyName;
-        if ((domainName.IndexOf("Roslyn.Worker", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("JetBrains", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("ServiceHub", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("LanguageServer", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("OmniSharp", StringComparison.OrdinalIgnoreCase) >= 0))
-        {
-            return true;
-        }
-
-        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        if ((baseDir.IndexOf("resharper", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             baseDir.IndexOf("jetbrains", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             baseDir.IndexOf("ServiceHub", StringComparison.OrdinalIgnoreCase) >= 0))
-        {
-            return true;
-        }
-
-        foreach (var reference in compilation.References)
-        {
-            if (reference is CompilationReference)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static void WriteUnityAotArtifact(string safeAssemblyName, GeneratorConfig config,
-        string preludeSource, string commonDeviceSource, string allKernelsSource, ITranspilerDialect dialect,
-        SourceProductionContext context, HashSet<string> requiredIncludes)
-    {
-        var includesBuilder = new StringBuilder();
-        foreach (var inc in requiredIncludes)
-        {
-            includesBuilder.AppendLine($"#include {inc}");
-        }
-        var bodySource = includesBuilder + preludeSource + commonDeviceSource + allKernelsSource;
-        var sourceHash = GSharpNameEncoding.ComputeSourceHash(bodySource);
-        var fullSource = GSharpNameEncoding.FormatSymbolHeaderLine(sourceHash) + "\n" + bodySource;
-        var dialectName = dialect.IsCuda ? "Cuda" : "Cpu";
-        var gsymContent = GSharpNameEncoding.BuildSymbolFileContent(bodySource, dialectName, static id => GlobalCppNames.TryGetFullName(id, out var full) ? full : null);
-
-        var ext = dialect.IsCuda ? ".g.cu" : ".g.cpp";
-        var fileName = $"Kassyi.GSharp.Kernels_{safeAssemblyName}{ext}";
-        var safeIntermediateOutputPath = config.IntermediateOutputPath ?? "";
-        if (string.IsNullOrEmpty(safeIntermediateOutputPath))
-        {
-            return;
-        }
-
-        var filePath = Path.Combine(safeIntermediateOutputPath, fileName);
-        var gsymFilePath = filePath + ".gsym.json";
-
-#pragma warning disable RS1035 // Do not do file IO in analyzers
-        try
-        {
-            if (!Directory.Exists(safeIntermediateOutputPath))
-            {
-                Directory.CreateDirectory(safeIntermediateOutputPath);
-            }
-
-            File.WriteAllText(filePath, fullSource);
-            File.WriteAllText(gsymFilePath, gsymContent);
-        }
-        catch (Exception ex)
-        {
-            // Ignore IO errors on best-effort basis, but report them as an info diagnostic
-            var diagnostic = Diagnostic.Create(
-                GSharpDiagnostics.AotArtifactWriteFailed,
-                Location.None,
-                filePath,
-                ex.Message);
-            context.ReportDiagnostic(diagnostic);
-        }
-#pragma warning restore RS1035
-    }
-
-    private static string GenerateCommonDeviceSource(IReadOnlyList<TranspiledDeviceMethodResult> deviceMethods,
-        SourceProductionContext context, bool isCuda)
-    {
-        var deviceSourceBuilder = new StringBuilder();
-
-        // Pass 1: Forward declarations
-        foreach (var method in deviceMethods)
-        {
-            method.Diagnostics
-                .AsStackEnumerable()
-                .Do(context, static (diag, ctx) => ctx.ReportDiagnostic(diag.Diagnostic));
-
-            deviceSourceBuilder.AppendLine(method.GetSignature(isCuda));
-        }
-
-        // Pass 2: Method bodies. A frame embeds the frames of its calls by value, so callees come first (CPU dialects).
-        var methodsByFrame = new Dictionary<string, int>(StringComparer.Ordinal);
-        for (var i = 0; i < deviceMethods.Count; i++)
-        {
-            if (deviceMethods[i].FrameName.Length > 0)
-            {
-                methodsByFrame[deviceMethods[i].FrameName] = i;
-            }
-        }
-
-        var emitted = new bool[deviceMethods.Count];
-        for (var i = 0; i < deviceMethods.Count; i++)
-        {
-            appendBody(i);
-        }
-
-        return deviceSourceBuilder.ToString();
-
-        void appendBody(int index)
-        {
-            if (emitted[index])
-            {
-                return;
-            }
-
-            emitted[index] = true;
-            var method = deviceMethods[index];
-            if (!isCuda)
-            {
-                foreach (var dependency in method.FrameDependencies)
-                {
-                    if (methodsByFrame.TryGetValue(dependency, out var dependencyIndex))
-                    {
-                        appendBody(dependencyIndex);
-                    }
-                }
-            }
-
-            deviceSourceBuilder.AppendLine(method.GetBody(isCuda));
-        }
-    }
-
-    private static string GetPreludeSource(ITranspilerDialect dialect) =>
-        dialect.IsCuda ? GSharpPreludeResources.Cuda : GSharpPreludeResources.Cpp;
 
     private static ImmutableArray<string> CombineIncludes(HashSet<string> a, HashSet<string> b)
     {
