@@ -27,14 +27,32 @@ internal static class GpuOperatorMacroTranspiler
             return false;
         }
 
-        var (leftOp, rightOp, extraArg) = ExtractOperands(macro.OperatorCall);
-        var resultOp = assignment.Left;
-        var hasContext = targetMethod.Parameters.Length == macro.MaxParameterCount;
+        ISymbol? contextVariable = null;
+        if (targetMethod.Parameters.Length == macro.MaxParameterCount &&
+            !TryFindContextVariable(assignment, targetMethod, context.Query.SemanticModel, out contextVariable,
+                out var failure))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, assignment, failure);
+            return false;
+        }
 
-        context.Emitter.Writer.Append(macro.TargetMethodName);
+        var (leftOp, rightOp, extraArg) = ExtractOperands(macro.OperatorCall);
+
+        // [WHY] The same resolver as the declaration, so the call names the renamed (and overload-numbered) function.
+        CppNameResolver.AppendSymbolName(targetMethod, ref context);
         using (context.Emitter.Writer.Parentheses())
         {
-            EmitMacroArguments(targetMethod, resultOp, leftOp, rightOp, extraArg, hasContext, ref context);
+            var parameterIndex = 0;
+            if (contextVariable != null)
+            {
+                AppendContextArgument(contextVariable, targetMethod.Parameters[parameterIndex++], assignment,
+                    ref context);
+            }
+
+            AppendOperand(assignment.Left, targetMethod, ref parameterIndex, ref context);
+            AppendOperand(leftOp, targetMethod, ref parameterIndex, ref context);
+            AppendOperand(rightOp, targetMethod, ref parameterIndex, ref context);
+            AppendOperand(extraArg, targetMethod, ref parameterIndex, ref context);
         }
 
         context.Emitter.Writer.AppendLine(";");
@@ -159,69 +177,175 @@ internal static class GpuOperatorMacroTranspiler
             _ => (null, null, null)
         };
 
-    private static void EmitMacroArguments(
+    /// <summary>
+    /// Finds the variable that a call of <paramref name="targetMethod"/> passes as its context: the one parameter or local
+    /// of the type of the first parameter that is in scope at <paramref name="assignment"/>. Without a single one,
+    /// <paramref name="failure"/> is the message argument of GSH0003.
+    /// </summary>
+    /// <remarks>
+    /// [WHY] The operator has no place for the context, so it is found by type, as Scala resolves a <c>using</c> parameter
+    /// and Kotlin a context parameter: no candidate or several candidates is an error rather than a guess. C# itself
+    /// passes no implicit argument; its nearest construct, <c>[InterpolatedStringHandlerArgument]</c>, names the
+    /// argument in an attribute, which would add public API.
+    /// </remarks>
+    private static bool TryFindContextVariable(
+        AssignmentExpressionSyntax assignment,
         IMethodSymbol targetMethod,
-        ExpressionSyntax resultOp,
-        ExpressionSyntax? leftOp,
-        ExpressionSyntax? rightOp,
-        ExpressionSyntax? extraArg,
-        bool hasContext,
+        SemanticModel semanticModel,
+        [NotNullWhen(true)] out ISymbol? variable,
+        [NotNullWhen(false)] out string? failure)
+    {
+        variable = null;
+        failure = null;
+        var contextType = targetMethod.Parameters[0].Type;
+        var candidates = ImmutableArray.CreateBuilder<ISymbol>();
+
+        // A lowered node is looked up at its place in the user's source, where the semantic model has its scope
+        var location = semanticModel.GetReportLocation(assignment);
+        if (location.SourceTree == semanticModel.SyntaxTree)
+        {
+            var position = location.SourceSpan.Start;
+            semanticModel.LookupSymbols(position)
+                .AsStackEnumerable()
+                .Where((Type: contextType, Position: position), static (symbol, s) =>
+                    IsContextCandidate(symbol, s.Type, s.Position)
+                ).AddTo(candidates);
+        }
+
+        if (candidates.Count == 1)
+        {
+            variable = candidates[0];
+            return true;
+        }
+
+        var target = $"{targetMethod.ContainingType.Name}.{targetMethod.Name}";
+        var type = contextType.Name;
+        failure = candidates.Count == 0
+            ? $"Operator macro target '{target}' takes a context of type '{type}', but no parameter or local of that type is in scope"
+            : $"Operator macro target '{target}' takes a context of type '{type}', but {candidates.Count} parameters or locals of that type are in scope ({FormatNames(candidates)})";
+        return false;
+    }
+
+    // A parameter, or a local declared before the call; the scope of a local covers its whole block
+    private static bool IsContextCandidate(ISymbol symbol, ITypeSymbol contextType, int position) => symbol switch
+    {
+        IParameterSymbol parameter => SymbolEqualityComparer.Default.Equals(parameter.Type, contextType),
+        ILocalSymbol local => SymbolEqualityComparer.Default.Equals(local.Type, contextType) &&
+                              local.Locations.Length > 0 &&
+                              local.Locations[0].SourceSpan.End <= position,
+        _ => false
+    };
+
+    private static string FormatNames(ImmutableArray<ISymbol>.Builder candidates)
+    {
+        var names = new StringBuilder();
+        foreach (var candidate in candidates)
+        {
+            names.Append(names.Length > 0 ? ", '" : "'").Append(candidate.Name).Append('\'');
+        }
+
+        return names.ToString();
+    }
+
+    // <operand> or &<operand>, after a comma unless it is the first argument; nothing when the operator has no such operand
+    private static void AppendOperand(ExpressionSyntax? operand, IMethodSymbol targetMethod, ref int parameterIndex,
         ref TranspileContext context)
     {
-        var isFirst = true;
-        var paramIndex = 0;
-
-        if (hasContext)
+        if (operand == null)
         {
-            appendArg(null, "ctx", ref context);
+            return;
         }
 
-        appendArg(resultOp, null, ref context);
-
-        if (leftOp != null)
+        AppendSeparator(parameterIndex, ref context);
+        var parameter = targetMethod.Parameters[parameterIndex++];
+        if (IsPassedByReference(parameter) && RefSyntaxHelper.NeedsAddressOf(operand, context.Query.SemanticModel))
         {
-            appendArg(leftOp, null, ref context);
+            context.Emitter.Writer.Append('&');
         }
 
-        if (rightOp != null)
+        context.Visitor.Visit(operand);
+    }
+
+    // The context variable as RoslynToCudaVisitor.VisitIdentifierName and RefSyntaxHelper emit a reference to it
+    private static void AppendContextArgument(ISymbol variable, IParameterSymbol parameter,
+        AssignmentExpressionSyntax assignment, ref TranspileContext context)
+    {
+        var model = context.Query.SemanticModel;
+        var writer = context.Emitter.Writer;
+
+        // [WHY] Lowering moves a local that lives across a barrier into the state machine frame and rewrites every
+        // reference to it; the call is not one of those references, so it copies one of them.
+        if (FindLoweredReference(assignment, variable, model) is { } reference)
         {
-            appendArg(rightOp, null, ref context);
+            if (IsPassedByReference(parameter) && RefSyntaxHelper.NeedsAddressOf(reference, model))
+            {
+                writer.Append('&');
+            }
+
+            context.Visitor.Visit(reference);
+            return;
         }
 
-        if (extraArg != null)
+        if (IsPassedByReference(parameter) &&
+            variable is not IParameterSymbol { RefKind: RefKind.In or RefKind.RefReadOnlyParameter })
         {
-            appendArg(extraArg, null, ref context);
+            writer.Append('&');
         }
 
-        void appendArg(ExpressionSyntax? expr, string? rawString, ref TranspileContext localContext)
+        if (context.Emitter.TryGetOverride(variable.Name, out var overrideValue))
         {
-            if (!isFirst)
+            overrideValue.WriteTo(context.Visitor);
+            return;
+        }
+
+        if (variable is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true })
+        {
+            using (writer.Parentheses())
             {
-                localContext.Emitter.Writer.Append(',');
+                writer.Append('*');
+                CppNameResolver.AppendSymbolName(variable, ref context);
             }
 
-            isFirst = false;
+            return;
+        }
 
-            var param = targetMethod.Parameters[paramIndex++];
-            var isPointer = param.RefKind is RefKind.Ref or RefKind.Out or RefKind.In;
+        CppNameResolver.AppendSymbolName(variable, ref context);
+    }
 
-            if (isPointer && rawString != null)
-            {
-                localContext.Emitter.Writer.Append($"&{rawString}");
-            }
-            else if (rawString != null)
-            {
-                localContext.Emitter.Writer.Append(rawString);
-            }
-            else if (expr != null)
-            {
-                if (isPointer && RefSyntaxHelper.NeedsAddressOf(expr, localContext.Query.SemanticModel))
-                {
-                    localContext.Emitter.Writer.Append("&");
-                }
+    // A reference to variable in the lowered body that holds assignment (__gsharp_sm_ctx-><name> when hoisted), or null
+    // when the body is the user's own tree or does not refer to it
+    private static ExpressionSyntax? FindLoweredReference(AssignmentExpressionSyntax assignment, ISymbol variable,
+        SemanticModel semanticModel)
+    {
+        if (assignment.SyntaxTree == semanticModel.SyntaxTree)
+        {
+            return null;
+        }
 
-                localContext.Visitor.Visit(expr);
-            }
+        var reference = assignment.SyntaxTree.GetRoot()
+            .DescendantNodes()
+            .AsStackEnumerable()
+            .OfType<IdentifierNameSyntax>()
+            .FirstOrDefault((Model: semanticModel, Variable: variable), static (identifier, s) =>
+                SymbolEqualityComparer.Default.Equals(
+                    s.Model.GetSymbol(identifier) ?? s.Model.GetDeclaredSymbol<ISymbol>(identifier),
+                    s.Variable
+                )
+            );
+
+        return reference?.Parent is MemberAccessExpressionSyntax access && access.Name == reference
+            ? access
+            : reference;
+    }
+
+    private static bool IsPassedByReference(IParameterSymbol parameter) =>
+        parameter.RefKind is RefKind.Ref or RefKind.Out or RefKind.In;
+
+    private static void AppendSeparator(int parameterIndex, ref TranspileContext context)
+    {
+        if (parameterIndex > 0)
+        {
+            context.Emitter.Writer.Append(',');
         }
     }
 }

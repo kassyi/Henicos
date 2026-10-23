@@ -6,8 +6,6 @@ namespace Kassyi.GSharp.Tests.Shared.Generators;
 [Category(TestCategory.Compiler)]
 public class MacroContextNameGeneratorTests
 {
-    private const string KnownBugSkipReason = "Operator macro calls pass an undeclared ctx (#477)";
-
     private static string Generate(string dialect)
     {
         var source = RoslynTestUtility.ReadTestCase("Generators/GpuKernel_MacroContextName.cu.cs");
@@ -15,7 +13,7 @@ public class MacroContextNameGeneratorTests
         return string.Join("\n", driver.GetRunResult().GeneratedTrees.Select(static t => t.GetText().ToString()));
     }
 
-    [Theory(Skip = KnownBugSkipReason)]
+    [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]
@@ -26,9 +24,10 @@ public class MacroContextNameGeneratorTests
         Assert.Contains("MacroCtxAdd(", text);
         // The kernel's context parameter is 'bigCtx'; the call must not refer to an undeclared 'ctx'.
         Assert.DoesNotContain("MacroCtxAdd(&ctx", text);
+        Assert.Contains("__MacroCtxAdd(&__gsharp_id_0_bigCtx,", text);
     }
 
-    [Theory(Skip = KnownBugSkipReason)]
+    [Theory]
     [InlineData("Cpu")]
     [InlineData("Cuda")]
     [Scenario(TestScenario.SadPath)]

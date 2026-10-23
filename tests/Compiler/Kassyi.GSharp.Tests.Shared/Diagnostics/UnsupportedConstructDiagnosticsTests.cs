@@ -134,6 +134,25 @@ public class UnsupportedConstructDiagnosticsTests
             diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "'OperatorMacroTargets.Missing'"));
     }
 
+    // NoContextKernel has no variable of the context type; TwoContextsKernel has two before the call (innermost first)
+    // and one after it
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_OperatorMacroWithoutSingleContext_ReportsGsh0003AtTheAssignment(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/OperatorMacroContext.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 41, 9, 41, 18)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "no parameter or local of that type"));
+        Assert.Equal(
+            [(Analyzer, 53, 9, 53, 18)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "2 parameters or locals of that type are in scope ('second', 'first')"));
+        Assert.Equal(2, diagnostics.Length);
+    }
+
     // StructSizeDiagnostics: SharedMemory<double>(5000) is 40000 bytes; 4096 doubles (exactly 32768 bytes) and 10000
     // bytes are not reported. ComprehensiveSpecKernel: SharedMemory<int>(10000); the dynamic size is not checked.
     [Theory]

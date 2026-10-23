@@ -125,9 +125,9 @@ __gsharp_switch_1_state_0:
 __gsharp_ty_TestNamespace__DummyRef __gsharp_id_4_a = __gsharp_id_1_dA;
 __gsharp_ty_TestNamespace__DummyRef __gsharp_id_5_b = __gsharp_id_2_dB;
 __gsharp_ty_TestNamespace__DummyRef __gsharp_id_6_c = __gsharp_id_3_dResult;
-DummyOp(&ctx,__gsharp_id_6_c,__gsharp_id_4_a,__gsharp_id_5_b);
-DummyUnaryOp(__gsharp_id_6_c,__gsharp_id_4_a);
-DummyShiftOp(ctx,__gsharp_id_6_c,__gsharp_id_4_a,5);
+__gsharp_fn_TestNamespace__DummyKernels__DummyOp(&__gsharp_id_0_ctx,__gsharp_id_6_c,__gsharp_id_4_a,__gsharp_id_5_b);
+__gsharp_fn_TestNamespace__DummyKernels__DummyUnaryOp(__gsharp_id_6_c,__gsharp_id_4_a);
+__gsharp_fn_TestNamespace__DummyKernels__DummyShiftOp(__gsharp_id_0_ctx,__gsharp_id_6_c,__gsharp_id_4_a,5);
 __gsharp_state=-1;
 return;
 }

@@ -52,6 +52,10 @@
 ## Diagnostics/OperatorMacroMissingTarget.cu.cs
 (36,9)-(36,18) GSH0003 analyzer: The syntax 'Macro target method 'OperatorMacroTargets.Missing' is missing or incompatible.' is not supported in GSharp GPU kernels
 
+## Diagnostics/OperatorMacroContext.cu.cs
+(41,9)-(41,18) GSH0003 analyzer: The syntax 'Operator macro target 'OperatorMacroContextTargets.Add' takes a context of type 'OperatorMacroState', but no parameter or local of that type is in scope' is not supported in GSharp GPU kernels
+(53,9)-(53,18) GSH0003 analyzer: The syntax 'Operator macro target 'OperatorMacroContextTargets.Add' takes a context of type 'OperatorMacroState', but 2 parameters or locals of that type are in scope ('second', 'first')' is not supported in GSharp GPU kernels
+
 ## Analyzers/MacroArgumentSadPath.cs
 (5,14)-(5,41) GSH0036 analyzer: The class 'GEN_36_MacroArgumentSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (14,26)-(14,31) GSH0012 analyzer: The argument 'count' of macro 'ForUnroll' must be a compile-time constant
