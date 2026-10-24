@@ -38,16 +38,26 @@ public static class LoweringAnnotations
     /// </summary>
     public const string ForEachIndexAnnotationKind = "GSharpForEachIndex";
 
+    internal static string FormatOriginalSpanData(SyntaxNode node, int treeOrdinal = -1) =>
+        treeOrdinal >= 0
+            ? $"{node.SpanStart},{node.Span.Length},{treeOrdinal}"
+            : $"{node.SpanStart},{node.Span.Length}";
+
     /// <summary>
     /// Attaches <see cref="OriginalSpanAnnotationKind"/> to every descendant node of <paramref name="node"/> that does
-    /// not already carry one, using each node's current span.
+    /// not already carry one, using each node's current span and, when <paramref name="compilation"/> contains the
+    /// node's <see cref="SyntaxTree"/>, the 0-based syntax-tree ordinal.
     /// </summary>
-    public static TNode AnnotateOriginalSpans<TNode>(TNode node) where TNode : SyntaxNode =>
-        s_spanAnnotator.Visit(node) as TNode ?? node;
+    public static TNode AnnotateOriginalSpans<TNode>(TNode node, Compilation? compilation = null) where TNode : SyntaxNode
+    {
+        var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(compilation, node.SyntaxTree);
+        var annotator = treeOrdinal >= 0 ? new SpanAnnotator(treeOrdinal) : s_spanAnnotator;
+        return annotator.Visit(node) as TNode ?? node;
+    }
 
-    private static readonly SpanAnnotator s_spanAnnotator = new();
+    private static readonly SpanAnnotator s_spanAnnotator = new(-1);
 
-    private sealed class SpanAnnotator : CSharpSyntaxRewriter
+    private sealed class SpanAnnotator(int treeOrdinal) : CSharpSyntaxRewriter
     {
         public override SyntaxNode? Visit(SyntaxNode? node)
         {
@@ -60,7 +70,7 @@ public static class LoweringAnnotations
             return node.HasAnnotations(OriginalSpanAnnotationKind)
                 ? visited
                 : visited.WithAdditionalAnnotations(
-                    new SyntaxAnnotation(OriginalSpanAnnotationKind, $"{node.SpanStart},{node.Span.Length}"));
+                    new SyntaxAnnotation(OriginalSpanAnnotationKind, FormatOriginalSpanData(node, treeOrdinal)));
         }
     }
 }

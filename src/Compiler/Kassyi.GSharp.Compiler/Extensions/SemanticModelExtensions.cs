@@ -3,40 +3,122 @@ namespace Kassyi.GSharp.Compiler.Extensions;
 /// <summary>Provides zero-allocation extension methods for Roslyn <see cref="SemanticModel"/> queries.</summary>
 internal static class SemanticModelExtensions
 {
+    private static readonly ConditionalWeakTable<Compilation, SyntaxTree[]> s_syntaxTrees = new();
+    private static readonly ConditionalWeakTable<Compilation, ConcurrentDictionary<SyntaxTree, SemanticModel>> s_semanticModels = new();
+
+    internal static SyntaxTree[] GetSyntaxTrees(Compilation compilation) =>
+        s_syntaxTrees.GetValue(compilation, static c => [.. c.SyntaxTrees]);
+
+    internal static int GetSyntaxTreeOrdinal(Compilation? compilation, SyntaxTree? tree)
+    {
+        if (compilation == null || tree == null)
+        {
+            return -1;
+        }
+
+        return Array.IndexOf(GetSyntaxTrees(compilation), tree);
+    }
+
+    private static SemanticModel GetSemanticModelForTree(SemanticModel defaultModel, SyntaxTree targetTree)
+    {
+        if (defaultModel.SyntaxTree == targetTree)
+        {
+            return defaultModel;
+        }
+
+        var models = s_semanticModels.GetValue(
+            defaultModel.Compilation,
+            static _ => new ConcurrentDictionary<SyntaxTree, SemanticModel>());
+        if (!models.TryGetValue(targetTree, out var targetModel))
+        {
+            targetModel = defaultModel.Compilation.GetSemanticModel(targetTree);
+            models.TryAdd(targetTree, targetModel);
+        }
+
+        return targetModel;
+    }
+
     private static bool IsInSameTree(SemanticModel semanticModel, SyntaxNode node) =>
         node.SyntaxTree == semanticModel.SyntaxTree;
 
-    private static SyntaxNode? FindOriginalNode(SemanticModel semanticModel, SyntaxNode node)
+    private static bool TryFindOriginalNode(
+        SemanticModel semanticModel,
+        SyntaxNode node,
+        out SemanticModel targetModel,
+        [NotNullWhen(true)] out SyntaxNode? originalNode)
     {
+        targetModel = semanticModel;
+        originalNode = null;
         if (!node.HasAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
         {
-            return null;
+            return false;
         }
 
         foreach (var ann in node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
         {
-            if (ann.Data is { } data)
+            if (ann.Data is not { } data)
             {
-                var commaIdx = data.IndexOf(',');
-                if (commaIdx > 0 &&
-                    int.TryParse(data[..commaIdx], out var start) &&
-                    int.TryParse(data[(commaIdx + 1)..], out var length))
-                {
-                    var span = new TextSpan(start, length);
-                    return semanticModel.SyntaxTree.GetRoot().FindNode(span, getInnermostNodeForTie: true);
-                }
+                continue;
             }
+
+            var firstComma = data.IndexOf(',');
+            if (firstComma <= 0 || !int.TryParse(data[..firstComma], out var start))
+            {
+                continue;
+            }
+
+            var rest = data[(firstComma + 1)..];
+            var secondComma = rest.IndexOf(',');
+            SyntaxTree targetTree;
+            int length;
+            if (secondComma < 0)
+            {
+                if (!int.TryParse(rest, out length))
+                {
+                    continue;
+                }
+
+                targetTree = semanticModel.SyntaxTree;
+            }
+            else
+            {
+                if (!int.TryParse(rest[..secondComma], out length) ||
+                    !int.TryParse(rest[(secondComma + 1)..], out var treeOrdinal))
+                {
+                    continue;
+                }
+
+                var trees = GetSyntaxTrees(semanticModel.Compilation);
+                if ((uint)treeOrdinal >= (uint)trees.Length)
+                {
+                    continue;
+                }
+
+                targetTree = trees[treeOrdinal];
+                targetModel = GetSemanticModelForTree(semanticModel, targetTree);
+            }
+
+            var span = new TextSpan(start, length);
+            originalNode = targetTree.GetRoot().FindNode(span, getInnermostNodeForTie: true);
+            return true;
         }
 
-        return null;
+        return false;
     }
 
     /// <summary>
-    /// Gets the node of the semantic model's tree that the specified node is, or was derived from by lowering, or null if
+    /// Gets the node of the compilation tree that the specified node is, or was derived from by lowering, or null if
     /// unmapped.
     /// </summary>
-    public static SyntaxNode? GetOriginalNode(this SemanticModel semanticModel, SyntaxNode node) =>
-        IsInSameTree(semanticModel, node) ? node : FindOriginalNode(semanticModel, node);
+    public static SyntaxNode? GetOriginalNode(this SemanticModel semanticModel, SyntaxNode node)
+    {
+        if (IsInSameTree(semanticModel, node))
+        {
+            return node;
+        }
+
+        return TryFindOriginalNode(semanticModel, node, out _, out var originalNode) ? originalNode : null;
+    }
 
     /// <summary>
     /// Gets the original location for the specified syntax node, or null if unmapped.
@@ -63,8 +145,7 @@ internal static class SemanticModelExtensions
                 return n.GetLocation();
             }
 
-            var orig = FindOriginalNode(model, n);
-            return orig?.GetLocation();
+            return TryFindOriginalNode(model, n, out _, out var orig) ? orig.GetLocation() : null;
         }
     }
 
@@ -109,8 +190,9 @@ internal static class SemanticModelExtensions
             return semanticModel.GetSymbolInfo(node, cancellationToken).Symbol;
         }
 
-        var original = FindOriginalNode(semanticModel, node);
-        return original != null ? semanticModel.GetSymbolInfo(original, cancellationToken).Symbol : null;
+        return TryFindOriginalNode(semanticModel, node, out var targetModel, out var original)
+            ? targetModel.GetSymbolInfo(original, cancellationToken).Symbol
+            : null;
     }
 
     /// <summary>
@@ -124,8 +206,9 @@ internal static class SemanticModelExtensions
             return semanticModel.GetTypeInfo(node, cancellationToken).Type;
         }
 
-        var original = FindOriginalNode(semanticModel, node);
-        return original != null ? semanticModel.GetTypeInfo(original, cancellationToken).Type : null;
+        return TryFindOriginalNode(semanticModel, node, out var targetModel, out var original)
+            ? targetModel.GetTypeInfo(original, cancellationToken).Type
+            : null;
     }
 
     /// <summary>
@@ -139,8 +222,9 @@ internal static class SemanticModelExtensions
             return semanticModel.GetDeclaredSymbol(node, cancellationToken) as T;
         }
 
-        var original = FindOriginalNode(semanticModel, node);
-        return original != null ? semanticModel.GetDeclaredSymbol(original, cancellationToken) as T : null;
+        return TryFindOriginalNode(semanticModel, node, out var targetModel, out var original)
+            ? targetModel.GetDeclaredSymbol(original, cancellationToken) as T
+            : null;
     }
 
     /// <summary>
@@ -154,8 +238,9 @@ internal static class SemanticModelExtensions
             return semanticModel.GetConstantValue(node, cancellationToken);
         }
 
-        var original = FindOriginalNode(semanticModel, node);
-        return original != null ? semanticModel.GetConstantValue(original, cancellationToken) : default;
+        return TryFindOriginalNode(semanticModel, node, out var targetModel, out var original)
+            ? targetModel.GetConstantValue(original, cancellationToken)
+            : default;
     }
 
     /// <summary>
@@ -168,7 +253,8 @@ internal static class SemanticModelExtensions
             return semanticModel.GetOperation(node, cancellationToken);
         }
 
-        var original = FindOriginalNode(semanticModel, node);
-        return original != null ? semanticModel.GetOperation(original, cancellationToken) : null;
+        return TryFindOriginalNode(semanticModel, node, out var targetModel, out var original)
+            ? targetModel.GetOperation(original, cancellationToken)
+            : null;
     }
 }
