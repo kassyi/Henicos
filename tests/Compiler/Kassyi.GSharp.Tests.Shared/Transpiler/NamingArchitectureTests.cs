@@ -278,10 +278,16 @@ public partial class NamingArchitectureTests
             foreach (var path in Directory.EnumerateFiles(Path.Combine(compilerRoot, directory), "*.cs",
                          SearchOption.AllDirectories))
             {
-                // The naming layer itself is exempt; ManagedCSharpTranspiler emits C#, not C++.
+                // Transpiler/Managed emits C#, not C++.
+                var relative = Path.GetRelativePath(compilerRoot, path).Replace('\\', '/');
+                if (relative.StartsWith("Transpiler/Managed/", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                // The naming layer itself is exempt.
                 var fileName = Path.GetFileName(path);
-                if (fileName is "CppNameResolver.cs" or "CppNameFormatter.cs" or "GlobalCppNames.cs" or
-                    "ManagedCSharpTranspiler.cs")
+                if (fileName is "CppNameResolver.cs" or "CppNameFormatter.cs" or "GlobalCppNames.cs")
                 {
                     continue;
                 }
