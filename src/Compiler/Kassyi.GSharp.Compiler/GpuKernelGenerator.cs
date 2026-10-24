@@ -104,8 +104,7 @@ public class GpuKernelGenerator : IIncrementalGenerator
                 var dialect = TranspilerDialects.GetName(options.GlobalOptions);
 
                 options.GlobalOptions.TryGetValue("build_property.GSharpEmitSource", out var emitSrcStr);
-                var emitSource = string.IsNullOrWhiteSpace(emitSrcStr) ||
-                                 string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
+                var emitSource = string.Equals(emitSrcStr, "true", StringComparison.OrdinalIgnoreCase);
 
                 options.GlobalOptions.TryGetValue("build_property.IntermediateOutputPath", out var objPath);
                 options.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var projDir);

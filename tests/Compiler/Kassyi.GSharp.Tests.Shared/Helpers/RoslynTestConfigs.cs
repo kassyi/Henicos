@@ -169,6 +169,13 @@ internal sealed class TestAnalyzerConfigOptions : AnalyzerConfigOptions
             return true;
         }
 
+        // The snapshots read the C++ through the Source constants, which the generator emits only on request.
+        if (key == "build_property.GSharpEmitSource")
+        {
+            value = "true";
+            return true;
+        }
+
         value = null;
         return false;
     }
