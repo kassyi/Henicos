@@ -380,6 +380,8 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
 
                 return;
             case IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true }:
+            case IParameterSymbol { RefKind: RefKind.In or RefKind.RefReadOnlyParameter, ContainingSymbol: IMethodSymbol paramMethod }
+                when !paramMethod.HasAttribute(KnownAttributes.GpuKernel):
                 {
                     using (Context.Emitter.Writer.Parentheses())
                     {

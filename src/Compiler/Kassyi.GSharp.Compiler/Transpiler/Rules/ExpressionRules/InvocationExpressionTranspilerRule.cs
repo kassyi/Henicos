@@ -139,10 +139,10 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 positionalArgIndex++;
             }
 
-            if (providedArg != null && parameter.RefKind == RefKind.RefReadOnlyParameter)
+            if (providedArg != null && parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter)
             {
-                // [WHY] A ref readonly parameter is a pointer in C++, as a ref parameter is, and C# accepts its argument
-                // with in, ref or no modifier; the C++ argument is the address whichever was written.
+                // [WHY] An in or ref readonly parameter is a pointer in C++, as a ref parameter is, and C# accepts its
+                // argument with in, ref or no modifier; the C++ argument is the address whichever was written.
                 RefSyntaxHelper.TranspileAsByRefArgument(ref context, providedArg.Expression);
             }
             else if (providedArg != null)

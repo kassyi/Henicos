@@ -145,9 +145,15 @@ internal static class MethodSignatureTranspiler
     {
         typeSymbol = typeSymbol.UnwrapNullableArrayLike();
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);
+        var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
+                       method.HasAttribute(KnownAttributes.GpuKernel);
+        var isReadOnlyRef = !isKernel &&
+                            (parameterSymbol is { RefKind: RefKind.In or RefKind.RefReadOnlyParameter } ||
+                             p.Modifiers.Any(SyntaxKind.InKeyword) ||
+                             p.Modifiers.Any(SyntaxKind.ReadOnlyKeyword));
         var isArray = typeSymbol.IsArrayLikeType();
 
-        if (isReadOnly && !isArray)
+        if ((isReadOnly && !isArray) || isReadOnlyRef)
         {
             context.Emitter.Writer.Append("const ");
         }

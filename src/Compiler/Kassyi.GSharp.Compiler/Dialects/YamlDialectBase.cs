@@ -206,7 +206,11 @@ public abstract class YamlDialectBase : ITranspilerDialect
     public virtual (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(
         ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol)
     {
-        var isRefPointer = p.Modifiers.Any(SyntaxKind.RefKeyword) || p.Modifiers.Any(SyntaxKind.OutKeyword);
+        var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
+                       method.HasAttribute(KnownAttributes.GpuKernel);
+        var isRefPointer = p.Modifiers.Any(SyntaxKind.RefKeyword) ||
+                           p.Modifiers.Any(SyntaxKind.OutKeyword) ||
+                           (!isKernel && p.Modifiers.Any(SyntaxKind.InKeyword));
         var isPointerType = typeSymbol is IPointerTypeSymbol;
 
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);

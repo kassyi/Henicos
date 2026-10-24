@@ -203,7 +203,7 @@ internal static class ObjectCreationHelper
                 var parameter = constructor.Parameters[i];
                 if (matched[i] is { } argument)
                 {
-                    if (parameter.RefKind == RefKind.RefReadOnlyParameter)
+                    if (parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter)
                     {
                         RefSyntaxHelper.TranspileAsByRefArgument(ref context, argument.Expression);
                     }

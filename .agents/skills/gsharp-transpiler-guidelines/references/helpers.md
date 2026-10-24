@@ -97,7 +97,7 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 | Handle a `Gpu.*` statement macro | implement `IMacroTranspilerRule` and add it to `TranspilerRuleRegistry.MacroRules` |
 | Map a BCL method to a CUDA / C++ function | the dialect YAML under `Dialects/`, not a new rule |
 | Branch on the target (CUDA or not, threads run as state machines, Thrust algorithms) | `ITranspilerDialect.IsCuda`, `.EmulatesThreadsWithStateMachine`, `.HasThrustAlgorithms` (from the YAML `Backend` and capabilities), not `dialect is ...` or a name comparison |
-| Pass a `ref` / `out` argument | `RefSyntaxHelper.TranspileAsByRefArgument` |
+| Pass a by-reference (`ref` / `out` / `in` / `ref readonly`) argument | `RefSyntaxHelper.TranspileAsByRefArgument` |
 | Read a computed property of a struct that G# emits (`s.Sum` → `s.__gsharp_mb_Sum()`) | write the member name as usual, then `ComputedPropertyGetterCall.AppendCallIfGetter` |
 | Transpile a lambda body inline | `LambdaTranspilerHelper.TranspileLambdaBody` |
 | A C# `using`: the `Dispose` it calls, whether a statement or a block declares one (`using var`) | `UsingTranspiler.FindDisposeMethod`, `UsingTranspiler.IsUsingDeclaration`, `UsingTranspiler.DeclaresUsing`; the statement and the declaration are emitted by `UsingTranspiler` |
