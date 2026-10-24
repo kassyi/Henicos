@@ -103,6 +103,7 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 | A C# `using`: the `Dispose` it calls, whether a statement or a block declares one (`using var`) | `UsingTranspiler.FindDisposeMethod`, `UsingTranspiler.IsUsingDeclaration`, `UsingTranspiler.DeclaresUsing`; the statement and the declaration are emitted by `UsingTranspiler` |
 | Enter or suppress automatic grid sync (`Gpu.SyncGrid` bodies, single-thread regions) | `AutoSyncGrid.Enter`, `AutoSyncGrid.Suppress`, `AutoSyncGrid.Restore` in `try` / `finally`; `AutoSyncGrid.IsActive` to read it. Never write `Emitter.AutoSyncGridDepth` directly |
 | Null test of an array-like value, `??`, `??=` | `NullRepresentation.IsArrayNullComparable`, `NullRepresentation.AppendArrayNullTest`, `NullRepresentation.AppendCoalesce`, `NullRepresentation.AppendCoalesceAssignment` |
+| Match invocation arguments to parameters (named arguments / defaults) | `ArgumentMatchingHelper.MatchArgumentsToParameters`, `ArgumentMatchingHelper.CreateDefaultArgument` |
 
 The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressionTranspilerRule.cs`.
 
