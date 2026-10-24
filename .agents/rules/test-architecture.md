@@ -147,6 +147,14 @@ public abstract class StateMachineTestBase
     Snap.{Prefix}_{Hash10}[_{Dialect}].g.verified.cs
     ```
 - **Infrastructure**: Never clone or copy-paste `HashHelper` or snapshot naming methods into individual test assemblies. Use the centralized test foundation in `Kassyi.GSharp.Tests.Shared.Helpers`.
+- **Strict Ban on Snapshot Tampering & Blind Promotion (Never Move the Goalposts)**:
+    - **NEVER** directly edit, string-replace (`sd` / `sed`), or apply patches (`git apply`) to `.verified.*` snapshot files to make tests pass.
+    - **NEVER** blindly copy `.received.*` to `.verified.*` in the same command/one-liner that runs `dotnet test` without inspecting the output first.
+    - **Mandatory Inspection Workflow**:
+        1. Run the test so the test runner emits `.received.*`.
+        2. Read `.received.*` or inspect the diff against `.verified.*` (`git diff --no-index` / `read_file`) and verify that every line matches the intended design and specification.
+        3. Only after verifying correctness, promote the specific `.received.*` file to `.verified.*`.
+        4. If an unrelated existing snapshot changes, **DO NOT** overwrite `.verified.*`; treat it as a regression in your code (or a stop condition) and report or fix the implementation.
 
 ### 3.5. OS-Separated Build Outputs (`bin/<os>/`, `obj/<os>/`) & Repository Root Discovery
 
