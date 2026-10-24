@@ -18,7 +18,7 @@ internal sealed partial class ManagedExecutionRewriter(SemanticModel semanticMod
     private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited) =>
         visited is BaseObjectCreationExpressionSyntax rewritten &&
         semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
-            ? ManagedCSharpTranspiler.AddSharedMemorySiteKey(node, rewritten, semanticModel)
+            ? SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKey(node, rewritten, semanticModel)
             : visited;
 
     public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)

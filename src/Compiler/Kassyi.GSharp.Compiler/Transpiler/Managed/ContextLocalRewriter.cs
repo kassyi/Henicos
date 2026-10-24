@@ -2,7 +2,7 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
 /// Turns context accesses to ref struct locals back into locals, and renames the accesses to locals that share their
-/// name with another hoisted local (see <see cref="ManagedCSharpTranspiler"/>).
+/// name with another hoisted local (see <see cref="ManagedContextFields"/>).
 /// </summary>
 internal sealed class ContextLocalRewriter(
     HashSet<ILocalSymbol> unhoistedSymbols,
@@ -30,7 +30,7 @@ internal sealed class ContextLocalRewriter(
     private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited) =>
         visited is BaseObjectCreationExpressionSyntax rewritten &&
         semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
-            ? ManagedCSharpTranspiler.AddSharedMemorySiteKey(node, rewritten, semanticModel)
+            ? SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKey(node, rewritten, semanticModel)
             : visited;
 
     public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)

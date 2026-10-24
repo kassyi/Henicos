@@ -52,7 +52,7 @@ internal sealed partial class ManagedExecutionRewriter
         if (arguments.Count <= 2)
         {
             return SyntaxFactory.InvocationExpression(
-                SyntaxFactory.ParseExpression(ManagedCSharpTranspiler.GetDeviceFunctionMember(callee,
+                SyntaxFactory.ParseExpression(ManagedStateMachineEmitter.GetDeviceFunctionMember(callee,
                     GSharpInternalNames.Kernel.StateMachinePrefix)),
                 SyntaxFactory.ArgumentList(callArguments));
         }
@@ -62,7 +62,7 @@ internal sealed partial class ManagedExecutionRewriter
             .WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.RefKeyword)));
 
         return SyntaxFactory.InvocationExpression(
-            SyntaxFactory.ParseExpression(ManagedCSharpTranspiler.GetDeviceFunctionMember(callee,
+            SyntaxFactory.ParseExpression(ManagedStateMachineEmitter.GetDeviceFunctionMember(callee,
                 GSharpInternalNames.Kernel.StateMachinePrefix)),
             SyntaxFactory.ArgumentList(callArguments));
     }
