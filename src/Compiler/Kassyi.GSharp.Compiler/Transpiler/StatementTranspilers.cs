@@ -65,32 +65,20 @@ internal static class StatementTranspilers
     }
 
     /// <summary>
-    /// Transpiles a foreach statement into a C++ range-based for loop, or into a <c>MoveNext()</c> loop when the source
-    /// is a <c>[GpuDeviceFunction]</c> iterator.
+    /// Transpiles a foreach statement into a C++ range-based for loop.
     /// </summary>
     public static void TranspileForEachStatement(ForEachStatementSyntax node, ref TranspileContext context)
     {
-        DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
-        if (IteratorTypeResolver.TryResolveIteratorSource(node.Expression, context.Query.SemanticModel, out _, out _))
+        if (IteratorTypeResolver.TryResolveIteratorSource(
+                node.Expression,
+                context.Query.SemanticModel,
+                out _,
+                out _))
         {
-            var annotatedNode = LoweringAnnotations.AnnotateOriginalSpans(node);
-            var lowered = ForEachRewriter.LowerIteratorForEach(
-                annotatedNode,
-                annotatedNode.Expression.WithoutTrivia(),
-                annotatedNode.Statement,
-                context.Emitter.ForEachCounter++);
-            for (var i = 0; i < lowered.Statements.Count; i++)
-            {
-                if (i > 0)
-                {
-                    context.Emitter.Writer.AppendLine();
-                }
-
-                context.Visitor.Visit(lowered.Statements[i]);
-            }
-
             return;
         }
+
+        DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
 
         context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
@@ -364,5 +352,3 @@ internal static class StatementTranspilers
         context.Emitter.Writer.Append("return true;");
     }
 }
-
-

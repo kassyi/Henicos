@@ -1,4 +1,4 @@
-public class Lower_Iterator_YieldInArrayForEach_Snapshot
+﻿public class Lower_ForEachArray_WithBarrier_Snapshot
 {
     public void LoweredMethod()
 {
@@ -6,7 +6,8 @@ public class Lower_Iterator_YieldInArrayForEach_Snapshot
     {
         case 0:
         {
-            __gsharp_ctx->__gsharp_foreach_src_0 = __gsharp_ctx->data;
+            __gsharp_ctx->sum = 0;
+            __gsharp_ctx->__gsharp_foreach_src_0 = data;
             __gsharp_ctx->__gsharp_foreach_i_0 = 0;
             goto case 1;
         }
@@ -16,9 +17,9 @@ public class Lower_Iterator_YieldInArrayForEach_Snapshot
             if (!(__gsharp_ctx->__gsharp_foreach_i_0 < __gsharp_ctx->__gsharp_foreach_src_0.Length))
                 goto case 4;
             __gsharp_ctx->x = __gsharp_ctx->__gsharp_foreach_src_0[__gsharp_ctx->__gsharp_foreach_i_0];
-            __gsharp_current = __gsharp_ctx->x * 2;
+            __gsharp_ctx->sum += __gsharp_ctx->x;
             __gsharp_state = 2;
-            return true;
+            return;
         }
 
         case 2:
@@ -35,8 +36,8 @@ public class Lower_Iterator_YieldInArrayForEach_Snapshot
 
         case 4:
         {
-            __gsharp_state = -2;
-            return false;
+            __gsharp_state = -1;
+            return;
         }
     }
 }

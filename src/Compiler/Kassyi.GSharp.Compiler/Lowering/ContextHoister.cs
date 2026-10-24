@@ -6,11 +6,9 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Whether the body belongs to a device function. Its shared memory is not set up by the launcher, so the initializer of
 /// a hoisted <c>SharedMemory&lt;T&gt;</c> stays in the body.
 /// </param>
-/// <param name="mode">Selects whether barriers or <c>yield</c> statements split the state machine.</param>
 public class ContextHoister(
     IReadOnlyCollection<string>? copiedParameters = null,
-    bool isDeviceFunction = false,
-    LoweringMode mode = LoweringMode.Suspension)
+    bool isDeviceFunction = false)
     : CSharpSyntaxRewriter
 {
     private readonly HashSet<string> _hoistedVariables = [];
@@ -23,7 +21,7 @@ public class ContextHoister(
         var hoistedDecls = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
 
         // [WHY] One-pass AST traversal to collect barriers and variables efficiently in O(N).
-        var analyzer = new HoistAnalyzer(mode);
+        var analyzer = new HoistAnalyzer();
         analyzer.Visit(block);
 
         if (analyzer.BarrierSpans.Count == 0)
@@ -221,8 +219,8 @@ public class ContextHoister(
     // [WHY] The member name keeps the original span of the replaced node, so that the transpiler resolves it to the
     // hoisted local's symbol and emits the same C++ name as the context struct field. The outer MemberAccessExpression
     // also keeps the original span and any foreach receiver annotations so `GetTypeSymbol(node.Expression)` and
-    // `node.Expression.HasAnnotations(...)` on an enclosing member access (`(__gsharp_ctx->arr).Length`,
-    // `(__gsharp_ctx->__gsharp_foreach_e_0).Current`) continue to see the hoisted variable's original expression.
+    // `node.Expression.HasAnnotations(...)` on an enclosing member access (`(__gsharp_ctx->arr).Length`) continue to see
+    // the hoisted variable's original expression.
     // The original token keeps a verbatim '@' for the managed C# fallback.
     private static MemberAccessExpressionSyntax CreateContextAccess(SyntaxToken identifier, SyntaxNode original)
     {
@@ -233,11 +231,10 @@ public class ContextHoister(
             SyntaxFactory.IdentifierName(identifier.WithoutTrivia())
                 .WithAdditionalAnnotations(spanAnnotations)
         ).WithAdditionalAnnotations(spanAnnotations)
-         .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.ForEachEnumeratorAnnotationKind))
          .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind));
     }
 
-    private sealed class HoistAnalyzer(LoweringMode mode) : CSharpSyntaxWalker
+    private sealed class HoistAnalyzer : CSharpSyntaxWalker
     {
         public readonly ImmutableArray<TextSpan>.Builder BarrierSpans = ImmutableArray.CreateBuilder<TextSpan>();
 
@@ -246,22 +243,12 @@ public class ContextHoister(
 
         public override void VisitInvocationExpression(InvocationExpressionSyntax node)
         {
-            if (mode == LoweringMode.Suspension && BarrierHelper.IsPhaseBarrier(node))
+            if (BarrierHelper.IsPhaseBarrier(node))
             {
                 BarrierSpans.Add(node.Span);
             }
 
             base.VisitInvocationExpression(node);
-        }
-
-        public override void VisitYieldStatement(YieldStatementSyntax node)
-        {
-            if (mode == LoweringMode.Iterator)
-            {
-                BarrierSpans.Add(node.Span);
-            }
-
-            base.VisitYieldStatement(node);
         }
 
         public override void VisitVariableDeclarator(VariableDeclaratorSyntax node)
@@ -281,4 +268,3 @@ public class ContextHoister(
         }
     }
 }
-

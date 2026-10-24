@@ -1,19 +1,21 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>
-/// Lowers <c>foreach</c> statements that contain a state-machine split point into <c>for</c> loops (for arrays and
-/// spans) or <c>while (e.MoveNext())</c> loops (for iterator device functions) prior to <see cref="LoopRewriter"/>.
+/// Lowers <c>foreach</c> statements that contain a phase barrier into <c>for</c> loops (for arrays and spans) prior to
+/// <see cref="LoopRewriter"/>.
 /// </summary>
-public class ForEachRewriter(LoweringMode mode = LoweringMode.Suspension, SemanticModel? semanticModel = null)
-    : CSharpSyntaxRewriter
+public class ForEachRewriter : CSharpSyntaxRewriter
 {
     private int _loopCounter;
 
-    private bool ContainsSplitPoint(SyntaxNode node) => BarrierHelper.ContainsSplitPoint(node, mode);
+    private static bool ContainsBarrier(SyntaxNode node) =>
+        node.DescendantNodesAndSelf()
+            .AsStackEnumerable()
+            .Any(static descendant => descendant is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv));
 
-    /// <summary>Rewrites <c>foreach</c> loops within <paramref name="block"/> that contain a split point.</summary>
+    /// <summary>Rewrites <c>foreach</c> loops within <paramref name="block"/> that contain a phase barrier.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) =>
-        ContainsSplitPoint(block) ? (BlockSyntax)Visit(block) : block;
+        ContainsBarrier(block) ? (BlockSyntax)Visit(block) : block;
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
     {
@@ -25,7 +27,7 @@ public class ForEachRewriter(LoweringMode mode = LoweringMode.Suspension, Semant
 
             if (visited is BlockSyntax nestedBlock)
             {
-                if (statement is not BlockSyntax || ContainsSplitPoint(statement))
+                if (statement is not BlockSyntax || ContainsBarrier(statement))
                 {
                     newStatements.AddRange(nestedBlock.Statements);
                 }
@@ -45,7 +47,7 @@ public class ForEachRewriter(LoweringMode mode = LoweringMode.Suspension, Semant
 
     public override SyntaxNode? VisitForEachStatement(ForEachStatementSyntax node)
     {
-        if (!ContainsSplitPoint(node))
+        if (!ContainsBarrier(node))
         {
             return base.VisitForEachStatement(node);
         }
@@ -53,12 +55,6 @@ public class ForEachRewriter(LoweringMode mode = LoweringMode.Suspension, Semant
         var id = _loopCounter++;
         var expr = ((ExpressionSyntax)Visit(node.Expression)).WithoutTrivia();
         var body = (StatementSyntax)Visit(node.Statement);
-
-        if (semanticModel != null &&
-            IteratorTypeResolver.TryResolveIteratorSource(node.Expression, semanticModel, out _, out _))
-        {
-            return LowerIteratorForEach(node, expr, body, id);
-        }
 
         return LowerArrayForEach(node, expr, body, id);
     }
@@ -162,86 +158,5 @@ public class ForEachRewriter(LoweringMode mode = LoweringMode.Suspension, Semant
         ).WithAdditionalAnnotations(annotations);
 
         return SyntaxFactory.Block(srcStatement, forStatement).WithAdditionalAnnotations(annotations);
-    }
-
-    // {
-    //     var __gsharp_foreach_e_<id> = <expr> / <expr>.GetEnumerator();
-    //     while (__gsharp_foreach_e_<id>.MoveNext())
-    //     {
-    //         <T> <x> = __gsharp_foreach_e_<id>.Current;
-    //         <body>
-    //     }
-    // }
-    internal static BlockSyntax LowerIteratorForEach(
-        ForEachStatementSyntax node,
-        ExpressionSyntax expr,
-        StatementSyntax body,
-        int id)
-    {
-        var annotations = ImmutableArray.CreateRange(
-            node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
-        );
-        var enumeratorInit = expr is InvocationExpressionSyntax
-            ? expr
-            : SyntaxFactory.InvocationExpression(
-                SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    expr,
-                    SyntaxFactory.IdentifierName("GetEnumerator")
-                )
-            );
-        var enumName = $"{GSharpInternalNames.Lowering.ForEachEnumeratorPrefix}{id}";
-
-        var enumDeclarator = SyntaxFactory.VariableDeclarator(SyntaxFactory.Identifier(enumName))
-            .WithInitializer(SyntaxFactory.EqualsValueClause(enumeratorInit));
-        var enumStatement = SyntaxFactory.LocalDeclarationStatement(
-            SyntaxFactory.VariableDeclaration(
-                SyntaxFactory.IdentifierName("var"),
-                SyntaxFactory.SingletonSeparatedList(enumDeclarator)
-            )
-        ).WithAdditionalAnnotations(annotations);
-
-        var moveNextCall = SyntaxFactory.InvocationExpression(
-            SyntaxFactory.MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                SyntaxFactory.IdentifierName(enumName),
-                SyntaxFactory.IdentifierName("MoveNext")
-            )
-        ).WithAdditionalAnnotations(annotations);
-
-        var currentAccess = SyntaxFactory.MemberAccessExpression(
-            SyntaxKind.SimpleMemberAccessExpression,
-            SyntaxFactory.IdentifierName(enumName)
-                .WithAdditionalAnnotations(new SyntaxAnnotation(LoweringAnnotations.ForEachEnumeratorAnnotationKind)),
-            SyntaxFactory.IdentifierName("Current")
-        ).WithAdditionalAnnotations(annotations);
-
-        var itemDeclarator = SyntaxFactory.VariableDeclarator(node.Identifier.WithoutTrivia())
-            .WithInitializer(SyntaxFactory.EqualsValueClause(currentAccess))
-            .WithAdditionalAnnotations(annotations);
-        var itemStatement = SyntaxFactory.LocalDeclarationStatement(
-            SyntaxFactory.VariableDeclaration(
-                node.Type.WithoutTrivia(),
-                SyntaxFactory.SingletonSeparatedList(itemDeclarator)
-            )
-        ).WithAdditionalAnnotations(annotations);
-
-        var bodyStatements = ImmutableArray.CreateBuilder<StatementSyntax>();
-        bodyStatements.Add(itemStatement);
-        if (body is BlockSyntax bodyBlock)
-        {
-            bodyStatements.AddRange(bodyBlock.Statements);
-        }
-        else
-        {
-            bodyStatements.Add(body);
-        }
-
-        var whileStatement = SyntaxFactory.WhileStatement(
-            moveNextCall,
-            SyntaxFactory.Block(bodyStatements).WithAdditionalAnnotations(annotations)
-        ).WithAdditionalAnnotations(annotations);
-
-        return SyntaxFactory.Block(enumStatement, whileStatement).WithAdditionalAnnotations(annotations);
     }
 }

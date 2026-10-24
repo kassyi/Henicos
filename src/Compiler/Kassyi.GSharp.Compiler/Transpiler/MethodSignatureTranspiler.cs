@@ -120,7 +120,7 @@ internal static class MethodSignatureTranspiler
 
     // [WHY] Checked here rather than in WriteParameters, which also runs for the CPU host launcher
     // and would record the same parameter twice.
-    internal static void FailUnsupportedParameterTypes(IMethodSymbol? methodSymbol, ref TranspileContext context)
+    private static void FailUnsupportedParameterTypes(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         if (methodSymbol is null)
         {
@@ -221,15 +221,10 @@ internal static class MethodSignatureTranspiler
         return false;
     }
 
-    internal static string GetDeviceMemberQualifier(IMethodSymbol? methodSymbol, ITranspilerDialect dialect)
-    {
-        var inlineKeyword = GetInliningKeyword(methodSymbol);
-        return dialect.IsCuda ? $"{inlineKeyword} __device__ " : $"{inlineKeyword} ";
-    }
-
     private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
-        context.Emitter.Writer.Append(GetDeviceMemberQualifier(methodSymbol, context.Emitter.Dialect));
+        var inlineKeyword = GetInliningKeyword(methodSymbol);
+        context.Emitter.Writer.Append(context.Emitter.Dialect.IsCuda ? $"{inlineKeyword} __device__ " : $"{inlineKeyword} ");
 
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })

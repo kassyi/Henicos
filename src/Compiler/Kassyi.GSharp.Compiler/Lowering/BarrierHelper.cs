@@ -122,23 +122,4 @@ internal static class BarrierHelper
 
         return null;
     }
-
-    /// <summary>
-    /// Determines whether <paramref name="node"/> is a state-machine split point for <paramref name="mode"/>.
-    /// </summary>
-    public static bool IsSplitPoint(SyntaxNode node, LoweringMode mode) => mode switch
-    {
-        LoweringMode.Iterator => node is YieldStatementSyntax,
-        _ => node is InvocationExpressionSyntax inv && IsPhaseBarrier(inv)
-    };
-
-    /// <summary>
-    /// Determines whether <paramref name="node"/> or any of its descendants is a split point for
-    /// <paramref name="mode"/>.
-    /// </summary>
-    public static bool ContainsSplitPoint(SyntaxNode node, LoweringMode mode) =>
-        node.DescendantNodesAndSelf()
-            .AsStackEnumerable()
-            .Any(mode, static (descendant, m) => IsSplitPoint(descendant, m));
 }
-

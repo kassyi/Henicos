@@ -43,7 +43,7 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
 
     private static VariableMapping AnalyzeVariableMapping(VariableDeclarationSyntax node, ITypeSymbol? typeSymbol)
     {
-        var isVar = node.Type.IsVar || IteratorTypeResolver.IsGenericIEnumerable(typeSymbol, out _);
+        var isVar = node.Type.IsVar;
         var isPointer = typeSymbol?.TypeKind == TypeKind.Pointer;
         var shouldSplit = node.Parent is LocalDeclarationStatementSyntax or FixedStatementSyntax;
 
@@ -72,6 +72,18 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
         for (var i = 0; i < variables.Count; i++)
         {
             var v = variables[i];
+
+            if (typeSymbol != null &&
+                IteratorTypeResolver.IsGenericIEnumerable(typeSymbol, out _) &&
+                v.Initializer != null &&
+                IteratorTypeResolver.TryResolveIteratorSource(
+                    v.Initializer.Value,
+                    context.Query.SemanticModel,
+                    out _,
+                    out _))
+            {
+                continue;
+            }
 
             if (TryTranspileStackArrayDeclaration(v, typeSymbol, ref context))
             {

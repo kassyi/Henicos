@@ -1,15 +1,18 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Lowers control flow branches (if/else) into a flat sequence of statements using conditional goto and labels.</summary>
-public class BranchRewriter(LoweringMode mode = LoweringMode.Suspension) : CSharpSyntaxRewriter
+public class BranchRewriter : CSharpSyntaxRewriter
 {
     private int _labelCounter;
 
-    private bool ContainsSplitPoint(SyntaxNode node) => BarrierHelper.ContainsSplitPoint(node, mode);
+    private static bool ContainsBarrier(SyntaxNode node) =>
+        node.DescendantNodesAndSelf()
+            .AsStackEnumerable()
+            .Any(static descendant => descendant is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv));
 
     /// <summary>Rewrites branching statements within the block into flat goto sequences.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) =>
-        ContainsSplitPoint(block) ? (BlockSyntax)Visit(block) : block;
+        ContainsBarrier(block) ? (BlockSyntax)Visit(block) : block;
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
     {
@@ -23,7 +26,7 @@ public class BranchRewriter(LoweringMode mode = LoweringMode.Suspension) : CShar
             {
                 // [WHY] Non-block statements (e.g. IfStatement) only become BlockSyntax when they already contain a barrier.
                 // Explicit nested BlockSyntax nodes are only inlined if they contain a barrier to preserve variable scopes.
-                if (statement is not BlockSyntax || ContainsSplitPoint(statement))
+                if (statement is not BlockSyntax || ContainsBarrier(statement))
                 {
                     newStatements.AddRange(nestedBlock.Statements);
                 }
@@ -43,7 +46,7 @@ public class BranchRewriter(LoweringMode mode = LoweringMode.Suspension) : CShar
 
     public override SyntaxNode? VisitIfStatement(IfStatementSyntax node)
     {
-        if (!ContainsSplitPoint(node))
+        if (!ContainsBarrier(node))
         {
             return base.VisitIfStatement(node);
         }
@@ -130,4 +133,3 @@ public class BranchRewriter(LoweringMode mode = LoweringMode.Suspension) : CShar
         return SyntaxFactory.Block(statements);
     }
 }
-

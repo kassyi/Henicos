@@ -43,11 +43,6 @@ public struct Emitter(
     public int UsingCounter;
 
     /// <summary>
-    /// Numbers the enumerator temporaries of unlowered iterator <c>foreach</c> statements (StatementTranspilers).
-    /// </summary>
-    public int ForEachCounter;
-
-    /// <summary>
     /// The struct definitions whose <c>Dispose</c> a <c>using</c> of the method calls, in the order of first use; each
     /// definition is emitted after the structs (UsingTranspiler.WriteDisposeDefinitions).
     /// </summary>
@@ -179,4 +174,3 @@ public readonly struct OverrideValue
         }
     }
 }
-

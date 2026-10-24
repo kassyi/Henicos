@@ -27,24 +27,6 @@ public static class LoweringAnnotations
     public const string StateMachineReturnAnnotationKind = "StateMachineReturn";
 
     /// <summary>
-    /// Data of a <see cref="StateMachineReturnAnnotationKind"/> annotation on an iterator <c>yield return</c>
-    /// (<c>return true;</c>).
-    /// </summary>
-    public const string IteratorYieldReturnAnnotationData = "Yield";
-
-    /// <summary>
-    /// Data of a <see cref="StateMachineReturnAnnotationKind"/> annotation on an iterator finish
-    /// (<c>return false;</c>).
-    /// </summary>
-    public const string IteratorFinishReturnAnnotationData = "Finish";
-
-    /// <summary>
-    /// Annotation kind that marks a lowered <c>foreach</c> enumerator receiver (<c>__gsharp_foreach_e_&lt;id&gt;</c>)
-    /// so <c>.Current</c> emits as <c>.Current()</c>.
-    /// </summary>
-    public const string ForEachEnumeratorAnnotationKind = "GSharpForEachEnumerator";
-
-    /// <summary>
     /// Annotation kind that marks a lowered <c>foreach</c> array/span source receiver
     /// (<c>__gsharp_foreach_src_&lt;id&gt;</c>) so <c>.Length</c> emits as <c>.length</c>.
     /// </summary>

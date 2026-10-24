@@ -16,9 +16,9 @@ internal enum MethodEmissionKind
     SuspendingDeviceFunction,
 
     /// <summary>
-    /// A static <c>[GpuDeviceFunction]</c> returning <c>IEnumerable&lt;T&gt;</c> that uses <c>yield</c>. All C++
-    /// dialects lower it into a value-type enumerator struct with <c>MoveNext()</c>, <c>Current()</c>, and
-    /// <c>GetEnumerator()</c>; the managed path uses the user's C# iterator directly.
+    /// A static <c>[GpuDeviceFunction]</c> returning <c>IEnumerable&lt;T&gt;</c> that uses <c>yield</c>. Expanded inline at
+    /// each <c>foreach</c> site in device code; emits no standalone device function. The managed path uses the user's C#
+    /// iterator directly.
     /// </summary>
     Iterator
 }
@@ -36,18 +36,15 @@ internal enum MethodEmissionKind
 internal readonly struct MethodEmissionPlan
 {
     private readonly DeferredLowering? _lowering;
-    private readonly DeferredIteratorLowering? _iteratorLowering;
 
     private MethodEmissionPlan(MethodDeclarationSyntax declaration, SemanticModel semanticModel, MethodEmissionKind kind,
-        IMethodSymbol? symbol, DeferredLowering? lowering, DeferredIteratorLowering? iteratorLowering,
-        bool isGpuKernelEntry, bool hasAutoResult)
+        IMethodSymbol? symbol, DeferredLowering? lowering, bool isGpuKernelEntry, bool hasAutoResult)
     {
         Declaration = declaration;
         SemanticModel = semanticModel;
         Kind = kind;
         Symbol = symbol;
         _lowering = lowering;
-        _iteratorLowering = iteratorLowering;
         IsGpuKernelEntry = isGpuKernelEntry;
         HasAutoResult = hasAutoResult;
     }
@@ -61,17 +58,6 @@ internal readonly struct MethodEmissionPlan
         public LoweredStateMachine Value => _lowered ??= AstLoweringPipeline.Lower(declaration, semanticModel, deviceFunction);
     }
 
-    private sealed class DeferredIteratorLowering(
-        MethodDeclarationSyntax declaration,
-        SemanticModel semanticModel,
-        IMethodSymbol iterator)
-    {
-        private LoweredIterator? _lowered;
-
-        public LoweredIterator Value =>
-            _lowered ??= AstLoweringPipeline.LowerIterator(declaration, semanticModel, iterator);
-    }
-
     public MethodDeclarationSyntax Declaration { get; }
 
     public SemanticModel SemanticModel { get; }
@@ -79,8 +65,7 @@ internal readonly struct MethodEmissionPlan
     public MethodEmissionKind Kind { get; }
 
     /// <summary>
-    /// The declared method. Never <see langword="null"/> when <see cref="Lowered"/> or <see cref="LoweredIterator"/> is
-    /// set.
+    /// The declared method. Never <see langword="null"/> when <see cref="Lowered"/> is set.
     /// </summary>
     public IMethodSymbol? Symbol { get; }
 
@@ -90,12 +75,6 @@ internal readonly struct MethodEmissionPlan
     /// first time.
     /// </summary>
     public LoweredStateMachine? Lowered => _lowering?.Value;
-
-    /// <summary>
-    /// The lowered iterator struct and <c>MoveNext()</c> body of a <see cref="MethodEmissionKind.Iterator"/>;
-    /// <see langword="null"/> otherwise. Used by all native dialects. Reading it lowers the method the first time.
-    /// </summary>
-    public LoweredIterator? LoweredIterator => _iteratorLowering?.Value;
 
     /// <summary>The method has <c>[GpuKernel]</c>.</summary>
     public bool IsGpuKernelEntry { get; }
@@ -172,7 +151,7 @@ internal readonly struct MethodEmissionPlan
                 ? new DeferredLowering(declaration, semanticModel, deviceFunction: null)
                 : null;
             return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.Kernel, symbol, kernelLowering,
-                iteratorLowering: null, isGpuKernelEntry, hasAutoResult);
+                isGpuKernelEntry, hasAutoResult);
         }
 
         if (symbol != null && declaration.HasBody() &&
@@ -180,19 +159,17 @@ internal readonly struct MethodEmissionPlan
             !IteratorTypeResolver.IsRecursiveIterator(symbol, semanticModel.Compilation))
         {
             return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.Iterator, symbol,
-                lowering: null, new DeferredIteratorLowering(declaration, semanticModel, symbol),
-                isGpuKernelEntry, hasAutoResult);
+                lowering: null, isGpuKernelEntry, hasAutoResult);
         }
 
         if (symbol == null || !declaration.HasBody() ||
             !SuspensionAnalysis.RequiresStateMachine(symbol, semanticModel.Compilation))
         {
             return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.DeviceFunction, symbol, null,
-                iteratorLowering: null, isGpuKernelEntry, hasAutoResult);
+                isGpuKernelEntry, hasAutoResult);
         }
 
         return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.SuspendingDeviceFunction, symbol,
-            new DeferredLowering(declaration, semanticModel, symbol), iteratorLowering: null,
-            isGpuKernelEntry, hasAutoResult);
+            new DeferredLowering(declaration, semanticModel, symbol), isGpuKernelEntry, hasAutoResult);
     }
 }

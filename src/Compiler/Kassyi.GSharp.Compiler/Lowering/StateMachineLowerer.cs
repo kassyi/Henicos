@@ -5,14 +5,8 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Whether the body belongs to a device function. Its end completes the call (a plain <c>return</c>, which the emitters
 /// turn into "reset the frame and report completion") instead of finishing the thread.
 /// </param>
-/// <param name="mode">Selects whether barriers or <c>yield</c> statements split the state machine.</param>
-public class StateMachineLowerer(bool isDeviceFunction = false, LoweringMode mode = LoweringMode.Suspension)
+public class StateMachineLowerer(bool isDeviceFunction = false)
 {
-    /// <summary>
-    /// The state value assigned when an iterator finishes (<c>yield break</c> or falling off the end).
-    /// </summary>
-    public const int IteratorFinishedState = -2;
-
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
 
@@ -38,14 +32,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, LoweringMode mod
                 labelStates[labeled.Identifier.ValueText] = simulatedState;
             }
 
-            if (mode == LoweringMode.Iterator)
-            {
-                if (stmt is YieldStatementSyntax yieldStmt && yieldStmt.IsKind(SyntaxKind.YieldReturnStatement))
-                {
-                    simulatedState++;
-                }
-            }
-            else if (BarrierHelper.GetPhaseBarrierInvocation(stmt) != null)
+            if (BarrierHelper.GetPhaseBarrierInvocation(stmt) != null)
             {
                 simulatedState++;
             }
@@ -62,22 +49,6 @@ public class StateMachineLowerer(bool isDeviceFunction = false, LoweringMode mod
                 if (labeled.Statement is not EmptyStatementSyntax)
                 {
                     currentCaseStatements.Add(RewriteGoto(labeled.Statement, labelStates));
-                }
-
-                continue;
-            }
-
-            if (mode == LoweringMode.Iterator && stmt is YieldStatementSyntax yieldStmt)
-            {
-                if (yieldStmt.IsKind(SyntaxKind.YieldReturnStatement) && yieldStmt.Expression is { } yieldExpr)
-                {
-                    currentCaseStatements.Add(CreateCurrentAssignment(yieldStmt, yieldExpr));
-                    commitState(state + 1, isBarrier: true);
-                }
-                else if (yieldStmt.IsKind(SyntaxKind.YieldBreakStatement))
-                {
-                    currentCaseStatements.Add(CreateStateAssignment(IteratorFinishedState));
-                    currentCaseStatements.Add(CreateIteratorReturn(hasValue: false));
                 }
 
                 continue;
@@ -142,14 +113,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false, LoweringMode mod
             }
         }
 
-        if (mode == LoweringMode.Iterator)
-        {
-            // Final iterator state: -2 (finished)
-            currentCaseStatements.Add(CreateStateAssignment(IteratorFinishedState));
-            currentCaseStatements.Add(CreateIteratorReturn(hasValue: false));
-            commitSection();
-        }
-        else if (isDeviceFunction)
+        if (isDeviceFunction)
         {
             // Falling off the end completes the call
             currentCaseStatements.Add(SyntaxFactory.ReturnStatement());
@@ -173,11 +137,9 @@ public class StateMachineLowerer(bool isDeviceFunction = false, LoweringMode mod
         {
             if (isBarrier)
             {
-                // __gsharp_state = <next state>; return [true];
+                // __gsharp_state = <next state>; return;
                 currentCaseStatements.Add(CreateStateAssignment(nextState));
-                currentCaseStatements.Add(mode == LoweringMode.Iterator
-                    ? CreateIteratorReturn(hasValue: true)
-                    : CreateSuspendingReturn());
+                currentCaseStatements.Add(CreateSuspendingReturn());
             }
             else
             {
@@ -256,35 +218,6 @@ public class StateMachineLowerer(bool isDeviceFunction = false, LoweringMode mod
             new SyntaxAnnotation(LoweringAnnotations.StateMachineReturnAnnotationKind)
         );
 
-    // return true; / return false; marked as an iterator state-machine transition
-    private static ReturnStatementSyntax CreateIteratorReturn(bool hasValue) =>
-        SyntaxFactory.ReturnStatement(
-            SyntaxFactory.LiteralExpression(
-                hasValue ? SyntaxKind.TrueLiteralExpression : SyntaxKind.FalseLiteralExpression)
-        ).WithAdditionalAnnotations(
-            new SyntaxAnnotation(
-                LoweringAnnotations.StateMachineReturnAnnotationKind,
-                hasValue
-                    ? LoweringAnnotations.IteratorYieldReturnAnnotationData
-                    : LoweringAnnotations.IteratorFinishReturnAnnotationData)
-        );
-
-    // __gsharp_current = <value>;
-    private static StatementSyntax CreateCurrentAssignment(YieldStatementSyntax yieldStmt, ExpressionSyntax value)
-    {
-        var annotations = ImmutableArray.CreateRange(
-            yieldStmt.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
-        );
-        return SyntaxFactory.ExpressionStatement(
-            SyntaxFactory.AssignmentExpression(
-                SyntaxKind.SimpleAssignmentExpression,
-                SyntaxFactory.IdentifierName(GSharpInternalNames.Iterator.Current)
-                    .WithAdditionalAnnotations(annotations),
-                value.WithoutTrivia()
-            ).WithAdditionalAnnotations(annotations)
-        ).WithAdditionalAnnotations(annotations);
-    }
-
     private static StatementSyntax RewriteGoto(StatementSyntax stmt, Dictionary<string, int> labelStates) =>
         (StatementSyntax)new GotoRewriter(labelStates).Visit(stmt);
 
@@ -344,4 +277,3 @@ public class StateMachineLowerer(bool isDeviceFunction = false, LoweringMode mod
         return stmt.ReplaceNode(barrierInv, rewrittenInv);
     }
 }
-

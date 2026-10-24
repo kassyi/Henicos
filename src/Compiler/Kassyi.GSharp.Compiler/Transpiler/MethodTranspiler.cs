@@ -56,6 +56,35 @@ public static class MethodTranspiler
     internal static string GenerateCudaSource(in MethodEmissionPlan plan, Action<TranspileFailure>? reportFailure,
         ITranspilerDialect dialect, out HashSet<string> requiredIncludes)
     {
+        if (plan.Kind == MethodEmissionKind.Iterator)
+        {
+            if (reportFailure != null && plan.Declaration.Body != null)
+            {
+                void ReportNonYieldFailure(TranspileFailure failure)
+                {
+                    if (failure.Descriptor.Id == GSharpDiagnostics.UnsupportedSyntax.Id &&
+                        failure.MessageArgs is
+                            [nameof(SyntaxKind.YieldReturnStatement) or nameof(SyntaxKind.YieldBreakStatement)])
+                    {
+                        return;
+                    }
+
+                    reportFailure(failure);
+                }
+
+                using var iteratorSession = TranspilationSession.Begin(in plan, ReportNonYieldFailure, dialect);
+                if (iteratorSession.ErrorMessage == null)
+                {
+                    using var dummyWriter = new SourceWriter();
+                    iteratorSession.Context.Emitter.Writer = dummyWriter;
+                    iteratorSession.Context.Visitor.Visit(plan.Declaration.Body);
+                }
+            }
+
+            requiredIncludes = [];
+            return "";
+        }
+
         using var session = TranspilationSession.Begin(in plan, reportFailure, dialect);
         if (session.ErrorMessage != null)
         {
@@ -79,40 +108,32 @@ public static class MethodTranspiler
 
         context.Emitter.Writer = bodyWriter;
 
-        if (plan.Kind == MethodEmissionKind.Iterator && plan.LoweredIterator is { } loweredIterator &&
-            plan.Symbol is { } iteratorSymbol)
+        // A plan with a state machine always has a symbol
+        if (lowered != null && plan.Symbol is { } loweredSymbol)
         {
-            IteratorTranspiler.WriteSource(in plan, iteratorSymbol, loweredIterator, ref context);
+            var prefix = isSuspendingDevice
+                ? GSharpInternalNames.SuspendingCall.FrameTypePrefix
+                : GSharpInternalNames.Kernel.ContextPrefix;
+            var frameName = GlobalCppNames.GetKernelDerivedName(prefix, loweredSymbol);
+            WriteContextStruct(frameName, methodDecl.Identifier.ValueText, lowered, in plan, isSuspendingDevice,
+                ref context);
+        }
+
+        if (isSuspendingDevice && lowered != null && plan.Symbol is { } suspendingSymbol)
+        {
+            MethodSignatureTranspiler.WriteSuspendingDeviceSignature(
+                methodDecl, suspendingSymbol, lowered.CopiedParameters, ref context);
         }
         else
         {
-            // A plan with a state machine always has a symbol
-            if (lowered != null && plan.Symbol is { } loweredSymbol)
-            {
-                var prefix = isSuspendingDevice
-                    ? GSharpInternalNames.SuspendingCall.FrameTypePrefix
-                    : GSharpInternalNames.Kernel.ContextPrefix;
-                var frameName = GlobalCppNames.GetKernelDerivedName(prefix, loweredSymbol);
-                WriteContextStruct(frameName, methodDecl.Identifier.ValueText, lowered, in plan, isSuspendingDevice,
-                    ref context);
-            }
+            MethodSignatureTranspiler.WriteMethodSignature(in plan, lowered != null, ref context);
+        }
 
-            if (isSuspendingDevice && lowered != null && plan.Symbol is { } suspendingSymbol)
-            {
-                MethodSignatureTranspiler.WriteSuspendingDeviceSignature(
-                    methodDecl, suspendingSymbol, lowered.CopiedParameters, ref context);
-            }
-            else
-            {
-                MethodSignatureTranspiler.WriteMethodSignature(in plan, lowered != null, ref context);
-            }
+        WriteMethodBody(in plan, lowered, ref context);
 
-            WriteMethodBody(in plan, lowered, ref context);
-
-            if (!isDevice && !context.Emitter.Dialect.IsCuda)
-            {
-                HostLauncherTranspiler.WriteCpuLauncher(in plan, lowered?.ContextFields, ref context);
-            }
+        if (!isDevice && !context.Emitter.Dialect.IsCuda)
+        {
+            HostLauncherTranspiler.WriteCpuLauncher(in plan, lowered?.ContextFields, ref context);
         }
 
         // Before the structs: a Dispose body can use more of them
@@ -148,6 +169,11 @@ public static class MethodTranspiler
             throw new ArgumentException("Only a device function has a forward declaration.", nameof(plan));
         }
 
+        if (plan.Kind == MethodEmissionKind.Iterator)
+        {
+            return "";
+        }
+
         using var session = TranspilationSession.Begin(in plan, reportFailure, dialect);
         if (session.ErrorMessage != null)
         {
@@ -161,14 +187,8 @@ public static class MethodTranspiler
 
         context.Emitter.Writer = sigWriter;
 
-        if (plan.Kind == MethodEmissionKind.Iterator &&
-            plan.LoweredIterator is { } loweredIterator &&
-            plan.Symbol is { } iteratorSymbol)
-        {
-            IteratorTranspiler.WriteSignature(in plan, iteratorSymbol, loweredIterator, ref context);
-        }
         // A suspending device function always has a symbol
-        else if (plan.IsSuspendingOn(dialect) && plan.Symbol is { } methodSymbol)
+        if (plan.IsSuspendingOn(dialect) && plan.Symbol is { } methodSymbol)
         {
             // The frame is defined with the body; the declaration only needs its name
             var frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix,
@@ -186,13 +206,6 @@ public static class MethodTranspiler
         context.Emitter.Writer = mainWriter;
         foreach (var structSym in StructTranspiler.GetTopologicallySortedStructs(ref context))
         {
-            if (plan.Kind == MethodEmissionKind.Iterator)
-            {
-                // The iterator struct is defined in the declaration section and holds its fields by value
-                StructTranspiler.WriteStructDefinition(structSym, ref context);
-                continue;
-            }
-
             StructTranspiler.WriteTemplatePrefix(ref context, structSym);
             context.Emitter.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine(";");
         }
@@ -243,25 +256,14 @@ public static class MethodTranspiler
 
         foreach (var field in lowered.ContextFields)
         {
-            if (HoistedFieldTypeResolver.TryResolveIteratorField(
-                    field,
-                    context.Query.SemanticModel,
-                    out var iteratorMethod))
-            {
-                var iteratorStruct = GlobalCppNames.GetKernelDerivedName(
-                    GSharpInternalNames.Iterator.TypePrefix,
-                    iteratorMethod);
-                context.Emitter.Writer.Append(iteratorStruct);
-                WriteContextFieldName(field, ref context);
-                continue;
-            }
-
             // Field types come from HoistedFieldTypeResolver
             var typeSymbol = HoistedFieldTypeResolver.Resolve(field, context.Query.SemanticModel, kernelName);
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
             context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-            WriteContextFieldName(field, ref context);
+            context.Emitter.Writer.Append(' ');
+            CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
+            context.Emitter.Writer.AppendLine(";");
         }
 
         for (var i = 0; i < lowered.CallSites.Count; i++)
@@ -278,13 +280,6 @@ public static class MethodTranspiler
     internal static IMethodSymbol GetSuspendingCallee(InvocationExpressionSyntax callSite, ref TranspileContext context) =>
         context.Query.SemanticModel.GetSymbol(callSite) as IMethodSymbol
         ?? throw new InvalidOperationException("A call that may suspend does not resolve to a device function.");
-
-    private static void WriteContextFieldName(VariableDeclaratorSyntax field, ref TranspileContext context)
-    {
-        context.Emitter.Writer.Append(' ');
-        CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
-        context.Emitter.Writer.AppendLine(";");
-    }
 
     private static void WriteMethodBody(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
         ref TranspileContext context)

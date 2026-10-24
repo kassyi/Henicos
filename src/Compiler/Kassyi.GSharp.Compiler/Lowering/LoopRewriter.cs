@@ -1,16 +1,19 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Lowers loop constructs (for, while, do-while) into flat goto sequences for linear state machine generation.</summary>
-public class LoopRewriter(LoweringMode mode = LoweringMode.Suspension) : CSharpSyntaxRewriter
+public class LoopRewriter : CSharpSyntaxRewriter
 {
     private int _labelCounter;
     private readonly Stack<(string Break, string Continue)> _loopStack = new();
 
-    private bool ContainsSplitPoint(SyntaxNode node) => BarrierHelper.ContainsSplitPoint(node, mode);
+    private static bool ContainsBarrier(SyntaxNode node) =>
+        node.DescendantNodesAndSelf()
+            .AsStackEnumerable()
+            .Any(static descendant => descendant is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv));
 
     /// <summary>Rewrites loops within the block into flat goto sequences.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) =>
-        ContainsSplitPoint(block) ? (BlockSyntax)Visit(block) : block;
+        ContainsBarrier(block) ? (BlockSyntax)Visit(block) : block;
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
     {
@@ -24,7 +27,7 @@ public class LoopRewriter(LoweringMode mode = LoweringMode.Suspension) : CSharpS
             {
                 // [WHY] Loop statements only become BlockSyntax when they already contain a barrier.
                 // Explicit nested BlockSyntax nodes are only inlined if they contain a barrier.
-                if (statement is not BlockSyntax || ContainsSplitPoint(statement))
+                if (statement is not BlockSyntax || ContainsBarrier(statement))
                 {
                     newStatements.AddRange(nestedBlock.Statements);
                 }
@@ -66,7 +69,7 @@ public class LoopRewriter(LoweringMode mode = LoweringMode.Suspension) : CSharpS
 
     public override SyntaxNode? VisitWhileStatement(WhileStatementSyntax node)
     {
-        if (!ContainsSplitPoint(node))
+        if (!ContainsBarrier(node))
         {
             return base.VisitWhileStatement(node);
         }
@@ -76,7 +79,7 @@ public class LoopRewriter(LoweringMode mode = LoweringMode.Suspension) : CSharpS
 
     public override SyntaxNode? VisitDoStatement(DoStatementSyntax node)
     {
-        if (!ContainsSplitPoint(node))
+        if (!ContainsBarrier(node))
         {
             return base.VisitDoStatement(node);
         }
@@ -86,7 +89,7 @@ public class LoopRewriter(LoweringMode mode = LoweringMode.Suspension) : CSharpS
 
     public override SyntaxNode? VisitForStatement(ForStatementSyntax node)
     {
-        if (!ContainsSplitPoint(node))
+        if (!ContainsBarrier(node))
         {
             return base.VisitForStatement(node);
         }
@@ -191,4 +194,3 @@ public class LoopRewriter(LoweringMode mode = LoweringMode.Suspension) : CSharpS
         return SyntaxFactory.Block(statements);
     }
 }
-

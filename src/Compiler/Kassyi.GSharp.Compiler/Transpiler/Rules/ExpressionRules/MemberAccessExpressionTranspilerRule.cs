@@ -167,13 +167,6 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
-        if (memberName.Name == "Current" &&
-            node.Expression.HasAnnotations(LoweringAnnotations.ForEachEnumeratorAnnotationKind))
-        {
-            context.Emitter.Writer.Append("Current()");
-            return;
-        }
-
         if (memberName.Name == "Length" &&
             node.Expression.HasAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind))
         {

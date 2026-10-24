@@ -51,7 +51,6 @@ Lowering:
     SwitchStatePrefix: __gsharp_switch_
     ForEachSourcePrefix: __gsharp_foreach_src_
     ForEachIndexPrefix: __gsharp_foreach_i_
-    ForEachEnumeratorPrefix: __gsharp_foreach_e_
 
 Using:
   Summary: >-
@@ -124,10 +123,3 @@ Prelude:
     LeadingZeroCountFor64: { Value: __gsharp_lzc_64, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor32: { Value: __gsharp_tzc_32, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor64: { Value: __gsharp_tzc_64, Prelude: MathAndBitOps.hpp }
-
-Iterator:
-  Summary: Value-type iterator structs lowered from device functions that use yield.
-  Names:
-    TypePrefix: __gsharp_iterator_
-    Current: __gsharp_current
-    InitialParameterPrefix: __gsharp_initial_
