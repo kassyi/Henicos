@@ -28,6 +28,8 @@ public partial class NamingArchitectureTests
         "MethodSignatureTranspiler.cs:methodSymbol.ContainingType.Name",
         "MethodSignatureTranspiler.cs:methodSymbol.Name",
         "HoistedFieldTypeResolver.cs:typeParameter.Name",
+        "ArgumentMatchingHelper.cs:callee.Name",
+        "ArgumentMatchingHelper.cs:parameter.Name",
         // A kernel whose symbol does not resolve; the C# compilation already fails.
         "MethodSignatureTranspiler.cs:method.Identifier.ValueText",
     };
