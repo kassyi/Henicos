@@ -206,7 +206,6 @@ public static class MethodTranspiler
         context.Emitter.Writer = mainWriter;
         foreach (var structSym in StructTranspiler.GetTopologicallySortedStructs(ref context))
         {
-            StructTranspiler.WriteTemplatePrefix(ref context, structSym);
             context.Emitter.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine(";");
         }
 

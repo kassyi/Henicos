@@ -326,6 +326,12 @@ internal static class StatementTranspilers
             context.Emitter.Writer.Append(GSharpInternalNames.StateMachine.Termination);
         }
 
+        if (context.Emitter is { StructConstructorType: not null, CallableDepth: 1 })
+        {
+            context.Emitter.Writer.Append($"return {GSharpInternalNames.Lowering.ConstructorSelf};");
+            return;
+        }
+
         context.Emitter.Writer.Append("return;");
     }
 

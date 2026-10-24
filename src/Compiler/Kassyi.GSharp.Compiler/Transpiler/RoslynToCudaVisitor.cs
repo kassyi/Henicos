@@ -103,13 +103,23 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
             return;
         }
 
-        if (Context.RuleRegistry.GetRule(node.Kind()) is { } rule)
-        {
-            rule.Transpile(node, ref Context);
-            return;
-        }
+        var previousNode = Context.Emitter.CurrentNode;
+        Context.Emitter.CurrentNode = node;
 
-        base.Visit(node);
+        try
+        {
+            if (Context.RuleRegistry.GetRule(node.Kind()) is { } rule)
+            {
+                rule.Transpile(node, ref Context);
+                return;
+            }
+
+            base.Visit(node);
+        }
+        finally
+        {
+            Context.Emitter.CurrentNode = previousNode;
+        }
     }
 
     /// <inheritdoc />
@@ -393,9 +403,19 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                         symbol.Name);
                 }
 
+                // In a lowered struct constructor function, unqualified instance members belong to __gsharp_self.
+                if (Context.Emitter.StructConstructorType is { } ctorType &&
+                    symbol is IFieldSymbol { IsStatic: false, IsConst: false } or IPropertySymbol { IsStatic: false } &&
+                    symbol.ContainingType != null &&
+                    symbol.ContainingType.OriginalDefinition.IsEqualTo(ctorType.OriginalDefinition) &&
+                    node.Parent is not AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax })
+                {
+                    Context.Emitter.Writer.Append(GSharpInternalNames.Lowering.ConstructorSelf).Append('.');
+                }
+
                 Context.Emitter.Writer.AppendCppName(
                     CppNameResolver.Resolve(symbol, node.Identifier.ValueText, Context.Emitter.Dialect));
-                ComputedPropertyGetterCall.AppendCallIfGetter(symbol, ref Context);
+                ComputedPropertyGetterCall.AppendCallIfGetter(node, symbol, ref Context);
                 break;
         }
     }

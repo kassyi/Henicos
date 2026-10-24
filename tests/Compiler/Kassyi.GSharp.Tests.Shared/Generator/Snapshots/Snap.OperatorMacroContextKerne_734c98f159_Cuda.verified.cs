@@ -117,6 +117,11 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> __gsharp_id_0_data) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_self{};
+__gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
+return __gsharp_self;
+}
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__AddTwice(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState* __restrict__  __gsharp_id_0_state, GSharpArray<unsigned int> __gsharp_id_1_left, GSharpArray<unsigned int> __gsharp_id_2_right, GSharpArray<unsigned int> __gsharp_id_3_result){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_4_a = __gsharp_id_1_left;
@@ -198,6 +203,11 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> __gsharp_id_0_data) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_self{};
+__gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
+return __gsharp_self;
+}
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__ParameterContextKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState __gsharp_id_0_bigCtx, GSharpArray<unsigned int> __gsharp_id_1_left, GSharpArray<unsigned int> __gsharp_id_2_right, GSharpArray<unsigned int> __gsharp_id_3_result, GSharpArray<unsigned int> __gsharp_id_4_calls){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_5_a = __gsharp_id_1_left;
@@ -456,6 +466,11 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> __gsharp_id_0_data) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_self{};
+__gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
+return __gsharp_self;
+}
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__ValueContextKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState __gsharp_id_0_bigCtx, GSharpArray<unsigned int> __gsharp_id_1_operand, GSharpArray<unsigned int> __gsharp_id_2_result){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_id_3_a = __gsharp_id_1_operand;
@@ -876,6 +891,11 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+__device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> __gsharp_id_0_data) {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_self{};
+__gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
+return __gsharp_self;
+}
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__HoistedContextKernel(GSharpArray<unsigned int> __gsharp_id_0_offset, GSharpArray<unsigned int> __gsharp_id_1_left, GSharpArray<unsigned int> __gsharp_id_2_right, GSharpArray<unsigned int> __gsharp_id_3_result, GSharpArray<unsigned int> __gsharp_id_4_calls){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState __gsharp_id_5_local = {};

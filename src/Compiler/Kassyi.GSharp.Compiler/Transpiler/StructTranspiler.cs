@@ -1,13 +1,96 @@
+using Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
+
 namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>Emits CUDA C++ struct definitions, operator overloads, and handles InlineArray structures.</summary>
 internal static class StructTranspiler
 {
     /// <summary>
+    /// Substitutes type parameters of <paramref name="currentStruct"/> in <paramref name="typeSymbol"/> with the
+    /// concrete type arguments of <paramref name="currentStruct"/>.
+    /// </summary>
+    internal static ITypeSymbol? SubstituteTypeParameters(ITypeSymbol? typeSymbol, INamedTypeSymbol? currentStruct,
+        Compilation? compilation = null)
+    {
+        if (typeSymbol == null || currentStruct is not { IsGenericType: true } || currentStruct.IsDefinition)
+        {
+            return typeSymbol;
+        }
+
+        return SubstituteTypeParametersCore(typeSymbol, currentStruct, compilation);
+    }
+
+    private static ITypeSymbol SubstituteTypeParametersCore(ITypeSymbol typeSymbol, INamedTypeSymbol currentStruct,
+        Compilation? compilation)
+    {
+        if (typeSymbol is ITypeParameterSymbol typeParam)
+        {
+            var typeParams = currentStruct.TypeParameters;
+            for (var i = 0; i < typeParams.Length; i++)
+            {
+                if (typeParams[i].IsEqualTo(typeParam))
+                {
+                    return currentStruct.TypeArguments[i];
+                }
+            }
+
+            return typeSymbol;
+        }
+
+        if (typeSymbol is IArrayTypeSymbol arrayType && compilation != null)
+        {
+            var elem = SubstituteTypeParametersCore(arrayType.ElementType, currentStruct, compilation);
+            return ReferenceEquals(elem, arrayType.ElementType)
+                ? arrayType
+                : compilation.CreateArrayTypeSymbol(elem, arrayType.Rank);
+        }
+
+        if (typeSymbol is IPointerTypeSymbol pointerType && compilation != null)
+        {
+            var pointedAt = SubstituteTypeParametersCore(pointerType.PointedAtType, currentStruct, compilation);
+            return ReferenceEquals(pointedAt, pointerType.PointedAtType)
+                ? pointerType
+                : compilation.CreatePointerTypeSymbol(pointedAt);
+        }
+
+        if (typeSymbol is INamedTypeSymbol { IsGenericType: true } namedType && !namedType.IsDefinition)
+        {
+            var args = namedType.TypeArguments;
+            ITypeSymbol[]? substituted = null;
+            for (var i = 0; i < args.Length; i++)
+            {
+                var arg = SubstituteTypeParametersCore(args[i], currentStruct, compilation);
+                if (!ReferenceEquals(arg, args[i]))
+                {
+                    if (substituted == null)
+                    {
+                        substituted = new ITypeSymbol[args.Length];
+                        for (var j = 0; j < i; j++)
+                        {
+                            substituted[j] = args[j];
+                        }
+                    }
+                }
+
+                if (substituted != null)
+                {
+                    substituted[i] = arg;
+                }
+            }
+
+            return substituted != null ? namedType.OriginalDefinition.Construct(substituted) : namedType;
+        }
+
+        return typeSymbol;
+    }
+
+    /// <summary>
     /// Recursively registers referenced struct symbols and their field types to ensure necessary forward definitions are emitted.
     /// </summary>
     public static void RegisterUsedStructIfApplicable(ITypeSymbol? typeSymbol, ref TranspileContext context)
     {
+        typeSymbol = SubstituteTypeParameters(typeSymbol, context.Emitter.CurrentStructType,
+            context.Query.SemanticModel.Compilation);
         if (!TryGetUserStruct(typeSymbol, out var namedStruct))
         {
             return;
@@ -16,6 +99,11 @@ internal static class StructTranspiler
         if (!context.Query.UsedStructs.Add(namedStruct))
         {
             return;
+        }
+
+        foreach (var typeArgument in namedStruct.TypeArguments)
+        {
+            RegisterUsedStructIfApplicable(typeArgument, ref context);
         }
 
         foreach (var member in StructAbiMembers.Get(namedStruct))
@@ -62,6 +150,14 @@ internal static class StructTranspiler
                 return;
             }
 
+            foreach (var typeArgument in s.TypeArguments)
+            {
+                if (TryGetUserStruct(typeArgument, out var dep) && structSet.Contains(dep))
+                {
+                    visit(dep);
+                }
+            }
+
             foreach (var member in StructAbiMembers.Get(s))
             {
                 if (TryGetUserStruct(member.Type, out var dep) && structSet.Contains(dep))
@@ -95,25 +191,35 @@ internal static class StructTranspiler
     /// </summary>
     public static void WriteStructDefinition(INamedTypeSymbol structSym, ref TranspileContext context)
     {
-        var hasPack = structSym.TryGetStructLayoutPack(out var packValue);
-        if (hasPack)
-        {
-            context.Emitter.Writer.AppendLine($"#pragma pack(push, {packValue})");
-        }
+        var previousStructType = context.Emitter.CurrentStructType;
+        context.Emitter.CurrentStructType = structSym;
 
-        var inlineArrayAttr = structSym.GetAttribute(KnownAttributes.InlineArray);
-        if (inlineArrayAttr != null)
+        try
         {
-            WriteInlineArrayDefinition(structSym, inlineArrayAttr, ref context);
-        }
-        else
-        {
-            WriteStandardStructDefinition(structSym, ref context);
-        }
+            var hasPack = structSym.TryGetStructLayoutPack(out var packValue);
+            if (hasPack)
+            {
+                context.Emitter.Writer.AppendLine($"#pragma pack(push, {packValue})");
+            }
 
-        if (hasPack)
+            var inlineArrayAttr = structSym.GetAttribute(KnownAttributes.InlineArray);
+            if (inlineArrayAttr != null)
+            {
+                WriteInlineArrayDefinition(structSym, inlineArrayAttr, ref context);
+            }
+            else
+            {
+                WriteStandardStructDefinition(structSym, ref context);
+            }
+
+            if (hasPack)
+            {
+                context.Emitter.Writer.AppendLine("#pragma pack(pop)");
+            }
+        }
+        finally
         {
-            context.Emitter.Writer.AppendLine("#pragma pack(pop)");
+            context.Emitter.CurrentStructType = previousStructType;
         }
     }
 
@@ -219,6 +325,7 @@ internal static class StructTranspiler
                 else if (member is IPropertySymbol property && StructAbiMembers.IsComputedProperty(property))
                 {
                     WriteComputedPropertyGetter(property, ref context);
+                    WriteComputedPropertySetter(property, ref context);
                 }
             }
 
@@ -230,25 +337,217 @@ internal static class StructTranspiler
             }
         }
 
-        WriteStructFooter(ref context);
+        context.Emitter.Writer.AppendLine(";");
+        WriteStructConstructors(structSym, ref context);
+        context.Emitter.Writer
+            .AppendLine("#endif")
+            .AppendLine();
     }
 
-    public static void WriteTemplatePrefix(ref TranspileContext context, INamedTypeSymbol structSym)
-    {
-        if (structSym.TypeParameters.Length > 0)
-        {
-            context.Emitter.Writer.Append("template <");
-            for (var i = 0; i < structSym.TypeParameters.Length; i++)
-            {
-                if (i > 0)
-                {
-                    context.Emitter.Writer.Append(", ");
-                }
+    /// <summary>
+    /// Whether <paramref name="constructor"/> is a user-defined struct constructor emitted as a value-returning device
+    /// function (<c>__gsharp_ctor_...</c>) rather than aggregate initialization.
+    /// </summary>
+    public static bool IsEmittedStructConstructor(IMethodSymbol? constructor) =>
+        constructor is { MethodKind: MethodKind.Constructor, IsImplicitlyDeclared: false, IsStatic: false } &&
+        constructor.ContainingType is { } containingType &&
+        GlobalCppNames.IsEmittedUserType(containingType) &&
+        constructor.TryGetDeclaringSyntax<ConstructorDeclarationSyntax>(out var declaration) &&
+        (declaration.Body != null || declaration.ExpressionBody != null);
 
-                context.Emitter.Writer.Append("typename ").AppendFullyQualifiedCppName(structSym.TypeParameters[i]);
+    // [WHY] Defining a C++ constructor inside the struct makes it non-aggregate, which breaks CUDA __shared__ and brace
+    // initialization. Instead, each user-defined constructor is emitted right after the struct as an inline factory
+    // function that default-initializes __gsharp_self{}, runs the body, and returns __gsharp_self (matching Roslyn's
+    // LocalRewriter_ObjectCreationExpression.MakeObjectCreationExpressionForStruct).
+    private static void WriteStructConstructors(INamedTypeSymbol structSym, ref TranspileContext context)
+    {
+        var compilation = context.Query.SemanticModel.Compilation;
+        var ordered = ImmutableArray.CreateBuilder<(
+            IMethodSymbol Constructor, ConstructorDeclarationSyntax Declaration)>();
+        var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+
+        foreach (var constructor in structSym.InstanceConstructors)
+        {
+            VisitConstructor(constructor);
+        }
+
+        foreach (var (constructor, declaration) in ordered)
+        {
+            WriteStructConstructor(structSym, constructor, declaration, ref context);
+        }
+
+        void VisitConstructor(IMethodSymbol constructor)
+        {
+            if (!visited.Add(constructor) ||
+                !IsEmittedStructConstructor(constructor) ||
+                !constructor.TryGetDeclaringSyntax<ConstructorDeclarationSyntax>(out var declaration) ||
+                !compilation.ContainsSyntaxTree(declaration.SyntaxTree))
+            {
+                return;
             }
 
-            context.Emitter.Writer.AppendLine(">");
+            if (declaration.Initializer is { } initializer)
+            {
+                var model = compilation.GetSemanticModel(declaration.SyntaxTree);
+                if (ResolveChainedConstructor(structSym, model.GetSymbol(initializer) as IMethodSymbol) is { } target)
+                {
+                    VisitConstructor(target);
+                }
+            }
+
+            ordered.Add((constructor, declaration));
+        }
+    }
+
+    private static IMethodSymbol? ResolveChainedConstructor(INamedTypeSymbol structSym, IMethodSymbol? target)
+    {
+        if (target == null)
+        {
+            return null;
+        }
+
+        foreach (var candidate in structSym.InstanceConstructors)
+        {
+            if (candidate.OriginalDefinition.IsEqualTo(target.OriginalDefinition))
+            {
+                return candidate;
+            }
+        }
+
+        return target;
+    }
+
+    private static bool TryGetMemberInitializer(ISymbol memberSymbol, Compilation compilation,
+        [NotNullWhen(true)] out EqualsValueClauseSyntax? initializer)
+    {
+        if (memberSymbol.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) &&
+            declarator.Initializer is { } fieldInit &&
+            compilation.ContainsSyntaxTree(declarator.SyntaxTree))
+        {
+            initializer = fieldInit;
+            return true;
+        }
+
+        if (memberSymbol.TryGetDeclaringSyntax<PropertyDeclarationSyntax>(out var propertyDecl) &&
+            propertyDecl.Initializer is { } propInit &&
+            compilation.ContainsSyntaxTree(propertyDecl.SyntaxTree))
+        {
+            initializer = propInit;
+            return true;
+        }
+
+        initializer = null;
+        return false;
+    }
+
+    // __device__ inline <StructType> __gsharp_ctor_<Name>(<params>) {
+    // <StructType> __gsharp_self{}; (or = __gsharp_ctor_...(...) when chaining : this(...))
+    // <member initializers when not chaining>
+    // <body>
+    // return __gsharp_self;
+    // }
+    private static void WriteStructConstructor(INamedTypeSymbol structSym, IMethodSymbol constructor,
+        ConstructorDeclarationSyntax declaration, ref TranspileContext context)
+    {
+        var query = context.Query;
+        var reporter = context.Reporter;
+        var model = query.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
+        context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
+        context.Reporter = reporter.WithSemanticModel(model);
+        var previousCtorType = context.Emitter.StructConstructorType;
+        var previousCallableDepth = context.Emitter.CallableDepth;
+        context.Emitter.StructConstructorType = structSym;
+        context.Emitter.CallableDepth = 1;
+
+        try
+        {
+            context.Emitter.Writer.Append("__device__ inline ");
+            context.Emitter.Dialect.AppendType(ref context, structSym);
+            context.Emitter.Writer.Append(' ').Append(GlobalCppNames.GetConstructorName(constructor));
+            context.Visitor.Visit(declaration.ParameterList);
+            context.Emitter.Writer.Append(' ');
+
+            using (context.Emitter.Writer.Scope())
+            {
+                context.Emitter.Dialect.AppendType(ref context, structSym);
+                if (declaration.Initializer is { } initializer)
+                {
+                    var target = ResolveChainedConstructor(structSym, model.GetSymbol(initializer) as IMethodSymbol);
+                    if (target != null && IsEmittedStructConstructor(target))
+                    {
+                        context.Emitter.Writer.Append($" {GSharpInternalNames.Lowering.ConstructorSelf} = ");
+                        ObjectCreationHelper.TranspileConstructorCall(structSym, target, initializer.ArgumentList,
+                            ref context);
+                        context.Emitter.Writer.AppendLine(";");
+                    }
+                    else if (target is { Parameters.Length: 0 })
+                    {
+                        context.Emitter.Writer.AppendLine($" {GSharpInternalNames.Lowering.ConstructorSelf}{{}};");
+                    }
+                    else
+                    {
+                        context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, initializer,
+                            initializer.Kind().ToString());
+                        context.Emitter.Writer.AppendLine($" {GSharpInternalNames.Lowering.ConstructorSelf}{{}};");
+                    }
+                }
+                else
+                {
+                    context.Emitter.Writer.AppendLine($" {GSharpInternalNames.Lowering.ConstructorSelf}{{}};");
+                    WriteStructMemberInitializers(structSym, ref context);
+                }
+
+                if (declaration.Body != null)
+                {
+                    context.Visitor.VisitBlock(declaration.Body);
+                }
+                else if (declaration.ExpressionBody != null)
+                {
+                    context.Visitor.Visit(declaration.ExpressionBody.Expression);
+                    context.Emitter.Writer.AppendLine(";");
+                }
+
+                context.Emitter.Writer.AppendLine($"return {GSharpInternalNames.Lowering.ConstructorSelf};");
+            }
+        }
+        finally
+        {
+            context.Emitter.StructConstructorType = previousCtorType;
+            context.Emitter.CallableDepth = previousCallableDepth;
+            context.Query = query;
+            context.Reporter = reporter;
+        }
+    }
+
+    private static void WriteStructMemberInitializers(INamedTypeSymbol structSym, ref TranspileContext context)
+    {
+        var compilation = context.Query.SemanticModel.Compilation;
+        foreach (var member in StructAbiMembers.Get(structSym))
+        {
+            if (!TryGetMemberInitializer(member.Symbol, compilation, out var initializer))
+            {
+                continue;
+            }
+
+            var query = context.Query;
+            var reporter = context.Reporter;
+            var model = compilation.GetSemanticModel(initializer.SyntaxTree);
+            context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
+            context.Reporter = reporter.WithSemanticModel(model);
+
+            try
+            {
+                context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.ConstructorSelf}.")
+                    .Append(GetMemberName(member.Symbol, ref context))
+                    .Append(" = ");
+                context.Visitor.Visit(initializer.Value);
+                context.Emitter.Writer.AppendLine(";");
+            }
+            finally
+            {
+                context.Query = query;
+                context.Reporter = reporter;
+            }
         }
     }
 
@@ -258,8 +557,6 @@ internal static class StructTranspiler
 
         context.Emitter.Writer.Append("#ifndef ").AppendLine(guardName)
             .Append("#define ").AppendLine(guardName);
-
-        WriteTemplatePrefix(ref context, structSym);
 
         context.Emitter.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine();
     }
@@ -338,16 +635,49 @@ internal static class StructTranspiler
             .AppendCppName(CppNameResolver.Resolve(property, property.Name, context.Emitter.Dialect))
             .Append("() const ");
 
+        TranspilePropertyAccessorBody(declaration.SyntaxTree, block, expression, isVoidExpression: false, ref context);
+    }
+
+    // __device__ inline void <property name>(<type> <value parameter>) { <setter body> }
+    // [WHY] The setter overloads the C++ name of the property with one parameter, so assignments and object / `with`
+    // initializers call it by appending `(<rhs>)` after the member name (ComputedPropertyGetterCall).
+    private static void WriteComputedPropertySetter(IPropertySymbol property, ref TranspileContext context)
+    {
+        var compilation = context.Query.SemanticModel.Compilation;
+        if (property.SetMethod is not { Parameters: [var valueParameter] } ||
+            !property.TryGetDeclaringSyntax<PropertyDeclarationSyntax>(out var declaration) ||
+            !compilation.ContainsSyntaxTree(declaration.SyntaxTree) ||
+            !TryGetSetterBody(declaration, out var block, out var expression))
+        {
+            return;
+        }
+
+        context.Emitter.Writer.Append("__device__ inline void ")
+            .AppendCppName(CppNameResolver.Resolve(property, property.Name, context.Emitter.Dialect));
+        using (context.Emitter.Writer.Parentheses())
+        {
+            context.Emitter.Dialect.AppendType(ref context, property.Type);
+            context.Emitter.Writer.Append(' ');
+            CppNameResolver.AppendSymbolName(valueParameter, ref context);
+        }
+
+        context.Emitter.Writer.Append(' ');
+        TranspilePropertyAccessorBody(declaration.SyntaxTree, block, expression, isVoidExpression: true, ref context);
+    }
+
+    private static void TranspilePropertyAccessorBody(SyntaxTree syntaxTree, BlockSyntax? block,
+        ExpressionSyntax? expression, bool isVoidExpression, ref TranspileContext context)
+    {
         // [WHY] The struct may be declared in another file than the kernel, so its body is bound with a model of its own tree.
         var query = context.Query;
         var reporter = context.Reporter;
-        var model = compilation.GetSemanticModel(declaration.SyntaxTree);
+        var model = query.SemanticModel.Compilation.GetSemanticModel(syntaxTree);
         context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
         context.Reporter = reporter.WithSemanticModel(model);
 
         try
         {
-            LambdaTranspilerHelper.TranspileLambdaBody(ref context, block, expression);
+            LambdaTranspilerHelper.TranspileLambdaBody(ref context, block, expression, isVoidExpression);
         }
         finally
         {
@@ -375,6 +705,27 @@ internal static class StructTranspiler
         return block != null || expression != null;
     }
 
+    // The body of `set => expr`, `set { ... }`, `init => expr` or `init { ... }`
+    private static bool TryGetSetterBody(PropertyDeclarationSyntax declaration, out BlockSyntax? block,
+        out ExpressionSyntax? expression)
+    {
+        block = null;
+        expression = null;
+        if (declaration.AccessorList is not { } accessorList)
+        {
+            return false;
+        }
+
+        var setter = accessorList.Accessors
+            .AsStackEnumerable()
+            .FirstOrDefault(static accessor =>
+                accessor.IsKind(SyntaxKind.SetAccessorDeclaration) ||
+                accessor.IsKind(SyntaxKind.InitAccessorDeclaration));
+        block = setter?.Body;
+        expression = setter?.ExpressionBody?.Expression;
+        return block != null || expression != null;
+    }
+
     private static string GetMemberName(ISymbol member, ref TranspileContext context) =>
         CppNameResolver.Resolve(member, member.Name, context.Emitter.Dialect).ToString();
 
@@ -390,7 +741,40 @@ internal static class StructTranspiler
         return false;
     }
 
+    private static SyntaxNode? GetMemberTypeSyntax(ISymbol symbol, Compilation compilation)
+    {
+        if (symbol.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) &&
+            declarator.Parent is VariableDeclarationSyntax varDecl &&
+            compilation.ContainsSyntaxTree(varDecl.SyntaxTree))
+        {
+            return varDecl.Type;
+        }
+
+        if (symbol.TryGetDeclaringSyntax<PropertyDeclarationSyntax>(out var propDecl) &&
+            compilation.ContainsSyntaxTree(propDecl.SyntaxTree))
+        {
+            return propDecl.Type;
+        }
+
+        return null;
+    }
+
     private static void WriteStructMember(ref TranspileContext context, StructAbiMember member)
+    {
+        var previousNode = context.Emitter.CurrentNode;
+        context.Emitter.CurrentNode =
+            GetMemberTypeSyntax(member.Symbol, context.Query.SemanticModel.Compilation);
+        try
+        {
+            WriteStructMemberCore(ref context, member);
+        }
+        finally
+        {
+            context.Emitter.CurrentNode = previousNode;
+        }
+    }
+
+    private static void WriteStructMemberCore(ref TranspileContext context, StructAbiMember member)
     {
         if (member is { Kind: StructAbiMemberKind.FixedBuffer, Symbol: IFieldSymbol field })
         {

@@ -19,4 +19,29 @@ public static partial class ComputedPropertyGetterFailureKernels
     {
         data[0] = value.Twice;
     }
+
+    [GpuKernel]
+    [SkipSnapshotConsistency("Diagnostics case")]
+    public static void UnsubstitutedTypeParameterKernel(int[] data)
+    {
+        var s = new UnsubstitutedOuter<int>.Inner();
+        data[0] = s.Copy;
+    }
+}
+
+public static class UnsubstitutedOuter<T> where T : unmanaged
+{
+    public struct Inner
+    {
+        public int Value;
+
+        public int Copy
+        {
+            get
+            {
+                T temp = default;
+                return Value;
+            }
+        }
+    }
 }

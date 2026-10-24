@@ -108,8 +108,12 @@ public class TranspilerIssuesTests : TranspilerTestBase
             nameof(TranspilerIssuesTarget.GenericsConstraintResolution), isDevice: false, dialect: CurrentDialect);
 
         Assert.Empty(diagnostics);
-        Assert.Contains("template <typename T>", cudaSource.WithCSharpNames());
-        Assert.Contains("struct Kassyi.GSharp.Tests.Shared.Transpiler.GenericBox_IssuesTest`1", cudaSource.WithCSharpNames());
-        Assert.Contains("Kassyi.GSharp.Tests.Shared.Transpiler.GenericBox_IssuesTest`1<float> b = boxes[0];", cudaSource.WithCSharpNames());
+        Assert.DoesNotContain("template <typename", cudaSource);
+        Assert.Contains(
+            "struct Kassyi.GSharp.Tests.Shared.Transpiler.GenericBox_IssuesTest<System.Single>",
+            cudaSource.WithCSharpNames());
+        Assert.Contains(
+            "Kassyi.GSharp.Tests.Shared.Transpiler.GenericBox_IssuesTest<System.Single> b = boxes[0];",
+            cudaSource.WithCSharpNames());
     }
 }

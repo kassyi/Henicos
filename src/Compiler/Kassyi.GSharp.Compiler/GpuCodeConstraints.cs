@@ -65,9 +65,8 @@ internal static class GpuCodeConstraints
     public const string WithOnReferenceType = "with expression on a reference type (heap allocation)";
 
     /// <summary>
-    /// Why <c>with</c> cannot assign <paramref name="member"/> on the device, or <see langword="null"/> when it can (GSH0003).
-    /// The device struct stores a field or an auto-property as a field; a property whose accessor has a body has no setter
-    /// function there, and a <c>[GpuReadOnly]</c> member is <c>const</c>.
+    /// Why <c>with</c> cannot assign <paramref name="member"/> on the device, or <see langword="null"/> when it can
+    /// (GSH0003): a <c>[GpuReadOnly]</c> member is <c>const</c> on the device.
     /// </summary>
     /// <param name="member">The member named on the left of a <c>with</c> initializer assignment.</param>
     public static string? GetWithMemberProblem(ISymbol? member)
@@ -84,13 +83,8 @@ internal static class GpuCodeConstraints
         }
 
         // [WHY] A [GpuReadOnly] array member stays assignable: the device holds it as a GSharpArray of const elements
-        if (member.HasAttribute(KnownAttributes.GpuReadOnly) && !type.TryGetArrayLikeElementType(out _))
-        {
-            return $"with expression assigning the [GpuReadOnly] member '{member.Name}'";
-        }
-
-        return member is IPropertySymbol { } p && !StructAbiMembers.IsAutoProperty(p)
-            ? $"with expression assigning the property '{p.Name}', whose accessor has a body"
+        return member.HasAttribute(KnownAttributes.GpuReadOnly) && !type.TryGetArrayLikeElementType(out _)
+            ? $"with expression assigning the [GpuReadOnly] member '{member.Name}'"
             : null;
     }
 

@@ -19,6 +19,15 @@ public sealed class PostfixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerR
     /// <inheritdoc />
     public override void Transpile(PostfixUnaryExpressionSyntax node, ref TranspileContext context)
     {
+        if ((node.IsKind(SyntaxKind.PostIncrementExpression) || node.IsKind(SyntaxKind.PostDecrementExpression)) &&
+            ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Operand, ref context))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
+                ComputedPropertyGetterCall.IncrementOrDecrementOfComputedProperty);
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
         context.Visitor.Visit(node.Operand);
         context.Emitter.Writer.Append(node.OperatorToken.Text);
     }

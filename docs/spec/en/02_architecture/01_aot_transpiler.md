@@ -241,7 +241,7 @@ When the transpiler is configured to use the `CpuDialect` (Standard C++), the ge
 The `GpuKernelGenerator` reads several MSBuild properties via `AnalyzerConfigOptions` to control the compilation pipeline. These properties must be prefixed with `build_property.` when accessed:
 
 - `GSharpTargetDialect`: Specifies the target transpilation dialect (e.g., `Cuda` or `Cpu`).
-- `GSharpEmitSource`: If `true`, the compiler emits the intermediate C++ source files to disk for debugging.
+- `GSharpEmitSource`: If `true`, the compiler embeds the generated C++ source in the assembly as string constants (`{Kernel}_Source`, `{Kernel}_FullSource` and the shared `Source`). Defaults to `false` when unset.
 - `IntermediateOutputPath`: Used to determine where to output generated artifacts and intermediate files.
 
 ## 1.6 Expression Lowering (IIFE)
