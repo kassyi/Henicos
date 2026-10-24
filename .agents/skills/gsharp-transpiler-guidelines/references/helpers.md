@@ -53,10 +53,12 @@ checked the namespace, suppress it with `#pragma warning disable HNT0003 // <the
 | Constant value / operation that may not resolve | `.GetSafeConstantValue`, `.GetSafeOperation` | try/catch around Roslyn calls |
 | Location in the user's source after lowering rewrote the tree | `.GetOriginalLocation` | `node.GetLocation()` on a rewritten node |
 | Location to report a diagnostic at, for a node that may be in a lowered tree (falls back to the nearest mapped ancestor, then `Location.None`) | `.GetReportLocation` (`context.Reporter.Fail(descriptor, node)` uses it) | `node.GetLocation()`: a generator may not report a location outside the compilation |
-| Attach or read a lowering annotation (original span, suspending call, state machine `return`) | `LoweringAnnotations.OriginalSpanAnnotationKind`, `LoweringAnnotations.SuspendingCallAnnotationKind`, `LoweringAnnotations.StateMachineReturnAnnotationKind` | `node.HasAnnotations("StateMachineReturn")` |
+| Attach or read a lowering annotation (original span, suspending call, state machine `return`, `foreach` receivers and index) | `LoweringAnnotations.OriginalSpanAnnotationKind`, `LoweringAnnotations.SuspendingCallAnnotationKind`, `LoweringAnnotations.StateMachineReturnAnnotationKind`, `LoweringAnnotations.ForEachEnumeratorAnnotationKind`, `LoweringAnnotations.ForEachArraySourceAnnotationKind`, `LoweringAnnotations.ForEachIndexAnnotationKind`, `LoweringAnnotations.AnnotateOriginalSpans` | `node.HasAnnotations("StateMachineReturn")` |
 | Method body, block or `=>` | `.GetBodyNode`, `.HasBody` | `Body ?? (SyntaxNode?)ExpressionBody` |
 | Node or token is one of 2-3 kinds | `.IsKind` (`node.IsKind(a, b)`) | `IsKind(a) \|\| IsKind(b)` |
 | Walk a tree on a hot path | derive from `PooledWalker` and rent it (see `GpuKernelValidationWalker`) | `new MyWalker()` per call |
+| Is this a `[GpuDeviceFunction]` iterator (`IEnumerable<T>` with `yield`), or resolve the iterator method an expression or local comes from? | `IteratorTypeResolver.IsDeviceIteratorMethod`, `IteratorTypeResolver.TryResolveIteratorSource`, `IteratorTypeResolver.ContainsDirectYield` | matching `IEnumerable` by name or walking `DescendantNodes()` for `YieldStatementSyntax` without stopping at local functions |
+| Lower an iterator body or rewrite a `foreach` that holds a split point | `AstLoweringPipeline.LowerIterator`, `ForEachRewriter.LowerArrayForEach`, `ForEachRewriter.LowerIteratorForEach`, `BarrierHelper.ContainsSplitPoint` | hand-building a `MoveNext()` loop in multiple places |
 
 ## 3. Emitting code
 

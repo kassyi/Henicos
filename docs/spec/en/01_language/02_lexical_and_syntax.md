@@ -28,7 +28,7 @@ G# supports standard procedural programming paradigms essential for GPU compute 
 | Local functions / Lambdas | Yes | C++ Lambdas | Supported for non-capturing lambdas and local functions. Transpiled to C++ lambda expressions. |
 | `goto` | No | - | Strictly prohibited to ensure static analyzability and structured control flow. |
 | `try` / `catch` / `finally` | No | - | GPU execution does not support C++ exception handling for performance reasons. |
-| `yield return` | Yes | - | Supported for coroutines and collection dispose routing. |
+| `yield return` | Yes (`[GpuDeviceFunction]`) | Value-type enumerator | Supported in a `[GpuDeviceFunction]` that returns `IEnumerable<T>`; lowered to a value-type enumerator (`MoveNext` / `Current`) and consumed by `foreach`. Not in `[GpuKernel]`, and not across a barrier (GSH0046, GSH0070-GSH0072). |
 | `await` / `async` | No | - | Asynchronous execution within a kernel is unsupported. |
 | `lock` | No | - | Use `Gpu.AtomicAdd` or `Gpu.SyncThreads` for synchronization instead. |
 

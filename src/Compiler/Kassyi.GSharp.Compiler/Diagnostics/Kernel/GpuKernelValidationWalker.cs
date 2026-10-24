@@ -49,6 +49,9 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
     private static readonly ImmutableArray<ISyntaxValidationRule<BinaryExpressionSyntax>> s_binaryRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<BinaryExpressionSyntax>>().ToImmutableArray();
 
+    private static readonly ImmutableArray<ISyntaxValidationRule<ConditionalExpressionSyntax>> s_conditionalRules =
+        DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<ConditionalExpressionSyntax>>().ToImmutableArray();
+
     private static readonly ImmutableArray<ISyntaxValidationRule<AssignmentExpressionSyntax>> s_assignmentRules =
         DiagnosticRuleRegistry.Rules.OfType<ISyntaxValidationRule<AssignmentExpressionSyntax>>().ToImmutableArray();
 
@@ -196,6 +199,16 @@ internal sealed class GpuKernelValidationWalker : PooledWalker<GpuKernelValidati
         }
 
         base.VisitBinaryExpression(node);
+    }
+
+    public override void VisitConditionalExpression(ConditionalExpressionSyntax node)
+    {
+        foreach (var rule in s_conditionalRules)
+        {
+            rule.Analyze(node, ref _context);
+        }
+
+        base.VisitConditionalExpression(node);
     }
 
     public override void VisitAssignmentExpression(AssignmentExpressionSyntax node)

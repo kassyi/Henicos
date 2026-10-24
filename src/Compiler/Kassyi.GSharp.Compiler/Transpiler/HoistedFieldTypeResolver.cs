@@ -5,6 +5,40 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 /// </summary>
 internal static class HoistedFieldTypeResolver
 {
+    /// <summary>
+    /// Resolves a hoisted state-machine field that holds an iterator or enumerator value to the iterator
+    /// <see cref="IMethodSymbol"/> that produces its struct.
+    /// </summary>
+    public static bool TryResolveIteratorField(
+        VariableDeclaratorSyntax field,
+        SemanticModel semanticModel,
+        [NotNullWhen(true)] out IMethodSymbol? iteratorMethod)
+    {
+        if (field.Initializer?.Value is { } initValue &&
+            semanticModel.GetOriginalNode(initValue) is ExpressionSyntax origInit &&
+            IteratorTypeResolver.TryResolveIteratorSource(origInit, semanticModel, out _, out iteratorMethod))
+        {
+            return true;
+        }
+
+        if (semanticModel.GetOriginalNode(field) is ExpressionSyntax origField &&
+            IteratorTypeResolver.TryResolveIteratorSource(origField, semanticModel, out _, out iteratorMethod))
+        {
+            return true;
+        }
+
+        if (semanticModel.GetDeclaredSymbol<ILocalSymbol>(field) is { } localSymbol &&
+            localSymbol.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var origDeclarator) &&
+            origDeclarator.Initializer?.Value is { } origDeclaratorInit &&
+            IteratorTypeResolver.TryResolveIteratorSource(origDeclaratorInit, semanticModel, out _, out iteratorMethod))
+        {
+            return true;
+        }
+
+        iteratorMethod = null;
+        return false;
+    }
+
     public static ITypeSymbol Resolve(VariableDeclaratorSyntax field, SemanticModel semanticModel, string kernelName)
     {
         var declaredSymbol = semanticModel.GetDeclaredSymbol<ILocalSymbol>(field);
@@ -19,6 +53,11 @@ internal static class HoistedFieldTypeResolver
         if (IsAcceptable(type2))
         {
             return type2;
+        }
+
+        if (field.HasAnnotations(LoweringAnnotations.ForEachIndexAnnotationKind))
+        {
+            return semanticModel.Compilation.GetSpecialType(SpecialType.System_Int32);
         }
 
         throw new InvalidOperationException(BuildErrorMessage(field, semanticModel, kernelName, declaredSymbol, type1, type2));

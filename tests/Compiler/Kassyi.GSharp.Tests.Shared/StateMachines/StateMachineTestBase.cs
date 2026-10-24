@@ -66,6 +66,33 @@ public abstract class StateMachineTestBase
             var (rewrittenBlock, _) = new ContextHoister().Hoist(b);
             return new StateMachineLowerer().Lower(rewrittenBlock);
         }, source, methodName);
+
+    protected static LoweredIterator LowerIteratorFromDelegate(Action action,
+        [CallerArgumentExpression(nameof(action))]
+        string source = "")
+    {
+        var lambda = (ParenthesizedLambdaExpressionSyntax)SyntaxFactory.ParseExpression(source);
+        var block = (BlockSyntax)lambda.Body;
+        if (block.Statements is [LocalFunctionStatementSyntax { Body: { } iteratorBody } localFunction])
+        {
+            return AstLoweringPipeline.LowerIterator(iteratorBody, localFunction.ParameterList);
+        }
+
+        return AstLoweringPipeline.LowerIterator(block);
+    }
+
+    protected static Task VerifyIteratorLower(Action action,
+        [CallerArgumentExpression(nameof(action))]
+        string source = "", [CallerMemberName] string methodName = "") =>
+        VerifyTransformation(action, b =>
+        {
+            if (b.Statements is [LocalFunctionStatementSyntax { Body: { } iteratorBody } localFunction])
+            {
+                return AstLoweringPipeline.LowerIterator(iteratorBody, localFunction.ParameterList).MoveNextBody;
+            }
+
+            return AstLoweringPipeline.LowerIterator(b).MoveNextBody;
+        }, source, methodName);
 }
 
 // Mock class to allow compiling test delegates containing Gpu.* calls without depending on the actual Intrinsics.

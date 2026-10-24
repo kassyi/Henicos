@@ -167,6 +167,20 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             return;
         }
 
+        if (memberName.Name == "Current" &&
+            node.Expression.HasAnnotations(LoweringAnnotations.ForEachEnumeratorAnnotationKind))
+        {
+            context.Emitter.Writer.Append("Current()");
+            return;
+        }
+
+        if (memberName.Name == "Length" &&
+            node.Expression.HasAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind))
+        {
+            context.Emitter.Writer.Append("length");
+            return;
+        }
+
         var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node.Expression);
         if (typeSymbol != null && context.Emitter.Dialect.TryMapMemberAccess(typeSymbol, memberName.Name, out var mappedName, out var isMethodCall) && mappedName != null)
         {

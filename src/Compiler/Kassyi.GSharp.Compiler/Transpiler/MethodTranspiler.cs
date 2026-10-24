@@ -79,30 +79,40 @@ public static class MethodTranspiler
 
         context.Emitter.Writer = bodyWriter;
 
-        // A plan with a state machine always has a symbol
-        if (lowered != null && plan.Symbol is { } loweredSymbol)
+        if (plan.Kind == MethodEmissionKind.Iterator && plan.LoweredIterator is { } loweredIterator &&
+            plan.Symbol is { } iteratorSymbol)
         {
-            var prefix = isSuspendingDevice ? GSharpInternalNames.SuspendingCall.FrameTypePrefix : GSharpInternalNames.Kernel.ContextPrefix;
-            var frameName = GlobalCppNames.GetKernelDerivedName(prefix, loweredSymbol);
-            WriteContextStruct(frameName, methodDecl.Identifier.ValueText, lowered, in plan, isSuspendingDevice,
-                ref context);
-        }
-
-        if (isSuspendingDevice && lowered != null && plan.Symbol is { } suspendingSymbol)
-        {
-            MethodSignatureTranspiler.WriteSuspendingDeviceSignature(methodDecl, suspendingSymbol, lowered.CopiedParameters,
-                ref context);
+            IteratorTranspiler.WriteSource(in plan, iteratorSymbol, loweredIterator, ref context);
         }
         else
         {
-            MethodSignatureTranspiler.WriteMethodSignature(in plan, lowered != null, ref context);
-        }
+            // A plan with a state machine always has a symbol
+            if (lowered != null && plan.Symbol is { } loweredSymbol)
+            {
+                var prefix = isSuspendingDevice
+                    ? GSharpInternalNames.SuspendingCall.FrameTypePrefix
+                    : GSharpInternalNames.Kernel.ContextPrefix;
+                var frameName = GlobalCppNames.GetKernelDerivedName(prefix, loweredSymbol);
+                WriteContextStruct(frameName, methodDecl.Identifier.ValueText, lowered, in plan, isSuspendingDevice,
+                    ref context);
+            }
 
-        WriteMethodBody(in plan, lowered, ref context);
+            if (isSuspendingDevice && lowered != null && plan.Symbol is { } suspendingSymbol)
+            {
+                MethodSignatureTranspiler.WriteSuspendingDeviceSignature(
+                    methodDecl, suspendingSymbol, lowered.CopiedParameters, ref context);
+            }
+            else
+            {
+                MethodSignatureTranspiler.WriteMethodSignature(in plan, lowered != null, ref context);
+            }
 
-        if (!isDevice && !context.Emitter.Dialect.IsCuda)
-        {
-            HostLauncherTranspiler.WriteCpuLauncher(in plan, lowered?.ContextFields, ref context);
+            WriteMethodBody(in plan, lowered, ref context);
+
+            if (!isDevice && !context.Emitter.Dialect.IsCuda)
+            {
+                HostLauncherTranspiler.WriteCpuLauncher(in plan, lowered?.ContextFields, ref context);
+            }
         }
 
         // Before the structs: a Dispose body can use more of them
@@ -151,8 +161,14 @@ public static class MethodTranspiler
 
         context.Emitter.Writer = sigWriter;
 
+        if (plan.Kind == MethodEmissionKind.Iterator &&
+            plan.LoweredIterator is { } loweredIterator &&
+            plan.Symbol is { } iteratorSymbol)
+        {
+            IteratorTranspiler.WriteSignature(in plan, iteratorSymbol, loweredIterator, ref context);
+        }
         // A suspending device function always has a symbol
-        if (plan.IsSuspendingOn(dialect) && plan.Symbol is { } methodSymbol)
+        else if (plan.IsSuspendingOn(dialect) && plan.Symbol is { } methodSymbol)
         {
             // The frame is defined with the body; the declaration only needs its name
             var frameName = GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.SuspendingCall.FrameTypePrefix,
@@ -170,6 +186,13 @@ public static class MethodTranspiler
         context.Emitter.Writer = mainWriter;
         foreach (var structSym in StructTranspiler.GetTopologicallySortedStructs(ref context))
         {
+            if (plan.Kind == MethodEmissionKind.Iterator)
+            {
+                // The iterator struct is defined in the declaration section and holds its fields by value
+                StructTranspiler.WriteStructDefinition(structSym, ref context);
+                continue;
+            }
+
             StructTranspiler.WriteTemplatePrefix(ref context, structSym);
             context.Emitter.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine(";");
         }
@@ -220,6 +243,19 @@ public static class MethodTranspiler
 
         foreach (var field in lowered.ContextFields)
         {
+            if (HoistedFieldTypeResolver.TryResolveIteratorField(
+                    field,
+                    context.Query.SemanticModel,
+                    out var iteratorMethod))
+            {
+                var iteratorStruct = GlobalCppNames.GetKernelDerivedName(
+                    GSharpInternalNames.Iterator.TypePrefix,
+                    iteratorMethod);
+                context.Emitter.Writer.Append(iteratorStruct);
+                WriteContextFieldName(field, ref context);
+                continue;
+            }
+
             // Field types come from HoistedFieldTypeResolver
             var typeSymbol = HoistedFieldTypeResolver.Resolve(field, context.Query.SemanticModel, kernelName);
 

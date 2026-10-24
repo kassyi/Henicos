@@ -31,6 +31,11 @@ internal readonly ref struct KernelBarrierValidator(
     private readonly ImmutableArray<LocalFunctionStatementSyntax>.Builder _localFunctionsWithBarrier =
         ImmutableArray.CreateBuilder<LocalFunctionStatementSyntax>();
 
+    private readonly ImmutableArray<YieldStatementSyntax>.Builder _yields =
+        ImmutableArray.CreateBuilder<YieldStatementSyntax>();
+
+    private readonly bool _isDeviceIterator = !isKernel && IteratorTypeResolver.ContainsDirectYield(methodDecl.Body);
+
     // Computed on the first branch around a block barrier
     private readonly ThreadVarianceAnalysis _variance = new(semanticModel, methodDecl);
 
@@ -46,6 +51,11 @@ internal readonly ref struct KernelBarrierValidator(
 
         // 2. Body Traversal & Immediate Node Validations
         ScanKernelBody();
+
+        if (_isDeviceIterator && _yields.Count > 0)
+        {
+            ValidateCrossYieldLocals();
+        }
 
         // Fast-path: If no barriers exist, cross-barrier constraints are completely skipped
         if (_barriers.Count == 0)
@@ -73,6 +83,7 @@ internal readonly ref struct KernelBarrierValidator(
         // GSH0044: ref, out, in, and ref struct parameters on [GpuKernel]; a device function receives them from its caller
         if (!isKernel)
         {
+            ValidateDeviceIteratorHeader();
             return;
         }
 
@@ -109,12 +120,116 @@ internal readonly ref struct KernelBarrierValidator(
         {
             switch (node.Kind())
             {
+                case SyntaxKind.LocalFunctionStatement:
+                    var localFunc = (LocalFunctionStatementSyntax)node;
+                    if (IteratorTypeResolver.ContainsDirectYield(localFunc.Body))
+                    {
+                        context.ReportDiagnostic(
+                            GSharpDiagnostics.IteratorShapeNotSupported,
+                            localFunc.Identifier.GetLocation(),
+                            localFunc.Identifier.ValueText,
+                            "local function iterators are not supported");
+                    }
+
+                    break;
+
+                case SyntaxKind.SimpleLambdaExpression:
+                case SyntaxKind.ParenthesizedLambdaExpression:
+                case SyntaxKind.AnonymousMethodExpression:
+                    var anonFunc = (AnonymousFunctionExpressionSyntax)node;
+                    if (IteratorTypeResolver.ContainsDirectYield(anonFunc.Body))
+                    {
+                        context.ReportDiagnostic(
+                            GSharpDiagnostics.IteratorShapeNotSupported,
+                            anonFunc.GetLocation(),
+                            "<lambda>",
+                            "anonymous function iterators are not supported");
+                    }
+
+                    break;
+
                 case SyntaxKind.AwaitExpression:
-                case SyntaxKind.YieldReturnStatement:
-                case SyntaxKind.YieldBreakStatement:
                     context.ReportDiagnostic(
                         GSharpDiagnostics.AsyncYieldInKernelProhibited,
                         node.GetLocation());
+                    break;
+
+                case SyntaxKind.YieldReturnStatement:
+                case SyntaxKind.YieldBreakStatement:
+                    if (IsInsideLocalOrAnonymousFunction(node))
+                    {
+                        break;
+                    }
+
+                    if (isKernel)
+                    {
+                        context.ReportDiagnostic(
+                            GSharpDiagnostics.AsyncYieldInKernelProhibited,
+                            node.GetLocation());
+                        break;
+                    }
+
+                    var yieldStmt = (YieldStatementSyntax)node;
+                    _yields.Add(yieldStmt);
+                    if (TryGetUnflattenableYieldConstruct(yieldStmt, methodDecl, out var yieldConstruct))
+                    {
+                        context.ReportDiagnostic(
+                            GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                            yieldStmt.YieldKeyword.GetLocation(),
+                            yieldConstruct);
+                    }
+
+                    break;
+
+                case SyntaxKind.UsingStatement:
+                    if (_isDeviceIterator && !IsInsideLocalOrAnonymousFunction(node))
+                    {
+                        var usingStmt = (UsingStatementSyntax)node;
+                        context.ReportDiagnostic(
+                            GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                            usingStmt.UsingKeyword.GetLocation(),
+                            "using");
+                    }
+
+                    break;
+
+                case SyntaxKind.LocalDeclarationStatement:
+                    if (_isDeviceIterator && !IsInsideLocalOrAnonymousFunction(node))
+                    {
+                        var localDecl = (LocalDeclarationStatementSyntax)node;
+                        if (UsingTranspiler.IsUsingDeclaration(localDecl))
+                        {
+                            context.ReportDiagnostic(
+                                GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                                localDecl.UsingKeyword.GetLocation(),
+                                "using");
+                        }
+
+                        if (semanticModel.GetTypeSymbol(localDecl.Declaration.Type).IsSharedMemoryType())
+                        {
+                            context.ReportDiagnostic(
+                                GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                                localDecl.Declaration.Type.GetLocation(),
+                                "SharedMemory<T>");
+                        }
+                    }
+
+                    break;
+
+                case SyntaxKind.ForEachStatement:
+                    if (_isDeviceIterator && !IsInsideLocalOrAnonymousFunction(node))
+                    {
+                        var forEachStmt = (ForEachStatementSyntax)node;
+                        if (semanticModel.GetTypeSymbol(forEachStmt.Expression) is { } collectionType &&
+                            collectionType.HasAttribute(KnownAttributes.InlineArray))
+                        {
+                            context.ReportDiagnostic(
+                                GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                                forEachStmt.ForEachKeyword.GetLocation(),
+                                "foreach over [InlineArray]");
+                        }
+                    }
+
                     break;
 
                 case SyntaxKind.LockStatement:
@@ -145,17 +260,36 @@ internal readonly ref struct KernelBarrierValidator(
 
                 case SyntaxKind.InvocationExpression:
                     var inv = (InvocationExpressionSyntax)node;
-                    if (BarrierUsageAnalyzer.IsSyncThreadsInvocation(inv, semanticModel))
+                    var isSyncThreads = BarrierUsageAnalyzer.IsSyncThreadsInvocation(inv, semanticModel);
+                    var isPhaseBarrier = isSyncThreads || BarrierHelper.IsPhaseBarrier(inv);
+                    IMethodSymbol? suspendingCallee = null;
+                    if (!isSyncThreads &&
+                        semanticModel.GetSymbol(inv) is IMethodSymbol callee &&
+                        SuspensionAnalysis.IsSuspendingFunction(callee, semanticModel.Compilation))
+                    {
+                        suspendingCallee = callee;
+                    }
+
+                    if ((isPhaseBarrier || suspendingCallee != null) &&
+                        (_isDeviceIterator || IsInsideIteratorForEachBody(inv)))
+                    {
+                        context.ReportDiagnostic(
+                            GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                            inv.GetLocation(),
+                            IteratorTypeResolver.FormatSyntax(inv));
+                        break;
+                    }
+
+                    if (isSyncThreads)
                     {
                         _barriers.Add(inv);
                         InspectBarrierAncestors(inv, isBlockBarrier: true);
                     }
-                    else if (semanticModel.GetSymbol(inv) is IMethodSymbol callee &&
-                             SuspensionAnalysis.IsSuspendingFunction(callee, semanticModel.Compilation))
+                    else if (suspendingCallee != null)
                     {
                         _barriers.Add(inv);
                         InspectBarrierAncestors(inv,
-                            SuspensionAnalysis.ReachesBlockBarrier(callee, semanticModel.Compilation));
+                            SuspensionAnalysis.ReachesBlockBarrier(suspendingCallee, semanticModel.Compilation));
                     }
 
                     break;
@@ -425,6 +559,246 @@ internal readonly ref struct KernelBarrierValidator(
         }
 
         return resultIndex >= 0 ? _barriers[resultIndex] : null;
+    }
+
+    private void ValidateDeviceIteratorHeader()
+    {
+        if (!_isDeviceIterator ||
+            semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl) is not { } methodSymbol)
+        {
+            return;
+        }
+
+        if (!methodSymbol.IsStatic)
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorShapeNotSupported,
+                methodDecl.Identifier.GetLocation(),
+                methodSymbol.Name,
+                "iterator methods must be static");
+            return;
+        }
+
+        if (methodSymbol.IsGenericMethod)
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorShapeNotSupported,
+                methodDecl.Identifier.GetLocation(),
+                methodSymbol.Name,
+                "generic iterator methods are not supported");
+            return;
+        }
+
+        if (!IteratorTypeResolver.IsGenericIEnumerable(methodSymbol.ReturnType, out var elementType))
+        {
+            var formattedReturnType = IteratorTypeResolver.FormatType(methodSymbol.ReturnType);
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorShapeNotSupported,
+                methodDecl.Identifier.GetLocation(),
+                methodSymbol.Name,
+                $"return type must be System.Collections.Generic.IEnumerable<T>, not '{formattedReturnType}'");
+            return;
+        }
+
+        if (IteratorTypeResolver.TryGetUnsupportedElementTypeReason(elementType, out var reason))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorShapeNotSupported,
+                methodDecl.Identifier.GetLocation(),
+                methodSymbol.Name,
+                reason);
+            return;
+        }
+
+        if (IteratorTypeResolver.IsRecursiveIterator(methodSymbol, semanticModel.Compilation))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorShapeNotSupported,
+                methodDecl.Identifier.GetLocation(),
+                methodSymbol.Name,
+                "recursive iterators are not supported");
+        }
+    }
+
+    private void ValidateCrossYieldLocals()
+    {
+        if (_trackedLocals.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var tracked in _trackedLocals)
+        {
+            var varStart = tracked.Declarator.SpanStart;
+            var firstYield = FindFirstYieldAfter(varStart);
+            if (firstYield == null)
+            {
+                continue;
+            }
+
+            var firstYieldAfterEnd = firstYield.Span.End;
+            var scopeNode = tracked.Declarator.Parent?.Parent?.Parent ?? methodDecl;
+
+            var usedAfterYield = scopeNode.DescendantNodes()
+                .AsStackEnumerable()
+                .Any(
+                    (Model: semanticModel, Tracked: tracked, After: firstYieldAfterEnd),
+                    static (childNode, s) =>
+                        childNode is IdentifierNameSyntax id &&
+                        id.SpanStart > s.After &&
+                        id.Identifier.ValueText == s.Tracked.IdentifierText &&
+                        s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
+                );
+            if (!usedAfterYield && !IsUsedInLoopWithYield(tracked, firstYield))
+            {
+                continue;
+            }
+
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                tracked.Declarator.Identifier.GetLocation(),
+                tracked.IdentifierText);
+        }
+    }
+
+    private bool IsUsedInLoopWithYield(TrackedLocalInfo tracked, YieldStatementSyntax yieldStmt)
+    {
+        for (var ancestor = yieldStmt.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
+        {
+            if (ancestor is not (ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax
+                or DoStatementSyntax))
+            {
+                continue;
+            }
+
+            if (tracked.Declarator.SpanStart >= ancestor.SpanStart)
+            {
+                continue;
+            }
+
+            var referencedInLoop = ancestor.DescendantNodes()
+                .AsStackEnumerable()
+                .Any(
+                    (Model: semanticModel, Tracked: tracked),
+                    static (childNode, s) =>
+                        childNode is IdentifierNameSyntax id &&
+                        id.Identifier.ValueText == s.Tracked.IdentifierText &&
+                        s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
+                );
+            if (referencedInLoop)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private YieldStatementSyntax? FindFirstYieldAfter(int position)
+    {
+        var low = 0;
+        var high = _yields.Count - 1;
+        var resultIndex = -1;
+
+        while (low <= high)
+        {
+            var mid = low + (high - low) / 2;
+            if (_yields[mid].SpanStart > position)
+            {
+                resultIndex = mid;
+                high = mid - 1;
+            }
+            else
+            {
+                low = mid + 1;
+            }
+        }
+
+        return resultIndex >= 0 ? _yields[resultIndex] : null;
+    }
+
+    private bool IsInsideLocalOrAnonymousFunction(SyntaxNode node)
+    {
+        for (var ancestor = node.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
+        {
+            if (ancestor is LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    internal static bool TryGetUnflattenableYieldConstruct(
+        YieldStatementSyntax yieldStmt,
+        MethodDeclarationSyntax methodDecl,
+        [NotNullWhen(true)] out string? construct)
+    {
+        for (var ancestor = yieldStmt.Parent;
+             ancestor != null && ancestor != methodDecl.Body && ancestor != methodDecl;
+             ancestor = ancestor.Parent)
+        {
+            if (ancestor is LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax)
+            {
+                construct = null;
+                return false;
+            }
+
+            switch (ancestor)
+            {
+                case BlockSyntax:
+                case IfStatementSyntax:
+                case ElseClauseSyntax:
+                case WhileStatementSyntax:
+                case DoStatementSyntax:
+                case ForStatementSyntax:
+                case ForEachStatementSyntax:
+                    continue;
+
+                case SwitchSectionSyntax:
+                case SwitchStatementSyntax:
+                    construct = "yield inside switch";
+                    return true;
+
+                case CheckedStatementSyntax checkedStmt:
+                    construct = $"yield inside {checkedStmt.Keyword.ValueText}";
+                    return true;
+
+                case LabeledStatementSyntax:
+                    construct = "labeled yield";
+                    return true;
+
+                case ForEachVariableStatementSyntax:
+                    construct = "yield inside deconstructing foreach";
+                    return true;
+
+                default:
+                    construct = $"yield inside {ancestor.Kind()}";
+                    return true;
+            }
+        }
+
+        construct = null;
+        return false;
+    }
+
+    private bool IsInsideIteratorForEachBody(SyntaxNode node)
+    {
+        SyntaxNode child = node;
+        for (var ancestor = node.Parent;
+             ancestor != null && ancestor != methodDecl;
+             child = ancestor, ancestor = ancestor.Parent)
+        {
+            if (ancestor is ForEachStatementSyntax forEach &&
+                child == forEach.Statement &&
+                IteratorTypeResolver.IsIteratorForEachSource(forEach.Expression, semanticModel))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
 

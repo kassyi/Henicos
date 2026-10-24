@@ -61,6 +61,59 @@ public static class AstLoweringPipeline
         return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters);
     }
 
+    /// <summary>
+    /// Lowers an iterator device function declaration into a <c>MoveNext()</c> state machine and extracts its struct
+    /// fields.
+    /// </summary>
+    public static LoweredIterator LowerIterator(
+        MethodDeclarationSyntax method,
+        SemanticModel? semanticModel = null,
+        IMethodSymbol? iterator = null)
+    {
+        var body = method.GetBodyNode()
+                   ?? throw new InvalidOperationException(
+                       "An iterator method without a body cannot be lowered into a state machine.");
+        return LowerIterator(ToBlock(body, returnsValue: false), method.ParameterList, semanticModel, iterator);
+    }
+
+    /// <summary>
+    /// Lowers an iterator block into a <c>MoveNext()</c> state machine and extracts its struct fields.
+    /// </summary>
+    public static LoweredIterator LowerIterator(
+        BlockSyntax body,
+        ParameterListSyntax? parameterList = null,
+        SemanticModel? semanticModel = null,
+        IMethodSymbol? iterator = null)
+    {
+        var annotatedBody = ToBlock(
+            new SpanAnnotationRewriter(new Dictionary<TextSpan, bool>()).Visit(body) ?? body,
+            returnsValue: false);
+
+        var allParameters = CollectIteratorParameters(parameterList, iterator);
+        var assignedParameters = FindAssignedParameters(body, allParameters);
+
+        var forEachRewriter = new ForEachRewriter(LoweringMode.Iterator, semanticModel);
+        var branchRewriter = new BranchRewriter(LoweringMode.Iterator);
+        var hoistedBody = forEachRewriter.Rewrite(annotatedBody);
+        hoistedBody = branchRewriter.Rewrite(hoistedBody);
+        hoistedBody = new LoopRewriter(LoweringMode.Iterator).Rewrite(hoistedBody);
+        hoistedBody = branchRewriter.Rewrite(hoistedBody);
+
+        var (contextHoistedBody, contextFields) =
+            new ContextHoister(allParameters, isDeviceFunction: true, mode: LoweringMode.Iterator)
+                .Hoist(hoistedBody);
+        var lowerer = new StateMachineLowerer(isDeviceFunction: false, mode: LoweringMode.Iterator);
+        var moveNextBody = lowerer.Lower(contextHoistedBody);
+
+        ITypeSymbol? elementType = null;
+        if (iterator != null)
+        {
+            IteratorTypeResolver.IsGenericIEnumerable(iterator.ReturnType, out elementType);
+        }
+
+        return new LoweredIterator(moveNextBody, contextFields, assignedParameters, elementType);
+    }
+
     private static BlockSyntax ToBlock(SyntaxNode body, bool returnsValue) => body switch
     {
         BlockSyntax block => block,
@@ -106,6 +159,42 @@ public static class AstLoweringPipeline
             .Select(static parameter => parameter.Name)
             .AddTo(candidates);
 
+        return FindAssignedParameters(body, candidates);
+    }
+
+    private static ImmutableArray<string> CollectIteratorParameters(
+        ParameterListSyntax? parameterList,
+        IMethodSymbol? iterator)
+    {
+        var parameters = ImmutableArray.CreateBuilder<string>();
+        if (iterator != null)
+        {
+            iterator.Parameters
+                .AsStackEnumerable()
+                .Select(static parameter => parameter.Name)
+                .AddTo(parameters);
+        }
+        else if (parameterList != null)
+        {
+            parameterList.Parameters
+                .AsStackEnumerable()
+                .Select(static parameter => parameter.Identifier.ValueText)
+                .AddTo(parameters);
+        }
+
+        return parameters.ToImmutable();
+    }
+
+    private static ImmutableArray<string> FindAssignedParameters(
+        SyntaxNode body,
+        IReadOnlyCollection<string> candidateParameters)
+    {
+        if (candidateParameters.Count == 0)
+        {
+            return ImmutableArray<string>.Empty;
+        }
+
+        var candidates = new HashSet<string>(candidateParameters, StringComparer.Ordinal);
         var assigned = ImmutableArray.CreateBuilder<string>();
         foreach (var node in body.DescendantNodes())
         {

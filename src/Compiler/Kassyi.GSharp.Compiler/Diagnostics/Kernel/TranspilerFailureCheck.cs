@@ -31,7 +31,20 @@ internal static class TranspilerFailureCheck
         var reportedBefore = diagnostics.Count;
         try
         {
-            Transpile(declaration, method, semanticModel, new FailureSink(diagnostics));
+            var isDeviceIteratorCandidate =
+                method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+                !method.HasAttribute(KnownAttributes.GpuKernel) &&
+                IteratorTypeResolver.ContainsDirectYield(declaration.Body);
+            var isValidDeviceIterator =
+                isDeviceIteratorCandidate &&
+                IteratorTypeResolver.IsDeviceIteratorMethod(method) &&
+                !IteratorTypeResolver.IsRecursiveIterator(method, semanticModel.Compilation);
+            Transpile(
+                declaration,
+                method,
+                semanticModel,
+                new FailureSink(diagnostics, declaration, method.HasAttribute(KnownAttributes.GpuKernel),
+                    isDeviceIteratorCandidate, isValidDeviceIterator));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -59,9 +72,63 @@ internal static class TranspilerFailureCheck
         }
     }
 
-    private sealed class FailureSink(ImmutableArray<Diagnostic>.Builder diagnostics)
+    private sealed class FailureSink(
+        ImmutableArray<Diagnostic>.Builder diagnostics,
+        MethodDeclarationSyntax declaration,
+        bool isKernel,
+        bool isDeviceIteratorCandidate,
+        bool isValidDeviceIterator)
     {
-        public void Add(TranspileFailure failure) =>
+        public void Add(TranspileFailure failure)
+        {
+            if (failure.Descriptor.Id == GSharpDiagnostics.UnsupportedSyntax.Id &&
+                failure.MessageArgs is
+                    [nameof(SyntaxKind.YieldReturnStatement) or nameof(SyntaxKind.YieldBreakStatement)] &&
+                IsYieldAlreadyReportedByBarrierValidator(failure.Location))
+            {
+                return;
+            }
+
+            if (isDeviceIteratorCandidate &&
+                (failure.Descriptor.Id == GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id ||
+                 failure.Descriptor.Id == GSharpDiagnostics.InstanceDeviceFunctionNotSupported.Id))
+            {
+                return;
+            }
+
             diagnostics.Add(Diagnostic.Create(failure.Descriptor, failure.Location, failure.MessageArgs));
+        }
+
+        private bool IsYieldAlreadyReportedByBarrierValidator(Location location)
+        {
+            if (isKernel || !isValidDeviceIterator)
+            {
+                return true;
+            }
+
+            if (!location.IsInSource || location.SourceTree != declaration.SyntaxTree)
+            {
+                return false;
+            }
+
+            var yieldStmt = declaration.FindNode(location.SourceSpan)
+                .FirstAncestorOrSelf<YieldStatementSyntax>();
+            if (yieldStmt is null)
+            {
+                return false;
+            }
+
+            for (var ancestor = yieldStmt.Parent;
+                 ancestor != null && ancestor != declaration;
+                 ancestor = ancestor.Parent)
+            {
+                if (ancestor is LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax)
+                {
+                    return true;
+                }
+            }
+
+            return KernelBarrierValidator.TryGetUnflattenableYieldConstruct(yieldStmt, declaration, out _);
+        }
     }
 }

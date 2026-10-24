@@ -1,19 +1,16 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>Lowers loop constructs (for, while, do-while) into flat goto sequences for linear state machine generation.</summary>
-public class LoopRewriter : CSharpSyntaxRewriter
+public class LoopRewriter(LoweringMode mode = LoweringMode.Suspension) : CSharpSyntaxRewriter
 {
     private int _labelCounter;
     private readonly Stack<(string Break, string Continue)> _loopStack = new();
 
-    private static bool ContainsBarrier(SyntaxNode node) =>
-        node.DescendantNodesAndSelf()
-            .AsStackEnumerable()
-            .Any(static descendant => descendant is InvocationExpressionSyntax inv && BarrierHelper.IsPhaseBarrier(inv));
+    private bool ContainsSplitPoint(SyntaxNode node) => BarrierHelper.ContainsSplitPoint(node, mode);
 
     /// <summary>Rewrites loops within the block into flat goto sequences.</summary>
     public BlockSyntax Rewrite(BlockSyntax block) =>
-        ContainsBarrier(block) ? (BlockSyntax)Visit(block) : block;
+        ContainsSplitPoint(block) ? (BlockSyntax)Visit(block) : block;
 
     public override SyntaxNode VisitBlock(BlockSyntax node)
     {
@@ -27,7 +24,7 @@ public class LoopRewriter : CSharpSyntaxRewriter
             {
                 // [WHY] Loop statements only become BlockSyntax when they already contain a barrier.
                 // Explicit nested BlockSyntax nodes are only inlined if they contain a barrier.
-                if (statement is not BlockSyntax || ContainsBarrier(statement))
+                if (statement is not BlockSyntax || ContainsSplitPoint(statement))
                 {
                     newStatements.AddRange(nestedBlock.Statements);
                 }
@@ -69,7 +66,7 @@ public class LoopRewriter : CSharpSyntaxRewriter
 
     public override SyntaxNode? VisitWhileStatement(WhileStatementSyntax node)
     {
-        if (!ContainsBarrier(node))
+        if (!ContainsSplitPoint(node))
         {
             return base.VisitWhileStatement(node);
         }
@@ -79,7 +76,7 @@ public class LoopRewriter : CSharpSyntaxRewriter
 
     public override SyntaxNode? VisitDoStatement(DoStatementSyntax node)
     {
-        if (!ContainsBarrier(node))
+        if (!ContainsSplitPoint(node))
         {
             return base.VisitDoStatement(node);
         }
@@ -89,7 +86,7 @@ public class LoopRewriter : CSharpSyntaxRewriter
 
     public override SyntaxNode? VisitForStatement(ForStatementSyntax node)
     {
-        if (!ContainsBarrier(node))
+        if (!ContainsSplitPoint(node))
         {
             return base.VisitForStatement(node);
         }

@@ -25,4 +25,60 @@ public static class LoweringAnnotations
     /// thread or completing the device function call.
     /// </summary>
     public const string StateMachineReturnAnnotationKind = "StateMachineReturn";
+
+    /// <summary>
+    /// Data of a <see cref="StateMachineReturnAnnotationKind"/> annotation on an iterator <c>yield return</c>
+    /// (<c>return true;</c>).
+    /// </summary>
+    public const string IteratorYieldReturnAnnotationData = "Yield";
+
+    /// <summary>
+    /// Data of a <see cref="StateMachineReturnAnnotationKind"/> annotation on an iterator finish
+    /// (<c>return false;</c>).
+    /// </summary>
+    public const string IteratorFinishReturnAnnotationData = "Finish";
+
+    /// <summary>
+    /// Annotation kind that marks a lowered <c>foreach</c> enumerator receiver (<c>__gsharp_foreach_e_&lt;id&gt;</c>)
+    /// so <c>.Current</c> emits as <c>.Current()</c>.
+    /// </summary>
+    public const string ForEachEnumeratorAnnotationKind = "GSharpForEachEnumerator";
+
+    /// <summary>
+    /// Annotation kind that marks a lowered <c>foreach</c> array/span source receiver
+    /// (<c>__gsharp_foreach_src_&lt;id&gt;</c>) so <c>.Length</c> emits as <c>.length</c>.
+    /// </summary>
+    public const string ForEachArraySourceAnnotationKind = "GSharpForEachArraySource";
+
+    /// <summary>
+    /// Annotation kind that marks a lowered <c>foreach</c> loop index declarator
+    /// (<c>__gsharp_foreach_i_&lt;id&gt;</c>) as <see cref="int"/> when hoisted into a context struct.
+    /// </summary>
+    public const string ForEachIndexAnnotationKind = "GSharpForEachIndex";
+
+    /// <summary>
+    /// Attaches <see cref="OriginalSpanAnnotationKind"/> to every descendant node of <paramref name="node"/> that does
+    /// not already carry one, using each node's current span.
+    /// </summary>
+    public static TNode AnnotateOriginalSpans<TNode>(TNode node) where TNode : SyntaxNode =>
+        s_spanAnnotator.Visit(node) as TNode ?? node;
+
+    private static readonly SpanAnnotator s_spanAnnotator = new();
+
+    private sealed class SpanAnnotator : CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? Visit(SyntaxNode? node)
+        {
+            if (node == null)
+            {
+                return null;
+            }
+
+            var visited = base.Visit(node);
+            return node.HasAnnotations(OriginalSpanAnnotationKind)
+                ? visited
+                : visited.WithAdditionalAnnotations(
+                    new SyntaxAnnotation(OriginalSpanAnnotationKind, $"{node.SpanStart},{node.Span.Length}"));
+        }
+    }
 }
