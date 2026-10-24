@@ -162,6 +162,11 @@ public class CoreIntrinsicsTests
             var sm = new SharedMemory<int>(128);
             sm[0] = 42;
         });
+        Assert.Throws<GpuOnlyException>(() =>
+        {
+            var sm = new SharedMemory<int>(128);
+            ref int r = ref sm[0];
+        });
     }
 
     [Theory]

@@ -295,6 +295,18 @@ __gsharp_smem_current_base = offset + size;
 return (void*)(__gsharp_dynamic_smem + offset);
 }
 
+inline void __gsharp_unsupported(const char* message);
+
+inline void __gsharp_mbarrier_init(unsigned long long*, unsigned int) {
+__gsharp_unsupported(""mbarrier is not supported by the StandardCpp dialect."");
+}
+inline void __gsharp_mbarrier_arrive(unsigned long long*) {
+__gsharp_unsupported(""mbarrier is not supported by the StandardCpp dialect."");
+}
+inline void __gsharp_mbarrier_wait(unsigned long long*, unsigned int) {
+__gsharp_unsupported(""mbarrier is not supported by the StandardCpp dialect."");
+}
+
 // --- Atomics ---
 template<typename T>
 __forceinline__ T __gsharp_atomic_fetch_add(T* address, T val) {

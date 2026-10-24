@@ -52,24 +52,21 @@ public readonly ref struct SharedMemory<T> where T : unmanaged
     }
 
     /// <summary>
-    /// Gets or sets the element at the specified zero-based index in shared memory.
+    /// Gets a reference to the element at the specified zero-based index in shared memory.
     /// </summary>
     /// <param name="index">The zero-based element offset.</param>
-    /// <returns>The element at the specified index.</returns>
+    /// <returns>A reference to the element at the specified index.</returns>
     /// <exception cref="GpuOnlyException">Thrown when evaluated on the host CPU.</exception>
-    public T this[int index]
+    public ref T this[int index]
     {
-        get => ManagedGpuContext.IsActive ? _span[index] : GpuOnlyException.Throw<T>();
-        set
+        get
         {
-            if (ManagedGpuContext.IsActive)
-            {
-                _span[index] = value;
-            }
-            else
+            if (!ManagedGpuContext.IsActive)
             {
                 GpuOnlyException.Throw();
             }
+
+            return ref _span[index];
         }
     }
 
