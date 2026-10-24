@@ -44,8 +44,6 @@ You **MUST** load and read the corresponding skill using `view_file` when perfor
 
 - [Transpiler & Source Generator Guidelines](.agents/skills/gsharp-transpiler-guidelines/SKILL.md): Roslyn syntax rewriters, AST visitors, and generator pipelines.
 - [QA & Test Coverage Guidelines](.agents/skills/qa-testing-guidelines/SKILL.md): Test scenario matrix (Happy/Boundary/Sad) and snapshot workflows.
-- [Jules Wave Execution Rules](.agents/skills/jules-wave-spec/SKILL.md): Rules for issues handed to Google Jules (test first, allowed files, PR naming, stop conditions). Load when writing or reviewing a Jules Wave issue or PR.
-- [Jules Wave Orchestration](.agents/skills/jules-wave-orchestration/SKILL.md): The handing side: choosing a wave, writing the specs, reviewing Jules PRs (including unannounced deletions) and making them merge-ready. Load when planning a wave or reviewing a Jules PR.
 
 ### Symbol Mapping & Demangling Tools (`*.gsym.json`)
 G# generates sidecar symbol map files (`*.gsym.json`) next to AOT artifacts (`.g.cu` / `.g.cpp`) in `obj/`. Both the AOT source (line 1 header `// gsharp-symbols: <hash>`) and symbol file record a matching FNV-1a 64 source hash. Run `just gsharp-demangle <log> [symbols_path]` or `dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle <log> [symbols_path]` to translate mangled C++ identifiers back to C# symbols.
