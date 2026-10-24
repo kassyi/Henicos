@@ -26,6 +26,7 @@ internal static class GlobalCppNames
     private static readonly ConditionalWeakTable<ISymbol, string> s_typeNames = new();
     private static readonly ConditionalWeakTable<ISymbol, string> s_functionNames = new();
     private static readonly ConditionalWeakTable<ISymbol, string> s_functionPathBodies = new();
+    private static readonly ConditionalWeakTable<ISymbol, string> s_constructorNames = new();
 
     /// <summary>
     /// Whether <paramref name="type"/> is a user struct whose definition G# emits itself. Other types
@@ -48,13 +49,32 @@ internal static class GlobalCppNames
     public static bool IsEncodedUserType(INamedTypeSymbol type, ITranspilerDialect dialect) =>
         IsEmittedUserType(type) && !dialect.IsMappedType(type);
 
-    /// <summary>Returns <c>__gsharp_ty_{path}</c> for the definition of <paramref name="type"/>.</summary>
+    /// <summary>Returns <c>__gsharp_ty_{path}</c> for <paramref name="type"/>.</summary>
     /// <remarks>
-    /// A constructed type has the name of its definition; C++ applies the type arguments as template arguments.
+    /// A constructed generic type encodes its type arguments so each specialization is emitted as a distinct
+    /// monomorphized struct; an unconstructed generic definition carries its arity (<c>_a{n}</c>).
     /// </remarks>
     public static string GetTypeName(INamedTypeSymbol type) =>
-        s_typeNames.GetValue(type.OriginalDefinition, static definition =>
-            Shorten(GSharpNameEncoding.TypePrefix, GSharpNameEncoding.Encode(GetTypePath((INamedTypeSymbol)definition))));
+        s_typeNames.GetValue(type, static symbol =>
+            Shorten(GSharpNameEncoding.TypePrefix, GSharpNameEncoding.Encode(GetTypePath((INamedTypeSymbol)symbol))));
+
+    /// <summary>
+    /// Returns <c>__gsharp_ctor_{type path}</c> for a user-defined struct constructor, with <c>_o{n}</c> when the
+    /// struct declares more than one constructor.
+    /// </summary>
+    public static string GetConstructorName(IMethodSymbol constructor) =>
+        s_constructorNames.GetValue(constructor, static symbol =>
+        {
+            var ctor = (IMethodSymbol)symbol;
+            var body = GSharpNameEncoding.Encode(GetTypePath(ctor.ContainingType));
+            var ordinal = GetConstructorOverloadOrdinal(ctor);
+            if (ordinal >= 0)
+            {
+                body += "_o" + ordinal.ToString(CultureInfo.InvariantCulture);
+            }
+
+            return Shorten(GSharpInternalNames.Lowering.ConstructorPrefix, body);
+        });
 
     /// <summary>
     /// Returns <c>__gsharp_fn_{type path}__{name}</c> for a device function, with <c>_o{n}</c> when its containing type
@@ -113,6 +133,39 @@ internal static class GlobalCppNames
         return definition.PartialDefinitionPart ?? definition;
     }
 
+    private static int GetConstructorOverloadOrdinal(IMethodSymbol constructor)
+    {
+        constructor = GetDefinition(constructor);
+        var constructors = constructor.ContainingType.InstanceConstructors;
+        var candidates = new ISymbol[constructors.Length];
+        var count = 0;
+        foreach (var candidate in constructors)
+        {
+            if (!candidate.IsImplicitlyDeclared && candidate.TryGetDeclaringSyntax<ConstructorDeclarationSyntax>(out _))
+            {
+                candidates[count++] = candidate;
+            }
+        }
+
+        if (count <= 1)
+        {
+            return -1;
+        }
+
+        Array.Sort(candidates, 0, count, DeclarationOrderComparer.Instance);
+        var ordinal = candidates
+            .AsStackEnumerable()
+            .Take(count)
+            .IndexOf(constructor, static (candidate, target) => candidate.IsEqualTo(target));
+        if (ordinal >= 0)
+        {
+            return ordinal;
+        }
+
+        throw new InvalidOperationException(
+            $"The constructor is not a member of '{constructor.ContainingType.Name}'.");
+    }
+
     /// <summary>
     /// The position of <paramref name="method"/> among the ordinary methods with the same name in its containing type,
     /// in declaration order, or -1 when the name is not overloaded.
@@ -162,22 +215,96 @@ internal static class GlobalCppNames
     public static string GetTypeParameterName(ITypeParameterSymbol parameter) =>
         GSharpNameEncoding.TypeParameterPrefix + GSharpNameEncoding.EscapeName(parameter.Name);
 
-    /// <summary>The C# path of the definition of <paramref name="type"/>: namespaces, containing types and the type.</summary>
-    public static GlobalNamePath GetTypePath(INamedTypeSymbol type)
+    /// <summary>
+    /// The C# path of <paramref name="type"/>: namespaces, containing types and the type, including concrete type
+    /// arguments when <paramref name="type"/> (or an enclosing type) is a constructed generic type.
+    /// </summary>
+    public static GlobalNamePath GetTypePath(INamedTypeSymbol type) =>
+        new(BuildTypeSegments(type));
+
+    private static GlobalNamePath GetTypePath(ITypeSymbol type)
+    {
+        var modifiers = ImmutableArray.CreateBuilder<int>();
+        var current = type;
+        while (true)
+        {
+            if (current is IPointerTypeSymbol pointer)
+            {
+                modifiers.Add(0);
+                current = pointer.PointedAtType;
+            }
+            else if (current is IArrayTypeSymbol array)
+            {
+                modifiers.Add(array.Rank);
+                current = array.ElementType;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        modifiers.Reverse();
+        var segments = current is INamedTypeSymbol named
+            ? BuildTypeSegments(named)
+            : ImmutableArray.Create(new GlobalNameSegment(current.Name));
+        return new GlobalNamePath(segments, modifiers.ToImmutable());
+    }
+
+    private static ImmutableArray<GlobalNameSegment> BuildTypeSegments(INamedTypeSymbol type)
     {
         var segments = ImmutableArray.CreateBuilder<GlobalNameSegment>();
-        for (ISymbol? symbol = type.OriginalDefinition; symbol is not null and not INamespaceSymbol { IsGlobalNamespace: true };
+        for (ISymbol? symbol = type; symbol is not null and not INamespaceSymbol { IsGlobalNamespace: true };
              symbol = symbol.ContainingSymbol)
         {
-            var named = symbol as INamedTypeSymbol;
-            var fileId = named is { IsFileLocal: true }
-                ? GetFileOrdinal(named).ToString("x", CultureInfo.InvariantCulture)
-                : null;
-            segments.Add(new GlobalNameSegment(symbol.Name, arity: named?.Arity ?? 0, fileId: fileId));
+            if (symbol is INamedTypeSymbol named)
+            {
+                var definition = named.OriginalDefinition;
+                var fileId = definition.IsFileLocal
+                    ? GetFileOrdinal(definition).ToString("x", CultureInfo.InvariantCulture)
+                    : null;
+                if (IsConstructedSegment(named))
+                {
+                    var args = ImmutableArray.CreateBuilder<GlobalNamePath>(named.TypeArguments.Length);
+                    foreach (var arg in named.TypeArguments)
+                    {
+                        args.Add(GetTypePath(arg));
+                    }
+
+                    segments.Add(new GlobalNameSegment(definition.Name, typeArguments: args.MoveToImmutable(),
+                        arity: 0, fileId: fileId));
+                }
+                else
+                {
+                    segments.Add(new GlobalNameSegment(definition.Name, arity: definition.Arity, fileId: fileId));
+                }
+            }
+            else
+            {
+                segments.Add(new GlobalNameSegment(symbol.Name));
+            }
         }
 
         segments.Reverse();
-        return new GlobalNamePath(segments.ToImmutable());
+        return segments.ToImmutable();
+    }
+
+    private static bool IsConstructedSegment(INamedTypeSymbol type)
+    {
+        if (type.Arity == 0 || type.IsDefinition || type.IsUnboundGenericType || type.TypeArguments.Length == 0)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < type.TypeArguments.Length; i++)
+        {
+            if (!type.TypeArguments[i].IsEqualTo(type.TypeParameters[i]))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // [WHY] A file type is identified by its position among the file types with the same name and arity, ordered by

@@ -3,11 +3,9 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 [Category(TestCategory.Syntax)]
 public class StructConstructorTests : TranspilerTestBase
 {
-    private const string KnownBugSkipReason = "Struct constructors become aggregate initialization (#474)";
-
     private const int Count = 4;
 
-    [Theory(Skip = KnownBugSkipReason)]
+    [Theory]
     [InlineData(nameof(StructConstructorKernels.ConstructorBodyKernel))]
     [InlineData(nameof(StructConstructorKernels.ConstructorDefaultArgumentKernel))]
     [InlineData(nameof(StructConstructorKernels.ConstructorNamedArgumentKernel))]
@@ -25,9 +23,9 @@ public class StructConstructorTests : TranspilerTestBase
             "new CtorScaled(...) became aggregate initialization without a diagnostic.");
     }
 
-    [SkippableFact(Skip = KnownBugSkipReason)]
+    [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    [Scenario(TestScenario.SadPath)]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_ConstructorBody_Runs()
     {
         var output = new int[Count];
@@ -39,9 +37,9 @@ public class StructConstructorTests : TranspilerTestBase
         }
     }
 
-    [SkippableFact(Skip = KnownBugSkipReason)]
+    [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    [Scenario(TestScenario.SadPath)]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_ConstructorDefaultArgument_IsApplied()
     {
         var output = new int[Count];
@@ -53,9 +51,9 @@ public class StructConstructorTests : TranspilerTestBase
         }
     }
 
-    [SkippableFact(Skip = KnownBugSkipReason)]
+    [SkippableFact]
     [TestTarget(ExecutionTarget.GpuExecution)]
-    [Scenario(TestScenario.SadPath)]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_ConstructorNamedArguments_AreMatchedByName()
     {
         var output = new int[Count];
@@ -64,6 +62,48 @@ public class StructConstructorTests : TranspilerTestBase
         for (int i = 0; i < Count; i++)
         {
             Assert.Equal(i + 1, output[i]);
+        }
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ConstructorChainedThis_RunsTargetThenBody()
+    {
+        var output = new int[Count];
+        StructConstructorKernels.LaunchConstructorChainedThisKernel(output, blockDimX: Count);
+
+        for (int i = 0; i < Count; i++)
+        {
+            Assert.Equal((i + 5) * 100 + 9, output[i]);
+        }
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ConstructorFieldAndPropertyInitializers_RunBeforeBody()
+    {
+        var output = new int[Count];
+        StructConstructorKernels.LaunchConstructorFieldInitializersKernel(output, blockDimX: Count);
+
+        for (int i = 0; i < Count; i++)
+        {
+            Assert.Equal(107 + i, output[i]);
+        }
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_ConstructorFieldAndPropertyInitializers_AreNotRunWithoutConstructorCall()
+    {
+        var output = new int[Count];
+        StructConstructorKernels.LaunchConstructorFieldInitializersDefaultKernel(output, blockDimX: Count);
+
+        for (int i = 0; i < Count; i++)
+        {
+            Assert.Equal(10 + i, output[i]);
         }
     }
 }

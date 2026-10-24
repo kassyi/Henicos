@@ -105,6 +105,11 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+__device__ inline __gsharp_ty_TestNamespace__DummyRef __gsharp_ctor_TestNamespace__DummyRef(GSharpArray<unsigned int> __gsharp_id_0_data) {
+__gsharp_ty_TestNamespace__DummyRef __gsharp_self{};
+__gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
+return __gsharp_self;
+}
 #endif
 struct __gsharp_context_TestNamespace__TestKernels__MacroKernel {
 int __gsharp_state = 0;

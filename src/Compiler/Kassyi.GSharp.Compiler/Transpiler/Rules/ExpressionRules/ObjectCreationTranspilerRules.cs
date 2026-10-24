@@ -35,7 +35,9 @@ internal static class ObjectCreationHelper
 {
     public static void TranspileObjectCreation(BaseObjectCreationExpressionSyntax node, ref TranspileContext context)
     {
-        var typeSymbol = context.Query.SemanticModel.GetTypeSymbol(node);
+        var typeSymbol = StructTranspiler.SubstituteTypeParameters(
+            context.Query.SemanticModel.GetTypeSymbol(node), context.Emitter.CurrentStructType,
+            context.Query.SemanticModel.Compilation);
         if (!GpuCodeConstraints.IsSupportedObjectCreation(typeSymbol))
         {
             context.Reporter.Fail(GSharpDiagnostics.ObjectCreationNotSupported, node);
@@ -99,32 +101,51 @@ internal static class ObjectCreationHelper
             return;
         }
 
+        var constructor = context.Query.SemanticModel.GetSymbol(node) as IMethodSymbol;
+        if (constructor != null && typeSymbol is INamedTypeSymbol { IsGenericType: true } constructedStruct &&
+            !constructedStruct.IsEqualTo(constructor.ContainingType))
+        {
+            foreach (var candidate in constructedStruct.InstanceConstructors)
+            {
+                if (candidate.OriginalDefinition.IsEqualTo(constructor.OriginalDefinition))
+                {
+                    constructor = candidate;
+                    break;
+                }
+            }
+        }
+
         // IsSupportedObjectCreation leaves only a struct here
-        TranspileStructCreationCore(typeSymbol, initializer, argumentList, ref context);
+        TranspileStructCreationCore(typeSymbol, constructor, initializer, argumentList, ref context);
     }
 
-    private static void TranspileStructCreationCore(ITypeSymbol typeSymbol, InitializerExpressionSyntax? initializer,
-        ArgumentListSyntax? argumentList, ref TranspileContext context)
+    private static void TranspileStructCreationCore(ITypeSymbol typeSymbol, IMethodSymbol? constructor,
+        InitializerExpressionSyntax? initializer, ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
         if (initializer != null)
         {
-            TranspileStructCreationWithInitializer(typeSymbol, initializer, argumentList, ref context);
+            TranspileStructCreationWithInitializer(typeSymbol, constructor, initializer, argumentList, ref context);
         }
         else
         {
-            TranspileStructCreationWithoutInitializer(typeSymbol, argumentList, ref context);
+            TranspileStructCreationWithoutInitializer(typeSymbol, constructor, argumentList, ref context);
         }
     }
 
-    private static void TranspileStructCreationWithoutInitializer(ITypeSymbol typeSymbol,
-        ArgumentListSyntax? argumentList,
-        ref TranspileContext context)
+    private static void TranspileStructCreationWithoutInitializer(ITypeSymbol typeSymbol, IMethodSymbol? constructor,
+        ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
+        if (constructor != null && StructTranspiler.IsEmittedStructConstructor(constructor))
+        {
+            TranspileConstructorCall(typeSymbol, constructor, argumentList, ref context);
+            return;
+        }
+
         context.Emitter.Dialect.AppendType(ref context, typeSymbol);
         TranspileArgumentListAsBraces(argumentList, ref context);
     }
 
-    private static void TranspileStructCreationWithInitializer(ITypeSymbol typeSymbol,
+    private static void TranspileStructCreationWithInitializer(ITypeSymbol typeSymbol, IMethodSymbol? constructor,
         InitializerExpressionSyntax initializer, ArgumentListSyntax? argumentList, ref TranspileContext context)
     {
         using (context.Emitter.Writer.Parentheses())
@@ -134,7 +155,15 @@ internal static class ObjectCreationHelper
             {
                 context.Emitter.Dialect.AppendType(ref context, typeSymbol);
                 context.Emitter.Writer.Append(' ').Append(GSharpInternalNames.Lowering.AggregateTemp);
-                TranspileArgumentListAsBraces(argumentList, ref context);
+                if (constructor != null && StructTranspiler.IsEmittedStructConstructor(constructor))
+                {
+                    context.Emitter.Writer.Append(" = ");
+                    TranspileConstructorCall(typeSymbol, constructor, argumentList, ref context);
+                }
+                else
+                {
+                    TranspileArgumentListAsBraces(argumentList, ref context);
+                }
 
                 context.Emitter.Writer.Append(';');
                 context.Emitter.Writer.Append(' ');
@@ -147,9 +176,7 @@ internal static class ObjectCreationHelper
                     }
 
                     context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.AggregateTemp}.");
-                    context.Visitor.Visit(assignment.Left);
-                    context.Emitter.Writer.Append(" = ");
-                    context.Visitor.Visit(assignment.Right);
+                    ComputedPropertyGetterCall.TranspileAssignment(assignment, " = ", ref context);
                     context.Emitter.Writer.Append("; ");
                 }
 
@@ -158,6 +185,56 @@ internal static class ObjectCreationHelper
 
             context.Emitter.Writer.Append("()");
         }
+    }
+
+    internal static void TranspileConstructorCall(ITypeSymbol typeSymbol, IMethodSymbol constructor,
+        ArgumentListSyntax? argumentList, ref TranspileContext context)
+    {
+        StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
+        context.Emitter.Writer.Append(GlobalCppNames.GetConstructorName(constructor));
+
+        var matched = ArgumentMatchingHelper.MatchArgumentsToParameters(
+            argumentList?.Arguments ?? default, constructor);
+        using (context.Emitter.Writer.Parentheses())
+        {
+            for (var i = 0; i < constructor.Parameters.Length; i++)
+            {
+                context.Emitter.Writer.AppendIf(i > 0, ", ");
+                var parameter = constructor.Parameters[i];
+                if (matched[i] is { } argument)
+                {
+                    if (parameter.RefKind == RefKind.RefReadOnlyParameter)
+                    {
+                        RefSyntaxHelper.TranspileAsByRefArgument(ref context, argument.Expression);
+                    }
+                    else
+                    {
+                        context.Visitor.Visit(argument);
+                    }
+                }
+                else
+                {
+                    EmitDefaultArgument(parameter, ref context);
+                }
+            }
+        }
+    }
+
+    private static void EmitDefaultArgument(IParameterSymbol parameter, ref TranspileContext context)
+    {
+        var defaultExpr = ArgumentMatchingHelper.CreateDefaultArgument(parameter);
+        if (defaultExpr is CastExpressionSyntax cast)
+        {
+            using (context.Emitter.Writer.Parentheses())
+            {
+                context.Emitter.Dialect.AppendType(ref context, parameter.Type);
+            }
+
+            context.Visitor.Visit(cast.Expression);
+            return;
+        }
+
+        context.Visitor.Visit(defaultExpr);
     }
 
     private static void TranspileArgumentListAsBraces(ArgumentListSyntax? argumentList, ref TranspileContext context)

@@ -879,19 +879,17 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
 #pragma warning restore CS8500
-public const string GenericArityKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_a1__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_a1__
-template <typename __gsharp_tp_T>
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_a1
+public const string GenericArityKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g1_bSystem__Int32_e__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g1_bSystem__Int32_e__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g1_bSystem__Int32_e
 {
 int __gsharp_mb_Value;
 }
 ;
 #endif
-#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_a2__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_a2__
-template <typename __gsharp_tp_T, typename __gsharp_tp_U>
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_a2
+#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e
 {
 int __gsharp_mb_First;
 int __gsharp_mb_Second;
@@ -915,11 +913,11 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_tid = threadIdx.x;
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_a1<int> __gsharp_id_2_single = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_a1<int> __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Value = 5; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g1_bSystem__Int32_e __gsharp_id_2_single = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g1_bSystem__Int32_e __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_Value = 5; return __gsharp_tmp; }
 ());
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_a2<int, int> __gsharp_id_3_pair = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_a2<int, int> __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_First = 6; __gsharp_tmp.__gsharp_mb_Second = 7; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e __gsharp_id_3_pair = ([&]() {
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_First = 6; __gsharp_tmp.__gsharp_mb_Second = 7; return __gsharp_tmp; }
 ());
 __gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_2_single.__gsharp_mb_Value*100+__gsharp_id_3_pair.__gsharp_mb_First*10+__gsharp_id_3_pair.__gsharp_mb_Second+__gsharp_id_1_tid;
 __gsharp_state=-1;

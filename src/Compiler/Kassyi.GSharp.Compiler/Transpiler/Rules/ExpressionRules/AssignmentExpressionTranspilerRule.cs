@@ -50,6 +50,20 @@ public sealed class AssignmentExpressionTranspilerRule : SyntaxNodeTranspilerRul
             return;
         }
 
+        if (node.IsKind(SyntaxKind.SimpleAssignmentExpression))
+        {
+            ComputedPropertyGetterCall.TranspileAssignment(node, node.OperatorToken.Text, ref context);
+            return;
+        }
+
+        if (ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Left, ref context))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
+                ComputedPropertyGetterCall.CompoundAssignmentToComputedProperty);
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
         context.Visitor.Visit(node.Left);
         context.Emitter.Writer.Append(node.OperatorToken.Text);
         context.Visitor.Visit(node.Right);

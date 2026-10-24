@@ -36,6 +36,22 @@ public struct Emitter(
     public int AutoSyncGridDepth;
     public string? LabelSuffix;
 
+    /// <summary>
+    /// The struct whose definition or <c>Dispose</c> body is currently being emitted, used to substitute generic type
+    /// parameters with the concrete type arguments of the specialization.
+    /// </summary>
+    public INamedTypeSymbol? CurrentStructType;
+
+    /// <summary>
+    /// The struct whose user-defined constructor body is currently being emitted, or <see langword="null"/>.
+    /// </summary>
+    public INamedTypeSymbol? StructConstructorType;
+
+    /// <summary>
+    /// The syntax node or member type syntax currently being emitted, used when reporting diagnostics from type emission.
+    /// </summary>
+    public SyntaxNode? CurrentNode;
+
     public int SwitchIdCounter;
     public Stack<int> ActiveSwitchIds = activeSwitchIds;
 

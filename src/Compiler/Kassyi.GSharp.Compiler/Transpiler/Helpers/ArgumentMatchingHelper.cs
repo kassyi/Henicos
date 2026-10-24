@@ -27,7 +27,7 @@ internal static class ArgumentMatchingHelper
             if (index < 0 || index >= matched.Length)
             {
                 throw new InvalidOperationException(
-                    $"An argument of a call that may suspend does not match a parameter of '{callee.Name}'.");
+                    $"An argument of a call does not match a parameter of '{callee.Name}'.");
             }
 
             matched[index] = argument;
@@ -44,7 +44,7 @@ internal static class ArgumentMatchingHelper
         if (!parameter.HasExplicitDefaultValue)
         {
             throw new InvalidOperationException(
-                $"A call that may suspend omits the parameter '{parameter.Name}', which has no default value.");
+                $"A call omits the parameter '{parameter.Name}', which has no default value.");
         }
 
         var value = parameter.ExplicitDefaultValue;
@@ -90,7 +90,7 @@ internal static class ArgumentMatchingHelper
             byte or sbyte or short or ushort => SyntaxFactory.Literal(
                 Convert.ToInt32(value, CultureInfo.InvariantCulture)),
             _ => throw new InvalidOperationException(
-                $"A call that may suspend omits a parameter whose default value '{value}' has no C# literal.")
+                $"A call omits a parameter whose default value '{value}' has no C# literal.")
         };
 
         return SyntaxFactory.LiteralExpression(value is char

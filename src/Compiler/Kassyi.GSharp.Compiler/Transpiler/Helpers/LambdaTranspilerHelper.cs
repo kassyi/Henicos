@@ -8,7 +8,8 @@ internal static class LambdaTranspilerHelper
     public static void TranspileLambdaBody(
         ref TranspileContext context,
         BlockSyntax? block,
-        ExpressionSyntax? expressionBody)
+        ExpressionSyntax? expressionBody,
+        bool isVoidExpression = false)
     {
         context.Emitter.CallableDepth++;
         try
@@ -21,7 +22,7 @@ internal static class LambdaTranspilerHelper
             {
                 using (context.Emitter.Writer.Scope())
                 {
-                    context.Emitter.Writer.Append("return ");
+                    context.Emitter.Writer.AppendIf(!isVoidExpression, "return ");
                     context.Visitor.Visit(expressionBody);
                     context.Emitter.Writer.AppendLine(";");
                 }

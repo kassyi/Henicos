@@ -117,13 +117,27 @@ public class GlobalCppNamesTests
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
-    public void Test_GetTypeName_ConstructedType_UsesTheDefinitionName()
+    public void Test_GetTypeName_ConstructedType_EncodesTypeArguments()
     {
         var compilation = CreateCompilation();
         var definition = GetType(compilation, "Repro.Generic`1");
-        var constructed = definition.Construct(compilation.GetSpecialType(SpecialType.System_Int32));
+        var intType = definition.Construct(compilation.GetSpecialType(SpecialType.System_Int32));
+        var floatType = definition.Construct(compilation.GetSpecialType(SpecialType.System_Single));
+        var nestedType = definition.Construct(intType);
 
-        Assert.Equal(GlobalCppNames.GetTypeName(definition), GlobalCppNames.GetTypeName(constructed));
+        var intName = GlobalCppNames.GetTypeName(intType);
+        var floatName = GlobalCppNames.GetTypeName(floatType);
+        var nestedName = GlobalCppNames.GetTypeName(nestedType);
+
+        Assert.Equal("__gsharp_ty_Repro__Generic_g1_bSystem__Int32_e", intName);
+        Assert.Equal("__gsharp_ty_Repro__Generic_g1_bSystem__Single_e", floatName);
+        Assert.Equal("__gsharp_ty_Repro__Generic_g1_bRepro__Generic_g1_bSystem__Int32_e_e", nestedName);
+        Assert.NotEqual(GlobalCppNames.GetTypeName(definition), intName);
+        Assert.NotEqual(intName, floatName);
+        Assert.True(GSharpNameEncoding.TryDecode(intName, out var intDisplay));
+        Assert.Equal("Repro.Generic<System.Int32>", intDisplay);
+        Assert.True(GSharpNameEncoding.TryDecode(nestedName, out var nestedDisplay));
+        Assert.Equal("Repro.Generic<Repro.Generic<System.Int32>>", nestedDisplay);
     }
 
     [Fact]

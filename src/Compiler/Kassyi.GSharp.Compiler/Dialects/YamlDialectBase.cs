@@ -10,11 +10,32 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
     public virtual void AppendType(ref TranspileContext context, ITypeSymbol? typeSymbol)
     {
+        typeSymbol = StructTranspiler.SubstituteTypeParameters(typeSymbol, context.Emitter.CurrentStructType,
+            context.Query.SemanticModel.Compilation);
         typeSymbol = typeSymbol.UnwrapNullableArrayLike();
 
         if (typeSymbol == null)
         {
             context.Emitter.Writer.Append("void");
+            return;
+        }
+
+        if (typeSymbol is ITypeParameterSymbol typeParam)
+        {
+            if (context.Emitter.CurrentNode is { } currentNode)
+            {
+                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, currentNode,
+                    "unsubstituted type parameter");
+            }
+            else
+            {
+                var location = typeParam.Locations.AsStackEnumerable()
+                                   .FirstOrDefault(static loc => loc.IsInSource) ?? Location.None;
+                context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, location,
+                    "unsubstituted type parameter");
+            }
+
+            context.Emitter.Writer.Append("/*unsupported:TypeParameter*/");
             return;
         }
 
@@ -58,9 +79,11 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return;
         }
 
+        StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
         context.Emitter.Writer.AppendFullyQualifiedCppName(typeSymbol);
 
-        if (typeSymbol is not INamedTypeSymbol { IsGenericType: true } namedType)
+        if (typeSymbol is not INamedTypeSymbol { IsGenericType: true } namedType ||
+            GlobalCppNames.IsEmittedUserType(namedType))
         {
             return;
         }

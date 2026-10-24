@@ -12,10 +12,9 @@ namespace Kassyi.GSharp.Compiler.Transpiler.Rules.ExpressionRules;
 /// still read the original value (C# 9 non-destructive mutation).
 /// </para>
 /// <para>
-/// Emitted only for a member that is a field or an auto-property, which the device struct stores as a field
-/// (<see cref="Layout.StructAbiMembers"/>). A property whose <c>init</c> accessor has a body has no setter function on the
-/// device, so running that body is not possible and the expression is reported (GSH0003) instead of skipping it.
-/// A <c>with</c> on a class would allocate and is reported as well.
+/// A field or auto-property is assigned directly on the copy, and a computed property with a <c>set</c> or <c>init</c>
+/// body is assigned through the setter member function emitted by <c>StructTranspiler</c>
+/// (<see cref="ComputedPropertyGetterCall"/>). A <c>with</c> on a class would allocate and is reported (GSH0003).
 /// </para>
 /// <para><b>Thread Safety:</b> This rule is stateless and thread-safe.</para>
 /// <para><b>Execution Target:</b> Host-only (Roslyn compiler environment).</para>
@@ -73,9 +72,7 @@ public sealed class WithExpressionTranspilerRule : SyntaxNodeTranspilerRuleBase<
                 }
 
                 context.Emitter.Writer.Append($"{GSharpInternalNames.Lowering.AggregateTemp}.");
-                context.Visitor.Visit(assignment.Left);
-                context.Emitter.Writer.Append(" = ");
-                context.Visitor.Visit(assignment.Right);
+                ComputedPropertyGetterCall.TranspileAssignment(assignment, " = ", ref context);
                 context.Emitter.Writer.AppendLine(";");
             }
 

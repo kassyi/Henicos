@@ -1961,10 +1961,9 @@ global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
 #pragma warning restore CS8500
-public const string GenericStructKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPairStruct_a1__
-#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPairStruct_a1__
-template <typename __gsharp_tp_T>
-struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPairStruct_a1
+public const string GenericStructKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPairStruct_g1_bSystem__Int32_e__
+#define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPairStruct_g1_bSystem__Int32_e__
+struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPairStruct_g1_bSystem__Int32_e
 {
 int __gsharp_mb_First;
 int __gsharp_mb_Second;
@@ -1988,10 +1987,10 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 auto __gsharp_id_1_p = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPairStruct_a1<int> __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_First = 1; __gsharp_tmp.__gsharp_mb_Second = 2; return __gsharp_tmp; }
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPairStruct_g1_bSystem__Int32_e __gsharp_tmp{}; __gsharp_tmp.__gsharp_mb_First = 1; __gsharp_tmp.__gsharp_mb_Second = 2; return __gsharp_tmp; }
 ());
 auto __gsharp_id_2_q = ([&]() {
-__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPairStruct_a1<int> __gsharp_tmp = __gsharp_id_1_p;
+__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__WithPairStruct_g1_bSystem__Int32_e __gsharp_tmp = __gsharp_id_1_p;
 __gsharp_tmp.__gsharp_mb_Second = 20;
 return __gsharp_tmp;
 }());

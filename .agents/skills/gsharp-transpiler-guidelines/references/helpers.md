@@ -104,6 +104,7 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 | Enter or suppress automatic grid sync (`Gpu.SyncGrid` bodies, single-thread regions) | `AutoSyncGrid.Enter`, `AutoSyncGrid.Suppress`, `AutoSyncGrid.Restore` in `try` / `finally`; `AutoSyncGrid.IsActive` to read it. Never write `Emitter.AutoSyncGridDepth` directly |
 | Null test of an array-like value, `??`, `??=` | `NullRepresentation.IsArrayNullComparable`, `NullRepresentation.AppendArrayNullTest`, `NullRepresentation.AppendCoalesce`, `NullRepresentation.AppendCoalesceAssignment` |
 | Match invocation arguments to parameters (named arguments / defaults) | `ArgumentMatchingHelper.MatchArgumentsToParameters`, `ArgumentMatchingHelper.CreateDefaultArgument` |
+| Substitute a generic struct's type parameters with concrete type arguments during emission | `StructTranspiler.SubstituteTypeParameters` |
 
 The smallest example is `Transpiler/Rules/ExpressionRules/ParenthesizedExpressionTranspilerRule.cs`.
 

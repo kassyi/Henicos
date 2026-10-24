@@ -54,6 +54,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         IMethodSymbol symbol,
         ref TranspileContext context)
     {
+        StructTranspiler.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
         context.Visitor.Visit(node.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
@@ -73,6 +74,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
             throw new InvalidOperationException("A lowered resume call does not wrap a call to a device function.");
         }
 
+        StructTranspiler.RegisterUsedStructIfApplicable(callee.ReturnType, ref context);
         context.Visitor.Visit(call.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
