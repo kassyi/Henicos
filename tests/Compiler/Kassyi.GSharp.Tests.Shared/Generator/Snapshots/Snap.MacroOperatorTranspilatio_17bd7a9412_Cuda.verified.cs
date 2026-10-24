@@ -154,6 +154,11 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+__device__ inline __gsharp_ty_TestNamespace__DummyRef __gsharp_ctor_TestNamespace__DummyRef(GSharpArray<unsigned int> __gsharp_id_0_data) {
+__gsharp_ty_TestNamespace__DummyRef __gsharp_self{};
+__gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
+return __gsharp_self;
+}
 #endif
 extern ""C"" __global__ void __gsharp_k_TestNamespace__TestKernels__MacroKernel(__gsharp_ty_TestNamespace__DummyContext __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_dA, GSharpArray<unsigned int> __gsharp_id_2_dB, GSharpArray<unsigned int> __gsharp_id_3_dResult){
 __gsharp_ty_TestNamespace__DummyRef __gsharp_id_4_a = __gsharp_id_1_dA;

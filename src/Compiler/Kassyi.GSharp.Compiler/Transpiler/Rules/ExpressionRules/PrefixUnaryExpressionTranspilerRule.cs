@@ -27,6 +27,15 @@ public sealed class PrefixUnaryExpressionTranspilerRule : SyntaxNodeTranspilerRu
             return;
         }
 
+        if ((node.IsKind(SyntaxKind.PreIncrementExpression) || node.IsKind(SyntaxKind.PreDecrementExpression)) &&
+            ComputedPropertyGetterCall.IsComputedPropertyTarget(node.Operand, ref context))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node,
+                ComputedPropertyGetterCall.IncrementOrDecrementOfComputedProperty);
+            context.Visitor.AppendUnsupportedPlaceholder(node);
+            return;
+        }
+
         var op = node.OperatorToken.Text;
         context.Emitter.Writer.Append(op);
         context.Visitor.Visit(node.Operand);

@@ -33,12 +33,15 @@
 (44,23)-(44,30) GSH0003 analyzer: The syntax 'SpreadElement' is not supported in GSharp GPU kernels
 
 ## Diagnostics/WithExpressionUnsupported.cu.cs
-(33,20)-(33,41) GSH0003 analyzer: The syntax 'with expression on a reference type (heap allocation)' is not supported in GSharp GPU kernels
-(42,45)-(42,50) GSH0003 analyzer: The syntax 'with expression assigning the property 'Value', whose accessor has a body' is not supported in GSharp GPU kernels
-(51,44)-(51,49) GSH0003 analyzer: The syntax 'with expression assigning the [GpuReadOnly] member 'Fixed'' is not supported in GSharp GPU kernels
+(44,20)-(44,41) GSH0003 analyzer: The syntax 'with expression on a reference type (heap allocation)' is not supported in GSharp GPU kernels
+(62,44)-(62,49) GSH0003 analyzer: The syntax 'with expression assigning the [GpuReadOnly] member 'Fixed'' is not supported in GSharp GPU kernels
+(71,9)-(71,22) GSH0003 analyzer: The syntax 'compound assignment to a computed property' is not supported in GSharp GPU kernels
+(72,9)-(72,19) GSH0003 analyzer: The syntax 'increment or decrement of a computed property' is not supported in GSharp GPU kernels
+(73,17)-(73,29) GSH0003 analyzer: The syntax 'chained assignment to a computed property' is not supported in GSharp GPU kernels
 
 ## Diagnostics/ComputedPropertyGetterFailure.cu.cs
 (11,25)-(11,39) GSH0003 analyzer: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
+(42,17)-(42,33) GSH0003 analyzer: The syntax 'unsubstituted type parameter' is not supported in GSharp GPU kernels
 
 ## Analyzers/DynamicStackAllocSadPath.cs
 (6,21)-(6,55) GSH0036 analyzer: The class 'SYN13_DynamicStackAllocSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.

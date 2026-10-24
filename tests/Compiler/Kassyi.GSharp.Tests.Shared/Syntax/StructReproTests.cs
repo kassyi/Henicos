@@ -9,12 +9,9 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class StructReproTests : TranspilerTestBase
 {
-    private const string GenericStructSkipReason = "A second instantiation of a generic struct reuses the layout of the first (#407)";
-    private const string ReturnOnlyStructSkipReason = "A struct used only in a device function signature is defined after the function in C++ (#480)";
     private const string BarrierLocalSameNameSkipReason = "A local live across a barrier with the same name as a struct member is an internal compiler error (#481)";
-    private const string InitBodySkipReason = "The body of an init accessor is not emitted for object initializers and the C++ does not compile (#482)";
 
-    [SkippableFact(Skip = GenericStructSkipReason)]
+    [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_GenericStruct_IntThenFloat()
@@ -26,7 +23,7 @@ public class StructReproTests : TranspilerTestBase
         Assert.Equal(4.0f, floats[0]);
     }
 
-    [SkippableFact(Skip = GenericStructSkipReason)]
+    [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_GenericStruct_FloatThenInt()
@@ -38,8 +35,31 @@ public class StructReproTests : TranspilerTestBase
         Assert.Equal(4.0f, floats[0]);
     }
 
-#if REPRO_A47_RETURN_ONLY
-    [SkippableFact(Skip = ReturnOnlyStructSkipReason)]
+    [SkippableFact]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GenericStruct_Nested()
+    {
+        var ints = new int[1];
+        var floats = new float[1];
+        StructReproKernels.LaunchGenericNestedKernel(ints, floats, blockDimX: 1);
+        Assert.Equal(10, ints[0]);
+        Assert.Equal(12.0f, floats[0]);
+    }
+
+    [SkippableFact]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_GenericStruct_ArrayField()
+    {
+        int[] ints = [0, 3, 4];
+        float[] floats = [0f, 1.5f, 2.5f];
+        StructReproKernels.LaunchGenericArrayFieldKernel(ints, floats, blockDimX: 1);
+        Assert.Equal(7, ints[0]);
+        Assert.Equal(4.0f, floats[0]);
+    }
+
+    [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_StructUsedOnlyAsReturnType()
@@ -48,10 +68,8 @@ public class StructReproTests : TranspilerTestBase
         StructReproKernels.LaunchReturnOnlyStructKernel(output, blockDimX: 1);
         Assert.Equal(5, output[0]);
     }
-#endif
 
-#if REPRO_A47_RETURN_AND_LOCAL
-    [SkippableFact(Skip = ReturnOnlyStructSkipReason)]
+    [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
     public void Test_StructReturnedAndWrittenAsLocal()
@@ -60,7 +78,6 @@ public class StructReproTests : TranspilerTestBase
         StructReproKernels.LaunchReturnAndLocalStructKernel(output, blockDimX: 1);
         Assert.Equal(5, output[0]);
     }
-#endif
 
 #if REPRO_A48_INIT
     [SkippableFact(Skip = BarrierLocalSameNameSkipReason)]
@@ -97,8 +114,7 @@ public class StructReproTests : TranspilerTestBase
         Assert.Equal(31, output[0]);
     }
 
-#if REPRO_INIT_BODY
-    [SkippableFact(Skip = InitBodySkipReason)]
+    [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.Boundary)]
     public void Test_InitAccessorBody_RunsInObjectInitializer()
@@ -107,5 +123,29 @@ public class StructReproTests : TranspilerTestBase
         StructReproKernels.LaunchInitBodyKernel(output, blockDimX: 1);
         Assert.Equal([0, 7], output);
     }
-#endif
+
+    [SkippableFact]
+    [Category(TestCategory.Syntax)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SetAndInitAccessorBodies_RunInWithAndAssignment()
+    {
+        var output = new int[3];
+        StructReproKernels.LaunchSetAndWithAccessorBodyKernel(output, blockDimX: 1);
+        Assert.Equal([1006, 0, 810], output);
+    }
+
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_UnsubstitutedTypeParameter_ReportsGsh0003AtMemberType(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync(
+            "Diagnostics/ComputedPropertyGetterFailure.cu.cs", dialect);
+
+        Assert.Equal(
+            [(DiagnosticOrigin.Analyzer, 42, 17, 42, 33)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "unsubstituted type parameter"));
+    }
 }

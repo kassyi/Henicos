@@ -44,7 +44,7 @@ internal readonly record struct StructAbiMember(
 /// <see cref="StructAbiMember.ElementCount"/> and copy an <c>[InlineArray(N)]</c> struct or a <c>fixed</c> buffer as one
 /// block. A property without a backing field has no storage on either side and is listed only when
 /// <c>includeComputedProperties</c> is set; the device definition emits a <see cref="IsComputedProperty">computed
-/// property</see> as a getter member function instead (pinned by <c>StructAbiTests</c>).
+/// property</see>'s accessors as member functions instead (pinned by <c>StructAbiTests</c>).
 /// </remarks>
 internal static class StructAbiMembers
 {
@@ -55,12 +55,11 @@ internal static class StructAbiMembers
         new(structType, includeComputedProperties);
 
     /// <summary>
-    /// Whether <paramref name="property"/> is a computed property: an instance property without a backing field that has
-    /// only a <c>get</c> accessor (<c>=&gt; expr</c>, <c>get =&gt; expr</c> or <c>get { ... }</c>). The device reads it
-    /// through a getter member function of the struct.
+    /// Whether <paramref name="property"/> is a computed property: an instance property without a backing field, whose
+    /// <c>get</c> and <c>set</c> / <c>init</c> accessors are emitted as member functions of the struct.
     /// </summary>
     public static bool IsComputedProperty(IPropertySymbol property) =>
-        property is { IsStatic: false, IsIndexer: false, IsImplicitlyDeclared: false, GetMethod: not null, SetMethod: null } &&
+        property is { IsStatic: false, IsIndexer: false, IsImplicitlyDeclared: false } &&
         !HasBackingField(property.ContainingType.GetMembers(), property);
 
     /// <summary>Whether <paramref name="property"/> is an auto-property, which the device stores as a field.</summary>

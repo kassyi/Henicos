@@ -195,6 +195,8 @@ internal static class UsingTranspiler
         [NotNullWhen(true)] out INamedTypeSymbol? resourceType)
     {
         resourceType = null;
+        var compilation = context.Query.SemanticModel.Compilation;
+        type = StructTranspiler.SubstituteTypeParameters(type, context.Emitter.CurrentStructType, compilation);
 
         // An unresolved type is the C# compiler's error
         if (type is null or IErrorTypeSymbol)
@@ -202,7 +204,6 @@ internal static class UsingTranspiler
             return false;
         }
 
-        var compilation = context.Query.SemanticModel.Compilation;
         if (type is not INamedTypeSymbol named || !GlobalCppNames.IsEncodedUserType(named, context.Emitter.Dialect) ||
             FindDisposeMethod(named, compilation) is not { } dispose)
         {
@@ -217,13 +218,12 @@ internal static class UsingTranspiler
         }
 
         StructTranspiler.RegisterUsedStructIfApplicable(named, ref context);
-        var definition = named.OriginalDefinition;
         var isRecorded = context.Emitter.DisposedStructs
             .AsStackEnumerable()
-            .Any(definition, static (recorded, type) => recorded.IsEqualTo(type));
+            .Any(named, static (recorded, type) => recorded.IsEqualTo(type));
         if (!isRecorded)
         {
-            context.Emitter.DisposedStructs.Add(definition);
+            context.Emitter.DisposedStructs.Add(named);
         }
 
         resourceType = named;
@@ -270,8 +270,7 @@ internal static class UsingTranspiler
 
     // #ifndef __GSHARP_DISPOSE_<type>__
     // #define __GSHARP_DISPOSE_<type>__
-    // [template <typename T>]
-    // __device__ inline void <type>[<T>]::__gsharp_dispose() { <body> }
+    // __device__ inline void <type>::__gsharp_dispose() { <body> }
     // #endif
     private static void WriteDisposeDefinition(INamedTypeSymbol type, MethodDeclarationSyntax declaration,
         BlockSyntax? block, ExpressionSyntax? expression, ref TranspileContext context)
@@ -279,9 +278,7 @@ internal static class UsingTranspiler
         var writer = context.Emitter.Writer;
         writer.Append("#ifndef __GSHARP_DISPOSE_").AppendFullyQualifiedCppName(type).AppendLine("__");
         writer.Append("#define __GSHARP_DISPOSE_").AppendFullyQualifiedCppName(type).AppendLine("__");
-        StructTranspiler.WriteTemplatePrefix(ref context, type);
         writer.Append("__device__ inline void ").AppendFullyQualifiedCppName(type);
-        AppendTemplateParameters(type, ref context);
         writer.Append($"::{GSharpInternalNames.Using.Dispose}() ");
 
         // [WHY] The struct may be declared in another file than the method, so its body is bound with a model of its own tree.
@@ -290,6 +287,8 @@ internal static class UsingTranspiler
         var model = query.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
         context.Query = new Query(model, query.BclIntrinsicMap, query.UsedStructs);
         context.Reporter = reporter.WithSemanticModel(model);
+        var previousStructType = context.Emitter.CurrentStructType;
+        context.Emitter.CurrentStructType = type;
 
         // A return in the body leaves Dispose, not the kernel
         context.Emitter.CallableDepth++;
@@ -311,32 +310,11 @@ internal static class UsingTranspiler
         finally
         {
             context.Emitter.CallableDepth--;
+            context.Emitter.CurrentStructType = previousStructType;
             context.Query = query;
             context.Reporter = reporter;
         }
 
         context.Emitter.Writer.AppendLine("#endif").AppendLine();
-    }
-
-    // <T1, T2> of a generic struct, whose definition is a template
-    private static void AppendTemplateParameters(INamedTypeSymbol type, ref TranspileContext context)
-    {
-        if (type.TypeParameters.Length == 0)
-        {
-            return;
-        }
-
-        context.Emitter.Writer.Append('<');
-        for (var i = 0; i < type.TypeParameters.Length; i++)
-        {
-            if (i > 0)
-            {
-                context.Emitter.Writer.Append(", ");
-            }
-
-            context.Emitter.Writer.AppendFullyQualifiedCppName(type.TypeParameters[i]);
-        }
-
-        context.Emitter.Writer.Append('>');
     }
 }

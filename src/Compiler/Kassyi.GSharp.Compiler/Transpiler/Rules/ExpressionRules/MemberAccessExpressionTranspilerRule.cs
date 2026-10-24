@@ -163,7 +163,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
         if (memberName.Kind != CppNameKind.Verbatim)
         {
             context.Emitter.Writer.AppendCppName(memberName);
-            ComputedPropertyGetterCall.AppendCallIfGetter(memberSymbol, ref context);
+            ComputedPropertyGetterCall.AppendCallIfGetter(node, memberSymbol, ref context);
             return;
         }
 
