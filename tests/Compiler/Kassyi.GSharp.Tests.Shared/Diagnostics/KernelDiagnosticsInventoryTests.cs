@@ -28,6 +28,8 @@ public class KernelDiagnosticsInventoryTests
         "Diagnostics/WithExpressionUnsupported.cu.cs",
         // GSH0003 in the getter of a computed property (#471)
         "Diagnostics/ComputedPropertyGetterFailure.cu.cs",
+        // GSH0003 (dynamic SharedMemory<T> reached from a struct member or through a delegate, #439)
+        "Diagnostics/DynamicSharedMemoryWithoutTable.cu.cs",
         // GSH0003 (dynamic array size)
         "Analyzers/DynamicStackAllocSadPath.cs",
         // GSH0003 (switch expression)

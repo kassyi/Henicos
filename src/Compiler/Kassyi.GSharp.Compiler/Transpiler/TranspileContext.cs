@@ -25,7 +25,13 @@ public struct Emitter(
     public ITranspilerDialect Dialect { get; } = dialect;
     public HashSet<string> RequiredIncludes { get; } = new();
 
-    public bool HasEmittedDynamicSmemBase;
+    /// <summary>
+    /// The qualifier of <c>Slot&lt;Key&gt;</c> in the table of dynamic shared memory regions that <c>__gsharp_dsmem</c>
+    /// points to (CUDA): <c>__gsharp_dsmem_&lt;kernel&gt;::</c> in a kernel, <c>TDsmem::template </c> in a device
+    /// function that receives the table. <see langword="null"/> when the code being emitted has no table
+    /// (<see cref="DynamicSharedMemoryEmitter"/>).
+    /// </summary>
+    public string? DynamicSharedMemorySlotScope;
     public bool SkipLocalsInit;
     public bool IsGpuKernelEntry;
 

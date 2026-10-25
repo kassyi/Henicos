@@ -8,6 +8,8 @@ internal static class MethodSignatureTranspiler
     /// <summary>
     /// Writes the signature of a kernel entry point or of a device function that does not suspend. A kernel with a state
     /// machine (<paramref name="hasContext"/>) takes its per-thread context as the last parameter before the auto result.
+    /// A CUDA device function that reaches a dynamic <c>SharedMemory&lt;T&gt;</c> declaration is a template over the
+    /// table type of its kernel and takes the table as the last parameter (<see cref="DynamicSharedMemoryEmitter"/>).
     /// </summary>
     public static void WriteMethodSignature(in MethodEmissionPlan plan, bool hasContext, ref TranspileContext context)
     {
@@ -27,8 +29,16 @@ internal static class MethodSignatureTranspiler
 
         string methodName;
         string? contextName = null;
+        var takesTable = isDevice && methodSymbol != null &&
+                         DynamicSharedMemoryEmitter.TakesTable(methodSymbol, context.Emitter.Dialect,
+                             context.Query.SemanticModel.Compilation);
         if (isDevice)
         {
+            if (takesTable)
+            {
+                DynamicSharedMemoryEmitter.AppendTemplateHeader(ref context);
+            }
+
             WriteDeviceMethodPrefix(methodSymbol, ref context);
             methodName = methodSymbol != null && CppNameResolver.IsEmittedDeviceFunction(methodSymbol, context.Emitter.Dialect)
                 ? GlobalCppNames.GetFunctionName(methodSymbol)
@@ -54,6 +64,11 @@ internal static class MethodSignatureTranspiler
         using (context.Emitter.Writer.Parentheses())
         {
             WriteParameters(method.ParameterList.Parameters, isDevice, ref context);
+
+            if (takesTable)
+            {
+                DynamicSharedMemoryEmitter.AppendTableParameter(method.ParameterList.Parameters.Count > 0, ref context);
+            }
 
             if (contextName != null)
             {

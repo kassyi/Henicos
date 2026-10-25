@@ -126,4 +126,77 @@ internal static class DeviceDynamicSharedMemoryScenarios
             Assert.Equal(2 * i + 121, output[i]);
         }
     }
+
+    // D9 (R7)
+    public static void NestedScopeDeclarationsDoNotOverlap(Action<Action> run)
+    {
+        var output = new int[Length];
+
+        run(() => DeviceDynamicSharedMemoryKernels.LaunchNestedScopeKernel(output, Length,
+            blockDimX: Length, sharedMemBytes: 2 * Length * sizeof(int)));
+
+        for (int i = 0; i < Length; i++)
+        {
+            Assert.Equal(2 * i + 1001, output[i]);
+        }
+    }
+
+    // D10: on CUDA the kernel's 12 bytes end at 12; the helper's region starts at 16 and grows in place to 32 bytes
+    public static void ZeroCountDeclarationGrowsInPlace(Action<Action> run)
+    {
+        const int smallCount = 3;
+        const int largeCount = 4;
+        var output = new int[Length];
+
+        run(() => DeviceDynamicSharedMemoryKernels.LaunchZeroThenGrowKernel(output, smallCount, largeCount,
+            blockDimX: Length, sharedMemBytes: 32));
+
+        for (int i = 0; i < Length; i++)
+        {
+            int expected = (i < smallCount ? i + 100 : 0) + (i < largeCount ? 2 * i : 0);
+            Assert.Equal(expected, output[i]);
+        }
+    }
+
+    // D11
+    public static void HelperBehindFunctionWithoutDeclaration(Action<Action> run)
+    {
+        var output = new int[Length];
+
+        run(() => DeviceDynamicSharedMemoryKernels.LaunchMiddleCallerKernel(output, Length,
+            blockDimX: Length, sharedMemBytes: 2 * Length * sizeof(int)));
+
+        for (int i = 0; i < Length; i++)
+        {
+            Assert.Equal(i + 100 + 2 * i, output[i]);
+        }
+    }
+
+    // D12
+    public static void HelperWithoutParameters(Action<Action> run)
+    {
+        var output = new int[Length];
+
+        run(() => DeviceDynamicSharedMemoryKernels.LaunchNoParameterCallerKernel(output,
+            blockDimX: Length, sharedMemBytes: Length * sizeof(int)));
+
+        for (int i = 0; i < Length; i++)
+        {
+            Assert.Equal(3 * i, output[i]);
+        }
+    }
+
+    // D13
+    public static void HelpersCalledFromLocalFunctionAndLambda(Action<Action> run)
+    {
+        var output = new int[Length];
+
+        run(() => DeviceDynamicSharedMemoryKernels.LaunchNestedFunctionCallerKernel(output, Length,
+            blockDimX: Length, sharedMemBytes: 3 * Length * sizeof(int)));
+
+        for (int i = 0; i < Length; i++)
+        {
+            Assert.Equal(i + 100 + 2 * i + 3 * i, output[i]);
+        }
+    }
 }

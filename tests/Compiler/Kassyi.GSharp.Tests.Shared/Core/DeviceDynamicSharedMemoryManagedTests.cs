@@ -59,6 +59,31 @@ public class DeviceDynamicSharedMemoryManagedTests : TranspilerTestBase
     public void Test_Managed_RecursiveHelper_SharesOneBufferAndDoesNotOverlapCaller() =>
         DeviceDynamicSharedMemoryScenarios.RecursiveHelperSharesOneBufferAndDoesNotOverlapCaller(s_runManaged);
 
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_NestedScopeDeclarations_DoNotOverlap() =>
+        DeviceDynamicSharedMemoryScenarios.NestedScopeDeclarationsDoNotOverlap(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_ZeroCountDeclaration_GrowsInPlace() =>
+        DeviceDynamicSharedMemoryScenarios.ZeroCountDeclarationGrowsInPlace(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_HelperBehindFunctionWithoutDeclaration_DoesNotOverlapCaller() =>
+        DeviceDynamicSharedMemoryScenarios.HelperBehindFunctionWithoutDeclaration(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_HelperWithoutParameters_GetsItsBuffer() =>
+        DeviceDynamicSharedMemoryScenarios.HelperWithoutParameters(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_HelpersCalledFromLocalFunctionAndLambda_DoNotOverlapCaller() =>
+        DeviceDynamicSharedMemoryScenarios.HelpersCalledFromLocalFunctionAndLambda(s_runManaged);
+
     private static void RunManaged(Action launch)
     {
         var failures = new ConcurrentQueue<Exception>();

@@ -86,17 +86,22 @@ public partial class ConcurrencyAndWarpKernels
 public static partial class AotContexts
 {
 }
-public const string SharedMemoryKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_dynSize){
+public const string SharedMemoryKernel_Source = @"// SharedMemoryKernel reaches 2 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel {
+static constexpr int Slots = 2;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x5df350f09946465cull ? 0 : Key == 0x5df353f099464b75ull ? 1 : -1;
+unsigned int cursor;
+unsigned int offset[2];
+unsigned int size[2];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel(GSharpArray<int> __gsharp_id_0_data, int __gsharp_id_1_dynSize){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = threadIdx.x;
 __shared__ int __gsharp_id_3_sStatic[256];
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_4_sDyn1 = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_1_dynSize) * sizeof(int);
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
-float* __gsharp_id_5_sDyn2 = (float*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_1_dynSize) * sizeof(float);
+int* __gsharp_id_4_sDyn1 = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel::Slot<0x5df350f09946465cull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_dynSize) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+float* __gsharp_id_5_sDyn2 = (float*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__ConcurrencyAndWarpKernels__SharedMemoryKernel::Slot<0x5df353f099464b75ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_dynSize) * sizeof(float), __GSHARP_DSMEM_ALIGN(float));
 __gsharp_id_3_sStatic[__gsharp_id_2_tid]=__gsharp_id_0_data[__gsharp_id_2_tid];
 __gsharp_id_4_sDyn1[__gsharp_id_2_tid]=__gsharp_id_0_data[__gsharp_id_2_tid]*2;
 __gsharp_id_5_sDyn2[__gsharp_id_2_tid]=3.14f;

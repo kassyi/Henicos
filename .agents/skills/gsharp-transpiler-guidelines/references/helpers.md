@@ -33,6 +33,8 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | `[StructLayout(Pack = n)]` | `.TryGetStructLayoutPack` | reading `NamedArguments` by hand |
 | First declaring syntax of a symbol | `.TryGetDeclaringSyntax` | `DeclaringSyntaxReferences[0].GetSyntax()` |
 | Which `Gpu` macro is this call (`SyncGrid`, `SingleThread`, `ForUnroll` ...)? | `GpuMacroClassifier.Classify` | `symbol.Name == "SyncGrid"` |
+| Does a device function reach a barrier, which device functions a body calls, does a method have a device function body? | `SuspensionAnalysis.IsSuspendingFunction`, `SuspensionAnalysis.ReachesBlockBarrier`, `SuspensionAnalysis.GetDeviceFunctionCallees`, `SuspensionAnalysis.TryGetDeviceFunctionBody` | a walk of `DescendantNodes()` for invocations of `[GpuDeviceFunction]` methods |
+| Is a `SharedMemory<T>` declaration dynamic (its count is not a C# constant), does a device function reach one, which ones does a kernel reach? | `DynamicSharedMemoryAnalysis.TryGetCount`, `DynamicSharedMemoryAnalysis.ReachesDynamicSharedMemory`, `DynamicSharedMemoryAnalysis.GetReachableSites` | `GetSafeConstantValue` on the first argument in each rule, or a call graph walk of its own |
 
 Type and namespace names: `TypeConstants` (`TypeConstants.GpuType`, `TypeConstants.GpuMacros`). Attribute short names:
 `KnownAttributes`. Never spell `"Gpu"`, `"SharedMemory"` or an attribute name as a literal.
@@ -81,6 +83,7 @@ fixed text (separators, keywords, `;`) is a literal. The other helpers:
 | C++ and C# literal pair of a `[GpuConstexpr]` value | `ConstexprLiteral.Format` | culture-dependent `ToString()` or `"R"` format |
 | Header and attributes of a generated `.g.cs` | `.AppendGeneratedFileHeader`, `.AppendGeneratedCodeAttributes` | copied header text |
 | Compute a 64-bit site key for a `SharedMemory<T>` allocation or emit a CPU `SharedMemory<T>` allocation (`(T*)__gsharp_allocate_smem(...)`) | `SharedMemorySiteKey.Compute`, `SharedMemorySiteKey.ToCppLiteral`, `SharedMemorySiteKey.ToCSharpLiteral`, `SharedMemorySiteKey.AppendCpuAllocation` | hand-hashing a syntax span or spelling `__gsharp_allocate_smem(...)` in multiple rules |
+| Emit the CUDA placement of a dynamic `SharedMemory<T>` (the table type and the first lines of a kernel, the template header, hidden parameter and argument of a device function that reaches one, the placement of a declaration) | `DynamicSharedMemoryEmitter.TakesTable`, `DynamicSharedMemoryEmitter.BeginMethod`, `DynamicSharedMemoryEmitter.WriteKernelPrologue`, `DynamicSharedMemoryEmitter.AppendTemplateHeader`, `DynamicSharedMemoryEmitter.AppendTableParameter`, `DynamicSharedMemoryEmitter.AppendTableArgument`, `DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall`, `DynamicSharedMemoryEmitter.WritePlacement` | `extern __shared__` and a running offset in each function, or `__gsharp_dsmem` spelled in a rule |
 
 Where an internal name lives: in the YAML when the Prelude, the runtime, another emitter, or both host and device code
 spell it; otherwise a `private const` in the one emitter that declares and uses it. See the remarks on `GSharpInternalNames`.

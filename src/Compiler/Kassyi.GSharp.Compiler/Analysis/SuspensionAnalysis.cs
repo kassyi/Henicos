@@ -142,7 +142,11 @@ internal static class SuspensionAnalysis
         return false;
     }
 
-    private static IEnumerable<IMethodSymbol> GetDeviceFunctionCallees(SyntaxNode body, Compilation compilation)
+    /// <summary>
+    /// The definitions of the <c>[GpuDeviceFunction]</c> methods with a body that <paramref name="body"/> calls, in call
+    /// order, with repeats.
+    /// </summary>
+    internal static IEnumerable<IMethodSymbol> GetDeviceFunctionCallees(SyntaxNode body, Compilation compilation)
     {
         var semanticModel = compilation.GetSemanticModel(body.SyntaxTree);
         foreach (var node in body.DescendantNodes())
@@ -156,7 +160,8 @@ internal static class SuspensionAnalysis
         }
     }
 
-    private static bool TryGetDeviceFunctionBody(IMethodSymbol method,
+    /// <summary>Whether <paramref name="method"/> is a <c>[GpuDeviceFunction]</c> declared with a body in source.</summary>
+    internal static bool TryGetDeviceFunctionBody(IMethodSymbol method,
         [NotNullWhen(true)] out MethodDeclarationSyntax? declaration)
     {
         if (method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&

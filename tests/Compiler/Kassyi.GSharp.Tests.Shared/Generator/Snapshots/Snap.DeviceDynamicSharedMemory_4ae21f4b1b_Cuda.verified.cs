@@ -52,6 +52,12 @@ global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.WarmupF
 global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.WarmupFunctionPointerStaticPersistKernel();
 global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.WarmupFunctionPointerGrowAfterCallerKernel();
 global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.WarmupFunctionPointerRecursiveKernel();
+global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.WarmupFunctionPointerNestedScopeKernel();
+global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.WarmupFunctionPointerZeroThenGrowKernel();
+global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.WarmupFunctionPointerMiddleCallerKernel();
+global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.WarmupFunctionPointerNoParameterCallerKernel();
+global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.WarmupFunctionPointerNestedFunctionCallerKernel();
+global::Kassyi.GSharp.Tests.Shared.Core.DeviceDynamicSharedMemoryKernels.WarmupFunctionPointerNegativeCountKernel();
 }}}
 
 
@@ -63,60 +69,48 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(int __gsharp_id_0_n, int __gsharp_id_1_val);
+public const string Source = @"template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, TDsmem* __gsharp_dsmem);
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(int __gsharp_id_0_n, int __gsharp_id_1_val);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, TDsmem* __gsharp_dsmem);
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(int __gsharp_id_0_n, int __gsharp_id_1_val);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, TDsmem* __gsharp_dsmem);
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write, TDsmem* __gsharp_dsmem);
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write, TDsmem* __gsharp_dsmem);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__StaticPersistHelper(int __gsharp_id_0_val, bool __gsharp_id_1_write);
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int __gsharp_id_0_count, int __gsharp_id_1_writeStart, int __gsharp_id_2_val);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int __gsharp_id_0_count, int __gsharp_id_1_writeStart, int __gsharp_id_2_val, TDsmem* __gsharp_dsmem);
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(int __gsharp_id_0_n, int __gsharp_id_1_depth);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(int __gsharp_id_0_n, int __gsharp_id_1_depth, TDsmem* __gsharp_dsmem);
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(int __gsharp_id_0_n, int __gsharp_id_1_val){
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_2_inner = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_0_n) * sizeof(int);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Middle(int __gsharp_id_0_n, int __gsharp_id_1_val, TDsmem* __gsharp_dsmem);
+
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterHelper(TDsmem* __gsharp_dsmem);
+
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, TDsmem* __gsharp_dsmem){
+int* __gsharp_id_2_inner = (int*)__gsharp_dsmem_place<TDsmem::template Slot<0x84b31862e77be173ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_0_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_2_inner[threadIdx.x]=__gsharp_id_1_val*2;
 __syncthreads();
 return __gsharp_id_2_inner[threadIdx.x];
 }
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(int __gsharp_id_0_n, int __gsharp_id_1_val){
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_2_inner = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_0_n) * sizeof(int);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, TDsmem* __gsharp_dsmem){
+int* __gsharp_id_2_inner = (int*)__gsharp_dsmem_place<TDsmem::template Slot<0x5e40b7025ff4f720ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_0_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_2_inner[threadIdx.x]=__gsharp_id_1_val*2;
 __syncthreads();
 return __gsharp_id_2_inner[threadIdx.x];
 }
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(int __gsharp_id_0_n, int __gsharp_id_1_val){
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_2_inner = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_0_n) * sizeof(int);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, TDsmem* __gsharp_dsmem){
+int* __gsharp_id_2_inner = (int*)__gsharp_dsmem_place<TDsmem::template Slot<0x622419c8fd194e8dull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_0_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_2_inner[threadIdx.x]=__gsharp_id_1_val*2;
 return __gsharp_id_2_inner[threadIdx.x];
 }
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write){
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_3_s = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_0_n) * sizeof(int);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write, TDsmem* __gsharp_dsmem){
+int* __gsharp_id_3_s = (int*)__gsharp_dsmem_place<TDsmem::template Slot<0x8e9b2cbfc1a4ab1eull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_0_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 if(__gsharp_id_2_write)
 {
 __gsharp_id_3_s[threadIdx.x]=__gsharp_id_1_val;
@@ -125,12 +119,8 @@ __syncthreads();
 return __gsharp_id_3_s[(threadIdx.x+1)%__gsharp_id_0_n];
 }
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write){
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_3_s = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_0_n) * sizeof(int);
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(int __gsharp_id_0_n, int __gsharp_id_1_val, bool __gsharp_id_2_write, TDsmem* __gsharp_dsmem){
+int* __gsharp_id_3_s = (int*)__gsharp_dsmem_place<TDsmem::template Slot<0x0e0c1dfb8c6d9238ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_0_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 if(__gsharp_id_2_write)
 {
 __gsharp_id_3_s[threadIdx.x]=__gsharp_id_1_val;
@@ -147,13 +137,9 @@ __gsharp_id_2_s[threadIdx.x]=__gsharp_id_0_val;
 return __gsharp_id_2_s[(threadIdx.x+1)%32];
 }
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int __gsharp_id_0_count, int __gsharp_id_1_writeStart, int __gsharp_id_2_val){
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(int __gsharp_id_0_count, int __gsharp_id_1_writeStart, int __gsharp_id_2_val, TDsmem* __gsharp_dsmem){
 int __gsharp_id_3_tid = threadIdx.x;
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_4_s = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_0_count) * sizeof(int);
+int* __gsharp_id_4_s = (int*)__gsharp_dsmem_place<TDsmem::template Slot<0xa9215b4dd44568e3ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_0_count) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 if(__gsharp_id_3_tid>=__gsharp_id_1_writeStart&&__gsharp_id_3_tid<__gsharp_id_0_count)
 {
 __gsharp_id_4_s[__gsharp_id_3_tid]=__gsharp_id_2_val*2;
@@ -164,21 +150,28 @@ __syncthreads();
 return __gsharp_id_5_r;
 }
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(int __gsharp_id_0_n, int __gsharp_id_1_depth){
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(int __gsharp_id_0_n, int __gsharp_id_1_depth, TDsmem* __gsharp_dsmem){
 int __gsharp_id_2_tid = threadIdx.x;
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_3_s = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_0_n) * sizeof(int);
+int* __gsharp_id_3_s = (int*)__gsharp_dsmem_place<TDsmem::template Slot<0x7bd5bf3595ca0873ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_0_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 if(__gsharp_id_1_depth==0)
 {
 __gsharp_id_3_s[__gsharp_id_2_tid]=__gsharp_id_2_tid+1;
 return __gsharp_id_3_s[__gsharp_id_2_tid];
 }
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(__gsharp_id_0_n,__gsharp_id_1_depth-1);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(__gsharp_id_0_n,__gsharp_id_1_depth-1,__gsharp_dsmem);
 __gsharp_id_3_s[__gsharp_id_2_tid]+=10;
 return __gsharp_id_3_s[__gsharp_id_2_tid];
+}
+
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Middle(int __gsharp_id_0_n, int __gsharp_id_1_val, TDsmem* __gsharp_dsmem){
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(__gsharp_id_0_n,__gsharp_id_1_val,__gsharp_dsmem);
+}
+
+template <typename TDsmem> inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterHelper(TDsmem* __gsharp_dsmem){
+int __gsharp_id_0_tid = threadIdx.x;
+int* __gsharp_id_1_s = (int*)__gsharp_dsmem_place<TDsmem::template Slot<0x1125921b811ab22cull>>(__gsharp_dsmem, (unsigned long long)(long long)(blockDim.x) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+__gsharp_id_1_s[__gsharp_id_0_tid]=__gsharp_id_0_tid*3;
+return __gsharp_id_1_s[__gsharp_id_0_tid];
 }
 
 ";
@@ -208,16 +201,23 @@ public partial class DeviceDynamicSharedMemoryKernels
 public static partial class AotContexts
 {
 }
-public const string SuspendingCallerKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+public const string SuspendingCallerKernel_Source = @"// SuspendingCallerKernel reaches 2 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel {
+static constexpr int Slots = 2;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x84b31862e77be173ull ? 0 : Key == 0xd8d3c5e7a76b4685ull ? 1 : -1;
+unsigned int cursor;
+unsigned int offset[2];
+unsigned int size[2];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = threadIdx.x;
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_3_outer = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_1_n) * sizeof(int);
+int* __gsharp_id_3_outer = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingCallerKernel::Slot<0xd8d3c5e7a76b4685ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_id_2_tid+100;
 __syncthreads();
-int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(__gsharp_id_1_n,__gsharp_id_2_tid);
+int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingHelper(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
 __syncthreads();
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_outer[__gsharp_id_2_tid]+__gsharp_id_4_helperResult;
 }
@@ -329,9 +329,20 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string HelperOnlyKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperOnlyKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+public const string HelperOnlyKernel_Source = @"// HelperOnlyKernel reaches 1 dynamic shared memory declaration
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperOnlyKernel {
+static constexpr int Slots = 1;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x5e40b7025ff4f720ull ? 0 : -1;
+unsigned int cursor;
+unsigned int offset[1];
+unsigned int size[1];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperOnlyKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperOnlyKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperOnlyKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = threadIdx.x;
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(__gsharp_id_1_n,__gsharp_id_2_tid);
+__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
 }
 ";
 public static readonly string HelperOnlyKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +HelperOnlyKernel_Source;
@@ -441,16 +452,23 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string HelperAndCallerKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+public const string HelperAndCallerKernel_Source = @"// HelperAndCallerKernel reaches 2 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel {
+static constexpr int Slots = 2;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x5e40b7025ff4f720ull ? 0 : Key == 0x7047eeed6a045198ull ? 1 : -1;
+unsigned int cursor;
+unsigned int offset[2];
+unsigned int size[2];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = threadIdx.x;
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_3_outer = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_1_n) * sizeof(int);
+int* __gsharp_id_3_outer = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__HelperAndCallerKernel::Slot<0x7047eeed6a045198ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_id_2_tid+100;
 __syncthreads();
-int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(__gsharp_id_1_n,__gsharp_id_2_tid);
+int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__TwoKernelHelper(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
 __syncthreads();
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_outer[__gsharp_id_2_tid]+__gsharp_id_4_helperResult;
 }
@@ -562,16 +580,23 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PlainCallerKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+public const string PlainCallerKernel_Source = @"// PlainCallerKernel reaches 2 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel {
+static constexpr int Slots = 2;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x3890c35093ada06bull ? 0 : Key == 0x622419c8fd194e8dull ? 1 : -1;
+unsigned int cursor;
+unsigned int offset[2];
+unsigned int size[2];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = threadIdx.x;
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_3_outer = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_1_n) * sizeof(int);
+int* __gsharp_id_3_outer = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainCallerKernel::Slot<0x3890c35093ada06bull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_id_2_tid+100;
 __syncthreads();
-int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(__gsharp_id_1_n,__gsharp_id_2_tid);
+int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
 __syncthreads();
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_outer[__gsharp_id_2_tid]+__gsharp_id_4_helperResult;
 }
@@ -683,11 +708,22 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string SuspendingPersistKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+public const string SuspendingPersistKernel_Source = @"// SuspendingPersistKernel reaches 1 dynamic shared memory declaration
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistKernel {
+static constexpr int Slots = 1;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x8e9b2cbfc1a4ab1eull ? 0 : -1;
+unsigned int cursor;
+unsigned int offset[1];
+unsigned int size[1];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = threadIdx.x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(__gsharp_id_1_n,__gsharp_id_2_tid+1,true);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(__gsharp_id_1_n,__gsharp_id_2_tid+1,true,__gsharp_dsmem);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(__gsharp_id_1_n,0,false);
+__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__SuspendingPersistHelper(__gsharp_id_1_n,0,false,__gsharp_dsmem);
 }
 ";
 public static readonly string SuspendingPersistKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +SuspendingPersistKernel_Source;
@@ -797,11 +833,22 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string PlainPersistKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+public const string PlainPersistKernel_Source = @"// PlainPersistKernel reaches 1 dynamic shared memory declaration
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistKernel {
+static constexpr int Slots = 1;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x0e0c1dfb8c6d9238ull ? 0 : -1;
+unsigned int cursor;
+unsigned int offset[1];
+unsigned int size[1];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = threadIdx.x;
-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(__gsharp_id_1_n,__gsharp_id_2_tid+1,true);
+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(__gsharp_id_1_n,__gsharp_id_2_tid+1,true,__gsharp_dsmem);
 __syncthreads();
-__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(__gsharp_id_1_n,0,false);
+__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainPersistHelper(__gsharp_id_1_n,0,false,__gsharp_dsmem);
 }
 ";
 public static readonly string PlainPersistKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +PlainPersistKernel_Source;
@@ -1021,17 +1068,24 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string GrowAfterCallerKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_small, int __gsharp_id_2_large){
+public const string GrowAfterCallerKernel_Source = @"// GrowAfterCallerKernel reaches 2 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel {
+static constexpr int Slots = 2;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x03275e9f903bff9bull ? 0 : Key == 0xa9215b4dd44568e3ull ? 1 : -1;
+unsigned int cursor;
+unsigned int offset[2];
+unsigned int size[2];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_small, int __gsharp_id_2_large){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_3_tid = threadIdx.x;
-int __gsharp_id_4_h1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(__gsharp_id_1_small,0,__gsharp_id_3_tid);
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_5_outer = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_2_large) * sizeof(int);
+int __gsharp_id_4_h1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(__gsharp_id_1_small,0,__gsharp_id_3_tid,__gsharp_dsmem);
+int* __gsharp_id_5_outer = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowAfterCallerKernel::Slot<0x03275e9f903bff9bull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_2_large) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_5_outer[__gsharp_id_3_tid]=__gsharp_id_3_tid+100;
 __syncthreads();
-int __gsharp_id_6_h2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(__gsharp_id_2_large,__gsharp_id_1_small,__gsharp_id_3_tid);
+int __gsharp_id_6_h2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(__gsharp_id_2_large,__gsharp_id_1_small,__gsharp_id_3_tid,__gsharp_dsmem);
 __syncthreads();
 __gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_5_outer[__gsharp_id_3_tid]+__gsharp_id_6_h2+__gsharp_id_4_h1*0;
 }
@@ -1147,15 +1201,22 @@ finally
 }
 }
 #pragma warning restore CS8500
-public const string RecursiveKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+public const string RecursiveKernel_Source = @"// RecursiveKernel reaches 2 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel {
+static constexpr int Slots = 2;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x514817400221aa76ull ? 0 : Key == 0x7bd5bf3595ca0873ull ? 1 : -1;
+unsigned int cursor;
+unsigned int offset[2];
+unsigned int size[2];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 int __gsharp_id_2_tid = threadIdx.x;
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(int) - 1) & ~(alignof(int) - 1);
-int* __gsharp_id_3_outer = (int*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_1_n) * sizeof(int);
+int* __gsharp_id_3_outer = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__RecursiveKernel::Slot<0x514817400221aa76ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
 __gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_id_2_tid+100;
-int __gsharp_id_4_r = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(__gsharp_id_1_n,2);
+int __gsharp_id_4_r = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Rec(__gsharp_id_1_n,2,__gsharp_dsmem);
 __gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_outer[__gsharp_id_2_tid]+__gsharp_id_4_r;
 }
 ";
@@ -1250,6 +1311,802 @@ proxy_output[0] = output;
 kernelParams[0] = proxy_output;
 // Marshal scalar: n
 kernelParams[1] = &n;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string NestedScopeKernel_Source = @"// NestedScopeKernel reaches 2 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel {
+static constexpr int Slots = 2;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x3d770cff060c8b52ull ? 0 : Key == 0x3d770dff060c8d05ull ? 1 : -1;
+unsigned int cursor;
+unsigned int offset[2];
+unsigned int size[2];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
+int __gsharp_id_2_tid = threadIdx.x;
+int __gsharp_id_3_inner = 0;
+int __gsharp_id_4_outer = 0;
+for(int __gsharp_id_5_round = 0;__gsharp_id_5_round<2;__gsharp_id_5_round++)
+{
+if(__gsharp_id_1_n>0)
+{
+int* __gsharp_id_6_a = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel::Slot<0x3d770dff060c8d05ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+if(__gsharp_id_5_round==0)
+{
+__gsharp_id_6_a[__gsharp_id_2_tid]=__gsharp_id_2_tid+1;
+}
+else
+{
+__gsharp_id_3_inner=__gsharp_id_6_a[__gsharp_id_2_tid];
+}
+}
+int* __gsharp_id_7_b = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel::Slot<0x3d770cff060c8b52ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+__gsharp_id_7_b[__gsharp_id_2_tid]=1000+__gsharp_id_2_tid;
+__gsharp_id_4_outer=__gsharp_id_7_b[__gsharp_id_2_tid];
+}
+__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_inner+__gsharp_id_4_outer;
+}
+";
+public static readonly string NestedScopeKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedScopeKernel_Source;
+private static IntPtr? s_hfunc_NestedScopeKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerNestedScopeKernel()
+{
+if (s_hfunc_NestedScopeKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_NestedScopeKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedScopeKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchNestedScopeKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
+if (output.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerNestedScopeKernel();
+IntPtr hfunc = s_hfunc_NestedScopeKernel!.Value;
+IntPtr d_output = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal array: output
+int output_size = output.Length * sizeof(global::System.Int32);
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = IntPtr.Zero;
+((int*)(proxy_output + 1))[0] = output.Length;
+if (output_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
+proxy_output[0] = d_output;
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_output;
+// Marshal scalar: n
+kernelParams[1] = &n;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: output
+if (output_size > 0 && d_output != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_output, d_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchNestedScopeKernelPtr(IntPtr output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerNestedScopeKernel();
+IntPtr hfunc = s_hfunc_NestedScopeKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal device array: output
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = output;
+((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_output;
+// Marshal scalar: n
+kernelParams[1] = &n;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string ZeroThenGrowKernel_Source = @"// ZeroThenGrowKernel reaches 2 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel {
+static constexpr int Slots = 2;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x989c8b7d9b352ae3ull ? 0 : Key == 0xa9215b4dd44568e3ull ? 1 : -1;
+unsigned int cursor;
+unsigned int offset[2];
+unsigned int size[2];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_small, int __gsharp_id_2_large){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
+int __gsharp_id_3_tid = threadIdx.x;
+int* __gsharp_id_4_outer = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel::Slot<0x989c8b7d9b352ae3ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_small) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+if(__gsharp_id_3_tid<__gsharp_id_1_small)
+{
+__gsharp_id_4_outer[__gsharp_id_3_tid]=__gsharp_id_3_tid+100;
+}
+__syncthreads();
+int __gsharp_id_5_h0 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(0,0,__gsharp_id_3_tid,__gsharp_dsmem);
+int __gsharp_id_6_h1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__GrowHelper(__gsharp_id_2_large,0,__gsharp_id_3_tid,__gsharp_dsmem);
+__syncthreads();
+__gsharp_id_0_output[__gsharp_id_3_tid]=((__gsharp_id_3_tid<__gsharp_id_1_small?__gsharp_id_4_outer[__gsharp_id_3_tid]:0))+__gsharp_id_6_h1+__gsharp_id_5_h0;
+}
+";
+public static readonly string ZeroThenGrowKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +ZeroThenGrowKernel_Source;
+private static IntPtr? s_hfunc_ZeroThenGrowKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerZeroThenGrowKernel()
+{
+if (s_hfunc_ZeroThenGrowKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_ZeroThenGrowKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__ZeroThenGrowKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchZeroThenGrowKernel(global::System.Int32[] output, global::System.Int32 small, global::System.Int32 large, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
+if (output.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerZeroThenGrowKernel();
+IntPtr hfunc = s_hfunc_ZeroThenGrowKernel!.Value;
+IntPtr d_output = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[3];
+// Marshal array: output
+int output_size = output.Length * sizeof(global::System.Int32);
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = IntPtr.Zero;
+((int*)(proxy_output + 1))[0] = output.Length;
+if (output_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
+proxy_output[0] = d_output;
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_output;
+// Marshal scalar: small
+kernelParams[1] = &small;
+// Marshal scalar: large
+kernelParams[2] = &large;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: output
+if (output_size > 0 && d_output != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_output, d_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchZeroThenGrowKernelPtr(IntPtr output, global::System.Int32 small, global::System.Int32 large, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerZeroThenGrowKernel();
+IntPtr hfunc = s_hfunc_ZeroThenGrowKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[3];
+// Marshal device array: output
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = output;
+((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_output;
+// Marshal scalar: small
+kernelParams[1] = &small;
+// Marshal scalar: large
+kernelParams[2] = &large;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string MiddleCallerKernel_Source = @"// MiddleCallerKernel reaches 2 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel {
+static constexpr int Slots = 2;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x622419c8fd194e8dull ? 0 : Key == 0xe9e3e359170e8a1eull ? 1 : -1;
+unsigned int cursor;
+unsigned int offset[2];
+unsigned int size[2];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
+int __gsharp_id_2_tid = threadIdx.x;
+int* __gsharp_id_3_outer = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel::Slot<0xe9e3e359170e8a1eull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+__gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_id_2_tid+100;
+__syncthreads();
+int __gsharp_id_4_helperResult = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__Middle(__gsharp_id_1_n,__gsharp_id_2_tid,__gsharp_dsmem);
+__syncthreads();
+__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_outer[__gsharp_id_2_tid]+__gsharp_id_4_helperResult;
+}
+";
+public static readonly string MiddleCallerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +MiddleCallerKernel_Source;
+private static IntPtr? s_hfunc_MiddleCallerKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerMiddleCallerKernel()
+{
+if (s_hfunc_MiddleCallerKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_MiddleCallerKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__MiddleCallerKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchMiddleCallerKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
+if (output.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerMiddleCallerKernel();
+IntPtr hfunc = s_hfunc_MiddleCallerKernel!.Value;
+IntPtr d_output = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal array: output
+int output_size = output.Length * sizeof(global::System.Int32);
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = IntPtr.Zero;
+((int*)(proxy_output + 1))[0] = output.Length;
+if (output_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
+proxy_output[0] = d_output;
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_output;
+// Marshal scalar: n
+kernelParams[1] = &n;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: output
+if (output_size > 0 && d_output != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_output, d_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchMiddleCallerKernelPtr(IntPtr output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerMiddleCallerKernel();
+IntPtr hfunc = s_hfunc_MiddleCallerKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal device array: output
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = output;
+((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_output;
+// Marshal scalar: n
+kernelParams[1] = &n;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string NoParameterCallerKernel_Source = @"// NoParameterCallerKernel reaches 1 dynamic shared memory declaration
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel {
+static constexpr int Slots = 1;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x1125921b811ab22cull ? 0 : -1;
+unsigned int cursor;
+unsigned int offset[1];
+unsigned int size[1];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel(GSharpArray<int> __gsharp_id_0_output){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
+int __gsharp_id_1_tid = threadIdx.x;
+__gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterHelper(__gsharp_dsmem);
+}
+";
+public static readonly string NoParameterCallerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NoParameterCallerKernel_Source;
+private static IntPtr? s_hfunc_NoParameterCallerKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerNoParameterCallerKernel()
+{
+if (s_hfunc_NoParameterCallerKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_NoParameterCallerKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterCallerKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchNoParameterCallerKernel(global::System.Int32[] output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
+if (output.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerNoParameterCallerKernel();
+IntPtr hfunc = s_hfunc_NoParameterCallerKernel!.Value;
+IntPtr d_output = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal array: output
+int output_size = output.Length * sizeof(global::System.Int32);
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = IntPtr.Zero;
+((int*)(proxy_output + 1))[0] = output.Length;
+if (output_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
+proxy_output[0] = d_output;
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_output;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: output
+if (output_size > 0 && d_output != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_output, d_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchNoParameterCallerKernelPtr(IntPtr output, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerNoParameterCallerKernel();
+IntPtr hfunc = s_hfunc_NoParameterCallerKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[1];
+// Marshal device array: output
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = output;
+((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_output;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string NestedFunctionCallerKernel_Source = @"// NestedFunctionCallerKernel reaches 3 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel {
+static constexpr int Slots = 3;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x1125921b811ab22cull ? 0 : Key == 0x622419c8fd194e8dull ? 1 : Key == 0xd3a5cf7b48c876f0ull ? 2 : -1;
+unsigned int cursor;
+unsigned int offset[3];
+unsigned int size[3];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
+int __gsharp_id_2_tid = threadIdx.x;
+int* __gsharp_id_3_outer = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel::Slot<0xd3a5cf7b48c876f0ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+__gsharp_id_3_outer[__gsharp_id_2_tid]=__gsharp_id_2_tid+100;
+__syncthreads();
+auto __gsharp_id_4_CallPlainHelper = [&](int __gsharp_id_5_val) {
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__PlainHelper(__gsharp_id_1_n,__gsharp_id_5_val,__gsharp_dsmem);
+}
+;
+auto __gsharp_id_6_callNoParameterHelper = [&]() {
+return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NoParameterHelper(__gsharp_dsmem);
+}
+;
+int __gsharp_id_7_plain = __gsharp_id_4_CallPlainHelper(__gsharp_id_2_tid);
+int __gsharp_id_8_noParameter = __gsharp_id_6_callNoParameterHelper();
+__syncthreads();
+__gsharp_id_0_output[__gsharp_id_2_tid]=__gsharp_id_3_outer[__gsharp_id_2_tid]+__gsharp_id_7_plain+__gsharp_id_8_noParameter;
+}
+";
+public static readonly string NestedFunctionCallerKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NestedFunctionCallerKernel_Source;
+private static IntPtr? s_hfunc_NestedFunctionCallerKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerNestedFunctionCallerKernel()
+{
+if (s_hfunc_NestedFunctionCallerKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_NestedFunctionCallerKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NestedFunctionCallerKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchNestedFunctionCallerKernel(global::System.Int32[] output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
+if (output.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerNestedFunctionCallerKernel();
+IntPtr hfunc = s_hfunc_NestedFunctionCallerKernel!.Value;
+IntPtr d_output = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal array: output
+int output_size = output.Length * sizeof(global::System.Int32);
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = IntPtr.Zero;
+((int*)(proxy_output + 1))[0] = output.Length;
+if (output_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
+proxy_output[0] = d_output;
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_output;
+// Marshal scalar: n
+kernelParams[1] = &n;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: output
+if (output_size > 0 && d_output != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_output, d_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchNestedFunctionCallerKernelPtr(IntPtr output, global::System.Int32 n, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerNestedFunctionCallerKernel();
+IntPtr hfunc = s_hfunc_NestedFunctionCallerKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[2];
+// Marshal device array: output
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = output;
+((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_output;
+// Marshal scalar: n
+kernelParams[1] = &n;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+}
+finally
+{
+}
+}
+}
+#pragma warning restore CS8500
+public const string NegativeCountKernel_Source = @"// NegativeCountKernel reaches 3 dynamic shared memory declarations
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel {
+static constexpr int Slots = 3;
+template <unsigned long long Key> static constexpr int Slot = Key == 0x0c3a506c39b2a5dbull ? 0 : Key == 0x0c3a516c39b2a78eull ? 1 : Key == 0x0c3a526c39b2a941ull ? 2 : -1;
+unsigned int cursor;
+unsigned int offset[3];
+unsigned int size[3];
+};
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel(GSharpArray<int> __gsharp_id_0_output, int __gsharp_id_1_n, int __gsharp_id_2_negative){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
+int __gsharp_id_3_tid = threadIdx.x;
+int* __gsharp_id_4_first = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel::Slot<0x0c3a526c39b2a941ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+__gsharp_id_4_first[__gsharp_id_3_tid]=__gsharp_id_3_tid;
+int* __gsharp_id_5_second = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel::Slot<0x0c3a516c39b2a78eull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_2_negative) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+int* __gsharp_id_6_third = (int*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel::Slot<0x0c3a506c39b2a5dbull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_1_n) * sizeof(int), __GSHARP_DSMEM_ALIGN(int));
+__gsharp_id_6_third[__gsharp_id_3_tid]=1000+__gsharp_id_3_tid;
+__syncthreads();
+__gsharp_id_0_output[__gsharp_id_3_tid]=__gsharp_id_4_first[__gsharp_id_3_tid];
+}
+";
+public static readonly string NegativeCountKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +NegativeCountKernel_Source;
+private static IntPtr? s_hfunc_NegativeCountKernel;
+/// <summary>Preloads the CUDA module and resolves the function pointer for this kernel.</summary>
+public static void WarmupFunctionPointerNegativeCountKernel()
+{
+if (s_hfunc_NegativeCountKernel.HasValue) return;
+IntPtr hModule = global::Kassyi.GSharp.Generated.GSharpModuleContext_SnapshotTest.GetOrLoadModule();
+s_hfunc_NegativeCountKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hModule, "__gsharp_k_Kassyi__GSharp__Tests__Shared__Core__DeviceDynamicSharedMemoryKernels__NegativeCountKernel");
+}
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchNegativeCountKernel(global::System.Int32[] output, global::System.Int32 n, global::System.Int32 negative, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+if (output is null){
+throw new global::System.ArgumentNullException(nameof(output));
+}
+if (output.Length == 0){
+throw new global::System.ArgumentException("Kernel array arguments must not be empty. Declare the parameter as nullable (T[]? or Memory<T>?) to accept null or empty input.", nameof(output));
+}
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerNegativeCountKernel();
+IntPtr hfunc = s_hfunc_NegativeCountKernel!.Value;
+IntPtr d_output = IntPtr.Zero;
+try
+{
+void** kernelParams = stackalloc void*[3];
+// Marshal array: output
+int output_size = output.Length * sizeof(global::System.Int32);
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = IntPtr.Zero;
+((int*)(proxy_output + 1))[0] = output.Length;
+if (output_size > 0)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_output, (IntPtr)output_size, hStream));
+proxy_output[0] = d_output;
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyHtoDAsync_v2(d_output, (IntPtr)p_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+kernelParams[0] = proxy_output;
+// Marshal scalar: n
+kernelParams[1] = &n;
+// Marshal scalar: negative
+kernelParams[2] = &negative;
+CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
+hfunc,
+gridDimX, gridDimY, gridDimZ, // Grid dim
+blockDimX, blockDimY, blockDimZ, // Block dim
+sharedMemBytes, // Shared mem
+hStream, // Stream
+kernelParams,
+IntPtr.Zero // Extra
+));
+// Copy back array: output
+if (output_size > 0 && d_output != IntPtr.Zero)
+{
+fixed (global::System.Int32* p_output = output)
+{
+CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_output, d_output, (IntPtr)output_size, hStream));
+CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
+}
+}
+}
+finally
+{
+if (d_output != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_output, hStream);
+}
+}
+}
+#pragma warning restore CS8500
+#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
+[global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
+[global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+public static unsafe void LaunchNegativeCountKernelPtr(IntPtr output, global::System.Int32 n, global::System.Int32 negative, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
+{
+using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
+{
+WarmupFunctionPointerNegativeCountKernel();
+IntPtr hfunc = s_hfunc_NegativeCountKernel!.Value;
+try
+{
+void** kernelParams = stackalloc void*[3];
+// Marshal device array: output
+IntPtr* proxy_output = stackalloc IntPtr[2];
+proxy_output[0] = output;
+((int*)(proxy_output + 1))[0] = 0; // Length is unknown for raw IntPtr
+kernelParams[0] = proxy_output;
+// Marshal scalar: n
+kernelParams[1] = &n;
+// Marshal scalar: negative
+kernelParams[2] = &negative;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim

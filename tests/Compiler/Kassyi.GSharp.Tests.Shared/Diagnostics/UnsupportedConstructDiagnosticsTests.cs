@@ -170,4 +170,24 @@ public class UnsupportedConstructDiagnosticsTests
             [(Analyzer, startLine, startColumn, endLine, endColumn)],
             diagnostics.Ranges(GSharpDiagnostics.ExcessiveSharedMemoryWarning.Id));
     }
+
+    // #439: the getter of a computed property (line 12) is a member of the emitted struct and the method group (line 37)
+    // becomes a delegate; neither can pass the table of dynamic shared memory regions that Scratch takes on CUDA. The
+    // direct call of DirectCallKernel passes it. The analyzer runs the CUDA transpilation on both dialects.
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.SadPath)]
+    public async Task Test_DynamicSharedMemoryReachedWithoutTable_ReportsGsh0003(string dialect)
+    {
+        var diagnostics = await KernelDiagnostics.RunTestCaseAsync("Diagnostics/DynamicSharedMemoryWithoutTable.cu.cs", dialect);
+
+        Assert.Equal(
+            [(Analyzer, 12, 27, 12, 80)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, DynamicSharedMemoryAnalysis.ReachedWithoutTable));
+        // The method group is in a kernel, so the message names the delegate rather than the code around it
+        Assert.Equal(
+            [(Analyzer, 37, 34, 37, 41)],
+            diagnostics.Ranges(GSharpDiagnostics.UnsupportedSyntax.Id, "passed as a delegate"));
+    }
 }
