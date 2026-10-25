@@ -6,18 +6,25 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Whether the body belongs to a device function. Its shared memory is not set up by the launcher, so the initializer of
 /// a hoisted <c>SharedMemory&lt;T&gt;</c> stays in the body.
 /// </param>
+/// <param name="semanticModel">
+/// The semantic model of the method's syntax tree, used to key hoisted declarations and references by symbol and region
+/// (<see cref="DeclarationKey"/>). When <see langword="null"/>, declarations and references are matched by name and region.
+/// </param>
 public class ContextHoister(
     IReadOnlyCollection<string>? copiedParameters = null,
-    bool isDeviceFunction = false)
+    bool isDeviceFunction = false,
+    SemanticModel? semanticModel = null)
     : CSharpSyntaxRewriter
 {
-    private readonly HashSet<string> _hoistedVariables = [];
+    private readonly HashSet<DeclarationKey> _hoistedVariables = [];
+    private readonly HashSet<string> _copiedParameters = [];
 
     /// <summary>Analyzes barrier crossings and rewrites variable accesses to point to the hoisted context structure.</summary>
     public (BlockSyntax RewrittenBlock, IReadOnlyList<VariableDeclaratorSyntax> HoistedVariables) Hoist(
         BlockSyntax block)
     {
         _hoistedVariables.Clear();
+        _copiedParameters.Clear();
         var hoistedDecls = ImmutableArray.CreateBuilder<VariableDeclaratorSyntax>();
 
         // [WHY] One-pass AST traversal to collect barriers and variables efficiently in O(N).
@@ -31,7 +38,7 @@ public class ContextHoister(
 
         if (copiedParameters != null)
         {
-            _hoistedVariables.UnionWith(copiedParameters);
+            _copiedParameters.UnionWith(copiedParameters);
         }
 
         var barrierCount = analyzer.BarrierSpans.Count;
@@ -76,14 +83,16 @@ public class ContextHoister(
             }
         }
 
-        // [WHY] Accesses are rewritten by name, so a local that shares its name with a hoisted one (declared in a sibling
-        // scope) reaches the context as well and needs a field of its own: its type may differ, and the transpilers name
-        // each field after its declaration.
-        analyzer.Variables
-            .AsStackEnumerable()
-            .Select(static variable => variable.Decl)
-            .AddIf(hoistedDecls, hoistedNames, static (decl, names) => names.Contains(decl.Identifier.ValueText));
-        _hoistedVariables.UnionWith(hoistedNames);
+        // [WHY] Hoisting selection remains name-based so that sibling locals sharing a hoisted name still receive context
+        // fields; rewrites then match each declaration and reference by its DeclarationKey (symbol + region).
+        foreach (var (decl, _) in analyzer.Variables)
+        {
+            if (hoistedNames.Contains(decl.Identifier.ValueText))
+            {
+                hoistedDecls.Add(decl);
+                _hoistedVariables.Add(LoweringIdentity.ForDeclaration(decl, semanticModel));
+            }
+        }
 
         var rewrittenBlock = (BlockSyntax)Visit(block);
         return (rewrittenBlock, hoistedDecls);
@@ -96,7 +105,7 @@ public class ContextHoister(
 
         foreach (var variable in node.Declaration.Variables)
         {
-            if (_hoistedVariables.Contains(variable.Identifier.ValueText))
+            if (_hoistedVariables.Contains(LoweringIdentity.ForDeclaration(variable, semanticModel)))
             {
                 // [WHY] Hoisted variables reside in the context struct, so initializations must become explicit member assignments.
                 var typeSyntax = (variable.Parent as VariableDeclarationSyntax)?.Type;
@@ -164,7 +173,7 @@ public class ContextHoister(
         var remainingVariables = SyntaxFactory.SeparatedList<VariableDeclaratorSyntax>();
         foreach (var variable in declaration.Variables)
         {
-            if (!_hoistedVariables.Contains(variable.Identifier.ValueText))
+            if (!_hoistedVariables.Contains(LoweringIdentity.ForDeclaration(variable, semanticModel)))
             {
                 remainingVariables = remainingVariables.Add(variable);
             }
@@ -200,20 +209,56 @@ public class ContextHoister(
 
     public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
     {
-        // [WHY] Only the receiver of a member access is a variable reference; the member name itself (`s.x`) is a
-        // field or method of the receiver's type and must not be rewritten to `s.__gsharp_ctx->x` when a hoisted local
-        // happens to share the name `x`.
-        if (node.Parent is MemberAccessExpressionSyntax parentMember && parentMember.Name == node)
+        if (IsNonValueIdentifierPosition(node))
         {
             return base.VisitIdentifierName(node);
         }
 
-        if (_hoistedVariables.Contains(node.Identifier.ValueText))
+        if (IsHoistedIdentifier(node))
         {
             return CreateContextAccess(node.Identifier, node).WithTriviaFrom(node);
         }
 
         return base.VisitIdentifierName(node);
+    }
+
+    // [WHY] Syntactic positions that name a member, type, label, or named argument/property rather than reading or
+    // writing a local variable must never be rewritten, even when lowering runs without a SemanticModel (Tier 2).
+    private static bool IsNonValueIdentifierPosition(IdentifierNameSyntax node) =>
+        node.Parent switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name == node,
+            MemberBindingExpressionSyntax memberBinding => memberBinding.Name == node,
+            QualifiedNameSyntax => true,
+            NameColonSyntax => true,
+            NameEqualsSyntax => true,
+            AssignmentExpressionSyntax { Parent: InitializerExpressionSyntax } assignment => assignment.Left == node,
+            GotoStatementSyntax => true,
+            _ => false
+        };
+
+    private bool IsHoistedIdentifier(IdentifierNameSyntax node)
+    {
+        var key = LoweringIdentity.ForReference(node, semanticModel);
+        if (_hoistedVariables.Contains(key))
+        {
+            return true;
+        }
+
+        if (!_copiedParameters.Contains(node.Identifier.ValueText))
+        {
+            return false;
+        }
+
+        if (semanticModel == null)
+        {
+            return true;
+        }
+
+        return key.Symbol is IParameterSymbol
+        {
+            ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Ordinary }
+        };
     }
 
     // [WHY] The member name keeps the original span of the replaced node, so that the transpiler resolves it to the

@@ -1,6 +1,13 @@
+#nullable enable
 using System;
+using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Kassyi.GSharp.Compiler.Extensions;
 using Kassyi.GSharp.Compiler.Lowering;
+using Kassyi.GSharp.Compiler.Transpiler;
+using Kassyi.GSharp.Compiler.Transpiler.Dialects;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -24,6 +31,57 @@ public abstract class StateMachineTestBase
         var wrapped = $$"""
             public class {{methodName}}_Snapshot
             {
+                public void LoweredMethod()
+            {{formatted}}
+            }
+            """;
+        return Verifier.Verify(wrapped, "cs").UseFastHashSnapshotName(methodName);
+    }
+
+    protected static Task VerifyPipelineLowerFromTestCase(
+        string testCaseFile,
+        Func<BlockSyntax, SemanticModel, BlockSyntax>? preLowerTransform = null,
+        Action<LoweredStateMachine, SemanticModel>? inspect = null,
+        [CallerMemberName] string methodName = "")
+    {
+        var (compilation, tree, model) = RoslynTestUtility.GetTestCaseContext(
+            Path.Combine("StateMachines", testCaseFile));
+        var method = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .First();
+
+        LoweredStateMachine lowered;
+        if (preLowerTransform == null)
+        {
+            lowered = AstLoweringPipeline.Lower(method, model);
+        }
+        else
+        {
+            var body = method.Body ?? throw new InvalidOperationException("Test case method must have a block body.");
+            var annotated = LoweringAnnotations.AnnotateOriginalSpans(body, compilation);
+            var expanded = preLowerTransform(annotated, model);
+            lowered = AstLoweringPipeline.Lower(expanded, model);
+        }
+
+        inspect?.Invoke(lowered, model);
+
+        var dialect = new StandardCppDialect();
+        var fieldsComment = string.Join(
+            Environment.NewLine,
+            lowered.ContextFields.Select(f =>
+            {
+                var symbol = model.GetDeclaredSymbol<ISymbol>(f);
+                var region = LoweringIdentity.GetRegion(f);
+                var cppName = CppNameResolver.Resolve(symbol, f.Identifier.ValueText, dialect, region);
+                return $"    // {f.Identifier.ValueText} -> {cppName}";
+            }));
+        var formatted = lowered.LoweredBody.NormalizeWhitespace().ToFullString();
+
+        var wrapped = $$"""
+            public class {{methodName}}_Snapshot
+            {
+            {{fieldsComment}}
                 public void LoweredMethod()
             {{formatted}}
             }

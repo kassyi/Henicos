@@ -30,10 +30,12 @@ public static class AstLoweringPipeline
     private static LoweredStateMachine Lower(CSharpSyntaxNode body, bool returnsValue, SemanticModel? semanticModel,
         IMethodSymbol? deviceFunction)
     {
+        var bodyModel = ResolveBodyModel(body, semanticModel);
+
         // [WHY] Annotate before wrapping an expression body: the annotations record spans of the original tree, which is
         // how later passes find the symbols of the synthesized block.
-        var suspendingCalls = CollectSuspendingCalls(body, semanticModel);
-        var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(semanticModel?.Compilation, body.SyntaxTree);
+        var suspendingCalls = CollectSuspendingCalls(body, bodyModel);
+        var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(bodyModel?.Compilation, body.SyntaxTree);
         var annotatedBody = ToBlock(new SpanAnnotationRewriter(suspendingCalls, treeOrdinal).Visit(body) ?? body, returnsValue);
 
         var copiedParameters = deviceFunction != null
@@ -56,12 +58,20 @@ public static class AstLoweringPipeline
         hoistedBody = branchRewriter.Rewrite(hoistedBody);
 
         var (contextHoistedBody, contextFields) =
-            new ContextHoister(copiedParameters, isDeviceFunction: deviceFunction != null).Hoist(hoistedBody);
-        var lowerer = new StateMachineLowerer(isDeviceFunction: deviceFunction != null);
+            new ContextHoister(copiedParameters, isDeviceFunction: deviceFunction != null, bodyModel).Hoist(hoistedBody);
+        var lowerer = new StateMachineLowerer(isDeviceFunction: deviceFunction != null, bodyModel);
         var stateMachineBody = lowerer.Lower(contextHoistedBody);
 
         return new LoweredStateMachine(stateMachineBody, contextFields, lowerer.CallSites, copiedParameters);
     }
+
+    private static SemanticModel? ResolveBodyModel(SyntaxNode body, SemanticModel? semanticModel) =>
+        semanticModel == null
+            ? null
+            : semanticModel.SyntaxTree == body.SyntaxTree ||
+              !semanticModel.Compilation.ContainsSyntaxTree(body.SyntaxTree)
+                ? semanticModel
+                : semanticModel.Compilation.GetSemanticModel(body.SyntaxTree);
 
     private static BlockSyntax ToBlock(SyntaxNode body, bool returnsValue) => body switch
     {
@@ -73,22 +83,19 @@ public static class AstLoweringPipeline
     };
 
     // Maps the span of each call that suspends to whether its callee returns a value
-    private static Dictionary<TextSpan, bool> CollectSuspendingCalls(SyntaxNode body, SemanticModel? semanticModel)
+    private static Dictionary<TextSpan, bool> CollectSuspendingCalls(SyntaxNode body, SemanticModel? bodyModel)
     {
         var calls = new Dictionary<TextSpan, bool>();
-        if (semanticModel == null)
+        if (bodyModel == null)
         {
             return calls;
         }
 
-        var model = semanticModel.SyntaxTree == body.SyntaxTree
-            ? semanticModel
-            : semanticModel.Compilation.GetSemanticModel(body.SyntaxTree);
         foreach (var node in body.DescendantNodes())
         {
             if (node is InvocationExpressionSyntax invocation &&
-                model.GetSymbolInfo(invocation).Symbol is IMethodSymbol callee &&
-                SuspensionAnalysis.IsSuspendingFunction(callee, model.Compilation))
+                bodyModel.GetSymbol(invocation) is IMethodSymbol callee &&
+                SuspensionAnalysis.IsSuspendingFunction(callee, bodyModel.Compilation))
             {
                 calls[invocation.Span] = !callee.ReturnsVoid;
             }
