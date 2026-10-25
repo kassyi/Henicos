@@ -60,6 +60,7 @@ checked the namespace, suppress it with `#pragma warning disable HNT0003 // <the
 | Is this a `[GpuDeviceFunction]` iterator (`IEnumerable<T>` with `yield`), resolve the iterator method an expression or local comes from, or count its expanded `yield return` sites? | `IteratorTypeResolver.IsDeviceIteratorMethod`, `IteratorTypeResolver.TryResolveIteratorSource`, `IteratorTypeResolver.ContainsDirectYield`, `IteratorTypeResolver.CountYieldReturns` | matching `IEnumerable` by name or walking `DescendantNodes()` for `YieldStatementSyntax` without stopping at local functions |
 | Expand a `foreach` over a `[GpuDeviceFunction]` iterator inline (or standalone for iterator body validation), or rewrite consumer `break` / `continue` to `goto` labels | `IteratorInliner.Expand`, `IteratorInliner.ExpandStandalone`, `BranchTargetRewriter.Rewrite` | generating an enumerator struct or duplicating `yield` lowering across rules |
 | Rewrite an array `foreach` that holds a phase barrier into a `for` loop | `ForEachRewriter.LowerArrayForEach` | hand-building an indexed `for` loop in multiple places |
+| Expand a `Gpu.ForUnroll` statement that contains a phase barrier into a `for` loop before state machine lowering | `PreLoweringExpander.Expand` | unrolling barrier-containing `ForUnroll` bodies at the emission stage on state-machine targets |
 
 ## 3. Emitting code
 

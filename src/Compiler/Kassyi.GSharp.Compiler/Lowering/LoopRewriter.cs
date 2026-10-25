@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 public class LoopRewriter : CSharpSyntaxRewriter
 {
     private int _labelCounter;
-    private readonly Stack<(string Break, string Continue)> _loopStack = new();
+    private readonly Stack<(string? Break, string? Continue)> _loopStack = new();
 
     private static bool ContainsBarrier(SyntaxNode node) =>
         node.DescendantNodesAndSelf()
@@ -47,23 +47,21 @@ public class LoopRewriter : CSharpSyntaxRewriter
 
     public override SyntaxNode VisitBreakStatement(BreakStatementSyntax node)
     {
-        if (_loopStack.Count == 0)
+        if (_loopStack.Count == 0 || _loopStack.Peek().Break is not { } breakLabel)
         {
             return node;
         }
 
-        var (breakLabel, _) = _loopStack.Peek();
         return SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(breakLabel));
     }
 
     public override SyntaxNode VisitContinueStatement(ContinueStatementSyntax node)
     {
-        if (_loopStack.Count == 0)
+        if (_loopStack.Count == 0 || _loopStack.Peek().Continue is not { } continueLabel)
         {
             return node;
         }
 
-        var (_, continueLabel) = _loopStack.Peek();
         return SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(continueLabel));
     }
 
@@ -71,7 +69,7 @@ public class LoopRewriter : CSharpSyntaxRewriter
     {
         if (!ContainsBarrier(node))
         {
-            return base.VisitWhileStatement(node);
+            return VisitBarrierFreeLoop(node, base.VisitWhileStatement);
         }
 
         return RewriteLoop("While", node.Condition, node.Statement, isPostCondition: false);
@@ -81,7 +79,7 @@ public class LoopRewriter : CSharpSyntaxRewriter
     {
         if (!ContainsBarrier(node))
         {
-            return base.VisitDoStatement(node);
+            return VisitBarrierFreeLoop(node, base.VisitDoStatement);
         }
 
         return RewriteLoop("Do", node.Condition, node.Statement, isPostCondition: true);
@@ -91,7 +89,7 @@ public class LoopRewriter : CSharpSyntaxRewriter
     {
         if (!ContainsBarrier(node))
         {
-            return base.VisitForStatement(node);
+            return VisitBarrierFreeLoop(node, base.VisitForStatement);
         }
 
         var initializers = ImmutableArray.CreateBuilder<StatementSyntax>();
@@ -119,6 +117,40 @@ public class LoopRewriter : CSharpSyntaxRewriter
             isPostCondition: false,
             initializers: initializers.Count > 0 ? initializers : null,
             incrementors: incrementors.Count > 0 ? incrementors : null);
+    }
+
+    public override SyntaxNode? VisitForEachStatement(ForEachStatementSyntax node) =>
+        VisitBarrierFreeLoop(node, base.VisitForEachStatement);
+
+    public override SyntaxNode? VisitForEachVariableStatement(ForEachVariableStatementSyntax node) =>
+        VisitBarrierFreeLoop(node, base.VisitForEachVariableStatement);
+
+    public override SyntaxNode? VisitSwitchStatement(SwitchStatementSyntax node)
+    {
+        var currentContinue = _loopStack.Count > 0 ? _loopStack.Peek().Continue : null;
+        _loopStack.Push((null, currentContinue));
+        try
+        {
+            return base.VisitSwitchStatement(node);
+        }
+        finally
+        {
+            _loopStack.Pop();
+        }
+    }
+
+    private SyntaxNode? VisitBarrierFreeLoop<TNode>(TNode node, Func<TNode, SyntaxNode?> visitBase)
+        where TNode : SyntaxNode
+    {
+        _loopStack.Push((null, null));
+        try
+        {
+            return visitBase(node);
+        }
+        finally
+        {
+            _loopStack.Pop();
+        }
     }
 
     /// <summary>Flattens a loop construct into a linear sequence of statements using labels and gotos.</summary>

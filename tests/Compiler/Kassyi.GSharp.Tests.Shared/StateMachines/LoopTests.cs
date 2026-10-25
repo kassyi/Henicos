@@ -66,4 +66,45 @@ public class LoopTests : StateMachineTestBase
             }
         });
     }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_ForStatement_WithNestedBarrierFreeForBreakAndContinue() =>
+        VerifyLoopRewrite(() =>
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    if (j == 1) continue;
+                    if (j == 2) break;
+                }
+
+                Gpu.SyncThreads();
+            }
+        });
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.Boundary)]
+    public Task Lower_ForStatement_WithNestedSwitchBreak() =>
+        VerifyLoopRewrite(() =>
+        {
+            int sum = 0;
+            for (int i = 0; i < 4; i++)
+            {
+                switch (i)
+                {
+                    case 0:
+                        sum += 1;
+                        break;
+                    default:
+                        sum += 2;
+                        break;
+                }
+
+                Gpu.SyncThreads();
+            }
+        });
 }

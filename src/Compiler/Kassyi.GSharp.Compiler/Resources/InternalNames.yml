@@ -53,6 +53,7 @@ Lowering:
     ConstructorSelf: __gsharp_self
     ForEachSourcePrefix: __gsharp_foreach_src_
     ForEachIndexPrefix: __gsharp_foreach_i_
+    UnrollIndexPrefix: __gsharp_unroll_
 
 Iterator:
   Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).
