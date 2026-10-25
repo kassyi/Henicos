@@ -2,11 +2,12 @@ namespace Kassyi.GSharp.Compiler.Transpiler;
 
 /// <summary>
 /// Turns context accesses to ref struct locals back into locals, and renames the accesses to locals that share their
-/// name with another hoisted local (see <see cref="ManagedContextFields"/>).
+/// name with another hoisted local (see <see cref="ManagedContextFields"/>). Accesses are matched to declarations by
+/// <see cref="DeclarationKey"/> (symbol and region).
 /// </summary>
 internal sealed class ContextLocalRewriter(
-    HashSet<ILocalSymbol> unhoistedSymbols,
-    Dictionary<ILocalSymbol, string> renamedLocals,
+    HashSet<DeclarationKey> unhoistedKeys,
+    Dictionary<DeclarationKey, string> renamedLocals,
     SemanticModel semanticModel,
     string kernelName) : CSharpSyntaxRewriter
 {
@@ -29,17 +30,16 @@ internal sealed class ContextLocalRewriter(
             return visited;
         }
 
-        var symbol = semanticModel.GetSymbol(memberAccess.Name) as ILocalSymbol ??
-                     semanticModel.GetDeclaredSymbol<ILocalSymbol>(memberAccess.Name);
-        if (symbol == null)
+        var key = LoweringIdentity.ForReference(memberAccess.Name, semanticModel);
+        if (key.Symbol == null)
         {
             return memberAccess;
         }
 
-        SimpleNameSyntax name = renamedLocals.TryGetValue(symbol, out var renamed)
+        SimpleNameSyntax name = renamedLocals.TryGetValue(key, out var renamed)
             ? SyntaxFactory.IdentifierName(renamed)
             : memberAccess.Name;
-        return unhoistedSymbols.Contains(symbol)
+        return unhoistedKeys.Contains(key)
             ? name.WithTriviaFrom(memberAccess)
             : memberAccess.WithName(name);
     }
@@ -53,9 +53,10 @@ internal sealed class ContextLocalRewriter(
             assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) &&
             IsContextPointerAccess(memberAccess))
         {
-            // Only the declarator-derived initialization resolves through GetDeclaredSymbol; later assignments stay
-            var declaredSymbol = semanticModel.GetDeclaredSymbol<ILocalSymbol>(memberAccess.Name);
-            if (declaredSymbol != null && unhoistedSymbols.Contains(declaredSymbol))
+            // Only the declarator-derived initialization resolves through GetDeclaredSymbol; later assignments stay.
+            // The member name carries the declarator's span and region, so it keys like the declarator itself.
+            var declaredKey = LoweringIdentity.ForDeclaration(memberAccess.Name, semanticModel);
+            if (declaredKey.Symbol is { } declaredSymbol && unhoistedKeys.Contains(declaredKey))
             {
                 if (node.Parent is BlockSyntax or SwitchSectionSyntax)
                 {
