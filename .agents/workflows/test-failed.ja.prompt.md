@@ -56,6 +56,8 @@ graph TD
 2. 根本原因を分析し、自律的にソースコードを修正します（`replace_file_content` / `multi_replace_file_content` 等を使用）。
 3. 再び `dotnet test` を実行してテストがパスすることを確認します。
 
+テストを通すために検査を弱めてはいけません（`Assert` を消す、許容誤差を根拠なく広げる、期待値を被テスト側から取る、Skip にする）。失敗の原因がテスト側にあると判断した場合も、数値・アルゴリズムのテストは [property-test-design](../skills/property-test-design/SKILL.md) の §2・§3・§6 を満たす形で直します。
+
 ---
 
 ### フェーズ 2-B: スナップショットテスト失敗の差分解析＆デグレ判定
