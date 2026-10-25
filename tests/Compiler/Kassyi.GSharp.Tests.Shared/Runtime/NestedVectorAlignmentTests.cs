@@ -44,12 +44,21 @@ public class NestedVectorAlignmentTests
 
         var debugField2 = type.GetField("DebugName_Field2_Float2", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
 
+#if GSHARP_CPU
+        Assert.Equal(0, offset1);
+        Assert.Equal(4, offset2);
+        Assert.Equal(12, offset3);
+        Assert.Equal(28, offset4);
+        Assert.Equal(32, offset5);
+        Assert.Equal(48, totalSize);
+#else
         Assert.Equal(0, offset1);
         Assert.Equal(8, offset2);
         Assert.Equal(16, offset3);
         Assert.Equal(32, offset4);
         Assert.Equal(48, offset5);
         Assert.Equal(64, totalSize);
+#endif
     }
 
     [Fact]

@@ -1,15 +1,15 @@
 namespace Kassyi.GSharp.Compiler.Marshaling;
 
-/// <summary>Emits explicit layout shadow structs representing C# structs in native CUDA memory.</summary>
+/// <summary>Emits explicit layout shadow structs representing C# structs in native device memory.</summary>
 internal static class NativeStructEmitter
 {
-    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
+    /// <summary>Emits the explicit struct declaration with computed field offsets for <paramref name="dialect"/>.</summary>
+    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s, ITranspilerDialect dialect) =>
+        WriteNativeStructDeclaration(writer, s, TypeLayoutCalculator.GetStructLayout(s, dialect));
 
-    /// <summary>Emits the explicit struct declaration with computed field offsets.</summary>
-    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s)
+    /// <summary>Emits the explicit struct declaration with computed field offsets from <paramref name="structLayout"/>.</summary>
+    internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
     {
-        var structLayout = TypeLayoutCalculator.GetStructLayout(s, s_cudaDialect);
-
         var parents = AotHostNames.GetEnclosingCustomStructs(s);
 
         foreach (var p in parents)

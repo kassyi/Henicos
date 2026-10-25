@@ -130,11 +130,11 @@ public global::System.Int32 State;
 }
 public static unsafe void Marshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.State = host.State;
+native = System.Runtime.CompilerServices.Unsafe.As<global::TestNamespace.DummyContext, AotContexts.Dummy>(ref host);
 }
 public static unsafe void Unmarshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.State = native.State;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.Dummy, global::TestNamespace.DummyContext>(ref native);
 }
 #pragma warning restore CS8500
 }
@@ -195,6 +195,7 @@ s_hfunc_MacroKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunct
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchMacroKernel(global::TestNamespace.DummyContext ctx, global::System.UInt32[] dA, global::System.UInt32[] dB, global::System.UInt32[] dResult, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::TestNamespace.DummyContext>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("TestNamespace.DummyContext", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::TestNamespace.DummyContext>());
 if (dA is null){
 throw new global::System.ArgumentNullException(nameof(dA));
 }
@@ -217,17 +218,14 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerMacroKernel();
 IntPtr hfunc = s_hfunc_MacroKernel!.Value;
-System.Collections.Generic.List<IntPtr> ctx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_dA = IntPtr.Zero;
 IntPtr d_dB = IntPtr.Zero;
 IntPtr d_dResult = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[4];
-AotContexts.Dummy native_ctx = default;
-AotContexts.Marshal_DummyContext(ref ctx, ref native_ctx, false, ctx_allocatedPtrs, hStream);
 // Marshal scalar struct: ctx
-kernelParams[0] = &native_ctx;
+kernelParams[0] = &ctx;
 // Marshal array: dA
 int dA_size = dA.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_dA = stackalloc IntPtr[2];
@@ -285,7 +283,6 @@ hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-AotContexts.Unmarshal_DummyContext(ref ctx, ref native_ctx, false, hStream);
 // Copy back array: dA
 if (dA_size > 0 && d_dA != IntPtr.Zero)
 {
@@ -316,7 +313,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in ctx_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_dA != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_dA, hStream);
 if (d_dB != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_dB, hStream);
 if (d_dResult != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_dResult, hStream);

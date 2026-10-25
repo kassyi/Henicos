@@ -3,9 +3,12 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits custom struct marshal and unmarshal helper methods between managed and native shadow representations.</summary>
 internal static class StructMarshalingEmitter
 {
+    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
+    private static readonly ITranspilerDialect s_cpuDialect = new StandardCppDialect();
+
     /// <summary>Emits the rendered structs of a kernel class (<see cref="RenderStructs"/>).</summary>
     /// <remarks>A struct whose <c>AotContexts</c> name is already taken gets no helpers; GSH0058 reports it.</remarks>
-    internal static void WriteStructMarshaling(SourceWriter writer, EquatableArray<StructHostSource> structs)
+    internal static void WriteStructMarshaling(SourceWriter writer, EquatableArray<StructHostSource> structs, bool isCuda)
     {
         if (structs.Length > 0)
         {
@@ -13,7 +16,7 @@ internal static class StructMarshalingEmitter
                 "#pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type");
             foreach (var s in structs)
             {
-                writer.Append(s.Text);
+                writer.Append(s.GetText(isCuda));
             }
 
             writer.AppendLine("#pragma warning restore CS8500");
@@ -30,14 +33,23 @@ internal static class StructMarshalingEmitter
         var sources = ImmutableArray.CreateBuilder<StructHostSource>(structTypes.Length);
         foreach (var s in structTypes)
         {
-            using var writer = new SourceWriter();
-            NativeStructEmitter.WriteNativeStructDeclaration(writer, s);
-            WriteMarshalMethod(writer, s);
-            WriteUnmarshalMethod(writer, s);
-            sources.Add(new StructHostSource(AotHostNames.GetAotStructPath(s), writer.ToString()));
+            sources.Add(new StructHostSource(
+                AotHostNames.GetAotStructPath(s),
+                RenderStructForDialect(s, s_cudaDialect),
+                RenderStructForDialect(s, s_cpuDialect)));
         }
 
         return sources.MoveToImmutable().AsEquatableArray();
+    }
+
+    private static string RenderStructForDialect(INamedTypeSymbol s, ITranspilerDialect dialect)
+    {
+        var structLayout = TypeLayoutCalculator.GetStructLayout(s, dialect);
+        using var writer = new SourceWriter();
+        NativeStructEmitter.WriteNativeStructDeclaration(writer, s, structLayout);
+        WriteMarshalMethod(writer, s, structLayout);
+        WriteUnmarshalMethod(writer, s, structLayout);
+        return writer.ToString();
     }
 
     /// <summary>
@@ -78,7 +90,7 @@ internal static class StructMarshalingEmitter
         return unique.ToImmutable();
     }
 
-    private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s)
+    private static void WriteMarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
     {
         writer.Append("public static unsafe void ");
         writer.AppendMarshalMethodName(s);
@@ -95,9 +107,20 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            foreach (var member in StructAbiMembers.Get(s))
+            if (structLayout.Transfer == TransferClass.Identical)
             {
-                WriteMarshalMember(writer, member);
+                writer.Append("native = System.Runtime.CompilerServices.Unsafe.As<");
+                writer.AppendFullyQualifiedCsharpName(s);
+                writer.Append(", ");
+                writer.AppendAotStructPath(s);
+                writer.AppendLine(">(ref host);");
+            }
+            else
+            {
+                foreach (var member in StructAbiMembers.Get(s))
+                {
+                    WriteMarshalMember(writer, member);
+                }
             }
         }
 
@@ -259,7 +282,7 @@ internal static class StructMarshalingEmitter
         }
     }
 
-    private static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s)
+    private static void WriteUnmarshalMethod(SourceWriter writer, INamedTypeSymbol s, StructLayoutInfo structLayout)
     {
         writer.Append("public static unsafe void ");
         writer.AppendUnmarshalMethodName(s);
@@ -275,9 +298,20 @@ internal static class StructMarshalingEmitter
         writer.AppendLine();
         using (writer.Scope())
         {
-            foreach (var member in StructAbiMembers.Get(s))
+            if (structLayout.Transfer == TransferClass.Identical)
             {
-                WriteUnmarshalMember(writer, member);
+                writer.Append("host = System.Runtime.CompilerServices.Unsafe.As<");
+                writer.AppendAotStructPath(s);
+                writer.Append(", ");
+                writer.AppendFullyQualifiedCsharpName(s);
+                writer.AppendLine(">(ref native);");
+            }
+            else
+            {
+                foreach (var member in StructAbiMembers.Get(s))
+                {
+                    WriteUnmarshalMember(writer, member);
+                }
             }
         }
 

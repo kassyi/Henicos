@@ -101,13 +101,11 @@ public global::System.Single B;
 }
 public static unsafe void Marshal_ByRefParameterStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct host, ref AotContexts.ByRefParameterStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-native.B = host.B;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct, AotContexts.ByRefParameterStruct>(ref host);
 }
 public static unsafe void Unmarshal_ByRefParameterStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct host, ref AotContexts.ByRefParameterStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-host.B = native.B;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.ByRefParameterStruct, global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>(ref native);
 }
 #pragma warning restore CS8500
 }
@@ -151,6 +149,7 @@ s_hfunc_RefStructBarrierKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoad
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRefStructBarrierKernel(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>());
 if (o is null){
 throw new global::System.ArgumentNullException(nameof(o));
 }
@@ -435,6 +434,7 @@ s_hfunc_OutStructBarrierKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoad
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchOutStructBarrierKernel(out global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>());
 s = default;
 if (o is null){
 throw new global::System.ArgumentNullException(nameof(o));
@@ -573,6 +573,7 @@ s_hfunc_RefReadOnlyStructNoBarrierKernel = global::Kassyi.GSharp.Runtime.Aot.Gpu
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRefReadOnlyStructNoBarrierKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>());
 if (o is null){
 throw new global::System.ArgumentNullException(nameof(o));
 }
@@ -583,15 +584,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefReadOnlyStructNoBarrierKernel();
 IntPtr hfunc = s_hfunc_RefReadOnlyStructNoBarrierKernel!.Value;
-System.Collections.Generic.List<IntPtr> s_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_o = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
-AotContexts.ByRefParameterStruct native_s = default;
-AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, s_allocatedPtrs, hStream);
 // Marshal scalar struct: s
-kernelParams[0] = &native_s;
+kernelParams[0] = &s;
 // Marshal array: o
 int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
@@ -617,7 +615,6 @@ hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-AotContexts.Unmarshal_ByRefParameterStruct(ref s, ref native_s, false, hStream);
 // Copy back array: o
 if (o_size > 0 && d_o != IntPtr.Zero)
 {
@@ -630,7 +627,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in s_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_o != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_o, hStream);
 }
 }
@@ -705,6 +701,7 @@ s_hfunc_RefReadOnlyStructBarrierKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKe
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRefReadOnlyStructBarrierKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>());
 if (o is null){
 throw new global::System.ArgumentNullException(nameof(o));
 }
@@ -715,15 +712,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefReadOnlyStructBarrierKernel();
 IntPtr hfunc = s_hfunc_RefReadOnlyStructBarrierKernel!.Value;
-System.Collections.Generic.List<IntPtr> s_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_o = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
-AotContexts.ByRefParameterStruct native_s = default;
-AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, s_allocatedPtrs, hStream);
 // Marshal scalar struct: s
-kernelParams[0] = &native_s;
+kernelParams[0] = &s;
 // Marshal array: o
 int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
@@ -749,7 +743,6 @@ hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-AotContexts.Unmarshal_ByRefParameterStruct(ref s, ref native_s, false, hStream);
 // Copy back array: o
 if (o_size > 0 && d_o != IntPtr.Zero)
 {
@@ -762,7 +755,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in s_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_o != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_o, hStream);
 }
 }
@@ -837,6 +829,7 @@ s_hfunc_InStructBarrierKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoade
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchInStructBarrierKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct s, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>());
 if (o is null){
 throw new global::System.ArgumentNullException(nameof(o));
 }
@@ -847,15 +840,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerInStructBarrierKernel();
 IntPtr hfunc = s_hfunc_InStructBarrierKernel!.Value;
-System.Collections.Generic.List<IntPtr> s_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_o = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
-AotContexts.ByRefParameterStruct native_s = default;
-AotContexts.Marshal_ByRefParameterStruct(ref s, ref native_s, false, s_allocatedPtrs, hStream);
 // Marshal scalar struct: s
-kernelParams[0] = &native_s;
+kernelParams[0] = &s;
 // Marshal array: o
 int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
@@ -881,7 +871,6 @@ hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-AotContexts.Unmarshal_ByRefParameterStruct(ref s, ref native_s, false, hStream);
 // Copy back array: o
 if (o_size > 0 && d_o != IntPtr.Zero)
 {
@@ -894,7 +883,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in s_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_o != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_o, hStream);
 }
 }

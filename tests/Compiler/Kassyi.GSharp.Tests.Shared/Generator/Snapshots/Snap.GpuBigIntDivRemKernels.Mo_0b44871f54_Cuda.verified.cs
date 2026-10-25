@@ -1162,29 +1162,11 @@ public global::System.Int32 NumBits;
 }
 public static unsafe void Marshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext host, ref AotContexts.Dimension native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.NumberOfWords = host.NumberOfWords;
-native.NumberOfWordsExtended = host.NumberOfWordsExtended;
-native.Exponent = host.Exponent;
-native.BitOffset2E1 = host.BitOffset2E1;
-native.MarginWords = host.MarginWords;
-native.ActualBits = host.ActualBits;
-native.MarginBits = host.MarginBits;
-native.Iterations = host.Iterations;
-native.TargetBits = host.TargetBits;
-native.NumBits = host.NumBits;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext, AotContexts.Dimension>(ref host);
 }
 public static unsafe void Unmarshal_DimensionContext(ref global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext host, ref AotContexts.Dimension native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.NumberOfWords = native.NumberOfWords;
-host.NumberOfWordsExtended = native.NumberOfWordsExtended;
-host.Exponent = native.Exponent;
-host.BitOffset2E1 = native.BitOffset2E1;
-host.MarginWords = native.MarginWords;
-host.ActualBits = native.ActualBits;
-host.MarginBits = native.MarginBits;
-host.Iterations = native.Iterations;
-host.TargetBits = native.TargetBits;
-host.NumBits = native.NumBits;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.Dimension, global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 248)]
 public unsafe partial struct Ntt
@@ -3033,6 +3015,7 @@ s_hfunc_ModPowNttMegaKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchModPowNttMegaKernel(global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.ModPowNttContext ctx, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext>() != 40) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext", 40, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Stdlib.GpuMath.BigNum.Algorithms.DimensionContext>());
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerModPowNttMegaKernel();

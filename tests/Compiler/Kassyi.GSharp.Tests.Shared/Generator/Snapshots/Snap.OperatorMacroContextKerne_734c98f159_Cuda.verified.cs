@@ -185,13 +185,11 @@ public global::System.UInt32 Calls;
 }
 public static unsafe void Marshal_OperatorMacroContextState(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState host, ref AotContexts.OperatorMacroContextState native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.Offset = host.Offset;
-native.Calls = host.Calls;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState, AotContexts.OperatorMacroContextState>(ref host);
 }
 public static unsafe void Unmarshal_OperatorMacroContextState(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState host, ref AotContexts.OperatorMacroContextState native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.Offset = native.Offset;
-host.Calls = native.Calls;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.OperatorMacroContextState, global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState>(ref native);
 }
 #pragma warning restore CS8500
 }
@@ -253,6 +251,7 @@ s_hfunc_ParameterContextKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoad
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchParameterContextKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState bigCtx, global::System.UInt32[] left, global::System.UInt32[] right, global::System.UInt32[] result, global::System.UInt32[] calls, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState>());
 if (left is null){
 throw new global::System.ArgumentNullException(nameof(left));
 }
@@ -281,7 +280,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerParameterContextKernel();
 IntPtr hfunc = s_hfunc_ParameterContextKernel!.Value;
-System.Collections.Generic.List<IntPtr> bigCtx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_left = IntPtr.Zero;
 IntPtr d_right = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -289,10 +287,8 @@ IntPtr d_calls = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[5];
-AotContexts.OperatorMacroContextState native_bigCtx = default;
-AotContexts.Marshal_OperatorMacroContextState(ref bigCtx, ref native_bigCtx, false, bigCtx_allocatedPtrs, hStream);
 // Marshal scalar struct: bigCtx
-kernelParams[0] = &native_bigCtx;
+kernelParams[0] = &bigCtx;
 // Marshal array: left
 int left_size = left.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_left = stackalloc IntPtr[2];
@@ -366,7 +362,6 @@ hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-AotContexts.Unmarshal_OperatorMacroContextState(ref bigCtx, ref native_bigCtx, false, hStream);
 // Copy back array: left
 if (left_size > 0 && d_left != IntPtr.Zero)
 {
@@ -406,7 +401,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in bigCtx_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_left != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_left, hStream);
 if (d_right != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_right, hStream);
 if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
@@ -521,6 +515,7 @@ s_hfunc_ValueContextKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.G
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchValueContextKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState bigCtx, global::System.UInt32[] operand, global::System.UInt32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState>());
 if (operand is null){
 throw new global::System.ArgumentNullException(nameof(operand));
 }
@@ -537,16 +532,13 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerValueContextKernel();
 IntPtr hfunc = s_hfunc_ValueContextKernel!.Value;
-System.Collections.Generic.List<IntPtr> bigCtx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_operand = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[3];
-AotContexts.OperatorMacroContextState native_bigCtx = default;
-AotContexts.Marshal_OperatorMacroContextState(ref bigCtx, ref native_bigCtx, false, bigCtx_allocatedPtrs, hStream);
 // Marshal scalar struct: bigCtx
-kernelParams[0] = &native_bigCtx;
+kernelParams[0] = &bigCtx;
 // Marshal array: operand
 int operand_size = operand.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_operand = stackalloc IntPtr[2];
@@ -588,7 +580,6 @@ hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-AotContexts.Unmarshal_OperatorMacroContextState(ref bigCtx, ref native_bigCtx, false, hStream);
 // Copy back array: operand
 if (operand_size > 0 && d_operand != IntPtr.Zero)
 {
@@ -610,7 +601,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in bigCtx_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_operand != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_operand, hStream);
 if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);
 }
@@ -689,6 +679,7 @@ s_hfunc_RefParameterContextKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelL
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRefParameterContextKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState bigCtx, global::System.UInt32[] left, global::System.UInt32[] right, global::System.UInt32[] result, global::System.UInt32[] calls, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState>());
 if (left is null){
 throw new global::System.ArgumentNullException(nameof(left));
 }
@@ -717,7 +708,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerRefParameterContextKernel();
 IntPtr hfunc = s_hfunc_RefParameterContextKernel!.Value;
-System.Collections.Generic.List<IntPtr> bigCtx_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_left = IntPtr.Zero;
 IntPtr d_right = IntPtr.Zero;
 IntPtr d_result = IntPtr.Zero;
@@ -725,10 +715,8 @@ IntPtr d_calls = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[5];
-AotContexts.OperatorMacroContextState native_bigCtx = default;
-AotContexts.Marshal_OperatorMacroContextState(ref bigCtx, ref native_bigCtx, false, bigCtx_allocatedPtrs, hStream);
 // Marshal scalar struct: bigCtx
-kernelParams[0] = &native_bigCtx;
+kernelParams[0] = &bigCtx;
 // Marshal array: left
 int left_size = left.Length * sizeof(global::System.UInt32);
 IntPtr* proxy_left = stackalloc IntPtr[2];
@@ -802,7 +790,6 @@ hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-AotContexts.Unmarshal_OperatorMacroContextState(ref bigCtx, ref native_bigCtx, false, hStream);
 // Copy back array: left
 if (left_size > 0 && d_left != IntPtr.Zero)
 {
@@ -842,7 +829,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in bigCtx_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_left != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_left, hStream);
 if (d_right != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_right, hStream);
 if (d_result != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_result, hStream);

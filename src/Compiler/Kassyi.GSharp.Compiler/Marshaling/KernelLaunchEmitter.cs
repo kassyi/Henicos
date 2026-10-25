@@ -16,7 +16,7 @@ internal static class KernelLaunchEmitter
                 continue;
             }
 
-            if (shape.IsCustomStruct)
+            if (shape.IsCustomStruct && !shape.IsDirectCudaValueStruct)
             {
                 writer.AppendLine(
                     $"System.Collections.Generic.List<IntPtr> {shape.Name}_allocatedPtrs =" +
@@ -186,6 +186,13 @@ internal static class KernelLaunchEmitter
     private static void WriteCustomStructMarshal(SourceWriter writer, in KernelParameterShape shape, int paramIndex,
         bool isDevicePtr)
     {
+        if (shape.IsDirectCudaValueStruct)
+        {
+            writer.AppendLine($"// Marshal scalar struct: {shape.Identifier}");
+            writer.AppendLine($"kernelParams[{paramIndex}] = &{shape.Identifier};");
+            return;
+        }
+
         writer.AppendLine($"{shape.AotStructPath} native_{shape.Name} = default;");
         writer.Append(shape.MarshalMethodName);
         using (writer.Parentheses())
@@ -345,6 +352,11 @@ internal static class KernelLaunchEmitter
 
     private static void WriteCustomStructUnmarshal(SourceWriter writer, in KernelParameterShape shape, bool isDevicePtr)
     {
+        if (shape.IsDirectCudaValueStruct)
+        {
+            return;
+        }
+
         if (isDevicePtr && shape.IsByRef)
         {
             return;
@@ -429,7 +441,7 @@ internal static class KernelLaunchEmitter
             return;
         }
 
-        if (shape.IsCustomStruct)
+        if (shape.IsCustomStruct && !shape.IsDirectCudaValueStruct)
         {
             writer.AppendLine(
                 $"foreach (var ptr in {shape.Name}_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);");

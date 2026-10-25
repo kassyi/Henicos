@@ -364,31 +364,11 @@ public global::System.Double DoubleValue;
 }
 public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.BooleanValue = host.BooleanValue;
-native.ByteValue = host.ByteValue;
-native.SByteValue = host.SByteValue;
-native.ShortValue = host.ShortValue;
-native.UShortValue = host.UShortValue;
-native.IntValue = host.IntValue;
-native.UIntValue = host.UIntValue;
-native.LongValue = host.LongValue;
-native.ULongValue = host.ULongValue;
-native.FloatValue = host.FloatValue;
-native.DoubleValue = host.DoubleValue;
+native = System.Runtime.CompilerServices.Unsafe.As<global::DebugReduc.SpecTypes, AotContexts.SpecTypes>(ref host);
 }
 public static unsafe void Unmarshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.BooleanValue = native.BooleanValue;
-host.ByteValue = native.ByteValue;
-host.SByteValue = native.SByteValue;
-host.ShortValue = native.ShortValue;
-host.UShortValue = native.UShortValue;
-host.IntValue = native.IntValue;
-host.UIntValue = native.UIntValue;
-host.LongValue = native.LongValue;
-host.ULongValue = native.ULongValue;
-host.FloatValue = native.FloatValue;
-host.DoubleValue = native.DoubleValue;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.SpecTypes, global::DebugReduc.SpecTypes>(ref native);
 }
 #pragma warning restore CS8500
 }
@@ -401,6 +381,11 @@ float __gsharp_mb_Y;
 float __gsharp_mb_Z;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__PhysicsVector)==12,""DebugReduc.PhysicsVector: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__PhysicsVector)==4,""DebugReduc.PhysicsVector: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_X)==0,""DebugReduc.PhysicsVector.X: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_Y)==4,""DebugReduc.PhysicsVector.Y: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_Z)==8,""DebugReduc.PhysicsVector.Z: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__SpecTypes__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__SpecTypes__
@@ -419,6 +404,19 @@ float __gsharp_mb_FloatValue;
 double __gsharp_mb_DoubleValue;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__SpecTypes)==48,""DebugReduc.SpecTypes: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__SpecTypes)==8,""DebugReduc.SpecTypes: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_BooleanValue)==0,""DebugReduc.SpecTypes.BooleanValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_ByteValue)==1,""DebugReduc.SpecTypes.ByteValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_SByteValue)==2,""DebugReduc.SpecTypes.SByteValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_ShortValue)==4,""DebugReduc.SpecTypes.ShortValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_UShortValue)==6,""DebugReduc.SpecTypes.UShortValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_IntValue)==8,""DebugReduc.SpecTypes.IntValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_UIntValue)==12,""DebugReduc.SpecTypes.UIntValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_LongValue)==16,""DebugReduc.SpecTypes.LongValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_ULongValue)==24,""DebugReduc.SpecTypes.ULongValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_FloatValue)==32,""DebugReduc.SpecTypes.FloatValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_DoubleValue)==40,""DebugReduc.SpecTypes.DoubleValue: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__Point__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__Point__
@@ -428,6 +426,10 @@ float __gsharp_mb_X;
 float __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__Point)==8,""DebugReduc.Point: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__Point)==4,""DebugReduc.Point: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__Point,__gsharp_mb_X)==0,""DebugReduc.Point.X: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__Point,__gsharp_mb_Y)==4,""DebugReduc.Point.Y: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__NestedPhysicsState__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__NestedPhysicsState__
@@ -438,6 +440,11 @@ __gsharp_ty_DebugReduc__PhysicsVector __gsharp_mb_Velocity;
 unsigned long long __gsharp_mb_StatusFlag;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__NestedPhysicsState)==32,""DebugReduc.NestedPhysicsState: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__NestedPhysicsState)==8,""DebugReduc.NestedPhysicsState: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__NestedPhysicsState,__gsharp_mb_Position)==0,""DebugReduc.NestedPhysicsState.Position: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__NestedPhysicsState,__gsharp_mb_Velocity)==12,""DebugReduc.NestedPhysicsState.Velocity: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__NestedPhysicsState,__gsharp_mb_StatusFlag)==24,""DebugReduc.NestedPhysicsState.StatusFlag: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8__
@@ -458,6 +465,8 @@ __device__ inline const unsigned int* end() const { return __gsharp_mb__element0
 __device__ inline int size() const { return 8; }
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8)==32,""DebugReduc.ComprehensiveSpecKernel.Vector8: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8)==4,""DebugReduc.ComprehensiveSpecKernel.Vector8: alignment"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState__
@@ -467,6 +476,10 @@ unsigned int __gsharp_mb_Buffer[16];
 unsigned long long __gsharp_mb_Flags;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState)==72,""DebugReduc.ComprehensiveSpecKernel.PhysicsState: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState)==8,""DebugReduc.ComprehensiveSpecKernel.PhysicsState: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState,__gsharp_mb_Buffer)==0,""DebugReduc.ComprehensiveSpecKernel.PhysicsState.Buffer: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState,__gsharp_mb_Flags)==64,""DebugReduc.ComprehensiveSpecKernel.PhysicsState.Flags: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles, float* __gsharp_id_1_totalMagnitude, bool* __gsharp_id_2_successFlag, __gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal, int __gsharp_id_4_particleCount, int __gsharp_id_5_unrollFactor){
 (*__gsharp_id_2_successFlag)=false;
@@ -601,6 +614,8 @@ s_hfunc_ProcessPhysics = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFu
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref global::System.Single totalMagnitude, out global::System.Boolean successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.PhysicsVector>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("DebugReduc.PhysicsVector", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.PhysicsVector>());
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.SpecTypes>() != 48) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("DebugReduc.SpecTypes", 48, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.SpecTypes>());
 successFlag = default;
 if (particles is null){
 throw new global::System.ArgumentNullException(nameof(particles));
@@ -615,7 +630,6 @@ IntPtr hfunc = s_hfunc_ProcessPhysics!.Value;
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> largeStructVal_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
 void** kernelParams = stackalloc void*[6];
@@ -649,10 +663,8 @@ kernelParams[1] = &d_totalMagnitude;
 int successFlag_size = sizeof(global::System.Boolean);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_successFlag, (IntPtr)successFlag_size, hStream));
 kernelParams[2] = &d_successFlag;
-AotContexts.SpecTypes native_largeStructVal = default;
-AotContexts.Marshal_SpecTypes(ref largeStructVal, ref native_largeStructVal, false, largeStructVal_allocatedPtrs, hStream);
 // Marshal scalar struct: largeStructVal
-kernelParams[3] = &native_largeStructVal;
+kernelParams[3] = &largeStructVal;
 // Marshal scalar: particleCount
 kernelParams[4] = &particleCount;
 // Marshal scalar: unrollFactor
@@ -688,14 +700,12 @@ fixed (global::System.Boolean* ptr_successFlag = &successFlag)
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_successFlag, d_successFlag, (IntPtr)successFlag_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-AotContexts.Unmarshal_SpecTypes(ref largeStructVal, ref native_largeStructVal, false, hStream);
 }
 finally
 {
 if (d_particles != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_particles, hStream);
 if (d_totalMagnitude != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_totalMagnitude, hStream);
 if (d_successFlag != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_successFlag, hStream);
-foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 }
 }
 }

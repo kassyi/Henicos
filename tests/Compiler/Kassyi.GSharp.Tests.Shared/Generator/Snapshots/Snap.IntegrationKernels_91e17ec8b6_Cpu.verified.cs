@@ -67,15 +67,11 @@ public global::System.Boolean BoolVal;
 }
 public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.IntVal = host.IntVal;
-native.FloatVal = host.FloatVal;
-native.BoolVal = host.BoolVal;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct, AotContexts.Tier1CustomStruct>(ref host);
 }
 public static unsafe void Unmarshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.IntVal = native.IntVal;
-host.FloatVal = native.FloatVal;
-host.BoolVal = native.BoolVal;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.Tier1CustomStruct, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct>(ref native);
 }
 #pragma warning restore CS8500
 }

@@ -154,7 +154,7 @@ internal static class WrapperEmitter
             writer.AppendLine($"public static partial class {AotHostNames.AotContextsClassName}");
             using (writer.Scope())
             {
-                StructMarshalingEmitter.WriteStructMarshaling(writer, model.Structs);
+                StructMarshalingEmitter.WriteStructMarshaling(writer, model.Structs, config.IsCuda);
             }
 
             foreach (var kernel in model.Kernels)
@@ -241,6 +241,17 @@ internal static class WrapperEmitter
         else
         {
             writer.Append("void ");
+        }
+    }
+
+    internal static void WriteLayoutGuards(SourceWriter writer, in KernelHostModel kernel)
+    {
+        foreach (var guard in kernel.CudaLayoutGuards)
+        {
+            writer.AppendLine(
+                $"if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<{guard.FullyQualifiedTypeName}>() != {guard.ExpectedSize}) " +
+                $"global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch(\"{guard.DisplayTypeName}\", {guard.ExpectedSize}, " +
+                $"global::System.Runtime.CompilerServices.Unsafe.SizeOf<{guard.FullyQualifiedTypeName}>());");
         }
     }
 

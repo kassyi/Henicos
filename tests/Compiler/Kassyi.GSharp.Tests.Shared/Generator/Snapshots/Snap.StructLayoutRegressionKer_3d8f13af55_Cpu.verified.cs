@@ -33,77 +33,59 @@ public partial class StructLayoutRegressionKernels
 public static partial class AotContexts
 {
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 48)]
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct LayoutReproInlineOuter
 {
 public const string DebugName_Tag = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 Tag;
 public const string DebugName_Items = "global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElems";
-[System.Runtime.InteropServices.FieldOffset(8)]
+[System.Runtime.InteropServices.FieldOffset(4)]
 public AotContexts.LayoutReproElems Items;
 public const string DebugName_C = "global::System.Int32";
-[System.Runtime.InteropServices.FieldOffset(40)]
+[System.Runtime.InteropServices.FieldOffset(28)]
 public global::System.Int32 C;
 }
 public static unsafe void Marshal_LayoutReproInlineOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter host, ref AotContexts.LayoutReproInlineOuter native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.Tag = host.Tag;
-Marshal_LayoutReproElems(ref host.Items, ref native.Items, isDevicePtr, allocatedPtrs, hStream);
-native.C = host.C;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter, AotContexts.LayoutReproInlineOuter>(ref host);
 }
 public static unsafe void Unmarshal_LayoutReproInlineOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter host, ref AotContexts.LayoutReproInlineOuter native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.Tag = native.Tag;
-Unmarshal_LayoutReproElems(ref host.Items, ref native.Items, isDevicePtr, hStream);
-host.C = native.C;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproInlineOuter, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproInlineOuter>(ref native);
 }
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct LayoutReproElems
 {
 public const string DebugName__element0 = "global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElem";
 [System.Runtime.InteropServices.FieldOffset(0)]
-public fixed byte _element0[32];
+public fixed byte _element0[24];
 }
 public static unsafe void Marshal_LayoutReproElems(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElems host, ref AotContexts.LayoutReproElems native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-fixed (byte* pField = native._element0)
-{
-System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);
-}
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElems, AotContexts.LayoutReproElems>(ref host);
 }
 public static unsafe void Unmarshal_LayoutReproElems(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElems host, ref AotContexts.LayoutReproElems native, bool isDevicePtr, IntPtr hStream = default)
 {
-fixed (byte* pField = native._element0)
-{
-System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproElems, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElems>(ref native);
 }
-}
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 12)]
 public unsafe partial struct LayoutReproElem
 {
 public const string DebugName_A = "global::System.Byte";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Byte A;
 public const string DebugName_V = "global::Kassyi.GSharp.Core.Float2";
-[System.Runtime.InteropServices.FieldOffset(8)]
+[System.Runtime.InteropServices.FieldOffset(4)]
 public fixed byte V[8];
 }
 public static unsafe void Marshal_LayoutReproElem(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElem host, ref AotContexts.LayoutReproElem native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-fixed (byte* pField = native.V)
-{
-*((global::Kassyi.GSharp.Core.Float2*)pField) = host.V;
-}
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElem, AotContexts.LayoutReproElem>(ref host);
 }
 public static unsafe void Unmarshal_LayoutReproElem(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElem host, ref AotContexts.LayoutReproElem native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-fixed (byte* pField = native.V)
-{
-host.V = *((global::Kassyi.GSharp.Core.Float2*)pField);
-}
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproElem, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproElem>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct LayoutReproBag
@@ -180,15 +162,11 @@ public global::System.Int32 X;
 }
 public static unsafe void Marshal_LayoutReproTwoBools(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools host, ref AotContexts.LayoutReproTwoBools native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.F = host.F;
-native.G = host.G;
-native.X = host.X;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools, AotContexts.LayoutReproTwoBools>(ref host);
 }
 public static unsafe void Unmarshal_LayoutReproTwoBools(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools host, ref AotContexts.LayoutReproTwoBools native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.F = native.F;
-host.G = native.G;
-host.X = native.X;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproTwoBools, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
 public unsafe partial struct LayoutReproIntFloatUnion

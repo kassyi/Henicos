@@ -45,13 +45,11 @@ public global::System.Single B;
 }
 public static unsafe void Marshal_ByRefParameterStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct host, ref AotContexts.ByRefParameterStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-native.B = host.B;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct, AotContexts.ByRefParameterStruct>(ref host);
 }
 public static unsafe void Unmarshal_ByRefParameterStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct host, ref AotContexts.ByRefParameterStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-host.B = native.B;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.ByRefParameterStruct, global::Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct>(ref native);
 }
 #pragma warning restore CS8500
 }

@@ -42,11 +42,11 @@ public global::System.Int32 A;
 }
 public static unsafe void Marshal_Pair(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair host, ref AotContexts.Pair native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair, AotContexts.Pair>(ref host);
 }
 public static unsafe void Unmarshal_Pair(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair host, ref AotContexts.Pair native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.Pair, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 4)]
 public unsafe partial struct Box
@@ -57,11 +57,11 @@ public global::System.Int32 Value;
 }
 public static unsafe void Marshal_Box(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> host, ref AotContexts.Box native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.Value = host.Value;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>, AotContexts.Box>(ref host);
 }
 public static unsafe void Unmarshal_Box(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> host, ref AotContexts.Box native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.Value = native.Value;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.Box, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>>(ref native);
 }
 #pragma warning restore CS8500
 }
