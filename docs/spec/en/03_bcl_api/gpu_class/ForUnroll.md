@@ -44,7 +44,7 @@ The loop body delegate receiving the zero-based unrolled loop iteration index.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside managed execution.
 
 ## ForUnroll\<TContext\>(ref TContext, int, int, Gpu.UnrollAction\<TContext\>)
 
@@ -82,7 +82,7 @@ The loop body delegate receiving the context by reference and the iteration inde
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside managed execution.
 
 ## Examples
 
@@ -115,6 +115,8 @@ catch (GpuOnlyException)
 This method should be used strictly when the loop variable needs to be evaluated as a compile-time constant literal (e.g., `0`, `1`, `2`) in the generated C++ code. Note that the loop index parameter is a regular delegate parameter in C#, so it is not a C# constant expression (`const int c = i;` and `[GpuConstexpr]` arguments inside the body are not supported).
 
 On CPU dialects and in the managed state machine, if the lambda body contains a phase split point (such as `Gpu.SyncThreads`, `Gpu.SyncGrid`, `Gpu.Warp.*`, or a barrier-reaching `[GpuDeviceFunction]`), `Gpu.ForUnroll` is lowered into a `for` loop and compiled into the state machine so that each iteration suspends and resumes across threads.
+
+Under managed execution (a kernel that runs as a C# state machine, and the `[GpuDeviceFunction]` methods it calls), `Gpu.ForUnroll` runs the body `count` times, with the index going from `start` up to `start + count - 1`.
 
 > [!CAUTION]
 > Because this macro performs literal source code duplication during transpilation, using it for loops with high iteration counts will drastically bloat the generated C++ code. For general performance tuning and Instruction-Level Parallelism (ILP) improvements, use [`Gpu.Hint.Unroll`](HintUnroll.md) instead.

@@ -41,7 +41,7 @@ The loop body delegate receiving the current thread stride index.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside managed execution.
 
 ## GridStrideLoop\<TContext\>(ref TContext, int, Gpu.GridStrideAction\<TContext\>)
 
@@ -75,7 +75,7 @@ The loop body delegate receiving the context and current stride index.
 #### Exceptions
 
 [GpuOnlyException](../01_diagnostics_and_exceptions.md#gpuonlyexception)<br>
-Thrown when evaluated on the host CPU.
+Thrown when evaluated on the host CPU outside managed execution.
 
 ## Examples
 
@@ -112,6 +112,8 @@ for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < count; i += blockDim.x *
     // body...
 }
 ```
+
+Under managed execution, each thread starts at `blockDim.x * blockIdx.x + threadIdx.x` and steps by `blockDim.x * gridDim.x`, as in the loop above.
 
 ## See also
 

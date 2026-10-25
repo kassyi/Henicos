@@ -833,10 +833,11 @@ return;
 case 1:
 {
 int sum = 0;
-Gpu.ForUnroll(0, 3, i =>
+for (int __gsharp_unroll_0 = 0; __gsharp_unroll_0 < unchecked(0 + 3); __gsharp_unroll_0++)
 {
-sum += i;
-});
+sum += __gsharp_unroll_0;
+}
+
 output[__gsharp_ctx.t] = sum + __gsharp_ctx.i;
 __gsharp_ctx.__gsharp_state = -1;
 return;
