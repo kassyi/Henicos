@@ -41,6 +41,10 @@ int __gsharp_mb_X;
 int __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt.Y: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameInitializerKernel {
 int __gsharp_state = 0;
@@ -264,6 +268,10 @@ int __gsharp_mb_X;
 int __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt.Y: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameWithKernel {
 int __gsharp_state = 0;
@@ -496,6 +504,10 @@ int __gsharp_mb_X;
 int __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt.Y: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__HoistedNameIdentityKernels__BarrierLocalSameNameMemberAccessKernel {
 int __gsharp_state = 0;
