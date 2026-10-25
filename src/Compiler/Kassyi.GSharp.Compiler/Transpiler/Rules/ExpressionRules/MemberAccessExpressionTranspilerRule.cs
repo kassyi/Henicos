@@ -33,6 +33,7 @@ public sealed class MemberAccessExpressionTranspilerRule : SyntaxNodeTranspilerR
             // A device function carries its containing type in its own global name; other static members drop it.
             if (symbol is IMethodSymbol method && CppNameResolver.IsEmittedDeviceFunction(method, context.Emitter.Dialect))
             {
+                DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref context);
                 context.Emitter.Writer.AppendCppName(CppNameResolver.Resolve(method, method.Name, context.Emitter.Dialect));
                 return;
             }

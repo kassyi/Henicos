@@ -43,6 +43,10 @@
 (11,25)-(11,39) GSH0003 analyzer: The syntax 'CheckedExpression' is not supported in GSharp GPU kernels
 (42,17)-(42,33) GSH0003 analyzer: The syntax 'unsubstituted type parameter' is not supported in GSharp GPU kernels
 
+## Diagnostics/DynamicSharedMemoryWithoutTable.cu.cs
+(12,27)-(12,80) GSH0003 analyzer: The syntax 'dynamic SharedMemory<T> reached outside a kernel or a static device function' is not supported in GSharp GPU kernels
+(37,34)-(37,41) GSH0003 analyzer: The syntax 'device function passed as a delegate (it reaches dynamic SharedMemory<T>, and a delegate call cannot pass it the table of dynamic shared memory regions)' is not supported in GSharp GPU kernels
+
 ## Analyzers/DynamicStackAllocSadPath.cs
 (6,21)-(6,55) GSH0036 analyzer: The class 'SYN13_DynamicStackAllocSadPathCase' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (13,43)-(13,54) GSH0003 analyzer: The syntax 'dynamic array size' is not supported in GSharp GPU kernels

@@ -35,7 +35,7 @@ public class Tier1_IntegrationTests : TranspilerTestBase
             config,
             gpuCounter,
             count,
-            count * sizeof(float), // dynamicSharedSize
+            count, // dynamicSharedSize: the element count of the kernel's SharedMemory<float>
             blockDimX: count,
             sharedMemBytes: (uint)(count * sizeof(float))
         );

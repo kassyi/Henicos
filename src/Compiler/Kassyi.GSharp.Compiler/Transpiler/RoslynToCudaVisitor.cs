@@ -407,6 +407,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                         symbol.Name);
                 }
 
+                if (symbol is IMethodSymbol method)
+                {
+                    DynamicSharedMemoryEmitter.FailIfReferencedWithoutCall(node, method, ref Context);
+                }
+
                 // In a lowered struct constructor function, unqualified instance members belong to __gsharp_self.
                 if (Context.Emitter.StructConstructorType is { } ctorType &&
                     symbol is IFieldSymbol { IsStatic: false, IsConst: false } or IPropertySymbol { IsStatic: false } &&

@@ -172,7 +172,18 @@ static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1Int
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.Tier1FixedBufferStruct: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.Tier1FixedBufferStruct.Data: offset"");
 #endif
+// AllInOneKernel reaches 1 dynamic shared memory declaration
+struct __gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel {
+static constexpr int Slots = 1;
+template <unsigned long long Key> static constexpr int Slot = Key == 0xf4a8b89f8fdf4f71ull ? 0 : -1;
+unsigned int cursor;
+unsigned int offset[1];
+unsigned int size[1];
+};
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel(GSharpArray<int> __gsharp_id_0_intInput, GSharpArray<float> __gsharp_id_1_floatInput, GSharpArray<float> __gsharp_id_2_results, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct __gsharp_id_3_config, GSharpArray<unsigned long long> __gsharp_id_4_globalCounter, int __gsharp_id_5_count, int __gsharp_id_6_dynamicSharedSize){
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel __gsharp_dsmem_storage;
+__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel* __gsharp_dsmem = &__gsharp_dsmem_storage;
+__gsharp_dsmem_init(__gsharp_dsmem);
 for(int __gsharp_id_7_tid = blockIdx.x * blockDim.x + threadIdx.x; __gsharp_id_7_tid < __gsharp_id_5_count; __gsharp_id_7_tid += gridDim.x * blockDim.x)
 {
 auto __gsharp_id_8_LocalInlineFunc = [&](int __gsharp_id_9_x) {
@@ -274,11 +285,7 @@ if(__gsharp_id_12_ok&&__gsharp_id_3_config.__gsharp_mb_BoolVal)
 {
 atomicAdd(&__gsharp_id_4_globalCounter[0],(unsigned long long)__gsharp_id_14_bitwise);
 }
-extern __shared__ char __gsharp_dynamic_smem[];
-size_t __gsharp_smem_offset = 0;
-__gsharp_smem_offset = (__gsharp_smem_offset + alignof(float) - 1) & ~(alignof(float) - 1);
-float* __gsharp_id_30_dynamicSharedMem = (float*)(__gsharp_dynamic_smem + __gsharp_smem_offset);
-__gsharp_smem_offset += (__gsharp_id_6_dynamicSharedSize) * sizeof(float);
+float* __gsharp_id_30_dynamicSharedMem = (float*)__gsharp_dsmem_place<__gsharp_dsmem_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel::Slot<0xf4a8b89f8fdf4f71ull>>(__gsharp_dsmem, (unsigned long long)(long long)(__gsharp_id_6_dynamicSharedSize) * sizeof(float), __GSHARP_DSMEM_ALIGN(float));
 __gsharp_id_30_dynamicSharedMem[threadIdx.x]=__gsharp_id_17_sum;
 __syncthreads();
 float __gsharp_id_31_finalVal = ((__gsharp_id_14_bitwise>0)?((__gsharp_id_30_dynamicSharedMem[threadIdx.x]>10.0f?10.0f:__gsharp_id_30_dynamicSharedMem[threadIdx.x])):0.0f);
