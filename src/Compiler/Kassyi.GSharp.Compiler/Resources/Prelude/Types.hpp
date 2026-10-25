@@ -23,7 +23,7 @@ struct __gsharp_using_scope {
 
 template <typename T>
 struct GSharpArray {
-    T* __restrict__ data;
+    T* data;
     int length;
 
     inline GSharpArray() : data(nullptr), length(0) {}

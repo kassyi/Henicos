@@ -6,9 +6,9 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCpuDeviceCode
 {
-public const string Source = @"inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(int* __restrict__  __gsharp_id_0_counter, int __gsharp_id_1_value);
+public const string Source = @"inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(int* __gsharp_id_0_counter, int __gsharp_id_1_value);
 
-inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(int* __restrict__  __gsharp_id_0_counter, int __gsharp_id_1_value){
+inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__AtomicIntrinsicsKernels__AccumulateThroughRef(int* __gsharp_id_0_counter, int __gsharp_id_1_value){
 atomicAdd(&(*__gsharp_id_0_counter),__gsharp_id_1_value);
 }
 

@@ -63,13 +63,13 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__TryCombine(int __gsharp_id_0_register, int __gsharp_id_1_template, int* __restrict__  __gsharp_id_2_union);
+public const string Source = @"inline __device__ bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__TryCombine(int __gsharp_id_0_register, int __gsharp_id_1_template, int* __gsharp_id_2_union);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__friend(int __gsharp_id_0_x);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__class(int __gsharp_id_0_x);
 
-inline __device__ bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__TryCombine(int __gsharp_id_0_register, int __gsharp_id_1_template, int* __restrict__  __gsharp_id_2_union){
+inline __device__ bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__TryCombine(int __gsharp_id_0_register, int __gsharp_id_1_template, int* __gsharp_id_2_union){
 int __gsharp_id_3_typename = __gsharp_id_0_register+__gsharp_id_1_template;
 (*__gsharp_id_2_union)=__gsharp_id_3_typename*2;
 return (*__gsharp_id_2_union)>0;

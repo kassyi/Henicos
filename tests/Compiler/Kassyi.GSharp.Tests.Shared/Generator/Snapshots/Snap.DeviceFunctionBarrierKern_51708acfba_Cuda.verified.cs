@@ -73,7 +73,7 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceF
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ExchangeThroughSharedParameter(int* __gsharp_id_0_shared, int __gsharp_id_1_value, int __gsharp_id_2_length);
 
-inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseWithOriginal(int __gsharp_id_0_value, int __gsharp_id_1_length, int* __restrict__  __gsharp_id_2_reversed, int* __restrict__  __gsharp_id_3_original);
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseWithOriginal(int __gsharp_id_0_value, int __gsharp_id_1_length, int* __gsharp_id_2_reversed, int* __gsharp_id_3_original);
 
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseSpanWarp(GSharpArray<int> __gsharp_id_0_data);
 
@@ -125,7 +125,7 @@ __syncthreads();
 return __gsharp_id_0_shared[__gsharp_id_2_length-1-__gsharp_id_3_tid];
 }
 
-inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseWithOriginal(int __gsharp_id_0_value, int __gsharp_id_1_length, int* __restrict__  __gsharp_id_2_reversed, int* __restrict__  __gsharp_id_3_original){
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseWithOriginal(int __gsharp_id_0_value, int __gsharp_id_1_length, int* __gsharp_id_2_reversed, int* __gsharp_id_3_original){
 (*__gsharp_id_3_original)=__gsharp_id_0_value;
 (*__gsharp_id_2_reversed)=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__ReverseThroughSharedMemory(__gsharp_id_0_value,__gsharp_id_1_length);
 }

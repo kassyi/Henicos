@@ -82,7 +82,7 @@ public partial class WrapperAllocationKernels
 public static partial class AotContexts
 {
 }
-public const string AllocationTestKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__AllocationTestKernel(int* __restrict__  __gsharp_id_0_ioVal, float* __restrict__  __gsharp_id_1_outVal, GSharpArray<int> __gsharp_id_2_arrayVal, unsigned int __gsharp_id_3_constantVal){
+public const string AllocationTestKernel_Source = @"extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__WrapperAllocationKernels__AllocationTestKernel(int* __gsharp_id_0_ioVal, float* __gsharp_id_1_outVal, GSharpArray<int> __gsharp_id_2_arrayVal, unsigned int __gsharp_id_3_constantVal){
 if((*__gsharp_id_0_ioVal)>__gsharp_id_3_constantVal)
 {
 (*__gsharp_id_1_outVal)=__gsharp_id_2_arrayVal[0];
