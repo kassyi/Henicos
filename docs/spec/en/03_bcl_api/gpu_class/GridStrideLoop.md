@@ -115,6 +115,11 @@ for (int i = blockIdx.x * blockDim.x + threadIdx.x; i < count; i += blockDim.x *
 
 Under managed execution, each thread starts at `blockDim.x * blockIdx.x + threadIdx.x` and steps by `blockDim.x * gridDim.x`, as in the loop above.
 
+The body is written into the surrounding code, so two things that are legal in an ordinary C# lambda are rejected with [GSH0003](../diagnostics/GSH0003.md):
+
+- A `return` statement. In C# it would end one iteration, but in the generated code it would end the kernel. Instead of leaving early with `return`, wrap the rest of the body in `if (...) { ... }`. A `return` inside a nested lambda or local function of the body belongs to that function and is allowed.
+- An assignment to the loop variable (`i = 0`, `i += 1`, `i++`, `--i`, or passing it as a `ref` / `out` argument), or a reference to it (an `in` argument, or `&i`). The generated code uses the loop's own index, which the loop advances and which has no address of its own. A local variable declared in the body, and the context parameter of the `ref TContext` overload, can be assigned.
+
 ## See also
 
 ### Getting Started
