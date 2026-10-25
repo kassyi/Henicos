@@ -39,7 +39,7 @@ internal static class GlobalCppNames
     /// exists today.
     /// </remarks>
     public static bool IsEmittedUserType(INamedTypeSymbol type) =>
-        type.TypeKind == TypeKind.Struct && !type.ContainingNamespace.IsSystemOrNumerics() && !type.IsSharedMemoryType();
+        type.TypeKind == TypeKind.Struct && !type.ContainingNamespace.IsSystemOrNumerics() && !type.IsSharedMemoryType() && !type.IsWmmaFragmentType() && !type.IsWmmaMarkerType();
 
     /// <summary>
     /// Whether a reference to <paramref name="type"/> or to one of its instance members uses the encoded name: an

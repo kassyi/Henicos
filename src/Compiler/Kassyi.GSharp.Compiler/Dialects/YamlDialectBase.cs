@@ -73,6 +73,11 @@ public abstract class YamlDialectBase : ITranspilerDialect
             return;
         }
 
+        if (WmmaTypeSyntaxHelper.TryAppendType(ref context, typeSymbol))
+        {
+            return;
+        }
+
         if (TryMapType(GetTypeMappingKey(typeSymbol), out var mappedType))
         {
             context.Emitter.Writer.Append(mappedType);

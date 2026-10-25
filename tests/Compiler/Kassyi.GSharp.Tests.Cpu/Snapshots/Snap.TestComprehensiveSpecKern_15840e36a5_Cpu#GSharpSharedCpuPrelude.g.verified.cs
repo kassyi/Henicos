@@ -540,6 +540,37 @@ namespace Hint {
 inline void Unroll() {}
 }
 
+// --- Tensor Core (WMMA) ---
+struct __gsharp_wmma_matrix_a {};
+struct __gsharp_wmma_matrix_b {};
+struct __gsharp_wmma_accumulator {};
+struct __gsharp_wmma_row_major {};
+struct __gsharp_wmma_col_major {};
+template <int M, int N, int K> struct __gsharp_wmma_shape {};
+template <class Use, int M, int N, int K, class T, class Layout = void>
+struct __gsharp_wmma_fragment {};
+
+template <class Shape, class T, class Layout = void, class Frag>
+inline void __gsharp_wmma_fill(Frag*, T) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class T, class Layout, class Frag>
+inline void __gsharp_wmma_load(Frag*, const T*, unsigned int) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class T, class Frag>
+inline void __gsharp_wmma_load(Frag*, const T*, unsigned int, int) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class T, class Frag>
+inline void __gsharp_wmma_store(T*, const Frag*, unsigned int, int) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class TIn, class LayoutA, class LayoutB, class TAcc, class FragD, class FragA, class FragB, class FragC>
+inline void __gsharp_wmma_mma(FragD*, const FragA*, const FragB*, const FragC*) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+
 // --- Runtime Error Channel (CPU Dialect) ---
 enum class GSharpErrorCode : int32_t {
 None = 0,

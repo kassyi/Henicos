@@ -186,6 +186,37 @@ internal static class SymbolExtensions
         type is { Name: TypeConstants.SharedMemoryType } && type.ContainingNamespace.IsCoreNamespace();
 
     /// <summary>
+    /// Checks whether the type is one of the WMMA fragment types (<c>WmmaMatrixA&lt;...&gt;</c>,
+    /// <c>WmmaMatrixB&lt;...&gt;</c>, or <c>WmmaAccumulator&lt;...&gt;</c>) in <c>Kassyi.GSharp.Core</c>.
+    /// </summary>
+    public static bool IsWmmaFragmentType(
+        [NotNullWhen(true)] this ITypeSymbol? type) =>
+        type is INamedTypeSymbol
+        {
+            Name: TypeConstants.WmmaTypes.MatrixA
+                or TypeConstants.WmmaTypes.MatrixB
+                or TypeConstants.WmmaTypes.Accumulator
+        } && type.ContainingNamespace.IsCoreNamespace();
+
+    /// <summary>
+    /// Checks whether the type is a WMMA shape or layout marker type or interface (<c>IWmmaShape</c>,
+    /// <c>IWmmaLayout</c>, <c>WmmaM16N16K16</c>, <c>WmmaRowMajor</c>, etc.) in <c>Kassyi.GSharp.Core</c>.
+    /// </summary>
+    public static bool IsWmmaMarkerType(
+        [NotNullWhen(true)] this ITypeSymbol? type) =>
+        type is INamedTypeSymbol
+        {
+            Name: TypeConstants.WmmaTypes.ShapeInterface
+                or TypeConstants.WmmaTypes.M16N16K16
+                or TypeConstants.WmmaTypes.M32N8K16
+                or TypeConstants.WmmaTypes.M8N32K16
+                or TypeConstants.WmmaTypes.M8N8K4
+                or TypeConstants.WmmaTypes.LayoutInterface
+                or TypeConstants.WmmaTypes.RowMajor
+                or TypeConstants.WmmaTypes.ColumnMajor
+        } && type.ContainingNamespace.IsCoreNamespace();
+
+    /// <summary>
     /// Attempts to get the first declaring syntax node of the specified type for this symbol.
     /// </summary>
     public static bool TryGetDeclaringSyntax<TSyntax>(

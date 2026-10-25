@@ -203,6 +203,7 @@ public class NativeApiYamlReaderTests
     [InlineData("cublas_api.yml")]
     [InlineData("curand_api.yml")]
     [InlineData("device_heap_intrinsics.yml")]
+    [InlineData("wmma_intrinsics.yml")]
     public void Test_TryRead_BuiltInDefinitions_ParseWithoutErrors(string fileName)
     {
         var path = RepositoryPaths.Combine("src", "NativeApi", fileName);

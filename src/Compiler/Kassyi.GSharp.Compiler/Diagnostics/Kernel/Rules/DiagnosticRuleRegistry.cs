@@ -20,7 +20,8 @@ internal static class DiagnosticRuleRegistry
         SharedMemorySizeRule.Instance,
         StaticMemberAccessRule.Instance,
         UnsupportedConstructRule.Instance,
-        UserDefinedOperatorRule.Instance
+        UserDefinedOperatorRule.Instance,
+        WmmaRule.Instance
     );
 
     public static readonly ImmutableArray<DiagnosticDescriptor> AllSupportedDiagnostics = CreateAllSupportedDiagnostics();

@@ -79,6 +79,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0069](GSH0069.md) | Error | SharedMemory element type must not be disposable |
 | [GSH0074](GSH0074.md) | Error | CopyAsyncWaitGroup count must be a compile-time constant between 0 and 7 |
 | [GSH0075](GSH0075.md) | Error | Gpu.CopyAsync requires a SharedMemory<T> destination and an lvalue source |
+| [GSH0076](GSH0076.md) | Error | Unsupported warp matrix (WMMA) type or operation |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 

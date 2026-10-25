@@ -651,6 +651,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "UnsupportedWarpMatrixOperation",
+    "id": "GSH0076",
+    "title": "Unsupported warp matrix fragment or operation",
+    "messageFormat": "'{0}' is not a supported warp matrix fragment or operation: {1}.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

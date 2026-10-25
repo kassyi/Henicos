@@ -726,56 +726,6 @@ public static void MBarrierArrive(ref ulong barrier) => Kassyi.GSharp.Core.GpuOn
 /// <param name="phase">The phase parity to wait for.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mbarrier_wait")]
 public static void MBarrierWait(ref ulong barrier, uint phase) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Loads a matrix fragment from memory across the warp synchronously.</summary>
-/// <param name="fragment">The local fragment storage receiving matrix elements.</param>
-/// <param name="ptr">Source memory address.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_load_matrix_sync")]
-public static void WmmaLoadMatrixSync(ref int fragment, IntPtr ptr, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Loads a matrix fragment from memory across the warp synchronously.</summary>
-/// <param name="fragment">The local fragment storage receiving matrix elements.</param>
-/// <param name="ptr">Source memory address.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_load_matrix_sync")]
-public static void WmmaLoadMatrixSync(ref uint fragment, IntPtr ptr, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Loads a matrix fragment from memory across the warp synchronously.</summary>
-/// <param name="fragment">The local fragment storage receiving matrix elements.</param>
-/// <param name="ptr">Source memory address.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_load_matrix_sync")]
-public static void WmmaLoadMatrixSync(ref float fragment, IntPtr ptr, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Stores an accumulator matrix fragment back to memory across the warp synchronously.</summary>
-/// <param name="ptr">Destination memory address.</param>
-/// <param name="fragment">The local fragment storage holding matrix elements to store.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_store_matrix_sync")]
-public static void WmmaStoreMatrixSync(IntPtr ptr, ref int fragment, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Stores an accumulator matrix fragment back to memory across the warp synchronously.</summary>
-/// <param name="ptr">Destination memory address.</param>
-/// <param name="fragment">The local fragment storage holding matrix elements to store.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_store_matrix_sync")]
-public static void WmmaStoreMatrixSync(IntPtr ptr, ref uint fragment, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Stores an accumulator matrix fragment back to memory across the warp synchronously.</summary>
-/// <param name="ptr">Destination memory address.</param>
-/// <param name="fragment">The local fragment storage holding matrix elements to store.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_store_matrix_sync")]
-public static void WmmaStoreMatrixSync(IntPtr ptr, ref float fragment, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Performs a warp-synchronous matrix multiply-accumulate D = A * B + C on Tensor Cores.</summary>
-/// <param name="d">Destination accumulator fragment.</param>
-/// <param name="a">Multiplicand A fragment.</param>
-/// <param name="b">Multiplicand B fragment.</param>
-/// <param name="c">Addend C fragment.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_mma_sync")]
-public static void WmmaMmaSync(ref int d, ref int a, ref int b, ref int c) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Performs a warp-synchronous matrix multiply-accumulate D = A * B + C on Tensor Cores.</summary>
-/// <param name="d">Destination accumulator fragment.</param>
-/// <param name="a">Multiplicand A fragment.</param>
-/// <param name="b">Multiplicand B fragment.</param>
-/// <param name="c">Addend C fragment.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_mma_sync")]
-public static void WmmaMmaSync(ref float d, ref float a, ref float b, ref float c) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
 // ReSharper restore UnusedMember.Global
 #pragma warning restore IDE0051
 }

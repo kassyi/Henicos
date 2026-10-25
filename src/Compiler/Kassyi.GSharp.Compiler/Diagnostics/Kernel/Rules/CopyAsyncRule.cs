@@ -81,7 +81,7 @@ internal sealed class CopyAsyncRule : ISyntaxValidationRule<InvocationExpression
         }
     }
 
-    private static bool IsSharedMemoryLocation(ExpressionSyntax expression, SemanticModel semanticModel, int depth = 0)
+    internal static bool IsSharedMemoryLocation(ExpressionSyntax expression, SemanticModel semanticModel, int depth = 0)
     {
         if (depth > 8)
         {
@@ -119,7 +119,7 @@ internal sealed class CopyAsyncRule : ISyntaxValidationRule<InvocationExpression
         }
     }
 
-    private static bool IsGlobalMemorySourceLocation(ExpressionSyntax expression, SemanticModel semanticModel, int depth = 0)
+    internal static bool IsGlobalMemorySourceLocation(ExpressionSyntax expression, SemanticModel semanticModel, int depth = 0)
     {
         if (depth > 8)
         {

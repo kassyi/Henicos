@@ -249,9 +249,16 @@ public class CoreIntrinsicsTests
         Assert.Throws<GpuOnlyException>(() => Gpu.MBarrierArrive(ref barrier));
         Assert.Throws<GpuOnlyException>(() => Gpu.MBarrierWait(ref barrier, 0));
 
-        int frag = 0;
-        Assert.Throws<GpuOnlyException>(() => Gpu.WmmaLoadMatrixSync(ref frag, IntPtr.Zero, 16));
-        Assert.Throws<GpuOnlyException>(() => Gpu.WmmaStoreMatrixSync(IntPtr.Zero, ref frag, 16));
-        Assert.Throws<GpuOnlyException>(() => Gpu.WmmaMmaSync(ref frag, ref frag, ref frag, ref frag));
+        WmmaMatrixA<WmmaM16N16K16, sbyte, WmmaRowMajor> fragA = default;
+        WmmaMatrixB<WmmaM16N16K16, sbyte, WmmaRowMajor> fragB = default;
+        WmmaAccumulator<WmmaM16N16K16, int> fragC = default;
+        sbyte elemSByte = 0;
+        int elemInt = 0;
+        Assert.Throws<GpuOnlyException>(() => Wmma.Fill(ref fragC, 0));
+        Assert.Throws<GpuOnlyException>(() => Wmma.Load(ref fragA, in elemSByte, 16));
+        Assert.Throws<GpuOnlyException>(() => Wmma.Load(ref fragB, in elemSByte, 16));
+        Assert.Throws<GpuOnlyException>(() => Wmma.Load(ref fragC, in elemInt, 16, WmmaMemoryLayout.RowMajor));
+        Assert.Throws<GpuOnlyException>(() => Wmma.Store(ref elemInt, in fragC, 16, WmmaMemoryLayout.RowMajor));
+        Assert.Throws<GpuOnlyException>(() => Wmma.MultiplyAccumulate(ref fragC, in fragA, in fragB, in fragC));
     }
 }

@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Generated
 internal static class GSharpSharedCudaPrelude
 {
 public const string Source = @"#include <cooperative_groups.h>
+#include <mma.h>
 namespace cg = cooperative_groups;
 
 // --- Standard Types ---
@@ -183,6 +184,71 @@ __device__ __forceinline__ void __gsharp_cp_async_wait_all() {
 asm volatile(""cp.async.wait_all;\n"" ::: ""memory"");
 #endif
 }
+
+// --- Tensor Core (WMMA) ---
+template <int M, int N, int K> struct __gsharp_wmma_shape {};
+#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 700
+using __gsharp_wmma_matrix_a = nvcuda::wmma::matrix_a;
+using __gsharp_wmma_matrix_b = nvcuda::wmma::matrix_b;
+using __gsharp_wmma_accumulator = nvcuda::wmma::accumulator;
+using __gsharp_wmma_row_major = nvcuda::wmma::row_major;
+using __gsharp_wmma_col_major = nvcuda::wmma::col_major;
+template <class Use, int M, int N, int K, class T, class Layout = void>
+using __gsharp_wmma_fragment = nvcuda::wmma::fragment<Use, M, N, K, T, Layout>;
+
+template <class Shape, class T, class Layout = void, class Frag>
+__device__ __forceinline__ void __gsharp_wmma_fill(Frag* frag, T value) {
+nvcuda::wmma::fill_fragment(*frag, value);
+}
+
+template <class Shape, class T, class Layout, class Frag>
+__device__ __forceinline__ void __gsharp_wmma_load(Frag* frag, const T* src, unsigned int ldm) {
+nvcuda::wmma::load_matrix_sync(*frag, src, ldm);
+}
+
+template <class Shape, class T, class Frag>
+__device__ __forceinline__ void __gsharp_wmma_load(Frag* frag, const T* src, unsigned int ldm, int layout) {
+nvcuda::wmma::load_matrix_sync(*frag, src, ldm, layout == 0 ? nvcuda::wmma::mem_row_major : nvcuda::wmma::mem_col_major);
+}
+
+template <class Shape, class T, class Frag>
+__device__ __forceinline__ void __gsharp_wmma_store(T* dst, const Frag* frag, unsigned int ldm, int layout) {
+nvcuda::wmma::store_matrix_sync(dst, *frag, ldm, layout == 0 ? nvcuda::wmma::mem_row_major : nvcuda::wmma::mem_col_major);
+}
+
+template <class Shape, class TIn, class LayoutA, class LayoutB, class TAcc, class FragD, class FragA, class FragB, class FragC>
+__device__ __forceinline__ void __gsharp_wmma_mma(FragD* d, const FragA* a, const FragB* b, const FragC* c) {
+nvcuda::wmma::mma_sync(*d, *a, *b, *c);
+}
+#else
+struct __gsharp_wmma_matrix_a {};
+struct __gsharp_wmma_matrix_b {};
+struct __gsharp_wmma_accumulator {};
+struct __gsharp_wmma_row_major {};
+struct __gsharp_wmma_col_major {};
+template <class Use, int M, int N, int K, class T, class Layout = void>
+struct __gsharp_wmma_fragment {};
+template <class Shape, class T, class Layout = void, class Frag>
+__device__ __forceinline__ void __gsharp_wmma_fill(Frag*, T) {
+static_assert(sizeof(Frag) == 0, ""WMMA requires compute capability 7.0 or higher."");
+}
+template <class Shape, class T, class Layout, class Frag>
+__device__ __forceinline__ void __gsharp_wmma_load(Frag*, const T*, unsigned int) {
+static_assert(sizeof(Frag) == 0, ""WMMA requires compute capability 7.0 or higher."");
+}
+template <class Shape, class T, class Frag>
+__device__ __forceinline__ void __gsharp_wmma_load(Frag*, const T*, unsigned int, int) {
+static_assert(sizeof(Frag) == 0, ""WMMA requires compute capability 7.0 or higher."");
+}
+template <class Shape, class T, class Frag>
+__device__ __forceinline__ void __gsharp_wmma_store(T*, const Frag*, unsigned int, int) {
+static_assert(sizeof(Frag) == 0, ""WMMA requires compute capability 7.0 or higher."");
+}
+template <class Shape, class TIn, class LayoutA, class LayoutB, class TAcc, class FragD, class FragA, class FragB, class FragC>
+__device__ __forceinline__ void __gsharp_wmma_mma(FragD*, const FragA*, const FragB*, const FragC*) {
+static_assert(sizeof(FragD) == 0, ""WMMA requires compute capability 7.0 or higher."");
+}
+#endif
 
 __device__ __forceinline__ unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {
 unsigned int res;
