@@ -191,5 +191,6 @@ When picking up tasks from the roadmap, you MUST follow this fundamental workflo
 1. **Phase 1: Golden Master / Snapshot Test Generation First**
     - Before writing ANY implementation code, you must create the necessary test cases.
     - You MUST design the tests covering happy paths, boundaries, and sad paths (exceptions) based on the `qa-testing-guidelines` **before** writing the actual logic.
+    - For numeric and algorithm tests (GpuMath, CPU vs GPU comparisons), also follow [property-test-design](../skills/property-test-design/SKILL.md): define the properties first, and show that each check is reached and that a one-line mutant makes it fail.
 2. **Phase 2: Isolated AST Lane Branching**
     - Work in isolated branches separated by the AST responsibility area (e.g., Expression, Statement) to prevent parallel implementation conflicts.

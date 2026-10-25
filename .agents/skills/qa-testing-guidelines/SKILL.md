@@ -22,6 +22,8 @@ description: ガイドライン: C#およびGPU向けのテストコードを作
 - **制御構文**: `if` や `switch` の境界となる値（例: `> 10` なら `9`, `10`, `11`）、および `default` ルートへのフォールバック。
 - **配列・Span**: 空の配列（長さ0）、1要素の配列、メモリ境界ギリギリのサイズ。
 
+数値・アルゴリズムのテスト（GpuMath の BigInt / BigFloat / NTT、CPU と GPU の突き合わせなど）では、性質の決め方、各検査に届く入力、1 行壊せば落ちることの確認を [property-test-design](../property-test-design/SKILL.md) に従って揃えてください。
+
 ## 2. GPU固有の並行性・ストレステスト (Concurrency & Stress Testing)
 
 スレッドやワープ（Warp）、共有メモリ、アトミック演算が絡む処理の場合、意図的に高負荷・高競合状態を作り出してテストしてください。

@@ -45,6 +45,7 @@ You **MUST** load and read the corresponding skill using `view_file` when perfor
 
 - [Transpiler & Source Generator Guidelines](.agents/skills/gsharp-transpiler-guidelines/SKILL.md): Roslyn syntax rewriters, AST visitors, and generator pipelines.
 - [QA & Test Coverage Guidelines](.agents/skills/qa-testing-guidelines/SKILL.md): Test scenario matrix (Happy/Boundary/Sad) and snapshot workflows.
+- [Property Test Design](.agents/skills/property-test-design/SKILL.md): Numeric / algorithm tests (GpuMath, CPU vs GPU): define properties first, prove each check is reached and can fail (one-line mutant).
 
 ### Symbol Mapping & Demangling Tools (`*.gsym.json`)
 G# generates sidecar symbol map files (`*.gsym.json`) next to AOT artifacts (`.g.cu` / `.g.cpp`) in `obj/`. Both the AOT source (line 1 header `// gsharp-symbols: <hash>`) and symbol file record a matching FNV-1a 64 source hash. Run `just gsharp-demangle <log> [symbols_path]` or `dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle <log> [symbols_path]` to translate mangled C++ identifiers back to C# symbols.
