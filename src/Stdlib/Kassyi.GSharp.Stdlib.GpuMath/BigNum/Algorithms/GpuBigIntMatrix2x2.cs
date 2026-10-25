@@ -159,7 +159,7 @@ public class GpuBigIntMatrix2x2 : IDisposable
     /// <param name="u">The right-hand operand matrix $U$. Cannot be <see langword="null"/>.</param>
     /// <returns>
     /// A new <see cref="GpuBigIntMatrix2x2"/> instance containing the product of <paramref name="v"/> and <paramref name="u"/>.
-    /// The word count of each element in the resulting matrix equals the sum of the operand limb lengths (<c>v.M00.NumWords + u.M00.NumWords</c>).
+    /// The word count of each element in the resulting matrix equals the sum of the operand limb lengths plus one word for addition carry (<c>v.M00.NumWords + u.M00.NumWords + 1</c>).
     /// </returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="v"/> or <paramref name="u"/> is <see langword="null"/>.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when <paramref name="v"/> or <paramref name="u"/> has been disposed.</exception>
@@ -192,18 +192,21 @@ public class GpuBigIntMatrix2x2 : IDisposable
         }
 
         var workspace = v.Workspace;
-        var outWords = v.M00.NumWords + u.M00.NumWords;
+        var prodWords = v.M00.NumWords + u.M00.NumWords;
+        var outWords = prodWords + 1;
         var result = new GpuBigIntMatrix2x2(workspace, outWords, v.IsOddStep ^ u.IsOddStep);
 
         try
         {
+            using var prod1 = new GpuBigUInt(workspace, prodWords);
+            using var prod2 = new GpuBigUInt(workspace, prodWords);
             using var temp1 = new GpuBigUInt(workspace, outWords);
             using var temp2 = new GpuBigUInt(workspace, outWords);
 
-            ComputeMatrixElement(v.M00, u.M00, v.M01, u.M10, temp1, temp2, result.M00);
-            ComputeMatrixElement(v.M00, u.M01, v.M01, u.M11, temp1, temp2, result.M01);
-            ComputeMatrixElement(v.M10, u.M00, v.M11, u.M10, temp1, temp2, result.M10);
-            ComputeMatrixElement(v.M10, u.M01, v.M11, u.M11, temp1, temp2, result.M11);
+            ComputeMatrixElement(v.M00, u.M00, v.M01, u.M10, prod1, prod2, temp1, temp2, result.M00);
+            ComputeMatrixElement(v.M00, u.M01, v.M01, u.M11, prod1, prod2, temp1, temp2, result.M01);
+            ComputeMatrixElement(v.M10, u.M00, v.M11, u.M10, prod1, prod2, temp1, temp2, result.M10);
+            ComputeMatrixElement(v.M10, u.M01, v.M11, u.M11, prod1, prod2, temp1, temp2, result.M11);
 
             return result;
         }
@@ -219,12 +222,18 @@ public class GpuBigIntMatrix2x2 : IDisposable
         GpuBigUInt right1,
         GpuBigUInt left2,
         GpuBigUInt right2,
+        GpuBigUInt prod1,
+        GpuBigUInt prod2,
         GpuBigUInt temp1,
         GpuBigUInt temp2,
         GpuBigUInt destination)
     {
-        GpuBigIntMath.Mul(left1, right1, temp1);
-        GpuBigIntMath.Mul(left2, right2, temp2);
+        GpuBigIntMath.Mul(left1, right1, prod1);
+        GpuBigIntMath.Mul(left2, right2, prod2);
+        temp1.ClearWord(temp1.NumWords - 1);
+        temp1.CopyFrom(prod1, numWords: prod1.NumWords);
+        temp2.ClearWord(temp2.NumWords - 1);
+        temp2.CopyFrom(prod2, numWords: prod2.NumWords);
         GpuBigIntMath.Add(temp1, temp2, destination);
     }
 
