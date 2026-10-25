@@ -258,9 +258,10 @@ internal static class GpuOperatorMacroTranspiler
 
         AppendSeparator(parameterIndex, ref context);
         var parameter = targetMethod.Parameters[parameterIndex++];
-        if (IsPassedByReference(parameter) && RefSyntaxHelper.NeedsAddressOf(operand, context.Query.SemanticModel))
+        if (IsPassedByReference(parameter))
         {
-            context.Emitter.Writer.Append('&');
+            RefSyntaxHelper.TranspileAsByRefArgument(ref context, operand);
+            return;
         }
 
         context.Visitor.Visit(operand);
@@ -286,8 +287,7 @@ internal static class GpuOperatorMacroTranspiler
             return;
         }
 
-        if (IsPassedByReference(parameter) &&
-            variable is not IParameterSymbol { RefKind: RefKind.In or RefKind.RefReadOnlyParameter })
+        if (IsPassedByReference(parameter))
         {
             writer.Append('&');
         }
@@ -298,7 +298,9 @@ internal static class GpuOperatorMacroTranspiler
             return;
         }
 
-        if (variable is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true })
+        if (variable is IParameterSymbol { RefKind: RefKind.Ref or RefKind.Out } or ILocalSymbol { IsRef: true } ||
+            (variable is IParameterSymbol { RefKind: RefKind.In or RefKind.RefReadOnlyParameter, ContainingSymbol: IMethodSymbol paramMethod } &&
+             !paramMethod.HasAttribute(KnownAttributes.GpuKernel)))
         {
             using (writer.Parentheses())
             {
@@ -339,7 +341,7 @@ internal static class GpuOperatorMacroTranspiler
     }
 
     private static bool IsPassedByReference(IParameterSymbol parameter) =>
-        parameter.RefKind is RefKind.Ref or RefKind.Out or RefKind.In;
+        parameter.RefKind is RefKind.Ref or RefKind.Out or RefKind.In or RefKind.RefReadOnlyParameter;
 
     private static void AppendSeparator(int parameterIndex, ref TranspileContext context)
     {

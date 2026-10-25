@@ -35,4 +35,43 @@ public class SharedMemoryTests : TranspilerTestBase
             Assert.Equal(length - 1 - i, output[i]);
         }
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SharedMemory_RefIndexer_AtomicAddIncrementsAcrossThreads()
+    {
+        EnsureCapability(DialectCapabilities.SharedMemory);
+        var output = new int[1];
+
+        SharedMemoryRefIndexerKernels.LaunchAtomicAddSharedMemoryKernel(output, blockDimX: 32);
+
+        Assert.Equal(32, output[0]);
+    }
+
+#if GSHARP_CPU
+    [Fact]
+    [Scenario(TestScenario.SadPath)]
+    public void Test_SharedMemory_MBarrier_CpuDialectThrowsNotSupportedException()
+    {
+        var output = new int[32];
+
+        Assert.Throws<NotSupportedException>(() =>
+            SharedMemoryRefIndexerKernels.LaunchMBarrierSharedMemoryKernel(output, blockDimX: 32));
+    }
+#else
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_SharedMemory_MBarrier_SynchronizesSharedMemoryWrites()
+    {
+        EnsureCapability(DialectCapabilities.SharedMemory);
+        var output = new int[32];
+
+        SharedMemoryRefIndexerKernels.LaunchMBarrierSharedMemoryKernel(output, blockDimX: 32);
+
+        for (int tid = 0; tid < 32; tid++)
+        {
+            Assert.Equal(3 * ((tid + 1) % 32), output[tid]);
+        }
+    }
+#endif
 }

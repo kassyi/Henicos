@@ -131,3 +131,15 @@ Prelude:
     LeadingZeroCountFor64: { Value: __gsharp_lzc_64, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor32: { Value: __gsharp_tzc_32, Prelude: MathAndBitOps.hpp }
     TrailingZeroCountFor64: { Value: __gsharp_tzc_64, Prelude: MathAndBitOps.hpp }
+    TempAddress: { Value: __gsharp_temp_address, Prelude: Types.hpp }
+
+Wmma:
+  Summary: Tensor Core warp matrix fragment types and tags (nvcuda::wmma).
+  Names:
+    Fragment: { Value: __gsharp_wmma_fragment, Prelude: WarpAndHints.hpp }
+    Shape: { Value: __gsharp_wmma_shape, Prelude: WarpAndHints.hpp }
+    MatrixA: { Value: __gsharp_wmma_matrix_a, Prelude: WarpAndHints.hpp }
+    MatrixB: { Value: __gsharp_wmma_matrix_b, Prelude: WarpAndHints.hpp }
+    Accumulator: { Value: __gsharp_wmma_accumulator, Prelude: WarpAndHints.hpp }
+    RowMajor: { Value: __gsharp_wmma_row_major, Prelude: WarpAndHints.hpp }
+    ColMajor: { Value: __gsharp_wmma_col_major, Prelude: WarpAndHints.hpp }

@@ -35,4 +35,30 @@ public class RefParameterAliasTests : TranspilerTestBase
         int[] expected = [10, 200, 11, 201, 12, 202, 13, 203];
         Assert.Equal(expected, output);
     }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_RefSharedBarrierNeighborWrite_RereadsUpdatedValueAfterBarrier()
+    {
+        const int count = RefParameterAliasKernels.N;
+        var output = new int[count * 2];
+
+        RefParameterAliasKernels.LaunchRefSharedBarrierNeighborWriteKernel(output, blockDimX: count);
+
+        int[] expected = [10, 100, 11, 101, 12, 102, 13, 103];
+        Assert.Equal(expected, output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_RefReadOnlySharedBarrierNeighborWrite_RereadsUpdatedValueAfterBarrier()
+    {
+        const int count = RefParameterAliasKernels.N;
+        var output = new int[count * 2];
+
+        RefParameterAliasKernels.LaunchRefReadOnlySharedBarrierNeighborWriteKernel(output, blockDimX: count);
+
+        int[] expected = [10, 100, 11, 101, 12, 102, 13, 103];
+        Assert.Equal(expected, output);
+    }
 }

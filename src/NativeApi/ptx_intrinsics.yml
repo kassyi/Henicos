@@ -1071,18 +1071,39 @@ methods:
 
   - name: CopyAsync
     nativeName: __gsharp_cp_async
-    summary: Asynchronously copies bytes from global memory directly into shared memory bypassing registers (PTX cp.async).
+    summary: Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.
+    typeTemplate:
+      placeholder: T
+      types: [int, uint, float, long, ulong, double, System.Numerics.Vector2, System.Numerics.Vector4]
     returnType: void
     parameters:
       - name: sharedDst
-        type: ref byte
-        description: The destination reference in shared memory.
+        type: ref T
+        description: The destination element in shared memory.
       - name: globalSrc
-        type: in byte
-        description: The source reference in global memory.
-      - name: bytes
-        type: uint
-        description: Number of bytes to asynchronously transfer (4, 8, or 16).
+        type: ref readonly T
+        description: The source element in global memory (must refer to a variable or element in global memory, not a temporary value).
+
+  - name: CopyAsyncCommitGroup
+    nativeName: __gsharp_cp_async_commit_group
+    summary: Batches all prior uncommitted CopyAsync operations issued by the calling thread into a new commit group (PTX cp.async.commit_group).
+    returnType: void
+    parameters: []
+
+  - name: CopyAsyncWaitGroup
+    nativeName: __gsharp_cp_async_wait_group
+    summary: Waits until at most pendingGroups committed CopyAsync groups of the calling thread remain pending (PTX cp.async.wait_group; 0 waits for all committed groups of the calling thread). Call SyncThreads after waiting if other threads read the copied shared memory.
+    returnType: void
+    parameters:
+      - name: pendingGroups
+        type: int
+        description: Maximum number of committed groups of the calling thread allowed to remain pending (must be a compile-time constant in 0..7).
+
+  - name: CopyAsyncWaitAll
+    nativeName: __gsharp_cp_async_wait_all
+    summary: Waits until all prior CopyAsync operations issued by the calling thread have completed (PTX cp.async.wait_all). Call SyncThreads after waiting if other threads read the copied shared memory.
+    returnType: void
+    parameters: []
 
   - name: MBarrierInit
     nativeName: __gsharp_mbarrier_init
@@ -1116,63 +1137,3 @@ methods:
       - name: phase
         type: uint
         description: The phase parity to wait for.
-
-  # ===========================================================================
-  # 11. Tensor Core (WMMA - Warp Matrix Multiply-Accumulate)
-  # ===========================================================================
-  - name: WmmaLoadMatrixSync
-    nativeName: __gsharp_wmma_load_matrix_sync
-    summary: Loads a matrix fragment from memory across the warp synchronously.
-    typeTemplate:
-      placeholder: T
-      types: [int, uint, float]
-    returnType: void
-    parameters:
-      - name: fragment
-        type: ref T
-        description: The local fragment storage receiving matrix elements.
-      - name: ptr
-        type: IntPtr
-        description: Source memory address.
-      - name: ldm
-        type: uint
-        description: Leading dimension stride in elements.
-
-  - name: WmmaStoreMatrixSync
-    nativeName: __gsharp_wmma_store_matrix_sync
-    summary: Stores an accumulator matrix fragment back to memory across the warp synchronously.
-    typeTemplate:
-      placeholder: T
-      types: [int, uint, float]
-    returnType: void
-    parameters:
-      - name: ptr
-        type: IntPtr
-        description: Destination memory address.
-      - name: fragment
-        type: ref T
-        description: The local fragment storage holding matrix elements to store.
-      - name: ldm
-        type: uint
-        description: Leading dimension stride in elements.
-
-  - name: WmmaMmaSync
-    nativeName: __gsharp_wmma_mma_sync
-    summary: Performs a warp-synchronous matrix multiply-accumulate D = A * B + C on Tensor Cores.
-    typeTemplate:
-      placeholder: T
-      types: [int, float]
-    returnType: void
-    parameters:
-      - name: d
-        type: ref T
-        description: Destination accumulator fragment.
-      - name: a
-        type: ref T
-        description: Multiplicand A fragment.
-      - name: b
-        type: ref T
-        description: Multiplicand B fragment.
-      - name: c
-        type: ref T
-        description: Addend C fragment.

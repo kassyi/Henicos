@@ -21,6 +21,8 @@ struct __gsharp_using_scope {
     inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 };
 
+template <class T> inline const T* __gsharp_temp_address(const T& v) { return &v; }
+
 template <typename T>
 struct GSharpArray {
     T* data;

@@ -97,6 +97,7 @@ internal static class ManagedStateMachineEmitter
             {
                 RefKind.Ref or RefKind.Out => "ref ",
                 RefKind.In => "in ",
+                RefKind.RefReadOnlyParameter => "ref readonly ",
                 _ => ""
             });
             writer.AppendCsharpTypeName(p.Type);
@@ -205,6 +206,7 @@ internal static class ManagedStateMachineEmitter
                 RefKind.Ref => "ref ",
                 RefKind.Out => "out ",
                 RefKind.In => "in ",
+                RefKind.RefReadOnlyParameter => "ref readonly ",
                 _ => ""
             });
             writer.AppendCsharpTypeName(p.Type);

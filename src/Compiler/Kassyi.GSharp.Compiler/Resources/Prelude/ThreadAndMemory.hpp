@@ -54,3 +54,23 @@ inline void* __gsharp_allocate_smem(unsigned long long siteKey, size_t size, siz
     __gsharp_smem_current_base = offset + size;
     return (void*)(__gsharp_dynamic_smem + offset);
 }
+
+inline void __gsharp_unsupported(const char* message);
+
+inline void __gsharp_mbarrier_init(unsigned long long*, unsigned int) {
+    __gsharp_unsupported("mbarrier is not supported by the StandardCpp dialect.");
+}
+inline void __gsharp_mbarrier_arrive(unsigned long long*) {
+    __gsharp_unsupported("mbarrier is not supported by the StandardCpp dialect.");
+}
+inline void __gsharp_mbarrier_wait(unsigned long long*, unsigned int) {
+    __gsharp_unsupported("mbarrier is not supported by the StandardCpp dialect.");
+}
+
+template <typename T>
+inline void __gsharp_cp_async(T* dst, const T* src) {
+    *dst = *src;
+}
+inline void __gsharp_cp_async_commit_group() {}
+inline void __gsharp_cp_async_wait_group(int) {}
+inline void __gsharp_cp_async_wait_all() {}

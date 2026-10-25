@@ -1,0 +1,211 @@
+namespace: Kassyi.GSharp.Core
+className: Wmma
+
+classes:
+  - name: Wmma
+    xmlDoc: |
+      <summary>
+      Provides warp-synchronous Tensor Core matrix multiply-accumulate (WMMA) intrinsics (<c>nvcuda::wmma</c>).
+      </summary>
+      <remarks>
+      All threads in the warp must execute each <see cref="Wmma"/> operation uniformly with identical memory addresses,
+      leading dimensions, and layout arguments. Calling any method in divergent control flow results in undefined hardware behavior.
+      </remarks>
+
+methods:
+  - name: Fill
+    nativeName: __gsharp_wmma_fill
+    summary: Fills all elements of a warp matrix A fragment with a scalar value across the warp.
+    typeParameters:
+      - name: TShape
+        constraints: [struct, IWmmaShape]
+        description: The warp matrix tile shape (m x n x k).
+      - name: T
+        constraints: unmanaged
+        description: The fragment element type.
+      - name: TLayout
+        constraints: [struct, IWmmaLayout]
+        description: The row-major or column-major storage layout of matrix A.
+    returnType: void
+    parameters:
+      - name: fragment
+        type: ref WmmaMatrixA<TShape, T, TLayout>
+        description: The matrix A fragment to fill.
+      - name: value
+        type: T
+        description: The scalar value to broadcast into every element of the fragment.
+
+  - name: Fill
+    nativeName: __gsharp_wmma_fill
+    summary: Fills all elements of a warp matrix B fragment with a scalar value across the warp.
+    typeParameters:
+      - name: TShape
+        constraints: [struct, IWmmaShape]
+        description: The warp matrix tile shape (m x n x k).
+      - name: T
+        constraints: unmanaged
+        description: The fragment element type.
+      - name: TLayout
+        constraints: [struct, IWmmaLayout]
+        description: The row-major or column-major storage layout of matrix B.
+    returnType: void
+    parameters:
+      - name: fragment
+        type: ref WmmaMatrixB<TShape, T, TLayout>
+        description: The matrix B fragment to fill.
+      - name: value
+        type: T
+        description: The scalar value to broadcast into every element of the fragment.
+
+  - name: Fill
+    nativeName: __gsharp_wmma_fill
+    summary: Fills all elements of a warp accumulator fragment with a scalar value across the warp.
+    typeParameters:
+      - name: TShape
+        constraints: [struct, IWmmaShape]
+        description: The warp matrix tile shape (m x n x k).
+      - name: T
+        constraints: unmanaged
+        description: The accumulator element type.
+    returnType: void
+    parameters:
+      - name: fragment
+        type: ref WmmaAccumulator<TShape, T>
+        description: The accumulator fragment to fill.
+      - name: value
+        type: T
+        description: The scalar value to broadcast into every element of the fragment.
+
+  - name: Load
+    nativeName: __gsharp_wmma_load
+    summary: Synchronously loads a matrix A tile from global or shared memory into a warp fragment across all threads of the warp.
+    typeParameters:
+      - name: TShape
+        constraints: [struct, IWmmaShape]
+        description: The warp matrix tile shape (m x n x k).
+      - name: T
+        constraints: unmanaged
+        description: The matrix element type.
+      - name: TLayout
+        constraints: [struct, IWmmaLayout]
+        description: The row-major or column-major storage layout of matrix A in memory.
+    returnType: void
+    parameters:
+      - name: fragment
+        type: ref WmmaMatrixA<TShape, T, TLayout>
+        description: The destination matrix A fragment.
+      - name: source
+        type: ref readonly T
+        description: The first element of the matrix tile in 256-bit aligned global or shared memory.
+      - name: leadingDimension
+        type: uint
+        description: The stride in elements between consecutive rows (for row-major) or columns (for column-major); must be a multiple of 16 bytes.
+
+  - name: Load
+    nativeName: __gsharp_wmma_load
+    summary: Synchronously loads a matrix B tile from global or shared memory into a warp fragment across all threads of the warp.
+    typeParameters:
+      - name: TShape
+        constraints: [struct, IWmmaShape]
+        description: The warp matrix tile shape (m x n x k).
+      - name: T
+        constraints: unmanaged
+        description: The matrix element type.
+      - name: TLayout
+        constraints: [struct, IWmmaLayout]
+        description: The row-major or column-major storage layout of matrix B in memory.
+    returnType: void
+    parameters:
+      - name: fragment
+        type: ref WmmaMatrixB<TShape, T, TLayout>
+        description: The destination matrix B fragment.
+      - name: source
+        type: ref readonly T
+        description: The first element of the matrix tile in 256-bit aligned global or shared memory.
+      - name: leadingDimension
+        type: uint
+        description: The stride in elements between consecutive rows (for row-major) or columns (for column-major); must be a multiple of 16 bytes.
+
+  - name: Load
+    nativeName: __gsharp_wmma_load
+    summary: Synchronously loads an accumulator matrix tile from global or shared memory into a warp fragment across all threads of the warp.
+    typeParameters:
+      - name: TShape
+        constraints: [struct, IWmmaShape]
+        description: The warp matrix tile shape (m x n x k).
+      - name: T
+        constraints: unmanaged
+        description: The accumulator element type.
+    returnType: void
+    parameters:
+      - name: fragment
+        type: ref WmmaAccumulator<TShape, T>
+        description: The destination accumulator fragment.
+      - name: source
+        type: ref readonly T
+        description: The first element of the matrix tile in 256-bit aligned global or shared memory.
+      - name: leadingDimension
+        type: uint
+        description: The stride in elements between consecutive rows or columns; must be a multiple of 16 bytes.
+      - name: layout
+        type: WmmaMemoryLayout
+        description: Whether the source matrix is stored in row-major or column-major order.
+
+  - name: Store
+    nativeName: __gsharp_wmma_store
+    summary: Synchronously stores a warp accumulator fragment to global or shared memory across all threads of the warp.
+    typeParameters:
+      - name: TShape
+        constraints: [struct, IWmmaShape]
+        description: The warp matrix tile shape (m x n x k).
+      - name: T
+        constraints: unmanaged
+        description: The accumulator element type.
+    returnType: void
+    parameters:
+      - name: destination
+        type: ref T
+        description: The first element of the destination matrix tile in 256-bit aligned global or shared memory.
+      - name: fragment
+        type: ref readonly WmmaAccumulator<TShape, T>
+        description: The source accumulator fragment to store.
+      - name: leadingDimension
+        type: uint
+        description: The stride in elements between consecutive rows or columns; must be a multiple of 16 bytes.
+      - name: layout
+        type: WmmaMemoryLayout
+        description: Whether the destination matrix is stored in row-major or column-major order.
+
+  - name: MultiplyAccumulate
+    nativeName: __gsharp_wmma_mma
+    summary: Performs a warp-synchronous Tensor Core matrix multiply-accumulate operation (D = A * B + C) across all threads of the warp.
+    typeParameters:
+      - name: TShape
+        constraints: [struct, IWmmaShape]
+        description: The warp matrix tile shape (m x n x k).
+      - name: TIn
+        constraints: unmanaged
+        description: The input element type of matrices A and B.
+      - name: TLayoutA
+        constraints: [struct, IWmmaLayout]
+        description: The storage layout of matrix A.
+      - name: TLayoutB
+        constraints: [struct, IWmmaLayout]
+        description: The storage layout of matrix B.
+      - name: TAcc
+        constraints: unmanaged
+        description: The accumulator element type of matrices C and D.
+    returnType: void
+    parameters:
+      - name: d
+        type: ref WmmaAccumulator<TShape, TAcc>
+        description: The destination accumulator fragment receiving A * B + C.
+      - name: a
+        type: ref readonly WmmaMatrixA<TShape, TIn, TLayoutA>
+        description: The multiplicand matrix A fragment.
+      - name: b
+        type: ref readonly WmmaMatrixB<TShape, TIn, TLayoutB>
+        description: The multiplicand matrix B fragment.
+      - name: c
+        type: ref readonly WmmaAccumulator<TShape, TAcc>
+        description: The addend accumulator fragment C.

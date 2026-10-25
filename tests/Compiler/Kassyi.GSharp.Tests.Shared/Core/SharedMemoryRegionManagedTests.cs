@@ -182,6 +182,25 @@ public class SharedMemoryRegionManagedTests : TranspilerTestBase
         });
     }
 
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_RefIndexer_WriteThroughRef_IsVisibleOnSubsequentReads()
+    {
+        WithBlock(() =>
+        {
+            var smem = new SharedMemory<int>(4, 700UL);
+            ref int slot = ref smem[2];
+            slot = 77;
+
+            Assert.Equal(77, smem[2]);
+
+            WriteByRef(ref smem[2], 123);
+            Assert.Equal(123, smem[2]);
+        });
+    }
+
+    private static void WriteByRef(ref int target, int value) => target = value;
+
     private static void WithBlock(Action body) => RunOnFreshThread(() =>
     {
         try

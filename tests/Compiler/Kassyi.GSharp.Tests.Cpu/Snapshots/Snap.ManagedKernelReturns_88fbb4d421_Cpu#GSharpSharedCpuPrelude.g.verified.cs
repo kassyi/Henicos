@@ -81,6 +81,8 @@ T& resource;
 inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 };
 
+template <class T> inline const T* __gsharp_temp_address(const T& v) { return &v; }
+
 template <typename T>
 struct GSharpArray {
 T* data;
@@ -292,6 +294,26 @@ __gsharp_smem_site_count++;
 __gsharp_smem_current_base = offset + size;
 return (void*)(__gsharp_dynamic_smem + offset);
 }
+
+inline void __gsharp_unsupported(const char* message);
+
+inline void __gsharp_mbarrier_init(unsigned long long*, unsigned int) {
+__gsharp_unsupported(""mbarrier is not supported by the StandardCpp dialect."");
+}
+inline void __gsharp_mbarrier_arrive(unsigned long long*) {
+__gsharp_unsupported(""mbarrier is not supported by the StandardCpp dialect."");
+}
+inline void __gsharp_mbarrier_wait(unsigned long long*, unsigned int) {
+__gsharp_unsupported(""mbarrier is not supported by the StandardCpp dialect."");
+}
+
+template <typename T>
+inline void __gsharp_cp_async(T* dst, const T* src) {
+*dst = *src;
+}
+inline void __gsharp_cp_async_commit_group() {}
+inline void __gsharp_cp_async_wait_group(int) {}
+inline void __gsharp_cp_async_wait_all() {}
 
 // --- Atomics ---
 template<typename T>
@@ -516,6 +538,37 @@ inline void __syncwarp(unsigned int mask = 0xFFFFFFFFU) {}
 // --- Compiler Hints ---
 namespace Hint {
 inline void Unroll() {}
+}
+
+// --- Tensor Core (WMMA) ---
+struct __gsharp_wmma_matrix_a {};
+struct __gsharp_wmma_matrix_b {};
+struct __gsharp_wmma_accumulator {};
+struct __gsharp_wmma_row_major {};
+struct __gsharp_wmma_col_major {};
+template <int M, int N, int K> struct __gsharp_wmma_shape {};
+template <class Use, int M, int N, int K, class T, class Layout = void>
+struct __gsharp_wmma_fragment {};
+
+template <class Shape, class T, class Layout = void, class Frag>
+inline void __gsharp_wmma_fill(Frag*, T) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class T, class Layout, class Frag>
+inline void __gsharp_wmma_load(Frag*, const T*, unsigned int) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class T, class Frag>
+inline void __gsharp_wmma_load(Frag*, const T*, unsigned int, int) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class T, class Frag>
+inline void __gsharp_wmma_store(T*, const Frag*, unsigned int, int) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
+}
+template <class Shape, class TIn, class LayoutA, class LayoutB, class TAcc, class FragD, class FragA, class FragB, class FragC>
+inline void __gsharp_wmma_mma(FragD*, const FragA*, const FragB*, const FragC*) {
+__gsharp_unsupported(""WMMA is not supported by the StandardCpp dialect."");
 }
 
 // --- Runtime Error Channel (CPU Dialect) ---

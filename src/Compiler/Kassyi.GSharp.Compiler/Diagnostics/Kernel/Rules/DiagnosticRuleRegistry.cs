@@ -3,6 +3,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 internal static class DiagnosticRuleRegistry
 {
     public static readonly ImmutableArray<IValidationRule> Rules = ImmutableArray.Create<IValidationRule>(
+        CopyAsyncRule.Instance,
         CppReservedIdentifierRule.Instance,
         ForEachNotSupportedRule.Instance,
         GpuFinalizerRule.Instance,
@@ -20,7 +21,8 @@ internal static class DiagnosticRuleRegistry
         SharedMemorySizeRule.Instance,
         StaticMemberAccessRule.Instance,
         UnsupportedConstructRule.Instance,
-        UserDefinedOperatorRule.Instance
+        UserDefinedOperatorRule.Instance,
+        WmmaRule.Instance
     );
 
     public static readonly ImmutableArray<DiagnosticDescriptor> AllSupportedDiagnostics = CreateAllSupportedDiagnostics();

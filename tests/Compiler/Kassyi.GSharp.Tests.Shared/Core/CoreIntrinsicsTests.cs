@@ -1,3 +1,4 @@
+using System.Numerics;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
@@ -162,6 +163,11 @@ public class CoreIntrinsicsTests
             var sm = new SharedMemory<int>(128);
             sm[0] = 42;
         });
+        Assert.Throws<GpuOnlyException>(() =>
+        {
+            var sm = new SharedMemory<int>(128);
+            ref int r = ref sm[0];
+        });
     }
 
     [Theory]
@@ -230,19 +236,29 @@ public class CoreIntrinsicsTests
         Assert.Throws<GpuOnlyException>(() => Gpu.ApplyPriorityL2(IntPtr.Zero, 128, 0.5f));
         Assert.Throws<GpuOnlyException>(() => Gpu.ConvertToSharedMemory(ref intVal));
 
-        byte sharedByte = 0;
-        byte globalByte = 0;
-        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsync(ref sharedByte, in globalByte, 4));
+        int sharedInt = 0, globalInt = 0;
+        Vector4 sharedVec4 = default, globalVec4 = default;
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsync(ref sharedInt, in globalInt));
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsync(ref sharedVec4, in globalVec4));
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsyncCommitGroup());
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsyncWaitGroup(0));
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsyncWaitAll());
 
         ulong barrier = 0;
         Assert.Throws<GpuOnlyException>(() => Gpu.MBarrierInit(ref barrier, 32));
         Assert.Throws<GpuOnlyException>(() => Gpu.MBarrierArrive(ref barrier));
         Assert.Throws<GpuOnlyException>(() => Gpu.MBarrierWait(ref barrier, 0));
 
-        int frag = 0;
-        Assert.Throws<GpuOnlyException>(() => Gpu.WmmaLoadMatrixSync(ref frag, IntPtr.Zero, 16));
-        Assert.Throws<GpuOnlyException>(() => Gpu.WmmaStoreMatrixSync(IntPtr.Zero, ref frag, 16));
-        Assert.Throws<GpuOnlyException>(() => Gpu.WmmaMmaSync(ref frag, ref frag, ref frag, ref frag));
+        WmmaMatrixA<WmmaM16N16K16, sbyte, WmmaRowMajor> fragA = default;
+        WmmaMatrixB<WmmaM16N16K16, sbyte, WmmaRowMajor> fragB = default;
+        WmmaAccumulator<WmmaM16N16K16, int> fragC = default;
+        sbyte elemSByte = 0;
+        int elemInt = 0;
+        Assert.Throws<GpuOnlyException>(() => Wmma.Fill(ref fragC, 0));
+        Assert.Throws<GpuOnlyException>(() => Wmma.Load(ref fragA, in elemSByte, 16));
+        Assert.Throws<GpuOnlyException>(() => Wmma.Load(ref fragB, in elemSByte, 16));
+        Assert.Throws<GpuOnlyException>(() => Wmma.Load(ref fragC, in elemInt, 16, WmmaMemoryLayout.RowMajor));
+        Assert.Throws<GpuOnlyException>(() => Wmma.Store(ref elemInt, in fragC, 16, WmmaMemoryLayout.RowMajor));
+        Assert.Throws<GpuOnlyException>(() => Wmma.MultiplyAccumulate(ref fragC, in fragA, in fragB, in fragC));
     }
 }
-

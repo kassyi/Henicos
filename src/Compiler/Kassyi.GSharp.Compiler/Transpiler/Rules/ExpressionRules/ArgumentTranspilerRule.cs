@@ -18,7 +18,7 @@ public sealed class ArgumentTranspilerRule : SyntaxNodeTranspilerRuleBase<Argume
     /// <inheritdoc />
     public override void Transpile(ArgumentSyntax node, ref TranspileContext context)
     {
-        if (node.RefKindKeyword.IsKind(SyntaxKind.RefKeyword, SyntaxKind.OutKeyword))
+        if (node.RefKindKeyword.IsKind(SyntaxKind.RefKeyword, SyntaxKind.OutKeyword, SyntaxKind.InKeyword))
         {
             RefSyntaxHelper.TranspileAsByRefArgument(ref context, node.Expression);
         }

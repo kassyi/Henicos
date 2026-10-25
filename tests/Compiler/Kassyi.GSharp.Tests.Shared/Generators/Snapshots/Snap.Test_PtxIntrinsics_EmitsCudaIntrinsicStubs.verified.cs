@@ -662,12 +662,56 @@ public static IntPtr ConvertToSharedMemory(ref float address) => Kassyi.GSharp.C
 /// <returns>The shared space pointer.</returns>
 [Kassyi.GSharp.Core.CudaIntrinsic("__cvta_generic_to_shared")]
 public static IntPtr ConvertToSharedMemory(ref double address) => Kassyi.GSharp.Core.GpuOnlyException.Throw<IntPtr>();
-/// <summary>Asynchronously copies bytes from global memory directly into shared memory bypassing registers (PTX cp.async).</summary>
-/// <param name="sharedDst">The destination reference in shared memory.</param>
-/// <param name="globalSrc">The source reference in global memory.</param>
-/// <param name="bytes">Number of bytes to asynchronously transfer (4, 8, or 16).</param>
+/// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
+/// <param name="sharedDst">The destination element in shared memory.</param>
+/// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
-public static void CopyAsync(ref byte sharedDst, in byte globalSrc, uint bytes) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+public static void CopyAsync(ref int sharedDst, ref readonly int globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+/// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
+/// <param name="sharedDst">The destination element in shared memory.</param>
+/// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
+public static void CopyAsync(ref uint sharedDst, ref readonly uint globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+/// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
+/// <param name="sharedDst">The destination element in shared memory.</param>
+/// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
+public static void CopyAsync(ref float sharedDst, ref readonly float globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+/// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
+/// <param name="sharedDst">The destination element in shared memory.</param>
+/// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
+public static void CopyAsync(ref long sharedDst, ref readonly long globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+/// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
+/// <param name="sharedDst">The destination element in shared memory.</param>
+/// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
+public static void CopyAsync(ref ulong sharedDst, ref readonly ulong globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+/// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
+/// <param name="sharedDst">The destination element in shared memory.</param>
+/// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
+public static void CopyAsync(ref double sharedDst, ref readonly double globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+/// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
+/// <param name="sharedDst">The destination element in shared memory.</param>
+/// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
+public static void CopyAsync(ref System.Numerics.Vector2 sharedDst, ref readonly System.Numerics.Vector2 globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+/// <summary>Issues an uncommitted asynchronous copy from global memory to shared memory on the calling thread (PTX cp.async). Batch issued copies with CopyAsyncCommitGroup and wait with CopyAsyncWaitGroup or CopyAsyncWaitAll; call SyncThreads before other threads read sharedDst. Reading or writing sharedDst, or writing globalSrc, before completion is a data race.</summary>
+/// <param name="sharedDst">The destination element in shared memory.</param>
+/// <param name="globalSrc">The source element in global memory (must refer to a variable or element in global memory, not a temporary value).</param>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async")]
+public static void CopyAsync(ref System.Numerics.Vector4 sharedDst, ref readonly System.Numerics.Vector4 globalSrc) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+/// <summary>Batches all prior uncommitted CopyAsync operations issued by the calling thread into a new commit group (PTX cp.async.commit_group).</summary>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async_commit_group")]
+public static void CopyAsyncCommitGroup() => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+/// <summary>Waits until at most pendingGroups committed CopyAsync groups of the calling thread remain pending (PTX cp.async.wait_group; 0 waits for all committed groups of the calling thread). Call SyncThreads after waiting if other threads read the copied shared memory.</summary>
+/// <param name="pendingGroups">Maximum number of committed groups of the calling thread allowed to remain pending (must be a compile-time constant in 0..7).</param>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async_wait_group")]
+public static void CopyAsyncWaitGroup(int pendingGroups) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
+/// <summary>Waits until all prior CopyAsync operations issued by the calling thread have completed (PTX cp.async.wait_all). Call SyncThreads after waiting if other threads read the copied shared memory.</summary>
+[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_cp_async_wait_all")]
+public static void CopyAsyncWaitAll() => Kassyi.GSharp.Core.GpuOnlyException.Throw();
 /// <summary>Initializes an asynchronous barrier object in shared memory (PTX mbarrier.init).</summary>
 /// <param name="barrier">The 64-bit mbarrier object in shared memory.</param>
 /// <param name="expectedCount">The number of threads expected to arrive at the barrier.</param>
@@ -682,56 +726,6 @@ public static void MBarrierArrive(ref ulong barrier) => Kassyi.GSharp.Core.GpuOn
 /// <param name="phase">The phase parity to wait for.</param>
 [Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_mbarrier_wait")]
 public static void MBarrierWait(ref ulong barrier, uint phase) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Loads a matrix fragment from memory across the warp synchronously.</summary>
-/// <param name="fragment">The local fragment storage receiving matrix elements.</param>
-/// <param name="ptr">Source memory address.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_load_matrix_sync")]
-public static void WmmaLoadMatrixSync(ref int fragment, IntPtr ptr, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Loads a matrix fragment from memory across the warp synchronously.</summary>
-/// <param name="fragment">The local fragment storage receiving matrix elements.</param>
-/// <param name="ptr">Source memory address.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_load_matrix_sync")]
-public static void WmmaLoadMatrixSync(ref uint fragment, IntPtr ptr, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Loads a matrix fragment from memory across the warp synchronously.</summary>
-/// <param name="fragment">The local fragment storage receiving matrix elements.</param>
-/// <param name="ptr">Source memory address.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_load_matrix_sync")]
-public static void WmmaLoadMatrixSync(ref float fragment, IntPtr ptr, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Stores an accumulator matrix fragment back to memory across the warp synchronously.</summary>
-/// <param name="ptr">Destination memory address.</param>
-/// <param name="fragment">The local fragment storage holding matrix elements to store.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_store_matrix_sync")]
-public static void WmmaStoreMatrixSync(IntPtr ptr, ref int fragment, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Stores an accumulator matrix fragment back to memory across the warp synchronously.</summary>
-/// <param name="ptr">Destination memory address.</param>
-/// <param name="fragment">The local fragment storage holding matrix elements to store.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_store_matrix_sync")]
-public static void WmmaStoreMatrixSync(IntPtr ptr, ref uint fragment, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Stores an accumulator matrix fragment back to memory across the warp synchronously.</summary>
-/// <param name="ptr">Destination memory address.</param>
-/// <param name="fragment">The local fragment storage holding matrix elements to store.</param>
-/// <param name="ldm">Leading dimension stride in elements.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_store_matrix_sync")]
-public static void WmmaStoreMatrixSync(IntPtr ptr, ref float fragment, uint ldm) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Performs a warp-synchronous matrix multiply-accumulate D = A * B + C on Tensor Cores.</summary>
-/// <param name="d">Destination accumulator fragment.</param>
-/// <param name="a">Multiplicand A fragment.</param>
-/// <param name="b">Multiplicand B fragment.</param>
-/// <param name="c">Addend C fragment.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_mma_sync")]
-public static void WmmaMmaSync(ref int d, ref int a, ref int b, ref int c) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
-/// <summary>Performs a warp-synchronous matrix multiply-accumulate D = A * B + C on Tensor Cores.</summary>
-/// <param name="d">Destination accumulator fragment.</param>
-/// <param name="a">Multiplicand A fragment.</param>
-/// <param name="b">Multiplicand B fragment.</param>
-/// <param name="c">Addend C fragment.</param>
-[Kassyi.GSharp.Core.CudaIntrinsic("__gsharp_wmma_mma_sync")]
-public static void WmmaMmaSync(ref float d, ref float a, ref float b, ref float c) => Kassyi.GSharp.Core.GpuOnlyException.Throw();
 // ReSharper restore UnusedMember.Global
 #pragma warning restore IDE0051
 }
