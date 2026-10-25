@@ -10,10 +10,15 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The semantic model of the method's syntax tree, used to key hoisted declarations and references by symbol and region
 /// (<see cref="DeclarationKey"/>). When <see langword="null"/>, declarations and references are matched by name and region.
 /// </param>
+/// <param name="deviceFunction">
+/// The device function that owns the body. With a semantic model, only references to its own parameters are rewritten
+/// to the frame copies of <paramref name="copiedParameters"/>.
+/// </param>
 public class ContextHoister(
     IReadOnlyCollection<string>? copiedParameters = null,
     bool isDeviceFunction = false,
-    SemanticModel? semanticModel = null)
+    SemanticModel? semanticModel = null,
+    IMethodSymbol? deviceFunction = null)
     : CSharpSyntaxRewriter
 {
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
@@ -255,10 +260,12 @@ public class ContextHoister(
             return true;
         }
 
-        return key.Symbol is IParameterSymbol
-        {
-            ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Ordinary }
-        };
+        // [WHY] Only the lowered method's own parameter lives in the frame. A parameter of the same name that belongs
+        // to a lambda, a local function or a body that an expansion copied in (an inlined iterator) stays a plain
+        // reference.
+        return deviceFunction != null &&
+               key.Symbol is IParameterSymbol parameter &&
+               parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(deviceFunction.OriginalDefinition);
     }
 
     // [WHY] The member name keeps the original span of the replaced node, so that the transpiler resolves it to the
