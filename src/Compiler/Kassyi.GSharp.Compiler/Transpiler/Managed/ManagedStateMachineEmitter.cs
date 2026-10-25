@@ -167,14 +167,6 @@ internal static class ManagedStateMachineEmitter
         EmitStateMachineSignature(writer, contextName, stateMachineName, methodSymbol, hasAutoResult);
         writer.AppendLine(") {");
 
-        foreach (var p in methodSymbol.Parameters)
-        {
-            if (p.RefKind == RefKind.Out)
-            {
-                writer.AppendLine($"{p.Name.ToCSharpIdentifier()} = default;");
-            }
-        }
-
         foreach (var localInit in localInits)
         {
             AppendFieldType(writer, localInit);
@@ -191,6 +183,7 @@ internal static class ManagedStateMachineEmitter
         writer.AppendLine("}");
     }
 
+    // Out parameters become ref: a suspended call returns before it assigns them, and resumed calls must keep previous writes
     private static void EmitStateMachineSignature(
         SourceWriter writer,
         string contextName,
@@ -203,8 +196,7 @@ internal static class ManagedStateMachineEmitter
         {
             writer.Append(p.RefKind switch
             {
-                RefKind.Ref => "ref ",
-                RefKind.Out => "out ",
+                RefKind.Ref or RefKind.Out => "ref ",
                 RefKind.In => "in ",
                 RefKind.RefReadOnlyParameter => "ref readonly ",
                 _ => ""

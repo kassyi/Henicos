@@ -213,9 +213,12 @@ public abstract class YamlDialectBase : ITranspilerDialect
     {
         var isKernel = parameterSymbol?.ContainingSymbol is IMethodSymbol method &&
                        method.HasAttribute(KnownAttributes.GpuKernel);
-        var isRefPointer = p.Modifiers.Any(SyntaxKind.RefKeyword) ||
-                           p.Modifiers.Any(SyntaxKind.OutKeyword) ||
-                           (!isKernel && p.Modifiers.Any(SyntaxKind.InKeyword));
+        var isRefPointer = parameterSymbol is not null
+            ? parameterSymbol.RefKind is RefKind.Ref or RefKind.Out ||
+              (!isKernel && parameterSymbol.RefKind is RefKind.In or RefKind.RefReadOnlyParameter)
+            : p.Modifiers.Any(SyntaxKind.RefKeyword) ||
+              p.Modifiers.Any(SyntaxKind.OutKeyword) ||
+              (!isKernel && p.Modifiers.Any(SyntaxKind.InKeyword));
         var isPointerType = typeSymbol is IPointerTypeSymbol;
 
         var isReadOnly = parameterSymbol != null && parameterSymbol.HasAttribute(KnownAttributes.GpuReadOnly);

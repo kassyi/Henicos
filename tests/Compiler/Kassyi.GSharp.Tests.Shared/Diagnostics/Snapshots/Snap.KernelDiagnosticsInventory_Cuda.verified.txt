@@ -131,7 +131,6 @@
 
 ## Generator/KernelOverload_Indistinguishable.cu.cs
 (12,28)-(12,31) GSH0059 analyzer: The [GpuKernel] overloads 'Run(global::System.Int32[])' and 'Run(ref global::System.Int32)' produce the same LaunchRunPtr launch wrapper signature. Rename one of the kernels.
-(12,32)-(12,45) GSH0044 analyzer: The parameter 'value' uses a prohibited modifier (ref/out/in) or type (ref struct). These cannot be saved to the state machine context across barriers.
 
 ## Analyzers/StaticMemberAccess_SadPath.cs
 (20,28)-(20,33) GSH0065 analyzer: The static member 'Cfg.M' cannot be accessed in GPU code because static fields and properties reside in host memory. Use a 'const' field or pass the value as a kernel parameter.

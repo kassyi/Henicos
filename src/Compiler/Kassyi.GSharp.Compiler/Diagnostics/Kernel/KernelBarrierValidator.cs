@@ -8,7 +8,7 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel;
 /// A call to a device function that reaches a barrier suspends the caller like the barrier itself, so it counts as a
 /// barrier for the cross-barrier rules. The divergence rule (GSH0037) counts only calls that reach a block barrier.
 /// The same rules apply to the body of such a device function (<paramref name="isKernel"/> is false), which is lowered
-/// into a state machine as well; only the kernel signature rules (GSH0044) are left out.
+/// into a state machine as well.
 /// </remarks>
 internal readonly ref struct KernelBarrierValidator(
     SyntaxNodeAnalysisContext context,
@@ -61,10 +61,10 @@ internal readonly ref struct KernelBarrierValidator(
         ValidateCrossBarrierLocals();
     }
 
-    /// <summary>Validates kernel entrypoint signature modifiers and parameters (GSH0044, GSH0046).</summary>
+    /// <summary>Validates the method header: the async modifier (GSH0046) and, for a device function, the iterator shape.</summary>
     private void ValidateKernelHeader()
     {
-        // GSH0046: async keyword on [GpuKernel]
+        // GSH0046: async keyword on a kernel or a device function
         if (methodDecl.Modifiers.Any(SyntaxKind.AsyncKeyword))
         {
             context.ReportDiagnostic(
@@ -72,36 +72,9 @@ internal readonly ref struct KernelBarrierValidator(
                 methodDecl.Identifier.GetLocation());
         }
 
-        // GSH0044: ref, out, in, and ref struct parameters on [GpuKernel]; a device function receives them from its caller
         if (!isKernel)
         {
             ValidateDeviceIteratorHeader();
-            return;
-        }
-
-        foreach (var param in methodDecl.ParameterList.Parameters)
-        {
-            var isByRef = param.Modifiers
-                .AsStackEnumerable()
-                .Any(static mod => mod.IsKind(SyntaxKind.RefKeyword, SyntaxKind.OutKeyword, SyntaxKind.InKeyword));
-
-            if (isByRef)
-            {
-                context.ReportDiagnostic(
-                    GSharpDiagnostics.KernelParameterRefStructProhibited,
-                    param.GetLocation(),
-                    param.Identifier.ValueText);
-                continue;
-            }
-
-            var paramSymbol = semanticModel.GetDeclaredSymbol<IParameterSymbol>(param);
-            if (paramSymbol?.Type.IsRefLikeType == true)
-            {
-                context.ReportDiagnostic(
-                    GSharpDiagnostics.KernelParameterRefStructProhibited,
-                    param.GetLocation(),
-                    param.Identifier.ValueText);
-            }
         }
     }
 
