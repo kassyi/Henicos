@@ -77,6 +77,7 @@ fixed text (separators, keywords, `;`) is a literal. The other helpers:
 | C++ name of a user symbol (declaration / reference; nodes with a stamped region > 0 receive `__gsharp_il_<region>_` via `CppName.Region`) | `CppNameResolver.AppendDeclaredName`, `CppNameResolver.AppendReferencedName`, `CppNameResolver.AppendSymbolName` | `identifier.ValueText` written directly |
 | Compiler-internal name (`__gsharp_*`) | `GSharpInternalNames` (add new names to `Resources/InternalNames.yml`) | a `"__gsharp_..."` literal |
 | C++ literal of a constant field | `.AppendConstantField` | `ConstantValue.ToString()` plus a hand-picked suffix |
+| C++ and C# literal pair of a `[GpuConstexpr]` value | `ConstexprLiteral.Format` | culture-dependent `ToString()` or `"R"` format |
 | Header and attributes of a generated `.g.cs` | `.AppendGeneratedFileHeader`, `.AppendGeneratedCodeAttributes` | copied header text |
 
 Where an internal name lives: in the YAML when the Prelude, the runtime, another emitter, or both host and device code
