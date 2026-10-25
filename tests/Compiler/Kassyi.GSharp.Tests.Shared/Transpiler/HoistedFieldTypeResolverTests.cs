@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Kassyi.GSharp.Compiler.Lowering;
 using Kassyi.GSharp.Compiler.Transpiler;
 using Kassyi.GSharp.Tests.Shared.Helpers;
 using Xunit;
@@ -49,6 +50,33 @@ public class HoistedFieldTypeResolverTests
         Assert.Contains("type parameter 'T'", ex.Message);
         var lineSpan = declarator.GetLocation().GetLineSpan();
         Assert.Contains($"({lineSpan.StartLinePosition.Line + 1},", ex.Message);
+    }
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Resolve_DeclaratorMappedToParameter_ResolvesToParameterType()
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(
+            RoslynTestUtility.ReadTestCase("Transpiler/HoistedFieldTypeResolver/ParameterLocal.cs"));
+        var tree = compilation.SyntaxTrees.First();
+        var model = compilation.GetSemanticModel(tree);
+        var parameter = tree.GetRoot().DescendantNodes()
+            .OfType<ParameterSyntax>()
+            .First(p => p.Identifier.ValueText == "p");
+
+        // An expansion turns a parameter into a local: `Pair p;`, whose declarator carries the parameter's span
+        var declarator = SyntaxFactory.VariableDeclarator("p")
+            .WithAdditionalAnnotations(new SyntaxAnnotation(
+                LoweringAnnotations.OriginalSpanAnnotationKind,
+                LoweringAnnotations.FormatOriginalSpanData(parameter)));
+        var declaration = SyntaxFactory.VariableDeclaration(
+            SyntaxFactory.IdentifierName("Pair"),
+            SyntaxFactory.SingletonSeparatedList(declarator));
+        var lowered = declaration.Variables[0];
+
+        var typeSymbol = HoistedFieldTypeResolver.Resolve(lowered, model, "K");
+
+        Assert.Equal("Pair", typeSymbol.ToDisplayString());
     }
 
     [Fact]

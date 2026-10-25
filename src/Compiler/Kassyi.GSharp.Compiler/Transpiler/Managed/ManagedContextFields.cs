@@ -20,8 +20,12 @@ internal static class ManagedContextFields
     /// <summary>
     /// Categorizes hoisted fields into regular context fields and unhoisted ref-struct fields initialized on the stack.
     /// </summary>
+    /// <remarks>
+    /// Declarations are keyed by <see cref="DeclarationKey"/> (symbol and region), so the copies of one declaration
+    /// that an expansion stamped with different regions get fields of their own.
+    /// </remarks>
     public static (ImmutableArray<ManagedContextField> LocalInits, ImmutableArray<ManagedContextField> RegularFields,
-        HashSet<ILocalSymbol> UnhoistedSymbols, Dictionary<ILocalSymbol, string> RenamedLocals)
+        HashSet<DeclarationKey> UnhoistedKeys, Dictionary<DeclarationKey, string> RenamedLocals)
         ProcessContextFields(
             IReadOnlyList<VariableDeclaratorSyntax>? contextFields,
             SemanticModel semanticModel,
@@ -29,12 +33,12 @@ internal static class ManagedContextFields
     {
         var regularFields = ImmutableArray.CreateBuilder<ManagedContextField>();
         var localInits = ImmutableArray.CreateBuilder<ManagedContextField>();
-        var unhoistedSymbols = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
-        var renamedLocals = new Dictionary<ILocalSymbol, string>(SymbolEqualityComparer.Default);
+        var unhoistedKeys = new HashSet<DeclarationKey>();
+        var renamedLocals = new Dictionary<DeclarationKey, string>();
 
         if (contextFields == null)
         {
-            return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedSymbols, renamedLocals);
+            return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedKeys, renamedLocals);
         }
 
         var sharedNames = FindSharedNames(contextFields);
@@ -45,18 +49,18 @@ internal static class ManagedContextFields
                 continue;
             }
 
-            var localSymbol = semanticModel.GetDeclaredSymbol<ILocalSymbol>(field);
+            var key = LoweringIdentity.ForDeclaration(field, semanticModel);
             var name = field.Identifier.ValueText.ToCSharpIdentifier();
             if (sharedNames.Contains(field.Identifier.ValueText))
             {
-                if (localSymbol == null)
+                if (key.Symbol == null)
                 {
                     throw new InvalidOperationException(
                         $"The hoisted local '{field.Identifier.ValueText}' of '{kernelName}' shares its name with another one and does not resolve to a symbol.");
                 }
 
-                name = GetDistinctName(localSymbol);
-                renamedLocals[localSymbol] = name;
+                name = GetDistinctName(key.Symbol, key.Region);
+                renamedLocals[key] = name;
             }
 
             var contextField = new ManagedContextField(field, declaration.Type,
@@ -64,9 +68,9 @@ internal static class ManagedContextFields
 
             if (contextField.ResolvedType.IsRefLikeType)
             {
-                if (localSymbol != null)
+                if (key.Symbol != null)
                 {
-                    unhoistedSymbols.Add(localSymbol);
+                    unhoistedKeys.Add(key);
                 }
 
                 // A ref struct local is declared again on every resume, so its initializer is emitted as is
@@ -81,10 +85,11 @@ internal static class ManagedContextFields
             }
         }
 
-        return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedSymbols, renamedLocals);
+        return (localInits.ToImmutable(), regularFields.ToImmutable(), unhoistedKeys, renamedLocals);
     }
 
-    // Names that more than one hoisted local declares; such locals live in sibling scopes of the user's method
+    // Names that more than one hoisted local declares; such locals live in sibling scopes of the user's method, or are
+    // copies of one declaration that an expansion stamped with different regions
     private static HashSet<string> FindSharedNames(IReadOnlyList<VariableDeclaratorSyntax> contextFields)
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -97,8 +102,9 @@ internal static class ManagedContextFields
     }
 
     // [WHY] Every field of a context class needs its own name. A local that shares its name takes the name of its field
-    // in the C++ context struct, which carries the declaration ordinal; user identifiers cannot contain '__' (GSH0055),
-    // so that name collides with nothing the user writes. A function-scope name does not depend on the dialect.
-    private static string GetDistinctName(ILocalSymbol local) =>
-        CppNameResolver.Resolve(local, local.Name, s_cppDialect).ToString();
+    // in the C++ context struct, which carries the declaration ordinal and the region; user identifiers cannot contain
+    // '__' (GSH0055), so that name collides with nothing the user writes. A function-scope name does not depend on the
+    // dialect.
+    private static string GetDistinctName(ISymbol declared, int region) =>
+        CppNameResolver.Resolve(declared, declared.Name, s_cppDialect, region).ToString();
 }
