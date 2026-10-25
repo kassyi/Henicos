@@ -55,11 +55,11 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ void __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__CalculateOptionPrice(float __gsharp_id_0_s, float __gsharp_id_1_x, float __gsharp_id_2_t, float __gsharp_id_3_r, float __gsharp_id_4_v, float* __restrict__  __gsharp_id_5_callResult, float* __restrict__  __gsharp_id_6_putResult);
+public const string Source = @"inline __device__ void __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__CalculateOptionPrice(float __gsharp_id_0_s, float __gsharp_id_1_x, float __gsharp_id_2_t, float __gsharp_id_3_r, float __gsharp_id_4_v, float* __gsharp_id_5_callResult, float* __gsharp_id_6_putResult);
 
 inline __device__ float __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__Cnd(float __gsharp_id_0_d);
 
-inline __device__ void __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__CalculateOptionPrice(float __gsharp_id_0_s, float __gsharp_id_1_x, float __gsharp_id_2_t, float __gsharp_id_3_r, float __gsharp_id_4_v, float* __restrict__  __gsharp_id_5_callResult, float* __restrict__  __gsharp_id_6_putResult){
+inline __device__ void __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__CalculateOptionPrice(float __gsharp_id_0_s, float __gsharp_id_1_x, float __gsharp_id_2_t, float __gsharp_id_3_r, float __gsharp_id_4_v, float* __gsharp_id_5_callResult, float* __gsharp_id_6_putResult){
 auto __gsharp_id_7_d1 = (__logf(__gsharp_id_0_s/__gsharp_id_1_x)+(__gsharp_id_3_r+__gsharp_id_4_v*__gsharp_id_4_v/2.0f)*__gsharp_id_2_t)/(__gsharp_id_4_v*__fsqrt_rn(__gsharp_id_2_t));
 auto __gsharp_id_8_d2 = __gsharp_id_7_d1-__gsharp_id_4_v*__fsqrt_rn(__gsharp_id_2_t);
 auto __gsharp_id_9_cndD1 = __gsharp_fn_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__Cnd(__gsharp_id_7_d1);

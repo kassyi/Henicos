@@ -6,14 +6,14 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCpuDeviceCode
 {
-public const string Source = @"inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ModifyRef(bool* __restrict__  __gsharp_id_0_successFlag);
+public const string Source = @"inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ModifyRef(bool* __gsharp_id_0_successFlag);
 
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct;
-inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__MemberAccessRef(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct* __restrict__  __gsharp_id_0_refArg);
+inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__MemberAccessRef(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct* __gsharp_id_0_refArg);
 
-inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ChainedAssignmentRef(int* __restrict__  __gsharp_id_0_refArg, int* __restrict__  __gsharp_id_1_a, int* __restrict__  __gsharp_id_2_b);
+inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ChainedAssignmentRef(int* __gsharp_id_0_refArg, int* __gsharp_id_1_a, int* __gsharp_id_2_b);
 
-inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ModifyRef(bool* __restrict__  __gsharp_id_0_successFlag){
+inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ModifyRef(bool* __gsharp_id_0_successFlag){
 (*__gsharp_id_0_successFlag)=false;
 }
 
@@ -26,11 +26,11 @@ int __gsharp_mb_Value;
 }
 ;
 #endif
-inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__MemberAccessRef(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct* __restrict__  __gsharp_id_0_refArg){
+inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__MemberAccessRef(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct* __gsharp_id_0_refArg){
 (*__gsharp_id_0_refArg).__gsharp_mb_Field=5;
 }
 
-inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ChainedAssignmentRef(int* __restrict__  __gsharp_id_0_refArg, int* __restrict__  __gsharp_id_1_a, int* __restrict__  __gsharp_id_2_b){
+inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKernels__ChainedAssignmentRef(int* __gsharp_id_0_refArg, int* __gsharp_id_1_a, int* __gsharp_id_2_b){
 (*__gsharp_id_1_a)=(*__gsharp_id_2_b)=(*__gsharp_id_0_refArg)=10;
 }
 
