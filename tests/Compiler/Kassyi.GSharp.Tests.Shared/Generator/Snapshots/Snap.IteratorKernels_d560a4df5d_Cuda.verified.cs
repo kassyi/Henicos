@@ -78,7 +78,7 @@ public const string Source = @"
 
 
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IteratorKernels__RecordEval(int __gsharp_id_0_value, int __gsharp_id_1_slot, int* __restrict__  __gsharp_id_2_stepCounter, GSharpArray<int> __gsharp_id_3_evalLog);
+inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IteratorKernels__RecordEval(int __gsharp_id_0_value, int __gsharp_id_1_slot, int* __gsharp_id_2_stepCounter, GSharpArray<int> __gsharp_id_3_evalLog);
 
 
 
@@ -92,7 +92,7 @@ inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Iterato
 
 
 
-inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IteratorKernels__RecordEval(int __gsharp_id_0_value, int __gsharp_id_1_slot, int* __restrict__  __gsharp_id_2_stepCounter, GSharpArray<int> __gsharp_id_3_evalLog){
+inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__IteratorKernels__RecordEval(int __gsharp_id_0_value, int __gsharp_id_1_slot, int* __gsharp_id_2_stepCounter, GSharpArray<int> __gsharp_id_3_evalLog){
 (*__gsharp_id_2_stepCounter)+=1;
 __gsharp_id_3_evalLog[__gsharp_id_1_slot]=(*__gsharp_id_2_stepCounter);
 return __gsharp_id_0_value;
