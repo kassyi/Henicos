@@ -83,7 +83,7 @@ inline ~__gsharp_using_scope() { resource.__gsharp_dispose(); }
 
 template <typename T>
 struct GSharpArray {
-T* __restrict__ data;
+T* data;
 int length;
 
 inline GSharpArray() : data(nullptr), length(0) {}
