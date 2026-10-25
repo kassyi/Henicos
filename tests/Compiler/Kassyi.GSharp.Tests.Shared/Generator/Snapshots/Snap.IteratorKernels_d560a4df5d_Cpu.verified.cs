@@ -1406,6 +1406,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterInner_g1_bSystem__
 int __gsharp_mb_A;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterInner_g1_bSystem__Int32_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.IterInner<System.Int32>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterInner_g1_bSystem__Int32_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.IterInner<System.Int32>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterInner_g1_bSystem__Int32_e,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.IterInner<System.Int32>.A: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterInner_g1_bSystem__Int32_e __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__IterInner_g1_bSystem__Int32_e(int __gsharp_id_0_a) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterInner_g1_bSystem__Int32_e __gsharp_self{};
 __gsharp_self.__gsharp_mb_A=__gsharp_id_0_a;
@@ -1420,6 +1423,10 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterInner_g1_bSystem__Int32_e
 int __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterOuter)==8,""Kassyi.GSharp.Tests.Shared.Syntax.IterOuter: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterOuter)==4,""Kassyi.GSharp.Tests.Shared.Syntax.IterOuter: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterOuter,__gsharp_mb_Inner)==0,""Kassyi.GSharp.Tests.Shared.Syntax.IterOuter.Inner: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterOuter,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.IterOuter.B: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterOuter __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__IterOuter(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterInner_g1_bSystem__Int32_e __gsharp_id_0_inner, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterOuter __gsharp_self{};
 __gsharp_self.__gsharp_mb_Inner=__gsharp_id_0_inner;
@@ -2634,6 +2641,11 @@ int __gsharp_mb_Marker;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable)==24,""Kassyi.GSharp.Tests.Shared.Syntax.IterDisposable: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable)==8,""Kassyi.GSharp.Tests.Shared.Syntax.IterDisposable: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.IterDisposable.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable,__gsharp_mb_Slot)==16,""Kassyi.GSharp.Tests.Shared.Syntax.IterDisposable.Slot: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable,__gsharp_mb_Marker)==20,""Kassyi.GSharp.Tests.Shared.Syntax.IterDisposable.Marker: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterDisposable__
@@ -3389,6 +3401,8 @@ __device__ inline const int* end() const { return __gsharp_mb__element0 + 4; }
 __device__ inline int size() const { return 4; }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterIntBuffer4)==16,""Kassyi.GSharp.Tests.Shared.Syntax.IterIntBuffer4: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__IterIntBuffer4)==4,""Kassyi.GSharp.Tests.Shared.Syntax.IterIntBuffer4: alignment"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__IteratorKernels__InlineArrayForEachKernel {
 int __gsharp_state = 0;

@@ -68,6 +68,11 @@ int __gsharp_mb_Value;
 int __gsharp_mb_Status;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState)==12,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState)==4,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Id)==0,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Id: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Value: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Status)==8,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Status: offset"");
 #endif
 inline __device__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__TransformState(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState __gsharp_id_0_state, int __gsharp_id_1_multiplier){
 __gsharp_id_0_state.__gsharp_mb_Value=__gsharp_id_0_state.__gsharp_mb_Value*__gsharp_id_1_multiplier;
@@ -111,6 +116,11 @@ int __gsharp_mb_Value;
 int __gsharp_mb_Status;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState)==12,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState)==4,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Id)==0,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Id: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Value: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Status)==8,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Status: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uLifecycleUpdate(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState> __gsharp_id_0_states, int __gsharp_id_1_length, int __gsharp_id_2_multiplier){
 int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;
@@ -241,6 +251,11 @@ int __gsharp_mb_Value;
 int __gsharp_mb_Status;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState)==12,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState)==4,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Id)==0,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Id: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Value: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState,__gsharp_mb_Status)==8,""Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState.Status: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ObjectLifecycleKernels__Kernel_uFactoryInitialization(GSharpArray<int> __gsharp_id_0_inputValues, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__LifecycleObjectState> __gsharp_id_1_outputStates, int __gsharp_id_2_length){
 int __gsharp_id_3_tid = blockIdx.x*blockDim.x+threadIdx.x;

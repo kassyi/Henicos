@@ -52,6 +52,10 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKerne
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Field)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Field: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Value: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(int __gsharp_id_0_field, int __gsharp_id_1_value) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_self{};
 __gsharp_self.__gsharp_mb_Field=__gsharp_id_0_field;
@@ -106,6 +110,10 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKerne
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Field)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Field: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Value: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(int __gsharp_id_0_field, int __gsharp_id_1_value) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_self{};
 __gsharp_self.__gsharp_mb_Field=__gsharp_id_0_field;
@@ -132,6 +140,10 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKerne
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Field)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Field: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Value: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(int __gsharp_id_0_field, int __gsharp_id_1_value) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_self{};
 __gsharp_self.__gsharp_mb_Field=__gsharp_id_0_field;
@@ -158,6 +170,10 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKerne
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Field)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Field: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Value: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(int __gsharp_id_0_field, int __gsharp_id_1_value) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_self{};
 __gsharp_self.__gsharp_mb_Field=__gsharp_id_0_field;
@@ -233,6 +249,10 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKerne
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Field)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Field: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Value: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(int __gsharp_id_0_field, int __gsharp_id_1_value) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_self{};
 __gsharp_self.__gsharp_mb_Field=__gsharp_id_0_field;
@@ -462,6 +482,10 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKerne
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Field)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Field: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Value: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(int __gsharp_id_0_field, int __gsharp_id_1_value) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_self{};
 __gsharp_self.__gsharp_mb_Field=__gsharp_id_0_field;
@@ -705,6 +729,10 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKerne
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Field)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Field: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Value: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(int __gsharp_id_0_field, int __gsharp_id_1_value) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_self{};
 __gsharp_self.__gsharp_mb_Field=__gsharp_id_0_field;
@@ -948,6 +976,10 @@ return __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__RefOutDereferenceKerne
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Field)==0,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Field: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct,__gsharp_mb_Value)==4,""Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct.Value: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct(int __gsharp_id_0_field, int __gsharp_id_1_value) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__RefTestStruct __gsharp_self{};
 __gsharp_self.__gsharp_mb_Field=__gsharp_id_0_field;

@@ -112,6 +112,19 @@ public abstract class YamlDialectBase : ITranspilerDialect
         return false;
     }
 
+    public virtual TypeLayout ArrayViewLayout => new(16, 8);
+
+    public virtual TypeLayout PointerLayout => new(8, 8);
+
+    public virtual bool TryGetMappedTypeLayout(string fullyQualifiedName, out TypeLayout layout)
+    {
+        layout = default;
+        return false;
+    }
+
+    public bool TryGetTypeLayout(ITypeSymbol typeSymbol, out TypeLayout layout) =>
+        TryGetMappedTypeLayout(GetTypeMappingKey(typeSymbol), out layout);
+
     public bool IsMappedType(ITypeSymbol typeSymbol) => TryMapType(GetTypeMappingKey(typeSymbol), out _);
 
     private static string GetTypeMappingKey(ITypeSymbol typeSymbol)

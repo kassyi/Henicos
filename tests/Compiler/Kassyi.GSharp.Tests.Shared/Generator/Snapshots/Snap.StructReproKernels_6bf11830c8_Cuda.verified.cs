@@ -77,6 +77,10 @@ int __gsharp_mb_Low;
 int __gsharp_mb_High;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproRange)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproRange: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproRange)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproRange: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproRange,__gsharp_mb_Low)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproRange.Low: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproRange,__gsharp_mb_High)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproRange.High: offset"");
 #endif
 inline __device__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproRange __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__MakeRange(int __gsharp_id_0_low, int __gsharp_id_1_high){
 return ([&]() {
@@ -92,6 +96,10 @@ int __gsharp_mb_Low;
 int __gsharp_mb_High;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproSpan)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproSpan: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproSpan)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproSpan: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproSpan,__gsharp_mb_Low)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproSpan.Low: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproSpan,__gsharp_mb_High)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproSpan.High: offset"");
 #endif
 inline __device__ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproSpan __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__MakeSpan(int __gsharp_id_0_low, int __gsharp_id_1_high){
 return ([&]() {
@@ -134,6 +142,10 @@ int __gsharp_mb_First;
 int __gsharp_mb_Second;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e,__gsharp_mb_Second)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>.Second: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e__
@@ -143,6 +155,10 @@ float __gsharp_mb_First;
 float __gsharp_mb_Second;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e,__gsharp_mb_Second)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>.Second: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericIntFirstKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<float> __gsharp_id_1_floats){
 auto __gsharp_id_2_a = ([&]() {
@@ -304,6 +320,10 @@ float __gsharp_mb_First;
 float __gsharp_mb_Second;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e,__gsharp_mb_Second)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>.Second: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e__
@@ -313,6 +333,10 @@ int __gsharp_mb_First;
 int __gsharp_mb_Second;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e,__gsharp_mb_Second)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>.Second: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericFloatFirstKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<float> __gsharp_id_1_floats){
 auto __gsharp_id_2_b = ([&]() {
@@ -474,6 +498,10 @@ int __gsharp_mb_First;
 int __gsharp_mb_Second;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e,__gsharp_mb_Second)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>.Second: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e_e__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e_e__
@@ -483,6 +511,10 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e __gsharp_mb_Second;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e_e)==16,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e_e,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>>.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Int32_e_e,__gsharp_mb_Second)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Int32>>.Second: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e__
@@ -492,6 +524,10 @@ float __gsharp_mb_First;
 float __gsharp_mb_Second;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e,__gsharp_mb_Second)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>.Second: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e_e__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e_e__
@@ -501,6 +537,10 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e __gsharp_mb_Second;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e_e)==16,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e_e,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>>.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bKassyi__GSharp__Tests__Shared__Syntax__ReproPair_g1_bSystem__Single_e_e,__gsharp_mb_Second)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<Kassyi.GSharp.Tests.Shared.Syntax.ReproPair<System.Single>>.Second: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericNestedKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<float> __gsharp_id_1_floats){
 auto __gsharp_id_2_a = ([&]() {
@@ -669,6 +709,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSys
 GSharpArray<int> __gsharp_mb_Items;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSystem__Int32_e)==16,""Kassyi.GSharp.Tests.Shared.Syntax.ReproArrayWrap<System.Int32>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSystem__Int32_e)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproArrayWrap<System.Int32>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSystem__Int32_e,__gsharp_mb_Items)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproArrayWrap<System.Int32>.Items: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSystem__Single_e__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSystem__Single_e__
@@ -677,6 +720,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSys
 GSharpArray<float> __gsharp_mb_Items;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSystem__Single_e)==16,""Kassyi.GSharp.Tests.Shared.Syntax.ReproArrayWrap<System.Single>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSystem__Single_e)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproArrayWrap<System.Single>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproArrayWrap_g1_bSystem__Single_e,__gsharp_mb_Items)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproArrayWrap<System.Single>.Items: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__GenericArrayFieldKernel(GSharpArray<int> __gsharp_id_0_ints, GSharpArray<float> __gsharp_id_1_floats){
 auto __gsharp_id_2_a = ([&]() {
@@ -838,6 +884,10 @@ int __gsharp_mb_Low;
 int __gsharp_mb_High;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproRange)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproRange: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproRange)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproRange: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproRange,__gsharp_mb_Low)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproRange.Low: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproRange,__gsharp_mb_High)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproRange.High: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__ReturnOnlyStructKernel(GSharpArray<int> __gsharp_id_0_output){
 __gsharp_id_0_output[0]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__MakeRange(2,7).__gsharp_mb_High-__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__MakeRange(2,7).__gsharp_mb_Low;
@@ -954,6 +1004,10 @@ int __gsharp_mb_Low;
 int __gsharp_mb_High;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproSpan)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproSpan: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproSpan)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproSpan: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproSpan,__gsharp_mb_Low)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproSpan.Low: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproSpan,__gsharp_mb_High)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproSpan.High: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__ReturnAndLocalStructKernel(GSharpArray<int> __gsharp_id_0_output){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproSpan __gsharp_id_1_s = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__MakeSpan(2,7);
@@ -1071,6 +1125,10 @@ int __gsharp_mb_X;
 int __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproPt,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproPt.Y: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__BarrierLocalDifferentNameKernel(GSharpArray<int> __gsharp_id_0_output){
 int __gsharp_id_1_tid = threadIdx.x;
@@ -1210,6 +1268,10 @@ __gsharp_mb__scaled=(__gsharp_id_value<0?0:__gsharp_id_value*2);
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproClamped)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproClamped)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproClamped,__gsharp_mb__v)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped._v: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproClamped,__gsharp_mb__scaled)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped._scaled: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__InitBodyKernel(GSharpArray<int> __gsharp_id_0_output){
 auto __gsharp_id_1_c = ([&]() {
@@ -1345,6 +1407,10 @@ __gsharp_mb__scaled=(__gsharp_id_value<0?0:__gsharp_id_value*2);
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproClamped)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproClamped)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproClamped,__gsharp_mb__v)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped._v: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ReproClamped,__gsharp_mb__scaled)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ReproClamped._scaled: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__StructReproKernels__SetAndWithAccessorBodyKernel(GSharpArray<int> __gsharp_id_0_output){
 auto __gsharp_id_1_c = ([&]() {

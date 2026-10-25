@@ -1,0 +1,218 @@
+using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Kassyi.GSharp.Core;
+
+namespace Kassyi.GSharp.Tests.Shared.Core;
+
+public struct LayoutReproVecHolder
+{
+    public float A;
+    public Vector2 V;
+    public float B;
+    public Vector4 W;
+}
+
+public struct LayoutReproCoreHolder
+{
+    public float A;
+    public Float2 V;
+    public float B;
+    public Float4 W;
+}
+
+public struct LayoutReproElem
+{
+    public byte A;
+    public Float2 V;
+}
+
+[InlineArray(2)]
+public struct LayoutReproElems
+{
+    private LayoutReproElem _element0;
+}
+
+public struct LayoutReproInlineOuter
+{
+    public int Tag;
+    public LayoutReproElems Items;
+    public int C;
+}
+
+public struct LayoutReproBag
+{
+    public int N;
+    public int[] Data;
+}
+
+public struct LayoutReproTwoBools
+{
+    public bool F;
+    public bool G;
+    public int X;
+}
+
+[StructLayout(LayoutKind.Explicit)]
+public struct LayoutReproIntFloatUnion
+{
+    [FieldOffset(0)]
+    public int I;
+
+    [FieldOffset(0)]
+    public float F;
+}
+
+[StructLayout(LayoutKind.Auto)]
+public struct LayoutReproAutoLayout
+{
+    public byte A;
+    public long B;
+    public byte C;
+}
+
+public struct LayoutReproWithArr
+{
+    public int[] Data;
+}
+
+[InlineArray(2)]
+public struct LayoutReproArrPair
+{
+    private LayoutReproWithArr _element0;
+}
+
+public struct LayoutReproArrOuter
+{
+    public LayoutReproArrPair P;
+}
+
+public static partial class StructLayoutRegressionKernels
+{
+    // R1: array of structs holding System.Numerics vectors (#498)
+    [GpuKernel]
+    public static void VecArrayKernel(LayoutReproVecHolder[] h, float[] o)
+    {
+        o[0] = h[0].V.Y;
+        o[1] = h[0].W.Z;
+        o[2] = h[1].A;
+        unsafe
+        {
+            LayoutReproVecHolder s = default;
+            LayoutReproVecHolder* p = &s;
+            o[3] = (float)((byte*)(p + 1) - (byte*)p);
+            o[4] = (float)((byte*)&s.W - (byte*)p);
+        }
+
+        h[0].B = 42f;
+    }
+
+    // R2: array of structs holding Kassyi.GSharp.Core vectors (#498)
+    [GpuKernel]
+    public static void CoreArrayKernel(LayoutReproCoreHolder[] h, float[] o)
+    {
+        o[0] = h[0].V.Y;
+        o[1] = h[0].W.Z;
+        o[2] = h[1].A;
+        unsafe
+        {
+            LayoutReproCoreHolder s = default;
+            LayoutReproCoreHolder* p = &s;
+            o[3] = (float)((byte*)(p + 1) - (byte*)p);
+            o[4] = (float)((byte*)&s.W - (byte*)p);
+        }
+    }
+
+    // R3: [InlineArray] whose element has a different layout on the device (S-26)
+    [GpuKernel]
+    public static void InlineElemKernel(ref LayoutReproInlineOuter x, float[] o)
+    {
+        o[0] = x.Items[1].V.Y;
+        o[1] = x.Items[1].A;
+        o[2] = x.C;
+        unsafe
+        {
+            LayoutReproInlineOuter s = default;
+            LayoutReproInlineOuter* p = &s;
+            o[3] = (float)((byte*)(p + 1) - (byte*)p);
+            o[4] = (float)((byte*)&s.C - (byte*)p);
+        }
+
+        x.Items[1].V = new Float2(9f, 10f);
+        x.C = x.C + 1;
+    }
+
+    // R4a: struct with an array field passed by value (#511)
+    [GpuKernel]
+    public static void BagByValKernel(LayoutReproBag b, int[] o)
+    {
+        o[0] = b.N;
+        o[1] = b.Data.Length;
+        o[2] = b.Data[1];
+    }
+
+    // R4b: struct with an array field passed by ref (#511)
+    [GpuKernel]
+    public static void BagByRefKernel(ref LayoutReproBag b, int[] o)
+    {
+        o[0] = b.N;
+        o[1] = b.Data.Length;
+        o[2] = b.Data[1];
+        b.Data[1] = 99;
+    }
+
+    // R4c: array of structs with an array field (#514)
+    [GpuKernel]
+    public static void BagArrayKernel(LayoutReproBag[] b, int[] o)
+    {
+        o[0] = b[0].N;
+        o[1] = b[0].Data.Length;
+        o[2] = b[1].N;
+    }
+
+    // R5a: struct with multiple bool fields passed by value
+    [GpuKernel]
+    public static void TwoBoolsByValKernel(LayoutReproTwoBools t, int[] o)
+    {
+        o[0] = t.F ? 1 : 0;
+        o[1] = t.G ? 1 : 0;
+        o[2] = t.X;
+    }
+
+    // R6a: explicit layout (union) passed by value (#515)
+    [GpuKernel]
+    public static void UnionKernel(LayoutReproIntFloatUnion u, int[] o)
+    {
+        o[0] = u.I;
+        unsafe
+        {
+            LayoutReproIntFloatUnion s = default;
+            LayoutReproIntFloatUnion* p = &s;
+            o[1] = (int)((byte*)(p + 1) - (byte*)p);
+        }
+    }
+
+    // R6b: array of explicit layout (union) structs (#515)
+    [GpuKernel]
+    public static void UnionArrayKernel(LayoutReproIntFloatUnion[] u, int[] o)
+    {
+        o[0] = u[1].I;
+    }
+
+    // R7: array of LayoutKind.Auto structs (#515)
+    [GpuKernel]
+    public static void AutoArrayKernel(LayoutReproAutoLayout[] a, int[] o)
+    {
+        o[0] = a[0].A;
+        o[1] = (int)a[0].B;
+        o[2] = a[0].C;
+        o[3] = a[1].A;
+    }
+
+    // R9: [InlineArray] whose element contains an array field (S-26)
+    [GpuKernel]
+    public static void InlineArrFieldKernel(ref LayoutReproArrOuter x, int[] o)
+    {
+        o[0] = x.P[1].Data[0];
+    }
+}

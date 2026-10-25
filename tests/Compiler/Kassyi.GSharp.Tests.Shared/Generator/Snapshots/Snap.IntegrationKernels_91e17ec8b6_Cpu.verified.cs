@@ -98,6 +98,8 @@ __device__ inline const float* end() const { return __gsharp_mb__element0 + 4; }
 __device__ inline int size() const { return 4; }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray)==16,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1FixedArray: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1FixedArray)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1FixedArray: alignment"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct__
@@ -108,6 +110,11 @@ float __gsharp_mb_FloatVal;
 bool __gsharp_mb_BoolVal;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct)==12,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct,__gsharp_mb_IntVal)==0,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct.IntVal: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct,__gsharp_mb_FloatVal)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct.FloatVal: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1CustomStruct,__gsharp_mb_BoolVal)==8,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct.BoolVal: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct__
@@ -116,6 +123,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernel
 int __gsharp_mb_Data[4];
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct)==16,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.Tier1FixedBufferStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.Tier1FixedBufferStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__Tier1FixedBufferStruct,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Syntax.Tier1IntegrationKernels.Tier1FixedBufferStruct.Data: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__AllInOneKernel {
 int __gsharp_state = 0;

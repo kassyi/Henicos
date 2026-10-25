@@ -152,7 +152,7 @@ internal static class AotHostNames
     }
 
     private static INamedTypeSymbol? GetEnclosingCustomStruct(ISymbol symbol) =>
-        symbol.ContainingType is { } parentType && CudaLayoutRules.IsCustomStruct(parentType) ? parentType : null;
+        symbol.ContainingType is { } parentType && TypeLayoutCalculator.IsUserStruct(parentType) ? parentType : null;
 
     private static string TrimContextSuffix(string name) =>
         name.EndsWith(ContextSuffix) ? name[..^ContextSuffix.Length] : name;

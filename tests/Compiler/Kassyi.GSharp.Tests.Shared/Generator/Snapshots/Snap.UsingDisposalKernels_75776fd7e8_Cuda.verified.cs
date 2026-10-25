@@ -89,6 +89,10 @@ int __gsharp_mb_Id;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==24,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==8,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Id)==16,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Id: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -141,6 +145,10 @@ int __gsharp_mb_Id;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==24,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==8,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Id)==16,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Id: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -272,6 +280,10 @@ int __gsharp_mb_Id;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==24,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==8,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Id)==16,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Id: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -412,6 +424,10 @@ int __gsharp_mb_Id;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==24,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==8,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Id)==16,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Id: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -554,6 +570,10 @@ int __gsharp_mb_Id;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==24,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==8,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Id)==16,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Id: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -700,6 +720,10 @@ int __gsharp_mb_Id;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==24,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==8,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Id)==16,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Id: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -844,6 +868,10 @@ int __gsharp_mb_Id;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==24,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==8,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Id)==16,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Id: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -979,6 +1007,10 @@ int __gsharp_mb_Id;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder)==24,""Kassyi.GSharp.Tests.Shared.Syntax.UsingPatternRecorder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder)==8,""Kassyi.GSharp.Tests.Shared.Syntax.UsingPatternRecorder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.UsingPatternRecorder.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder,__gsharp_mb_Id)==16,""Kassyi.GSharp.Tests.Shared.Syntax.UsingPatternRecorder.Id: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder__
@@ -1113,6 +1145,10 @@ int __gsharp_mb_Id;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==24,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==8,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Id)==16,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Id: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
@@ -1352,6 +1388,10 @@ int __gsharp_mb_Id;
 __device__ void __gsharp_dispose();
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==24,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder)==8,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Log)==0,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Log: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder,__gsharp_mb_Id)==16,""Kassyi.GSharp.Tests.Shared.Syntax.UsingRecorder.Id: offset"");
 #endif
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingRecorder__

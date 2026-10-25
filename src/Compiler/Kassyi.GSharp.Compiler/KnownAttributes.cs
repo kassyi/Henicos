@@ -28,6 +28,7 @@ internal static class KnownAttributes
     public const string BclIntrinsicMap = nameof(BclIntrinsicMap);
     public const string BclIntrinsicMapMetadataName = $"{TypeConstants.CoreNamespace}.{BclIntrinsicMap}Attribute";
     public const string StructLayout = nameof(StructLayout);
+    public const string FieldOffset = nameof(FieldOffset);
     public const string In = nameof(In);
     public const string Out = nameof(Out);
 
@@ -65,7 +66,7 @@ internal static class KnownAttributes
             or CudaIntrinsicPattern or GpuOperatorMacro or GpuResource or TakesOwnership or CudaImport or BclIntrinsicMap =>
             declaringNamespace.IsCoreNamespace(),
         MethodImpl or SkipLocalsInit or InlineArray => declaringNamespace.IsSystemRuntimeCompilerServices(),
-        StructLayout or In or Out => declaringNamespace.IsSystemRuntimeInteropServices(),
+        StructLayout or FieldOffset or In or Out => declaringNamespace.IsSystemRuntimeInteropServices(),
         _ => true
     };
 }

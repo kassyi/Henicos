@@ -187,7 +187,7 @@ internal readonly record struct KernelParameterShape
         };
 
         // A user struct wins over by-reference: ref MyStruct goes through the native shadow struct as well
-        if (CudaLayoutRules.IsCustomStruct(marshaledType))
+        if (TypeLayoutCalculator.IsUserStruct(marshaledType))
         {
             return shape with
             {
@@ -216,7 +216,7 @@ internal readonly record struct KernelParameterShape
     // A user struct lives on the device in its native shadow layout, which the wrapper class declares as AotContexts.*
     private static string? GetBufferElementTypeName(ITypeSymbol element) =>
         !element.IsUnmanagedType ? null
-        : CudaLayoutRules.IsCustomStruct(element) ? AotHostNames.GetAotStructPath(element)
+        : TypeLayoutCalculator.IsUserStruct(element) ? AotHostNames.GetAotStructPath(element)
         : element.GetFullyQualifiedCsharpName();
 
     private static string? FormatDefaultValue(object? value) => value switch

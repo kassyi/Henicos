@@ -20,6 +20,11 @@ float __gsharp_mb_Y;
 float __gsharp_mb_Z;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__PhysicsVector)==12,""DebugReduc.PhysicsVector: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__PhysicsVector)==4,""DebugReduc.PhysicsVector: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_X)==0,""DebugReduc.PhysicsVector.X: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_Y)==4,""DebugReduc.PhysicsVector.Y: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_Z)==8,""DebugReduc.PhysicsVector.Z: offset"");
 #endif
 __forceinline__ float __gsharp_fn_DebugReduc__ComprehensiveSpecKernel__ComputeMagnitude(__gsharp_ty_DebugReduc__PhysicsVector __gsharp_id_0_v){
 return (float)sqrt(__gsharp_id_0_v.__gsharp_mb_X*__gsharp_id_0_v.__gsharp_mb_X+__gsharp_id_0_v.__gsharp_mb_Y*__gsharp_id_0_v.__gsharp_mb_Y+__gsharp_id_0_v.__gsharp_mb_Z*__gsharp_id_0_v.__gsharp_mb_Z);

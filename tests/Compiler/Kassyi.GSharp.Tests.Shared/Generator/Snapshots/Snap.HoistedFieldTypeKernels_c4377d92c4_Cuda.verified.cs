@@ -359,6 +359,10 @@ float __gsharp_mb_X;
 float __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HoistedPoint)==8,""Kassyi.GSharp.Tests.Shared.Syntax.HoistedPoint: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HoistedPoint)==4,""Kassyi.GSharp.Tests.Shared.Syntax.HoistedPoint: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HoistedPoint,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.HoistedPoint.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HoistedPoint,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.HoistedPoint.Y: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__HoistedFieldTypeKernels__StructVarKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__HoistedPoint> __gsharp_id_0_items, GSharpArray<float> __gsharp_id_1_output){
 int __gsharp_id_2_tid = threadIdx.x;

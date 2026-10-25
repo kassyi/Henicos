@@ -95,5 +95,22 @@ public interface ITranspilerDialect
     /// <param name="typeSymbol">The type to check.</param>
     /// <returns><see langword="true"/> if the dialect maps the type; otherwise, <see langword="false"/>.</returns>
     bool IsMappedType(ITypeSymbol typeSymbol);
+
+    /// <summary>Gets the byte size and alignment of <c>GSharpArray&lt;T&gt;</c> on the target device.</summary>
+    TypeLayout ArrayViewLayout
+    {
+        get;
+    }
+
+    /// <summary>Gets the byte size and alignment of a pointer on the target device.</summary>
+    TypeLayout PointerLayout
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Attempts to get the byte size and alignment of a dialect-mapped type (such as primitives or vector types).
+    /// </summary>
+    bool TryGetTypeLayout(ITypeSymbol typeSymbol, out TypeLayout layout);
 }
 

@@ -23,7 +23,7 @@ internal sealed class SharedMemorySizeRule : ISyntaxValidationRule<LocalDeclarat
             return;
         }
 
-        var elementSize = CudaLayoutRules.GetCudaLayout(type.TypeArguments[0]).Size;
+        var elementSize = TypeLayoutCalculator.GetDeviceLayout(type.TypeArguments[0], context.Dialect).Size;
         foreach (var variable in node.Declaration.Variables)
         {
             if (variable.Initializer?.Value is not { } value ||

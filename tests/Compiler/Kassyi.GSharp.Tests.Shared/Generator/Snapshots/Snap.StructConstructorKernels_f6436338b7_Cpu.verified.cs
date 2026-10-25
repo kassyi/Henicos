@@ -41,6 +41,10 @@ int __gsharp_mb_Sum;
 int __gsharp_mb_Scale;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Sum)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Sum: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_self{};
 __gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a+__gsharp_id_1_b;
@@ -251,6 +255,10 @@ int __gsharp_mb_Sum;
 int __gsharp_mb_Scale;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Sum)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Sum: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_self{};
 __gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a+__gsharp_id_1_b;
@@ -461,6 +469,10 @@ int __gsharp_mb_Sum;
 int __gsharp_mb_Scale;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Sum)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Sum: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_self{};
 __gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a+__gsharp_id_1_b;
@@ -671,6 +683,10 @@ int __gsharp_mb_Sum;
 int __gsharp_mb_Scale;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Sum)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Sum: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled,__gsharp_mb_Scale)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorScaled.Scale: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(int __gsharp_id_0_a, int __gsharp_id_1_b) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled __gsharp_self{};
 __gsharp_self.__gsharp_mb_Sum=__gsharp_id_0_a+__gsharp_id_1_b;
@@ -882,6 +898,11 @@ int __gsharp_mb_Bonus;
 int __gsharp_mb_Result;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers)==12,""Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers,__gsharp_mb_BaseValue)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers.BaseValue: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers,__gsharp_mb_Bonus)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers.Bonus: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers,__gsharp_mb_Result)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers.Result: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers(int __gsharp_id_0_x) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers __gsharp_self{};
 __gsharp_self.__gsharp_mb_BaseValue = 100;
@@ -1089,6 +1110,11 @@ int __gsharp_mb_Bonus;
 int __gsharp_mb_Result;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers)==12,""Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers,__gsharp_mb_BaseValue)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers.BaseValue: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers,__gsharp_mb_Bonus)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers.Bonus: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers,__gsharp_mb_Result)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CtorWithInitializers.Result: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers(int __gsharp_id_0_x) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CtorWithInitializers __gsharp_self{};
 __gsharp_self.__gsharp_mb_BaseValue = 100;

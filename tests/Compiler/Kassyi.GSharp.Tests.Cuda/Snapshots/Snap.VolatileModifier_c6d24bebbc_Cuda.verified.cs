@@ -5,6 +5,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMo
 volatile int __gsharp_mb_Flag;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMod)==4,"Kassyi.GSharp.Tests.Shared.Syntax.VolatileState_MicroMod: size");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMod)==4,"Kassyi.GSharp.Tests.Shared.Syntax.VolatileState_MicroMod: alignment");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMod,__gsharp_mb_Flag)==0,"Kassyi.GSharp.Tests.Shared.Syntax.VolatileState_MicroMod.Flag: offset");
 #endif
 extern "C" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MicroModifiersTarget__VolatileModifier(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMod> __gsharp_id_0_states){
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__VolatileState_uMicroMod __gsharp_id_1_s = __gsharp_id_0_states[0];

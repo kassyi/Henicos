@@ -112,6 +112,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct)==8,""Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct)==4,""Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(int* __gsharp_id_0_scalarRef, float* __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct* __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal){
 (*__gsharp_id_1_scalarOut)=0;

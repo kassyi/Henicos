@@ -41,6 +41,10 @@ float __gsharp_mb_X;
 float __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint.Y: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel {
 int __gsharp_state = 0;

@@ -75,6 +75,10 @@ unsigned int __gsharp_mb_Offset;
 unsigned int __gsharp_mb_Calls;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Offset)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Offset: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Calls)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Calls: offset"");
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextOps__AddWithOffset(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, GSharpArray<unsigned int> __gsharp_id_3_right){
 __gsharp_id_1_result[0]=__gsharp_id_2_left[0]+__gsharp_id_3_right[0]+(*__gsharp_id_0_ctx).__gsharp_mb_Offset;
@@ -89,6 +93,10 @@ unsigned int __gsharp_mb_Offset;
 unsigned int __gsharp_mb_Calls;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Offset)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Offset: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Calls)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Calls: offset"");
 #endif
 inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextOps__ShiftWithOffset(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_operand, int __gsharp_id_3_shift){
 __gsharp_id_1_result[0]=(__gsharp_id_2_operand[0]<<__gsharp_id_3_shift)+__gsharp_id_0_ctx.__gsharp_mb_Offset;
@@ -102,6 +110,10 @@ unsigned int __gsharp_mb_Offset;
 unsigned int __gsharp_mb_Calls;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Offset)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Offset: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Calls)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Calls: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__
@@ -117,6 +129,9 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==16,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue.Data: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> __gsharp_id_0_data) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
@@ -188,6 +203,10 @@ unsigned int __gsharp_mb_Offset;
 unsigned int __gsharp_mb_Calls;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Offset)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Offset: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Calls)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Calls: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__
@@ -203,6 +222,9 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==16,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue.Data: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> __gsharp_id_0_data) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
@@ -451,6 +473,10 @@ unsigned int __gsharp_mb_Offset;
 unsigned int __gsharp_mb_Calls;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Offset)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Offset: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Calls)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Calls: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__
@@ -466,6 +492,9 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==16,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue.Data: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> __gsharp_id_0_data) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;
@@ -636,6 +665,10 @@ unsigned int __gsharp_mb_Offset;
 unsigned int __gsharp_mb_Calls;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Offset)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Offset: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Calls)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Calls: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__RefParameterContextKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState __gsharp_id_0_bigCtx, GSharpArray<unsigned int> __gsharp_id_1_left, GSharpArray<unsigned int> __gsharp_id_2_right, GSharpArray<unsigned int> __gsharp_id_3_result, GSharpArray<unsigned int> __gsharp_id_4_calls){
 __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextKernels__AddTwice(&__gsharp_id_0_bigCtx,__gsharp_id_1_left,__gsharp_id_2_right,__gsharp_id_3_result);
@@ -876,6 +909,10 @@ unsigned int __gsharp_mb_Offset;
 unsigned int __gsharp_mb_Calls;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Offset)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Offset: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextState,__gsharp_mb_Calls)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState.Calls: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue__
@@ -891,6 +928,9 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==16,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue,__gsharp_mb_Data)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextValue.Data: offset"");
 __device__ inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue(GSharpArray<unsigned int> __gsharp_id_0_data) {
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OperatorMacroContextValue __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;

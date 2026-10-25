@@ -113,7 +113,7 @@ internal sealed class CppReservedIdentifierRule :
         const int MaxDepth = 8;
 
         memberPath = null;
-        if (depth > MaxDepth || !CudaLayoutRules.IsCustomStruct(type) || type is not INamedTypeSymbol structType)
+        if (depth > MaxDepth || !TypeLayoutCalculator.IsUserStruct(type) || type is not INamedTypeSymbol structType)
         {
             return false;
         }

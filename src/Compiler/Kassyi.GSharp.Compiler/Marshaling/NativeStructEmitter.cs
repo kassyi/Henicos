@@ -3,10 +3,12 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// <summary>Emits explicit layout shadow structs representing C# structs in native CUDA memory.</summary>
 internal static class NativeStructEmitter
 {
+    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
+
     /// <summary>Emits the explicit struct declaration with computed field offsets.</summary>
     internal static void WriteNativeStructDeclaration(SourceWriter writer, INamedTypeSymbol s)
     {
-        var layout = CudaLayoutRules.GetCudaLayout(s);
+        var structLayout = TypeLayoutCalculator.GetStructLayout(s, s_cudaDialect);
 
         var parents = AotHostNames.GetEnclosingCustomStructs(s);
 
@@ -17,13 +19,13 @@ internal static class NativeStructEmitter
         }
 
         writer.AppendLine(
-            $"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = {layout.Size})]");
+            $"[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = {structLayout.Device.Size})]");
         writer.Append($"public unsafe partial struct {AotHostNames.GetNativeStructName(s)}");
         writer.AppendLine();
 
         using (writer.Scope())
         {
-            foreach (var (field, offset, fieldLayout) in CudaLayoutRules.GetFieldLayouts(s))
+            foreach (var (field, offset, fieldLayout) in structLayout.DeviceFields)
             {
                 writer.Append($"public const string DebugName_{field.Name} = \"");
                 writer.AppendFullyQualifiedCsharpName(field.Type);
@@ -53,7 +55,7 @@ internal static class NativeStructEmitter
         {
             writer.AppendLine($"public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy {field.Name.ToCSharpIdentifier()};");
         }
-        else if (CudaLayoutRules.IsCustomStruct(field.Type))
+        else if (TypeLayoutCalculator.IsUserStruct(field.Type))
         {
             writer.Append("public ");
             writer.AppendAotStructPath(field.Type);

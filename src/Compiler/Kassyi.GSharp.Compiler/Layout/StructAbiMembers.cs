@@ -1,7 +1,7 @@
 namespace Kassyi.GSharp.Compiler.Layout;
 
 /// <summary>The kind of a <see cref="StructAbiMember"/>.</summary>
-internal enum StructAbiMemberKind
+public enum StructAbiMemberKind
 {
     /// <summary>An ordinary instance field.</summary>
     Field,
@@ -25,7 +25,7 @@ internal enum StructAbiMemberKind
 /// <param name="Type">The type of one element: the pointed-at type of a <c>fixed</c> buffer, the field type otherwise.</param>
 /// <param name="ElementCount">The number of elements: 1, or N for a <c>fixed</c> buffer or the element of an <c>[InlineArray(N)]</c> struct.</param>
 /// <param name="Kind">What the member was declared as.</param>
-internal readonly record struct StructAbiMember(
+public readonly record struct StructAbiMember(
     ISymbol Symbol,
     string Name,
     ITypeSymbol Type,
@@ -35,7 +35,7 @@ internal readonly record struct StructAbiMember(
 /// <summary>
 /// The members that make up the native layout of a user struct. The device definition (<c>StructTranspiler</c>), the
 /// host shadow struct (<c>NativeStructEmitter</c>), its marshaling (<c>StructMarshalingEmitter</c>) and the layout
-/// computation (<see cref="CudaLayoutRules"/>) walk this one set so that both sides agree on the offsets.
+/// computation (<see cref="TypeLayoutCalculator"/>) walk this one set so that both sides agree on the offsets.
 /// </summary>
 /// <remarks>
 /// The set holds instance fields, auto-properties (through the backing field, under the property name), <c>fixed</c>
