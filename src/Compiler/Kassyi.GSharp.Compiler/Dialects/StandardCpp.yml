@@ -3,32 +3,37 @@ Backend: Cpp
 Capabilities: HardwareAtomics, SharedMemory
 Types:
   System.Void: "void"
-  System.Boolean: "bool"
-  System.Byte: "unsigned char"
-  System.SByte: "signed char"
-  System.Int16: "short"
-  System.UInt16: "unsigned short"
-  System.Int32: "int"
-  System.UInt32: "unsigned int"
-  System.Int64: "long long"
-  System.UInt64: "unsigned long long"
-  System.Single: "float"
-  System.Double: "double"
+  System.Boolean: { cpp: "bool", size: 1, align: 1 }
+  System.Byte: { cpp: "unsigned char", size: 1, align: 1 }
+  System.SByte: { cpp: "signed char", size: 1, align: 1 }
+  System.Char: { cpp: "char16_t", size: 2, align: 2 }
+  System.Int16: { cpp: "short", size: 2, align: 2 }
+  System.UInt16: { cpp: "unsigned short", size: 2, align: 2 }
+  System.Int32: { cpp: "int", size: 4, align: 4 }
+  System.UInt32: { cpp: "unsigned int", size: 4, align: 4 }
+  System.Int64: { cpp: "long long", size: 8, align: 8 }
+  System.UInt64: { cpp: "unsigned long long", size: 8, align: 8 }
+  System.Single: { cpp: "float", size: 4, align: 4 }
+  System.Double: { cpp: "double", size: 8, align: 8 }
   void: "void"
-  bool: "bool"
-  byte: "unsigned char"
-  sbyte: "signed char"
-  short: "short"
-  ushort: "unsigned short"
-  int: "int"
-  uint: "unsigned int"
-  long: "long long"
-  ulong: "unsigned long long"
-  float: "float"
-  double: "double"
-  System.Numerics.Vector2: "float2"
-  System.Numerics.Vector3: "float3"
-  System.Numerics.Vector4: "float4"
+  bool: { cpp: "bool", size: 1, align: 1 }
+  byte: { cpp: "unsigned char", size: 1, align: 1 }
+  sbyte: { cpp: "signed char", size: 1, align: 1 }
+  char: { cpp: "char16_t", size: 2, align: 2 }
+  short: { cpp: "short", size: 2, align: 2 }
+  ushort: { cpp: "unsigned short", size: 2, align: 2 }
+  int: { cpp: "int", size: 4, align: 4 }
+  uint: { cpp: "unsigned int", size: 4, align: 4 }
+  long: { cpp: "long long", size: 8, align: 8 }
+  ulong: { cpp: "unsigned long long", size: 8, align: 8 }
+  float: { cpp: "float", size: 4, align: 4 }
+  double: { cpp: "double", size: 8, align: 8 }
+  System.Numerics.Vector2: { cpp: "float2", size: 8, align: 4 }
+  System.Numerics.Vector3: { cpp: "float3", size: 12, align: 4 }
+  System.Numerics.Vector4: { cpp: "float4", size: 16, align: 4 }
+Layout:
+  ArrayView: { size: 16, align: 8 }
+  Pointer: { size: 8, align: 8 }
 Intrinsics:
   System.Math.Abs(float): "fabsf"
   System.Math.Abs(double): "fabs"

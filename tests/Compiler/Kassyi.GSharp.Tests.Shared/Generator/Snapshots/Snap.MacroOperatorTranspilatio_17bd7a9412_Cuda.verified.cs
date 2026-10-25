@@ -70,6 +70,9 @@ struct __gsharp_ty_TestNamespace__DummyContext
 int __gsharp_mb_State;
 }
 ;
+static_assert(sizeof(__gsharp_ty_TestNamespace__DummyContext)==4,""TestNamespace.DummyContext: size"");
+static_assert(alignof(__gsharp_ty_TestNamespace__DummyContext)==4,""TestNamespace.DummyContext: alignment"");
+static_assert(offsetof(__gsharp_ty_TestNamespace__DummyContext,__gsharp_mb_State)==0,""TestNamespace.DummyContext.State: offset"");
 #endif
 inline __device__ void __gsharp_fn_TestNamespace__DummyKernels__DummyOp(__gsharp_ty_TestNamespace__DummyContext* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, GSharpArray<unsigned int> __gsharp_id_3_right){
 }
@@ -84,6 +87,9 @@ struct __gsharp_ty_TestNamespace__DummyContext
 int __gsharp_mb_State;
 }
 ;
+static_assert(sizeof(__gsharp_ty_TestNamespace__DummyContext)==4,""TestNamespace.DummyContext: size"");
+static_assert(alignof(__gsharp_ty_TestNamespace__DummyContext)==4,""TestNamespace.DummyContext: alignment"");
+static_assert(offsetof(__gsharp_ty_TestNamespace__DummyContext,__gsharp_mb_State)==0,""TestNamespace.DummyContext.State: offset"");
 #endif
 inline __device__ void __gsharp_fn_TestNamespace__DummyKernels__DummyShiftOp(__gsharp_ty_TestNamespace__DummyContext __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_operand, int __gsharp_id_3_shift){
 }
@@ -139,6 +145,9 @@ struct __gsharp_ty_TestNamespace__DummyContext
 int __gsharp_mb_State;
 }
 ;
+static_assert(sizeof(__gsharp_ty_TestNamespace__DummyContext)==4,""TestNamespace.DummyContext: size"");
+static_assert(alignof(__gsharp_ty_TestNamespace__DummyContext)==4,""TestNamespace.DummyContext: alignment"");
+static_assert(offsetof(__gsharp_ty_TestNamespace__DummyContext,__gsharp_mb_State)==0,""TestNamespace.DummyContext.State: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_TestNamespace__DummyRef__
 #define __GSHARP_STRUCT___gsharp_ty_TestNamespace__DummyRef__
@@ -154,6 +163,9 @@ return this->__gsharp_mb_Data;
 }
 }
 ;
+static_assert(sizeof(__gsharp_ty_TestNamespace__DummyRef)==16,""TestNamespace.DummyRef: size"");
+static_assert(alignof(__gsharp_ty_TestNamespace__DummyRef)==8,""TestNamespace.DummyRef: alignment"");
+static_assert(offsetof(__gsharp_ty_TestNamespace__DummyRef,__gsharp_mb_Data)==0,""TestNamespace.DummyRef.Data: offset"");
 __device__ inline __gsharp_ty_TestNamespace__DummyRef __gsharp_ctor_TestNamespace__DummyRef(GSharpArray<unsigned int> __gsharp_id_0_data) {
 __gsharp_ty_TestNamespace__DummyRef __gsharp_self{};
 __gsharp_self.__gsharp_mb_Data=__gsharp_id_0_data;

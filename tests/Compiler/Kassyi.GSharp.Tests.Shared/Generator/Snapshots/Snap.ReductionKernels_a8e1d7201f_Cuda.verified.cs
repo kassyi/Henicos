@@ -92,6 +92,12 @@ float Z;
 float W;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Core__Float4)==16,""Kassyi.GSharp.Core.Float4: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Core__Float4)==4,""Kassyi.GSharp.Core.Float4: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Core__Float4,X)==0,""Kassyi.GSharp.Core.Float4.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Core__Float4,Y)==4,""Kassyi.GSharp.Core.Float4.Y: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Core__Float4,Z)==8,""Kassyi.GSharp.Core.Float4.Z: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Core__Float4,W)==12,""Kassyi.GSharp.Core.Float4.W: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel(GSharpArray<float4> __gsharp_id_0_input, GSharpArray<float> __gsharp_id_1_output, int __gsharp_id_2_n){
 __shared__ float __gsharp_id_3_sdata[8];

@@ -1,15 +1,8 @@
-using YamlDotNet.Serialization.NamingConventions;
-
 namespace Kassyi.GSharp.Compiler.Generators;
 
 /// <summary>Generates C# dialect classes implementing ITranspilerDialect from YAML configuration files.</summary>
 public static class YamlDialectGenerator
 {
-    private static readonly IDeserializer s_deserializer = new DeserializerBuilder()
-        .WithNamingConvention(PascalCaseNamingConvention.Instance)
-        .IgnoreUnmatchedProperties()
-        .Build();
-
     /// <summary>Discovers YAML dialect files in inputDir and generates dialect C# classes in outputDir.</summary>
     public static void Run(string inputDir, string outputDir)
     {
@@ -27,15 +20,7 @@ public static class YamlDialectGenerator
             }
 
             var text = File.ReadAllText(path);
-            DialectDefinition? def = null;
-            try
-            {
-                def = s_deserializer.Deserialize<DialectDefinition>(text);
-            }
-            catch
-            {
-                // Ignore deserialization failure
-            }
+            var def = DialectDefinition.TryParse(text);
 
             if (def != null && !string.IsNullOrEmpty(def.Name))
             {
@@ -58,6 +43,7 @@ public static class YamlDialectGenerator
         writer.AppendGeneratedFileHeader();
         writer.Line("using System;");
         writer.Line("using System.Collections.Generic;");
+        writer.Line("using Kassyi.GSharp.Compiler.Layout;");
         writer.Line("using Kassyi.GSharp.Compiler.Transpiler;");
         writer.Line("using Kassyi.GSharp.Compiler.Transpiler.Dialects;");
         writer.Line();
@@ -87,6 +73,17 @@ public static class YamlDialectGenerator
                 writer.Line($"public override Kassyi.GSharp.Compiler.Transpiler.Dialects.DialectCapabilities Capabilities => {FormatCapabilityFlags(capabilities)};");
             }
 
+            // Layout (ArrayView / Pointer)
+            if (def.Layout.TryGetValue("ArrayView", out var arrayViewLayout))
+            {
+                writer.Line($"public override TypeLayout ArrayViewLayout => new TypeLayout({arrayViewLayout.Size}, {arrayViewLayout.Align});");
+            }
+
+            if (def.Layout.TryGetValue("Pointer", out var pointerLayout))
+            {
+                writer.Line($"public override TypeLayout PointerLayout => new TypeLayout({pointerLayout.Size}, {pointerLayout.Align});");
+            }
+
             // Types
             if (def.Types.Count > 0)
             {
@@ -98,11 +95,42 @@ public static class YamlDialectGenerator
                     {
                         foreach (var kvp in def.Types)
                         {
-                            writer.Line($"case \"{kvp.Key}\": mappedType = \"{kvp.Value}\"; return true;");
+                            writer.Line($"case \"{kvp.Key}\": mappedType = \"{kvp.Value.CppType}\"; return true;");
                         }
                     }
 
                     writer.Line("return base.TryMapType(fullyQualifiedName, out mappedType);");
+                }
+
+                var hasAnyLayout = false;
+                foreach (var kvp in def.Types)
+                {
+                    if (kvp.Value.HasLayout)
+                    {
+                        hasAnyLayout = true;
+                        break;
+                    }
+                }
+
+                if (hasAnyLayout)
+                {
+                    writer.Line("public override bool TryGetMappedTypeLayout(string fullyQualifiedName, out TypeLayout layout)");
+                    using (writer.Scope())
+                    {
+                        writer.Line("switch (fullyQualifiedName)");
+                        using (writer.Scope())
+                        {
+                            foreach (var kvp in def.Types)
+                            {
+                                if (kvp.Value.Size is { } size && kvp.Value.Align is { } align)
+                                {
+                                    writer.Line($"case \"{kvp.Key}\": layout = new TypeLayout({size}, {align}); return true;");
+                                }
+                            }
+                        }
+
+                        writer.Line("return base.TryGetMappedTypeLayout(fullyQualifiedName, out layout);");
+                    }
                 }
             }
 

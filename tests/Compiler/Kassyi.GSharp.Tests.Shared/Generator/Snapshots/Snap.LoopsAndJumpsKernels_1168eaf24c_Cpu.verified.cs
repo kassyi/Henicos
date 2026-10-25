@@ -52,6 +52,8 @@ __device__ inline const int* end() const { return __gsharp_mb__element0 + 4; }
 __device__ inline int size() const { return 4; }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedArray4)==16,""Kassyi.GSharp.Tests.Shared.Syntax.FixedArray4: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__FixedArray4)==4,""Kassyi.GSharp.Tests.Shared.Syntax.FixedArray4: alignment"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__LoopsAndJumpsKernels__ForeachInlineArrayKernel {
 int __gsharp_state = 0;

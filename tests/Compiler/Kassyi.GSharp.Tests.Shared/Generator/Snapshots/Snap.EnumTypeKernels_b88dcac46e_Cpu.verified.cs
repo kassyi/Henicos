@@ -48,6 +48,11 @@ unsigned int __gsharp_mb_Flags;
 int __gsharp_mb_Payload;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem)==12,""Kassyi.GSharp.Tests.Shared.Syntax.PacketItem: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem)==4,""Kassyi.GSharp.Tests.Shared.Syntax.PacketItem: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem,__gsharp_mb_Color)==0,""Kassyi.GSharp.Tests.Shared.Syntax.PacketItem.Color: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem,__gsharp_mb_Flags)==4,""Kassyi.GSharp.Tests.Shared.Syntax.PacketItem.Flags: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__PacketItem,__gsharp_mb_Payload)==8,""Kassyi.GSharp.Tests.Shared.Syntax.PacketItem.Payload: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__EnumTypeKernels__EvaluatePacketsKernel {
 int __gsharp_state = 0;

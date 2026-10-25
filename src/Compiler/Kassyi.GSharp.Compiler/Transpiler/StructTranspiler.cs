@@ -250,7 +250,7 @@ internal static class StructTranspiler
             WriteInlineArrayIterators(ref context, firstMember.Type, element, length);
         }
 
-        WriteStructFooter(ref context);
+        WriteStructFooter(structSym, isInlineArray: true, ref context);
     }
 
     private static void WriteInlineArrayIterators(ref TranspileContext context, ITypeSymbol elementType, string element,
@@ -338,6 +338,7 @@ internal static class StructTranspiler
         }
 
         context.Emitter.Writer.AppendLine(";");
+        WriteStructStaticAsserts(structSym, isInlineArray: false, ref context);
         WriteStructConstructors(structSym, ref context);
         context.Emitter.Writer
             .AppendLine("#endif")
@@ -561,10 +562,40 @@ internal static class StructTranspiler
         context.Emitter.Writer.Append("struct ").AppendFullyQualifiedCppName(structSym).AppendLine();
     }
 
-    private static void WriteStructFooter(ref TranspileContext context)
+    private static void WriteStructStaticAsserts(INamedTypeSymbol structSym, bool isInlineArray,
+        ref TranspileContext context)
+    {
+        var layout = TypeLayoutCalculator.GetStructLayout(structSym, context.Emitter.Dialect);
+        var csType = GlobalCppNames.GetTypePath(structSym).ToDisplayString();
+        context.Emitter.Writer.Append("static_assert(sizeof(")
+            .AppendFullyQualifiedCppName(structSym)
+            .Append($")=={layout.Device.Size},\"{csType}: size\");")
+            .AppendLine();
+        context.Emitter.Writer.Append("static_assert(alignof(")
+            .AppendFullyQualifiedCppName(structSym)
+            .Append($")=={layout.Device.Alignment},\"{csType}: alignment\");")
+            .AppendLine();
+
+        if (!isInlineArray)
+        {
+            foreach (var field in layout.DeviceFields)
+            {
+                var cppMember = GetMemberName(field.Member.Symbol, ref context);
+                var csMember = field.Member.Name;
+                context.Emitter.Writer.Append("static_assert(offsetof(")
+                    .AppendFullyQualifiedCppName(structSym)
+                    .Append($",{cppMember})=={field.Offset},\"{csType}.{csMember}: offset\");")
+                    .AppendLine();
+            }
+        }
+    }
+
+    private static void WriteStructFooter(INamedTypeSymbol structSym, bool isInlineArray, ref TranspileContext context)
     {
         context.Emitter.Writer
-            .AppendLine(";")
+            .AppendLine(";");
+        WriteStructStaticAsserts(structSym, isInlineArray, ref context);
+        context.Emitter.Writer
             .AppendLine("#endif")
             .AppendLine();
     }

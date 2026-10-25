@@ -72,16 +72,16 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
         foreach (var parameter in kernel.Parameters)
         {
             var layout = parameter.RefKind != RefKind.None
-                ? new CudaLayoutRules.CudaLayoutInfo(DevicePointerBytes, DevicePointerBytes)
-                : CudaLayoutRules.GetCudaLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type);
+                ? new TypeLayout(DevicePointerBytes, DevicePointerBytes)
+                : TypeLayoutCalculator.GetDeviceLayout(parameter.Type.UnwrapNullableArrayLike() ?? parameter.Type, context.Dialect);
 
-            offset = CudaLayoutRules.AlignUp(offset, layout.Alignment) + layout.Size;
+            offset = TypeLayoutCalculator.AlignUp(offset, layout.Alignment) + layout.Size;
         }
 
         // A kernel that returns a value takes the pointer to its result buffer as a hidden last parameter
         if (!kernel.ReturnsVoid)
         {
-            offset = CudaLayoutRules.AlignUp(offset, DevicePointerBytes) + DevicePointerBytes;
+            offset = TypeLayoutCalculator.AlignUp(offset, DevicePointerBytes) + DevicePointerBytes;
         }
 
         if (offset > KernelParameterSpaceLimitBytes)

@@ -341,6 +341,10 @@ int __gsharp_mb_First;
 int __gsharp_mb_Second;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Container__Nested__Leaf)==8,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested.Leaf: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Container__Nested__Leaf)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested.Leaf: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Container__Nested__Leaf,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested.Leaf.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Container__Nested__Leaf,__gsharp_mb_Second)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested.Leaf.Second: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Container__Nested_uLeaf__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Container__Nested_uLeaf__
@@ -349,6 +353,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Container
 int __gsharp_mb_Total;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Container__Nested_uLeaf)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested_Leaf: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Container__Nested_uLeaf)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested_Leaf: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Container__Nested_uLeaf,__gsharp_mb_Total)==0,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Container.Nested_Leaf.Total: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__GlobalNameCollisionKernels__UnderscoreInNameKernel(GSharpArray<int> __gsharp_id_0_output){
 int __gsharp_id_1_tid = threadIdx.x;
@@ -471,6 +478,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Alpha__Ou
 int __gsharp_mb_Value;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Alpha__Outer__Inner)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Alpha.Outer.Inner: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Alpha__Outer__Inner)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Alpha.Outer.Inner: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Alpha__Outer__Inner,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Alpha.Outer.Inner.Value: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Beta__Outer_uInner__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Beta__Outer_uInner__
@@ -479,6 +489,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Beta__Out
 int __gsharp_mb_Value;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Beta__Outer_uInner)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Beta.Outer_Inner: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Beta__Outer_uInner)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Beta.Outer_Inner: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Beta__Outer_uInner,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Beta.Outer_Inner.Value: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__GlobalNameCollisionKernels__NestedTypeAndUnderscoreKernel(GSharpArray<int> __gsharp_id_0_output){
 int __gsharp_id_1_tid = threadIdx.x;
@@ -601,6 +614,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g1_b
 int __gsharp_mb_Value;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g1_bSystem__Int32_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<System.Int32>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g1_bSystem__Int32_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<System.Int32>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g1_bSystem__Int32_e,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<System.Int32>.Value: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e__
@@ -610,6 +626,10 @@ int __gsharp_mb_First;
 int __gsharp_mb_Second;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e)==8,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<System.Int32, System.Int32>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<System.Int32, System.Int32>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e,__gsharp_mb_First)==0,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<System.Int32, System.Int32>.First: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__Pair_g2_bSystem__Int32_bSystem__Int32_e,__gsharp_mb_Second)==4,""Kassyi.GSharp.Tests.Shared.Syntax.GlobalNames.Pair<System.Int32, System.Int32>.Second: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__GlobalNames__GlobalNameCollisionKernels__GenericArityKernel(GSharpArray<int> __gsharp_id_0_output){
 int __gsharp_id_1_tid = threadIdx.x;

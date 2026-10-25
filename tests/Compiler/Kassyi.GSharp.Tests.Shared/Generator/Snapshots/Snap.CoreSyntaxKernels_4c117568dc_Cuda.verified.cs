@@ -438,6 +438,10 @@ float __gsharp_mb_X;
 float __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Vector2)==8,""Kassyi.GSharp.Tests.Shared.Syntax.Vector2: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Vector2)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Vector2: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Vector2,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.Vector2.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Vector2,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.Vector2.Y: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__StructKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__Vector2> __gsharp_id_0_vectors, int __gsharp_id_1_length){
 int __gsharp_id_2_tid = threadIdx.x;
@@ -567,6 +571,12 @@ int __gsharp_mb_ValueI;
 short __gsharp_mb_Flag2;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MixedPaddingStruct)==24,""Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MixedPaddingStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MixedPaddingStruct,__gsharp_mb_Flag1)==0,""Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct.Flag1: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MixedPaddingStruct,__gsharp_mb_ValueD)==8,""Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct.ValueD: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MixedPaddingStruct,__gsharp_mb_ValueI)==16,""Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct.ValueI: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MixedPaddingStruct,__gsharp_mb_Flag2)==20,""Kassyi.GSharp.Tests.Shared.Syntax.MixedPaddingStruct.Flag2: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CoreSyntaxKernels__PaddedStructKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__MixedPaddingStruct> __gsharp_id_0_items, int __gsharp_id_1_length){
 int __gsharp_id_2_tid = threadIdx.x;

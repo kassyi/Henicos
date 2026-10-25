@@ -43,6 +43,11 @@ double __gsharp_mb_B;
 float __gsharp_mb_C;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__CustomLayoutStruct)==13,""Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__CustomLayoutStruct)==1,""Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__CustomLayoutStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__CustomLayoutStruct,__gsharp_mb_B)==1,""Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct.B: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__CustomLayoutStruct,__gsharp_mb_C)==9,""Kassyi.GSharp.Tests.Shared.Core.CustomLayoutStruct.C: offset"");
 #endif
 #pragma pack(pop)
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__StructLayoutKernels__ModifyStructLayoutKernel {
@@ -257,6 +262,8 @@ __device__ inline const unsigned char* end() const { return __gsharp_mb_Element 
 __device__ inline int size() const { return 4; }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__PackedInlineArray)==4,""Kassyi.GSharp.Tests.Shared.Core.PackedInlineArray: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__PackedInlineArray)==1,""Kassyi.GSharp.Tests.Shared.Core.PackedInlineArray: alignment"");
 #endif
 #pragma pack(pop)
 #pragma pack(push, 1)
@@ -269,6 +276,11 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__PackedInlineArray __gsharp_mb_B
 int __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructWithPackedInlineArray)==9,""Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructWithPackedInlineArray)==1,""Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructWithPackedInlineArray,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructWithPackedInlineArray,__gsharp_mb_Buffer)==1,""Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray.Buffer: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__StructWithPackedInlineArray,__gsharp_mb_B)==5,""Kassyi.GSharp.Tests.Shared.Core.StructWithPackedInlineArray.B: offset"");
 #endif
 #pragma pack(pop)
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__StructLayoutKernels__ModifyPackedInlineArrayKernel {

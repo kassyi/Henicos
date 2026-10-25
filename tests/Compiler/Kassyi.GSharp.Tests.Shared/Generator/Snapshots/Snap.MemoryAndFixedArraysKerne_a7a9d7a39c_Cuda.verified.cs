@@ -90,6 +90,10 @@ float __gsharp_mb_X;
 float __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CustomPoint.Y: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MemoryAndFixedArraysKernels__SharedMemoryStaticKernel(GSharpArray<int> __gsharp_id_0_intOutput, GSharpArray<float> __gsharp_id_1_floatOutput, GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CustomPoint> __gsharp_id_2_pointOutput){
 __shared__ int __gsharp_id_3_intSmem[256];

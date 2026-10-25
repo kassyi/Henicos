@@ -41,6 +41,10 @@ int __gsharp_mb_A;
 int __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AggregateStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.AggregateStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AggregateStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.AggregateStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AggregateStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.AggregateStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AggregateStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.AggregateStruct.B: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructAggregateInitKernels__AggregateInitKernel {
 int __gsharp_state = 0;
@@ -243,6 +247,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InnerStruct
 int __gsharp_mb_X;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InnerStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.InnerStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InnerStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.InnerStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InnerStruct,__gsharp_mb_X)==0,""Kassyi.GSharp.Tests.Shared.Syntax.InnerStruct.X: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OuterStruct__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OuterStruct__
@@ -252,6 +259,10 @@ __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InnerStruct __gsharp_mb_B;
 int __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OuterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.OuterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OuterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OuterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OuterStruct,__gsharp_mb_B)==0,""Kassyi.GSharp.Tests.Shared.Syntax.OuterStruct.B: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__OuterStruct,__gsharp_mb_Y)==4,""Kassyi.GSharp.Tests.Shared.Syntax.OuterStruct.Y: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__StructAggregateInitKernels__DeeplyNestedInitKernel {
 int __gsharp_state = 0;

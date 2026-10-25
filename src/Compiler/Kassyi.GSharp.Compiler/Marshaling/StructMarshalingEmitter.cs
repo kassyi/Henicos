@@ -56,7 +56,7 @@ internal static class StructMarshalingEmitter
         {
             kernel.Parameters
                 .AsStackEnumerable()
-                .Do(structTypes, static (parameter, structs) => CudaLayoutRules.CollectStructs(parameter.Type, structs));
+                .Do(structTypes, static (parameter, structs) => TypeLayoutCalculator.CollectStructs(parameter.Type, structs));
         }
 
         var byName = new Dictionary<string, INamedTypeSymbol>(StringComparer.Ordinal);
@@ -153,7 +153,7 @@ internal static class StructMarshalingEmitter
         {
             WriteMarshalArrayMember(writer, member, elementType);
         }
-        else if (CudaLayoutRules.IsCustomStruct(member.Type))
+        else if (TypeLayoutCalculator.IsUserStruct(member.Type))
         {
             writer.AppendMarshalMethodName(member.Type);
             using (writer.Parentheses())
@@ -206,7 +206,7 @@ internal static class StructMarshalingEmitter
                         $"CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out native.{member.Name.ToCSharpIdentifier()}.Data, (IntPtr)size, hStream));");
                     writer.AppendLine($"allocatedPtrs?.Add(native.{member.Name.ToCSharpIdentifier()}.Data);");
 
-                    if (CudaLayoutRules.IsCustomStruct(elementType))
+                    if (TypeLayoutCalculator.IsUserStruct(elementType))
                     {
                         writer.Append("var tempArray = new ");
                         writer.AppendAotStructPath(elementType);
@@ -295,7 +295,7 @@ internal static class StructMarshalingEmitter
         {
             WriteUnmarshalArrayMember(writer, member, elementType);
         }
-        else if (CudaLayoutRules.IsCustomStruct(member.Type))
+        else if (TypeLayoutCalculator.IsUserStruct(member.Type))
         {
             writer.AppendUnmarshalMethodName(member.Type);
             using (writer.Parentheses())
@@ -335,7 +335,7 @@ internal static class StructMarshalingEmitter
             writer.AppendLine("if (size > 0)");
             using (writer.Scope())
             {
-                if (CudaLayoutRules.IsCustomStruct(elementType))
+                if (TypeLayoutCalculator.IsUserStruct(elementType))
                 {
                     writer.Append("var tempArray = new ");
                     writer.AppendAotStructPath(elementType);
@@ -387,7 +387,7 @@ internal static class StructMarshalingEmitter
     private static void WriteArrayElementSize(SourceWriter writer, string prefix, string name,
         ITypeSymbol elementType)
     {
-        if (CudaLayoutRules.IsCustomStruct(elementType))
+        if (TypeLayoutCalculator.IsUserStruct(elementType))
         {
             writer.Append($"int size = {prefix}{name}.Length * sizeof(");
             writer.AppendAotStructPath(elementType);

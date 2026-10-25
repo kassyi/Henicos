@@ -263,6 +263,10 @@ int __gsharp_mb_A;
 int __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InternalNameCollisionPair)==8,""Kassyi.GSharp.Tests.Shared.Syntax.InternalNameCollisionPair: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InternalNameCollisionPair)==4,""Kassyi.GSharp.Tests.Shared.Syntax.InternalNameCollisionPair: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InternalNameCollisionPair,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.InternalNameCollisionPair.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__InternalNameCollisionPair,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.InternalNameCollisionPair.B: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InternalNameCollisionKernels__AggregateTempNamedLocalKernel {
 int __gsharp_state = 0;

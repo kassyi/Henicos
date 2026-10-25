@@ -119,6 +119,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefStructBarrierKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct* __gsharp_id_0_s, GSharpArray<int> __gsharp_id_1_o){
 int __gsharp_id_2_tid = threadIdx.x;
@@ -398,6 +402,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__OutStructBarrierKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct* __gsharp_id_0_s, GSharpArray<int> __gsharp_id_1_o){
 int __gsharp_id_2_tid = threadIdx.x;
@@ -541,6 +549,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructNoBarrierKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct __gsharp_id_0_s, GSharpArray<int> __gsharp_id_1_o){
 int __gsharp_id_2_tid = threadIdx.x;
@@ -667,6 +679,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructBarrierKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct __gsharp_id_0_s, GSharpArray<int> __gsharp_id_1_o){
 int __gsharp_id_2_tid = threadIdx.x;
@@ -795,6 +811,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.B: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__InStructBarrierKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct __gsharp_id_0_s, GSharpArray<int> __gsharp_id_1_o){
 int __gsharp_id_2_tid = threadIdx.x;

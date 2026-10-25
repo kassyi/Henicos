@@ -123,6 +123,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pai
 int __gsharp_mb_A;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair)==4,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair)==4,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair.A: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__AotContextNameKernels__First(GSharpArray<int> __gsharp_id_0_data, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair __gsharp_id_1_pair){
 __gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_pair.__gsharp_mb_A;
@@ -247,6 +250,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pai
 int __gsharp_mb_A;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair)==4,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair)==4,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair.A: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__AotContextNameKernels__Second(GSharpArray<int> __gsharp_id_0_data, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Pair __gsharp_id_1_pair){
 __gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_pair.__gsharp_mb_A+1;
@@ -371,6 +377,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Box
 int __gsharp_mb_Value;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Box_g1_bSystem__Int32_e)==4,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<System.Int32>: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Box_g1_bSystem__Int32_e)==4,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<System.Int32>: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Box_g1_bSystem__Int32_e,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<System.Int32>.Value: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__AotContextNameKernels__Third(GSharpArray<int> __gsharp_id_0_data, __gsharp_ty_Kassyi__GSharp__Tests__Shared__Generator__AotContextName__Box_g1_bSystem__Int32_e __gsharp_id_1_box){
 __gsharp_id_0_data[threadIdx.x]=__gsharp_id_1_box.__gsharp_mb_Value;

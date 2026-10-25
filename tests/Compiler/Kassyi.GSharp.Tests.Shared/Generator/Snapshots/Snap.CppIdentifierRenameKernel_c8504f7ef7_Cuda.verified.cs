@@ -681,6 +681,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordInner
 int __gsharp_mb_template;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordInner)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordInner: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordInner)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordInner: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordInner,__gsharp_mb_template)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordInner.template: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields__
@@ -694,6 +697,14 @@ int __gsharp_mb__Value;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordInner __gsharp_mb_inner;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields)==24,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields,__gsharp_mb_register)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields.register: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields,__gsharp_mb_int)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields.int: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields,__gsharp_mb_Length)==8,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields.Length: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields,__gsharp_mb_Count)==12,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields.Count: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields,__gsharp_mb__Value)==16,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields._Value: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields,__gsharp_mb_inner)==20,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields.inner: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordBuffer4__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordBuffer4__
@@ -714,6 +725,8 @@ __device__ inline const int* end() const { return __gsharp_mb_begin + 4; }
 __device__ inline int size() const { return 4; }
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordBuffer4)==16,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordBuffer4: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordBuffer4)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordBuffer4: alignment"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordProps__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordProps__
@@ -722,6 +735,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordProps
 int __gsharp_mb_union;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordProps)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordProps: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordProps)==4,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordProps: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordProps,__gsharp_mb_union)==0,""Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordProps.union: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__CppIdentifierRenameKernels__StructMemberNamesKernel(GSharpArray<__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__CppKeywordFields> __gsharp_id_0_items, GSharpArray<int> __gsharp_id_1_result){
 int __gsharp_id_2_tid = threadIdx.x;

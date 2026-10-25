@@ -63,6 +63,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.B: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefStructBarrierKernel {
 int __gsharp_state = 0;
@@ -530,6 +534,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.B: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__OutStructBarrierKernel {
 int __gsharp_state = 0;
@@ -770,6 +778,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.B: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructNoBarrierKernel {
 int __gsharp_state = 0;
@@ -967,6 +979,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.B: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__RefReadOnlyStructBarrierKernel {
 int __gsharp_state = 0;
@@ -1182,6 +1198,10 @@ int __gsharp_mb_A;
 float __gsharp_mb_B;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_A)==0,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.A: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__ByRefParameterStruct,__gsharp_mb_B)==4,""Kassyi.GSharp.Tests.Shared.Syntax.ByRefParameterStruct.B: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__ByRefKernelParameterKernels__InStructBarrierKernel {
 int __gsharp_state = 0;

@@ -16,6 +16,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct
 int __gsharp_mb_Value;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct.Value: offset"");
 #endif
 inline __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__CreateChild(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_id_0_child){
 return __gsharp_id_0_child;
@@ -55,6 +58,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct
 int __gsharp_mb_Value;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct.Value: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__HappyPathKernel {
 int __gsharp_state = 0;
@@ -259,6 +265,9 @@ struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct
 int __gsharp_mb_Value;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct,__gsharp_mb_Value)==0,""Kassyi.GSharp.Tests.Shared.Syntax.NestedChildStruct.Value: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct__
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct__
@@ -268,6 +277,10 @@ int __gsharp_mb_Id;
 __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedChildStruct __gsharp_mb_Child;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.NestedParentStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct)==4,""Kassyi.GSharp.Tests.Shared.Syntax.NestedParentStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct,__gsharp_mb_Id)==0,""Kassyi.GSharp.Tests.Shared.Syntax.NestedParentStruct.Id: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__NestedParentStruct,__gsharp_mb_Child)==4,""Kassyi.GSharp.Tests.Shared.Syntax.NestedParentStruct.Child: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__TargetTypedNewKernels__NestedInitializerKernel {
 int __gsharp_state = 0;

@@ -286,6 +286,11 @@ unsigned int __gsharp_mb_ValueU;
 long long __gsharp_mb_ValueL;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AtomicTestStruct)==16,""Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AtomicTestStruct)==8,""Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AtomicTestStruct,__gsharp_mb_ValueI)==0,""Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct.ValueI: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AtomicTestStruct,__gsharp_mb_ValueU)==4,""Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct.ValueU: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__AtomicTestStruct,__gsharp_mb_ValueL)==8,""Kassyi.GSharp.Tests.Shared.Syntax.AtomicTestStruct.ValueL: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__InvocationAndIntrinsicsKernels__InterlockedEdgeCasesKernel {
 int __gsharp_state = 0;

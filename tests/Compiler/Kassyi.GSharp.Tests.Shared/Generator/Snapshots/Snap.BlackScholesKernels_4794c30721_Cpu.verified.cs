@@ -323,6 +323,16 @@ GSharpArray<float> __gsharp_mb_PutResult;
 int __gsharp_mb_N;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext)==96,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext: size"");
+static_assert(alignof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext)==8,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext: alignment"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_S)==0,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.S: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_X)==16,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.X: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_T)==32,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.T: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_R)==48,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.R: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_V)==52,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.V: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_CallResult)==56,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.CallResult: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_PutResult)==72,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.PutResult: offset"");
+static_assert(offsetof(__gsharp_ty_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesContext,__gsharp_mb_N)==88,""Henicos.Benchmarks.ComputeBenchmarks.BlackScholesKernels.BlackScholesContext.N: offset"");
 #endif
 struct __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__BlackScholesKernels__BlackScholesKernel {
 int __gsharp_state = 0;

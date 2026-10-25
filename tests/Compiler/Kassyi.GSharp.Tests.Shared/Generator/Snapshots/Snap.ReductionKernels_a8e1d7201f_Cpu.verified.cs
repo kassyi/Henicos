@@ -43,6 +43,12 @@ float __gsharp_mb_Z;
 float __gsharp_mb_W;
 }
 ;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Core__Float4)==16,""Kassyi.GSharp.Core.Float4: size"");
+static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Core__Float4)==4,""Kassyi.GSharp.Core.Float4: alignment"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Core__Float4,__gsharp_mb_X)==0,""Kassyi.GSharp.Core.Float4.X: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Core__Float4,__gsharp_mb_Y)==4,""Kassyi.GSharp.Core.Float4.Y: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Core__Float4,__gsharp_mb_Z)==8,""Kassyi.GSharp.Core.Float4.Z: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Core__Float4,__gsharp_mb_W)==12,""Kassyi.GSharp.Core.Float4.W: offset"");
 #endif
 struct __gsharp_context_Henicos__Benchmarks__ComputeBenchmarks__ReductionKernels__ReductionKernel {
 int __gsharp_state = 0;
