@@ -33,6 +33,7 @@ You **MUST** follow the dedicated rule files for code implementation:
 - [Test Execution (`just`)](.agents/rules/test-execution.md): `just` test categories and DiffEngine hang prevention.
 - [Transpiler Emission Rules](.agents/rules/transpiler-emission.md): NO Reflection, `SourceWriter` scoped brackets, dense left-aligned output.
 - [Generator Pipeline Invariants](.agents/rules/generator-invariants.md): `[Constant]` exclusion, diagnostics, struct guards, ref/out, `var` suffix, design-time I/O guard, MSBuild wildcard. The symbol file (`*.gsym.json`) and source hash header are described in the transpiler skill (Symbol File Mapping).
+- [Issue Priority (Milestones)](.agents/rules/issue-milestones.md): the current bugs-first policy, the milestones `M1`–`M5` and `Future`, how to assign an issue, the order to work in, and what agents may change without approval.
 - [Hard Problem Routing](.agents/rules/model-routing.md): when to use Fable for the hardest design/verification work, and handing math optimization / complexity reduction to the user as a self-contained plain-text problem (no file attachments).
 - [Agent Scripts](.agents/rules/agent-scripts.md): agent-run scripts are dependency-free Node `.js` (no `.sh` / `.ps1`); compiler-owned logic goes in a `Kassyi.GSharp.Compiler.Generators` mode; script catalog.
 
