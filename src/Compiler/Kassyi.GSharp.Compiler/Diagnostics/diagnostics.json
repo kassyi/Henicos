@@ -398,15 +398,6 @@
     "isEnabledByDefault": true
   },
   {
-    "name": "KernelParameterRefStructProhibited",
-    "id": "GSH0044",
-    "title": "ref, out, in, and ref struct parameters are prohibited in GPU kernels",
-    "messageFormat": "The parameter '{0}' uses a prohibited modifier (ref/out/in) or type (ref struct). These cannot be saved to the state machine context across barriers.",
-    "category": "GSharpTranspiler",
-    "defaultSeverity": "Error",
-    "isEnabledByDefault": true
-  },
-  {
     "name": "RecursiveBarrierProhibited",
     "id": "GSH0045",
     "title": "Recursive local functions cannot contain Gpu.SyncThreads()",

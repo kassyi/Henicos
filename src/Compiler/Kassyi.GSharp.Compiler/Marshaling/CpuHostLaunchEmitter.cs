@@ -172,13 +172,13 @@ internal static class CpuHostLaunchEmitter
                                     }
 
                                     isFirst = false;
-                                    if (p.RefKind == RefKind.Ref)
+                                    if (p.RefKind is RefKind.Ref or RefKind.Out)
                                     {
                                         writer.Append("ref ");
                                     }
-                                    else if (p.RefKind == RefKind.Out)
+                                    else if (p.RefKind is RefKind.RefReadOnlyParameter)
                                     {
-                                        writer.Append("out ");
+                                        writer.Append("in ");
                                     }
 
                                     writer.Append(p.Identifier);

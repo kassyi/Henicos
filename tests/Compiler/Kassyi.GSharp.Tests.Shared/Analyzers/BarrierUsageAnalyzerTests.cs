@@ -74,11 +74,11 @@ public class BarrierUsageAnalyzerTests : TranspilerTestBase
     }
 
     [Fact]
-    [Scenario(TestScenario.SadPath)]
-    public async Task Test_InvalidKernelParameters_ReportsGSH0044()
+    [Scenario(TestScenario.HappyPath)]
+    public async Task Test_ByRefAndRefStructKernelParameters_HasNoDiagnostics()
     {
         await RoslynTestUtility.TestAnalyzer("Analyzers/BarrierUsage/KernelParameterRefStructKernels.cu.cs", s_analyzer)
-                               .ReportsErrorsAsync("GSH0044");
+                               .ReportsNoDiagnosticsAsync();
     }
 
     [Fact]

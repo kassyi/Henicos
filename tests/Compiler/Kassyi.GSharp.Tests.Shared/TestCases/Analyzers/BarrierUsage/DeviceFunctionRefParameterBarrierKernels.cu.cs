@@ -4,7 +4,7 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers.BarrierUsage;
 
 public static partial class DeviceFunctionRefParameterBarrierKernels
 {
-    // By-reference parameters are a kernel-only restriction (GSH0044)
+    // A device function that reaches a barrier may take ref and out parameters
     [GpuDeviceFunction]
     public static void IncrementAcrossBarrier(ref int value, out int previous)
     {

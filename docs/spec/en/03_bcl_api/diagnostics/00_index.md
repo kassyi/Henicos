@@ -57,7 +57,6 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0041](GSH0041.md) | Error | Stack pointers cannot be held across barrier synchronization |
 | [GSH0042](GSH0042.md) | Error | Gpu.SyncThreads() cannot be called from methods that are not GPU code |
 | [GSH0043](GSH0043.md) | Error | Gpu.SyncThreads() cannot be called inside a fixed block |
-| [GSH0044](GSH0044.md) | Error | ref, out, in, and ref struct parameters are prohibited in GPU kernels |
 | [GSH0045](GSH0045.md) | Error | Recursive local functions cannot contain Gpu.SyncThreads() |
 | [GSH0046](GSH0046.md) | Error | async, await, and yield return are prohibited in GPU kernels |
 | [GSH0047](GSH0047.md) | Error | The lock statement is prohibited in GPU kernels |

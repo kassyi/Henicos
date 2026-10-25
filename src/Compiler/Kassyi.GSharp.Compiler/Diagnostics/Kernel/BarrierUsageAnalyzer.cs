@@ -17,7 +17,6 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             GSharpDiagnostics.CrossBarrierLocalPointerProhibited, // GSH0041
             GSharpDiagnostics.ExternalBarrierCallProhibited, // GSH0042
             GSharpDiagnostics.FixedBlockBarrierProhibited, // GSH0043
-            GSharpDiagnostics.KernelParameterRefStructProhibited, // GSH0044
             GSharpDiagnostics.RecursiveBarrierProhibited, // GSH0045
             GSharpDiagnostics.AsyncYieldInKernelProhibited, // GSH0046
             GSharpDiagnostics.LockStatementInKernelProhibited, // GSH0047
