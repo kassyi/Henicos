@@ -391,7 +391,7 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct* __restrict__  __gsharp_id_0_data, __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct* __gsharp_id_0_data, __gsharp_context_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 auto* __gsharp_root = __gsharp_ctx;
@@ -409,7 +409,7 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, __gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct* __restrict__  __gsharp_id_0_data)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, __gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct* __gsharp_id_0_data)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;

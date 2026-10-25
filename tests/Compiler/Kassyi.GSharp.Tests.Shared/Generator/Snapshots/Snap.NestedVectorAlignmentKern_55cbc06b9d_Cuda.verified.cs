@@ -336,7 +336,7 @@ double2 __gsharp_mb_Field5_Double2;
 }
 ;
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct* __restrict__  __gsharp_id_0_data){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Runtime__NestedVectorAlignmentKernels__RoundtripKernel(__gsharp_ty_Kassyi__GSharp__Tests__Runtime__GEN56_uAlignmentTestStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_Field1_Byte=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_Field1_Byte+1-1);
 (*__gsharp_id_0_data).__gsharp_mb_Field4_Short=(short)((*__gsharp_id_0_data).__gsharp_mb_Field4_Short+1-1);
 }

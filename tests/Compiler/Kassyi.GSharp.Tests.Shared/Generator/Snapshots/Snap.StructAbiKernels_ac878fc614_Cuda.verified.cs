@@ -465,7 +465,7 @@ int __gsharp_mb_C;
 ;
 #endif
 #pragma pack(pop)
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripPackedKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPackedStruct* __restrict__  __gsharp_id_0_data){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripPackedKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPackedStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
 (*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
 }
@@ -726,7 +726,7 @@ int __gsharp_mb_C;
 }
 ;
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripInlineArrayKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiInlineArrayStruct* __restrict__  __gsharp_id_0_data){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripInlineArrayKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiInlineArrayStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
 (*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
 }
@@ -967,7 +967,7 @@ int __gsharp_mb_C;
 }
 ;
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripCoreFieldKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiCoreFieldStruct* __restrict__  __gsharp_id_0_data){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripCoreFieldKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiCoreFieldStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
 (*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
 }
@@ -1228,7 +1228,7 @@ int __gsharp_mb_C;
 }
 ;
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripPrivateInlineArrayKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPrivateInlineArrayStruct* __restrict__  __gsharp_id_0_data){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripPrivateInlineArrayKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiPrivateInlineArrayStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
 (*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
 }
@@ -1449,7 +1449,7 @@ int __gsharp_mb_C;
 }
 ;
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripFixedBufferKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiFixedBufferStruct* __restrict__  __gsharp_id_0_data){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripFixedBufferKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiFixedBufferStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
 (*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
 }
@@ -1670,7 +1670,7 @@ int __gsharp_mb_C;
 }
 ;
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripAutoPropertyKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiAutoPropertyStruct* __restrict__  __gsharp_id_0_data){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripAutoPropertyKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiAutoPropertyStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_A=(unsigned char)((*__gsharp_id_0_data).__gsharp_mb_A+1);
 (*__gsharp_id_0_data).__gsharp_mb_B=(*__gsharp_id_0_data).__gsharp_mb_B+1.0;
 (*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
@@ -1914,7 +1914,7 @@ return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
 }
 ;
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripComputedPropertyKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct* __restrict__  __gsharp_id_0_data){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__RoundtripComputedPropertyKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct* __gsharp_id_0_data){
 (*__gsharp_id_0_data).__gsharp_mb_C=(*__gsharp_id_0_data).__gsharp_mb_C+1;
 }
 ";
@@ -2157,7 +2157,7 @@ return (*this).__gsharp_mb_C-(*this).__gsharp_mb_Sum();
 }
 ;
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__ReadComputedPropertyThroughRefKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct* __restrict__  __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_result){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Core__StructAbiKernels__ReadComputedPropertyThroughRefKernel(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__AbiComputedPropertyStruct* __gsharp_id_0_data, GSharpArray<int> __gsharp_id_1_result){
 __gsharp_id_1_result[0]=(*__gsharp_id_0_data).__gsharp_mb_Sum();
 __gsharp_id_1_result[1]=(*__gsharp_id_0_data).__gsharp_mb_Twice();
 __gsharp_id_1_result[2]=(*__gsharp_id_0_data).__gsharp_mb_Product();

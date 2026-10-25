@@ -71,7 +71,7 @@ uint64_t __gsharp_warp_exchange[2] = {};
 uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 };
-extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(int* __restrict__  __gsharp_id_0_scalarRef, float* __restrict__  __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct* __restrict__  __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel* __gsharp_ctx){
+extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(int* __gsharp_id_0_scalarRef, float* __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct* __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal, __gsharp_context_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
 #define __gsharp_yielded_for_grid_sync __gsharp_ctx->__gsharp_yielded_for_grid_sync
 auto* __gsharp_root = __gsharp_ctx;
@@ -93,7 +93,7 @@ return;
 #undef __gsharp_state
 #undef __gsharp_yielded_for_grid_sync
 }
-extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, int* __restrict__  __gsharp_id_0_scalarRef, float* __restrict__  __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct* __restrict__  __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal)
+extern ""C"" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, int* __gsharp_id_0_scalarRef, float* __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct* __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal)
 {
 __gsharp_host_last_error.Reset();
 GSharpErrorSlot __gsharp_launch_error;

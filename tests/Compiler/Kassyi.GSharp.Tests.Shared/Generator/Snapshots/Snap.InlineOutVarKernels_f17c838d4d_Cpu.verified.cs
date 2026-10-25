@@ -6,16 +6,16 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCpuDeviceCode
 {
-public const string Source = @"inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TrySquare(int __gsharp_id_0_input, int* __restrict__  __gsharp_id_1_output);
+public const string Source = @"inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TrySquare(int __gsharp_id_0_input, int* __gsharp_id_1_output);
 
-inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TryStep(int __gsharp_id_0_input, int* __restrict__  __gsharp_id_1_next);
+inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TryStep(int __gsharp_id_0_input, int* __gsharp_id_1_next);
 
-inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TrySquare(int __gsharp_id_0_input, int* __restrict__  __gsharp_id_1_output){
+inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TrySquare(int __gsharp_id_0_input, int* __gsharp_id_1_output){
 (*__gsharp_id_1_output)=__gsharp_id_0_input*__gsharp_id_0_input;
 return __gsharp_id_0_input>0;
 }
 
-inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TryStep(int __gsharp_id_0_input, int* __restrict__  __gsharp_id_1_next){
+inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__InlineOutVarKernels__TryStep(int __gsharp_id_0_input, int* __gsharp_id_1_next){
 (*__gsharp_id_1_next)=__gsharp_id_0_input-1;
 return (*__gsharp_id_1_next)>0;
 }

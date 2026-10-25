@@ -113,7 +113,7 @@ float __gsharp_mb_B;
 }
 ;
 #endif
-extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(int* __restrict__  __gsharp_id_0_scalarRef, float* __restrict__  __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct* __restrict__  __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal){
+extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__TestCases__WrapperOptimizationKernels__ComplexSignatureKernel(int* __gsharp_id_0_scalarRef, float* __gsharp_id_1_scalarOut, GSharpArray<int> __gsharp_id_2_arrayVal, __gsharp_ty_Kassyi__GSharp__Tests__Shared__TestCases__MyCustomStruct* __gsharp_id_3_structRef, unsigned int __gsharp_id_4_constantVal){
 (*__gsharp_id_1_scalarOut)=0;
 if((*__gsharp_id_0_scalarRef)>__gsharp_id_4_constantVal)
 {

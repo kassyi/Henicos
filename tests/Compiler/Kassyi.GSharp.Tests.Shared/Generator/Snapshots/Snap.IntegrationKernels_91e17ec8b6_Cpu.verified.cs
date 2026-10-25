@@ -8,7 +8,7 @@ internal static class GSharpSharedCpuDeviceCode
 {
 public const string Source = @"inline float __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMath(float __gsharp_id_0_x, float __gsharp_id_1_y);
 
-inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__TryProcess(int __gsharp_id_0_input, int* __restrict__  __gsharp_id_1_output);
+inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__TryProcess(int __gsharp_id_0_input, int* __gsharp_id_1_output);
 
 __forceinline__ float __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__HelperMathAggressive(float __gsharp_id_0_x);
 
@@ -16,7 +16,7 @@ inline float __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1Integration
 return (float)fmaxf(__gsharp_id_0_x*__gsharp_id_0_x,__gsharp_id_1_y*__gsharp_id_1_y);
 }
 
-inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__TryProcess(int __gsharp_id_0_input, int* __restrict__  __gsharp_id_1_output){
+inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__Tier1IntegrationKernels__TryProcess(int __gsharp_id_0_input, int* __gsharp_id_1_output){
 (*__gsharp_id_1_output)=__gsharp_id_0_input*2;
 return __gsharp_id_0_input>0;
 }
