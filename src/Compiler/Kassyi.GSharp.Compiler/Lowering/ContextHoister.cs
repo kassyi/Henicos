@@ -10,10 +10,15 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// The semantic model of the method's syntax tree, used to key hoisted declarations and references by symbol and region
 /// (<see cref="DeclarationKey"/>). When <see langword="null"/>, declarations and references are matched by name and region.
 /// </param>
+/// <param name="deviceFunction">
+/// The device function that owns the body. With a semantic model, only references to its own parameters are rewritten
+/// to the frame copies of <paramref name="copiedParameters"/>.
+/// </param>
 public class ContextHoister(
     IReadOnlyCollection<string>? copiedParameters = null,
     bool isDeviceFunction = false,
-    SemanticModel? semanticModel = null)
+    SemanticModel? semanticModel = null,
+    IMethodSymbol? deviceFunction = null)
     : CSharpSyntaxRewriter
 {
     private readonly HashSet<DeclarationKey> _hoistedVariables = [];
@@ -48,10 +53,13 @@ public class ContextHoister(
             barrierStarts[i] = analyzer.BarrierSpans[i].Start;
         }
 
-        var hoistedNames = new HashSet<string>(StringComparer.Ordinal);
+        var variableCount = analyzer.Variables.Count;
+        var keys = new DeclarationKey[variableCount];
         // [WHY] Binary search (O(V log B)) is used to determine if variables cross any synchronization barriers.
-        foreach (var (decl, scopeEnd) in analyzer.Variables)
+        for (var v = 0; v < variableCount; v++)
         {
+            var (decl, scopeEnd) = analyzer.Variables[v];
+            keys[v] = LoweringIdentity.ForDeclaration(decl, semanticModel);
             var declEnd = decl.Span.End;
 
             var isSharedMemory = decl.Parent is VariableDeclarationSyntax
@@ -65,7 +73,7 @@ public class ContextHoister(
 
             if (isSharedMemory || isSuspendingCallResult)
             {
-                hoistedNames.Add(decl.Identifier.ValueText);
+                _hoistedVariables.Add(keys[v]);
                 continue;
             }
 
@@ -79,18 +87,19 @@ public class ContextHoister(
             // If a barrier is found after the declaration and before the end of the scope, it crosses.
             if (index < barrierCount && barrierStarts[index] < scopeEnd)
             {
-                hoistedNames.Add(decl.Identifier.ValueText);
+                _hoistedVariables.Add(keys[v]);
             }
         }
 
-        // [WHY] Hoisting selection remains name-based so that sibling locals sharing a hoisted name still receive context
-        // fields; rewrites then match each declaration and reference by its DeclarationKey (symbol + region).
-        foreach (var (decl, _) in analyzer.Variables)
+        // [WHY] Each declaration that crosses a barrier is hoisted on its own (DeclarationKey: symbol + region), so a
+        // sibling local of the same name that does not cross one stays a local. Without a semantic model the key is the
+        // name, and every declaration of a hoisted name moves into the context, which keeps the name-keyed rewrite
+        // consistent.
+        for (var v = 0; v < variableCount; v++)
         {
-            if (hoistedNames.Contains(decl.Identifier.ValueText))
+            if (_hoistedVariables.Contains(keys[v]))
             {
-                hoistedDecls.Add(decl);
-                _hoistedVariables.Add(LoweringIdentity.ForDeclaration(decl, semanticModel));
+                hoistedDecls.Add(analyzer.Variables[v].Decl);
             }
         }
 
@@ -255,10 +264,12 @@ public class ContextHoister(
             return true;
         }
 
-        return key.Symbol is IParameterSymbol
-        {
-            ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Ordinary }
-        };
+        // [WHY] Only the lowered method's own parameter lives in the frame. A parameter of the same name that belongs
+        // to a lambda, a local function or a body that an expansion copied in (an inlined iterator) stays a plain
+        // reference.
+        return deviceFunction != null &&
+               key.Symbol is IParameterSymbol parameter &&
+               parameter.ContainingSymbol.OriginalDefinition.IsEqualTo(deviceFunction.OriginalDefinition);
     }
 
     // [WHY] The member name keeps the original span of the replaced node, so that the transpiler resolves it to the
