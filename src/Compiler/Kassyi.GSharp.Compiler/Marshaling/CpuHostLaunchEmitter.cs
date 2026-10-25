@@ -48,11 +48,6 @@ internal static class CpuHostLaunchEmitter
                 "uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ");
             foreach (var p in kernel.Host.Parameters)
             {
-                if (p.IsConstant)
-                {
-                    continue;
-                }
-
                 writer.Append(", ");
 
                 if (p.IsArray)
@@ -285,11 +280,6 @@ internal static class CpuHostLaunchEmitter
 
             foreach (var shape in kernel.Parameters)
             {
-                if (shape.IsConstant)
-                {
-                    continue;
-                }
-
                 writer.Append(", ");
 
                 if (shape.IsArray)
