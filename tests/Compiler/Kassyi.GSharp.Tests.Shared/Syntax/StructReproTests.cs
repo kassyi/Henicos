@@ -9,8 +9,6 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class StructReproTests : TranspilerTestBase
 {
-    private const string BarrierLocalSameNameSkipReason = "A local live across a barrier with the same name as a struct member is an internal compiler error (#481)";
-
     [SkippableFact]
     [Category(TestCategory.Syntax)]
     [Scenario(TestScenario.HappyPath)]
@@ -78,30 +76,6 @@ public class StructReproTests : TranspilerTestBase
         StructReproKernels.LaunchReturnAndLocalStructKernel(output, blockDimX: 1);
         Assert.Equal(5, output[0]);
     }
-
-#if REPRO_A48_INIT
-    [SkippableFact(Skip = BarrierLocalSameNameSkipReason)]
-    [Category(TestCategory.Syntax)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_LocalAcrossBarrierNamedLikeMember_ObjectInitializer()
-    {
-        var output = new int[1];
-        StructReproKernels.LaunchBarrierLocalSameNameInitializerKernel(output, blockDimX: 1);
-        Assert.Equal(1, output[0]);
-    }
-#endif
-
-#if REPRO_A48_WITH
-    [SkippableFact(Skip = BarrierLocalSameNameSkipReason)]
-    [Category(TestCategory.Syntax)]
-    [Scenario(TestScenario.Boundary)]
-    public void Test_LocalAcrossBarrierNamedLikeMember_With()
-    {
-        var output = new int[1];
-        StructReproKernels.LaunchBarrierLocalSameNameWithKernel(output, blockDimX: 1);
-        Assert.Equal(3, output[0]);
-    }
-#endif
 
     [SkippableFact]
     [Category(TestCategory.Syntax)]

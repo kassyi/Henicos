@@ -271,4 +271,42 @@ public class SemanticModelExtensionsTests
             innerStamped.DescendantNodesAndSelf(),
             static n => Assert.True(n.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind).Count() <= 1));
     }
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void StampRegion_GenericLocalFunctionCall_StampsSimpleNameReference()
+    {
+        const string source = """
+            namespace TestNamespace;
+            public static class GenericLocalCaller
+            {
+                public static int Run(int x)
+                {
+                    T Id<T>(T v) => v;
+                    return Id<int>(x);
+                }
+            }
+            """;
+        var compilation = RoslynTestUtility.CreateCompilation(source);
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
+
+        var method = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .Single(static m => m.Identifier.ValueText == "Run");
+        var body = method.Body ?? throw new InvalidOperationException("Run has a block body.");
+
+        var annotated = LoweringAnnotations.AnnotateOriginalSpans(body, compilation);
+        var stamped = LoweringAnnotations.StampRegion(annotated, region: 3, model);
+
+        var localFuncDecl = stamped.DescendantNodes().OfType<LocalFunctionStatementSyntax>().Single();
+        var genericCallName = stamped.DescendantNodes().OfType<GenericNameSyntax>().Single();
+
+        Assert.Equal(3, LoweringIdentity.GetRegion(localFuncDecl));
+        Assert.Equal(3, LoweringIdentity.GetRegion(genericCallName));
+        Assert.Equal(
+            LoweringIdentity.ForDeclaration(localFuncDecl, model),
+            LoweringIdentity.ForReference(genericCallName, model));
+    }
 }

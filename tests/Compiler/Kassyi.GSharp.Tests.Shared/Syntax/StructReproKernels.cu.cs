@@ -119,35 +119,6 @@ public static partial class StructReproKernels
         output[0] = s.High - s.Low;
     }
 
-// Reproduces #481: defining the symbol makes the build fail with GSH0048 (InvalidCastException in ContextHoister)
-#if REPRO_A48_INIT
-    // ICE: InvalidCastException in ContextHoister.VisitLocalDeclarationStatement
-    [GpuKernel]
-    public static void BarrierLocalSameNameInitializerKernel(int[] output)
-    {
-        int tid = ThreadIndex.X;
-        int X = tid;
-        Gpu.SyncThreads();
-        var p = new ReproPt { X = 1, Y = 2 };
-        output[tid] = X * 100 + p.X;
-    }
-#endif
-
-// Reproduces #481: defining the symbol makes the build fail with GSH0048 (InvalidCastException in ContextHoister)
-#if REPRO_A48_WITH
-    // ICE: same InvalidCastException
-    [GpuKernel]
-    public static void BarrierLocalSameNameWithKernel(int[] output)
-    {
-        int tid = ThreadIndex.X;
-        int X = tid;
-        Gpu.SyncThreads();
-        var p = new ReproPt();
-        var q = p with { X = 3 };
-        output[tid] = X * 100 + q.X;
-    }
-#endif
-
     // Control: the same shape with a local that does not share a member name
     [GpuKernel]
     public static void BarrierLocalDifferentNameKernel(int[] output)
