@@ -101,7 +101,7 @@ public static partial class ComprehensiveSpecKernel
         out bool successFlag,
         SpecTypes largeStructVal, // 48 bytes by value; within the GSH0064 parameter limit.
         int particleCount,
-        [Constant] int unrollFactor)
+        [GpuConstexpr(4)] int unrollFactor)
     {
         successFlag = false;
 
@@ -401,6 +401,11 @@ float __gsharp_mb_Y;
 float __gsharp_mb_Z;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__PhysicsVector)==12,""DebugReduc.PhysicsVector: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__PhysicsVector)==4,""DebugReduc.PhysicsVector: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_X)==0,""DebugReduc.PhysicsVector.X: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_Y)==4,""DebugReduc.PhysicsVector.Y: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__PhysicsVector,__gsharp_mb_Z)==8,""DebugReduc.PhysicsVector.Z: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__SpecTypes__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__SpecTypes__
@@ -419,6 +424,19 @@ float __gsharp_mb_FloatValue;
 double __gsharp_mb_DoubleValue;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__SpecTypes)==48,""DebugReduc.SpecTypes: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__SpecTypes)==8,""DebugReduc.SpecTypes: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_BooleanValue)==0,""DebugReduc.SpecTypes.BooleanValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_ByteValue)==1,""DebugReduc.SpecTypes.ByteValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_SByteValue)==2,""DebugReduc.SpecTypes.SByteValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_ShortValue)==4,""DebugReduc.SpecTypes.ShortValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_UShortValue)==6,""DebugReduc.SpecTypes.UShortValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_IntValue)==8,""DebugReduc.SpecTypes.IntValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_UIntValue)==12,""DebugReduc.SpecTypes.UIntValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_LongValue)==16,""DebugReduc.SpecTypes.LongValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_ULongValue)==24,""DebugReduc.SpecTypes.ULongValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_FloatValue)==32,""DebugReduc.SpecTypes.FloatValue: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__SpecTypes,__gsharp_mb_DoubleValue)==40,""DebugReduc.SpecTypes.DoubleValue: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__Point__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__Point__
@@ -428,6 +446,10 @@ float __gsharp_mb_X;
 float __gsharp_mb_Y;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__Point)==8,""DebugReduc.Point: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__Point)==4,""DebugReduc.Point: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__Point,__gsharp_mb_X)==0,""DebugReduc.Point.X: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__Point,__gsharp_mb_Y)==4,""DebugReduc.Point.Y: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__NestedPhysicsState__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__NestedPhysicsState__
@@ -438,6 +460,11 @@ __gsharp_ty_DebugReduc__PhysicsVector __gsharp_mb_Velocity;
 unsigned long long __gsharp_mb_StatusFlag;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__NestedPhysicsState)==32,""DebugReduc.NestedPhysicsState: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__NestedPhysicsState)==8,""DebugReduc.NestedPhysicsState: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__NestedPhysicsState,__gsharp_mb_Position)==0,""DebugReduc.NestedPhysicsState.Position: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__NestedPhysicsState,__gsharp_mb_Velocity)==12,""DebugReduc.NestedPhysicsState.Velocity: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__NestedPhysicsState,__gsharp_mb_StatusFlag)==24,""DebugReduc.NestedPhysicsState.StatusFlag: offset"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8__
@@ -458,6 +485,8 @@ __device__ inline const unsigned int* end() const { return __gsharp_mb__element0
 __device__ inline int size() const { return 8; }
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8)==32,""DebugReduc.ComprehensiveSpecKernel.Vector8: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__Vector8)==4,""DebugReduc.ComprehensiveSpecKernel.Vector8: alignment"");
 #endif
 #ifndef __GSHARP_STRUCT___gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState__
 #define __GSHARP_STRUCT___gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState__
@@ -467,6 +496,10 @@ unsigned int __gsharp_mb_Buffer[16];
 unsigned long long __gsharp_mb_Flags;
 }
 ;
+static_assert(sizeof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState)==72,""DebugReduc.ComprehensiveSpecKernel.PhysicsState: size"");
+static_assert(alignof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState)==8,""DebugReduc.ComprehensiveSpecKernel.PhysicsState: alignment"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState,__gsharp_mb_Buffer)==0,""DebugReduc.ComprehensiveSpecKernel.PhysicsState.Buffer: offset"");
+static_assert(offsetof(__gsharp_ty_DebugReduc__ComprehensiveSpecKernel__PhysicsState,__gsharp_mb_Flags)==64,""DebugReduc.ComprehensiveSpecKernel.PhysicsState.Flags: offset"");
 #endif
 extern ""C"" __global__ void __gsharp_k_DebugReduc__ComprehensiveSpecKernel__ProcessPhysics(GSharpArray<__gsharp_ty_DebugReduc__PhysicsVector> __gsharp_id_0_particles, float* __gsharp_id_1_totalMagnitude, bool* __gsharp_id_2_successFlag, __gsharp_ty_DebugReduc__SpecTypes __gsharp_id_3_largeStructVal, int __gsharp_id_4_particleCount, int __gsharp_id_5_unrollFactor){
 (*__gsharp_id_2_successFlag)=false;

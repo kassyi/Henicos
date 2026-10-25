@@ -14,7 +14,8 @@ internal static class KnownAttributes
     public const string GpuReadOnly = nameof(GpuReadOnly);
     public const string GpuInline = nameof(GpuInline);
     public const string GpuNoInline = nameof(GpuNoInline);
-    public const string Constant = nameof(Constant);
+    public const string GpuConstexpr = nameof(GpuConstexpr);
+    public const string GpuConstexprMetadataName = $"{TypeConstants.CoreNamespace}.{GpuConstexpr}Attribute";
     public const string CudaIntrinsic = nameof(CudaIntrinsic);
     public const string CudaIntrinsicPattern = nameof(CudaIntrinsicPattern);
     public const string MethodImpl = nameof(MethodImpl);
@@ -62,7 +63,7 @@ internal static class KnownAttributes
     /// </summary>
     public static bool IsDeclaredInOwnerNamespace(INamespaceSymbol? declaringNamespace, string shortName) => shortName switch
     {
-        GpuKernel or GpuDeviceFunction or GpuReadOnly or GpuInline or GpuNoInline or Constant or CudaIntrinsic
+        GpuKernel or GpuDeviceFunction or GpuReadOnly or GpuInline or GpuNoInline or GpuConstexpr or CudaIntrinsic
             or CudaIntrinsicPattern or GpuOperatorMacro or GpuResource or TakesOwnership or CudaImport or BclIntrinsicMap =>
             declaringNamespace.IsCoreNamespace(),
         MethodImpl or SkipLocalsInit or InlineArray => declaringNamespace.IsSystemRuntimeCompilerServices(),

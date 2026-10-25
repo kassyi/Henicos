@@ -277,11 +277,10 @@ internal static class SymbolExtensions
             .Any(shortName, static (a, name) => a.IsAttribute(name));
 
     /// <summary>
-    /// Whether <paramref name="parameter"/> is a <c>[Constant]</c> parameter, which the launcher injects as a macro
-    /// (<c>#define</c>) instead of passing it as an argument.
+    /// Whether <paramref name="parameter"/> is a <c>[GpuConstexpr]</c> parameter.
     /// </summary>
-    public static bool IsConstantParameter(this IParameterSymbol parameter) =>
-        parameter.HasAttribute(KnownAttributes.Constant);
+    public static bool IsConstexprParameter(this IParameterSymbol parameter) =>
+        parameter.HasAttribute(KnownAttributes.GpuConstexpr);
 
     /// <summary>
     /// Whether <paramref name="method"/> is a <c>[GpuKernel(Cooperative = true)]</c> kernel, which the launcher starts

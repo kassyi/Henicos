@@ -16,7 +16,7 @@ public static partial class WrapperOptimizationKernels
         out float scalarOut,
         int[] arrayVal,
         ref MyCustomStruct structRef,
-        [Constant] uint constantVal)
+        [GpuConstexpr(10)] uint constantVal)
     {
         scalarOut = 0;
         if (scalarRef > constantVal)
