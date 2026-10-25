@@ -79,6 +79,7 @@ fixed text (separators, keywords, `;`) is a literal. The other helpers:
 | Compiler-internal name (`__gsharp_*`) | `GSharpInternalNames` (add new names to `Resources/InternalNames.yml`) | a `"__gsharp_..."` literal |
 | C++ literal of a constant field | `.AppendConstantField` | `ConstantValue.ToString()` plus a hand-picked suffix |
 | Header and attributes of a generated `.g.cs` | `.AppendGeneratedFileHeader`, `.AppendGeneratedCodeAttributes` | copied header text |
+| Compute a 64-bit site key for a `SharedMemory<T>` allocation or emit a CPU `SharedMemory<T>` allocation (`(T*)__gsharp_allocate_smem(...)`) | `SharedMemorySiteKey.Compute`, `SharedMemorySiteKey.ToCppLiteral`, `SharedMemorySiteKey.ToCSharpLiteral`, `SharedMemorySiteKey.AppendCpuAllocation` | hand-hashing a syntax span or spelling `__gsharp_allocate_smem(...)` in multiple rules |
 
 Where an internal name lives: in the YAML when the Prelude, the runtime, another emitter, or both host and device code
 spell it; otherwise a `private const` in the one emitter that declares and uses it. See the remarks on `GSharpInternalNames`.

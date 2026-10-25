@@ -69,7 +69,7 @@ return false;
 
 inline int __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierEdgeCaseKernels__IncrementThroughScratch(int __gsharp_id_0_value){
 int __gsharp_id_1_tid = threadIdx.x;
-__shared__ int __gsharp_id_2_scratch[256];
+int* __gsharp_id_2_scratch = (int*)__gsharp_allocate_smem(0xed78bc0ee852dcbfull, (256) * sizeof(int), alignof(int));
 __gsharp_id_2_scratch[__gsharp_id_1_tid]=__gsharp_id_0_value+1;
 return __gsharp_id_2_scratch[__gsharp_id_1_tid];
 }
