@@ -65,6 +65,9 @@ graph TD
      - If the issue spans two distinct topics (e.g., a new feature combined with refactoring -> `feature,refactor`), attach both labels.
      - **Strict Cap**: Assign **at most 2 labels** (`1 <= count <= 2`) so that label classification remains focused and meaningful.
 
+3. **Select the Milestone (exactly 1)**:
+   Pick one milestone by the decision order in [`.agents/rules/issue-milestones.md`](../rules/issue-milestones.md) (`M1 Wrong Results`, `M2 Build Failures & Missing Diagnostics`, `M3 Unconfirmed Suspicions`, `M4 Bug-Finding Infrastructure`, `M5 Cleanup`, `Future`). List the current ones with `gh api repos/{owner}/{repo}/milestones --jq '.[].title'`.
+
 If ambiguous, briefly ask the user to clarify the issue type.
 
 ### Step 2: Context Gathering & Repo Inspection
@@ -111,6 +114,7 @@ Present the proposed Issue to the user in the following structure. **Note**: Do 
 
 - **Title**: `[Bug]: ...`
 - **Labels**: `<label1>` (or `<label1>, <label2>` — 最大2件まで)
+- **Milestone**: `<milestone>`（1 件。振り分けの理由を 1 文で）
 
 ### Issue 本文:
 
@@ -130,9 +134,9 @@ Upon explicit approval from the user:
     if (!(Test-Path -Path "tmp")) { New-Item -ItemType Directory -Path "tmp" }
     ```
 2. Write the finalized issue body into `tmp/issue/issue_body.md` using `write_to_file`.
-3. Run the `gh` command (passing the 1–2 selected labels separated by a comma):
+3. Run the `gh` command (passing the 1–2 selected labels separated by a comma and the approved milestone):
     ```powershell
-    gh issue create --title "<Title>" --label "<label1,label2>" --body-file tmp/issue/issue_body.md
+    gh issue create --title "<Title>" --label "<label1,label2>" --milestone "<milestone>" --body-file tmp/issue/issue_body.md
     ```
 4. Remove the temporary file:
     ```powershell
