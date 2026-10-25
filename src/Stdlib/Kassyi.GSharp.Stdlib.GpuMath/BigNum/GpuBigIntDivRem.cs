@@ -109,6 +109,11 @@ public static partial class GpuBigIntDivRem
             return;
         }
 
+        if (TryDivRemSmallOrPowerOfTwo(leftOperand, rightOperand, bActualBits, quotientBuffer, remainderBuffer))
+        {
+            return;
+        }
+
         var lz = n * 32 - bActualBits;
 
         using var bNorm = new GpuBigUInt(rightOperand.Workspace, n);
@@ -118,7 +123,7 @@ public static partial class GpuBigIntDivRem
         var marginWords = marginBits / 32;
         var aActualWords = (aActualBits + 31) / 32;
         var targetBits = n * 32 + aActualWords * 32 + marginBits;
-        var targetWords = (targetBits + 31) / 32;
+        var targetWords = (targetBits + 31) / 32 + 1;
 
         using var reciprocalNorm = new GpuBigUInt(rightOperand.Workspace, targetWords);
         reciprocalNorm.Clear();
@@ -128,6 +133,123 @@ public static partial class GpuBigIntDivRem
         GpuBigIntMath.ShiftLeft(reciprocalNorm, lz, reciprocalOfB);
 
         Reduce(leftOperand, rightOperand, reciprocalOfB, targetBits, aActualWords, quotientBuffer, remainderBuffer);
+    }
+
+    private static bool TryDivRemSmallOrPowerOfTwo(GpuBigUInt leftOperand, GpuBigUInt rightOperand, int bActualBits,
+        GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
+    {
+        var workspace = leftOperand.Workspace;
+        var nA = leftOperand.NumWords;
+        var n = rightOperand.NumWords;
+
+        if (bActualBits <= 32)
+        {
+            var divisor = workspace.Provider.ReadWord(rightOperand.DevicePointer, 0, workspace.Stream);
+            if (divisor == 1u)
+            {
+                quotientBuffer.Clear();
+                quotientBuffer.CopyFrom(leftOperand, numWords: Math.Min(quotientBuffer.NumWords, nA));
+                remainderBuffer.Clear();
+                return true;
+            }
+
+            if ((divisor & (divisor - 1u)) == 0u)
+            {
+                var shift = bActualBits - 1;
+                if (quotientBuffer.NumWords == nA)
+                {
+                    GpuBigIntMath.ShiftRight(leftOperand, shift, quotientBuffer);
+                }
+                else
+                {
+                    using var tempQ = workspace.RentTemp(nA);
+                    GpuBigIntMath.ShiftRight(leftOperand, shift, tempQ);
+                    quotientBuffer.Clear();
+                    quotientBuffer.CopyFrom(tempQ, numWords: Math.Min(quotientBuffer.NumWords, nA));
+                }
+
+                var remWord = workspace.Provider.ReadWord(leftOperand.DevicePointer, 0, workspace.Stream) & (divisor - 1u);
+                remainderBuffer.Clear();
+                if (remWord != 0u && remainderBuffer.NumWords > 0)
+                {
+                    workspace.Provider.WriteWord(remainderBuffer.DevicePointer, 0, remWord, workspace.Stream);
+                }
+
+                return true;
+            }
+
+            uint rem;
+            if (quotientBuffer.NumWords == nA)
+            {
+                rem = GpuBigIntMath.DivideByUInt32(leftOperand, divisor, quotientBuffer);
+            }
+            else
+            {
+                using var tempQ = workspace.RentTemp(nA);
+                rem = GpuBigIntMath.DivideByUInt32(leftOperand, divisor, tempQ);
+                quotientBuffer.Clear();
+                quotientBuffer.CopyFrom(tempQ, numWords: Math.Min(quotientBuffer.NumWords, nA));
+            }
+
+            remainderBuffer.Clear();
+            if (rem != 0u && remainderBuffer.NumWords > 0)
+            {
+                workspace.Provider.WriteWord(remainderBuffer.DevicePointer, 0, rem, workspace.Stream);
+            }
+
+            return true;
+        }
+
+        // Fast path for multi-word power-of-2 divisors (b = 2^k, k >= 32): b & (b - 1) == 0.
+        // Reading the top word first rejects almost every other divisor with one read, before the kernels below.
+        var topBit = bActualBits - 1;
+        var topWord = workspace.Provider.ReadWord(rightOperand.DevicePointer, topBit / 32, workspace.Stream);
+        if (topWord != 1u << (topBit % 32))
+        {
+            return false;
+        }
+
+        using var mask = workspace.RentTemp(n);
+        GpuBigIntMath.Sub(rightOperand, 1u, mask);
+        using var bAndMask = workspace.RentTemp(n);
+        GpuBigIntMath.BitwiseAnd(rightOperand, mask, bAndMask);
+        if (!bAndMask.IsZero())
+        {
+            return false;
+        }
+
+        if (quotientBuffer.NumWords == nA)
+        {
+            GpuBigIntMath.ShiftRight(leftOperand, topBit, quotientBuffer);
+        }
+        else
+        {
+            using var tempQ = workspace.RentTemp(nA);
+            GpuBigIntMath.ShiftRight(leftOperand, topBit, tempQ);
+            quotientBuffer.Clear();
+            quotientBuffer.CopyFrom(tempQ, numWords: Math.Min(quotientBuffer.NumWords, nA));
+        }
+
+        var fullWords = topBit / 32;
+        var remBits = topBit % 32;
+        remainderBuffer.Clear();
+        var copyWords = Math.Min(remainderBuffer.NumWords, Math.Min(nA, fullWords));
+        if (copyWords > 0)
+        {
+            remainderBuffer.CopyFrom(leftOperand, numWords: copyWords);
+        }
+
+        if (remBits > 0 && fullWords < nA && fullWords < remainderBuffer.NumWords)
+        {
+            var topRemWord = workspace.Provider.ReadWord(leftOperand.DevicePointer, fullWords, workspace.Stream) &
+                             ((1u << remBits) - 1u);
+            if (topRemWord != 0u)
+            {
+                workspace.Provider.WriteWord(remainderBuffer.DevicePointer, fullWords, topRemWord, workspace.Stream);
+            }
+        }
+
+        return true;
     }
 
     /// <summary>

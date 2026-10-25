@@ -163,4 +163,138 @@ public class GpuBigIntDivRemTests : IDisposable
 
         Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR));
     }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(65)]
+    [InlineData(256)]
+    [InlineData(600)]
+    [InlineData(1024)]
+    public void DivRem_SmallAndBoundaryDivisors_MatchesBigIntegerReference(int numWords)
+    {
+        using var workspace = new GpuWorkspace(numWords * 4, GpuExecutionEngine.GSharpAot);
+
+        var rnd = new Random(20261025 + numWords);
+        var leftData = new uint[numWords];
+        for (var i = 0; i < numWords; i++)
+        {
+            leftData[i] = (uint)rnd.NextInt64(0, 1L << 32);
+        }
+
+        leftData[^1] |= 0x80000000u;
+
+        var twoWordDivisor = new uint[numWords];
+        twoWordDivisor[0] = (uint)rnd.NextInt64(0, 1L << 32);
+        twoWordDivisor[1] = (uint)rnd.NextInt64(0, 1L << 32) | 0x80000000u;
+
+        var halfWordCount = numWords / 2;
+        var halfWordDivisor = new uint[numWords];
+        for (var i = 0; i < halfWordCount; i++)
+        {
+            halfWordDivisor[i] = (uint)rnd.NextInt64(0, 1L << 32);
+        }
+
+        halfWordDivisor[halfWordCount - 1] |= 0x80000000u;
+
+        var divisors = new BigInteger[]
+        {
+            BigInteger.One,
+            new(2),
+            new(3),
+            BigInteger.One << 32,
+            (BigInteger.One << 33) + BigInteger.One,
+            BigInteger.One << 15,
+            BigInteger.One << 31,
+            BigInteger.One << 47,
+            BigIntExtensions.ToBigInteger(twoWordDivisor),
+            BigIntExtensions.ToBigInteger(halfWordDivisor)
+        };
+
+        using var gpuA = new GpuBigUInt(workspace, leftData);
+        using var gpuQ = new GpuBigUInt(workspace, numWords);
+        using var gpuR = new GpuBigUInt(workspace, numWords);
+        var expectedA = gpuA.ToBigInteger();
+
+        foreach (var divisor in divisors)
+        {
+            using var gpuB = GpuBigUInt.FromBigInteger(workspace, divisor, minWords: numWords);
+            GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+
+            var expectedQ = BigInteger.DivRem(expectedA, divisor, out var expectedR);
+            Assert.Equal(expectedQ, gpuQ.ToBigInteger());
+            Assert.Equal(expectedR, gpuR.ToBigInteger());
+        }
+    }
+
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [InlineData(64)]
+    [InlineData(256)]
+    [InlineData(600)]
+    public void Gcd_BoundaryOperandPairs_MatchesBigIntegerReference(int numWords)
+    {
+        using var workspace = new GpuWorkspace(numWords * 4, GpuExecutionEngine.GSharpAot);
+
+        var rnd = new Random(20261025 + numWords);
+        var arrA = new uint[numWords];
+        for (var i = 0; i < numWords; i++)
+        {
+            arrA[i] = (uint)rnd.NextInt64(0, 1L << 32);
+        }
+
+        arrA[^1] |= 0x40000000u;
+        var bigA = BigIntExtensions.ToBigInteger(arrA);
+
+        var pairs = new (BigInteger Left, BigInteger Right)[]
+        {
+            (bigA, BigInteger.One),
+            (BigInteger.One, bigA),
+            (bigA, bigA + BigInteger.One),
+            (bigA, bigA)
+        };
+
+        using var gpuResult = new GpuBigUInt(workspace, numWords);
+        foreach (var (left, right) in pairs)
+        {
+            using var gpuLeft = GpuBigUInt.FromBigInteger(workspace, left, minWords: numWords);
+            using var gpuRight = GpuBigUInt.FromBigInteger(workspace, right, minWords: numWords);
+
+            GpuBigIntMath.Gcd(gpuLeft, gpuRight, gpuResult);
+
+            var expected = BigInteger.GreatestCommonDivisor(left, right);
+            Assert.Equal(expected, gpuResult.ToBigInteger());
+        }
+    }
+
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void Gcd_WithOne64Words_CompletesViaFastPath()
+    {
+        const int NumWords = 64;
+        using var workspace = new GpuWorkspace(NumWords * 4, GpuExecutionEngine.GSharpAot);
+
+        var rnd = new Random(20261025);
+        var arrA = new uint[NumWords];
+        for (var i = 0; i < NumWords; i++)
+        {
+            arrA[i] = (uint)rnd.NextInt64(0, 1L << 32);
+        }
+
+        arrA[^1] |= 0x80000000u;
+        var bigA = BigIntExtensions.ToBigInteger(arrA);
+
+        using var gpuA = GpuBigUInt.FromBigInteger(workspace, bigA, minWords: NumWords);
+        using var gpuOne = GpuBigUInt.FromBigInteger(workspace, BigInteger.One, minWords: NumWords);
+        using var gpuResult = new GpuBigUInt(workspace, NumWords);
+
+        GpuBigIntMath.Gcd(gpuA, gpuOne, gpuResult);
+
+        Assert.Equal(BigInteger.One, gpuResult.ToBigInteger());
+    }
 }

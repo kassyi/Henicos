@@ -877,6 +877,14 @@ public sealed class KernelAdvancedMathHandler : IGpuAdvancedMathProvider
         public NttWorkspaceBuffers(GpuWorkspace workspace, int requiredLen, int maxOutWords,
             KernelAdvancedMathHandler handler, bool allocateOperandB = true)
         {
+            const int MaxNttTransformLength = 1 << 25;
+            if (requiredLen > (MaxNttTransformLength >> 1))
+            {
+                throw new ArgumentException(
+                    $"NTT transform length exceeds the maximum supported limit of 2^25 ({MaxNttTransformLength} elements, up to 2^23 words per operand) due to the 2-adicity limit (25) of the NTT primes. Required convolution words: {requiredLen}.",
+                    nameof(requiredLen));
+            }
+
             var m = 1;
             while (m < requiredLen * 2)
             {

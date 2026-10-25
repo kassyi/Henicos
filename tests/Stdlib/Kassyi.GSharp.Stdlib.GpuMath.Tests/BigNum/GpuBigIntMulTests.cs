@@ -240,6 +240,24 @@ public class GpuBigIntMulTests
         Assert.Equal(expected, result.ToBigInteger());
     }
 
+    [SkippableFact]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    public void Mul_WhenTransformLengthExceedsTwoAdicLimit_ThrowsArgumentExceptionBeforeAllocatingBuffers()
+    {
+        CudaCapability.EnsureGpuAvailable();
+        using var ctx = new GpuWorkspace(16, GpuExecutionEngine.GSharpAot);
+        using var dummyBuffer = new GpuBigUInt(ctx, 1);
+
+        const int ExceededWords = (1 << 23) + 1;
+        var fakeOperand = new GpuBigUInt(ctx, ExceededWords, dummyBuffer.DevicePointer, isTemp: true);
+        var fakeResult = new GpuBigUInt(ctx, ExceededWords * 2, dummyBuffer.DevicePointer, isTemp: true);
+
+        var exception = Assert.Throws<ArgumentException>(() => GpuBigIntMath.Mul(fakeOperand, fakeOperand, fakeResult));
+        Assert.Contains("2^23", exception.Message);
+        Assert.Contains("2-adicity", exception.Message);
+    }
+
     private static BigInteger ToBigInteger(uint[] words)
     {
         var bytes = new byte[words.Length * sizeof(uint)];
@@ -247,4 +265,3 @@ public class GpuBigIntMulTests
         return new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
     }
 }
-

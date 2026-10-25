@@ -84,6 +84,69 @@ public class GpuBigIntMatrix2x2Tests : IDisposable
     }
 
     [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Multiply_WhenElementsFillFullWord_CarriesToExtraWordAndMatchesBigInteger()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        using var v = new GpuBigIntMatrix2x2(_context, 1, isOddStep: false);
+        _context.Provider.CopyHostToDevice(v.M00.DevicePointer, [0xFFFFFFFFu], 1, _context.Stream);
+        _context.Provider.CopyHostToDevice(v.M01.DevicePointer, [0xFFFFFFFFu], 1, _context.Stream);
+        _context.Provider.CopyHostToDevice(v.M10.DevicePointer, [0xFFFFFFFFu], 1, _context.Stream);
+        _context.Provider.CopyHostToDevice(v.M11.DevicePointer, [0xFFFFFFFFu], 1, _context.Stream);
+
+        using var r = GpuBigIntMatrix2x2.Multiply(v, v);
+        var maxWord = (BigInteger.One << 32) - 1;
+        var expected = 2 * maxWord * maxWord; // 36893488130239234050 (65 bits)
+
+        Assert.Equal(3, r.M00.NumWords);
+        Assert.Equal(expected, r.M00.ToBigInteger());
+        Assert.Equal(expected, r.M01.ToBigInteger());
+        Assert.Equal(expected, r.M10.ToBigInteger());
+        Assert.Equal(expected, r.M11.ToBigInteger());
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Multiply_And_Apply_WithConsecutiveFibonacciTwoWords_MatchesBigInteger()
+    {
+        CudaCapability.EnsureGpuAvailable();
+
+        BigInteger fPrev = 1, fCurr = 1;
+        while (fCurr.GetBitLength() < 64)
+        {
+            (fPrev, fCurr) = (fCurr, fPrev + fCurr);
+        }
+
+        var fa = fCurr;
+        var fb = fPrev;
+        var fc = fa - fb;
+
+        using var m = new GpuBigIntMatrix2x2(_context, 2, isOddStep: false);
+        using var gpuFa = GpuBigUInt.FromBigInteger(_context, fa, minWords: 2);
+        using var gpuFb = GpuBigUInt.FromBigInteger(_context, fb, minWords: 2);
+        using var gpuFc = GpuBigUInt.FromBigInteger(_context, fc, minWords: 2);
+        m.M00.CopyFrom(gpuFa);
+        m.M01.CopyFrom(gpuFb);
+        m.M10.CopyFrom(gpuFb);
+        m.M11.CopyFrom(gpuFc);
+
+        using var mm = GpuBigIntMatrix2x2.Multiply(m, m);
+        Assert.Equal(5, mm.M00.NumWords);
+        Assert.Equal(fa * fa + fb * fb, mm.M00.ToBigInteger());
+        Assert.Equal(fa * fb + fb * fc, mm.M01.ToBigInteger());
+        Assert.Equal(fb * fa + fc * fb, mm.M10.ToBigInteger());
+        Assert.Equal(fb * fb + fc * fc, mm.M11.ToBigInteger());
+
+        using var id = GpuBigIntMatrix2x2.Identity(_context, 2);
+        using var outA = new GpuBigUInt(_context, 4);
+        using var outB = new GpuBigUInt(_context, 4);
+        id.Apply(gpuFa, gpuFb, outA, outB);
+        Assert.Equal(fa, outA.ToBigInteger());
+        Assert.Equal(fb, outB.ToBigInteger());
+    }
+
+    [SkippableFact]
     [Scenario(TestScenario.SadPath)]
     public void Constructor_And_Methods_ThrowExpectedExceptions_OnInvalidOrDisposedInputs()
     {
