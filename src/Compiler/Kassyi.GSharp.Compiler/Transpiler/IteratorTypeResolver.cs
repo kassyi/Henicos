@@ -137,22 +137,14 @@ internal static class IteratorTypeResolver
     /// Determines whether <paramref name="methodSymbol"/> is a valid static <c>[GpuDeviceFunction]</c> iterator
     /// returning <c>IEnumerable&lt;T&gt;</c> with a supported element type and a body containing <c>yield</c>.
     /// </summary>
-    public static bool IsDeviceIteratorMethod([NotNullWhen(true)] IMethodSymbol? methodSymbol)
-    {
-        if (methodSymbol is null ||
-            !methodSymbol.IsStatic ||
-            methodSymbol.IsGenericMethod ||
-            !methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction) ||
-            methodSymbol.HasAttribute(KnownAttributes.GpuKernel) ||
-            !IsGenericIEnumerable(methodSymbol.ReturnType, out var elementType) ||
-            TryGetUnsupportedElementTypeReason(elementType, out _))
-        {
-            return false;
-        }
-
-        return methodSymbol.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl) &&
-               ContainsDirectYield(decl.Body);
-    }
+    public static bool IsDeviceIteratorMethod([NotNullWhen(true)] IMethodSymbol? methodSymbol) =>
+        methodSymbol is { IsStatic: true, IsGenericMethod: false } &&
+        methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+        !methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
+        IsGenericIEnumerable(methodSymbol.ReturnType, out var elementType) &&
+        !TryGetUnsupportedElementTypeReason(elementType, out _) &&
+        methodSymbol.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl) &&
+        ContainsDirectYield(decl.Body);
 
     /// <summary>
     /// Determines whether <paramref name="expression"/> is an invocation of a <c>[GpuDeviceFunction]</c> whose body
@@ -164,6 +156,57 @@ internal static class IteratorTypeResolver
         method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
         method.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl) &&
         ContainsDirectYield(decl.Body);
+
+    /// <summary>
+    /// Determines whether <paramref name="methodSymbol"/> is a static <c>[GpuDeviceFunction]</c> returning
+    /// <c>IEnumerable&lt;T&gt;</c> whose body is not available in the current compilation (for example, from a
+    /// referenced assembly).
+    /// </summary>
+    public static bool IsExternalIteratorCandidate([NotNullWhen(true)] IMethodSymbol? methodSymbol) =>
+        methodSymbol is
+        {
+            IsStatic: true,
+            IsGenericMethod: false,
+            DeclaringSyntaxReferences.IsEmpty: true
+        } &&
+        methodSymbol.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+        !methodSymbol.HasAttribute(KnownAttributes.GpuKernel) &&
+        IsGenericIEnumerable(methodSymbol.ReturnType, out _);
+
+    /// <summary>
+    /// Resolves <paramref name="expression"/> (either a direct invocation or a local variable initialized from an
+    /// invocation) when it targets a <c>[GpuDeviceFunction]</c> returning <c>IEnumerable&lt;T&gt;</c> from an external
+    /// assembly without source syntax in this compilation.
+    /// </summary>
+    public static bool TryResolveExternalIteratorSource(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        [NotNullWhen(true)] out IMethodSymbol? methodSymbol)
+    {
+        var unwrapped = UnwrapParentheses(expression);
+        if (unwrapped is InvocationExpressionSyntax inv &&
+            semanticModel.GetSymbol(inv) is IMethodSymbol directMethod &&
+            IsExternalIteratorCandidate(directMethod))
+        {
+            methodSymbol = directMethod;
+            return true;
+        }
+
+        if (unwrapped is IdentifierNameSyntax identifier &&
+            semanticModel.GetSymbol(identifier) is ILocalSymbol local &&
+            local.TryGetDeclaringSyntax<VariableDeclaratorSyntax>(out var declarator) &&
+            declarator.Initializer?.Value is { } initializerValue &&
+            UnwrapParentheses(initializerValue) is InvocationExpressionSyntax initInv &&
+            semanticModel.GetSymbol(initInv) is IMethodSymbol initMethod &&
+            IsExternalIteratorCandidate(initMethod))
+        {
+            methodSymbol = initMethod;
+            return true;
+        }
+
+        methodSymbol = null;
+        return false;
+    }
 
     /// <summary>
     /// Determines whether an iterator <paramref name="methodSymbol"/> calls itself directly or mutually through other
@@ -305,6 +348,7 @@ internal static class IteratorTypeResolver
     {
         var unwrapped = UnwrapParentheses(expression);
         if (TryResolveIteratorSource(unwrapped, semanticModel, out _, out _) ||
+            TryResolveExternalIteratorSource(unwrapped, semanticModel, out _) ||
             IsIteratorCandidateInvocation(unwrapped, semanticModel))
         {
             return true;

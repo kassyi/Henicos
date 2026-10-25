@@ -134,6 +134,7 @@ internal sealed class IteratorConsumptionRule :
 
         var value = IteratorTypeResolver.UnwrapParentheses(node.Initializer.Value);
         if (IteratorTypeResolver.IsIteratorCandidateInvocation(value, context.SemanticModel) ||
+            IteratorTypeResolver.TryResolveExternalIteratorSource(value, context.SemanticModel, out _) ||
             IsAlreadyReportedInitializer(value, context.SemanticModel))
         {
             return;

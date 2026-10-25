@@ -38,10 +38,187 @@ public static class LoweringAnnotations
     /// </summary>
     public const string ForEachIndexAnnotationKind = "GSharpForEachIndex";
 
-    internal static string FormatOriginalSpanData(SyntaxNode node, int treeOrdinal = -1) =>
-        treeOrdinal >= 0
-            ? $"{node.SpanStart},{node.Span.Length},{treeOrdinal}"
-            : $"{node.SpanStart},{node.Span.Length}";
+    /// <summary>
+    /// Annotation kind that marks a synthesized <see cref="BlockSyntax"/> whose C++ scope braces must be preserved by
+    /// <c>RoslynToCudaVisitor.VisitBlock</c>.
+    /// </summary>
+    public const string ScopedBlockAnnotationKind = "GSharpScopedBlock";
+
+    /// <summary>Formats the <see cref="OriginalSpanAnnotationKind"/> payload for <paramref name="node"/>.</summary>
+    public static string FormatOriginalSpanData(SyntaxNode node, int treeOrdinal = -1, int region = 0) =>
+        FormatOriginalSpanData(node.SpanStart, node.Span.Length, treeOrdinal, region);
+
+    /// <summary>Formats an <see cref="OriginalSpanAnnotationKind"/> payload from its component integers.</summary>
+    public static string FormatOriginalSpanData(int start, int length, int treeOrdinal = -1, int region = 0)
+    {
+        if (region > 0)
+        {
+            return $"{start},{length},{(treeOrdinal >= 0 ? treeOrdinal : -1)},{region}";
+        }
+
+        return treeOrdinal >= 0
+            ? $"{start},{length},{treeOrdinal}"
+            : $"{start},{length}";
+    }
+
+    /// <summary>
+    /// Parses an <see cref="OriginalSpanAnnotationKind"/> payload of 2, 3, or 4 comma-separated integers
+    /// (<c>"{start},{length}[,{treeOrdinal}[,{region}]]"</c>).
+    /// </summary>
+    public static bool TryParseOriginalSpanData(
+        string? data,
+        out int start,
+        out int length,
+        out int treeOrdinal,
+        out int region)
+    {
+        start = 0;
+        length = 0;
+        treeOrdinal = -1;
+        region = 0;
+
+        if (data is not { Length: > 0 })
+        {
+            return false;
+        }
+
+        var firstComma = data.IndexOf(',');
+        if (firstComma <= 0 || !int.TryParse(data[..firstComma], out start))
+        {
+            return false;
+        }
+
+        var rest = data[(firstComma + 1)..];
+        var secondComma = rest.IndexOf(',');
+        if (secondComma < 0)
+        {
+            return int.TryParse(rest, out length);
+        }
+
+        if (!int.TryParse(rest[..secondComma], out length))
+        {
+            return false;
+        }
+
+        var afterSecond = rest[(secondComma + 1)..];
+        var thirdComma = afterSecond.IndexOf(',');
+        if (thirdComma < 0)
+        {
+            return int.TryParse(afterSecond, out treeOrdinal);
+        }
+
+        if (!int.TryParse(afterSecond[..thirdComma], out treeOrdinal) ||
+            !int.TryParse(afterSecond[(thirdComma + 1)..], out region))
+        {
+            return false;
+        }
+
+        if (region < 0)
+        {
+            region = 0;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Stamps <paramref name="region"/> onto the <see cref="OriginalSpanAnnotationKind"/> annotations of declarations
+    /// introduced within <paramref name="copy"/> and of <see cref="IdentifierNameSyntax"/> references that bind to those
+    /// declarations, leaving references to outer declarations untouched.
+    /// </summary>
+    public static TNode StampRegion<TNode>(TNode copy, int region, SemanticModel? model) where TNode : SyntaxNode
+    {
+        if (region <= 0)
+        {
+            return copy;
+        }
+
+        HashSet<ISymbol>? declaredSymbols = null;
+        if (model != null)
+        {
+            declaredSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            foreach (var node in copy.DescendantNodesAndSelf())
+            {
+                if (IsDeclarationNode(node) &&
+                    node.HasAnnotations(OriginalSpanAnnotationKind) &&
+                    model.GetDeclaredSymbol<ISymbol>(node) is { } symbol)
+                {
+                    declaredSymbols.Add(symbol);
+                }
+            }
+        }
+
+        var stamper = new RegionStamper(region, model, declaredSymbols);
+        return stamper.Visit(copy) as TNode ?? copy;
+    }
+
+    private static bool IsDeclarationNode(SyntaxNode node) =>
+        node is ParameterSyntax
+            or VariableDeclaratorSyntax
+            or SingleVariableDesignationSyntax
+            or ForEachStatementSyntax
+            or LocalFunctionStatementSyntax
+            or LabeledStatementSyntax
+            or CatchDeclarationSyntax;
+
+    private static TNode ReplaceRegionOnNode<TNode>(TNode node, int region) where TNode : SyntaxNode
+    {
+        foreach (var ann in node.GetAnnotations(OriginalSpanAnnotationKind))
+        {
+            if (TryParseOriginalSpanData(ann.Data, out var start, out var length, out var treeOrdinal, out _))
+            {
+                var updated = new SyntaxAnnotation(
+                    OriginalSpanAnnotationKind,
+                    FormatOriginalSpanData(start, length, treeOrdinal, region));
+                return node
+                    .WithoutAnnotations(OriginalSpanAnnotationKind)
+                    .WithAdditionalAnnotations(updated);
+            }
+        }
+
+        return node;
+    }
+
+    private sealed class RegionStamper(
+        int region,
+        SemanticModel? model,
+        HashSet<ISymbol>? declaredSymbols) : CSharpSyntaxRewriter
+    {
+        public override SyntaxNode? Visit(SyntaxNode? node)
+        {
+            if (node == null)
+            {
+                return null;
+            }
+
+            var visited = base.Visit(node);
+            if (visited == null || !visited.HasAnnotations(OriginalSpanAnnotationKind))
+            {
+                return visited;
+            }
+
+            if (IsDeclarationNode(visited))
+            {
+                return ReplaceRegionOnNode(visited, region);
+            }
+
+            if (visited is IdentifierNameSyntax identifier)
+            {
+                if (model == null)
+                {
+                    return ReplaceRegionOnNode(visited, region);
+                }
+
+                var symbol = model.GetSymbol(identifier) ?? model.GetDeclaredSymbol<ISymbol>(identifier);
+                if (symbol != null && declaredSymbols != null && declaredSymbols.Contains(symbol))
+                {
+                    return ReplaceRegionOnNode(visited, region);
+                }
+            }
+
+            return visited;
+        }
+    }
 
     /// <summary>
     /// Attaches <see cref="OriginalSpanAnnotationKind"/> to every descendant node of <paramref name="node"/> that does

@@ -264,8 +264,10 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
         foreach (var statement in node.Statements)
         {
             // [WHY] A nested block is emitted without braces, since lowering wraps statements of one scope in blocks; a
-            // block with a using declaration keeps them, because the end of the C++ scope disposes the resource.
-            if (statement is BlockSyntax nested && UsingTranspiler.DeclaresUsing(nested))
+            // block with a using declaration or a synthesized iterator scope keeps them.
+            if (statement is BlockSyntax nested &&
+                (UsingTranspiler.DeclaresUsing(nested) ||
+                 nested.HasAnnotations(LoweringAnnotations.ScopedBlockAnnotationKind)))
             {
                 VisitStatementOrBlock(nested);
             }
@@ -414,7 +416,11 @@ public class RoslynToCudaVisitor : CSharpSyntaxWalker, IDisposable
                 }
 
                 Context.Emitter.Writer.AppendCppName(
-                    CppNameResolver.Resolve(symbol, node.Identifier.ValueText, Context.Emitter.Dialect));
+                    CppNameResolver.Resolve(
+                        symbol,
+                        node.Identifier.ValueText,
+                        Context.Emitter.Dialect,
+                        LoweringIdentity.GetRegion(node)));
                 ComputedPropertyGetterCall.AppendCallIfGetter(node, symbol, ref Context);
                 break;
         }

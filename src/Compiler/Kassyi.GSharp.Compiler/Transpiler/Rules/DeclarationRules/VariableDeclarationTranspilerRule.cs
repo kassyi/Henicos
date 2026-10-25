@@ -69,35 +69,54 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
     private static void TranspileSplitVariableDeclarations(SeparatedSyntaxList<VariableDeclaratorSyntax> variables,
         ITypeSymbol? typeSymbol, bool isVar, ref TranspileContext context)
     {
+        var hasEmittedAny = false;
         for (var i = 0; i < variables.Count; i++)
         {
             var v = variables[i];
 
             if (typeSymbol != null &&
                 IteratorTypeResolver.IsGenericIEnumerable(typeSymbol, out _) &&
-                v.Initializer != null &&
-                IteratorTypeResolver.TryResolveIteratorSource(
-                    v.Initializer.Value,
-                    context.Query.SemanticModel,
-                    out _,
-                    out _))
+                v.Initializer != null)
             {
-                continue;
+                if (IteratorTypeResolver.TryResolveIteratorSource(
+                        v.Initializer.Value,
+                        context.Query.SemanticModel,
+                        out var sourceInvocation,
+                        out var iteratorMethod))
+                {
+                    TranspileIteratorArgumentBackingLocals(v, iteratorMethod, sourceInvocation, ref hasEmittedAny, ref context);
+                    continue;
+                }
+
+                if (IteratorTypeResolver.TryResolveExternalIteratorSource(
+                        v.Initializer.Value,
+                        context.Query.SemanticModel,
+                        out _))
+                {
+                    continue;
+                }
+            }
+
+            if (hasEmittedAny)
+            {
+                context.Emitter.Writer.AppendLine(";");
             }
 
             if (TryTranspileStackArrayDeclaration(v, typeSymbol, ref context))
             {
-                if (i < variables.Count - 1)
-                {
-                    context.Emitter.Writer.AppendLine(";");
-                }
-
+                hasEmittedAny = true;
                 continue;
             }
 
             if (isVar)
             {
                 context.Emitter.Writer.Append("auto");
+            }
+            else if (typeSymbol != null &&
+                     context.Query.SemanticModel.GetOriginalNode(v) is ParameterSyntax paramSyntax)
+            {
+                var paramSymbol = context.Query.SemanticModel.GetDeclaredSymbol<IParameterSymbol>(v);
+                MethodSignatureTranspiler.WriteParameterDeclaration(paramSyntax, typeSymbol, paramSymbol, ref context);
             }
             else
             {
@@ -108,14 +127,126 @@ public sealed class VariableDeclarationTranspilerRule : SyntaxNodeTranspilerRule
             CppNameResolver.AppendDeclaredName(v, v.Identifier, ref context);
 
             DeclarationTranspilerHelper.WriteDeclaratorInitializer(v, ref context);
+            hasEmittedAny = true;
+        }
+    }
 
-            if (i >= variables.Count - 1)
+    private static void TranspileIteratorArgumentBackingLocals(
+        VariableDeclaratorSyntax declarator,
+        IMethodSymbol iteratorMethod,
+        InvocationExpressionSyntax sourceInvocation,
+        ref bool hasEmittedAny,
+        ref TranspileContext context)
+    {
+        if (!IteratorInliner.TryGetInlinableSyntax(
+                iteratorMethod,
+                context.Query.SemanticModel.Compilation,
+                out var iteratorDecl))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, declarator, IteratorInliner.IteratorWithoutBody);
+            return;
+        }
+
+        var parameters = iteratorMethod.Parameters;
+        if (parameters.Length == 0)
+        {
+            return;
+        }
+
+        var localSymbol = context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(declarator);
+        var localRegion = LoweringIdentity.GetRegion(declarator);
+        var localCppName = CppNameResolver.Resolve(
+            localSymbol,
+            declarator.Identifier.ValueText,
+            context.Emitter.Dialect,
+            localRegion).ToString();
+
+        var annotatedParamList = LoweringAnnotations.AnnotateOriginalSpans(
+            iteratorDecl.ParameterList,
+            context.Query.SemanticModel.Compilation);
+
+        var arguments = sourceInvocation.ArgumentList.Arguments;
+        var provided = new bool[parameters.Length];
+
+        for (var lexIdx = 0; lexIdx < arguments.Count; lexIdx++)
+        {
+            var arg = arguments[lexIdx];
+            var paramIdx = arg.NameColon is { } nameColon
+                ? parameters
+                    .AsStackEnumerable()
+                    .IndexOf(nameColon.Name.Identifier.ValueText, static (p, name) => p.Name == name)
+                : lexIdx;
+            if ((uint)paramIdx >= (uint)parameters.Length)
             {
                 continue;
             }
 
+            provided[paramIdx] = true;
+            EmitBackingArgumentLocal(
+                localCppName,
+                paramIdx,
+                parameters[paramIdx],
+                annotatedParamList,
+                arg.Expression,
+                ref hasEmittedAny,
+                ref context);
+        }
+
+        for (var paramIdx = 0; paramIdx < parameters.Length; paramIdx++)
+        {
+            if (provided[paramIdx])
+            {
+                continue;
+            }
+
+            var paramSyntax = paramIdx < annotatedParamList.Parameters.Count
+                ? annotatedParamList.Parameters[paramIdx]
+                : null;
+            var defaultExpr = IteratorInliner.GetDefaultArgumentExpression(parameters[paramIdx], paramSyntax);
+            EmitBackingArgumentLocal(
+                localCppName,
+                paramIdx,
+                parameters[paramIdx],
+                annotatedParamList,
+                defaultExpr,
+                ref hasEmittedAny,
+                ref context);
+        }
+    }
+
+    private static void EmitBackingArgumentLocal(
+        string localCppName,
+        int paramIdx,
+        IParameterSymbol paramSymbol,
+        ParameterListSyntax annotatedParamList,
+        ExpressionSyntax valueExpression,
+        ref bool hasEmittedAny,
+        ref TranspileContext context)
+    {
+        if (hasEmittedAny)
+        {
             context.Emitter.Writer.AppendLine(";");
         }
+
+        var paramType = paramSymbol.Type.UnwrapNullableArrayLike();
+        StructTranspiler.RegisterUsedStructIfApplicable(paramType, ref context);
+
+        if (paramIdx < annotatedParamList.Parameters.Count)
+        {
+            MethodSignatureTranspiler.WriteParameterDeclaration(
+                annotatedParamList.Parameters[paramIdx],
+                paramType,
+                paramSymbol,
+                ref context);
+        }
+        else
+        {
+            context.Emitter.Dialect.AppendType(ref context, paramType);
+        }
+
+        context.Emitter.Writer.Append($" {localCppName}_arg_{paramIdx} = ");
+        context.Visitor.Visit(valueExpression);
+        hasEmittedAny = true;
     }
 
     private static bool TryTranspileStackArrayDeclaration(VariableDeclaratorSyntax variable, ITypeSymbol? typeSymbol,

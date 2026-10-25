@@ -56,38 +56,23 @@ internal static class SemanticModelExtensions
 
         foreach (var ann in node.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
         {
-            if (ann.Data is not { } data)
+            if (!LoweringAnnotations.TryParseOriginalSpanData(
+                    ann.Data,
+                    out var start,
+                    out var length,
+                    out var treeOrdinal,
+                    out _))
             {
                 continue;
             }
 
-            var firstComma = data.IndexOf(',');
-            if (firstComma <= 0 || !int.TryParse(data[..firstComma], out var start))
-            {
-                continue;
-            }
-
-            var rest = data[(firstComma + 1)..];
-            var secondComma = rest.IndexOf(',');
             SyntaxTree targetTree;
-            int length;
-            if (secondComma < 0)
+            if (treeOrdinal < 0)
             {
-                if (!int.TryParse(rest, out length))
-                {
-                    continue;
-                }
-
                 targetTree = semanticModel.SyntaxTree;
             }
             else
             {
-                if (!int.TryParse(rest[..secondComma], out length) ||
-                    !int.TryParse(rest[(secondComma + 1)..], out var treeOrdinal))
-                {
-                    continue;
-                }
-
                 var trees = GetSyntaxTrees(semanticModel.Compilation);
                 if ((uint)treeOrdinal >= (uint)trees.Length)
                 {

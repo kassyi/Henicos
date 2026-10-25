@@ -101,6 +101,7 @@ public static class MethodTranspiler
         context.Emitter.IsSuspendingDeviceFunction = isSuspendingDevice;
 
         var lowered = plan.GetLoweredFor(dialect);
+        context.Emitter.IteratorExpansionCounter = lowered?.RegionCount ?? 0;
 
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();

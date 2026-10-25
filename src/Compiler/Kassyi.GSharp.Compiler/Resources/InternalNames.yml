@@ -54,6 +54,12 @@ Lowering:
     ForEachSourcePrefix: __gsharp_foreach_src_
     ForEachIndexPrefix: __gsharp_foreach_i_
 
+Iterator:
+  Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).
+  Names:
+    EndLabelPrefix: __gsharp_iter_end_
+    NextLabelPrefix: __gsharp_iter_next_
+
 Using:
   Summary: >-
     The disposal of a C# using in device code. A struct that has a Dispose method declares it as a member under its own
