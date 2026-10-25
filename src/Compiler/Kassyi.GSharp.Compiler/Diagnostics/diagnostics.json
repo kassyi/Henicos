@@ -680,7 +680,7 @@
   {
     "name": "InvalidCopyAsyncArgument",
     "id": "GSH0075",
-    "title": "Gpu.CopyAsync requires a SharedMemory<T> destination and an lvalue source",
+    "title": "Gpu.CopyAsync requires a SharedMemory<T> destination and a global memory source",
     "messageFormat": "The argument '{0}' of Gpu.CopyAsync is not valid: {1}.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",

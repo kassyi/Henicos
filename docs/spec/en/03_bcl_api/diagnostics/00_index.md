@@ -82,7 +82,7 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0072](GSH0072.md) | Error | Construct is not supported inside a GPU iterator or its consuming `foreach` |
 | [GSH0073](GSH0073.md) | Warning | Expanding an iterator at `foreach` copies the loop body more than 32 times |
 | [GSH0074](GSH0074.md) | Error | CopyAsyncWaitGroup count must be a compile-time constant between 0 and 7 |
-| [GSH0075](GSH0075.md) | Error | Gpu.CopyAsync requires a SharedMemory<T> destination and an lvalue source |
+| [GSH0075](GSH0075.md) | Error | Gpu.CopyAsync requires a SharedMemory<T> destination and a global memory source |
 | [GSH0076](GSH0076.md) | Error | Unsupported warp matrix (WMMA) type or operation |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
