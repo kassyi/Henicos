@@ -633,6 +633,24 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "CopyAsyncWaitGroupCountOutOfRange",
+    "id": "GSH0074",
+    "title": "CopyAsyncWaitGroup count must be a compile-time constant between 0 and 7",
+    "messageFormat": "The argument 'pendingGroups' of Gpu.CopyAsyncWaitGroup must be a compile-time integer constant between 0 and 7",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "InvalidCopyAsyncArgument",
+    "id": "GSH0075",
+    "title": "Gpu.CopyAsync requires a SharedMemory<T> destination and an lvalue source",
+    "messageFormat": "The argument '{0}' of Gpu.CopyAsync is not valid: {1}.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

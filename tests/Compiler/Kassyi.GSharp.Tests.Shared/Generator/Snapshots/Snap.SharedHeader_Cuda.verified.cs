@@ -142,6 +142,48 @@ asm volatile(
 }
 }
 
+// cp.async (sm_80+; falls back to synchronous copy on earlier architectures).
+template <typename T>
+__device__ __forceinline__ void __gsharp_cp_async(T* dst, const T* src) {
+static_assert(sizeof(T) == 4 || sizeof(T) == 8 || sizeof(T) == 16, ""cp.async copies 4, 8 or 16 bytes"");
+#if __CUDA_ARCH__ >= 800
+unsigned int addr = (unsigned int)__cvta_generic_to_shared(dst);
+asm volatile(""cp.async.ca.shared.global [%0], [%1], %2;\n""
+:: ""r""(addr), ""l""(src), ""n""((int)sizeof(T)) : ""memory"");
+#else
+*dst = *src;
+#endif
+}
+
+__device__ __forceinline__ void __gsharp_cp_async_commit_group() {
+#if __CUDA_ARCH__ >= 800
+asm volatile(""cp.async.commit_group;\n"" ::: ""memory"");
+#endif
+}
+
+__device__ __forceinline__ void __gsharp_cp_async_wait_group(int n) {
+#if __CUDA_ARCH__ >= 800
+switch (n) {
+case 0: asm volatile(""cp.async.wait_group 0;\n"" ::: ""memory""); break;
+case 1: asm volatile(""cp.async.wait_group 1;\n"" ::: ""memory""); break;
+case 2: asm volatile(""cp.async.wait_group 2;\n"" ::: ""memory""); break;
+case 3: asm volatile(""cp.async.wait_group 3;\n"" ::: ""memory""); break;
+case 4: asm volatile(""cp.async.wait_group 4;\n"" ::: ""memory""); break;
+case 5: asm volatile(""cp.async.wait_group 5;\n"" ::: ""memory""); break;
+case 6: asm volatile(""cp.async.wait_group 6;\n"" ::: ""memory""); break;
+default: asm volatile(""cp.async.wait_group 7;\n"" ::: ""memory""); break;
+}
+#else
+(void)n;
+#endif
+}
+
+__device__ __forceinline__ void __gsharp_cp_async_wait_all() {
+#if __CUDA_ARCH__ >= 800
+asm volatile(""cp.async.wait_all;\n"" ::: ""memory"");
+#endif
+}
+
 __device__ __forceinline__ unsigned int __gsharp_vabsdiff4(unsigned int a, unsigned int b, unsigned int c) {
 unsigned int res;
 asm(""vabsdiff4.u32.u32.u32.add %0, %1, %2, %3;"" : ""=r""(res) : ""r""(a), ""r""(b), ""r""(c));

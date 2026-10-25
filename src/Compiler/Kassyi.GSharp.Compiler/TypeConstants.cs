@@ -44,5 +44,7 @@ internal static class TypeConstants
         public const string GridStrideLoop = nameof(GridStrideLoop);
         public const string SingleThread = nameof(SingleThread);
         public const string Constant = nameof(Constant);
+        public const string CopyAsync = nameof(CopyAsync);
+        public const string CopyAsyncWaitGroup = nameof(CopyAsyncWaitGroup);
     }
 }

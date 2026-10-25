@@ -78,7 +78,7 @@ internal static class RefSyntaxHelper
 
     // Whether the C++ expression that RoslynToCudaVisitor emits for an un-modified argument is an lvalue of the target
     // parameter type whose address '&' can take directly
-    private static bool IsCppLValue(ExpressionSyntax expression, SemanticModel semanticModel)
+    public static bool IsCppLValue(ExpressionSyntax expression, SemanticModel semanticModel)
     {
         var typeInfo = GetSafeTypeInfo(expression, semanticModel);
         if (typeInfo.Type != null &&

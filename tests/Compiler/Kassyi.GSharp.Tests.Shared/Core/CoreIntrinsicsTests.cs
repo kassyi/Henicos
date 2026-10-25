@@ -1,3 +1,4 @@
+using System.Numerics;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Core;
@@ -235,9 +236,13 @@ public class CoreIntrinsicsTests
         Assert.Throws<GpuOnlyException>(() => Gpu.ApplyPriorityL2(IntPtr.Zero, 128, 0.5f));
         Assert.Throws<GpuOnlyException>(() => Gpu.ConvertToSharedMemory(ref intVal));
 
-        byte sharedByte = 0;
-        byte globalByte = 0;
-        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsync(ref sharedByte, in globalByte, 4));
+        int sharedInt = 0, globalInt = 0;
+        Vector4 sharedVec4 = default, globalVec4 = default;
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsync(ref sharedInt, in globalInt));
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsync(ref sharedVec4, in globalVec4));
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsyncCommitGroup());
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsyncWaitGroup(0));
+        Assert.Throws<GpuOnlyException>(() => Gpu.CopyAsyncWaitAll());
 
         ulong barrier = 0;
         Assert.Throws<GpuOnlyException>(() => Gpu.MBarrierInit(ref barrier, 32));
@@ -250,4 +255,3 @@ public class CoreIntrinsicsTests
         Assert.Throws<GpuOnlyException>(() => Gpu.WmmaMmaSync(ref frag, ref frag, ref frag, ref frag));
     }
 }
-

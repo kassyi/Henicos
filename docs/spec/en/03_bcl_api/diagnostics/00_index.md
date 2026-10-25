@@ -77,6 +77,8 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 | [GSH0067](GSH0067.md) | Error | Disposable resource is created and discarded |
 | [GSH0068](GSH0068.md) | Error | Disposable local is never disposed |
 | [GSH0069](GSH0069.md) | Error | SharedMemory element type must not be disposable |
+| [GSH0074](GSH0074.md) | Error | CopyAsyncWaitGroup count must be a compile-time constant between 0 and 7 |
+| [GSH0075](GSH0075.md) | Error | Gpu.CopyAsync requires a SharedMemory<T> destination and an lvalue source |
 | [SLQ0001](SLQ0001.md) | Warning | Excessive StackLinq chain depth |
 | [RS0030](RS0030.md) | Error | GPU intrinsic invoked from host code or banned API used in kernel |
 
@@ -98,4 +100,3 @@ The G# compiler and Roslyn analyzers enforce GPU safety and memory management ru
 
 - [4. Practical Guides and Best Practices](../../04_guides/00_index.md)
 - [The CPU to GPU Paradigm Shift: Anti-Patterns & Best Practices](../../04_guides/06_antipatterns_and_best_practices.md)
-
