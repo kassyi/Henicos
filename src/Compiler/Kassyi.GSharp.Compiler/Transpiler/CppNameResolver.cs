@@ -6,7 +6,10 @@ internal enum CppNameKind : byte
     /// <summary>Emitted unchanged: compiler-internal names, external names and names not yet renamed (#402).</summary>
     Verbatim,
 
-    /// <summary>A parameter, local, label or local function: <c>__gsharp_id_{ordinal}_{name}</c>.</summary>
+    /// <summary>
+    /// A parameter, local, label or local function: <c>__gsharp_id_{ordinal}_{name}</c>, or
+    /// <c>__gsharp_il_{region}_{ordinal}_{name}</c> when <see cref="CppName.Region"/> is greater than zero.
+    /// </summary>
     FunctionScope,
 
     /// <summary>An instance field or property of a struct that G# emits itself: <c>__gsharp_mb_{name}</c>.</summary>
@@ -26,11 +29,12 @@ internal enum CppNameKind : byte
 /// </remarks>
 internal readonly struct CppName
 {
-    private CppName(CppNameKind kind, int ordinal, string name)
+    private CppName(CppNameKind kind, int ordinal, string name, int region = 0)
     {
         Kind = kind;
         Ordinal = ordinal;
         Name = name;
+        Region = region;
     }
 
     public CppNameKind Kind { get; }
@@ -38,12 +42,16 @@ internal readonly struct CppName
     /// <summary>The declaration ordinal within the declaring method, or -1 when the declaration was not found there.</summary>
     public int Ordinal { get; }
 
+    /// <summary>The 1-based copy (region) ordinal stamped onto the node by an expansion, or 0 outside expansions.</summary>
+    public int Region { get; }
+
     /// <summary>The C# name without the verbatim <c>@</c>.</summary>
     public string Name { get; }
 
     internal static CppName Verbatim(string name) => new(CppNameKind.Verbatim, -1, name);
 
-    internal static CppName FunctionScope(int ordinal, string name) => new(CppNameKind.FunctionScope, ordinal, name);
+    internal static CppName FunctionScope(int ordinal, string name, int region = 0) =>
+        new(CppNameKind.FunctionScope, ordinal, name, region > 0 ? region : 0);
 
     internal static CppName Member(string name) => new(CppNameKind.Member, -1, name);
 
@@ -71,10 +79,14 @@ internal static class CppNameResolver
     private static readonly ConditionalWeakTable<SyntaxNode, int[]> s_declarationPositions = new();
 
     /// <summary>Resolves the C++ name for <paramref name="symbol"/>, or <paramref name="fallbackName"/> when it is unresolved.</summary>
-    public static CppName Resolve(ISymbol? symbol, string fallbackName, ITranspilerDialect dialect) => symbol switch
+    public static CppName Resolve(
+        ISymbol? symbol,
+        string fallbackName,
+        ITranspilerDialect dialect,
+        int region = 0) => symbol switch
     {
         ILocalSymbol or IParameterSymbol or ILabelSymbol or IMethodSymbol { MethodKind: MethodKind.LocalFunction } =>
-            CppName.FunctionScope(GetDeclarationOrdinal(symbol), symbol.Name),
+            CppName.FunctionScope(GetDeclarationOrdinal(symbol), symbol.Name, region),
         IFieldSymbol { IsStatic: false } or IPropertySymbol { IsStatic: false } when IsEmittedStructMember(symbol, dialect)
             => CppName.Member(symbol.Name),
         ITypeParameterSymbol parameter => CppName.Global(GlobalCppNames.GetTypeParameterName(parameter)),
@@ -89,7 +101,8 @@ internal static class CppNameResolver
     public static void AppendDeclaredName(SyntaxNode declaration, SyntaxToken identifier, ref TranspileContext context)
     {
         var symbol = context.Query.SemanticModel.GetDeclaredSymbol<ISymbol>(declaration);
-        context.Emitter.Writer.AppendCppName(Resolve(symbol, identifier.ValueText, context.Emitter.Dialect));
+        var region = LoweringIdentity.GetRegion(declaration);
+        context.Emitter.Writer.AppendCppName(Resolve(symbol, identifier.ValueText, context.Emitter.Dialect, region));
     }
 
     /// <summary>Emits the name that <paramref name="reference"/> binds to.</summary>
@@ -101,7 +114,8 @@ internal static class CppNameResolver
     {
         var model = context.Query.SemanticModel;
         var symbol = model.GetSymbol(reference) ?? model.GetDeclaredSymbol<ISymbol>(reference);
-        context.Emitter.Writer.AppendCppName(Resolve(symbol, identifier.ValueText, context.Emitter.Dialect));
+        var region = LoweringIdentity.GetRegion(reference);
+        context.Emitter.Writer.AppendCppName(Resolve(symbol, identifier.ValueText, context.Emitter.Dialect, region));
     }
 
     /// <summary>Emits the name of <paramref name="symbol"/>.</summary>
@@ -113,7 +127,17 @@ internal static class CppNameResolver
         switch (name.Kind)
         {
             case CppNameKind.FunctionScope:
-                writer.Append(GSharpInternalNames.Renamed.IdentifierPrefix);
+                if (name.Region > 0)
+                {
+                    writer.Append(GSharpInternalNames.Renamed.InlinedIdentifierPrefix)
+                        .Append(name.Region)
+                        .Append('_');
+                }
+                else
+                {
+                    writer.Append(GSharpInternalNames.Renamed.IdentifierPrefix);
+                }
+
                 if (name.Ordinal >= 0)
                 {
                     writer.Append(name.Ordinal).Append('_');

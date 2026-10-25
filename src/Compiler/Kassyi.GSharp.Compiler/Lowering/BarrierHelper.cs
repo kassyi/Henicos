@@ -123,4 +123,3 @@ internal static class BarrierHelper
         return null;
     }
 }
-

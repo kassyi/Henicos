@@ -24,7 +24,7 @@ The CUDA execution environment lacks a garbage collector, a robust runtime type 
 | **Strings (`string`)** | **Device Only** | Strings are managed reference types. Fixed-size character arrays must be used instead, though not natively supported yet. (Fine to use on Host). |
 | **Console I/O (`Console.WriteLine`)** | **Device Only** | `Console.WriteLine` and standard I/O streams are completely unavailable on the GPU. To inspect variable state during debugging, use a pre-allocated telemetry array (see [Guide: Print Debugging](../04_guides/06_antipatterns_and_best_practices.md#6-print-debugging-the-consolewriteline-trap)). |
 | **LINQ (`System.Linq`)** | **Device Only** | Relies heavily on delegates, iterators, and dynamic allocations. (Enforced by **GSH0008**) |
-| **`foreach` Loops** | **Device Only** | Implicitly allocates `IEnumerator` instances on the managed heap, which is generally incompatible with GPU memory execution. However, iterating over `Span<T>`, `ReadOnlySpan<T>`, `InlineArray`, or fixed arrays does NOT allocate and is explicitly supported. (Enforced by **GSH0007**) |
+| **`foreach` Loops** | **Device Only** | Implicitly allocates `IEnumerator` instances on the managed heap, which is generally incompatible with GPU memory execution. However, iterating over `Span<T>`, `ReadOnlySpan<T>`, `InlineArray`, fixed arrays, or a `[GpuDeviceFunction]` iterator (`IEnumerable<T>` with `yield`, lowered by inlining the iterator body at each `foreach`) does NOT allocate and is explicitly supported. (Enforced by **GSH0007**, **GSH0070**–**GSH0073**) |
 | **Virtual Methods / Interfaces** | **Device Only** | Dynamic dispatch (v-tables) is unsupported in the current AOT transpiler. |
 | **Exceptions (`throw`, `try-catch`)** | **Device Only** | Exception unwinding is not supported in CUDA device code. |
 | **Recursion** | **Device Only** | Heavily restricted due to the highly limited thread stack size (typically a few kilobytes per thread) on GPUs. |
@@ -94,6 +94,10 @@ The `Kassyi.Generators.GSharp` AOT pipeline enforces constraints natively during
 | [**GSH0027**](../03_bcl_api/diagnostics/GSH0027.md) | Error | Disposing borrowed resource | Triggered when disposing a borrowed resource parameter. |
 | [**GSH0028**](../03_bcl_api/diagnostics/GSH0028.md) | Error | Disposable resource in DIM | Triggered when Default Interface Methods attempt to manage disposable resources. |
 | [**GSH0029**](../03_bcl_api/diagnostics/GSH0029.md) | Warning | Manual unmanaged allocation | Triggered when low-level manual unmanaged allocation (`Gpu.Unsafe.Malloc`) is detected. |
+| [**GSH0070**](../03_bcl_api/diagnostics/GSH0070.md) | Error | Device iterator shape not supported | Triggered when a GPU iterator method has an unsupported return type, element type, parameter modifier, or declaration shape. |
+| [**GSH0071**](../03_bcl_api/diagnostics/GSH0071.md) | Error | Iterator value must be enumerated in place | Triggered when an `IEnumerable<T>` iterator value is not consumed directly by `foreach` or stored in a single-assignment local variable. |
+| [**GSH0072**](../03_bcl_api/diagnostics/GSH0072.md) | Error | Iterator body construct not supported | Triggered when `Gpu.SyncThreads()`, `SharedMemory<T>`, or an iterator local crossing a barrier is used in an iterator or its consuming `foreach`. |
+| [**GSH0073**](../03_bcl_api/diagnostics/GSH0073.md) | Warning | Iterator expansion too large | Triggered when expanding an iterator at a consumer `foreach` duplicates the loop body more than 32 times. |
 | [**RS0030**](../03_bcl_api/diagnostics/RS0030.md) | Error | Banned API in GPU kernel | Triggered via `BannedApiAnalyzers` when a banned API is used in GPU kernels or GPU intrinsics in host code. |
 
 For individual guides, see the [Diagnostics Reference Catalog](../03_bcl_api/diagnostics/00_index.md).

@@ -41,7 +41,7 @@ const snapshots = execFileSync('git', ['ls-files', '*.verified.*'], { cwd: repoR
 
 // Renamed user declarations (__gsharp_id_ and friends) are the naming layer's business, not internal names.
 const output = new Set(snapshots.flatMap(text => matches(text, /__gsharp_[A-Za-z0-9_]*/g))
-    .filter(name => !/^__gsharp_(id|mb|fn|k|ty|tp)_/.test(name)));
+    .filter(name => !/^__gsharp_(id|il|mb|fn|k|ty|tp)_/.test(name)));
 
 const known = new Set([
     ...matches(read(path.join(compiler, 'Resources', 'InternalNames.yml')), /__gsharp_[a-z0-9_]+/g),

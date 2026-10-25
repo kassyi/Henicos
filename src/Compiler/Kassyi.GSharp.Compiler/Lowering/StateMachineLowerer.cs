@@ -277,4 +277,3 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
         return stmt.ReplaceNode(barrierInv, rewrittenInv);
     }
 }
-

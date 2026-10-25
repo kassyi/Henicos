@@ -14,6 +14,7 @@ namespace Kassyi.GSharp.Naming;
 /// <remarks>
 /// <list type="bullet">
 ///   <item><description><c>__gsharp_id_{ordinal}_{name}</c>: parameters, locals, labels and local functions. The ordinal is omitted when the declaration could not be located.</description></item>
+///   <item><description><c>__gsharp_il_{region}_{ordinal}_{name}</c>: parameters, locals, labels and local functions of a declaration that a pre-lowering or inline expansion copied into the method; the first number is the copy (region).</description></item>
 ///   <item><description><c>__gsharp_mb_{name}</c>: instance fields and properties of structs that G# emits.</description></item>
 ///   <item><description><c>__gsharp_ty_</c> / <c>__gsharp_fn_</c> / <c>__gsharp_k_</c> followed by the encoded C# path (<c>Encode</c>): types, device functions and kernel entry points, which share one global C++ scope.</description></item>
 ///   <item><description><c>__gsharp_tp_{name}</c>: template parameters.</description></item>
@@ -24,6 +25,7 @@ namespace Kassyi.GSharp.Naming;
 internal static class GSharpNameEncoding
 {
     public const string IdentifierPrefix = "__gsharp_id_";
+    public const string InlinedIdentifierPrefix = "__gsharp_il_";
     public const string MemberPrefix = "__gsharp_mb_";
     public const string TypePrefix = "__gsharp_ty_";
     public const string FunctionPrefix = "__gsharp_fn_";
@@ -158,7 +160,8 @@ internal static class GSharpNameEncoding
                 continue;
             }
 
-            var kind = identifier.StartsWith(IdentifierPrefix, StringComparison.Ordinal) ? "id"
+            var kind = identifier.StartsWith(IdentifierPrefix, StringComparison.Ordinal) ||
+                       identifier.StartsWith(InlinedIdentifierPrefix, StringComparison.Ordinal) ? "id"
                 : identifier.StartsWith(MemberPrefix, StringComparison.Ordinal) ? "member"
                 : identifier.StartsWith(TypePrefix, StringComparison.Ordinal) ? "type"
                 : identifier.StartsWith(FunctionPrefix, StringComparison.Ordinal) ? "function"
@@ -538,6 +541,35 @@ internal static class GSharpNameEncoding
             }
 
             return false;
+        }
+
+        if (identifier.StartsWith(InlinedIdentifierPrefix, StringComparison.Ordinal))
+        {
+            var ilStart = InlinedIdentifierPrefix.Length;
+            var ilDigitsEnd = ilStart;
+            while (ilDigitsEnd < identifier.Length && identifier[ilDigitsEnd] is >= '0' and <= '9')
+            {
+                ilDigitsEnd++;
+            }
+
+            if (ilDigitsEnd == ilStart || ilDigitsEnd >= identifier.Length || identifier[ilDigitsEnd] != '_')
+            {
+                return false;
+            }
+
+            var ordStart = ilDigitsEnd + 1;
+            var ordDigitsEnd = ordStart;
+            while (ordDigitsEnd < identifier.Length && identifier[ordDigitsEnd] is >= '0' and <= '9')
+            {
+                ordDigitsEnd++;
+            }
+
+            if (ordDigitsEnd > ordStart && ordDigitsEnd < identifier.Length && identifier[ordDigitsEnd] == '_')
+            {
+                ordStart = ordDigitsEnd + 1;
+            }
+
+            return TrySetName(identifier, ordStart, ref csharpName);
         }
 
         if (!identifier.StartsWith(IdentifierPrefix, StringComparison.Ordinal))

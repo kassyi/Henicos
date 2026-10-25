@@ -31,7 +31,15 @@ internal static class TranspilerFailureCheck
         var reportedBefore = diagnostics.Count;
         try
         {
-            Transpile(declaration, method, semanticModel, new FailureSink(diagnostics));
+            var isDeviceIteratorCandidate =
+                method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+                !method.HasAttribute(KnownAttributes.GpuKernel) &&
+                IteratorTypeResolver.ContainsDirectYield(declaration.Body);
+            Transpile(
+                declaration,
+                method,
+                semanticModel,
+                new FailureSink(diagnostics, declaration, semanticModel.Compilation, isDeviceIteratorCandidate));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -59,9 +67,68 @@ internal static class TranspilerFailureCheck
         }
     }
 
-    private sealed class FailureSink(ImmutableArray<Diagnostic>.Builder diagnostics)
+    private sealed class FailureSink(
+        ImmutableArray<Diagnostic>.Builder diagnostics,
+        MethodDeclarationSyntax declaration,
+        Compilation compilation,
+        bool isDeviceIteratorCandidate)
     {
-        public void Add(TranspileFailure failure) =>
+        public void Add(TranspileFailure failure)
+        {
+            // A valid device iterator body is validated once by its own standalone expansion; drop failures located in
+            // another standalone-validated iterator method so consumers do not re-report its body failures.
+            if (IsInOtherDeviceIteratorMethod(failure.Location))
+            {
+                return;
+            }
+
+            if (failure.Descriptor.Id == GSharpDiagnostics.UnsupportedSyntax.Id &&
+                failure.MessageArgs is
+                    [nameof(SyntaxKind.YieldReturnStatement) or nameof(SyntaxKind.YieldBreakStatement)])
+            {
+                return;
+            }
+
+            if (isDeviceIteratorCandidate &&
+                (failure.Descriptor.Id == GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id ||
+                 failure.Descriptor.Id == GSharpDiagnostics.InstanceDeviceFunctionNotSupported.Id))
+            {
+                return;
+            }
+
             diagnostics.Add(Diagnostic.Create(failure.Descriptor, failure.Location, failure.MessageArgs));
+        }
+
+        private bool IsInOtherDeviceIteratorMethod(Location location)
+        {
+            if (!location.IsInSource)
+            {
+                return false;
+            }
+
+            if (location.SourceTree == declaration.SyntaxTree &&
+                declaration.FullSpan.Contains(location.SourceSpan))
+            {
+                return false;
+            }
+
+            if (!compilation.ContainsSyntaxTree(location.SourceTree))
+            {
+                return false;
+            }
+
+            var node = location.SourceTree.GetRoot().FindNode(location.SourceSpan);
+            if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not { } otherMethod ||
+                otherMethod == declaration ||
+                !otherMethod.HasBody())
+            {
+                return false;
+            }
+
+            var otherModel = compilation.GetSemanticModel(otherMethod.SyntaxTree);
+            return otherModel.GetDeclaredSymbol(otherMethod) is IMethodSymbol otherSymbol &&
+                   IteratorTypeResolver.IsDeviceIteratorMethod(otherSymbol) &&
+                   !IteratorTypeResolver.IsRecursiveIterator(otherSymbol, compilation);
+        }
     }
 }

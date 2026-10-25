@@ -56,6 +56,32 @@ public static class MethodTranspiler
     internal static string GenerateCudaSource(in MethodEmissionPlan plan, Action<TranspileFailure>? reportFailure,
         ITranspilerDialect dialect, out HashSet<string> requiredIncludes)
     {
+        if (plan.Kind == MethodEmissionKind.Iterator)
+        {
+            if (reportFailure != null && plan.Declaration.Body != null && plan.Symbol != null)
+            {
+                using var iteratorSession = TranspilationSession.Begin(in plan, reportFailure, dialect);
+                if (iteratorSession.ErrorMessage == null)
+                {
+                    using var dummyWriter = new SourceWriter();
+                    ref var iteratorContext = ref iteratorSession.Context;
+                    iteratorContext.Emitter.Writer = dummyWriter;
+                    var expanded = IteratorInliner.ExpandStandalone(
+                        plan.Declaration,
+                        plan.Symbol,
+                        plan.SemanticModel,
+                        ref iteratorContext.Emitter.IteratorExpansionCounter,
+                        ref iteratorContext.Emitter.ArgumentTempCounter,
+                        dialect,
+                        iteratorContext.Reporter);
+                    iteratorContext.Visitor.Visit(expanded);
+                }
+            }
+
+            requiredIncludes = [];
+            return "";
+        }
+
         using var session = TranspilationSession.Begin(in plan, reportFailure, dialect);
         if (session.ErrorMessage != null)
         {
@@ -72,6 +98,7 @@ public static class MethodTranspiler
         context.Emitter.IsSuspendingDeviceFunction = isSuspendingDevice;
 
         var lowered = plan.GetLoweredFor(dialect);
+        context.Emitter.IteratorExpansionCounter = lowered?.RegionCount ?? 0;
 
         using var mainWriter = new SourceWriter();
         using var bodyWriter = new SourceWriter();
@@ -82,7 +109,9 @@ public static class MethodTranspiler
         // A plan with a state machine always has a symbol
         if (lowered != null && plan.Symbol is { } loweredSymbol)
         {
-            var prefix = isSuspendingDevice ? GSharpInternalNames.SuspendingCall.FrameTypePrefix : GSharpInternalNames.Kernel.ContextPrefix;
+            var prefix = isSuspendingDevice
+                ? GSharpInternalNames.SuspendingCall.FrameTypePrefix
+                : GSharpInternalNames.Kernel.ContextPrefix;
             var frameName = GlobalCppNames.GetKernelDerivedName(prefix, loweredSymbol);
             WriteContextStruct(frameName, methodDecl.Identifier.ValueText, lowered, in plan, isSuspendingDevice,
                 ref context);
@@ -90,8 +119,8 @@ public static class MethodTranspiler
 
         if (isSuspendingDevice && lowered != null && plan.Symbol is { } suspendingSymbol)
         {
-            MethodSignatureTranspiler.WriteSuspendingDeviceSignature(methodDecl, suspendingSymbol, lowered.CopiedParameters,
-                ref context);
+            MethodSignatureTranspiler.WriteSuspendingDeviceSignature(
+                methodDecl, suspendingSymbol, lowered.CopiedParameters, ref context);
         }
         else
         {
@@ -136,6 +165,11 @@ public static class MethodTranspiler
         if (plan.Kind == MethodEmissionKind.Kernel)
         {
             throw new ArgumentException("Only a device function has a forward declaration.", nameof(plan));
+        }
+
+        if (plan.Kind == MethodEmissionKind.Iterator)
+        {
+            return "";
         }
 
         using var session = TranspilationSession.Begin(in plan, reportFailure, dialect);
@@ -224,7 +258,9 @@ public static class MethodTranspiler
 
             StructTranspiler.RegisterUsedStructIfApplicable(typeSymbol, ref context);
             context.Emitter.Dialect.AppendType(ref context, typeSymbol);
-            WriteContextFieldName(field, ref context);
+            context.Emitter.Writer.Append(' ');
+            CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
+            context.Emitter.Writer.AppendLine(";");
         }
 
         for (var i = 0; i < lowered.CallSites.Count; i++)
@@ -241,13 +277,6 @@ public static class MethodTranspiler
     internal static IMethodSymbol GetSuspendingCallee(InvocationExpressionSyntax callSite, ref TranspileContext context) =>
         context.Query.SemanticModel.GetSymbol(callSite) as IMethodSymbol
         ?? throw new InvalidOperationException("A call that may suspend does not resolve to a device function.");
-
-    private static void WriteContextFieldName(VariableDeclaratorSyntax field, ref TranspileContext context)
-    {
-        context.Emitter.Writer.Append(' ');
-        CppNameResolver.AppendDeclaredName(field, field.Identifier, ref context);
-        context.Emitter.Writer.AppendLine(";");
-    }
 
     private static void WriteMethodBody(in MethodEmissionPlan plan, LoweredStateMachine? lowered,
         ref TranspileContext context)

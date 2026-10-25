@@ -69,7 +69,61 @@ internal static class StatementTranspilers
     /// </summary>
     public static void TranspileForEachStatement(ForEachStatementSyntax node, ref TranspileContext context)
     {
+        if (IteratorTypeResolver.TryResolveExternalIteratorSource(
+                node.Expression,
+                context.Query.SemanticModel,
+                out _))
+        {
+            context.Reporter.Fail(GSharpDiagnostics.UnsupportedSyntax, node, IteratorInliner.IteratorWithoutBody);
+            return;
+        }
+
+        if (IteratorTypeResolver.TryResolveIteratorSource(
+                node.Expression,
+                context.Query.SemanticModel,
+                out var sourceInvocation,
+                out var iteratorMethod))
+        {
+            if (context.Emitter.IteratorInlineDepth >= IteratorInliner.MaxInlineDepth)
+            {
+                context.Reporter.Fail(
+                    GSharpDiagnostics.IteratorShapeNotSupported,
+                    node,
+                    iteratorMethod.Name,
+                    $"inline expansion depth exceeds the maximum of {IteratorInliner.MaxInlineDepth}");
+                return;
+            }
+
+            if (IteratorTypeResolver.IsGenericIEnumerable(iteratorMethod.ReturnType, out var elementType))
+            {
+                StructTranspiler.RegisterUsedStructIfApplicable(elementType, ref context);
+            }
+
+            var expandedBlock = IteratorInliner.Expand(
+                node,
+                iteratorMethod,
+                sourceInvocation,
+                context.Query.SemanticModel,
+                ref context.Emitter.IteratorExpansionCounter,
+                ref context.Emitter.ArgumentTempCounter,
+                context.Emitter.Dialect,
+                context.Reporter);
+
+            context.Emitter.IteratorInlineDepth++;
+            try
+            {
+                context.Visitor.VisitBlock(expandedBlock);
+            }
+            finally
+            {
+                context.Emitter.IteratorInlineDepth--;
+            }
+
+            return;
+        }
+
         DeclarationHoistingHelper.HoistDeclarationExpressions(node.Expression, ref context);
+
         context.Emitter.Writer.Append("for");
         using (context.Emitter.Writer.Parentheses())
         {
@@ -207,7 +261,16 @@ internal static class StatementTranspilers
         {
             foreach (var stmt in node.Statements)
             {
-                context.Visitor.Visit(stmt);
+                if (stmt is BlockSyntax nested &&
+                    nested.HasAnnotations(LoweringAnnotations.ScopedBlockAnnotationKind))
+                {
+                    context.Visitor.VisitStatementOrBlock(nested);
+                }
+                else
+                {
+                    context.Visitor.Visit(stmt);
+                }
+
                 context.Emitter.Writer.AppendLine();
             }
         }
@@ -241,10 +304,14 @@ internal static class StatementTranspilers
         }
 
         context.Emitter.Writer.Append("goto ");
-        if (node.Expression is IdentifierNameSyntax identifier && context.Emitter.LabelSuffix != null)
+        if (node.Expression is IdentifierNameSyntax identifier &&
+            !IsSyntheticIteratorLabel(identifier.Identifier.ValueText))
         {
             CppNameResolver.AppendReferencedName(identifier, identifier.Identifier, ref context);
-            context.Emitter.Writer.Append(context.Emitter.LabelSuffix);
+            if (context.Emitter.LabelSuffix != null)
+            {
+                context.Emitter.Writer.Append(context.Emitter.LabelSuffix);
+            }
         }
         else
         {
@@ -257,14 +324,24 @@ internal static class StatementTranspilers
     public static void TranspileLabeledStatement(LabeledStatementSyntax node, ref TranspileContext context)
     {
         CppNameResolver.AppendDeclaredName(node, node.Identifier, ref context);
-        if (context.Emitter.LabelSuffix != null)
+        if (context.Emitter.LabelSuffix != null && !IsSyntheticIteratorLabel(node.Identifier.ValueText))
         {
             context.Emitter.Writer.Append(context.Emitter.LabelSuffix);
+        }
+
+        if (node.Statement is EmptyStatementSyntax)
+        {
+            context.Emitter.Writer.AppendLine(":;");
+            return;
         }
 
         context.Emitter.Writer.AppendLine(":");
         context.Visitor.Visit(node.Statement);
     }
+
+    private static bool IsSyntheticIteratorLabel(string name) =>
+        name.StartsWith(GSharpInternalNames.Iterator.EndLabelPrefix, StringComparison.Ordinal) ||
+        name.StartsWith(GSharpInternalNames.Iterator.NextLabelPrefix, StringComparison.Ordinal);
 
     /// <summary>
     /// Transpiles a return statement, hoisting any inline declarations from the returned expression.
@@ -348,5 +425,3 @@ internal static class StatementTranspilers
         context.Emitter.Writer.Append("return true;");
     }
 }
-
-

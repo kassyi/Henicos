@@ -51,6 +51,14 @@ Lowering:
     SwitchStatePrefix: __gsharp_switch_
     ConstructorPrefix: __gsharp_ctor_
     ConstructorSelf: __gsharp_self
+    ForEachSourcePrefix: __gsharp_foreach_src_
+    ForEachIndexPrefix: __gsharp_foreach_i_
+
+Iterator:
+  Summary: Labels synthesized by inlining a device iterator body into a foreach site (IteratorInliner).
+  Names:
+    EndLabelPrefix: __gsharp_iter_end_
+    NextLabelPrefix: __gsharp_iter_next_
 
 Using:
   Summary: >-

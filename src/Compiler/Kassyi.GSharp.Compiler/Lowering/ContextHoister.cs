@@ -6,7 +6,9 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Whether the body belongs to a device function. Its shared memory is not set up by the launcher, so the initializer of
 /// a hoisted <c>SharedMemory&lt;T&gt;</c> stays in the body.
 /// </param>
-public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null, bool isDeviceFunction = false)
+public class ContextHoister(
+    IReadOnlyCollection<string>? copiedParameters = null,
+    bool isDeviceFunction = false)
     : CSharpSyntaxRewriter
 {
     private readonly HashSet<string> _hoistedVariables = [];
@@ -198,6 +200,14 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
 
     public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
     {
+        // [WHY] Only the receiver of a member access is a variable reference; the member name itself (`s.x`) is a
+        // field or method of the receiver's type and must not be rewritten to `s.__gsharp_ctx->x` when a hoisted local
+        // happens to share the name `x`.
+        if (node.Parent is MemberAccessExpressionSyntax parentMember && parentMember.Name == node)
+        {
+            return base.VisitIdentifierName(node);
+        }
+
         if (_hoistedVariables.Contains(node.Identifier.ValueText))
         {
             return CreateContextAccess(node.Identifier, node).WithTriviaFrom(node);
@@ -207,18 +217,21 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
     }
 
     // [WHY] The member name keeps the original span of the replaced node, so that the transpiler resolves it to the
-    // hoisted local's symbol and emits the same C++ name as the context struct field. The original token keeps a
-    // verbatim '@' for the managed C# fallback.
+    // hoisted local's symbol and emits the same C++ name as the context struct field. The outer MemberAccessExpression
+    // also keeps the original span and any foreach receiver annotations so `GetTypeSymbol(node.Expression)` and
+    // `node.Expression.HasAnnotations(...)` on an enclosing member access (`(__gsharp_ctx->arr).Length`) continue to see
+    // the hoisted variable's original expression.
+    // The original token keeps a verbatim '@' for the managed C# fallback.
     private static MemberAccessExpressionSyntax CreateContextAccess(SyntaxToken identifier, SyntaxNode original)
     {
+        var spanAnnotations = original.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind);
         return SyntaxFactory.MemberAccessExpression(
             SyntaxKind.PointerMemberAccessExpression,
             SyntaxFactory.IdentifierName(GSharpInternalNames.StateMachine.Context),
             SyntaxFactory.IdentifierName(identifier.WithoutTrivia())
-                .WithAdditionalAnnotations(
-                    original.GetAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind)
-                )
-        );
+                .WithAdditionalAnnotations(spanAnnotations)
+        ).WithAdditionalAnnotations(spanAnnotations)
+         .WithAdditionalAnnotations(original.GetAnnotations(LoweringAnnotations.ForEachArraySourceAnnotationKind));
     }
 
     private sealed class HoistAnalyzer : CSharpSyntaxWalker
@@ -255,4 +268,3 @@ public class ContextHoister(IReadOnlyCollection<string>? copiedParameters = null
         }
     }
 }
-
