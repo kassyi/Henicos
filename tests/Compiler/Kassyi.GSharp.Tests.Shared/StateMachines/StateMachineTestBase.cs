@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -44,25 +45,7 @@ public abstract class StateMachineTestBase
         Action<LoweredStateMachine, SemanticModel>? inspect = null,
         [CallerMemberName] string methodName = "")
     {
-        var (compilation, tree, model) = RoslynTestUtility.GetTestCaseContext(
-            Path.Combine("StateMachines", testCaseFile));
-        var method = tree.GetRoot()
-            .DescendantNodes()
-            .OfType<MethodDeclarationSyntax>()
-            .First();
-
-        LoweredStateMachine lowered;
-        if (preLowerTransform == null)
-        {
-            lowered = AstLoweringPipeline.Lower(method, model);
-        }
-        else
-        {
-            var body = method.Body ?? throw new InvalidOperationException("Test case method must have a block body.");
-            var annotated = LoweringAnnotations.AnnotateOriginalSpans(body, compilation);
-            var expanded = preLowerTransform(annotated, model);
-            lowered = AstLoweringPipeline.Lower(expanded, model);
-        }
+        var (lowered, model) = LowerTestCase(testCaseFile, preLowerTransform);
 
         inspect?.Invoke(lowered, model);
 
@@ -87,6 +70,72 @@ public abstract class StateMachineTestBase
             }
             """;
         return Verifier.Verify(wrapped, "cs").UseFastHashSnapshotName(methodName);
+    }
+
+    /// <summary>
+    /// Lowers a <c>TestCases/StateMachines</c> kernel like <see cref="VerifyPipelineLowerFromTestCase"/>, then names its
+    /// context fields and rewrites its context accesses as the managed C# output does
+    /// (<see cref="ManagedContextFields"/>, <see cref="ContextLocalRewriter"/>). The snapshot lists each hoisted
+    /// declarator with its managed field name, followed by the rewritten body. <paramref name="inspect"/> receives the
+    /// names of the ref struct locals declared on every resume, the names of the context class fields, and the body.
+    /// </summary>
+    protected static Task VerifyManagedPipelineLowerFromTestCase(
+        string testCaseFile,
+        Func<BlockSyntax, SemanticModel, BlockSyntax>? preLowerTransform = null,
+        Action<IReadOnlyList<string>, IReadOnlyList<string>, SyntaxNode>? inspect = null,
+        [CallerMemberName] string methodName = "")
+    {
+        var (lowered, model) = LowerTestCase(testCaseFile, preLowerTransform);
+
+        var (localInits, regularFields, unhoistedKeys, renamedLocals) =
+            ManagedContextFields.ProcessContextFields(lowered.ContextFields, model, methodName);
+        var rewritten = new ContextLocalRewriter(unhoistedKeys, renamedLocals, model, methodName)
+                            .Visit(lowered.LoweredBody)
+                        ?? throw new InvalidOperationException("Context local rewriting removed the lowered body.");
+
+        inspect?.Invoke(
+            localInits.Select(static f => f.Name).ToArray(),
+            regularFields.Select(static f => f.Name).ToArray(),
+            rewritten);
+
+        var fields = localInits.Concat(regularFields).ToArray();
+
+        var fieldsComment = string.Join(
+            Environment.NewLine,
+            fields.Select(static f => $"    // {f.Declarator.Identifier.ValueText} -> {f.Name}"));
+        var formatted = rewritten.NormalizeWhitespace().ToFullString();
+
+        var wrapped = $$"""
+            public class {{methodName}}_Snapshot
+            {
+            {{fieldsComment}}
+                public void LoweredMethod()
+            {{formatted}}
+            }
+            """;
+        return Verifier.Verify(wrapped, "cs").UseFastHashSnapshotName(methodName);
+    }
+
+    private static (LoweredStateMachine Lowered, SemanticModel Model) LowerTestCase(
+        string testCaseFile,
+        Func<BlockSyntax, SemanticModel, BlockSyntax>? preLowerTransform)
+    {
+        var (compilation, tree, model) = RoslynTestUtility.GetTestCaseContext(
+            Path.Combine("StateMachines", testCaseFile));
+        var method = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .First();
+
+        if (preLowerTransform == null)
+        {
+            return (AstLoweringPipeline.Lower(method, model), model);
+        }
+
+        var body = method.Body ?? throw new InvalidOperationException("Test case method must have a block body.");
+        var annotated = LoweringAnnotations.AnnotateOriginalSpans(body, compilation);
+        var expanded = preLowerTransform(annotated, model);
+        return (AstLoweringPipeline.Lower(expanded, model), model);
     }
 
     protected static Task VerifyStateMachineLower(Action action,

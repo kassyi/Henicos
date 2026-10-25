@@ -31,11 +31,11 @@ internal static class ManagedCSharpTranspiler
         // Internal-error reports name the kernel as the user wrote it.
         var kernelName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedSymbols, renamedLocals) =
+        var (localInits, regularFields, unhoistedKeys, renamedLocals) =
             ManagedContextFields.ProcessContextFields(contextFields, semanticModel, kernelName);
 
         var unhoistedBody =
-            new ContextLocalRewriter(unhoistedSymbols, renamedLocals, semanticModel, kernelName).Visit(loweredBody) as
+            new ContextLocalRewriter(unhoistedKeys, renamedLocals, semanticModel, kernelName).Visit(loweredBody) as
                 BlockSyntax
             ?? throw new InvalidOperationException(
                 $"Unhoisting ref-struct fields removed the body of kernel '{kernelName}'.");
@@ -75,12 +75,12 @@ internal static class ManagedCSharpTranspiler
             GlobalCppNames.GetKernelDerivedName(GSharpInternalNames.Kernel.StateMachinePrefix, methodSymbol);
         var functionName = methodDecl.Identifier.ValueText;
 
-        var (localInits, regularFields, unhoistedSymbols, renamedLocals) =
+        var (localInits, regularFields, unhoistedKeys, renamedLocals) =
             ManagedContextFields.ProcessContextFields(lowered.ContextFields, semanticModel, functionName);
         var copiedParameters = plan.GetCopiedParameters(lowered);
 
         var unhoistedBody =
-            new ContextLocalRewriter(unhoistedSymbols, renamedLocals, semanticModel, functionName)
+            new ContextLocalRewriter(unhoistedKeys, renamedLocals, semanticModel, functionName)
                 .Visit(lowered.LoweredBody) as BlockSyntax
             ?? throw new InvalidOperationException(
                 $"Unhoisting ref-struct fields removed the body of device function '{functionName}'.");
