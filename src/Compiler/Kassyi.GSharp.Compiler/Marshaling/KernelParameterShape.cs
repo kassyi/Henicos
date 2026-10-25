@@ -85,8 +85,8 @@ internal readonly record struct KernelParameterShape
     /// <summary>A nullable value type such as <c>Memory&lt;float&gt;?</c>.</summary>
     public bool IsNullableValue { get; init; }
 
-    /// <summary>A <c>[Constant]</c> parameter, which the launcher injects as a macro.</summary>
-    public bool IsConstant { get; init; }
+    /// <summary>A <c>[GpuConstexpr]</c> parameter.</summary>
+    public bool IsConstexpr { get; init; }
 
     /// <summary>Whether the parameter declares a default value.</summary>
     public bool HasExplicitDefault { get; init; }
@@ -184,7 +184,7 @@ internal readonly record struct KernelParameterShape
             IsNullableReference =
                 parameter.Type.IsReferenceType && parameter.NullableAnnotation == NullableAnnotation.Annotated,
             IsNullableValue = parameter.Type.IsNullableArrayLike(),
-            IsConstant = parameter.IsConstantParameter(),
+            IsConstexpr = parameter.IsConstexprParameter(),
             HasExplicitDefault = parameter.HasExplicitDefaultValue,
             DefaultValueLiteral = parameter.HasExplicitDefaultValue
                 ? FormatDefaultValue(parameter.ExplicitDefaultValue)

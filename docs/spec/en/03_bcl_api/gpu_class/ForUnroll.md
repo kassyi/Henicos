@@ -112,7 +112,9 @@ catch (GpuOnlyException)
 
 ## Remarks
 
-This method should be used strictly when the loop variable needs to be evaluated as a compile-time constant literal (e.g., `0`, `1`, `2`). This is essential when passing the index to methods that enforce strict constant evaluation.
+This method should be used strictly when the loop variable needs to be evaluated as a compile-time constant literal (e.g., `0`, `1`, `2`) in the generated C++ code. Note that the loop index parameter is a regular delegate parameter in C#, so it is not a C# constant expression (`const int c = i;` and `[Constant]` arguments inside the body are not supported).
+
+On CPU dialects and in the managed state machine, if the lambda body contains a phase split point (such as `Gpu.SyncThreads`, `Gpu.SyncGrid`, `Gpu.Warp.*`, or a barrier-reaching `[GpuDeviceFunction]`), `Gpu.ForUnroll` is lowered into a `for` loop and compiled into the state machine so that each iteration suspends and resumes across threads.
 
 > [!CAUTION]
 > Because this macro performs literal source code duplication during transpilation, using it for loops with high iteration counts will drastically bloat the generated C++ code. For general performance tuning and Instruction-Level Parallelism (ILP) improvements, use [`Gpu.Hint.Unroll`](HintUnroll.md) instead.

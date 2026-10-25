@@ -78,7 +78,7 @@ public static partial class ComprehensiveSpecKernel
         out bool successFlag,
         SpecTypes largeStructVal, // 48 bytes by value; within the GSH0064 parameter limit.
         int particleCount,
-        [Constant] int unrollFactor)
+        [GpuConstexpr(4)] int unrollFactor)
     {
         successFlag = false;
 

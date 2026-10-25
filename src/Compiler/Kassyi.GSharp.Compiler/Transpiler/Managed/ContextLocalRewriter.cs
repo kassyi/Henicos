@@ -20,19 +20,6 @@ internal sealed class ContextLocalRewriter(
         } memberAccess &&
         memberAccess.IsKind(SyntaxKind.PointerMemberAccessExpression);
 
-    public override SyntaxNode? VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) =>
-        VisitCreation(node, base.VisitObjectCreationExpression(node));
-
-    public override SyntaxNode?
-        VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) =>
-        VisitCreation(node, base.VisitImplicitObjectCreationExpression(node));
-
-    private SyntaxNode? VisitCreation(BaseObjectCreationExpressionSyntax node, SyntaxNode? visited) =>
-        visited is BaseObjectCreationExpressionSyntax rewritten &&
-        semanticModel.GetTypeSymbol(node).IsSharedMemoryType()
-            ? SharedMemorySiteKeyAnnotator.AddSharedMemorySiteKey(node, rewritten, semanticModel)
-            : visited;
-
     public override SyntaxNode? VisitMemberAccessExpression(MemberAccessExpressionSyntax node)
     {
         var visited = base.VisitMemberAccessExpression(node);

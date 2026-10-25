@@ -5,7 +5,7 @@ namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers;
 public partial class GSH_32_UnrollStaticDeterminism_HappyPath
 {
     [GpuKernel]
-    public static unsafe void HappyPath_Unroll(int* data, [Constant] int iterations)
+    public static unsafe void HappyPath_Unroll(int* data, [GpuConstexpr(10)] int iterations)
     {
         // 1. Literal constant bound
         Gpu.Hint.Unroll();
@@ -22,7 +22,7 @@ public partial class GSH_32_UnrollStaticDeterminism_HappyPath
             data[j] = 2;
         }
 
-        // 3. [Constant] argument bound
+        // 3. [GpuConstexpr] argument bound
         Gpu.Hint.Unroll();
         for (int k = 0; k < iterations; k++)
         {

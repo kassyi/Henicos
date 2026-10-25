@@ -37,6 +37,7 @@ public static class AstLoweringPipeline
         var suspendingCalls = CollectSuspendingCalls(body, bodyModel);
         var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(bodyModel?.Compilation, body.SyntaxTree);
         var annotatedBody = ToBlock(new SpanAnnotationRewriter(suspendingCalls, treeOrdinal).Visit(body) ?? body, returnsValue);
+        annotatedBody = PreLoweringExpander.Expand(annotatedBody, bodyModel);
 
         var copiedParameters = deviceFunction != null
             ? FindAssignedValueParameters(body, deviceFunction)

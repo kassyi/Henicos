@@ -50,4 +50,51 @@ internal static class SharedMemorySiteKey
 
     /// <summary>Formats a key as a C# <see cref="ulong"/> literal.</summary>
     public static string ToCSharpLiteral(ulong key) => $"0x{key:x16}UL";
+
+    /// <summary>
+    /// Appends <c>(&lt;T&gt;*)__gsharp_allocate_smem(&lt;siteKey&gt;, (&lt;n&gt;) * sizeof(&lt;T&gt;), alignof(&lt;T&gt;))</c>
+    /// for a CPU <c>SharedMemory&lt;T&gt;</c> creation expression.
+    /// </summary>
+    public static void AppendCpuAllocation(
+        BaseObjectCreationExpressionSyntax creation,
+        ITypeSymbol elementType,
+        ref TranspileContext context)
+    {
+        var siteKey = ToCppLiteral(Compute(context.Query.SemanticModel, creation));
+        var argumentList = creation.ArgumentList;
+
+        using (context.Emitter.Writer.Parentheses())
+        {
+            context.Emitter.Dialect.AppendType(ref context, elementType);
+            context.Emitter.Writer.Append('*');
+        }
+
+        context.Emitter.Writer.Append($"{GSharpInternalNames.Prelude.AllocateSharedMemory}({siteKey}, ");
+
+        using (context.Emitter.Writer.Parentheses())
+        {
+            if (argumentList?.Arguments.Count > 0)
+            {
+                context.Visitor.Visit(argumentList.Arguments[0].Expression);
+            }
+            else
+            {
+                context.Emitter.Writer.Append("1");
+            }
+        }
+
+        context.Emitter.Writer.Append(" * sizeof");
+        using (context.Emitter.Writer.Parentheses())
+        {
+            context.Emitter.Dialect.AppendType(ref context, elementType);
+        }
+
+        context.Emitter.Writer.Append(", alignof");
+        using (context.Emitter.Writer.Parentheses())
+        {
+            context.Emitter.Dialect.AppendType(ref context, elementType);
+        }
+
+        context.Emitter.Writer.Append(')');
+    }
 }

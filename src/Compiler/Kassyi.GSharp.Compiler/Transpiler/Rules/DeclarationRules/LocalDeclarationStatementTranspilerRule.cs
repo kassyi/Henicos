@@ -58,7 +58,18 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
 
         for (var i = 0; i < node.Declaration.Variables.Count; i++)
         {
-            var alloc = AnalyzeSharedMemoryAllocation(node.Declaration.Variables[i], context.Query.SemanticModel);
+            var variable = node.Declaration.Variables[i];
+            if (!context.Emitter.Dialect.IsCuda)
+            {
+                if (variable.Initializer?.Value is BaseObjectCreationExpressionSyntax creation)
+                {
+                    WriteCpuSharedMemory(variable, creation, typeArg, node, i, ref context);
+                }
+
+                continue;
+            }
+
+            var alloc = AnalyzeSharedMemoryAllocation(variable, context.Query.SemanticModel);
             if (alloc == null)
             {
                 continue;
@@ -72,6 +83,26 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
             {
                 WriteStaticSharedMemory(alloc.Value, typeArg, node, i, ref context);
             }
+        }
+    }
+
+    private static void WriteCpuSharedMemory(
+        VariableDeclaratorSyntax declarator,
+        BaseObjectCreationExpressionSyntax creation,
+        ITypeSymbol typeArg,
+        LocalDeclarationStatementSyntax node,
+        int index,
+        ref TranspileContext context)
+    {
+        context.Emitter.Dialect.AppendType(ref context, typeArg);
+        context.Emitter.Writer.Append("* ");
+        CppNameResolver.AppendDeclaredName(declarator, declarator.Identifier, ref context);
+        context.Emitter.Writer.Append(" = ");
+        SharedMemorySiteKey.AppendCpuAllocation(creation, typeArg, ref context);
+        context.Emitter.Writer.Append(';');
+        if (index < node.Declaration.Variables.Count - 1)
+        {
+            context.Emitter.Writer.AppendLine();
         }
     }
 

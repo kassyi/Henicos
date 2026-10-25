@@ -293,7 +293,7 @@
     "name": "UnrolledLoopMustBeStatic",
     "id": "GSH0032",
     "title": "Unrolled loop bounds must be statically deterministic",
-    "messageFormat": "The bounds of the loop marked with Gpu.Hint.Unroll cannot be statically determined. Loop conditions must rely on compile-time constants or [Constant] parameters.",
+    "messageFormat": "The bounds of the loop marked with Gpu.Hint.Unroll cannot be statically determined. Loop conditions must rely on compile-time constants or [GpuConstexpr] parameters.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true

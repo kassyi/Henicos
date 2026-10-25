@@ -28,6 +28,7 @@ inline thread_local char __gsharp_dynamic_smem[65536];
 #define __GSHARP_SMEM_MAX_SITES 64
 inline thread_local unsigned long long __gsharp_smem_keys[__GSHARP_SMEM_MAX_SITES];
 inline thread_local size_t __gsharp_smem_offsets[__GSHARP_SMEM_MAX_SITES];
+inline thread_local size_t __gsharp_smem_sizes[__GSHARP_SMEM_MAX_SITES];
 inline thread_local int __gsharp_smem_site_count;
 inline thread_local size_t __gsharp_smem_current_base;
 
@@ -39,6 +40,24 @@ inline void __gsharp_reset_smem() {
 inline void* __gsharp_allocate_smem(unsigned long long siteKey, size_t size, size_t alignment) {
     for (int i = 0; i < __gsharp_smem_site_count; i++) {
         if (__gsharp_smem_keys[i] == siteKey) {
+            if (size > __gsharp_smem_sizes[i]) {
+                size_t oldOffset = __gsharp_smem_offsets[i];
+                size_t oldSize = __gsharp_smem_sizes[i];
+                size_t newOffset = (oldOffset + oldSize == __gsharp_smem_current_base)
+                    ? oldOffset
+                    : ((__gsharp_smem_current_base + alignment - 1) & ~(alignment - 1));
+                if (newOffset + size > sizeof(__gsharp_dynamic_smem)) {
+                    std::fprintf(stderr, "G#: shared memory of the block exceeds %d declarations or %zu bytes\n",
+                                 __GSHARP_SMEM_MAX_SITES, sizeof(__gsharp_dynamic_smem));
+                    std::abort();
+                }
+                if (newOffset != oldOffset) {
+                    std::memcpy(__gsharp_dynamic_smem + newOffset, __gsharp_dynamic_smem + oldOffset, oldSize);
+                    __gsharp_smem_offsets[i] = newOffset;
+                }
+                __gsharp_smem_sizes[i] = size;
+                __gsharp_smem_current_base = newOffset + size;
+            }
             return (void*)(__gsharp_dynamic_smem + __gsharp_smem_offsets[i]);
         }
     }
@@ -50,6 +69,7 @@ inline void* __gsharp_allocate_smem(unsigned long long siteKey, size_t size, siz
     }
     __gsharp_smem_keys[__gsharp_smem_site_count] = siteKey;
     __gsharp_smem_offsets[__gsharp_smem_site_count] = offset;
+    __gsharp_smem_sizes[__gsharp_smem_site_count] = size;
     __gsharp_smem_site_count++;
     __gsharp_smem_current_base = offset + size;
     return (void*)(__gsharp_dynamic_smem + offset);

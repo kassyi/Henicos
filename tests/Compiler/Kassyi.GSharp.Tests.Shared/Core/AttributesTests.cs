@@ -12,6 +12,15 @@ public class AttributesTests
         var kernelAttr = new GpuKernelAttribute();
         Assert.NotNull(kernelAttr);
 
+        var constexprEmptyAttr = new GpuConstexprAttribute();
+        Assert.NotNull(constexprEmptyAttr);
+
+        var constexprLongAttr = new GpuConstexprAttribute(10, 20);
+        Assert.NotNull(constexprLongAttr);
+
+        var constexprDoubleAttr = new GpuConstexprAttribute(0.5, 1.5);
+        Assert.NotNull(constexprDoubleAttr);
+
         var intrinsicAttr1 = new CudaIntrinsicAttribute("foo");
         Assert.NotNull(intrinsicAttr1);
 

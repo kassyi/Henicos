@@ -1,8 +1,11 @@
+using Kassyi.GSharp.Compiler.Extensions;
+using Kassyi.GSharp.Compiler.Marshaling;
+
 namespace Kassyi.GSharp.Tests.Shared.Generator;
 
 /// <summary>
 /// Verifies the parts of a kernel's launch wrappers that come from single parameters: the array copy direction from
-/// <c>[In]</c> / <c>[Out]</c>, and the default value literals.
+/// <c>[In]</c> / <c>[Out]</c>, the default value literals, and <c>[GpuConstexpr]</c> classification.
 /// </summary>
 [Category(TestCategory.Compiler)]
 public class KernelParameterAbiTests
@@ -12,6 +15,9 @@ public class KernelParameterAbiTests
 
     private static readonly string s_defaultValueKernels =
         RoslynTestUtility.ReadTestCase("Generator/KernelParameterAbi_DefaultValues.cu.cs");
+
+    private static readonly string s_constexprKernels =
+        RoslynTestUtility.ReadTestCase("Generator/KernelParameterAbi_Constexpr.cu.cs");
 
     [Theory]
     [Scenario(TestScenario.HappyPath)]
@@ -68,6 +74,33 @@ public class KernelParameterAbiTests
         Assert.Contains("global::Kassyi.GSharp.Runtime.GpuBuffer<global::System.Int32>? extra = null, ", wrapper,
             StringComparison.Ordinal);
         Assert.Contains("extra?.DevicePointer ?? IntPtr.Zero, ", wrapper, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [Scenario(TestScenario.HappyPath)]
+    [InlineData("realInt", true)]
+    [InlineData("realFloat", true)]
+    [InlineData("realBool", true)]
+    [InlineData("realEnum", true)]
+    [InlineData("userConstant", false)]
+    [InlineData("userGpuConstexpr", false)]
+    [InlineData("plainInt", false)]
+    public void Test_ConstexprParameter_MatchesOnlyCoreGpuConstexprAttribute(string parameterName, bool expected)
+    {
+        var compilation = RoslynTestUtility.CreateCompilation(s_constexprKernels);
+        Assert.NotNull(compilation.GetTypeByMetadataName(KnownAttributes.GpuConstexprMetadataName));
+
+        var tree = compilation.SyntaxTrees.Last();
+        var model = compilation.GetSemanticModel(tree);
+        var methodDecl = tree.GetRoot()
+            .DescendantNodes()
+            .OfType<MethodDeclarationSyntax>()
+            .Single(static m => m.Identifier.ValueText == "ConstexprKernel");
+        var method = Assert.IsAssignableFrom<IMethodSymbol>(model.GetDeclaredSymbol(methodDecl));
+        var parameter = method.Parameters.Single(p => p.Name == parameterName);
+
+        Assert.Equal(expected, parameter.IsConstexprParameter());
+        Assert.Equal(expected, KernelParameterShape.Classify(parameter).IsConstexpr);
     }
 
     private static string GetWrapper(string source, string dialect, string className)
