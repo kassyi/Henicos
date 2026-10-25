@@ -17,7 +17,7 @@ Script conventions and the catalog of agent scripts are in [agent-scripts.md](..
 | Is this position inside device code (lambdas and local functions included)? | `GpuExecutionSpace.IsWithinGpuFunction` on `GetEnclosingSymbol(...)` | a hand-written `ContainingSymbol` loop |
 | Does a symbol carry a G# attribute? | `.HasAttribute` with a `KnownAttributes` constant (also checks the declaring namespace, `KnownAttributes.IsDeclaredInOwnerNamespace`) | `AttributeClass?.Name == "GpuKernelAttribute"` |
 | Get the attribute data | `.GetAttribute` | `GetAttributes()` plus a loop |
-| Is this a `[Constant]` (macro-injected) parameter? | `.IsConstantParameter` | `p.HasAttribute(KnownAttributes.Constant)` |
+| Is this a `[GpuConstexpr]` parameter? | `.IsConstexprParameter` | `p.HasAttribute(KnownAttributes.GpuConstexpr)` |
 | Is this a cooperative kernel (`[GpuKernel(Cooperative = true)]`, launched with `cuLaunchCooperativeKernel`)? | `.IsCooperativeKernel` | `GetAttribute(GpuKernel)` plus a search of `NamedArguments` for `"Cooperative"` |
 | Compare symbols | `.IsEqualTo` | `SymbolEqualityComparer.Default.Equals` spelled out |
 | Query a collection (`Any`, `All`, `Count`, `First`, `Where` / `Select`) | `.AsStackEnumerable` on an array, `ImmutableArray`, `EquatableArray`, `IReadOnlyList`, `HashSet`, `Dictionary`, `SyntaxList`, `SeparatedSyntaxList`, `SyntaxTokenList` or a node walk (`DescendantNodes()`), then the StackLinq operator with a `static` lambda (`Kassyi.ZeroAlloc.Linq.Embedded`); an outer value goes through the state overload (`Any(shortName, static (a, name) => ...)`) | a hand-written search loop, `System.Linq`, a capturing lambda |
@@ -78,6 +78,7 @@ fixed text (separators, keywords, `;`) is a literal. The other helpers:
 | C++ name of a user symbol (declaration / reference; nodes with a stamped region > 0 receive `__gsharp_il_<region>_` via `CppName.Region`) | `CppNameResolver.AppendDeclaredName`, `CppNameResolver.AppendReferencedName`, `CppNameResolver.AppendSymbolName` | `identifier.ValueText` written directly |
 | Compiler-internal name (`__gsharp_*`) | `GSharpInternalNames` (add new names to `Resources/InternalNames.yml`) | a `"__gsharp_..."` literal |
 | C++ literal of a constant field | `.AppendConstantField` | `ConstantValue.ToString()` plus a hand-picked suffix |
+| C++ and C# literal pair of a `[GpuConstexpr]` value | `ConstexprLiteral.Format` | culture-dependent `ToString()` or `"R"` format |
 | Header and attributes of a generated `.g.cs` | `.AppendGeneratedFileHeader`, `.AppendGeneratedCodeAttributes` | copied header text |
 | Compute a 64-bit site key for a `SharedMemory<T>` allocation or emit a CPU `SharedMemory<T>` allocation (`(T*)__gsharp_allocate_smem(...)`) | `SharedMemorySiteKey.Compute`, `SharedMemorySiteKey.ToCppLiteral`, `SharedMemorySiteKey.ToCSharpLiteral`, `SharedMemorySiteKey.AppendCpuAllocation` | hand-hashing a syntax span or spelling `__gsharp_allocate_smem(...)` in multiple rules |
 

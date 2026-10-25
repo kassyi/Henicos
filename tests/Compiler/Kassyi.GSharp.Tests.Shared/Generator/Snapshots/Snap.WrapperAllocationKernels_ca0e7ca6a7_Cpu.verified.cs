@@ -141,7 +141,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void AllocationTestKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* ioVal, global::System.Single* outVal, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy arrayVal);
+private unsafe delegate void AllocationTestKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* ioVal, global::System.Single* outVal, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy arrayVal, global::System.UInt32 constantVal);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -234,7 +234,7 @@ fixed (global::System.Int32* p_ioVal = &ioVal)
 fixed (global::System.Single* p_outVal = &outVal)
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_ioVal, p_outVal, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_arrayVal, Length = arrayVal.Length });
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_ioVal, p_outVal, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_arrayVal, Length = arrayVal.Length }, constantVal);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }

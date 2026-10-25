@@ -9,7 +9,7 @@ public static partial class WrapperAllocationKernels
         ref int ioVal,
         out float outVal,
         int[] arrayVal,
-        [Constant] uint constantVal)
+        [GpuConstexpr(10, 11, 12)] uint constantVal)
     {
         if (ioVal > constantVal)
         {

@@ -1,28 +1,36 @@
 ---
-title: "ConstantAttribute Class (G#)"
+title: "GpuConstexprAttribute Class (G#)"
 site: "G# Documentation"
 published: "2026-09-22T00:00:00.000Z"
 language: "en"
-description: "Marks a kernel argument as an Ahead-Of-Time (AOT) preprocessor constant, enabling aggressive hardware-level optimizations."
+description: "Marks a kernel parameter as a compile-time constant."
 ---
 
-## ConstantAttribute Class
+## GpuConstexprAttribute Class
+
+> [!NOTE]
+> Candidate values passed to `[GpuConstexpr(...)]` are not used yet: the parameter is still passed at runtime. A later release compiles one `constexpr` specialization per value.
 
 ## Definition
 
 **Namespace:** `Kassyi.GSharp.Core`  
 **Assembly:** `Kassyi.GSharp.Core.dll`
 
-Marks a kernel argument as an Ahead-Of-Time (AOT) preprocessor constant, enabling aggressive hardware-level optimizations.
+Marks a kernel parameter as a compile-time constant.
 
 ```csharp
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class ConstantAttribute : Attribute
+public sealed class GpuConstexprAttribute : Attribute
+{
+    public GpuConstexprAttribute() { }
+    public GpuConstexprAttribute(params long[] values) { }
+    public GpuConstexprAttribute(params double[] values) { }
+}
 ```
 
 ## Examples
 
-### Loop Unrolling with Constant
+### Loop Unrolling with GpuConstexpr
 
 > [!NOTE] Requires assemblies: Kassyi.GSharp.Core
 
@@ -38,7 +46,7 @@ Example.Run();
 public class Example
 {
     [GpuKernel]
-    public static unsafe void MultiplyKernel(int* data, [Constant] int iterations)
+    public static unsafe void MultiplyKernel(int* data, [GpuConstexpr(10)] int iterations)
     {
         // On CPU, ThreadIndex.X throws GpuOnlyException.
     }
@@ -47,39 +55,32 @@ public class Example
     {
         var method = typeof(Example).GetMethod(nameof(MultiplyKernel));
         var param = method.GetParameters()[1];
-        var isConstant = param.GetCustomAttribute<ConstantAttribute>() != null;
+        var isConstexpr = param.GetCustomAttribute<GpuConstexprAttribute>() != null;
 
-        Console.WriteLine($"Parameter '{param.Name}' has [Constant] attribute: {isConstant}");
+        Console.WriteLine($"Parameter '{param.Name}' has [GpuConstexpr] attribute: {isConstexpr}");
     }
 }
 ```
 
 ## Remarks
 
-The parameter is removed from the generated C++ function signature entirely. Instead, the AOT transpiler injects a `#define` macro.
+The parameter is marked for compile-time constant specialization.
 
 ### Comparison with `[GpuReadOnly]`
 
 While both attributes optimize constant values, their underlying mechanics differ fundamentally. **If you think of this in C# terms:**
 
-- **[Constant] is like a `const` literal:** The variable completely disappears at compile-time. The compiler takes the raw value (e.g., `10`) and hardcodes it directly into the instructions everywhere it was used.
+- **[GpuConstexpr] is like a `const` literal:** The variable becomes a C++ `constexpr` at compile-time (in a later release).
 - **[[GpuReadOnly]](GpuReadOnlyAttribute.md) is like an `in` parameter or `readonly` field:** The variable physically exists in memory and is passed as a real argument, but the compiler ensures it cannot be modified, allowing it to be placed in a fast, read-only memory cache.
 
-#### `[Constant]`
+#### `[GpuConstexpr]`
 
-Acts as a strict Ahead-Of-Time (AOT) preprocessor directive. The transpiler completely removes the parameter from the generated C++ signature and injects a `#define` macro. It is mandatory when a physical variable cannot exist (e.g., compile-time loop unroll bounds).
+Marks a kernel parameter as a compile-time constant with a listed set of candidate values.
 
 **C# Source (called with `iterations = 10` on the CPU):**
 
 ```csharp
-public static unsafe void MultiplyKernel(int* data, [Constant] int iterations)
-```
-
-**Emitted CUDA C++:**
-
-```cpp
-#define iterations 10
-__global__ void MultiplyKernel(int* data)
+public static unsafe void MultiplyKernel(int* data, [GpuConstexpr(10)] int iterations)
 ```
 
 #### [`[GpuReadOnly]`](GpuReadOnlyAttribute.md)

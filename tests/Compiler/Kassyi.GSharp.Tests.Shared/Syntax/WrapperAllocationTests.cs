@@ -1,4 +1,3 @@
-#if GSHARP_CUDA
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -11,7 +10,25 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 [TestTarget(ExecutionTarget.GpuExecution)]
 public class WrapperAllocationTests : TranspilerTestBase
 {
+    [SkippableFact]
+    [Category(TestCategory.Compiler)]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_LaunchAllocationTestKernel_PassesConstantParameter()
+    {
+        int[] arrayVal = [42];
 
+        int ioBelow = 5;
+        WrapperAllocationKernels.LaunchAllocationTestKernel(ref ioBelow, out float outBelow, arrayVal, constantVal: 10);
+        Assert.Equal(0f, outBelow);
+        Assert.Equal(5, ioBelow);
+
+        int ioAbove = 15;
+        WrapperAllocationKernels.LaunchAllocationTestKernel(ref ioAbove, out float outAbove, arrayVal, constantVal: 10);
+        Assert.Equal(42f, outAbove);
+        Assert.Equal(43, ioAbove);
+    }
+
+#if GSHARP_CUDA
     [SkippableFact]
     public void Test_LaunchDevice_ShouldNotAllocateOnHotPath()
     {
@@ -123,5 +140,5 @@ public class WrapperAllocationTests : TranspilerTestBase
             Assert.Equal(0f, outVal);
         });
     }
-}
 #endif
+}

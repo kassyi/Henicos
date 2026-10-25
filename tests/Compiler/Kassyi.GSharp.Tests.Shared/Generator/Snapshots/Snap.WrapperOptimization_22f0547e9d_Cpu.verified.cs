@@ -170,7 +170,7 @@ return;
 }
 
 [System.Runtime.InteropServices.UnmanagedFunctionPointer(System.Runtime.InteropServices.CallingConvention.Cdecl)]
-private unsafe delegate void ComplexSignatureKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* scalarRef, global::System.Single* scalarOut, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy arrayVal, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct* structRef);
+private unsafe delegate void ComplexSignatureKernel_Delegate(uint gridDimX, uint gridDimY, uint gridDimZ, uint blockDimX, uint blockDimY, uint blockDimZ, global::System.Int32* scalarRef, global::System.Single* scalarOut, global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy arrayVal, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct* structRef, global::System.UInt32 constantVal);
 #pragma warning disable CS8500
 [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Kassyi.GSharp.Compiler", "1.0.0.0")]
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -264,7 +264,7 @@ fixed (global::System.Single* p_scalarOut = &scalarOut)
 fixed (global::System.Int32* p_arrayVal = arrayVal)
 fixed (global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct* p_structRef = &structRef)
 {
-hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_scalarRef, p_scalarOut, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_arrayVal, Length = arrayVal.Length }, p_structRef);
+hfunc(gridDimX, gridDimY, gridDimZ, blockDimX, blockDimY, blockDimZ, p_scalarRef, p_scalarOut, new global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy { Data = (IntPtr)p_arrayVal, Length = arrayVal.Length }, p_structRef, constantVal);
 global::Kassyi.GSharp.Runtime.Aot.CpuKernelLoader.ThrowIfNativeError(dllPath);
 }
 }
