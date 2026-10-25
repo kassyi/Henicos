@@ -53,10 +53,13 @@ public class ContextHoister(
             barrierStarts[i] = analyzer.BarrierSpans[i].Start;
         }
 
-        var hoistedNames = new HashSet<string>(StringComparer.Ordinal);
+        var variableCount = analyzer.Variables.Count;
+        var keys = new DeclarationKey[variableCount];
         // [WHY] Binary search (O(V log B)) is used to determine if variables cross any synchronization barriers.
-        foreach (var (decl, scopeEnd) in analyzer.Variables)
+        for (var v = 0; v < variableCount; v++)
         {
+            var (decl, scopeEnd) = analyzer.Variables[v];
+            keys[v] = LoweringIdentity.ForDeclaration(decl, semanticModel);
             var declEnd = decl.Span.End;
 
             var isSharedMemory = decl.Parent is VariableDeclarationSyntax
@@ -70,7 +73,7 @@ public class ContextHoister(
 
             if (isSharedMemory || isSuspendingCallResult)
             {
-                hoistedNames.Add(decl.Identifier.ValueText);
+                _hoistedVariables.Add(keys[v]);
                 continue;
             }
 
@@ -84,18 +87,19 @@ public class ContextHoister(
             // If a barrier is found after the declaration and before the end of the scope, it crosses.
             if (index < barrierCount && barrierStarts[index] < scopeEnd)
             {
-                hoistedNames.Add(decl.Identifier.ValueText);
+                _hoistedVariables.Add(keys[v]);
             }
         }
 
-        // [WHY] Hoisting selection remains name-based so that sibling locals sharing a hoisted name still receive context
-        // fields; rewrites then match each declaration and reference by its DeclarationKey (symbol + region).
-        foreach (var (decl, _) in analyzer.Variables)
+        // [WHY] Each declaration that crosses a barrier is hoisted on its own (DeclarationKey: symbol + region), so a
+        // sibling local of the same name that does not cross one stays a local. Without a semantic model the key is the
+        // name, and every declaration of a hoisted name moves into the context, which keeps the name-keyed rewrite
+        // consistent.
+        for (var v = 0; v < variableCount; v++)
         {
-            if (hoistedNames.Contains(decl.Identifier.ValueText))
+            if (_hoistedVariables.Contains(keys[v]))
             {
-                hoistedDecls.Add(decl);
-                _hoistedVariables.Add(LoweringIdentity.ForDeclaration(decl, semanticModel));
+                hoistedDecls.Add(analyzer.Variables[v].Decl);
             }
         }
 
