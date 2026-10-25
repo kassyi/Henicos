@@ -27,6 +27,18 @@ public class ForUnrollBarrierTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
+    public void Test_SuspendingCallKernel_ResumesDeviceFunctionEachIteration()
+    {
+        int[] buffer = new int[BlockSize];
+        int[] output = new int[BlockSize];
+
+        ForUnrollBarrierKernels.LaunchSuspendingCallKernel(buffer, output, blockDimX: BlockSize);
+
+        Assert.Equal([3, 6, 9, 0], output);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_RefContextKernel_PropagatesAccumulatorAcrossBarriers()
     {
         int[] buffer = new int[BlockSize];

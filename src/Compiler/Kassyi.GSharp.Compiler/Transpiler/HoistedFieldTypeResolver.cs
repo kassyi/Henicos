@@ -21,6 +21,12 @@ internal static class HoistedFieldTypeResolver
             return type2;
         }
 
+        if (field.Parent is VariableDeclarationSyntax { Type: PredefinedTypeSyntax predefinedType } &&
+            TryGetSpecialType(predefinedType.Keyword.Kind()) is { } specialType)
+        {
+            return semanticModel.Compilation.GetSpecialType(specialType);
+        }
+
         if (field.HasAnnotations(LoweringAnnotations.ForEachIndexAnnotationKind))
         {
             return semanticModel.Compilation.GetSpecialType(SpecialType.System_Int32);
@@ -28,6 +34,24 @@ internal static class HoistedFieldTypeResolver
 
         throw new InvalidOperationException(BuildErrorMessage(field, semanticModel, kernelName, declaredSymbol, type1, type2));
     }
+
+    private static SpecialType? TryGetSpecialType(SyntaxKind kind) => kind switch
+    {
+        SyntaxKind.BoolKeyword => SpecialType.System_Boolean,
+        SyntaxKind.ByteKeyword => SpecialType.System_Byte,
+        SyntaxKind.SByteKeyword => SpecialType.System_SByte,
+        SyntaxKind.ShortKeyword => SpecialType.System_Int16,
+        SyntaxKind.UShortKeyword => SpecialType.System_UInt16,
+        SyntaxKind.IntKeyword => SpecialType.System_Int32,
+        SyntaxKind.UIntKeyword => SpecialType.System_UInt32,
+        SyntaxKind.LongKeyword => SpecialType.System_Int64,
+        SyntaxKind.ULongKeyword => SpecialType.System_UInt64,
+        SyntaxKind.FloatKeyword => SpecialType.System_Single,
+        SyntaxKind.DoubleKeyword => SpecialType.System_Double,
+        SyntaxKind.DecimalKeyword => SpecialType.System_Decimal,
+        SyntaxKind.CharKeyword => SpecialType.System_Char,
+        _ => null
+    };
 
 #pragma warning disable RS0030 // Source and symbol text for a human-readable internal-error report only
     private static string BuildErrorMessage(

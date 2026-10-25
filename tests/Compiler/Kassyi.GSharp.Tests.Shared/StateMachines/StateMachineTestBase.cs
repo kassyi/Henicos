@@ -129,11 +129,21 @@ public abstract class StateMachineTestBase
 // Mock class to allow compiling test delegates containing Gpu.* calls without depending on the actual Intrinsics.
 public static class Gpu
 {
+    public delegate void UnrollAction<TContext>(ref TContext ctx, int index);
+
     public static void SyncThreads()
     {
     }
 
     public static void SyncWarp()
+    {
+    }
+
+    public static void ForUnroll(int start, int count, Action<int> body)
+    {
+    }
+
+    public static void ForUnroll<TContext>(ref TContext ctx, int start, int count, UnrollAction<TContext> body)
     {
     }
 }

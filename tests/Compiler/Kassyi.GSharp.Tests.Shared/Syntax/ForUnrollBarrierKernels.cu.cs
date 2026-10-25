@@ -14,6 +14,16 @@ public struct ForUnrollAccumulator
 /// </summary>
 public static partial class ForUnrollBarrierKernels
 {
+    [GpuDeviceFunction]
+    public static int Neighbor(int[] buffer, int tid, int value)
+    {
+        buffer[tid] = value;
+        Gpu.SyncThreads();
+        int r = buffer[(tid + 1) % 4];
+        Gpu.SyncThreads();
+        return r;
+    }
+
     // K1: Neighbor exchange across SyncThreads inside ForUnroll
     [GpuKernel]
     public static void ExchangeKernel(int[] buffer, int[] output)
@@ -26,6 +36,19 @@ public static partial class ForUnrollBarrierKernels
             Gpu.SyncThreads();
             sum += buffer[(tid + 1) % 4];
             Gpu.SyncThreads();
+        });
+        output[tid] = sum;
+    }
+
+    // K2: Suspending device function call inside ForUnroll
+    [GpuKernel]
+    public static void SuspendingCallKernel(int[] buffer, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        int sum = 0;
+        Gpu.ForUnroll(0, 3, iter =>
+        {
+            sum += Neighbor(buffer, tid, tid * iter);
         });
         output[tid] = sum;
     }
