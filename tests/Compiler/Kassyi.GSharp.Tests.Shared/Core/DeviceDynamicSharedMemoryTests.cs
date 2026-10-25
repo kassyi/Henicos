@@ -16,10 +16,35 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
+    public void Test_PlainHelper_DoesNotOverlapCaller()
+    {
+        EnsureCapability(DialectCapabilities.SharedMemory);
+        Skip.If(IsCudaDialect, "#439");
+        DeviceDynamicSharedMemoryScenarios.PlainHelperDoesNotOverlapCaller(s_runNative);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_SuspendingHelper_PersistsAcrossCalls()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);
         DeviceDynamicSharedMemoryScenarios.SuspendingHelperPersistsAcrossCalls(s_runNative);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_PlainHelper_PersistsAcrossCalls()
+    {
+        EnsureCapability(DialectCapabilities.SharedMemory);
+        DeviceDynamicSharedMemoryScenarios.PlainHelperPersistsAcrossCalls(s_runNative);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_StaticHelper_PersistsAcrossCalls()
+    {
+        EnsureCapability(DialectCapabilities.SharedMemory);
+        DeviceDynamicSharedMemoryScenarios.StaticHelperPersistsAcrossCalls(s_runNative);
     }
 
 #if GSHARP_CPU
@@ -31,4 +56,13 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
         DeviceDynamicSharedMemoryScenarios.GrowingHelperAfterCallerDeclaration(s_runNative);
     }
 #endif
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_RecursiveHelper_SharesOneBufferAndDoesNotOverlapCaller()
+    {
+        EnsureCapability(DialectCapabilities.SharedMemory);
+        Skip.If(IsCudaDialect, "#439");
+        DeviceDynamicSharedMemoryScenarios.RecursiveHelperSharesOneBufferAndDoesNotOverlapCaller(s_runNative);
+    }
 }

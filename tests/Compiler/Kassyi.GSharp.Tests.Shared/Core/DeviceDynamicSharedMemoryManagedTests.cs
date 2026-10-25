@@ -21,13 +21,33 @@ public class DeviceDynamicSharedMemoryManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_PlainHelper_DoesNotOverlapCaller() =>
+        DeviceDynamicSharedMemoryScenarios.PlainHelperDoesNotOverlapCaller(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Managed_SuspendingHelper_PersistsAcrossCalls() =>
         DeviceDynamicSharedMemoryScenarios.SuspendingHelperPersistsAcrossCalls(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_PlainHelper_PersistsAcrossCalls() =>
+        DeviceDynamicSharedMemoryScenarios.PlainHelperPersistsAcrossCalls(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_StaticHelper_PersistsAcrossCalls() =>
+        DeviceDynamicSharedMemoryScenarios.StaticHelperPersistsAcrossCalls(s_runManaged);
 
     [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Test_Managed_GrowingHelper_AfterCallerDeclaration_PreservesBothBuffers() =>
         DeviceDynamicSharedMemoryScenarios.GrowingHelperAfterCallerDeclaration(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_RecursiveHelper_SharesOneBufferAndDoesNotOverlapCaller() =>
+        DeviceDynamicSharedMemoryScenarios.RecursiveHelperSharesOneBufferAndDoesNotOverlapCaller(s_runManaged);
 
     private static void RunManaged(Action launch)
     {
