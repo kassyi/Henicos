@@ -81,11 +81,11 @@ public global::System.Int32 State;
 }
 public static unsafe void Marshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.State = host.State;
+native = System.Runtime.CompilerServices.Unsafe.As<global::TestNamespace.DummyContext, AotContexts.Dummy>(ref host);
 }
 public static unsafe void Unmarshal_DummyContext(ref global::TestNamespace.DummyContext host, ref AotContexts.Dummy native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.State = native.State;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.Dummy, global::TestNamespace.DummyContext>(ref native);
 }
 #pragma warning restore CS8500
 }

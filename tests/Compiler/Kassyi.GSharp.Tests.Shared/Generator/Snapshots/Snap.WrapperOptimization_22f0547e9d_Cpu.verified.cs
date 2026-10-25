@@ -45,13 +45,11 @@ public global::System.Single B;
 }
 public static unsafe void Marshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-native.B = host.B;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct, AotContexts.MyCustomStruct>(ref host);
 }
 public static unsafe void Unmarshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-host.B = native.B;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.MyCustomStruct, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct>(ref native);
 }
 #pragma warning restore CS8500
 }

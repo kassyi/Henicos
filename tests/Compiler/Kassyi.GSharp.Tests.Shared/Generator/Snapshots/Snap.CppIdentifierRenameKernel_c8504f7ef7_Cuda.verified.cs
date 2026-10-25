@@ -774,6 +774,7 @@ s_hfunc_StructMemberNamesKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoa
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchStructMemberNamesKernel(global::Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields[] items, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.CppKeywordFields>());
 if (items is null){
 throw new global::System.ArgumentNullException(nameof(items));
 }

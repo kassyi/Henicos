@@ -44,6 +44,7 @@ internal enum ArrayContainerKind
 internal readonly record struct KernelParameterShape
 {
     private const string GpuBufferType = "global::Kassyi.GSharp.Runtime.GpuBuffer";
+    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
 
     /// <summary>The parameter name as declared, which the launcher's locals (<c>d_</c>, <c>p_</c>, <c>proxy_</c>, ...) build on.</summary>
     public string Name { get; init; }
@@ -99,12 +100,18 @@ internal readonly record struct KernelParameterShape
     /// <summary>Whether the launcher copies an array argument back to the host (see <see cref="ArrayCopyDirection"/>).</summary>
     public bool CopyOut { get; init; }
 
+    /// <summary>Whether the parameter is a user struct whose layout is <see cref="TransferClass.Identical"/> on CUDA.</summary>
+    public bool IsCudaIdenticalStruct { get; init; }
+
     public bool IsArray => Kind == KernelParameterKind.Array;
 
     public bool IsCustomStruct => Kind == KernelParameterKind.CustomStruct;
 
     /// <summary>Whether the parameter is <c>ref</c> or <c>out</c>.</summary>
     public bool IsByRef => RefKind is RefKind.Ref or RefKind.Out;
+
+    /// <summary>Whether the parameter is a by-value user struct with <see cref="TransferClass.Identical"/> on CUDA, passed directly via <c>&amp;host</c>.</summary>
+    public bool IsDirectCudaValueStruct => IsCustomStruct && !IsByRef && IsCudaIdenticalStruct;
 
     /// <summary>
     /// Whether the <c>IntPtr</c> launch wrapper takes the parameter as a raw device pointer: an array-like or
@@ -189,13 +196,16 @@ internal readonly record struct KernelParameterShape
         // A user struct wins over by-reference: ref MyStruct goes through the native shadow struct as well
         if (TypeLayoutCalculator.IsUserStruct(marshaledType))
         {
+            var isCudaIdentical = marshaledType is INamedTypeSymbol namedStruct &&
+                                  TypeLayoutCalculator.GetStructLayout(namedStruct, s_cudaDialect).Transfer == TransferClass.Identical;
             return shape with
             {
                 Kind = KernelParameterKind.CustomStruct,
                 AotStructPath = AotHostNames.GetAotStructPath(marshaledType),
                 MarshalMethodName = AotHostNames.GetQualifiedMarshalMethodName(marshaledType),
                 UnmarshalMethodName = AotHostNames.GetQualifiedUnmarshalMethodName(marshaledType),
-                BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type) : null
+                BufferElementTypeName = shape.IsByRef ? GetBufferElementTypeName(parameter.Type) : null,
+                IsCudaIdenticalStruct = isCudaIdentical
             };
         }
 

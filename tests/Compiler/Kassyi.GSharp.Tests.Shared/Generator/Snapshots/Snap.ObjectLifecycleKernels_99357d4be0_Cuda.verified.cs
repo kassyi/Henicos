@@ -145,6 +145,7 @@ s_hfunc_Kernel_LifecycleUpdate = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoad
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchKernel_LifecycleUpdate(global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] states, global::System.Int32 length, global::System.Int32 multiplier, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState>());
 if (states is null){
 throw new global::System.ArgumentNullException(nameof(states));
 }
@@ -283,6 +284,7 @@ s_hfunc_Kernel_FactoryInitialization = global::Kassyi.GSharp.Runtime.Aot.GpuKern
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchKernel_FactoryInitialization(global::System.Int32[] inputValues, global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState[] outputStates, global::System.Int32 length, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.LifecycleObjectState>());
 if (inputValues is null){
 throw new global::System.ArgumentNullException(nameof(inputValues));
 }

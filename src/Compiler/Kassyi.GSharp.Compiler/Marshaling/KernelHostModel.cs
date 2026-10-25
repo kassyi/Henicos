@@ -12,6 +12,8 @@ namespace Kassyi.GSharp.Compiler.Marshaling;
 /// </remarks>
 internal readonly record struct KernelHostModel
 {
+    private static readonly ITranspilerDialect s_cudaDialect = new GSharpCudaDialect();
+
     public string Name { get; init; }
 
     /// <summary>The position among the ordinary methods with the same name, or -1 (<see cref="GlobalCppNames.GetOverloadOrdinal"/>).</summary>
@@ -49,6 +51,9 @@ internal readonly record struct KernelHostModel
     /// <summary>The user structs that the parameters marshal, one per <c>AotContexts</c> name, in first-use order.</summary>
     public EquatableArray<StructHostSource> Structs { get; init; }
 
+    /// <summary>The user structs with <see cref="TransferClass.Identical"/> on CUDA that the launcher block-copies.</summary>
+    public EquatableArray<StructLayoutGuard> CudaLayoutGuards { get; init; }
+
     public bool ReturnsValue => ReturnTypeName is not null;
 
     /// <summary>Reads the host launch ABI of <paramref name="kernel"/>.</summary>
@@ -79,10 +84,77 @@ internal readonly record struct KernelHostModel
             TypedPointerSignatureKey = KernelHostNames.GetSignatureKey(parameters, typedPointers: true),
             DisplaySignature = KernelHostNames.FormatSignature(kernel.Name, parameters),
             Parameters = parameters,
-            Structs = structs
+            Structs = structs,
+            CudaLayoutGuards = CollectCudaLayoutGuards(kernel)
         };
     }
+
+    private static EquatableArray<StructLayoutGuard> CollectCudaLayoutGuards(IMethodSymbol kernel)
+    {
+        var visited = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        var guards = ImmutableArray.CreateBuilder<StructLayoutGuard>();
+
+        foreach (var parameter in kernel.Parameters)
+        {
+            CollectBlockCopiedStructs(parameter.Type, s_cudaDialect, visited, guards);
+        }
+
+        if (kernel.ReturnType.SpecialType != SpecialType.System_Void)
+        {
+            CollectBlockCopiedStructs(kernel.ReturnType, s_cudaDialect, visited, guards);
+        }
+
+        return guards.ToImmutable().AsEquatableArray();
+    }
+
+    private static void CollectBlockCopiedStructs(
+        ITypeSymbol type,
+        ITranspilerDialect dialect,
+        HashSet<INamedTypeSymbol> visited,
+        ImmutableArray<StructLayoutGuard>.Builder guards)
+    {
+        type = type.UnwrapNullableArrayLike() ?? type;
+        if (type.TryGetArrayLikeElementType(out var elementType))
+        {
+            type = elementType;
+        }
+
+        if (!TypeLayoutCalculator.IsUserStruct(type))
+        {
+            return;
+        }
+
+        var named = (INamedTypeSymbol)type;
+        if (!visited.Add(named))
+        {
+            return;
+        }
+
+        var layout = TypeLayoutCalculator.GetStructLayout(named, dialect);
+        if (layout.Transfer == TransferClass.Identical)
+        {
+            guards.Add(new StructLayoutGuard(
+                named.GetFullyQualifiedCsharpName(),
+                GlobalCppNames.GetTypePath(named).ToDisplayString(),
+                layout.Host.Size));
+            return;
+        }
+
+        foreach (var member in StructAbiMembers.Get(named))
+        {
+            CollectBlockCopiedStructs(member.Type, dialect, visited, guards);
+        }
+    }
 }
+
+/// <summary>A runtime <c>Unsafe.SizeOf</c> check emitted at the start of <c>Launch</c> for a block-copied <see cref="TransferClass.Identical"/> struct.</summary>
+/// <param name="FullyQualifiedTypeName">The <c>global::</c>-qualified C# type name.</param>
+/// <param name="DisplayTypeName">The user-readable type name without <c>global::</c>.</param>
+/// <param name="ExpectedSize">The predicted host size in bytes.</param>
+internal readonly record struct StructLayoutGuard(
+    string FullyQualifiedTypeName,
+    string DisplayTypeName,
+    int ExpectedSize);
 
 /// <summary>The partial class that the generated host members of a kernel or device function go into.</summary>
 /// <param name="HintName">The source hint name of the class's wrapper (<see cref="GlobalCppNames.GetHintName"/>).</param>
@@ -109,8 +181,12 @@ internal readonly record struct HostClassHeader(
 
 /// <summary>The native shadow struct and the marshaling methods of one user struct, as the wrapper declares them.</summary>
 /// <param name="AotStructPath">The <c>AotContexts</c> path, which identifies the struct within a class.</param>
-/// <param name="Text">The declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
-internal readonly record struct StructHostSource(string AotStructPath, string Text);
+/// <param name="CudaText">The CUDA declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
+/// <param name="CpuText">The CPU declaration and the <c>Marshal_</c> / <c>Unmarshal_</c> methods.</param>
+internal readonly record struct StructHostSource(string AotStructPath, string CudaText, string CpuText)
+{
+    public string GetText(bool isCuda) => isCuda ? CudaText : CpuText;
+}
 
 /// <summary>One kernel of a <see cref="KernelClassModel"/>, with what its siblings decide.</summary>
 /// <param name="Host">The kernel's own launch ABI.</param>

@@ -116,15 +116,11 @@ public global::System.Boolean BoolVal;
 }
 public static unsafe void Marshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.IntVal = host.IntVal;
-native.FloatVal = host.FloatVal;
-native.BoolVal = host.BoolVal;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct, AotContexts.Tier1CustomStruct>(ref host);
 }
 public static unsafe void Unmarshal_Tier1CustomStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct host, ref AotContexts.Tier1CustomStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.IntVal = native.IntVal;
-host.FloatVal = native.FloatVal;
-host.BoolVal = native.BoolVal;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.Tier1CustomStruct, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct>(ref native);
 }
 #pragma warning restore CS8500
 }
@@ -335,6 +331,7 @@ s_hfunc_AllInOneKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFu
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchAllInOneKernel(global::System.Int32[] intInput, global::System.Single[] floatInput, global::System.Single[] results, global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct config, global::System.UInt64[] globalCounter, global::System.Int32 count, global::System.Int32 dynamicSharedSize, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Syntax.Tier1CustomStruct>());
 if (intInput is null){
 throw new global::System.ArgumentNullException(nameof(intInput));
 }
@@ -366,7 +363,6 @@ IntPtr hfunc = s_hfunc_AllInOneKernel!.Value;
 IntPtr d_intInput = IntPtr.Zero;
 IntPtr d_floatInput = IntPtr.Zero;
 IntPtr d_results = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> config_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_globalCounter = IntPtr.Zero;
 try
 {
@@ -419,10 +415,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 kernelParams[2] = proxy_results;
-AotContexts.Tier1CustomStruct native_config = default;
-AotContexts.Marshal_Tier1CustomStruct(ref config, ref native_config, false, config_allocatedPtrs, hStream);
 // Marshal scalar struct: config
-kernelParams[3] = &native_config;
+kernelParams[3] = &config;
 // Marshal array: globalCounter
 int globalCounter_size = globalCounter.Length * sizeof(global::System.UInt64);
 IntPtr* proxy_globalCounter = stackalloc IntPtr[2];
@@ -479,7 +473,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_results,
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-AotContexts.Unmarshal_Tier1CustomStruct(ref config, ref native_config, false, hStream);
 // Copy back array: globalCounter
 if (globalCounter_size > 0 && d_globalCounter != IntPtr.Zero)
 {
@@ -495,7 +488,6 @@ finally
 if (d_intInput != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_intInput, hStream);
 if (d_floatInput != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_floatInput, hStream);
 if (d_results != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_results, hStream);
-foreach (var ptr in config_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_globalCounter != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_globalCounter, hStream);
 }
 }

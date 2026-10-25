@@ -112,15 +112,11 @@ public global::System.Int32 C;
 }
 public static unsafe void Marshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-native.B = host.B;
-native.C = host.C;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct, AotContexts.AbiPackedStruct>(ref host);
 }
 public static unsafe void Unmarshal_AbiPackedStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct host, ref AotContexts.AbiPackedStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-host.B = native.B;
-host.C = native.C;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiPackedStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct AbiInlineArrayStruct
@@ -137,15 +133,11 @@ public global::System.Int32 C;
 }
 public static unsafe void Marshal_AbiInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct host, ref AotContexts.AbiInlineArrayStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-Marshal_AbiFourInts(ref host.B, ref native.B, isDevicePtr, allocatedPtrs, hStream);
-native.C = host.C;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct, AotContexts.AbiInlineArrayStruct>(ref host);
 }
 public static unsafe void Unmarshal_AbiInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct host, ref AotContexts.AbiInlineArrayStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-Unmarshal_AbiFourInts(ref host.B, ref native.B, isDevicePtr, hStream);
-host.C = native.C;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiInlineArrayStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
 public unsafe partial struct AbiFourInts
@@ -156,17 +148,11 @@ public fixed byte Element[16];
 }
 public static unsafe void Marshal_AbiFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts host, ref AotContexts.AbiFourInts native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-fixed (byte* pField = native.Element)
-{
-System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);
-}
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts, AotContexts.AbiFourInts>(ref host);
 }
 public static unsafe void Unmarshal_AbiFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts host, ref AotContexts.AbiFourInts native, bool isDevicePtr, IntPtr hStream = default)
 {
-fixed (byte* pField = native.Element)
-{
-System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);
-}
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiFourInts, global::Kassyi.GSharp.Tests.Shared.Core.AbiFourInts>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 20)]
 public unsafe partial struct AbiCoreFieldStruct
@@ -183,21 +169,11 @@ public global::System.Int32 C;
 }
 public static unsafe void Marshal_AbiCoreFieldStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct host, ref AotContexts.AbiCoreFieldStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-fixed (byte* pField = native.B)
-{
-*((global::Kassyi.GSharp.Core.Float3*)pField) = host.B;
-}
-native.C = host.C;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct, AotContexts.AbiCoreFieldStruct>(ref host);
 }
 public static unsafe void Unmarshal_AbiCoreFieldStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct host, ref AotContexts.AbiCoreFieldStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-fixed (byte* pField = native.B)
-{
-host.B = *((global::Kassyi.GSharp.Core.Float3*)pField);
-}
-host.C = native.C;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiCoreFieldStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct AbiPrivateInlineArrayStruct
@@ -214,15 +190,11 @@ public global::System.Int32 C;
 }
 public static unsafe void Marshal_AbiPrivateInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct host, ref AotContexts.AbiPrivateInlineArrayStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-Marshal_AbiPrivateFourInts(ref host.B, ref native.B, isDevicePtr, allocatedPtrs, hStream);
-native.C = host.C;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct, AotContexts.AbiPrivateInlineArrayStruct>(ref host);
 }
 public static unsafe void Unmarshal_AbiPrivateInlineArrayStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct host, ref AotContexts.AbiPrivateInlineArrayStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-Unmarshal_AbiPrivateFourInts(ref host.B, ref native.B, isDevicePtr, hStream);
-host.C = native.C;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiPrivateInlineArrayStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
 public unsafe partial struct AbiPrivateFourInts
@@ -233,17 +205,11 @@ public fixed byte _element0[16];
 }
 public static unsafe void Marshal_AbiPrivateFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts host, ref AotContexts.AbiPrivateFourInts native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-fixed (byte* pField = native._element0)
-{
-System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);
-}
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts, AotContexts.AbiPrivateFourInts>(ref host);
 }
 public static unsafe void Unmarshal_AbiPrivateFourInts(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts host, ref AotContexts.AbiPrivateFourInts native, bool isDevicePtr, IntPtr hStream = default)
 {
-fixed (byte* pField = native._element0)
-{
-System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);
-}
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiPrivateFourInts, global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateFourInts>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct AbiFixedBufferStruct
@@ -260,27 +226,11 @@ public global::System.Int32 C;
 }
 public static unsafe void Marshal_AbiFixedBufferStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct host, ref AotContexts.AbiFixedBufferStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-fixed (byte* pField = native.B)
-{
-fixed (int* pHost = host.B)
-{
-System.Buffer.MemoryCopy(pHost, pField, 4 * sizeof(int), 4 * sizeof(int));
-}
-}
-native.C = host.C;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct, AotContexts.AbiFixedBufferStruct>(ref host);
 }
 public static unsafe void Unmarshal_AbiFixedBufferStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct host, ref AotContexts.AbiFixedBufferStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-fixed (byte* pField = native.B)
-{
-fixed (int* pHost = host.B)
-{
-System.Buffer.MemoryCopy(pField, pHost, 4 * sizeof(int), 4 * sizeof(int));
-}
-}
-host.C = native.C;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiFixedBufferStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 24)]
 public unsafe partial struct AbiAutoPropertyStruct
@@ -297,15 +247,11 @@ public global::System.Int32 C;
 }
 public static unsafe void Marshal_AbiAutoPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct host, ref AotContexts.AbiAutoPropertyStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-native.B = host.B;
-native.C = host.C;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct, AotContexts.AbiAutoPropertyStruct>(ref host);
 }
 public static unsafe void Unmarshal_AbiAutoPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct host, ref AotContexts.AbiAutoPropertyStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-host.B = native.B;
-host.C = native.C;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiAutoPropertyStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
 public unsafe partial struct AbiComputedPropertyStruct
@@ -319,13 +265,11 @@ public global::System.Int32 C;
 }
 public static unsafe void Marshal_AbiComputedPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct host, ref AotContexts.AbiComputedPropertyStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-native.C = host.C;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct, AotContexts.AbiComputedPropertyStruct>(ref host);
 }
 public static unsafe void Unmarshal_AbiComputedPropertyStruct(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct host, ref AotContexts.AbiComputedPropertyStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-host.C = native.C;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.AbiComputedPropertyStruct, global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct>(ref native);
 }
 #pragma warning restore CS8500
 }
@@ -494,6 +438,7 @@ s_hfunc_RoundtripPackedKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoade
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRoundtripPackedKernel(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct>() != 13) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct", 13, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiPackedStruct>());
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerRoundtripPackedKernel();
@@ -769,6 +714,7 @@ s_hfunc_RoundtripInlineArrayKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernel
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRoundtripInlineArrayKernel(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiInlineArrayStruct>());
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerRoundtripInlineArrayKernel();
@@ -1030,6 +976,7 @@ s_hfunc_RoundtripCoreFieldKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLo
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRoundtripCoreFieldKernel(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct>() != 20) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct", 20, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiCoreFieldStruct>());
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerRoundtripCoreFieldKernel();
@@ -1305,6 +1252,7 @@ s_hfunc_RoundtripPrivateInlineArrayKernel = global::Kassyi.GSharp.Runtime.Aot.Gp
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRoundtripPrivateInlineArrayKernel(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiPrivateInlineArrayStruct>());
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerRoundtripPrivateInlineArrayKernel();
@@ -1536,6 +1484,7 @@ s_hfunc_RoundtripFixedBufferKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernel
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRoundtripFixedBufferKernel(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiFixedBufferStruct>());
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerRoundtripFixedBufferKernel();
@@ -1768,6 +1717,7 @@ s_hfunc_RoundtripAutoPropertyKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKerne
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRoundtripAutoPropertyKernel(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct>() != 24) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct", 24, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiAutoPropertyStruct>());
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerRoundtripAutoPropertyKernel();
@@ -2018,6 +1968,7 @@ s_hfunc_RoundtripComputedPropertyKernel = global::Kassyi.GSharp.Runtime.Aot.GpuK
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchRoundtripComputedPropertyKernel(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct data, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct>());
 using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.CudaContextScope())
 {
 WarmupFunctionPointerRoundtripComputedPropertyKernel();
@@ -2272,6 +2223,7 @@ s_hfunc_ReadComputedPropertyThroughRefKernel = global::Kassyi.GSharp.Runtime.Aot
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchReadComputedPropertyThroughRefKernel(ref global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct data, global::System.Int32[] result, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.AbiComputedPropertyStruct>());
 if (result is null){
 throw new global::System.ArgumentNullException(nameof(result));
 }

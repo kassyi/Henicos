@@ -93,11 +93,11 @@ public global::System.Int32 A;
 }
 public static unsafe void Marshal_Pair(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair host, ref AotContexts.Pair native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair, AotContexts.Pair>(ref host);
 }
 public static unsafe void Unmarshal_Pair(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair host, ref AotContexts.Pair native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.Pair, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 4)]
 public unsafe partial struct Box
@@ -108,11 +108,11 @@ public global::System.Int32 Value;
 }
 public static unsafe void Marshal_Box(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> host, ref AotContexts.Box native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.Value = host.Value;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>, AotContexts.Box>(ref host);
 }
 public static unsafe void Unmarshal_Box(ref global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> host, ref AotContexts.Box native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.Value = native.Value;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.Box, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>>(ref native);
 }
 #pragma warning restore CS8500
 }
@@ -145,6 +145,7 @@ s_hfunc_First = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hM
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchFirst(global::System.Int32[] data, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair pair, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>());
 if (data is null){
 throw new global::System.ArgumentNullException(nameof(data));
 }
@@ -156,7 +157,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerFirst();
 IntPtr hfunc = s_hfunc_First!.Value;
 IntPtr d_data = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> pair_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -176,10 +176,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 kernelParams[0] = proxy_data;
-AotContexts.Pair native_pair = default;
-AotContexts.Marshal_Pair(ref pair, ref native_pair, false, pair_allocatedPtrs, hStream);
 // Marshal scalar struct: pair
-kernelParams[1] = &native_pair;
+kernelParams[1] = &pair;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -198,12 +196,10 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_data, d_
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-AotContexts.Unmarshal_Pair(ref pair, ref native_pair, false, hStream);
 }
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-foreach (var ptr in pair_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 }
 }
 }
@@ -272,6 +268,7 @@ s_hfunc_Second = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(h
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchSecond(global::System.Int32[] data, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair pair, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Pair>());
 if (data is null){
 throw new global::System.ArgumentNullException(nameof(data));
 }
@@ -283,7 +280,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerSecond();
 IntPtr hfunc = s_hfunc_Second!.Value;
 IntPtr d_data = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> pair_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -303,10 +299,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 kernelParams[0] = proxy_data;
-AotContexts.Pair native_pair = default;
-AotContexts.Marshal_Pair(ref pair, ref native_pair, false, pair_allocatedPtrs, hStream);
 // Marshal scalar struct: pair
-kernelParams[1] = &native_pair;
+kernelParams[1] = &pair;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -325,12 +319,10 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_data, d_
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-AotContexts.Unmarshal_Pair(ref pair, ref native_pair, false, hStream);
 }
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-foreach (var ptr in pair_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 }
 }
 }
@@ -399,6 +391,7 @@ s_hfunc_Third = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFunction(hM
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchThird(global::System.Int32[] data, global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32> box, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>>() != 4) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<System.Int32>", 4, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Generator.AotContextName.Box<global::System.Int32>>());
 if (data is null){
 throw new global::System.ArgumentNullException(nameof(data));
 }
@@ -410,7 +403,6 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 WarmupFunctionPointerThird();
 IntPtr hfunc = s_hfunc_Third!.Value;
 IntPtr d_data = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> box_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
 void** kernelParams = stackalloc void*[2];
@@ -430,10 +422,8 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
 kernelParams[0] = proxy_data;
-AotContexts.Box native_box = default;
-AotContexts.Marshal_Box(ref box, ref native_box, false, box_allocatedPtrs, hStream);
 // Marshal scalar struct: box
-kernelParams[1] = &native_box;
+kernelParams[1] = &box;
 CudaException.ThrowIfError(CudaDriverApi.cuLaunchKernel(
 hfunc,
 gridDimX, gridDimY, gridDimZ, // Grid dim
@@ -452,12 +442,10 @@ CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)p_data, d_
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 }
-AotContexts.Unmarshal_Box(ref box, ref native_box, false, hStream);
 }
 finally
 {
 if (d_data != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_data, hStream);
-foreach (var ptr in box_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 }
 }
 }

@@ -239,15 +239,11 @@ public global::System.Int32 X;
 }
 public static unsafe void Marshal_LayoutReproTwoBools(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools host, ref AotContexts.LayoutReproTwoBools native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.F = host.F;
-native.G = host.G;
-native.X = host.X;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools, AotContexts.LayoutReproTwoBools>(ref host);
 }
 public static unsafe void Unmarshal_LayoutReproTwoBools(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools host, ref AotContexts.LayoutReproTwoBools native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.F = native.F;
-host.G = native.G;
-host.X = native.X;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproTwoBools, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
 public unsafe partial struct LayoutReproIntFloatUnion
@@ -1400,6 +1396,7 @@ s_hfunc_TwoBoolsByValKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchTwoBoolsByValKernel(global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools t, global::System.Int32[] o, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools>());
 if (o is null){
 throw new global::System.ArgumentNullException(nameof(o));
 }
@@ -1410,15 +1407,12 @@ using (var __gsharp_cuda_context_scope = new global::Kassyi.GSharp.Runtime.Aot.G
 {
 WarmupFunctionPointerTwoBoolsByValKernel();
 IntPtr hfunc = s_hfunc_TwoBoolsByValKernel!.Value;
-System.Collections.Generic.List<IntPtr> t_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 IntPtr d_o = IntPtr.Zero;
 try
 {
 void** kernelParams = stackalloc void*[2];
-AotContexts.LayoutReproTwoBools native_t = default;
-AotContexts.Marshal_LayoutReproTwoBools(ref t, ref native_t, false, t_allocatedPtrs, hStream);
 // Marshal scalar struct: t
-kernelParams[0] = &native_t;
+kernelParams[0] = &t;
 // Marshal array: o
 int o_size = o.Length * sizeof(global::System.Int32);
 IntPtr* proxy_o = stackalloc IntPtr[2];
@@ -1444,7 +1438,6 @@ hStream, // Stream
 kernelParams,
 IntPtr.Zero // Extra
 ));
-AotContexts.Unmarshal_LayoutReproTwoBools(ref t, ref native_t, false, hStream);
 // Copy back array: o
 if (o_size > 0 && d_o != IntPtr.Zero)
 {
@@ -1457,7 +1450,6 @@ CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
 finally
 {
-foreach (var ptr in t_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 if (d_o != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_o, hStream);
 }
 }

@@ -33,58 +33,32 @@ public partial class NestedVectorAlignmentKernels
 public static partial class AotContexts
 {
 #pragma warning disable CS8500 // Takes the address of, gets the size of, or declares a pointer to a managed type
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 64)]
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 48)]
 public unsafe partial struct GEN56_AlignmentTestStruct
 {
 public const string DebugName_Field1_Byte = "global::System.Byte";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Byte Field1_Byte;
 public const string DebugName_Field2_Float2 = "global::Kassyi.GSharp.Core.Float2";
-[System.Runtime.InteropServices.FieldOffset(8)]
+[System.Runtime.InteropServices.FieldOffset(4)]
 public fixed byte Field2_Float2[8];
 public const string DebugName_Field3_Float4 = "global::Kassyi.GSharp.Core.Float4";
-[System.Runtime.InteropServices.FieldOffset(16)]
+[System.Runtime.InteropServices.FieldOffset(12)]
 public fixed byte Field3_Float4[16];
 public const string DebugName_Field4_Short = "global::System.Int16";
-[System.Runtime.InteropServices.FieldOffset(32)]
+[System.Runtime.InteropServices.FieldOffset(28)]
 public global::System.Int16 Field4_Short;
 public const string DebugName_Field5_Double2 = "global::Kassyi.GSharp.Core.Double2";
-[System.Runtime.InteropServices.FieldOffset(48)]
+[System.Runtime.InteropServices.FieldOffset(32)]
 public fixed byte Field5_Double2[16];
 }
 public static unsafe void Marshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.Field1_Byte = host.Field1_Byte;
-fixed (byte* pField = native.Field2_Float2)
-{
-*((global::Kassyi.GSharp.Core.Float2*)pField) = host.Field2_Float2;
-}
-fixed (byte* pField = native.Field3_Float4)
-{
-*((global::Kassyi.GSharp.Core.Float4*)pField) = host.Field3_Float4;
-}
-native.Field4_Short = host.Field4_Short;
-fixed (byte* pField = native.Field5_Double2)
-{
-*((global::Kassyi.GSharp.Core.Double2*)pField) = host.Field5_Double2;
-}
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct, AotContexts.GEN56_AlignmentTestStruct>(ref host);
 }
 public static unsafe void Unmarshal_GEN56_AlignmentTestStruct(ref global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct host, ref AotContexts.GEN56_AlignmentTestStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.Field1_Byte = native.Field1_Byte;
-fixed (byte* pField = native.Field2_Float2)
-{
-host.Field2_Float2 = *((global::Kassyi.GSharp.Core.Float2*)pField);
-}
-fixed (byte* pField = native.Field3_Float4)
-{
-host.Field3_Float4 = *((global::Kassyi.GSharp.Core.Float4*)pField);
-}
-host.Field4_Short = native.Field4_Short;
-fixed (byte* pField = native.Field5_Double2)
-{
-host.Field5_Double2 = *((global::Kassyi.GSharp.Core.Double2*)pField);
-}
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.GEN56_AlignmentTestStruct, global::Kassyi.GSharp.Tests.Runtime.GEN56_AlignmentTestStruct>(ref native);
 }
 #pragma warning restore CS8500
 }

@@ -225,13 +225,11 @@ public global::System.Int32 Value;
 }
 public static unsafe void Marshal_RefTestStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct host, ref AotContexts.RefTestStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.Field = host.Field;
-native.Value = host.Value;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct, AotContexts.RefTestStruct>(ref host);
 }
 public static unsafe void Unmarshal_RefTestStruct(ref global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct host, ref AotContexts.RefTestStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.Field = native.Field;
-host.Value = native.Value;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.RefTestStruct, global::Kassyi.GSharp.Tests.Shared.Syntax.RefTestStruct>(ref native);
 }
 #pragma warning restore CS8500
 }

@@ -59,31 +59,11 @@ public global::System.Double DoubleValue;
 }
 public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.BooleanValue = host.BooleanValue;
-native.ByteValue = host.ByteValue;
-native.SByteValue = host.SByteValue;
-native.ShortValue = host.ShortValue;
-native.UShortValue = host.UShortValue;
-native.IntValue = host.IntValue;
-native.UIntValue = host.UIntValue;
-native.LongValue = host.LongValue;
-native.ULongValue = host.ULongValue;
-native.FloatValue = host.FloatValue;
-native.DoubleValue = host.DoubleValue;
+native = System.Runtime.CompilerServices.Unsafe.As<global::DebugReduc.SpecTypes, AotContexts.SpecTypes>(ref host);
 }
 public static unsafe void Unmarshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.BooleanValue = native.BooleanValue;
-host.ByteValue = native.ByteValue;
-host.SByteValue = native.SByteValue;
-host.ShortValue = native.ShortValue;
-host.UShortValue = native.UShortValue;
-host.IntValue = native.IntValue;
-host.UIntValue = native.UIntValue;
-host.LongValue = native.LongValue;
-host.ULongValue = native.ULongValue;
-host.FloatValue = native.FloatValue;
-host.DoubleValue = native.DoubleValue;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.SpecTypes, global::DebugReduc.SpecTypes>(ref native);
 }
 #pragma warning restore CS8500
 }

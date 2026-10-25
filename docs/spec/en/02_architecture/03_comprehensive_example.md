@@ -364,31 +364,11 @@ public global::System.Double DoubleValue;
 }
 public static unsafe void Marshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.BooleanValue = host.BooleanValue;
-native.ByteValue = host.ByteValue;
-native.SByteValue = host.SByteValue;
-native.ShortValue = host.ShortValue;
-native.UShortValue = host.UShortValue;
-native.IntValue = host.IntValue;
-native.UIntValue = host.UIntValue;
-native.LongValue = host.LongValue;
-native.ULongValue = host.ULongValue;
-native.FloatValue = host.FloatValue;
-native.DoubleValue = host.DoubleValue;
+native = System.Runtime.CompilerServices.Unsafe.As<global::DebugReduc.SpecTypes, AotContexts.SpecTypes>(ref host);
 }
 public static unsafe void Unmarshal_SpecTypes(ref global::DebugReduc.SpecTypes host, ref AotContexts.SpecTypes native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.BooleanValue = native.BooleanValue;
-host.ByteValue = native.ByteValue;
-host.SByteValue = native.SByteValue;
-host.ShortValue = native.ShortValue;
-host.UShortValue = native.UShortValue;
-host.IntValue = native.IntValue;
-host.UIntValue = native.UIntValue;
-host.LongValue = native.LongValue;
-host.ULongValue = native.ULongValue;
-host.FloatValue = native.FloatValue;
-host.DoubleValue = native.DoubleValue;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.SpecTypes, global::DebugReduc.SpecTypes>(ref native);
 }
 #pragma warning restore CS8500
 }
@@ -634,6 +614,8 @@ s_hfunc_ProcessPhysics = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoader.GetFu
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchProcessPhysics(global::DebugReduc.PhysicsVector[] particles, ref global::System.Single totalMagnitude, out global::System.Boolean successFlag, global::DebugReduc.SpecTypes largeStructVal, global::System.Int32 particleCount, global::System.Int32 unrollFactor, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.PhysicsVector>() != 12) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("DebugReduc.PhysicsVector", 12, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.PhysicsVector>());
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.SpecTypes>() != 48) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("DebugReduc.SpecTypes", 48, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::DebugReduc.SpecTypes>());
 successFlag = default;
 if (particles is null){
 throw new global::System.ArgumentNullException(nameof(particles));
@@ -648,7 +630,6 @@ IntPtr hfunc = s_hfunc_ProcessPhysics!.Value;
 IntPtr d_particles = IntPtr.Zero;
 IntPtr d_totalMagnitude = IntPtr.Zero;
 IntPtr d_successFlag = IntPtr.Zero;
-System.Collections.Generic.List<IntPtr> largeStructVal_allocatedPtrs = new System.Collections.Generic.List<IntPtr>();
 try
 {
 void** kernelParams = stackalloc void*[6];
@@ -682,10 +663,8 @@ kernelParams[1] = &d_totalMagnitude;
 int successFlag_size = sizeof(global::System.Boolean);
 CudaException.ThrowIfError(CudaDriverApi.cuMemAllocAsync(out d_successFlag, (IntPtr)successFlag_size, hStream));
 kernelParams[2] = &d_successFlag;
-AotContexts.SpecTypes native_largeStructVal = default;
-AotContexts.Marshal_SpecTypes(ref largeStructVal, ref native_largeStructVal, false, largeStructVal_allocatedPtrs, hStream);
 // Marshal scalar struct: largeStructVal
-kernelParams[3] = &native_largeStructVal;
+kernelParams[3] = &largeStructVal;
 // Marshal scalar: particleCount
 kernelParams[4] = &particleCount;
 // Marshal scalar: unrollFactor
@@ -721,14 +700,12 @@ fixed (global::System.Boolean* ptr_successFlag = &successFlag)
 CudaException.ThrowIfError(CudaDriverApi.cuMemcpyDtoHAsync_v2((IntPtr)ptr_successFlag, d_successFlag, (IntPtr)successFlag_size, hStream));
 CudaException.ThrowIfError(CudaDriverApi.cuStreamSynchronize(hStream));
 }
-AotContexts.Unmarshal_SpecTypes(ref largeStructVal, ref native_largeStructVal, false, hStream);
 }
 finally
 {
 if (d_particles != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_particles, hStream);
 if (d_totalMagnitude != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_totalMagnitude, hStream);
 if (d_successFlag != IntPtr.Zero) CudaDriverApi.cuMemFreeAsync(d_successFlag, hStream);
-foreach (var ptr in largeStructVal_allocatedPtrs) CudaDriverApi.cuMemFreeAsync(ptr, hStream);
 }
 }
 }

@@ -133,13 +133,11 @@ public global::System.UInt32 Calls;
 }
 public static unsafe void Marshal_OperatorMacroContextState(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState host, ref AotContexts.OperatorMacroContextState native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.Offset = host.Offset;
-native.Calls = host.Calls;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState, AotContexts.OperatorMacroContextState>(ref host);
 }
 public static unsafe void Unmarshal_OperatorMacroContextState(ref global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState host, ref AotContexts.OperatorMacroContextState native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.Offset = native.Offset;
-host.Calls = native.Calls;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.OperatorMacroContextState, global::Kassyi.GSharp.Tests.Shared.Syntax.OperatorMacroContextState>(ref native);
 }
 #pragma warning restore CS8500
 }

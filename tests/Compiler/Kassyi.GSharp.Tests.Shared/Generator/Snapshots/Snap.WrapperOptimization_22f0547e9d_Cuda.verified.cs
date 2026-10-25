@@ -94,13 +94,11 @@ public global::System.Single B;
 }
 public static unsafe void Marshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.A = host.A;
-native.B = host.B;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct, AotContexts.MyCustomStruct>(ref host);
 }
 public static unsafe void Unmarshal_MyCustomStruct(ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct host, ref AotContexts.MyCustomStruct native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.A = native.A;
-host.B = native.B;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.MyCustomStruct, global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct>(ref native);
 }
 #pragma warning restore CS8500
 }
@@ -140,6 +138,7 @@ s_hfunc_ComplexSignatureKernel = global::Kassyi.GSharp.Runtime.Aot.GpuKernelLoad
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 public static unsafe void LaunchComplexSignatureKernel(ref global::System.Int32 scalarRef, out global::System.Single scalarOut, global::System.Int32[] arrayVal, ref global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct structRef, global::System.UInt32 constantVal, uint gridDimX = 1, uint gridDimY = 1, uint gridDimZ = 1, uint blockDimX = 1, uint blockDimY = 1,uint blockDimZ = 1, uint sharedMemBytes = 0, IntPtr hStream = default, System.ReadOnlySpan<System.Collections.Generic.KeyValuePair<string, string>> macros = default)
 {
+if (global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct>() != 8) global::Kassyi.GSharp.Runtime.Interop.LayoutGuard.ThrowSizeMismatch("Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct", 8, global::System.Runtime.CompilerServices.Unsafe.SizeOf<global::Kassyi.GSharp.Tests.Shared.TestCases.MyCustomStruct>());
 scalarOut = default;
 if (arrayVal is null){
 throw new global::System.ArgumentNullException(nameof(arrayVal));
