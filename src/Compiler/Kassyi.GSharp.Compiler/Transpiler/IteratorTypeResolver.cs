@@ -219,6 +219,70 @@ internal static class IteratorTypeResolver
         return ReachesTarget(root, root, compilation, visited);
     }
 
+    /// <summary>
+    /// Counts how many times a consumer <c>foreach</c> loop body will be duplicated when <paramref name="iteratorMethod"/>
+    /// (and any iterators it enumerates along its expansion path) is expanded inline.
+    /// </summary>
+    public static int CountYieldReturns(IMethodSymbol iteratorMethod, Compilation compilation)
+    {
+        var visited = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        return CountYieldReturnsCore(iteratorMethod.OriginalDefinition, compilation, visited);
+    }
+
+    private static int CountYieldReturnsCore(
+        IMethodSymbol current,
+        Compilation compilation,
+        HashSet<IMethodSymbol> visited)
+    {
+        if (!visited.Add(current) ||
+            !current.TryGetDeclaringSyntax<MethodDeclarationSyntax>(out var decl) ||
+            decl.Body is null ||
+            !compilation.ContainsSyntaxTree(decl.SyntaxTree))
+        {
+            return 0;
+        }
+
+        var model = compilation.GetSemanticModel(decl.SyntaxTree);
+        var count = CountYieldReturnsInNode(decl.Body, model, compilation, visited);
+        visited.Remove(current);
+        return count;
+    }
+
+    private static int CountYieldReturnsInNode(
+        SyntaxNode node,
+        SemanticModel model,
+        Compilation compilation,
+        HashSet<IMethodSymbol> visited)
+    {
+        var total = 0;
+        foreach (var child in node.ChildNodes())
+        {
+            switch (child)
+            {
+                case LocalFunctionStatementSyntax:
+                case AnonymousFunctionExpressionSyntax:
+                    break;
+
+                case YieldStatementSyntax yieldStmt when yieldStmt.IsKind(SyntaxKind.YieldReturnStatement):
+                    total += 1;
+                    break;
+
+                case ForEachStatementSyntax forEach
+                    when TryResolveIteratorSource(forEach.Expression, model, out _, out var nestedIterator):
+                    var nestedCount = CountYieldReturnsCore(nestedIterator.OriginalDefinition, compilation, visited);
+                    var bodyYields = CountYieldReturnsInNode(forEach.Statement, model, compilation, visited);
+                    total += nestedCount * bodyYields;
+                    break;
+
+                default:
+                    total += CountYieldReturnsInNode(child, model, compilation, visited);
+                    break;
+            }
+        }
+
+        return total;
+    }
+
     private static bool ReachesTarget(
         IMethodSymbol current,
         IMethodSymbol target,

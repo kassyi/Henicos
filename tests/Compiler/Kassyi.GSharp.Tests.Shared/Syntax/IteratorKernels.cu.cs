@@ -1,6 +1,7 @@
 // ReSharper disable All
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
@@ -37,6 +38,12 @@ public struct IterDisposable : IDisposable
     {
         Log[Slot] += Marker;
     }
+}
+
+[InlineArray(4)]
+public struct IterIntBuffer4
+{
+    private int _element0;
 }
 
 public static partial class IteratorKernels
@@ -217,7 +224,6 @@ public static partial class IteratorKernels
         output[tid] = sum;
     }
 
-#pragma warning disable GSH0072
     [GpuDeviceFunction]
     public static IEnumerable<int> MultiYieldAndSwitch(int mode, int baseVal)
     {
@@ -252,7 +258,15 @@ public static partial class IteratorKernels
             yield return secondView[2] + secondView[3];
         }
     }
-#pragma warning restore GSH0072
+
+    [GpuDeviceFunction]
+    public static IEnumerable<int> InlineArrayItems(IterIntBuffer4 buffer, int scale)
+    {
+        foreach (var item in buffer)
+        {
+            yield return item * scale;
+        }
+    }
 
     [GpuDeviceFunction]
     public static IEnumerable<int> StepRange(int start, int count = 3, int step = 2)
@@ -434,5 +448,24 @@ public static partial class IteratorKernels
         }
 
         output[0] = sum;
+    }
+
+    [GpuKernel]
+    public static void InlineArrayForEachKernel(int scale, int[] output)
+    {
+        int tid = ThreadIndex.X;
+        IterIntBuffer4 buffer = default;
+        buffer[0] = tid + 1;
+        buffer[1] = tid + 2;
+        buffer[2] = tid + 3;
+        buffer[3] = tid + 4;
+
+        int sum = 0;
+        foreach (var v in InlineArrayItems(buffer, scale))
+        {
+            sum += v;
+        }
+
+        output[tid] = sum;
     }
 }

@@ -10,6 +10,9 @@ internal static class IteratorInliner
     /// <summary>Maximum allowed nesting depth of inlined iterator expansions before failing transpilation.</summary>
     public const int MaxInlineDepth = 16;
 
+    /// <summary>Maximum number of consumer <c>foreach</c> body copies before reporting GSH0073.</summary>
+    public const int MaxBodyCopies = 32;
+
     /// <summary>Unsupported syntax reason reported when a <c>foreach</c> targets an iterator whose body is not in the compilation.</summary>
     public const string IteratorWithoutBody = "foreach of an iterator that has no body in this compilation";
 
@@ -32,6 +35,48 @@ internal static class IteratorInliner
 
         iteratorDecl = null;
         return false;
+    }
+
+    /// <summary>
+    /// Expands <paramref name="iteratorDecl"/> with a synthetic <c>foreach</c> over its own parameters and an empty
+    /// consumer body so that <see cref="Transpiler.MethodTranspiler"/> and
+    /// <see cref="Diagnostics.Kernel.TranspilerFailureCheck"/> can validate the iterator body once at its declaration site.
+    /// </summary>
+    public static BlockSyntax ExpandStandalone(
+        MethodDeclarationSyntax iteratorDecl,
+        IMethodSymbol iteratorMethod,
+        SemanticModel semanticModel,
+        ref int regionCounter,
+        ref int argumentTempCounter,
+        ITranspilerDialect dialect,
+        Reporter reporter)
+    {
+        var arguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(iteratorDecl.ParameterList.Parameters.Count);
+        foreach (var parameter in iteratorDecl.ParameterList.Parameters)
+        {
+            arguments.Add(SyntaxFactory.Argument(SyntaxFactory.IdentifierName(parameter.Identifier)));
+        }
+
+        var syntheticInvocation = SyntaxFactory.InvocationExpression(
+            SyntaxFactory.IdentifierName(iteratorDecl.Identifier),
+            SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments))
+        );
+        var syntheticForEach = SyntaxFactory.ForEachStatement(
+            SyntaxFactory.IdentifierName("var"),
+            SyntaxFactory.Identifier("__gsharp_item"),
+            syntheticInvocation,
+            SyntaxFactory.Block()
+        );
+
+        return Expand(
+            syntheticForEach,
+            iteratorMethod,
+            syntheticInvocation,
+            semanticModel,
+            ref regionCounter,
+            ref argumentTempCounter,
+            dialect,
+            reporter);
     }
 
     /// <summary>

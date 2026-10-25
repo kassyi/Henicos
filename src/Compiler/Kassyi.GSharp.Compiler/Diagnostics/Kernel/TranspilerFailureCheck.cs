@@ -35,16 +35,11 @@ internal static class TranspilerFailureCheck
                 method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
                 !method.HasAttribute(KnownAttributes.GpuKernel) &&
                 IteratorTypeResolver.ContainsDirectYield(declaration.Body);
-            var isValidDeviceIterator =
-                isDeviceIteratorCandidate &&
-                IteratorTypeResolver.IsDeviceIteratorMethod(method) &&
-                !IteratorTypeResolver.IsRecursiveIterator(method, semanticModel.Compilation);
             Transpile(
                 declaration,
                 method,
                 semanticModel,
-                new FailureSink(diagnostics, declaration, method.HasAttribute(KnownAttributes.GpuKernel),
-                    isDeviceIteratorCandidate, isValidDeviceIterator));
+                new FailureSink(diagnostics, declaration, semanticModel.Compilation, isDeviceIteratorCandidate));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -75,16 +70,21 @@ internal static class TranspilerFailureCheck
     private sealed class FailureSink(
         ImmutableArray<Diagnostic>.Builder diagnostics,
         MethodDeclarationSyntax declaration,
-        bool isKernel,
-        bool isDeviceIteratorCandidate,
-        bool isValidDeviceIterator)
+        Compilation compilation,
+        bool isDeviceIteratorCandidate)
     {
         public void Add(TranspileFailure failure)
         {
+            // A valid device iterator body is validated once by its own standalone expansion; drop failures located in
+            // another standalone-validated iterator method so consumers do not re-report its body failures.
+            if (IsInOtherDeviceIteratorMethod(failure.Location))
+            {
+                return;
+            }
+
             if (failure.Descriptor.Id == GSharpDiagnostics.UnsupportedSyntax.Id &&
                 failure.MessageArgs is
-                    [nameof(SyntaxKind.YieldReturnStatement) or nameof(SyntaxKind.YieldBreakStatement)] &&
-                IsYieldAlreadyReportedByBarrierValidator(failure.Location))
+                    [nameof(SyntaxKind.YieldReturnStatement) or nameof(SyntaxKind.YieldBreakStatement)])
             {
                 return;
             }
@@ -99,36 +99,36 @@ internal static class TranspilerFailureCheck
             diagnostics.Add(Diagnostic.Create(failure.Descriptor, failure.Location, failure.MessageArgs));
         }
 
-        private bool IsYieldAlreadyReportedByBarrierValidator(Location location)
+        private bool IsInOtherDeviceIteratorMethod(Location location)
         {
-            if (isKernel || !isValidDeviceIterator)
-            {
-                return true;
-            }
-
-            if (!location.IsInSource || location.SourceTree != declaration.SyntaxTree)
+            if (!location.IsInSource)
             {
                 return false;
             }
 
-            var yieldStmt = declaration.FindNode(location.SourceSpan)
-                .FirstAncestorOrSelf<YieldStatementSyntax>();
-            if (yieldStmt is null)
+            if (location.SourceTree == declaration.SyntaxTree &&
+                declaration.FullSpan.Contains(location.SourceSpan))
             {
                 return false;
             }
 
-            for (var ancestor = yieldStmt.Parent;
-                 ancestor != null && ancestor != declaration;
-                 ancestor = ancestor.Parent)
+            if (!compilation.ContainsSyntaxTree(location.SourceTree))
             {
-                if (ancestor is LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax)
-                {
-                    return true;
-                }
+                return false;
             }
 
-            return KernelBarrierValidator.TryGetUnflattenableYieldConstruct(yieldStmt, declaration, out _);
+            var node = location.SourceTree.GetRoot().FindNode(location.SourceSpan);
+            if (node.FirstAncestorOrSelf<MethodDeclarationSyntax>() is not { } otherMethod ||
+                otherMethod == declaration ||
+                !otherMethod.HasBody())
+            {
+                return false;
+            }
+
+            var otherModel = compilation.GetSemanticModel(otherMethod.SyntaxTree);
+            return otherModel.GetDeclaredSymbol(otherMethod) is IMethodSymbol otherSymbol &&
+                   IteratorTypeResolver.IsDeviceIteratorMethod(otherSymbol) &&
+                   !IteratorTypeResolver.IsRecursiveIterator(otherSymbol, compilation);
         }
     }
 }

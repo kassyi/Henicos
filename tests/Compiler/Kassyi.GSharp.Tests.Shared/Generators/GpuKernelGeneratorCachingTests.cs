@@ -194,6 +194,78 @@ public class GpuKernelGeneratorCachingTests(ITestOutputHelper output)
         AssertSameOutput(CreateDriver(dialect).RunGenerators(after), incremental);
     }
 
+    [Theory]
+    [InlineData("Cpu")]
+    [InlineData("Cuda")]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_EditingIteratorInAnotherFile_ReemitsConsumerKernel(string dialect)
+    {
+        const string KernelSource = """
+            using Kassyi.GSharp.Core;
+
+            namespace TestNamespace.IteratorCaching;
+
+            public static partial class IteratorCachingKernels
+            {
+                [GpuKernel]
+                public static void ConsumeIteratorKernel(int[] output)
+                {
+                    int acc = 0;
+                    foreach (var x in IteratorHelpers.Values(3))
+                    {
+                        acc += x;
+                    }
+
+                    output[0] = acc;
+                }
+            }
+            """;
+
+        const string IteratorBefore = """
+            using System.Collections.Generic;
+            using Kassyi.GSharp.Core;
+
+            namespace TestNamespace.IteratorCaching;
+
+            public static class IteratorHelpers
+            {
+                [GpuDeviceFunction]
+                public static IEnumerable<int> Values(int seed)
+                {
+                    yield return seed + 10;
+                }
+            }
+            """;
+
+        var iteratorAfter = IteratorBefore.Replace("seed + 10", "seed + 20", StringComparison.Ordinal);
+        Assert.NotEqual(IteratorBefore, iteratorAfter);
+
+        var kernelTree = CSharpSyntaxTree.ParseText(KernelSource, s_parseOptions, path: "kernel.cs");
+        var iteratorTreeBefore = CSharpSyntaxTree.ParseText(IteratorBefore, s_parseOptions, path: "iterator.cs");
+        var iteratorTreeAfter = CSharpSyntaxTree.ParseText(iteratorAfter, s_parseOptions, path: "iterator.cs");
+
+        var before = CreateCompilation(kernelTree, iteratorTreeBefore);
+        var after = before.ReplaceSyntaxTree(iteratorTreeBefore, iteratorTreeAfter);
+
+        var incremental = CreateDriver(dialect).RunGenerators(before).RunGenerators(after);
+
+        var result = incremental.GetRunResult().Results.Single();
+        Assert.Null(result.Exception);
+        var kernelOutputs = result.TrackedSteps[GpuKernelGenerator.KernelTrackingName]
+            .SelectMany(static run => run.Outputs)
+            .ToList();
+        var kernelOutput = Assert.Single(kernelOutputs);
+        Assert.Equal(IncrementalStepRunReason.Modified, kernelOutput.Reason);
+
+        var wrapper = Assert.Single(
+            result.GeneratedSources,
+            static s => s.HintName.EndsWith("IteratorCachingKernels.g.cs", StringComparison.Ordinal));
+        Assert.Contains("+20", wrapper.SourceText.ToString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("+10", wrapper.SourceText.ToString(), StringComparison.Ordinal);
+
+        AssertSameOutput(CreateDriver(dialect).RunGenerators(after), incremental);
+    }
+
     // The paths fix the declaration order of the partial class's parts
     private static CSharpCompilation CreateSiblingCompilation(string siblingSource) =>
         CreateCompilation(

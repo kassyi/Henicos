@@ -1,8 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.TestCases.Analyzers;
+
+public struct IteratorDisposable : IDisposable
+{
+    public int Value;
+
+    public void Dispose()
+    {
+    }
+}
+
+[InlineArray(4)]
+public struct IntBuffer4
+{
+    private int _element0;
+}
 
 [SkipSnapshotConsistency("Analyzer happy path test case")]
 public static partial class IteratorHappyPathKernels
@@ -54,6 +70,44 @@ public static partial class IteratorHappyPathKernels
         yield return v1;
     }
 
+    [GpuDeviceFunction]
+    public static IEnumerable<int> UsingInIterator(int count)
+    {
+        using var resource = new IteratorDisposable { Value = count };
+        yield return resource.Value;
+    }
+
+    [GpuDeviceFunction]
+    public static IEnumerable<int> SwitchYieldInIterator(int mode)
+    {
+        switch (mode)
+        {
+            case 0:
+                yield return 10;
+                break;
+            default:
+                yield return 20;
+                break;
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static IEnumerable<int> InlineArrayForEachInIterator(IntBuffer4 buffer)
+    {
+        foreach (var item in buffer)
+        {
+            yield return item;
+        }
+    }
+
+    [GpuDeviceFunction]
+    public static IEnumerable<int> CrossYieldSpanInIterator(int[] data)
+    {
+        Span<int> slice = data;
+        yield return slice[0];
+        yield return slice[1];
+    }
+
     [GpuKernel]
     public static void ConsumeIteratorsKernel(int[] data, int[] output)
     {
@@ -80,6 +134,31 @@ public static partial class IteratorHappyPathKernels
         foreach (var z in LocalSpanWithinSingleStep(data))
         {
             sum += z;
+        }
+
+        foreach (var u in UsingInIterator(5))
+        {
+            sum += u;
+        }
+
+        foreach (var s in SwitchYieldInIterator(data[0]))
+        {
+            sum += s;
+        }
+
+        IntBuffer4 buffer = default;
+        buffer[0] = 1;
+        buffer[1] = 2;
+        buffer[2] = 3;
+        buffer[3] = 4;
+        foreach (var item in InlineArrayForEachInIterator(buffer))
+        {
+            sum += item;
+        }
+
+        foreach (var c in CrossYieldSpanInIterator(data))
+        {
+            sum += c;
         }
 
         output[0] = sum;

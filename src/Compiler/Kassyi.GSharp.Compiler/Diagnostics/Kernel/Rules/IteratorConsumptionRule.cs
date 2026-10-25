@@ -2,9 +2,12 @@ namespace Kassyi.GSharp.Compiler.Diagnostics.Kernel.Rules;
 
 /// <summary>
 /// Reports an <c>IEnumerable&lt;T&gt;</c> iterator value that is passed as an argument, returned, reassigned, declared
-/// without an initializer, or selected conditionally instead of being enumerated directly by <c>foreach</c> (GSH0071).
+/// without an initializer, or selected conditionally instead of being enumerated directly by <c>foreach</c> (GSH0071),
+/// and warns when expanding an iterator at a <c>foreach</c> copies the loop body more than
+/// <see cref="IteratorInliner.MaxBodyCopies"/> times (GSH0073).
 /// </summary>
 internal sealed class IteratorConsumptionRule :
+    ISyntaxValidationRule<ForEachStatementSyntax>,
     ISyntaxValidationRule<InvocationExpressionSyntax>,
     ISyntaxValidationRule<IdentifierNameSyntax>,
     ISyntaxValidationRule<ConditionalExpressionSyntax>,
@@ -15,10 +18,36 @@ internal sealed class IteratorConsumptionRule :
     public static readonly IteratorConsumptionRule Instance = new();
 
     public ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace);
+        ImmutableArray.Create(
+            GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace,
+            GSharpDiagnostics.IteratorExpansionTooLarge);
 
     private IteratorConsumptionRule()
     {
+    }
+
+    public void Analyze(ForEachStatementSyntax node, ref ValidationContext context)
+    {
+        if (!IteratorTypeResolver.TryResolveIteratorSource(
+                node.Expression,
+                context.SemanticModel,
+                out _,
+                out var iteratorMethod) ||
+            IteratorTypeResolver.IsRecursiveIterator(iteratorMethod, context.SemanticModel.Compilation))
+        {
+            return;
+        }
+
+        var copyCount = IteratorTypeResolver.CountYieldReturns(iteratorMethod, context.SemanticModel.Compilation);
+        if (copyCount > IteratorInliner.MaxBodyCopies)
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorExpansionTooLarge,
+                node,
+                iteratorMethod.Name,
+                copyCount,
+                IteratorInliner.MaxBodyCopies);
+        }
     }
 
     public void Analyze(InvocationExpressionSyntax node, ref ValidationContext context)

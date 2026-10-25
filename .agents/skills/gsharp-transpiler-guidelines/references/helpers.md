@@ -57,8 +57,8 @@ checked the namespace, suppress it with `#pragma warning disable HNT0003 // <the
 | Method body, block or `=>` | `.GetBodyNode`, `.HasBody` | `Body ?? (SyntaxNode?)ExpressionBody` |
 | Node or token is one of 2-3 kinds | `.IsKind` (`node.IsKind(a, b)`) | `IsKind(a) \|\| IsKind(b)` |
 | Walk a tree on a hot path | derive from `PooledWalker` and rent it (see `GpuKernelValidationWalker`) | `new MyWalker()` per call |
-| Is this a `[GpuDeviceFunction]` iterator (`IEnumerable<T>` with `yield`), or resolve the iterator method an expression or local comes from? | `IteratorTypeResolver.IsDeviceIteratorMethod`, `IteratorTypeResolver.TryResolveIteratorSource`, `IteratorTypeResolver.ContainsDirectYield` | matching `IEnumerable` by name or walking `DescendantNodes()` for `YieldStatementSyntax` without stopping at local functions |
-| Expand a `foreach` over a `[GpuDeviceFunction]` iterator inline, or rewrite consumer `break` / `continue` to `goto` labels | `IteratorInliner.Expand`, `BranchTargetRewriter.Rewrite` | generating an enumerator struct or duplicating `yield` lowering across rules |
+| Is this a `[GpuDeviceFunction]` iterator (`IEnumerable<T>` with `yield`), resolve the iterator method an expression or local comes from, or count its expanded `yield return` sites? | `IteratorTypeResolver.IsDeviceIteratorMethod`, `IteratorTypeResolver.TryResolveIteratorSource`, `IteratorTypeResolver.ContainsDirectYield`, `IteratorTypeResolver.CountYieldReturns` | matching `IEnumerable` by name or walking `DescendantNodes()` for `YieldStatementSyntax` without stopping at local functions |
+| Expand a `foreach` over a `[GpuDeviceFunction]` iterator inline (or standalone for iterator body validation), or rewrite consumer `break` / `continue` to `goto` labels | `IteratorInliner.Expand`, `IteratorInliner.ExpandStandalone`, `BranchTargetRewriter.Rewrite` | generating an enumerator struct or duplicating `yield` lowering across rules |
 | Rewrite an array `foreach` that holds a phase barrier into a `for` loop | `ForEachRewriter.LowerArrayForEach` | hand-building an indexed `for` loop in multiple places |
 
 ## 3. Emitting code

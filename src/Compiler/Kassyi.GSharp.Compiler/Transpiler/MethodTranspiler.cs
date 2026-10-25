@@ -58,26 +58,23 @@ public static class MethodTranspiler
     {
         if (plan.Kind == MethodEmissionKind.Iterator)
         {
-            if (reportFailure != null && plan.Declaration.Body != null)
+            if (reportFailure != null && plan.Declaration.Body != null && plan.Symbol != null)
             {
-                void ReportNonYieldFailure(TranspileFailure failure)
-                {
-                    if (failure.Descriptor.Id == GSharpDiagnostics.UnsupportedSyntax.Id &&
-                        failure.MessageArgs is
-                            [nameof(SyntaxKind.YieldReturnStatement) or nameof(SyntaxKind.YieldBreakStatement)])
-                    {
-                        return;
-                    }
-
-                    reportFailure(failure);
-                }
-
-                using var iteratorSession = TranspilationSession.Begin(in plan, ReportNonYieldFailure, dialect);
+                using var iteratorSession = TranspilationSession.Begin(in plan, reportFailure, dialect);
                 if (iteratorSession.ErrorMessage == null)
                 {
                     using var dummyWriter = new SourceWriter();
-                    iteratorSession.Context.Emitter.Writer = dummyWriter;
-                    iteratorSession.Context.Visitor.Visit(plan.Declaration.Body);
+                    ref var iteratorContext = ref iteratorSession.Context;
+                    iteratorContext.Emitter.Writer = dummyWriter;
+                    var expanded = IteratorInliner.ExpandStandalone(
+                        plan.Declaration,
+                        plan.Symbol,
+                        plan.SemanticModel,
+                        ref iteratorContext.Emitter.IteratorExpansionCounter,
+                        ref iteratorContext.Emitter.ArgumentTempCounter,
+                        dialect,
+                        iteratorContext.Reporter);
+                    iteratorContext.Visitor.Visit(expanded);
                 }
             }
 

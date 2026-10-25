@@ -202,6 +202,22 @@ public class IteratorTests : TranspilerTestBase
         Assert.Equal(int.MaxValue + 1L, output[0]);
     }
 
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
+    public void Test_InlineArrayForEach_EnumeratesBufferElementsInsideIterator()
+    {
+        const int threads = 4;
+        const int scale = 3;
+        var output = new int[threads];
+
+        IteratorKernels.LaunchInlineArrayForEachKernel(scale, output, blockDimX: threads);
+
+        for (int tid = 0; tid < threads; tid++)
+        {
+            Assert.Equal((4 * tid + 10) * scale, output[tid]);
+        }
+    }
+
     [Fact]
     [Scenario(TestScenario.SadPath)]
     public async Task Test_ExternalAssemblyIterator_ReportsUnsupportedSyntax()
@@ -323,6 +339,10 @@ public class IteratorTests : TranspilerTestBase
             var wideningOut = new long[1];
             IteratorKernels.LaunchWideningElementTypeKernel(wideningOut, blockDimX: 1);
             Assert.Equal(int.MaxValue + 1L, wideningOut[0]);
+
+            var inlineArrOut = new int[4];
+            IteratorKernels.LaunchInlineArrayForEachKernel(3, inlineArrOut, blockDimX: 4);
+            Assert.Equal([30, 42, 54, 66], inlineArrOut);
         }
         finally
         {

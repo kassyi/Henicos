@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kassyi.GSharp.Tests.Shared.Analyzers;
@@ -11,17 +12,22 @@ public class IteratorAnalyzerTests : TranspilerTestBase
         new BarrierUsageAnalyzer()
     ];
 
-    private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>>
-        RunAnalyzersAsync(string relativeTestCasePath)
+    private static async Task<ImmutableArray<Diagnostic>> GetDiagnosticsAsync(string relativeTestCasePath)
     {
         var source = RoslynTestUtility.ReadTestCase(relativeTestCasePath);
         var compilation = RoslynTestUtility.CreateCompilation(source);
         var options = new AnalyzerOptions(
             ImmutableArray<AdditionalText>.Empty,
             new TestAnalyzerConfigOptionsProvider("Cuda"));
-        var diagnostics = await compilation
+        return await compilation
             .WithAnalyzers(s_analyzers, options)
             .GetAnalyzerDiagnosticsAsync();
+    }
+
+    private static async Task<IReadOnlyList<(string Id, int StartLine, int StartCol, int EndLine, int EndCol)>>
+        RunAnalyzersAsync(string relativeTestCasePath)
+    {
+        var diagnostics = await GetDiagnosticsAsync(relativeTestCasePath);
 
         return diagnostics
             .Select(static d =>
@@ -60,8 +66,9 @@ public class IteratorAnalyzerTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.SadPath)]
-    public async Task Test_IteratorConsumption_SadPath_ReportsGSH0071WithExactSpans()
+    public async Task Test_IteratorConsumption_SadPath_ReportsGSH0071AndGSH0073WithExactSpans()
     {
+        var diagnostics = await GetDiagnosticsAsync("Analyzers/IteratorConsumption_SadPath.cs");
         var actual = await RunAnalyzersAsync("Analyzers/IteratorConsumption_SadPath.cs");
 
         Assert.Equal(
@@ -69,14 +76,21 @@ public class IteratorAnalyzerTests : TranspilerTestBase
                 (GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id, 24, 36, 24, 50),
                 (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 26, 16, 26, 31),
                 (GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable.Id, 30, 36, 30, 43),
-                (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 35, 14, 35, 25),
-                (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 37, 24, 37, 56),
-                (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 44, 9, 44, 26),
-                (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 50, 26, 50, 37),
-                (GSharpDiagnostics.ForeachNotSupported.Id, 51, 9, 54, 10),
-                (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 56, 26, 56, 46)
+                (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 83, 14, 83, 25),
+                (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 85, 24, 85, 56),
+                (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 92, 9, 92, 26),
+                (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 98, 26, 98, 37),
+                (GSharpDiagnostics.ForeachNotSupported.Id, 99, 9, 102, 10),
+                (GSharpDiagnostics.IteratorValueMustBeEnumeratedInPlace.Id, 104, 26, 104, 46),
+                (GSharpDiagnostics.IteratorExpansionTooLarge.Id, 111, 9, 114, 10)
             ],
             actual);
+
+        var expansionDiag = Assert.Single(diagnostics, static d => d.Id == GSharpDiagnostics.IteratorExpansionTooLarge.Id);
+        Assert.Equal(DiagnosticSeverity.Warning, expansionDiag.Severity);
+        Assert.Equal(
+            "Expanding the iterator 'SixBySix' at this foreach would copy the loop body 36 times (limit 32)",
+            expansionDiag.GetMessage());
     }
 
     [Fact]
@@ -87,19 +101,12 @@ public class IteratorAnalyzerTests : TranspilerTestBase
 
         Assert.Equal(
             [
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 40, 13, 40, 30),
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 48, 9, 48, 14),
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 55, 9, 55, 26),
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 66, 17, 66, 22),
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 69, 17, 69, 22),
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 77, 9, 77, 16),
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 86, 19, 86, 24),
-                (GSharpDiagnostics.UnsupportedSyntax.Id, 94, 9, 97, 10),
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 96, 13, 96, 18),
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 104, 9, 104, 14),
-                (GSharpDiagnostics.UnsupportedSyntax.Id, 110, 9, 113, 10),
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 112, 13, 112, 18),
-                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 122, 13, 122, 30)
+                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 23, 13, 23, 30),
+                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 31, 9, 31, 26),
+                (GSharpDiagnostics.UnsupportedSyntax.Id, 39, 9, 42, 10),
+                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 51, 13, 51, 30),
+                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 61, 13, 61, 16),
+                (GSharpDiagnostics.IteratorBodyConstructNotSupported.Id, 72, 13, 72, 16)
             ],
             actual);
     }

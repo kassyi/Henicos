@@ -660,6 +660,15 @@
     "isEnabledByDefault": true
   },
   {
+    "name": "IteratorExpansionTooLarge",
+    "id": "GSH0073",
+    "title": "Iterator expansion copies the foreach body too many times",
+    "messageFormat": "Expanding the iterator '{0}' at this foreach would copy the loop body {1} times (limit {2})",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
+    "isEnabledByDefault": true
+  },
+  {
     "name": "StackLinqChainTooDeep",
     "id": "SLQ0001",
     "title": "StackLinq method chain is too deep",

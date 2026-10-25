@@ -31,9 +31,6 @@ internal readonly ref struct KernelBarrierValidator(
     private readonly ImmutableArray<LocalFunctionStatementSyntax>.Builder _localFunctionsWithBarrier =
         ImmutableArray.CreateBuilder<LocalFunctionStatementSyntax>();
 
-    private readonly ImmutableArray<YieldStatementSyntax>.Builder _yields =
-        ImmutableArray.CreateBuilder<YieldStatementSyntax>();
-
     private readonly bool _isDeviceIterator = !isKernel && IteratorTypeResolver.ContainsDirectYield(methodDecl.Body);
 
     // Computed on the first branch around a block barrier
@@ -51,11 +48,6 @@ internal readonly ref struct KernelBarrierValidator(
 
         // 2. Body Traversal & Immediate Node Validations
         ScanKernelBody();
-
-        if (_isDeviceIterator && _yields.Count > 0)
-        {
-            ValidateCrossYieldLocals();
-        }
 
         // Fast-path: If no barriers exist, cross-barrier constraints are completely skipped
         if (_barriers.Count == 0)
@@ -166,29 +158,6 @@ internal readonly ref struct KernelBarrierValidator(
                         context.ReportDiagnostic(
                             GSharpDiagnostics.AsyncYieldInKernelProhibited,
                             node.GetLocation());
-                        break;
-                    }
-
-                    var yieldStmt = (YieldStatementSyntax)node;
-                    _yields.Add(yieldStmt);
-                    if (TryGetUnflattenableYieldConstruct(yieldStmt, methodDecl, out var yieldConstruct))
-                    {
-                        context.ReportDiagnostic(
-                            GSharpDiagnostics.IteratorBodyConstructNotSupported,
-                            yieldStmt.YieldKeyword.GetLocation(),
-                            yieldConstruct);
-                    }
-
-                    break;
-
-                case SyntaxKind.UsingStatement:
-                    if (_isDeviceIterator && !IsInsideLocalOrAnonymousFunction(node))
-                    {
-                        var usingStmt = (UsingStatementSyntax)node;
-                        context.ReportDiagnostic(
-                            GSharpDiagnostics.IteratorBodyConstructNotSupported,
-                            usingStmt.UsingKeyword.GetLocation(),
-                            "using");
                     }
 
                     break;
@@ -197,36 +166,12 @@ internal readonly ref struct KernelBarrierValidator(
                     if (_isDeviceIterator && !IsInsideLocalOrAnonymousFunction(node))
                     {
                         var localDecl = (LocalDeclarationStatementSyntax)node;
-                        if (UsingTranspiler.IsUsingDeclaration(localDecl))
-                        {
-                            context.ReportDiagnostic(
-                                GSharpDiagnostics.IteratorBodyConstructNotSupported,
-                                localDecl.UsingKeyword.GetLocation(),
-                                "using");
-                        }
-
                         if (semanticModel.GetTypeSymbol(localDecl.Declaration.Type).IsSharedMemoryType())
                         {
                             context.ReportDiagnostic(
                                 GSharpDiagnostics.IteratorBodyConstructNotSupported,
                                 localDecl.Declaration.Type.GetLocation(),
                                 "SharedMemory<T>");
-                        }
-                    }
-
-                    break;
-
-                case SyntaxKind.ForEachStatement:
-                    if (_isDeviceIterator && !IsInsideLocalOrAnonymousFunction(node))
-                    {
-                        var forEachStmt = (ForEachStatementSyntax)node;
-                        if (semanticModel.GetTypeSymbol(forEachStmt.Expression) is { } collectionType &&
-                            collectionType.HasAttribute(KnownAttributes.InlineArray))
-                        {
-                            context.ReportDiagnostic(
-                                GSharpDiagnostics.IteratorBodyConstructNotSupported,
-                                forEachStmt.ForEachKeyword.GetLocation(),
-                                "foreach over [InlineArray]");
                         }
                     }
 
@@ -297,7 +242,7 @@ internal readonly ref struct KernelBarrierValidator(
         }
     }
 
-    /// <summary>Checks if a variable declarator is a ref struct or local pointer that needs cross-barrier tracking.</summary>
+    /// <summary>Checks if a variable declarator is a ref struct, local pointer, or iterator local that needs cross-barrier tracking.</summary>
     private void InspectLocalVariableDeclarator(VariableDeclaratorSyntax varDecl)
     {
         if (semanticModel.GetDeclaredSymbol<ILocalSymbol>(varDecl) is not { } localSym)
@@ -315,10 +260,11 @@ internal readonly ref struct KernelBarrierValidator(
                         or ImplicitStackAllocArrayCreationExpressionSyntax ||
                     initChild.IsKind(SyntaxKind.AddressOfExpression)
                 );
+        var isIteratorLocal = IteratorTypeResolver.IsGenericIEnumerable(localSym.Type, out _);
 
-        if (isRefLikeOrRef || isLocalPointer)
+        if (isRefLikeOrRef || isLocalPointer || isIteratorLocal)
         {
-            _trackedLocals.Add(new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef, isLocalPointer));
+            _trackedLocals.Add(new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef, isLocalPointer, isIteratorLocal));
         }
     }
 
@@ -485,7 +431,7 @@ internal readonly ref struct KernelBarrierValidator(
         }
     }
 
-    /// <summary>Validates that ref structs and local pointers do not survive across barrier boundaries (GSH0039, GSH0041).</summary>
+    /// <summary>Validates that ref structs, local pointers, and iterator locals do not survive across barrier boundaries (GSH0039, GSH0041, GSH0072).</summary>
     private void ValidateCrossBarrierLocals()
     {
         if (_trackedLocals.Count == 0)
@@ -517,7 +463,7 @@ internal readonly ref struct KernelBarrierValidator(
                         id.Identifier.ValueText == s.Tracked.IdentifierText &&
                         s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
                 );
-            if (!usedAfterBarrier)
+            if (!usedAfterBarrier && !(tracked.IsIteratorLocal && IsUsedInLoopWithBarrier(tracked)))
             {
                 continue;
             }
@@ -535,7 +481,50 @@ internal readonly ref struct KernelBarrierValidator(
                     GSharpDiagnostics.CrossBarrierLocalPointerProhibited,
                     tracked.Declarator.Identifier.GetLocation());
             }
+            else if (tracked.IsIteratorLocal)
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                    tracked.Declarator.Identifier.GetLocation(),
+                    tracked.IdentifierText);
+            }
         }
+    }
+
+    private bool IsUsedInLoopWithBarrier(TrackedLocalInfo tracked)
+    {
+        foreach (var barrier in _barriers)
+        {
+            for (var ancestor = barrier.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
+            {
+                if (ancestor is not (ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax
+                    or DoStatementSyntax))
+                {
+                    continue;
+                }
+
+                if (tracked.Declarator.SpanStart >= ancestor.SpanStart)
+                {
+                    continue;
+                }
+
+                var referencedInLoop = ancestor.DescendantNodes()
+                    .AsStackEnumerable()
+                    .Any(
+                        (Model: semanticModel, Tracked: tracked),
+                        static (childNode, s) =>
+                            childNode is IdentifierNameSyntax id &&
+                            id.Identifier.ValueText == s.Tracked.IdentifierText &&
+                            s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
+                    );
+                if (referencedInLoop)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private InvocationExpressionSyntax? FindFirstBarrierAfter(int position)
@@ -620,103 +609,6 @@ internal readonly ref struct KernelBarrierValidator(
         }
     }
 
-    private void ValidateCrossYieldLocals()
-    {
-        if (_trackedLocals.Count == 0)
-        {
-            return;
-        }
-
-        foreach (var tracked in _trackedLocals)
-        {
-            var varStart = tracked.Declarator.SpanStart;
-            var firstYield = FindFirstYieldAfter(varStart);
-            if (firstYield == null)
-            {
-                continue;
-            }
-
-            var firstYieldAfterEnd = firstYield.Span.End;
-            var scopeNode = tracked.Declarator.Parent?.Parent?.Parent ?? methodDecl;
-
-            var usedAfterYield = scopeNode.DescendantNodes()
-                .AsStackEnumerable()
-                .Any(
-                    (Model: semanticModel, Tracked: tracked, After: firstYieldAfterEnd),
-                    static (childNode, s) =>
-                        childNode is IdentifierNameSyntax id &&
-                        id.SpanStart > s.After &&
-                        id.Identifier.ValueText == s.Tracked.IdentifierText &&
-                        s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
-                );
-            if (!usedAfterYield && !IsUsedInLoopWithYield(tracked, firstYield))
-            {
-                continue;
-            }
-
-            context.ReportDiagnostic(
-                GSharpDiagnostics.IteratorBodyConstructNotSupported,
-                tracked.Declarator.Identifier.GetLocation(),
-                tracked.IdentifierText);
-        }
-    }
-
-    private bool IsUsedInLoopWithYield(TrackedLocalInfo tracked, YieldStatementSyntax yieldStmt)
-    {
-        for (var ancestor = yieldStmt.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
-        {
-            if (ancestor is not (ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax
-                or DoStatementSyntax))
-            {
-                continue;
-            }
-
-            if (tracked.Declarator.SpanStart >= ancestor.SpanStart)
-            {
-                continue;
-            }
-
-            var referencedInLoop = ancestor.DescendantNodes()
-                .AsStackEnumerable()
-                .Any(
-                    (Model: semanticModel, Tracked: tracked),
-                    static (childNode, s) =>
-                        childNode is IdentifierNameSyntax id &&
-                        id.Identifier.ValueText == s.Tracked.IdentifierText &&
-                        s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
-                );
-            if (referencedInLoop)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private YieldStatementSyntax? FindFirstYieldAfter(int position)
-    {
-        var low = 0;
-        var high = _yields.Count - 1;
-        var resultIndex = -1;
-
-        while (low <= high)
-        {
-            var mid = low + (high - low) / 2;
-            if (_yields[mid].SpanStart > position)
-            {
-                resultIndex = mid;
-                high = mid - 1;
-            }
-            else
-            {
-                low = mid + 1;
-            }
-        }
-
-        return resultIndex >= 0 ? _yields[resultIndex] : null;
-    }
-
     private bool IsInsideLocalOrAnonymousFunction(SyntaxNode node)
     {
         for (var ancestor = node.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
@@ -727,59 +619,6 @@ internal readonly ref struct KernelBarrierValidator(
             }
         }
 
-        return false;
-    }
-
-    internal static bool TryGetUnflattenableYieldConstruct(
-        YieldStatementSyntax yieldStmt,
-        MethodDeclarationSyntax methodDecl,
-        [NotNullWhen(true)] out string? construct)
-    {
-        for (var ancestor = yieldStmt.Parent;
-             ancestor != null && ancestor != methodDecl.Body && ancestor != methodDecl;
-             ancestor = ancestor.Parent)
-        {
-            if (ancestor is LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax)
-            {
-                construct = null;
-                return false;
-            }
-
-            switch (ancestor)
-            {
-                case BlockSyntax:
-                case IfStatementSyntax:
-                case ElseClauseSyntax:
-                case WhileStatementSyntax:
-                case DoStatementSyntax:
-                case ForStatementSyntax:
-                case ForEachStatementSyntax:
-                    continue;
-
-                case SwitchSectionSyntax:
-                case SwitchStatementSyntax:
-                    construct = "yield inside switch";
-                    return true;
-
-                case CheckedStatementSyntax checkedStmt:
-                    construct = $"yield inside {checkedStmt.Keyword.ValueText}";
-                    return true;
-
-                case LabeledStatementSyntax:
-                    construct = "labeled yield";
-                    return true;
-
-                case ForEachVariableStatementSyntax:
-                    construct = "yield inside deconstructing foreach";
-                    return true;
-
-                default:
-                    construct = $"yield inside {ancestor.Kind()}";
-                    return true;
-            }
-        }
-
-        construct = null;
         return false;
     }
 
@@ -806,12 +645,13 @@ internal readonly struct TrackedLocalInfo(
     VariableDeclaratorSyntax declarator,
     ILocalSymbol symbol,
     bool isRefLikeOrRef,
-    bool isLocalPointer)
+    bool isLocalPointer,
+    bool isIteratorLocal)
 {
     public readonly VariableDeclaratorSyntax Declarator = declarator;
     public readonly ILocalSymbol Symbol = symbol;
     public readonly string IdentifierText = declarator.Identifier.ValueText;
     public readonly bool IsRefLikeOrRef = isRefLikeOrRef;
     public readonly bool IsLocalPointer = isLocalPointer;
+    public readonly bool IsIteratorLocal = isIteratorLocal;
 }
-
