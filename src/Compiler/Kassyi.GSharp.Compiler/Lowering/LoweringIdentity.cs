@@ -1,10 +1,77 @@
 namespace Kassyi.GSharp.Compiler.Lowering;
 
 /// <summary>
-/// Reads the copy (region) ordinal stamped onto lowered syntax nodes by pre-lowering and inline expansions.
+/// Identifies a declaration instance across AST lowering: its Roslyn symbol (or syntax name when no semantic model is
+/// available) together with the 1-based expansion region ordinal (<c>0</c> outside expansions).
+/// </summary>
+public readonly record struct DeclarationKey(ISymbol? Symbol, string Name, int Region)
+{
+    public bool Equals(DeclarationKey other)
+    {
+        if (Region != other.Region)
+        {
+            return false;
+        }
+
+        if (Symbol is not null && other.Symbol is not null)
+        {
+            return Symbol.IsEqualTo(other.Symbol);
+        }
+
+        if (Symbol is null && other.Symbol is null)
+        {
+            return string.Equals(Name, other.Name, StringComparison.Ordinal);
+        }
+
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var symbolHash = Symbol is not null
+                ? SymbolEqualityComparer.Default.GetHashCode(Symbol)
+                : StringComparer.Ordinal.GetHashCode(Name ?? string.Empty);
+            return (Region * 397) ^ symbolHash;
+        }
+    }
+}
+
+/// <summary>
+/// Resolves declaration and reference identities (<see cref="DeclarationKey"/>) and reads the copy (region) ordinal
+/// stamped onto lowered syntax nodes by pre-lowering and inline expansions.
 /// </summary>
 public static class LoweringIdentity
 {
+    /// <summary>
+    /// Creates the <see cref="DeclarationKey"/> for a declaration syntax node (<see cref="VariableDeclaratorSyntax"/>,
+    /// <see cref="LabeledStatementSyntax"/>, <see cref="ParameterSyntax"/>, <see cref="SingleVariableDesignationSyntax"/>,
+    /// <see cref="ForEachStatementSyntax"/>, <see cref="LocalFunctionStatementSyntax"/>, or
+    /// <see cref="CatchDeclarationSyntax"/>).
+    /// </summary>
+    public static DeclarationKey ForDeclaration(SyntaxNode declaration, SemanticModel? model)
+    {
+        var name = GetDeclaredName(declaration);
+        var symbol = model?.GetDeclaredSymbol<ISymbol>(declaration)?.OriginalDefinition;
+        var region = GetRegion(declaration);
+        return new DeclarationKey(symbol, name, region);
+    }
+
+    /// <summary>
+    /// Creates the <see cref="DeclarationKey"/> that <paramref name="reference"/> binds to, falling back to
+    /// <see cref="SemanticModelExtensions.GetDeclaredSymbol{T}"/> for references synthesized from a declaration span
+    /// (such as spilled <c>out var</c> arguments).
+    /// </summary>
+    public static DeclarationKey ForReference(SimpleNameSyntax reference, SemanticModel? model)
+    {
+        var symbol = model != null
+            ? (model.GetSymbol(reference) ?? model.GetDeclaredSymbol<ISymbol>(reference))?.OriginalDefinition
+            : null;
+        var region = GetRegion(reference);
+        return new DeclarationKey(symbol, reference.Identifier.ValueText, region);
+    }
+
     /// <summary>
     /// Returns the 1-based region number recorded in the <see cref="LoweringAnnotations.OriginalSpanAnnotationKind"/>
     /// annotation of <paramref name="node"/>, or <c>0</c> when the node has no region.
@@ -26,4 +93,16 @@ public static class LoweringIdentity
 
         return 0;
     }
+
+    private static string GetDeclaredName(SyntaxNode declaration) => declaration switch
+    {
+        ParameterSyntax p => p.Identifier.ValueText,
+        VariableDeclaratorSyntax v => v.Identifier.ValueText,
+        SingleVariableDesignationSyntax d => d.Identifier.ValueText,
+        ForEachStatementSyntax f => f.Identifier.ValueText,
+        LocalFunctionStatementSyntax l => l.Identifier.ValueText,
+        LabeledStatementSyntax l => l.Identifier.ValueText,
+        CatchDeclarationSyntax c => c.Identifier.ValueText,
+        _ => string.Empty
+    };
 }

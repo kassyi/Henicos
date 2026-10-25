@@ -123,7 +123,7 @@ public static class LoweringAnnotations
 
     /// <summary>
     /// Stamps <paramref name="region"/> onto the <see cref="OriginalSpanAnnotationKind"/> annotations of declarations
-    /// introduced within <paramref name="copy"/> and of <see cref="IdentifierNameSyntax"/> references that bind to those
+    /// introduced within <paramref name="copy"/> and of <see cref="SimpleNameSyntax"/> references that bind to those
     /// declarations, leaving references to outer declarations untouched.
     /// </summary>
     public static TNode StampRegion<TNode>(TNode copy, int region, SemanticModel? model) where TNode : SyntaxNode
@@ -143,7 +143,7 @@ public static class LoweringAnnotations
                     node.HasAnnotations(OriginalSpanAnnotationKind) &&
                     model.GetDeclaredSymbol<ISymbol>(node) is { } symbol)
                 {
-                    declaredSymbols.Add(symbol);
+                    declaredSymbols.Add(symbol.OriginalDefinition);
                 }
             }
         }
@@ -202,14 +202,14 @@ public static class LoweringAnnotations
                 return ReplaceRegionOnNode(visited, region);
             }
 
-            if (visited is IdentifierNameSyntax identifier)
+            if (visited is SimpleNameSyntax simpleName)
             {
                 if (model == null)
                 {
                     return ReplaceRegionOnNode(visited, region);
                 }
 
-                var symbol = model.GetSymbol(identifier) ?? model.GetDeclaredSymbol<ISymbol>(identifier);
+                var symbol = (model.GetSymbol(simpleName) ?? model.GetDeclaredSymbol<ISymbol>(simpleName))?.OriginalDefinition;
                 if (symbol != null && declaredSymbols != null && declaredSymbols.Contains(symbol))
                 {
                     return ReplaceRegionOnNode(visited, region);
