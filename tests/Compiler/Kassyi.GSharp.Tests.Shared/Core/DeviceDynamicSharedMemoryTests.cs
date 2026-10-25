@@ -16,6 +16,22 @@ public class DeviceDynamicSharedMemoryTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
+    public void Test_SuspendingHelper_DoesNotOverlapCaller()
+    {
+        EnsureCapability(DialectCapabilities.SharedMemory);
+        DeviceDynamicSharedMemoryScenarios.SuspendingHelperDoesNotOverlapCaller(s_runNative);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_HelperReachedFromTwoKernels_GetsItsOwnBufferInEach()
+    {
+        EnsureCapability(DialectCapabilities.SharedMemory);
+        DeviceDynamicSharedMemoryScenarios.HelperReachedFromTwoKernels(s_runNative);
+    }
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_PlainHelper_DoesNotOverlapCaller()
     {
         EnsureCapability(DialectCapabilities.SharedMemory);

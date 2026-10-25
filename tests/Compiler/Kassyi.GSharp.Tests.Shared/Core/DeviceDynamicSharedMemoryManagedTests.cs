@@ -21,6 +21,16 @@ public class DeviceDynamicSharedMemoryManagedTests : TranspilerTestBase
 
     [Fact]
     [Scenario(TestScenario.HappyPath)]
+    public void Test_Managed_SuspendingHelper_DoesNotOverlapCaller() =>
+        DeviceDynamicSharedMemoryScenarios.SuspendingHelperDoesNotOverlapCaller(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_Managed_HelperReachedFromTwoKernels_GetsItsOwnBufferInEach() =>
+        DeviceDynamicSharedMemoryScenarios.HelperReachedFromTwoKernels(s_runManaged);
+
+    [Fact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Managed_PlainHelper_DoesNotOverlapCaller() =>
         DeviceDynamicSharedMemoryScenarios.PlainHelperDoesNotOverlapCaller(s_runManaged);
 

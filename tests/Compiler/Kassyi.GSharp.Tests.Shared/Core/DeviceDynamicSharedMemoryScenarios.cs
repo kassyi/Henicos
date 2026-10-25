@@ -11,6 +11,38 @@ internal static class DeviceDynamicSharedMemoryScenarios
 {
     public const int Length = 32;
 
+    // D1 (R1)
+    public static void SuspendingHelperDoesNotOverlapCaller(Action<Action> run)
+    {
+        var output = new int[Length];
+
+        run(() => DeviceDynamicSharedMemoryKernels.LaunchSuspendingCallerKernel(output, Length,
+            blockDimX: Length, sharedMemBytes: 2 * Length * sizeof(int)));
+
+        for (int i = 0; i < Length; i++)
+        {
+            Assert.Equal(i + 100 + 2 * i, output[i]);
+        }
+    }
+
+    // D8
+    public static void HelperReachedFromTwoKernels(Action<Action> run)
+    {
+        var helperOnly = new int[Length];
+        var helperAndCaller = new int[Length];
+
+        run(() => DeviceDynamicSharedMemoryKernels.LaunchHelperOnlyKernel(helperOnly, Length,
+            blockDimX: Length, sharedMemBytes: Length * sizeof(int)));
+        run(() => DeviceDynamicSharedMemoryKernels.LaunchHelperAndCallerKernel(helperAndCaller, Length,
+            blockDimX: Length, sharedMemBytes: 2 * Length * sizeof(int)));
+
+        for (int i = 0; i < Length; i++)
+        {
+            Assert.Equal(2 * i, helperOnly[i]);
+            Assert.Equal(i + 100 + 2 * i, helperAndCaller[i]);
+        }
+    }
+
     // D2 (R2)
     public static void PlainHelperDoesNotOverlapCaller(Action<Action> run)
     {

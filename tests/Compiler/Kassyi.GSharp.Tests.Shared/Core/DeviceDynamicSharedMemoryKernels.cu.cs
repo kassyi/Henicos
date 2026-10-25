@@ -9,6 +9,57 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 /// </summary>
 public static partial class DeviceDynamicSharedMemoryKernels
 {
+    // D1 (R1): the helper reaches a barrier (lowered on the CPU dialects); its buffer must not overlap the caller's
+    [GpuDeviceFunction]
+    public static int SuspendingHelper(int n, int val)
+    {
+        var inner = new SharedMemory<int>(n);
+        inner[ThreadIndex.X] = val * 2;
+        Gpu.SyncThreads();
+        return inner[ThreadIndex.X];
+    }
+
+    [GpuKernel]
+    public static void SuspendingCallerKernel(int[] output, int n)
+    {
+        int tid = ThreadIndex.X;
+        var outer = new SharedMemory<int>(n);
+        outer[tid] = tid + 100;
+        Gpu.SyncThreads();
+        int helperResult = SuspendingHelper(n, tid);
+        Gpu.SyncThreads();
+        output[tid] = outer[tid] + helperResult;
+    }
+
+    // D8: one helper reached from two kernels; the first declares no buffer of its own, the second has the D1 shape
+    [GpuDeviceFunction]
+    public static int TwoKernelHelper(int n, int val)
+    {
+        var inner = new SharedMemory<int>(n);
+        inner[ThreadIndex.X] = val * 2;
+        Gpu.SyncThreads();
+        return inner[ThreadIndex.X];
+    }
+
+    [GpuKernel]
+    public static void HelperOnlyKernel(int[] output, int n)
+    {
+        int tid = ThreadIndex.X;
+        output[tid] = TwoKernelHelper(n, tid);
+    }
+
+    [GpuKernel]
+    public static void HelperAndCallerKernel(int[] output, int n)
+    {
+        int tid = ThreadIndex.X;
+        var outer = new SharedMemory<int>(n);
+        outer[tid] = tid + 100;
+        Gpu.SyncThreads();
+        int helperResult = TwoKernelHelper(n, tid);
+        Gpu.SyncThreads();
+        output[tid] = outer[tid] + helperResult;
+    }
+
     // D2 (R2): the helper never reaches a barrier (not lowered on the CPU dialects)
     [GpuDeviceFunction]
     public static int PlainHelper(int n, int val)
