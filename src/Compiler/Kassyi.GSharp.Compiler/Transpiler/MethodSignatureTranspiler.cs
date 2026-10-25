@@ -230,15 +230,7 @@ internal static class MethodSignatureTranspiler
     private static void WriteDeviceMethodPrefix(IMethodSymbol? methodSymbol, ref TranspileContext context)
     {
         var inlineKeyword = GetInliningKeyword(methodSymbol);
-
-        if (context.Emitter.Dialect.IsCuda)
-        {
-            context.Emitter.Writer.Append($"{inlineKeyword} __device__ ");
-        }
-        else
-        {
-            context.Emitter.Writer.Append($"{inlineKeyword} ");
-        }
+        context.Emitter.Writer.Append(context.Emitter.Dialect.IsCuda ? $"{inlineKeyword} __device__ " : $"{inlineKeyword} ");
 
         var returnType = methodSymbol?.ReturnType;
         if (returnType is { SpecialType: not SpecialType.System_Void })

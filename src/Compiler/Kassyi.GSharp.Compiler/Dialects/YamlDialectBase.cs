@@ -245,9 +245,9 @@ public abstract class YamlDialectBase : ITranspilerDialect
 
         if (isRefPointer)
         {
-            context.Emitter.Writer.Append("* __restrict__ ");
+            context.Emitter.Writer.Append("*");
         }
 
-        return (isRefPointer, isPointerType, isRefPointer);
+        return (isRefPointer, isPointerType, false);
     }
 }

@@ -26,7 +26,12 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
     public void Analyze(MethodDeclarationSyntax node, ref ValidationContext context)
     {
         var method = context.MethodSymbol;
-        if (!GpuCodeConstraints.HasSupportedReturnType(method))
+        var isDeviceIteratorCandidate =
+            method.HasAttribute(KnownAttributes.GpuDeviceFunction) &&
+            !method.HasAttribute(KnownAttributes.GpuKernel) &&
+            IteratorTypeResolver.ContainsDirectYield(node.Body);
+
+        if (!isDeviceIteratorCandidate && !GpuCodeConstraints.HasSupportedReturnType(method))
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.KernelReturnMustBeVoidOrBlittable,
@@ -35,7 +40,7 @@ internal sealed class KernelSignatureRule : ISyntaxValidationRule<MethodDeclarat
                 GpuCodeConstraints.FormatReturnType(method));
         }
 
-        if (GpuCodeConstraints.IsInstanceDeviceFunction(method))
+        if (!isDeviceIteratorCandidate && GpuCodeConstraints.IsInstanceDeviceFunction(method))
         {
             context.ReportDiagnostic(
                 GSharpDiagnostics.InstanceDeviceFunctionNotSupported,

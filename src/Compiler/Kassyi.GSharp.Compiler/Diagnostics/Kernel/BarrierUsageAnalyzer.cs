@@ -22,7 +22,9 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
             GSharpDiagnostics.AsyncYieldInKernelProhibited, // GSH0046
             GSharpDiagnostics.LockStatementInKernelProhibited, // GSH0047
             GSharpDiagnostics.RecursiveDeviceFunctionBarrierProhibited, // GSH0061
-            GSharpDiagnostics.SuspendingCallInUnsupportedContext // GSH0062
+            GSharpDiagnostics.SuspendingCallInUnsupportedContext, // GSH0062
+            GSharpDiagnostics.IteratorShapeNotSupported, // GSH0070
+            GSharpDiagnostics.IteratorBodyConstructNotSupported // GSH0072
         );
 
     public override void Initialize(AnalysisContext context)
@@ -91,8 +93,10 @@ public class BarrierUsageAnalyzer : DiagnosticAnalyzer
                     methodSymbol.Name);
             }
 
-            // A device function that reaches a barrier is lowered into a state machine like a kernel body
-            if (SuspensionAnalysis.IsSuspendingFunction(methodSymbol, semanticModel.Compilation))
+            // A device function that reaches a barrier or is an iterator is validated for state machine / iterator
+            // rules
+            if (SuspensionAnalysis.IsSuspendingFunction(methodSymbol, semanticModel.Compilation) ||
+                IteratorTypeResolver.ContainsAnyYield(methodDecl.Body))
             {
                 new KernelBarrierValidator(context, methodDecl, semanticModel, isKernel: false).Analyze();
             }

@@ -65,7 +65,7 @@ public interface ITranspilerDialect
     /// <list type="bullet">
     /// <item><term><c>IsRefPointer</c></term><description><see langword="true"/> if the parameter is passed by reference as a pointer.</description></item>
     /// <item><term><c>IsPointerType</c></term><description><see langword="true"/> if the parameter represents an unmanaged raw pointer.</description></item>
-    /// <item><term><c>HasRestrict</c></term><description><see langword="true"/> if the parameter is decorated with the C++ <c>__restrict__</c> keyword.</description></item>
+    /// <item><term><c>HasRestrict</c></term><description><see langword="true"/> if this method has already emitted the C++ <c>__restrict__</c> qualifier for the parameter.</description></item>
     /// </list>
     /// </returns>
     (bool IsRefPointer, bool IsPointerType, bool HasRestrict) AppendParameter(ref TranspileContext context, ParameterSyntax p, ITypeSymbol? typeSymbol, IParameterSymbol? parameterSymbol);

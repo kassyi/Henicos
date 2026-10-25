@@ -133,4 +133,3 @@ public class BranchRewriter : CSharpSyntaxRewriter
         return SyntaxFactory.Block(statements);
     }
 }
-

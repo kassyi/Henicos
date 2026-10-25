@@ -85,7 +85,7 @@ template <class T> inline const T* __gsharp_temp_address(const T& v) { return &v
 
 template <typename T>
 struct GSharpArray {
-T* __restrict__ data;
+T* data;
 int length;
 
 inline GSharpArray() : data(nullptr), length(0) {}

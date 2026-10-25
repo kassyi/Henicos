@@ -50,4 +50,20 @@ public class LoopTests : StateMachineTestBase
             } while (condition);
         });
     }
+
+    [Fact]
+    [Category(TestCategory.Compiler)]
+    public Task Lower_ForEachArray_WithBarrier()
+    {
+        int[] data = [1, 2, 3];
+        return VerifyPipelineLower(() =>
+        {
+            int sum = 0;
+            foreach (int x in data)
+            {
+                sum += x;
+                Gpu.SyncThreads();
+            }
+        });
+    }
 }

@@ -55,11 +55,11 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCudaDeviceCode
 {
-public const string Source = @"inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier(int* __restrict__  __gsharp_id_0_value, int* __restrict__  __gsharp_id_1_previous);
+public const string Source = @"inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier(int* __gsharp_id_0_value, int* __gsharp_id_1_previous);
 
 inline __device__ int __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__Broadcast(int __gsharp_id_0_value);
 
-inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier(int* __restrict__  __gsharp_id_0_value, int* __restrict__  __gsharp_id_1_previous){
+inline __device__ void __gsharp_fn_Kassyi__GSharp__Tests__Shared__TestCases__Analyzers__BarrierUsage__DeviceFunctionRefParameterBarrierKernels__IncrementAcrossBarrier(int* __gsharp_id_0_value, int* __gsharp_id_1_previous){
 (*__gsharp_id_1_previous)=(*__gsharp_id_0_value);
 (*__gsharp_id_0_value)+=1;
 __syncthreads();

@@ -21,6 +21,11 @@ internal static class HoistedFieldTypeResolver
             return type2;
         }
 
+        if (field.HasAnnotations(LoweringAnnotations.ForEachIndexAnnotationKind))
+        {
+            return semanticModel.Compilation.GetSpecialType(SpecialType.System_Int32);
+        }
+
         throw new InvalidOperationException(BuildErrorMessage(field, semanticModel, kernelName, declaredSymbol, type1, type2));
     }
 

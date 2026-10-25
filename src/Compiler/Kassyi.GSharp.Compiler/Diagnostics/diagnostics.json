@@ -175,7 +175,7 @@
     "name": "ManualEnumeratorNotSupported",
     "id": "GSH0019",
     "title": "Manual GetEnumerator calls are not supported",
-    "messageFormat": "Explicit calls to GetEnumerator() are not supported in GPU kernels. Use a foreach loop instead to ensure proper state machine dispose routing and memory safety.",
+    "messageFormat": "Explicit calls to GetEnumerator() are not supported in GPU kernels. Use a foreach loop instead so that the transpiler emits the enumerator loop for foreach itself.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -419,7 +419,7 @@
     "name": "AsyncYieldInKernelProhibited",
     "id": "GSH0046",
     "title": "async, await, and yield return are prohibited in GPU kernels",
-    "messageFormat": "The async, await, and yield keywords are not supported in [GpuKernel] methods because they conflict with the G# state machine generator.",
+    "messageFormat": "The async and await keywords are not supported in GPU methods, and yield is supported only in a [GpuDeviceFunction] that returns IEnumerable<T>.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
     "isEnabledByDefault": true
@@ -630,6 +630,42 @@
     "messageFormat": "SharedMemory<T> cannot hold the disposable type '{0}'. Shared memory is released with the thread block, so its elements are never disposed.",
     "category": "GSharpTranspiler",
     "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "IteratorShapeNotSupported",
+    "id": "GSH0070",
+    "title": "Iterator method must be a static [GpuDeviceFunction] returning IEnumerable<T> with a value-type element",
+    "messageFormat": "Iterator method '{0}' is not supported on the GPU: {1}.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "IteratorValueMustBeEnumeratedInPlace",
+    "id": "GSH0071",
+    "title": "Iterator value must be consumed directly by foreach",
+    "messageFormat": "The iterator value '{0}' cannot be passed, returned, reassigned, or selected conditionally; enumerate it directly with foreach (or bind it once to a local and foreach that local).",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "IteratorBodyConstructNotSupported",
+    "id": "GSH0072",
+    "title": "Unsupported construct in or around an iterator",
+    "messageFormat": "Construct '{0}' is not supported inside an iterator or a foreach over an iterator.",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Error",
+    "isEnabledByDefault": true
+  },
+  {
+    "name": "IteratorExpansionTooLarge",
+    "id": "GSH0073",
+    "title": "Iterator expansion copies the foreach body too many times",
+    "messageFormat": "Expanding the iterator '{0}' at this foreach would copy the loop body {1} times (limit {2})",
+    "category": "GSharpTranspiler",
+    "defaultSeverity": "Warning",
     "isEnabledByDefault": true
   },
   {

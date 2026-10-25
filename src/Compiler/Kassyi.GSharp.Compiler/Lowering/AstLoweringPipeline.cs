@@ -33,7 +33,8 @@ public static class AstLoweringPipeline
         // [WHY] Annotate before wrapping an expression body: the annotations record spans of the original tree, which is
         // how later passes find the symbols of the synthesized block.
         var suspendingCalls = CollectSuspendingCalls(body, semanticModel);
-        var annotatedBody = ToBlock(new SpanAnnotationRewriter(suspendingCalls).Visit(body) ?? body, returnsValue);
+        var treeOrdinal = SemanticModelExtensions.GetSyntaxTreeOrdinal(semanticModel?.Compilation, body.SyntaxTree);
+        var annotatedBody = ToBlock(new SpanAnnotationRewriter(suspendingCalls, treeOrdinal).Visit(body) ?? body, returnsValue);
 
         var copiedParameters = deviceFunction != null
             ? FindAssignedValueParameters(body, deviceFunction)
@@ -48,6 +49,7 @@ public static class AstLoweringPipeline
         var hoistedBody = conditionalRewriter.Rewrite(annotatedBody);
         hoistedBody = warpRewriter.Rewrite(hoistedBody);
         hoistedBody = branchRewriter.Rewrite(hoistedBody);
+        hoistedBody = new ForEachRewriter().Rewrite(hoistedBody);
         hoistedBody = new LoopRewriter().Rewrite(hoistedBody);
         hoistedBody = conditionalRewriter.Rewrite(hoistedBody);
         hoistedBody = warpRewriter.Rewrite(hoistedBody);
@@ -105,6 +107,10 @@ public static class AstLoweringPipeline
             .Where(static parameter => parameter.RefKind == RefKind.None && !parameter.Type.IsRefLikeType)
             .Select(static parameter => parameter.Name)
             .AddTo(candidates);
+        if (candidates.Count == 0)
+        {
+            return ImmutableArray<string>.Empty;
+        }
 
         var assigned = ImmutableArray.CreateBuilder<string>();
         foreach (var node in body.DescendantNodes())
@@ -129,7 +135,7 @@ public static class AstLoweringPipeline
         return assigned.ToImmutable();
     }
 
-    private sealed class SpanAnnotationRewriter(Dictionary<TextSpan, bool> suspendingCalls) : CSharpSyntaxRewriter
+    private sealed class SpanAnnotationRewriter(Dictionary<TextSpan, bool> suspendingCalls, int treeOrdinal) : CSharpSyntaxRewriter
     {
         public override SyntaxNode? Visit(SyntaxNode? node)
         {
@@ -138,8 +144,14 @@ public static class AstLoweringPipeline
                 return null;
             }
 
-            var visited = (base.Visit(node)).WithAdditionalAnnotations(
-                new SyntaxAnnotation(LoweringAnnotations.OriginalSpanAnnotationKind, $"{node.SpanStart},{node.Span.Length}"));
+            var visited = base.Visit(node);
+            if (!node.HasAnnotations(LoweringAnnotations.OriginalSpanAnnotationKind))
+            {
+                visited = visited.WithAdditionalAnnotations(
+                    new SyntaxAnnotation(
+                        LoweringAnnotations.OriginalSpanAnnotationKind,
+                        LoweringAnnotations.FormatOriginalSpanData(node, treeOrdinal)));
+            }
 
             if (node is not InvocationExpressionSyntax || !suspendingCalls.TryGetValue(node.Span, out var returnsValue))
             {

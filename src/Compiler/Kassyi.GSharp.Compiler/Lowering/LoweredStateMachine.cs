@@ -11,8 +11,13 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// By-value parameters of a device function that the body assigns. They are copied into the frame on the first entry,
 /// because the caller passes the original value again on every resume.
 /// </param>
+/// <param name="RegionCount">
+/// The highest region number assigned by pre-lowering expansions so that subsequent inline expansions can continue from
+/// a disjoint counter.
+/// </param>
 public sealed record LoweredStateMachine(
     BlockSyntax LoweredBody,
     IReadOnlyList<VariableDeclaratorSyntax> ContextFields,
     IReadOnlyList<InvocationExpressionSyntax> CallSites,
-    IReadOnlyList<string> CopiedParameters);
+    IReadOnlyList<string> CopiedParameters,
+    int RegionCount = 0);

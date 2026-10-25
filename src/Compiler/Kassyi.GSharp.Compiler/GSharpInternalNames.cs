@@ -20,6 +20,7 @@ internal static partial class GSharpInternalNames
     internal static class Renamed
     {
         public const string IdentifierPrefix = GSharpNameEncoding.IdentifierPrefix;
+        public const string InlinedIdentifierPrefix = GSharpNameEncoding.InlinedIdentifierPrefix;
         public const string MemberPrefix = GSharpNameEncoding.MemberPrefix;
     }
 

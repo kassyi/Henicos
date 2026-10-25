@@ -31,6 +31,8 @@ internal readonly ref struct KernelBarrierValidator(
     private readonly ImmutableArray<LocalFunctionStatementSyntax>.Builder _localFunctionsWithBarrier =
         ImmutableArray.CreateBuilder<LocalFunctionStatementSyntax>();
 
+    private readonly bool _isDeviceIterator = !isKernel && IteratorTypeResolver.ContainsDirectYield(methodDecl.Body);
+
     // Computed on the first branch around a block barrier
     private readonly ThreadVarianceAnalysis _variance = new(semanticModel, methodDecl);
 
@@ -73,6 +75,7 @@ internal readonly ref struct KernelBarrierValidator(
         // GSH0044: ref, out, in, and ref struct parameters on [GpuKernel]; a device function receives them from its caller
         if (!isKernel)
         {
+            ValidateDeviceIteratorHeader();
             return;
         }
 
@@ -109,12 +112,69 @@ internal readonly ref struct KernelBarrierValidator(
         {
             switch (node.Kind())
             {
+                case SyntaxKind.LocalFunctionStatement:
+                    var localFunc = (LocalFunctionStatementSyntax)node;
+                    if (IteratorTypeResolver.ContainsDirectYield(localFunc.Body))
+                    {
+                        context.ReportDiagnostic(
+                            GSharpDiagnostics.IteratorShapeNotSupported,
+                            localFunc.Identifier.GetLocation(),
+                            localFunc.Identifier.ValueText,
+                            "local function iterators are not supported");
+                    }
+
+                    break;
+
+                case SyntaxKind.SimpleLambdaExpression:
+                case SyntaxKind.ParenthesizedLambdaExpression:
+                case SyntaxKind.AnonymousMethodExpression:
+                    var anonFunc = (AnonymousFunctionExpressionSyntax)node;
+                    if (IteratorTypeResolver.ContainsDirectYield(anonFunc.Body))
+                    {
+                        context.ReportDiagnostic(
+                            GSharpDiagnostics.IteratorShapeNotSupported,
+                            anonFunc.GetLocation(),
+                            "<lambda>",
+                            "anonymous function iterators are not supported");
+                    }
+
+                    break;
+
                 case SyntaxKind.AwaitExpression:
-                case SyntaxKind.YieldReturnStatement:
-                case SyntaxKind.YieldBreakStatement:
                     context.ReportDiagnostic(
                         GSharpDiagnostics.AsyncYieldInKernelProhibited,
                         node.GetLocation());
+                    break;
+
+                case SyntaxKind.YieldReturnStatement:
+                case SyntaxKind.YieldBreakStatement:
+                    if (IsInsideLocalOrAnonymousFunction(node))
+                    {
+                        break;
+                    }
+
+                    if (isKernel)
+                    {
+                        context.ReportDiagnostic(
+                            GSharpDiagnostics.AsyncYieldInKernelProhibited,
+                            node.GetLocation());
+                    }
+
+                    break;
+
+                case SyntaxKind.LocalDeclarationStatement:
+                    if (_isDeviceIterator && !IsInsideLocalOrAnonymousFunction(node))
+                    {
+                        var localDecl = (LocalDeclarationStatementSyntax)node;
+                        if (semanticModel.GetTypeSymbol(localDecl.Declaration.Type).IsSharedMemoryType())
+                        {
+                            context.ReportDiagnostic(
+                                GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                                localDecl.Declaration.Type.GetLocation(),
+                                "SharedMemory<T>");
+                        }
+                    }
+
                     break;
 
                 case SyntaxKind.LockStatement:
@@ -145,17 +205,36 @@ internal readonly ref struct KernelBarrierValidator(
 
                 case SyntaxKind.InvocationExpression:
                     var inv = (InvocationExpressionSyntax)node;
-                    if (BarrierUsageAnalyzer.IsSyncThreadsInvocation(inv, semanticModel))
+                    var isSyncThreads = BarrierUsageAnalyzer.IsSyncThreadsInvocation(inv, semanticModel);
+                    var isPhaseBarrier = isSyncThreads || BarrierHelper.IsPhaseBarrier(inv);
+                    IMethodSymbol? suspendingCallee = null;
+                    if (!isSyncThreads &&
+                        semanticModel.GetSymbol(inv) is IMethodSymbol callee &&
+                        SuspensionAnalysis.IsSuspendingFunction(callee, semanticModel.Compilation))
+                    {
+                        suspendingCallee = callee;
+                    }
+
+                    if ((isPhaseBarrier || suspendingCallee != null) &&
+                        (_isDeviceIterator || IsInsideIteratorForEachBody(inv)))
+                    {
+                        context.ReportDiagnostic(
+                            GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                            inv.GetLocation(),
+                            IteratorTypeResolver.FormatSyntax(inv));
+                        break;
+                    }
+
+                    if (isSyncThreads)
                     {
                         _barriers.Add(inv);
                         InspectBarrierAncestors(inv, isBlockBarrier: true);
                     }
-                    else if (semanticModel.GetSymbol(inv) is IMethodSymbol callee &&
-                             SuspensionAnalysis.IsSuspendingFunction(callee, semanticModel.Compilation))
+                    else if (suspendingCallee != null)
                     {
                         _barriers.Add(inv);
                         InspectBarrierAncestors(inv,
-                            SuspensionAnalysis.ReachesBlockBarrier(callee, semanticModel.Compilation));
+                            SuspensionAnalysis.ReachesBlockBarrier(suspendingCallee, semanticModel.Compilation));
                     }
 
                     break;
@@ -163,7 +242,7 @@ internal readonly ref struct KernelBarrierValidator(
         }
     }
 
-    /// <summary>Checks if a variable declarator is a ref struct or local pointer that needs cross-barrier tracking.</summary>
+    /// <summary>Checks if a variable declarator is a ref struct, local pointer, or iterator local that needs cross-barrier tracking.</summary>
     private void InspectLocalVariableDeclarator(VariableDeclaratorSyntax varDecl)
     {
         if (semanticModel.GetDeclaredSymbol<ILocalSymbol>(varDecl) is not { } localSym)
@@ -181,10 +260,11 @@ internal readonly ref struct KernelBarrierValidator(
                         or ImplicitStackAllocArrayCreationExpressionSyntax ||
                     initChild.IsKind(SyntaxKind.AddressOfExpression)
                 );
+        var isIteratorLocal = IteratorTypeResolver.IsGenericIEnumerable(localSym.Type, out _);
 
-        if (isRefLikeOrRef || isLocalPointer)
+        if (isRefLikeOrRef || isLocalPointer || isIteratorLocal)
         {
-            _trackedLocals.Add(new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef, isLocalPointer));
+            _trackedLocals.Add(new TrackedLocalInfo(varDecl, localSym, isRefLikeOrRef, isLocalPointer, isIteratorLocal));
         }
     }
 
@@ -351,7 +431,7 @@ internal readonly ref struct KernelBarrierValidator(
         }
     }
 
-    /// <summary>Validates that ref structs and local pointers do not survive across barrier boundaries (GSH0039, GSH0041).</summary>
+    /// <summary>Validates that ref structs, local pointers, and iterator locals do not survive across barrier boundaries (GSH0039, GSH0041, GSH0072).</summary>
     private void ValidateCrossBarrierLocals()
     {
         if (_trackedLocals.Count == 0)
@@ -383,7 +463,7 @@ internal readonly ref struct KernelBarrierValidator(
                         id.Identifier.ValueText == s.Tracked.IdentifierText &&
                         s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
                 );
-            if (!usedAfterBarrier)
+            if (!usedAfterBarrier && !(tracked.IsIteratorLocal && IsUsedInLoopWithBarrier(tracked)))
             {
                 continue;
             }
@@ -401,7 +481,50 @@ internal readonly ref struct KernelBarrierValidator(
                     GSharpDiagnostics.CrossBarrierLocalPointerProhibited,
                     tracked.Declarator.Identifier.GetLocation());
             }
+            else if (tracked.IsIteratorLocal)
+            {
+                context.ReportDiagnostic(
+                    GSharpDiagnostics.IteratorBodyConstructNotSupported,
+                    tracked.Declarator.Identifier.GetLocation(),
+                    tracked.IdentifierText);
+            }
         }
+    }
+
+    private bool IsUsedInLoopWithBarrier(TrackedLocalInfo tracked)
+    {
+        foreach (var barrier in _barriers)
+        {
+            for (var ancestor = barrier.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
+            {
+                if (ancestor is not (ForStatementSyntax or ForEachStatementSyntax or WhileStatementSyntax
+                    or DoStatementSyntax))
+                {
+                    continue;
+                }
+
+                if (tracked.Declarator.SpanStart >= ancestor.SpanStart)
+                {
+                    continue;
+                }
+
+                var referencedInLoop = ancestor.DescendantNodes()
+                    .AsStackEnumerable()
+                    .Any(
+                        (Model: semanticModel, Tracked: tracked),
+                        static (childNode, s) =>
+                            childNode is IdentifierNameSyntax id &&
+                            id.Identifier.ValueText == s.Tracked.IdentifierText &&
+                            s.Model.GetSymbol(id).IsEqualTo(s.Tracked.Symbol)
+                    );
+                if (referencedInLoop)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private InvocationExpressionSyntax? FindFirstBarrierAfter(int position)
@@ -426,18 +549,109 @@ internal readonly ref struct KernelBarrierValidator(
 
         return resultIndex >= 0 ? _barriers[resultIndex] : null;
     }
+
+    private void ValidateDeviceIteratorHeader()
+    {
+        if (!_isDeviceIterator ||
+            semanticModel.GetDeclaredSymbol<IMethodSymbol>(methodDecl) is not { } methodSymbol)
+        {
+            return;
+        }
+
+        if (!methodSymbol.IsStatic)
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorShapeNotSupported,
+                methodDecl.Identifier.GetLocation(),
+                methodSymbol.Name,
+                "iterator methods must be static");
+            return;
+        }
+
+        if (methodSymbol.IsGenericMethod)
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorShapeNotSupported,
+                methodDecl.Identifier.GetLocation(),
+                methodSymbol.Name,
+                "generic iterator methods are not supported");
+            return;
+        }
+
+        if (!IteratorTypeResolver.IsGenericIEnumerable(methodSymbol.ReturnType, out var elementType))
+        {
+            var formattedReturnType = IteratorTypeResolver.FormatType(methodSymbol.ReturnType);
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorShapeNotSupported,
+                methodDecl.Identifier.GetLocation(),
+                methodSymbol.Name,
+                $"return type must be System.Collections.Generic.IEnumerable<T>, not '{formattedReturnType}'");
+            return;
+        }
+
+        if (IteratorTypeResolver.TryGetUnsupportedElementTypeReason(elementType, out var reason))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorShapeNotSupported,
+                methodDecl.Identifier.GetLocation(),
+                methodSymbol.Name,
+                reason);
+            return;
+        }
+
+        if (IteratorTypeResolver.IsRecursiveIterator(methodSymbol, semanticModel.Compilation))
+        {
+            context.ReportDiagnostic(
+                GSharpDiagnostics.IteratorShapeNotSupported,
+                methodDecl.Identifier.GetLocation(),
+                methodSymbol.Name,
+                "recursive iterators are not supported");
+        }
+    }
+
+    private bool IsInsideLocalOrAnonymousFunction(SyntaxNode node)
+    {
+        for (var ancestor = node.Parent; ancestor != null && ancestor != methodDecl; ancestor = ancestor.Parent)
+        {
+            if (ancestor is LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool IsInsideIteratorForEachBody(SyntaxNode node)
+    {
+        SyntaxNode child = node;
+        for (var ancestor = node.Parent;
+             ancestor != null && ancestor != methodDecl;
+             child = ancestor, ancestor = ancestor.Parent)
+        {
+            if (ancestor is ForEachStatementSyntax forEach &&
+                child == forEach.Statement &&
+                IteratorTypeResolver.IsIteratorForEachSource(forEach.Expression, semanticModel))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
 
 internal readonly struct TrackedLocalInfo(
     VariableDeclaratorSyntax declarator,
     ILocalSymbol symbol,
     bool isRefLikeOrRef,
-    bool isLocalPointer)
+    bool isLocalPointer,
+    bool isIteratorLocal)
 {
     public readonly VariableDeclaratorSyntax Declarator = declarator;
     public readonly ILocalSymbol Symbol = symbol;
     public readonly string IdentifierText = declarator.Identifier.ValueText;
     public readonly bool IsRefLikeOrRef = isRefLikeOrRef;
     public readonly bool IsLocalPointer = isLocalPointer;
+    public readonly bool IsIteratorLocal = isIteratorLocal;
 }
-

@@ -6,9 +6,9 @@ namespace Kassyi.GSharp.Generated
 [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal static class GSharpSharedCpuDeviceCode
 {
-public const string Source = @"inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulateHelper(__gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void>* __restrict__  __gsharp_id_0_acc, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __restrict__  __gsharp_id_1_fragA, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __restrict__  __gsharp_id_2_fragB);
+public const string Source = @"inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulateHelper(__gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void>* __gsharp_id_0_acc, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_1_fragA, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_2_fragB);
 
-inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulateHelper(__gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void>* __restrict__  __gsharp_id_0_acc, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __restrict__  __gsharp_id_1_fragA, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __restrict__  __gsharp_id_2_fragB){
+inline void __gsharp_fn_Kassyi__GSharp__Tests__Shared__Core__WmmaKernels__MultiplyAccumulateHelper(__gsharp_wmma_fragment<__gsharp_wmma_accumulator, 16, 16, 16, int, void>* __gsharp_id_0_acc, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_a, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_1_fragA, const __gsharp_wmma_fragment<__gsharp_wmma_matrix_b, 16, 16, 16, signed char, __gsharp_wmma_row_major>* __gsharp_id_2_fragB){
 __gsharp_wmma_mma<__gsharp_wmma_shape<16, 16, 16>, signed char, __gsharp_wmma_row_major, __gsharp_wmma_row_major, int>(&(*__gsharp_id_0_acc),&(*__gsharp_id_1_fragA),&(*__gsharp_id_2_fragB),&(*__gsharp_id_0_acc));
 }
 

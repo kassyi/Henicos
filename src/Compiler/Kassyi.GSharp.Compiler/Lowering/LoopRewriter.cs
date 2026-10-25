@@ -194,4 +194,3 @@ public class LoopRewriter : CSharpSyntaxRewriter
         return SyntaxFactory.Block(statements);
     }
 }
-

@@ -10,9 +10,14 @@ namespace Kassyi.GSharp.Compiler;
 /// </remarks>
 internal static class GpuCodeConstraints
 {
-    /// <summary>Whether a GPU function returns <see langword="void"/> or an unmanaged type (GSH0004).</summary>
+    /// <summary>
+    /// Whether a GPU function returns <see langword="void"/>, an unmanaged type, or is a valid device iterator
+    /// (GSH0004).
+    /// </summary>
     public static bool HasSupportedReturnType(IMethodSymbol method) =>
-        method.ReturnType.SpecialType == SpecialType.System_Void || method.ReturnType.IsUnmanagedType;
+        method.ReturnType.SpecialType == SpecialType.System_Void ||
+        method.ReturnType.IsUnmanagedType ||
+        IteratorTypeResolver.IsDeviceIteratorMethod(method);
 
     /// <summary>The return type of <paramref name="method"/> as the GSH0004 message names it.</summary>
     public static string FormatReturnType(IMethodSymbol method) =>

@@ -7,7 +7,7 @@ namespace Kassyi.GSharp.Generated
 internal static class GSharpSharedCpuDeviceCode
 {
 public const string Source = @"struct __gsharp_ty_TestNamespace__DummyContext;
-inline void __gsharp_fn_TestNamespace__DummyKernels__DummyOp(__gsharp_ty_TestNamespace__DummyContext* __restrict__  __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, GSharpArray<unsigned int> __gsharp_id_3_right);
+inline void __gsharp_fn_TestNamespace__DummyKernels__DummyOp(__gsharp_ty_TestNamespace__DummyContext* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, GSharpArray<unsigned int> __gsharp_id_3_right);
 
 inline void __gsharp_fn_TestNamespace__DummyKernels__DummyUnaryOp(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_operand);
 
@@ -22,7 +22,7 @@ int __gsharp_mb_State;
 }
 ;
 #endif
-inline void __gsharp_fn_TestNamespace__DummyKernels__DummyOp(__gsharp_ty_TestNamespace__DummyContext* __restrict__  __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, GSharpArray<unsigned int> __gsharp_id_3_right){
+inline void __gsharp_fn_TestNamespace__DummyKernels__DummyOp(__gsharp_ty_TestNamespace__DummyContext* __gsharp_id_0_ctx, GSharpArray<unsigned int> __gsharp_id_1_result, GSharpArray<unsigned int> __gsharp_id_2_left, GSharpArray<unsigned int> __gsharp_id_3_right){
 }
 
 inline void __gsharp_fn_TestNamespace__DummyKernels__DummyUnaryOp(GSharpArray<unsigned int> __gsharp_id_0_result, GSharpArray<unsigned int> __gsharp_id_1_operand){

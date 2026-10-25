@@ -37,9 +37,13 @@ public sealed class LocalDeclarationStatementTranspilerRule : SyntaxNodeTranspil
 
         DeclarationHoistingHelper.HoistDeclarationExpressions(node, ref context);
 
+        var lengthBefore = context.Emitter.Writer.Length;
         // Dispatch inner variable declaration transpilation to the visitor (which will use VariableDeclarationTranspilerRule)
         context.Visitor.Visit(node.Declaration);
-        context.Emitter.Writer.Append(';');
+        if (context.Emitter.Writer.Length > lengthBefore)
+        {
+            context.Emitter.Writer.Append(';');
+        }
 
         if (node.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
         {

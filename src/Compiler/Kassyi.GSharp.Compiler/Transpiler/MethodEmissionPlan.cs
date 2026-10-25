@@ -13,7 +13,14 @@ internal enum MethodEmissionKind
     /// A device function that reaches a barrier and is not recursive. The CPU dialects and the managed output lower it into
     /// a state machine with a frame; the dialects with hardware threads emit it as a plain device function.
     /// </summary>
-    SuspendingDeviceFunction
+    SuspendingDeviceFunction,
+
+    /// <summary>
+    /// A static <c>[GpuDeviceFunction]</c> returning <c>IEnumerable&lt;T&gt;</c> that uses <c>yield</c>. Expanded inline at
+    /// each <c>foreach</c> site in device code; emits no standalone device function. The managed path uses the user's C#
+    /// iterator directly.
+    /// </summary>
+    Iterator
 }
 
 /// <summary>
@@ -57,7 +64,9 @@ internal readonly struct MethodEmissionPlan
 
     public MethodEmissionKind Kind { get; }
 
-    /// <summary>The declared method. Never <see langword="null"/> when <see cref="Lowered"/> is set.</summary>
+    /// <summary>
+    /// The declared method. Never <see langword="null"/> when <see cref="Lowered"/> is set.
+    /// </summary>
     public IMethodSymbol? Symbol { get; }
 
     /// <summary>
@@ -143,6 +152,14 @@ internal readonly struct MethodEmissionPlan
                 : null;
             return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.Kernel, symbol, kernelLowering,
                 isGpuKernelEntry, hasAutoResult);
+        }
+
+        if (symbol != null && declaration.HasBody() &&
+            IteratorTypeResolver.IsDeviceIteratorMethod(symbol) &&
+            !IteratorTypeResolver.IsRecursiveIterator(symbol, semanticModel.Compilation))
+        {
+            return new MethodEmissionPlan(declaration, semanticModel, MethodEmissionKind.Iterator, symbol,
+                lowering: null, isGpuKernelEntry, hasAutoResult);
         }
 
         if (symbol == null || !declaration.HasBody() ||
