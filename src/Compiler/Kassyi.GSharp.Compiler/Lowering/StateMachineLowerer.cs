@@ -5,7 +5,11 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Whether the body belongs to a device function. Its end completes the call (a plain <c>return</c>, which the emitters
 /// turn into "reset the frame and report completion") instead of finishing the thread.
 /// </param>
-public class StateMachineLowerer(bool isDeviceFunction = false)
+/// <param name="semanticModel">
+/// The semantic model of the method's syntax tree, used to key user labels and <c>goto</c> targets by symbol and region
+/// (<see cref="DeclarationKey"/>).
+/// </param>
+public class StateMachineLowerer(bool isDeviceFunction = false, SemanticModel? semanticModel = null)
 {
     private readonly ImmutableArray<InvocationExpressionSyntax>.Builder _callSites =
         ImmutableArray.CreateBuilder<InvocationExpressionSyntax>();
@@ -22,14 +26,14 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
         var state = 0;
 
         // 1. Pass 1: Identify all state boundaries (barriers AND labels) and assign sequential states.
-        var labelStates = new Dictionary<string, int>();
+        var labelStates = new Dictionary<DeclarationKey, int>();
         int simulatedState = 0;
         foreach (var stmt in statements)
         {
             if (stmt is LabeledStatementSyntax labeled)
             {
                 simulatedState++;
-                labelStates[labeled.Identifier.ValueText] = simulatedState;
+                labelStates[LoweringIdentity.ForDeclaration(labeled, semanticModel)] = simulatedState;
             }
 
             if (BarrierHelper.GetPhaseBarrierInvocation(stmt) != null)
@@ -218,10 +222,10 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
             new SyntaxAnnotation(LoweringAnnotations.StateMachineReturnAnnotationKind)
         );
 
-    private static StatementSyntax RewriteGoto(StatementSyntax stmt, Dictionary<string, int> labelStates) =>
-        (StatementSyntax)new GotoRewriter(labelStates).Visit(stmt);
+    private StatementSyntax RewriteGoto(StatementSyntax stmt, Dictionary<DeclarationKey, int> labelStates) =>
+        (StatementSyntax)new GotoRewriter(labelStates, semanticModel).Visit(stmt);
 
-    private class GotoRewriter(Dictionary<string, int> labelStates) : CSharpSyntaxRewriter
+    private class GotoRewriter(Dictionary<DeclarationKey, int> labelStates, SemanticModel? semanticModel) : CSharpSyntaxRewriter
     {
         public override SyntaxNode? VisitGotoStatement(GotoStatementSyntax node)
         {
@@ -230,7 +234,7 @@ public class StateMachineLowerer(bool isDeviceFunction = false)
                 return base.VisitGotoStatement(node);
             }
 
-            if (labelStates.TryGetValue(id.Identifier.ValueText, out var targetState))
+            if (labelStates.TryGetValue(LoweringIdentity.ForReference(id, semanticModel), out var targetState))
             {
                 return SyntaxFactory.ParseStatement($"goto case {targetState};")
                     .WithTriviaFrom(node);
