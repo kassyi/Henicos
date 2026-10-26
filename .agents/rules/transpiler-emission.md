@@ -38,6 +38,11 @@ _writer.AppendLine();
 | `Brackets()` | `[` `]` inline |
 | `ImmediatelyInvokedLambda()` | `([&]() {` ... `})()` |
 
+To keep the C# order of evaluation, an emitted form whose operands interfere is wrapped by `EvaluationOrder`
+(`BeginCall` for calls, `BeginSequence` with `DeclareTemp` for operators and assignments); see
+[generator-invariants.md §9](generator-invariants.md#9-c-order-of-evaluation-in-emitted-c-evaluationorder). Do not
+open a lambda by hand for that purpose.
+
 Fixed text without a separately written closer is a literal: `Append("()")`, `Append(",")`, `Append("if")`,
 `AppendLine(";")`. `SourceWriter` has no per-token methods (`AppendComma`, `AppendKeyword`, ...); they only hid the text.
 Conditional text, generated-file headers and the name helpers are listed in

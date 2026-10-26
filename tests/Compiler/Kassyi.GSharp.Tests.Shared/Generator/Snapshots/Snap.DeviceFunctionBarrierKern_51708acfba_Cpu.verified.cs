@@ -1899,7 +1899,11 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 __gsharp_ctx->__gsharp_id_4_tid=threadIdx.x;
-__gsharp_ctx->__gsharp_arg_temp_0=__gsharp_id_0_input[__gsharp_ctx->__gsharp_id_4_tid]+__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__TakeTicket(__gsharp_id_2_tickets,__gsharp_ctx->__gsharp_id_4_tid);
+__gsharp_ctx->__gsharp_arg_temp_0=([&]() {
+auto __gsharp_seq_0 = __gsharp_id_0_input[__gsharp_ctx->__gsharp_id_4_tid];
+auto __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__DeviceFunctionBarrierKernels__TakeTicket(__gsharp_id_2_tickets,__gsharp_ctx->__gsharp_id_4_tid);
+return __gsharp_seq_0+__gsharp_seq_1;
+}());
 goto __gsharp_switch_1_state_1;
 }
 case 1:

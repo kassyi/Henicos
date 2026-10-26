@@ -55,13 +55,25 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         ref TranspileContext context)
     {
         StructTranspiler.RegisterUsedStructIfApplicable(symbol.ReturnType, ref context);
+        using var sequence = EvaluationOrder.BeginCall(ref context, node.ArgumentList.Arguments, symbol,
+            GetReceiver(node, symbol), spillAll: false);
         context.Visitor.Visit(node.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
-            TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, ref context);
+            TranspileArguments(symbol.Parameters, node.ArgumentList.Arguments, in sequence, ref context);
             DynamicSharedMemoryEmitter.AppendTableArgument(node, symbol, ref context);
         }
     }
+
+    // The receiver of an instance (or reduced extension) call, which C# and C++ evaluate before the arguments.
+    // [WHY] G# emits neither the instance methods of a struct nor reduced extension calls today, so the receiver path
+    // (and its ReducedFrom branch) is not reached by valid output; when the receiver interferes with an argument,
+    // BeginCall leaves the whole call as written, which also leaves the arguments in C++ order (to be fixed with the
+    // instance methods).
+    private static ExpressionSyntax? GetReceiver(InvocationExpressionSyntax node, IMethodSymbol symbol) =>
+        node.Expression is MemberAccessExpressionSyntax access && (!symbol.IsStatic || symbol.ReducedFrom != null)
+            ? access.Expression
+            : null;
 
     // __gsharp_resume(Foo(args), n[, target]) becomes Foo(args, &__gsharp_ctx->__gsharp_call_frame_n, __gsharp_root[, &target]):
     // the callee resumes from its frame and returns whether it completed.
@@ -79,7 +91,8 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         context.Visitor.Visit(call.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
-            TranspileArguments(callee.Parameters, call.ArgumentList.Arguments, ref context);
+            // Lowering has evaluated the arguments into temporaries already (WarpInstructionRewriter.SpillArguments)
+            TranspileArguments(callee.Parameters, call.ArgumentList.Arguments, default, ref context);
             if (callee.Parameters.Length > 0)
             {
                 context.Emitter.Writer.Append(',');
@@ -106,13 +119,15 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
         InvocationExpressionSyntax node,
         ref TranspileContext context)
     {
+        var arguments = node.ArgumentList.Arguments;
+        using var sequence = EvaluationOrder.BeginCall(ref context, arguments, callee: null, node.Expression,
+            spillAll: false);
         context.Visitor.Visit(node.Expression);
         using (context.Emitter.Writer.Parentheses())
         {
-            var arguments = node.ArgumentList.Arguments;
             for (var i = 0; i < arguments.Count; i++)
             {
-                context.Visitor.Visit(arguments[i]);
+                sequence.AppendArgument(arguments[i], parameter: null, ref context);
                 if (i < arguments.Count - 1)
                 {
                     context.Emitter.Writer.Append(',');
@@ -124,6 +139,7 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
     private static void TranspileArguments(
         ImmutableArray<IParameterSymbol> parameters,
         SeparatedSyntaxList<ArgumentSyntax> arguments,
+        in EvaluationOrder.CallSequence sequence,
         ref TranspileContext context)
     {
         var positionalArgIndex = 0;
@@ -140,22 +156,17 @@ public sealed class InvocationExpressionTranspilerRule : SyntaxNodeTranspilerRul
                 positionalArgIndex++;
             }
 
-            if (providedArg != null && parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter)
+            if (providedArg != null)
             {
-                // [WHY] An in or ref readonly parameter is a pointer in C++, as a ref parameter is, and C# accepts its
-                // argument with in, ref or no modifier; the C++ argument is the address whichever was written.
-                RefSyntaxHelper.TranspileAsByRefArgument(ref context, providedArg.Expression);
-            }
-            else if (providedArg != null)
-            {
-                context.Visitor.Visit(providedArg);
+                // The argument itself, or the temporary it was evaluated into (an in or ref readonly parameter by address)
+                sequence.AppendArgument(providedArg, parameter, ref context);
 
                 if (parameter.IsParams && positionalArgIndex < arguments.Count)
                 {
                     while (positionalArgIndex < arguments.Count && arguments[positionalArgIndex].NameColon == null)
                     {
                         context.Emitter.Writer.Append(',');
-                        context.Visitor.Visit(arguments[positionalArgIndex]);
+                        sequence.AppendArgument(arguments[positionalArgIndex], parameter, ref context);
                         positionalArgIndex++;
                     }
                 }

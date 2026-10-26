@@ -19,23 +19,27 @@ internal static class SemanticModelExtensions
         return Array.IndexOf(GetSyntaxTrees(compilation), tree);
     }
 
-    private static SemanticModel GetSemanticModelForTree(SemanticModel defaultModel, SyntaxTree targetTree)
+    private static SemanticModel GetSemanticModelForTree(SemanticModel defaultModel, SyntaxTree targetTree) =>
+        defaultModel.SyntaxTree == targetTree
+            ? defaultModel
+            : defaultModel.Compilation.GetCachedSemanticModel(targetTree);
+
+    /// <summary>
+    /// The semantic model of <paramref name="tree"/>, a tree of <paramref name="compilation"/>, shared by every caller
+    /// for the life of the compilation (a model caches its bindings, so creating one per query binds everything again).
+    /// </summary>
+    public static SemanticModel GetCachedSemanticModel(this Compilation compilation, SyntaxTree tree)
     {
-        if (defaultModel.SyntaxTree == targetTree)
-        {
-            return defaultModel;
-        }
-
         var models = s_semanticModels.GetValue(
-            defaultModel.Compilation,
+            compilation,
             static _ => new ConcurrentDictionary<SyntaxTree, SemanticModel>());
-        if (!models.TryGetValue(targetTree, out var targetModel))
+        if (!models.TryGetValue(tree, out var model))
         {
-            targetModel = defaultModel.Compilation.GetSemanticModel(targetTree);
-            models.TryAdd(targetTree, targetModel);
+            model = compilation.GetSemanticModel(tree);
+            models.TryAdd(tree, model);
         }
 
-        return targetModel;
+        return model;
     }
 
     private static bool IsInSameTree(SemanticModel semanticModel, SyntaxNode node) =>
@@ -225,6 +229,23 @@ internal static class SemanticModelExtensions
 
         return TryFindOriginalNode(semanticModel, node, out var targetModel, out var original)
             ? targetModel.GetConstantValue(original, cancellationToken)
+            : default;
+    }
+
+    /// <summary>
+    /// Gets the conversion that converts <paramref name="expression"/> (a node of the model's tree, or of a lowered tree
+    /// mapped to it), or the identity conversion when unresolvable.
+    /// </summary>
+    public static Conversion GetSafeConversion(this SemanticModel semanticModel, ExpressionSyntax expression,
+        CancellationToken cancellationToken = default)
+    {
+        if (IsInSameTree(semanticModel, expression))
+        {
+            return semanticModel.GetConversion(expression, cancellationToken);
+        }
+
+        return TryFindOriginalNode(semanticModel, expression, out var targetModel, out var original)
+            ? targetModel.GetConversion(original, cancellationToken)
             : default;
     }
 

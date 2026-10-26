@@ -10,10 +10,12 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
             return false;
         }
 
+        var arguments = node.ArgumentList.Arguments;
+        using var sequence = EvaluationOrder.BeginCall(ref context, arguments, symbol, receiver: null, spillAll: false);
         context.Emitter.Writer.Append(mappingInfo.CudaIntrinsicName);
         using (context.Emitter.Writer.Parentheses())
         {
-            for (var i = 0; i < node.ArgumentList.Arguments.Count; i++)
+            for (var i = 0; i < arguments.Count; i++)
             {
                 if (i == 0 && mappingInfo.CastFirstArgumentTo != null)
                 {
@@ -27,10 +29,11 @@ internal sealed class BclIntrinsicTranspilerRule : IInvocationTranspilerRule
                            ? context.Emitter.Writer.Parentheses()
                            : default)
                 {
-                    context.Visitor.Visit(node.ArgumentList.Arguments[i]);
+                    sequence.AppendArgument(arguments[i], symbol.FindParameter(arguments, i),
+                        ref context);
                 }
 
-                if (i < node.ArgumentList.Arguments.Count - 1)
+                if (i < arguments.Count - 1)
                 {
                     context.Emitter.Writer.Append(',');
                 }

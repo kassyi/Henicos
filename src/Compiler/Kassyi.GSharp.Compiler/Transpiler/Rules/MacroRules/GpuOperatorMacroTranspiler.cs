@@ -37,26 +37,93 @@ internal static class GpuOperatorMacroTranspiler
         }
 
         var (leftOp, rightOp, extraArg) = ExtractOperands(macro.OperatorCall);
+        var firstOperandParameter = contextVariable != null ? 1 : 0;
+        ExpressionSyntax?[] operands = [assignment.Left, leftOp, rightOp, extraArg];
+        var temps = PlanOperandTemps(operands, targetMethod, firstOperandParameter, context.Query.SemanticModel);
 
-        // [WHY] The same resolver as the declaration, so the call names the renamed (and overload-numbered) function.
-        CppNameResolver.AppendSymbolName(targetMethod, ref context);
-        using (context.Emitter.Writer.Parentheses())
+        // C# evaluates the target and then the operands from left to right; when they interfere, they are evaluated
+        // into temporaries in that order first (EvaluationOrder)
+        using (var sequence = temps != null ? EvaluationOrder.BeginSequence(context.Emitter.Writer) : default)
         {
-            var parameterIndex = 0;
-            if (contextVariable != null)
+            if (temps != null)
             {
-                AppendContextArgument(contextVariable, targetMethod.Parameters[parameterIndex++], assignment,
-                    ref context);
+                DeclareOperandTemps(operands, temps, targetMethod, firstOperandParameter, ref context);
+                sequence.Return();
             }
 
-            AppendOperand(assignment.Left, targetMethod, ref parameterIndex, ref context);
-            AppendOperand(leftOp, targetMethod, ref parameterIndex, ref context);
-            AppendOperand(rightOp, targetMethod, ref parameterIndex, ref context);
-            AppendOperand(extraArg, targetMethod, ref parameterIndex, ref context);
+            // [WHY] The same resolver as the declaration, so the call names the renamed (and overload-numbered) function.
+            CppNameResolver.AppendSymbolName(targetMethod, ref context);
+            using (context.Emitter.Writer.Parentheses())
+            {
+                var parameterIndex = 0;
+                if (contextVariable != null)
+                {
+                    AppendContextArgument(contextVariable, targetMethod.Parameters[parameterIndex++], assignment,
+                        ref context);
+                }
+
+                for (var i = 0; i < operands.Length; i++)
+                {
+                    AppendOperand(operands[i], temps?[i] ?? -1, targetMethod, ref parameterIndex, ref context);
+                }
+            }
         }
 
         context.Emitter.Writer.AppendLine(";");
         return true;
+    }
+
+    // The temporary of each operand (-1: emitted in place), or null when no two operands interfere
+    private static int[]? PlanOperandTemps(ExpressionSyntax?[] operands, IMethodSymbol targetMethod,
+        int firstOperandParameter, SemanticModel model)
+    {
+        var effects = new ExpressionEffects[operands.Length];
+        var parameterIndex = firstOperandParameter;
+        for (var i = 0; i < operands.Length; i++)
+        {
+            if (operands[i] is not { } operand)
+            {
+                continue;
+            }
+
+            effects[i] = IsPassedByReference(targetMethod.Parameters[parameterIndex++])
+                ? ExpressionEffects.OfLocation(operand, model)
+                : ExpressionEffects.Of(operand, model);
+        }
+
+        var last = EvaluationOrder.LastSpilledOperand(effects);
+        if (last < 0)
+        {
+            return null;
+        }
+
+        var temps = new int[operands.Length];
+        for (var i = 0; i < temps.Length; i++)
+        {
+            temps[i] = i <= last && operands[i] != null && !effects[i].IsEmpty ? 0 : -1;
+        }
+
+        return temps;
+    }
+
+    // auto&& __gsharp_seq_<n> = <operand passed by reference>; | auto __gsharp_seq_<n> = <operand>;
+    private static void DeclareOperandTemps(ExpressionSyntax?[] operands, int[] temps, IMethodSymbol targetMethod,
+        int firstOperandParameter, ref TranspileContext context)
+    {
+        var parameterIndex = firstOperandParameter;
+        for (var i = 0; i < operands.Length; i++)
+        {
+            if (operands[i] is not { } operand)
+            {
+                continue;
+            }
+
+            var byReference = IsPassedByReference(targetMethod.Parameters[parameterIndex++]);
+            if (temps[i] >= 0)
+            {
+                temps[i] = EvaluationOrder.DeclareTemp(ref context, operand, byReference);
+            }
+        }
     }
 
     /// <summary>
@@ -247,9 +314,10 @@ internal static class GpuOperatorMacroTranspiler
         return names.ToString();
     }
 
-    // <operand> or &<operand>, after a comma unless it is the first argument; nothing when the operator has no such operand
-    private static void AppendOperand(ExpressionSyntax? operand, IMethodSymbol targetMethod, ref int parameterIndex,
-        ref TranspileContext context)
+    // <operand> or &<operand> (or its temporary), after a comma unless it is the first argument; nothing when the
+    // operator has no such operand
+    private static void AppendOperand(ExpressionSyntax? operand, int temp, IMethodSymbol targetMethod,
+        ref int parameterIndex, ref TranspileContext context)
     {
         if (operand == null)
         {
@@ -258,6 +326,15 @@ internal static class GpuOperatorMacroTranspiler
 
         AppendSeparator(parameterIndex, ref context);
         var parameter = targetMethod.Parameters[parameterIndex++];
+        if (temp >= 0)
+        {
+            context.Emitter.Writer.AppendIf(
+                IsPassedByReference(parameter) && RefSyntaxHelper.NeedsAddressOf(operand, context.Query.SemanticModel),
+                "&");
+            EvaluationOrder.AppendTempName(context.Emitter.Writer, temp);
+            return;
+        }
+
         if (IsPassedByReference(parameter))
         {
             RefSyntaxHelper.TranspileAsByRefArgument(ref context, operand);

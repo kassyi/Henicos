@@ -503,9 +503,9 @@ __gsharp_switch_1_state_0:
 {
 int __gsharp_id_1_tid = threadIdx.x;
 auto __gsharp_id_2_s = ([&]() {
-int __gsharp_named_arg_0 = 1;
-int __gsharp_named_arg_1 = __gsharp_id_1_tid;
-return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(__gsharp_named_arg_1, __gsharp_named_arg_0);
+int __gsharp_seq_0 = 1;
+int __gsharp_seq_1 = __gsharp_id_1_tid;
+return __gsharp_ctor_Kassyi__GSharp__Tests__Shared__Syntax__CtorScaled_o0(__gsharp_seq_1, __gsharp_seq_0);
 }());
 __gsharp_id_0_output[__gsharp_id_1_tid]=__gsharp_id_2_s.__gsharp_mb_Sum;
 __gsharp_state=-1;

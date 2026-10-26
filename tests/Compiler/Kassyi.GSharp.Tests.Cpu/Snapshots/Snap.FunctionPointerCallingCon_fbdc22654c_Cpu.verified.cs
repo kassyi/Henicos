@@ -1,5 +1,9 @@
 ﻿extern "C" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__MicroModifiersTarget__FunctionPointerCallingConventions(void* __gsharp_id_0_fn, GSharpArray<int> __gsharp_id_1_output){
-__gsharp_id_1_output[0]=__gsharp_id_0_fn(10);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_id_1_output[0];
+int __gsharp_seq_1 = __gsharp_id_0_fn(10);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 }
 extern "C" __declspec(dllexport) void __gsharp_launch_Kassyi__GSharp__Tests__Shared__Syntax__MicroModifiersTarget__FunctionPointerCallingConventions(uint32_t __gsharp_grid_dim_x, uint32_t __gsharp_grid_dim_y, uint32_t __gsharp_grid_dim_z, uint32_t __gsharp_block_dim_x, uint32_t __gsharp_block_dim_y, uint32_t __gsharp_block_dim_z, void* __gsharp_id_0_fn, GSharpArray<int> __gsharp_id_1_output)
 {

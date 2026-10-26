@@ -4,8 +4,13 @@ namespace Kassyi.GSharp.Compiler.Lowering;
 /// Hoists nested warp-level primitives and calls to device functions that may suspend into standalone statements, so that
 /// the state machine can split on them.
 /// </summary>
-public class WarpInstructionRewriter : CSharpSyntaxRewriter
+/// <param name="semanticModel">
+/// A semantic model of the compilation, which tells whether a later argument of a suspending call writes the variable
+/// that an earlier one reads (<see cref="ExpressionEffects"/>). Without it, the arguments are compared by name.
+/// </param>
+public class WarpInstructionRewriter(SemanticModel? semanticModel = null) : CSharpSyntaxRewriter
 {
+    private readonly SemanticModel? _semanticModel = semanticModel;
     private int _tempCounter;
 
     /// <summary>Rewrites expressions containing warp primitives by hoisting them into prior statements.</summary>
@@ -158,9 +163,10 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
             var arguments = call.ArgumentList.Arguments;
             var spilledArguments = ImmutableArray.CreateBuilder<ArgumentSyntax>(arguments.Count);
             var changed = false;
-            foreach (var argument in arguments)
+            for (var i = 0; i < arguments.Count; i++)
             {
-                var spilled = SpillArgument(argument);
+                var argument = arguments[i];
+                var spilled = SpillArgument(argument, IsWrittenByLaterArgument(arguments, i));
                 changed |= spilled != argument;
                 spilledArguments.Add(spilled);
             }
@@ -171,7 +177,60 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
                 : call;
         }
 
-        private ArgumentSyntax SpillArgument(ArgumentSyntax argument)
+        // [WHY] C# reads an argument before it evaluates the next one, but an identifier argument that is not spilled is
+        // read at the call, after the spilled later arguments: one whose variable a later argument writes
+        // ('S(a, Next(ref a))') is spilled as well, so that it keeps the value C# reads (#608).
+        private bool IsWrittenByLaterArgument(SeparatedSyntaxList<ArgumentSyntax> arguments, int index)
+        {
+            var argument = arguments[index];
+            if (argument.Expression is not IdentifierNameSyntax identifier ||
+                !argument.RefKindKeyword.IsKind(SyntaxKind.None))
+            {
+                return false;
+            }
+
+            var model = parent._semanticModel;
+            if (model == null)
+            {
+                return arguments
+                    .AsStackEnumerable()
+                    .Skip(index + 1)
+                    .Any(identifier.Identifier.ValueText, static (later, name) => WritesByName(later, name));
+            }
+
+            var read = ExpressionEffects.Of(identifier, model);
+            return arguments
+                .AsStackEnumerable()
+                .Skip(index + 1)
+                .Any((Read: read, Model: model), static (later, s) => s.Read.InterferesWith(
+                    later.RefKindKeyword.IsKind(SyntaxKind.None)
+                        ? ExpressionEffects.Of(later.Expression, s.Model)
+                        : ExpressionEffects.OfLocation(later.Expression, s.Model)
+                ));
+        }
+
+        // Without a semantic model: whether argument holds a ref / out argument, an assignment or an increment of the
+        // variable named name
+        private static bool WritesByName(ArgumentSyntax argument, string name) =>
+            argument
+                .DescendantNodes()
+                .AsStackEnumerable()
+                .Any(name, static (node, n) => node switch
+                {
+                    ArgumentSyntax { RefKindKeyword.RawKind: not (int)SyntaxKind.None } byRef =>
+                        IsNamed(byRef.Expression, n),
+                    AssignmentExpressionSyntax assignment => IsNamed(assignment.Left, n),
+                    PrefixUnaryExpressionSyntax prefix when prefix.IsKind(SyntaxKind.PreIncrementExpression,
+                        SyntaxKind.PreDecrementExpression) => IsNamed(prefix.Operand, n),
+                    PostfixUnaryExpressionSyntax postfix when postfix.IsKind(SyntaxKind.PostIncrementExpression,
+                        SyntaxKind.PostDecrementExpression) => IsNamed(postfix.Operand, n),
+                    _ => false
+                });
+
+        private static bool IsNamed(ExpressionSyntax expression, string name) =>
+            expression is IdentifierNameSyntax identifier && identifier.Identifier.ValueText == name;
+
+        private ArgumentSyntax SpillArgument(ArgumentSyntax argument, bool isWrittenLater)
         {
             if (argument.Expression is DeclarationExpressionSyntax
                 {
@@ -208,7 +267,8 @@ public class WarpInstructionRewriter : CSharpSyntaxRewriter
                     : argument;
             }
 
-            return argument.Expression is IdentifierNameSyntax or LiteralExpressionSyntax
+            return argument.Expression is LiteralExpressionSyntax ||
+                   (argument.Expression is IdentifierNameSyntax && !isWrittenLater)
                 ? argument
                 : argument.WithExpression(Spill(argument.Expression));
         }

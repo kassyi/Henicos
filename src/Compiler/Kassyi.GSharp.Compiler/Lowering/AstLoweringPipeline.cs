@@ -47,7 +47,7 @@ public static class AstLoweringPipeline
         // once LoopRewriter has turned them into statements of the flat list, the second round lowers them there. Each
         // pass keeps one instance across both rounds so that temporaries and labels stay unique.
         var conditionalRewriter = new ConditionalEvaluationRewriter();
-        var warpRewriter = new WarpInstructionRewriter();
+        var warpRewriter = new WarpInstructionRewriter(bodyModel);
         var branchRewriter = new BranchRewriter();
         var hoistedBody = conditionalRewriter.Rewrite(annotatedBody);
         hoistedBody = warpRewriter.Rewrite(hoistedBody);

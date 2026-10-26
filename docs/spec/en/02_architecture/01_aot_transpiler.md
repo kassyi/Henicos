@@ -85,6 +85,7 @@ In C++, function call syntax strictly requires arguments to match the declaratio
 2. **Positional and Named Binding**: Each parameter declared in the method signature is sequentially bound. Named arguments (`NameColonSyntax`) are mapped by parameter name and normalized into their declaration sequence, regardless of caller order (e.g., `Method(b: 2, a: 1)` emits `Method(1, 2)`).
 3. **Default Constant Synthesis**: If an optional parameter is omitted by the caller (`IParameterSymbol.HasExplicitDefaultValue`), the transpiler synthesizes the compile-time default constant literal directly into the argument list (e.g., `Method(10)` emits `Method(10, 0)`). Default expressions are extracted from the declaring syntax (`ParameterSyntax.Default`) or formatted deterministically from `ExplicitDefaultValue` into C++ literal syntax (with appropriate type suffixes and `nullptr` mapping).
 4. **Variadic `params` Support**: For methods with `params` array arguments, trailing positional arguments are emitted sequentially without loss of caller ordering.
+5. **Evaluation Order**: C# evaluates the arguments in the written order; C++ evaluates them in an unspecified order. When an argument changes what another reads (a `ref` argument, an increment, a call that writes memory), or a constructor's arguments are written in another order than its parameters, the call is emitted as an immediately invoked lambda that stores the arguments in `__gsharp_seq_<n>` temporaries in the written order and then calls the function (§1.6).
 
 ### 1.2.6 Identifier Naming (`CppNameResolver`)
 
@@ -259,6 +260,23 @@ output = [&]() {
         default: return -1.0f;
     }
 }();
+```
+
+### 1.6.1 Evaluation Order Sequences
+
+The same lambda keeps the C# order of evaluation where C++ does not (call arguments, binary operands, the target and
+the value of an assignment). `EvaluationOrder` decides from what each operand reads and writes (`ExpressionEffects`; a
+call by what its callee writes, `DeviceFunctionEffects`) whether two operands interfere, and only then stores them in
+temporaries, up to the last one that interferes:
+
+```cpp
+// Execution Context: Generated C++ (GPU)
+// C#: a[i] = Next(ref i);   C++17 would evaluate Next(&i) before a[i]
+([&]() {
+auto&& __gsharp_seq_0 = a[i];
+int __gsharp_seq_1 = Next(&i);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 ```
 
 ## 1.4 Host Launcher Stub & `AotContexts` Architecture
