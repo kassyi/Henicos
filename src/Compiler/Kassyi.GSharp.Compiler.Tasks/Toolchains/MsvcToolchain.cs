@@ -216,6 +216,7 @@ public sealed class MsvcToolchain : INativeToolchain
         string vcvarsArch,
         CancellationToken cancellationToken)
     {
+        // The vswhere query below is repeated by tools/collect-env/collect-env.cs (Msvc); keep both in sync.
         string vswhere;
         if (!string.IsNullOrEmpty(_vswherePathOverride))
         {

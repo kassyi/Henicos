@@ -1,0 +1,3 @@
+<Project>
+  <!-- Stops the repository-root props: collect-env must build with only the .NET SDK, without restoring analyzer packages. -->
+</Project>
