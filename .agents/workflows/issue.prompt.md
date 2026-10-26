@@ -74,7 +74,7 @@ If ambiguous, briefly ask the user to clarify the issue type.
 
 Collect technical details from the repository or system:
 
-- For bugs: Search for relevant source files, minimal reproduction code in C#, expected vs actual behavior, stack traces or diagnostics.
+- For bugs: Search for relevant source files, minimal reproduction code in C#, expected vs actual behavior, stack traces or diagnostics. Run `just env-info` (`dotnet run tools/collect-env/collect-env.cs`) and use its output for the Environment Info field.
 - For features: Check relevant AST nodes, transpiler visitors (`Kassyi.GSharp.Compiler`), or runtime classes. Verify conformity with **Zero-Allocation** and **Static Determinism**.
 - For performance: Check benchmark commands (`just bench-pi`, `just test`), profiling numbers, or kernel bottlenecks.
 

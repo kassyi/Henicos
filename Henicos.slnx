@@ -41,6 +41,9 @@
   <Folder Name="/tests/Stdlib/">
     <Project Path="tests/Stdlib/Kassyi.GSharp.Stdlib.GpuMath.Tests/Kassyi.GSharp.Stdlib.GpuMath.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/Tools/">
+    <Project Path="tests/Tools/Kassyi.GSharp.Tools.CollectEnv.Tests/Kassyi.GSharp.Tools.CollectEnv.Tests.csproj" />
+  </Folder>
   <Folder Name="/tests/ZeroAlloc/">
     <Project Path="tests/ZeroAlloc/Kassyi.ZeroAlloc.Linq.Tests/Kassyi.ZeroAlloc.Linq.Tests.csproj" />
   </Folder>

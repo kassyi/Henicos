@@ -207,6 +207,12 @@ Specs, guides, and API references are available in [`docs/spec/en/`](docs/spec/e
 
 ---
 
+## Reporting a Bug
+
+Run the environment report and paste its output into the bug report. From a clone with the .NET 10 SDK: `just env-info` (or `dotnet run tools/collect-env/collect-env.cs`). Without a clone: download `collect-env-win-x64.exe` or `collect-env-linux-x64` from the latest release. The report leaves out your user name, host name, serial numbers and profile paths.
+
+---
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.

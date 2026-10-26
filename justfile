@@ -380,6 +380,10 @@ rebuild-and-test:
 gsharp-demangle log_path="-" symbols_path="":
     dotnet run --project src/Compiler/Kassyi.GSharp.Compiler.Generators -- demangle "{{log_path}}" "{{symbols_path}}"
 
+# Print the environment of a bug report (OS, GPU, CUDA, host C++, .NET) as Markdown; e.g. `just env-info --json`. Same source on Windows and Unix
+env-info *args="":
+    dotnet run tools/collect-env/collect-env.cs -- {{args}}
+
 # Print a trusted_keys.txt line (`<key>,fnv1a64:<fingerprint>`) for a 64-char hex or 44-char Base64 Ed25519 public key
 [windows]
 trusted-key-line key:
