@@ -205,9 +205,9 @@ switch (__gsharp_ctx.__gsharp_state)
 {
 case 0:
 {
-for (int tid = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; tid < (numMessages); tid += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
+for (int __gsharp_unroll_0 = global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.BlockIdxX + global::Kassyi.GSharp.Core.ManagedGpuContext.ThreadIdxX; __gsharp_unroll_0 < (numMessages); __gsharp_unroll_0 += global::Kassyi.GSharp.Core.ManagedGpuContext.BlockDimX * global::Kassyi.GSharp.Core.ManagedGpuContext.GridDimX)
 {
-ComputeBlock(tid, input, output);
+ComputeBlock(__gsharp_unroll_0, input, output);
 }
 
 __gsharp_ctx.__gsharp_state = -1;

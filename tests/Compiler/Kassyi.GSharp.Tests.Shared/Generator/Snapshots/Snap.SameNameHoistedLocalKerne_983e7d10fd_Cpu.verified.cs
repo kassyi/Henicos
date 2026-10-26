@@ -19,7 +19,6 @@ int __gsharp_warp_temp_0;
 int __gsharp_id_4_neighbor;
 int __gsharp_id_5_total;
 unsigned int __gsharp_id_6_d;
-int __gsharp_id_7_neighbor;
 };
 template <typename TRoot> inline bool __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__SameNameHoistedLocalKernels__WarpPrefixAndTotal(int __gsharp_in___gsharp_id_0_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SameNameHoistedLocalKernels__WarpPrefixAndTotal* __gsharp_ctx, TRoot* __gsharp_root, int* __gsharp_result){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -88,8 +87,8 @@ case 6:
 __gsharp_switch_1_state_6:
 {
 auto __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_root,4294967295U,__gsharp_ctx->__gsharp_id_5_total,(int)__gsharp_ctx->__gsharp_id_6_d);
-__gsharp_ctx->__gsharp_id_7_neighbor=__gsharp_warp_temp_1;
-__gsharp_ctx->__gsharp_id_5_total+=__gsharp_ctx->__gsharp_id_7_neighbor;
+int __gsharp_id_7_neighbor = __gsharp_warp_temp_1;
+__gsharp_ctx->__gsharp_id_5_total+=__gsharp_id_7_neighbor;
 goto __gsharp_switch_1_state_7;
 }
 case 7:
@@ -137,10 +136,9 @@ public int lane;
 public int original;
 public int __gsharp_id_3_d;
 public int __gsharp_warp_temp_0;
-public int __gsharp_id_4_neighbor;
+public int neighbor;
 public int total;
 public uint __gsharp_id_6_d;
-public int __gsharp_id_7_neighbor;
 }
 public static unsafe bool __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SameNameHoistedLocalKernels__WarpPrefixAndTotal(int __gsharp_in_value, __gsharp_frame_Kassyi__GSharp__Tests__Shared__Syntax__SameNameHoistedLocalKernels__WarpPrefixAndTotal __gsharp_ctx, ref int __gsharp_result) {
 if (__gsharp_ctx.__gsharp_state == 0) {
@@ -169,10 +167,10 @@ return false;
 case 2:
 {
 __gsharp_ctx.__gsharp_warp_temp_0 = __gsharp_warp_shuffle_read_up_sync(__gsharp_ctx, FullMask, __gsharp_ctx.value, (uint)__gsharp_ctx.__gsharp_id_3_d);
-__gsharp_ctx.__gsharp_id_4_neighbor = __gsharp_ctx.__gsharp_warp_temp_0;
+__gsharp_ctx.neighbor = __gsharp_ctx.__gsharp_warp_temp_0;
 if (__gsharp_ctx.lane >= __gsharp_ctx.__gsharp_id_3_d)
 {
-__gsharp_ctx.value += __gsharp_ctx.__gsharp_id_4_neighbor;
+__gsharp_ctx.value += __gsharp_ctx.neighbor;
 }
 
 goto case 3;
@@ -204,8 +202,8 @@ return false;
 case 6:
 {
 var __gsharp_warp_temp_1 = __gsharp_warp_shuffle_read_xor_sync(__gsharp_ctx, FullMask, __gsharp_ctx.total, (int)__gsharp_ctx.__gsharp_id_6_d);
-__gsharp_ctx.__gsharp_id_7_neighbor = __gsharp_warp_temp_1;
-__gsharp_ctx.total += __gsharp_ctx.__gsharp_id_7_neighbor;
+int neighbor = __gsharp_warp_temp_1;
+__gsharp_ctx.total += neighbor;
 goto case 7;
 }
 
@@ -587,7 +585,6 @@ uint32_t __gsharp_warp_shuffle_count = 0;
 bool __gsharp_yielded_for_grid_sync = false;
 int __gsharp_id_2_tid;
 int __gsharp_id_3_value;
-unsigned int __gsharp_id_4_value;
 };
 extern ""C"" __declspec(dllexport) void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__SameNameHoistedLocalKernels__PartlyHoistedNameKernel(GSharpArray<int> __gsharp_id_0_data, GSharpArray<unsigned int> __gsharp_id_1_unsignedData, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SameNameHoistedLocalKernels__PartlyHoistedNameKernel* __gsharp_ctx){
 #define __gsharp_state __gsharp_ctx->__gsharp_state
@@ -607,8 +604,8 @@ case 1:
 __gsharp_switch_1_state_1:
 {
 __gsharp_id_0_data[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_3_value;
-__gsharp_ctx->__gsharp_id_4_value=__gsharp_id_1_unsignedData[__gsharp_ctx->__gsharp_id_2_tid]+5u;
-__gsharp_id_1_unsignedData[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_ctx->__gsharp_id_4_value;
+unsigned int __gsharp_id_4_value = __gsharp_id_1_unsignedData[__gsharp_ctx->__gsharp_id_2_tid]+5u;
+__gsharp_id_1_unsignedData[__gsharp_ctx->__gsharp_id_2_tid]=__gsharp_id_4_value;
 __gsharp_state=-1;
 return;
 }
@@ -668,8 +665,7 @@ public int __gsharp_state;
 public uint __gsharp_warp_exchange;
 public bool __gsharp_yielded_for_grid_sync;
 public int tid;
-public int __gsharp_id_3_value;
-public uint __gsharp_id_4_value;
+public int value;
 }
 public static unsafe void __gsharp_statemachine_Kassyi__GSharp__Tests__Shared__Syntax__SameNameHoistedLocalKernels__PartlyHoistedNameKernel(int[] data, uint[] unsignedData, __gsharp_context_Kassyi__GSharp__Tests__Shared__Syntax__SameNameHoistedLocalKernels__PartlyHoistedNameKernel __gsharp_ctx) {
 {
@@ -678,17 +674,17 @@ switch (__gsharp_ctx.__gsharp_state)
 case 0:
 {
 __gsharp_ctx.tid = ThreadIndex.X;
-__gsharp_ctx.__gsharp_id_3_value = data[__gsharp_ctx.tid] * 3;
+__gsharp_ctx.value = data[__gsharp_ctx.tid] * 3;
 __gsharp_ctx.__gsharp_state = 1;
 return;
 }
 
 case 1:
 {
-data[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_id_3_value;
+data[__gsharp_ctx.tid] = __gsharp_ctx.value;
 {
-__gsharp_ctx.__gsharp_id_4_value = unsignedData[__gsharp_ctx.tid] + 5u;
-unsignedData[__gsharp_ctx.tid] = __gsharp_ctx.__gsharp_id_4_value;
+uint value = unsignedData[__gsharp_ctx.tid] + 5u;
+unsignedData[__gsharp_ctx.tid] = value;
 }
 
 __gsharp_ctx.__gsharp_state = -1;

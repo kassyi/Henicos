@@ -96,6 +96,23 @@
 
 ## Diagnostics/MacroLambdaWithoutParameter.cu.cs
 
+## Diagnostics/MacroLoopBodyRestrictions.cu.cs
+(32,25)-(32,32) GSH0003 analyzer: The syntax 'return in a Gpu.ForUnroll body' is not supported in GSharp GPU kernels
+(43,25)-(43,32) GSH0003 analyzer: The syntax 'return in a Gpu.GridStrideLoop body' is not supported in GSharp GPU kernels
+(55,25)-(55,32) GSH0003 analyzer: The syntax 'return in a Gpu.ForUnroll body' is not supported in GSharp GPU kernels
+(68,25)-(68,32) GSH0003 analyzer: The syntax 'return in a Gpu.GridStrideLoop body' is not supported in GSharp GPU kernels
+(80,13)-(80,18) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(81,13)-(81,19) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(82,13)-(82,16) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(83,13)-(83,16) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(84,18)-(84,23) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(85,19)-(85,24) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(86,13)-(86,34) GSH0003 analyzer: The syntax 'assignment to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(97,13)-(97,19) GSH0003 analyzer: The syntax 'assignment to the Gpu.GridStrideLoop loop variable 'i'' is not supported in GSharp GPU kernels
+(108,31)-(108,35) GSH0003 analyzer: The syntax 'reference to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(109,28)-(109,30) GSH0003 analyzer: The syntax 'reference to the Gpu.ForUnroll loop variable 'i'' is not supported in GSharp GPU kernels
+(119,31)-(119,35) GSH0003 analyzer: The syntax 'reference to the Gpu.GridStrideLoop loop variable 'i'' is not supported in GSharp GPU kernels
+
 ## Analyzers/UnrollHintSadPath.cs
 (5,14)-(5,31) GSH0036 analyzer: The class 'UnrollHintSadPath' containing [GpuKernel] methods must be declared as partial to support source generation of contexts and launch methods.
 (11,9)-(11,26) GSH0017 analyzer: Gpu.Hint.Unroll must immediately precede a for, while, or do-while loop

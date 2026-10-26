@@ -99,6 +99,7 @@ public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;
 }
 public static unsafe void Marshal_LayoutReproBag(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproBag host, ref AotContexts.LayoutReproBag native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 native.N = host.N;
 if (host.Data != null)
 {
@@ -168,25 +169,23 @@ public static unsafe void Unmarshal_LayoutReproTwoBools(ref global::Kassyi.GShar
 {
 host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproTwoBools, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproTwoBools>(ref native);
 }
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 8)]
+[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 4)]
 public unsafe partial struct LayoutReproIntFloatUnion
 {
 public const string DebugName_I = "global::System.Int32";
 [System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Int32 I;
 public const string DebugName_F = "global::System.Single";
-[System.Runtime.InteropServices.FieldOffset(4)]
+[System.Runtime.InteropServices.FieldOffset(0)]
 public global::System.Single F;
 }
 public static unsafe void Marshal_LayoutReproIntFloatUnion(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion host, ref AotContexts.LayoutReproIntFloatUnion native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
-native.I = host.I;
-native.F = host.F;
+native = System.Runtime.CompilerServices.Unsafe.As<global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion, AotContexts.LayoutReproIntFloatUnion>(ref host);
 }
 public static unsafe void Unmarshal_LayoutReproIntFloatUnion(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion host, ref AotContexts.LayoutReproIntFloatUnion native, bool isDevicePtr, IntPtr hStream = default)
 {
-host.I = native.I;
-host.F = native.F;
+host = System.Runtime.CompilerServices.Unsafe.As<AotContexts.LayoutReproIntFloatUnion, global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion>(ref native);
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 32)]
 public unsafe partial struct LayoutReproArrOuter
@@ -197,6 +196,7 @@ public AotContexts.LayoutReproArrPair P;
 }
 public static unsafe void Marshal_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, ref AotContexts.LayoutReproArrOuter native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 Marshal_LayoutReproArrPair(ref host.P, ref native.P, isDevicePtr, allocatedPtrs, hStream);
 }
 public static unsafe void Unmarshal_LayoutReproArrOuter(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrOuter host, ref AotContexts.LayoutReproArrOuter native, bool isDevicePtr, IntPtr hStream = default)
@@ -212,16 +212,23 @@ public fixed byte _element0[32];
 }
 public static unsafe void Marshal_LayoutReproArrPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, ref AotContexts.LayoutReproArrPair native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 fixed (byte* pField = native._element0)
 {
-System.Runtime.CompilerServices.Unsafe.Copy(pField, ref host);
+for (int k = 0; k < 2; k++)
+{
+Marshal_LayoutReproWithArr(ref host[k], ref ((AotContexts.LayoutReproWithArr*)pField)[k], isDevicePtr, allocatedPtrs, hStream);
+}
 }
 }
 public static unsafe void Unmarshal_LayoutReproArrPair(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproArrPair host, ref AotContexts.LayoutReproArrPair native, bool isDevicePtr, IntPtr hStream = default)
 {
 fixed (byte* pField = native._element0)
 {
-System.Runtime.CompilerServices.Unsafe.Copy(ref host, pField);
+for (int k = 0; k < 2; k++)
+{
+Unmarshal_LayoutReproWithArr(ref host[k], ref ((AotContexts.LayoutReproWithArr*)pField)[k], isDevicePtr, hStream);
+}
 }
 }
 [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Explicit, Size = 16)]
@@ -233,6 +240,7 @@ public global::Kassyi.GSharp.Runtime.Interop.GSharpArrayProxy Data;
 }
 public static unsafe void Marshal_LayoutReproWithArr(ref global::Kassyi.GSharp.Tests.Shared.Core.LayoutReproWithArr host, ref AotContexts.LayoutReproWithArr native, bool isDevicePtr, System.Collections.Generic.List<IntPtr>? allocatedPtrs, IntPtr hStream = default)
 {
+native = default;
 if (host.Data != null)
 {
 if (isDevicePtr)
@@ -1869,14 +1877,17 @@ public const string UnionKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp_ty_K
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion
 {
+union{
 int __gsharp_mb_I;
 float __gsharp_mb_F;
 }
 ;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion)==8,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion: size"");
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion)==4,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion)==4,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion,__gsharp_mb_I)==0,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion.I: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion,__gsharp_mb_F)==4,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion.F: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion,__gsharp_mb_F)==0,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion.F: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__UnionKernel {
 int __gsharp_state = 0;
@@ -2080,14 +2091,17 @@ public const string UnionArrayKernel_Source = @"#ifndef __GSHARP_STRUCT___gsharp
 #define __GSHARP_STRUCT___gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion__
 struct __gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion
 {
+union{
 int __gsharp_mb_I;
 float __gsharp_mb_F;
 }
 ;
-static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion)==8,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion: size"");
+}
+;
+static_assert(sizeof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion)==4,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion: size"");
 static_assert(alignof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion)==4,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion: alignment"");
 static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion,__gsharp_mb_I)==0,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion.I: offset"");
-static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion,__gsharp_mb_F)==4,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion.F: offset"");
+static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Core__LayoutReproIntFloatUnion,__gsharp_mb_F)==0,""Kassyi.GSharp.Tests.Shared.Core.LayoutReproIntFloatUnion.F: offset"");
 #endif
 struct __gsharp_context_Kassyi__GSharp__Tests__Shared__Core__StructLayoutRegressionKernels__UnionArrayKernel {
 int __gsharp_state = 0;

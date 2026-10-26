@@ -6,7 +6,7 @@ namespace Kassyi.GSharp.Tests.Shared.Core;
 
 public class StructLayoutRegressionTests
 {
-    [Fact(Skip = "L3")]
+    [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R1_VectorStructArray_PreservesFieldOffsetsAndWritesBack()
@@ -31,7 +31,7 @@ public class StructLayoutRegressionTests
         Assert.Equal(new Vector4(5f, 6f, 7f, 8f), h[0].W);
     }
 
-    [Fact(Skip = "L3")]
+    [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R2_CoreVectorStructArray_PreservesFieldOffsets()
@@ -54,7 +54,7 @@ public class StructLayoutRegressionTests
         Assert.Equal(11f, o[2]);
     }
 
-    [Fact(Skip = "L3")]
+    [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R3_InlineArrayWithDivergentElementLayout_RoundtripsElements()
@@ -87,7 +87,11 @@ public class StructLayoutRegressionTests
         Assert.Equal([3, 3, 20], o);
     }
 
-    [Fact(Skip = "L3")]
+#if GSHARP_CPU
+    [Fact(Skip = "L4")]
+#else
+    [Fact]
+#endif
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R4c_StructWithArrayField_Array_PreservesElements()
@@ -117,7 +121,7 @@ public class StructLayoutRegressionTests
         Assert.Equal([1, 1, 77], o);
     }
 
-    [Fact(Skip = "L3")]
+    [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R6a_ExplicitLayoutUnion_ByValue_HasExpectedBitPatternAndDeviceSize()
@@ -130,7 +134,7 @@ public class StructLayoutRegressionTests
         Assert.Equal([1065353216, 4], o);
     }
 
-    [Fact(Skip = "L3")]
+    [Fact]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R6b_ExplicitLayoutUnion_Array_PreservesElementStride()
@@ -143,7 +147,11 @@ public class StructLayoutRegressionTests
         Assert.Equal(1065353216, o[0]);
     }
 
-    [Fact(Skip = "L3")]
+#if GSHARP_CPU
+    [Fact(Skip = "L4")]
+#else
+    [Fact]
+#endif
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R7_AutoLayoutStruct_Array_PreservesFieldValues()
@@ -164,7 +172,11 @@ public class StructLayoutRegressionTests
 [Collection(TestCollections.GlobalStateSequential)]
 public class StructLayoutRegressionSequentialTests
 {
-    [Fact(Skip = "L3/L4")]
+#if GSHARP_CPU
+    [Fact(Skip = "L4")]
+#else
+    [Fact]
+#endif
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R4b_StructWithArrayField_ByRef_PreservesFieldsAndWritesBackArrayElement()
@@ -178,7 +190,11 @@ public class StructLayoutRegressionSequentialTests
         Assert.Equal(99, b.Data[1]);
     }
 
-    [Fact(Skip = "L3/L4")]
+#if GSHARP_CPU
+    [Fact(Skip = "L4")]
+#else
+    [Fact]
+#endif
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Scenario(TestScenario.HappyPath)]
     public void R9_InlineArrayWithArrayFieldInElement_ByRef_ReadsElementArray()

@@ -41,7 +41,7 @@ public class HoistedNameIdentityManagedTests : IDisposable
     public void Test_Managed_BarrierLocalSameNameMemberAccessKernel_PreservesMemberAndLocal() =>
         HoistedNameIdentityTests.AssertMemberAccessSameName();
 
-    [Fact(Skip = "#489: Gpu.ForUnroll throws GpuOnlyException in managed execution")]
+    [Fact]
     [Scenario(TestScenario.Boundary)]
     public void Test_Managed_BarrierLocalSameNameLambdaParameterKernel_DoesNotCaptureHoistedLocal() =>
         HoistedNameIdentityTests.AssertLambdaParameterSameName();

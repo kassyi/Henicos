@@ -41,8 +41,9 @@ public readonly record struct StructAbiMember(
 /// The set holds instance fields, auto-properties (through the backing field, under the property name), <c>fixed</c>
 /// buffers and the element of an <c>[InlineArray(N)]</c> struct, in declaration order, each with its element count.
 /// The layout, the shadow struct and the marshaling size a member as element layout times
-/// <see cref="StructAbiMember.ElementCount"/> and copy an <c>[InlineArray(N)]</c> struct or a <c>fixed</c> buffer as one
-/// block. A property without a backing field has no storage on either side and is listed only when
+/// <see cref="StructAbiMember.ElementCount"/> and copy a <c>fixed</c> buffer as one block; an <c>[InlineArray(N)]</c>
+/// struct is one block when its element lays out the same on both sides, and is copied element by element otherwise.
+/// A property without a backing field has no storage on either side and is listed only when
 /// <c>includeComputedProperties</c> is set; the device definition emits a <see cref="IsComputedProperty">computed
 /// property</see>'s accessors as member functions instead (pinned by <c>StructAbiTests</c>).
 /// </remarks>
