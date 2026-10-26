@@ -62,20 +62,7 @@ internal static class AotArtifactWriter
     /// <summary>Whether <paramref name="compilation"/> runs in an IDE worker, which must not overwrite the artifacts.</summary>
     public static bool IsDesignTimeCompilation(Compilation compilation)
     {
-        var domainName = AppDomain.CurrentDomain.FriendlyName;
-        if ((domainName.IndexOf("Roslyn.Worker", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("JetBrains", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("ServiceHub", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("LanguageServer", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             domainName.IndexOf("OmniSharp", StringComparison.OrdinalIgnoreCase) >= 0))
-        {
-            return true;
-        }
-
-        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-        if ((baseDir.IndexOf("resharper", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             baseDir.IndexOf("jetbrains", StringComparison.OrdinalIgnoreCase) >= 0 ||
-             baseDir.IndexOf("ServiceHub", StringComparison.OrdinalIgnoreCase) >= 0))
+        if (IsToolHost(AppDomain.CurrentDomain.FriendlyName, AppDomain.CurrentDomain.BaseDirectory))
         {
             return true;
         }
@@ -89,5 +76,23 @@ internal static class AotArtifactWriter
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Whether the host process, named by its app domain and base directory, is an IDE worker or Stryker.NET. Such a host
+    /// must not write the artifacts: Stryker compiles mutated trees in process, and the files it would write replace the real ones.
+    /// </summary>
+    internal static bool IsToolHost(string domainName, string baseDir)
+    {
+        return domainName.IndexOf("Roslyn.Worker", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               domainName.IndexOf("JetBrains", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               domainName.IndexOf("ServiceHub", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               domainName.IndexOf("LanguageServer", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               domainName.IndexOf("OmniSharp", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               domainName.IndexOf("Stryker", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               baseDir.IndexOf("resharper", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               baseDir.IndexOf("jetbrains", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               baseDir.IndexOf("ServiceHub", StringComparison.OrdinalIgnoreCase) >= 0 ||
+               baseDir.IndexOf("stryker", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }

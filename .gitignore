@@ -130,3 +130,6 @@ dist-ssr/
 # DocTest runtime files
 /tests/Compiler/Kassyi.GSharp.DocTest/Program.cs
 /tests/Compiler/Kassyi.GSharp.DocTest/*.csproj.user
+
+# Kassyi.ZeroAlloc.Linq sources copied into the compiler project by IncludeEmbeddedStackLinq
+/src/Compiler/Kassyi.GSharp.Compiler/StackLinqEmbedded/

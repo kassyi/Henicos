@@ -1,0 +1,12 @@
+{
+  "stryker-config": {
+    "project": "Kassyi.GSharp.Compiler.csproj",
+    "test-projects": ["Kassyi.GSharp.Tests.Cuda.csproj"],
+    "mutate": ["!**/*.g.cs"],
+    "coverage-analysis": "perTest",
+    "test-case-filter": "FullyQualifiedName~GeneratorSnapshotTests",
+    "concurrency": 6,
+    "reporters": ["json", "html", "cleartext"],
+    "verbosity": "info"
+  }
+}

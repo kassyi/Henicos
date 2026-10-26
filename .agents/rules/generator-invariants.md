@@ -26,6 +26,7 @@ When transpiling variable references (esp. `ref`/`out` arguments), query the `Se
 When a generator writes AOT artifacts (`.g.cu` / `.g.cpp`, written by `Aot/AotArtifactWriter.Write`) to `$(IntermediateOutputPath)`, skip the physical write when `IsDesignTimeCompilation(compilation)` is true.
 - **Why**: IDE workers (`JetBrains.Roslyn.Worker`, `ServiceHub.RoslynCodeAnalysisService`, `LanguageServer`, `OmniSharp`) read `build_property.IntermediateOutputPath` and run generators on every change. They race with `csc.exe`/`nvcc`/`cl.exe`/`g++` and overwrite valid artifacts using stale in-memory `CompilationReference`s (`CandidateReason.Ambiguous`).
 - **Pitfall**: A worker that loaded an older `Kassyi.GSharp.Compiler.dll` keeps overwriting `obj/` until restarted.
+- **Stryker.NET**: Its process (`Stryker.CLI`, under `dotnet-stryker`) compiles mutated trees in process and runs the generator on them. `AotArtifactWriter.IsToolHost` treats it like an IDE worker, so a mutation run never replaces the real artifacts with mutated ones. `just mutate` also deletes the artifacts under `obj/` before and after the run as insurance.
 
 ## 8. Unconditional Wildcard Exclusion for Pre-Compile Generated Sources
 When an MSBuild target (`GenerateNativeApi`, `GenerateYamlDialects`, `GenerateDiagnostics`) emits multiple `.g.cs` files into `$(IntermediateOutputPath)` and includes a subset, always add:

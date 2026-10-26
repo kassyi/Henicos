@@ -115,9 +115,34 @@
   </Target>
 
   <!-- StackLinq as internal types in Kassyi.ZeroAlloc.Linq.Embedded; the analyzer ships no extra assembly -->
+  <!-- The export directory lies outside this project, where Stryker.NET does not pick sources up for its recompilation,
+       so the sources are copied into StackLinqEmbedded/ (git-ignored) in this project and compiled from there.
+       The SDK default Compile glob picks the copies up at evaluation time, which is the only form Stryker reads (Compile items that a target
+       adds or removes make it lose them). Only when the copies do not exist yet at evaluation (the first build) does the target add them.
+       The copies are not registered in FileWrites on purpose: Clean would delete them before Stryker reads the sources.
+       Files that the export no longer holds are deleted. -->
+  <PropertyGroup>
+    <_StackLinqEmbeddedPresent Condition="Exists('$(MSBuildProjectDirectory)\StackLinqEmbedded\StackEnumerable.cs')">true</_StackLinqEmbeddedPresent>
+  </PropertyGroup>
   <Target Name="IncludeEmbeddedStackLinq" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_StackLinqEmbeddedDir>StackLinqEmbedded\</_StackLinqEmbeddedDir>
+    </PropertyGroup>
     <ItemGroup>
-      <Compile Include="$(MSBuildThisFileDirectory)..\..\ZeroAlloc\Kassyi.ZeroAlloc.Linq\$(BaseOutputPath)$(Configuration)\net10.0\export\netstandard2.0\*.cs" />
+      <_StackLinqExported Include="$(MSBuildThisFileDirectory)..\..\ZeroAlloc\Kassyi.ZeroAlloc.Linq\$(BaseOutputPath)$(Configuration)\net10.0\export\netstandard2.0\*.cs" />
+      <_StackLinqEmbedded Include="@(_StackLinqExported->'$(_StackLinqEmbeddedDir)%(Filename)%(Extension)')" />
+      <_StackLinqStale Include="$(_StackLinqEmbeddedDir)*.cs" Exclude="@(_StackLinqEmbedded)" />
+    </ItemGroup>
+    <Delete Files="@(_StackLinqStale)" Condition="'@(_StackLinqExported)' != ''" />
+    <MakeDir Directories="$(_StackLinqEmbeddedDir)" />
+    <Copy SourceFiles="@(_StackLinqExported)" DestinationFiles="@(_StackLinqEmbedded)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- First build only: the copies did not exist at evaluation, so the default glob missed them -->
+  <Target Name="IncludeEmbeddedStackLinqFirstBuild" AfterTargets="IncludeEmbeddedStackLinq" Condition="'$(_StackLinqEmbeddedPresent)' != 'true'">
+    <ItemGroup>
+      <Compile Remove="@(_StackLinqEmbedded)" />
+      <Compile Include="@(_StackLinqEmbedded)" />
     </ItemGroup>
   </Target>
 
