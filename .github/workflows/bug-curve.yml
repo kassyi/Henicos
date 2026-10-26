@@ -1,0 +1,42 @@
+name: Bug Curve
+
+# Redraws the open-bug curve (milestones M1-M3) and force-pushes it as the only commit of the
+# `metrics` branch, which README.md embeds. main is never written.
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  issues:
+    types: [opened, closed, reopened, deleted, milestoned, demilestoned]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: read
+
+concurrency:
+  group: bug-curve
+  cancel-in-progress: true
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          sparse-checkout: scripts
+
+      - name: Draw the curve
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/bug-curve.js --out "$RUNNER_TEMP/metrics/bug-curve.svg"
+
+      - name: Publish to the metrics branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: ${{ runner.temp }}/metrics
+        run: |
+          git init -q -b metrics
+          git add bug-curve.svg
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "chore: update bug curve"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" metrics

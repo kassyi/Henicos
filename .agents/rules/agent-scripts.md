@@ -33,6 +33,7 @@ cannot run bash or PowerShell. Write them so that any agent can run them.
 | `node scripts/manage-diagnostics.js --next-id` / `--check-gaps` / `--check-docs` | Next free `GSHxxxx` ID, gaps in the IDs, diagnostics without a doc page |
 | `node scripts/test-doc-snippet.js <snippet> [--assemblies A,B]` | Runs a doc snippet as a DocTest with exactly the given project references (`just doctest`) |
 | `node scripts/coverage-diff.js [--run] [--base <ref>] [--coverage <file\|dir>]` | Lists the lines changed since `<ref>` (default `main`) that no test executed, from the merged cobertura reports (`just coverage-diff`) |
+| `node scripts/bug-curve.js --out <file.svg> [--repo <owner/name>]` | Draws the open issues of milestones M1–M3 per day as a stacked area SVG (CI: `bug-curve.yml` publishes it to the `metrics` branch for README.md) |
 | `node scripts/format-markdown-table.js [path]` | Compacts Markdown tables (default `docs/spec`) |
 | `node scripts/sync-comprehensive-spec.js` | Syncs the comprehensive example in the spec with its kernel and snapshot |
 | `node scripts/update_usings.js` | Promotes `using` directives used in 3+ files to `GlobalUsings.cs` |
