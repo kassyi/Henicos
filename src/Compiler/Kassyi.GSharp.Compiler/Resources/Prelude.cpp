@@ -1,5 +1,6 @@
 #include "Prelude/Platform.hpp"
 #include "Prelude/Types.hpp"
+#include "Prelude/VectorConstructors.hpp"
 #include "Prelude/MathAndBitOps.hpp"
 #include "Prelude/ThreadAndMemory.hpp"
 #include "Prelude/Atomics.hpp"

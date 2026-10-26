@@ -396,5 +396,6 @@ __device__ __forceinline__ unsigned char* __gsharp_dsmem_place(TDsmem* s, unsign
     return __gsharp_dynamic_smem + offset;
 }
 
+#include "Prelude/VectorConstructors.hpp"
 // --- ZeroAlloc.Linq (StackLinq) ---
 #include "StackLinq.cuh"

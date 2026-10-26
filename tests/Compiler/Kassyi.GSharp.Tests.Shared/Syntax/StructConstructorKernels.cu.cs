@@ -2,6 +2,7 @@ using Kassyi.GSharp.Core;
 
 namespace Kassyi.GSharp.Tests.Shared.Syntax;
 
+// Sum is not symmetric in a and b, so arguments that land in the wrong parameter show
 public struct CtorScaled
 {
     public int Sum;
@@ -9,7 +10,7 @@ public struct CtorScaled
 
     public CtorScaled(int a, int b = 10)
     {
-        Sum = a + b;
+        Sum = a * 10 + b;
         Scale = 2;
     }
 

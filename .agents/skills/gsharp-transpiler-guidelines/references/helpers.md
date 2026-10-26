@@ -109,7 +109,7 @@ A rule is stateless and gets everything through `ref TranspileContext context`:
 | Handle a new `SyntaxKind` | derive from `SyntaxNodeTranspilerRuleBase` and register it in `TranspilerRuleRegistry` |
 | Handle a call to a specific method | implement `IInvocationTranspilerRule` and add it to `TranspilerRuleRegistry.InvocationRules` (order matters) |
 | Handle a `Gpu.*` statement macro | implement `IMacroTranspilerRule` and add it to `TranspilerRuleRegistry.MacroRules` |
-| Map a BCL method to a CUDA / C++ function | the dialect YAML under `Dialects/`, not a new rule |
+| Map a BCL method or a BCL struct constructor (`System.Numerics.Vector3.Vector3(float)`) to a CUDA / C++ function | the dialect YAML under `Dialects/`, not a new rule |
 | Branch on the target (CUDA or not, threads run as state machines, Thrust algorithms) | `ITranspilerDialect.IsCuda`, `.EmulatesThreadsWithStateMachine`, `.HasThrustAlgorithms` (from the YAML `Backend` and capabilities), not `dialect is ...` or a name comparison |
 | Pass a by-reference (`ref` / `out` / `in` / `ref readonly`) argument, or check whether an expression is a C++ lvalue of the target type | `RefSyntaxHelper.TranspileAsByRefArgument`, `RefSyntaxHelper.IsCppLValue` |
 | Emit or inspect WMMA fragment and marker types (`WmmaMatrixA`, `WmmaMatrixB`, `WmmaAccumulator`, `IWmmaShape`, `IWmmaLayout`) | `WmmaTypeSyntaxHelper.TryAppendType`, `WmmaTypeSyntaxHelper.TryGetShapeDimensions`, `WmmaTypeSyntaxHelper.TryGetLayoutCppName` |
