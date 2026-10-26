@@ -15,72 +15,51 @@ namespace Kassyi.GSharp.Tests.Generators;
 public class TestArchitectureAnalyzer : DiagnosticAnalyzer
 {
 #pragma warning disable RS2008 // Repository-internal analyzer; not shipped, so analyzer release tracking does not apply.
-    // Titles, messages and severities are carried over unchanged from the former diagnostics.json entries (formerly in the GSH range); IDs use the repository-internal HNT prefix.
-    public static readonly DiagnosticDescriptor TestClassMustInheritFromBase = new(
-        id: "HNT0001",
-        title: "Test classes must inherit from required base classes",
-        messageFormat: "Test class '{0}' contains [Fact] or [Theory] methods but does not inherit from TranspilerTestBase or StateMachineTestBase. This is required by the G# test architecture guidelines.",
-        category: "GSharpTestArchitecture",
-        defaultSeverity: DiagnosticSeverity.Error,
-        isEnabledByDefault: true);
-
+    // Title and severity are carried over from the former diagnostics.json entry (formerly in the GSH range); the
+    // message names the attributes that count. IDs use the repository-internal HNT prefix.
     public static readonly DiagnosticDescriptor TestMethodMustHaveCategoryTrait = new(
         id: "HNT0002",
         title: "Test methods must have a Category trait",
-        messageFormat: "Test method '{0}' is missing [Trait(\"Category\", \"...\")]. All tests must be categorized (e.g., Compiler, SadPath, GpuExecution).",
+        messageFormat: "Test method '{0}' has no category. Add [Category(TestCategory.X)], [TestTarget(ExecutionTarget.X)], [Scenario(TestScenario.X)] or [Trait(\"Category\", \"...\")] to the method or its class.",
         category: "GSharpTestArchitecture",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 #pragma warning restore RS2008
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-        ImmutableArray.Create(TestClassMustInheritFromBase, TestMethodMustHaveCategoryTrait);
+        ImmutableArray.Create(TestMethodMustHaveCategoryTrait);
 
     public override void Initialize(AnalysisContext context)
     {
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
+        // tests/** is generated code in .editorconfig, so the analyzer has to opt in to it
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();
 
-        context.RegisterCompilationStartAction(compilationContext =>
+        context.RegisterCompilationStartAction(static compilationContext =>
         {
-            // Only run in test assemblies
-            if (compilationContext.Compilation.AssemblyName?.Contains("Test") != true)
+            var compilation = compilationContext.Compilation;
+            if (!TestSymbols.IsTestAssembly(compilation) ||
+                compilation.GetTypeByMetadataName(TestSymbols.FactAttributeMetadataName) is not { } factAttribute)
             {
                 return;
             }
 
-            compilationContext.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
+            compilationContext.RegisterSyntaxNodeAction(
+                context => AnalyzeMethod(context, factAttribute),
+                SyntaxKind.MethodDeclaration
+            );
         });
     }
 
-    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeMethod(SyntaxNodeAnalysisContext context, INamedTypeSymbol factAttribute)
     {
         var methodDeclaration = (MethodDeclarationSyntax)context.Node;
         var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration, context.CancellationToken);
-        if (methodSymbol == null)
+        if (methodSymbol == null || !TestSymbols.IsTestMethod(methodSymbol, factAttribute))
         {
             return;
         }
 
-        // Check if method is a test method
-        var isTestMethod = false;
-        foreach (var attribute in methodSymbol.GetAttributes())
-        {
-            if (!IsAttribute(attribute, "Fact") && !IsAttribute(attribute, "Theory"))
-            {
-                continue;
-            }
-
-            isTestMethod = true;
-            break;
-        }
-
-        if (!isTestMethod)
-        {
-            return;
-        }
-
-        // Check if class inherits from required base
         if (methodDeclaration.Parent is not ClassDeclarationSyntax classDeclaration)
         {
             return;
@@ -90,27 +69,6 @@ public class TestArchitectureAnalyzer : DiagnosticAnalyzer
         if (classSymbol == null)
         {
             return;
-        }
-
-        var inheritsRequiredBase = false;
-        var currentBase = classSymbol.BaseType;
-        while (currentBase != null)
-        {
-            if (currentBase.Name is "TranspilerTestBase" or "StateMachineTestBase" or "DocTestBase")
-            {
-                inheritsRequiredBase = true;
-                break;
-            }
-
-            currentBase = currentBase.BaseType;
-        }
-
-        if (!inheritsRequiredBase)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(
-                TestClassMustInheritFromBase,
-                classDeclaration.Identifier.GetLocation(),
-                classDeclaration.Identifier.Text));
         }
 
         // Check for Category trait on method or class

@@ -5,6 +5,7 @@ namespace Kassyi.GSharp.Tests.Shared.Helpers;
 public class HashHelperTests
 {
     [Fact]
+    [Category(TestCategory.Unit)]
     public void ComputeFnv1A64ShortHash_GivenNormalString_ReturnsStableKnownHash()
     {
         // Assert a stable known hash for normal input
@@ -18,6 +19,7 @@ public class HashHelperTests
     }
 
     [Fact]
+    [Category(TestCategory.Unit)]
     public void ComputeFnv1A64ShortHash_GivenEmptyString_ReturnsExpectedHash()
     {
         var hash = HashHelper.ComputeFnv1A64ShortHash("");
@@ -29,6 +31,7 @@ public class HashHelperTests
     [Theory]
     [InlineData("a", "af63dc4c86")]
     [InlineData("foobar", "85944171f7")]
+    [Category(TestCategory.Unit)]
     public void ComputeFnv1A64ShortHash_GivenKnownVectors_ReturnsPinnedHash(string text, string expected)
     {
         // Published FNV-1a 64 test vectors (first 10 hex chars); guards against snapshot file name drift.
@@ -36,6 +39,7 @@ public class HashHelperTests
     }
 
     [Fact]
+    [Category(TestCategory.Unit)]
     public void ComputeFnv1A64ShortHash_GivenNullString_ThrowsArgumentNullException()
     {
         // Intentionally passing null to assert ArgumentNullException defensive guard.

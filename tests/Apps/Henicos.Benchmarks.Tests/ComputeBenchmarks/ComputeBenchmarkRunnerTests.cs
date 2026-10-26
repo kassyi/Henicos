@@ -1,6 +1,7 @@
 
 namespace Henicos.Benchmarks.Tests.ComputeBenchmarks;
 
+[Category(TestCategory.Unit)]
 public class ComputeBenchmarkRunnerTests
 {
     [Fact]

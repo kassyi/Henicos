@@ -2,6 +2,7 @@ using Kassyi.GSharp.Stdlib.GpuMath.BigNum.Providers.Handlers;
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.Kernels;
 
+[Category(TestCategory.Stdlib)]
 public class GpuBigIntNttReciprocalTests
 {
     [Fact]

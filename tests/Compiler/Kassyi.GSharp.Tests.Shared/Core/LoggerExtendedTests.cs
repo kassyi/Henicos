@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 namespace Kassyi.GSharp.Tests.Shared.Core;
 
 [Collection(TestCollections.GlobalStateSequential)]
+[Category(TestCategory.Runtime)]
 public class LoggerExtendedTests
 {
     private class TestLogger : Logger

@@ -9,6 +9,7 @@ using Kassyi.GSharp.Tests.Shared.Helpers;
 
 namespace Kassyi.GSharp.Tests.Shared.Diagnostics;
 
+[Category(TestCategory.Compiler)]
 public class ContextInferenceEngineTests
 {
     private (SemanticModel, IMethodSymbol) GetMethodSymbol(string methodName, [System.Runtime.CompilerServices.CallerFilePath] string currentFile = "")

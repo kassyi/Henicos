@@ -12,6 +12,7 @@ namespace Kassyi.GSharp.Tests.Shared.Tasks;
 public class ProcessRunnerTests
 {
     [Fact]
+    [Category(TestCategory.Compiler)]
     public async Task Test_ProcessRunner_Echo_Success()
     {
         var runner = ProcessRunner.Default;

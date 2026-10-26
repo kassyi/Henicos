@@ -45,14 +45,21 @@
     <ProjectReference Include="..\..\..\src\Compiler\Kassyi.GSharp.Compiler\Kassyi.GSharp.Compiler.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
     <ProjectReference Include="..\..\..\src\Stdlib\Kassyi.GSharp.Stdlib.GpuMath\Kassyi.GSharp.Stdlib.GpuMath.csproj" />
     <ProjectReference Include="..\..\..\src\ZeroAlloc\Kassyi.ZeroAlloc.Linq\Kassyi.ZeroAlloc.Linq.csproj" />
-    <ProjectReference Include="..\..\Shared\Kassyi.GSharp.Tests.Generators\Kassyi.GSharp.Tests.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <!-- tests/Directory.Build.props adds the test convention analyzer; the analyzer tests also use its types -->
+    <ProjectReference Update="..\..\Shared\Kassyi.GSharp.Tests.Generators\Kassyi.GSharp.Tests.Generators.csproj" ReferenceOutputAssembly="true" />
     <ProjectReference Include="..\..\..\src\Compiler\Kassyi.GSharp.Compiler.Tasks\Kassyi.GSharp.Compiler.Tasks.csproj" />
     <ProjectReference Include="..\..\..\src\Apps\Henicos.Benchmarks\Henicos.Benchmarks.csproj" />
     <_GSharpCudaSources Include="..\..\..\src\Apps\Henicos.Benchmarks\ComputeBenchmarks\Native\*.cu" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <!-- SnapshotTestCaseGenerator emits SnapshotTestCaseSource for GeneratorSnapshotTests -->
+    <GSharpGenerateSnapshotTestCases>true</GSharpGenerateSnapshotTestCases>
+  </PropertyGroup>
+
   <ItemGroup>
     <CompilerVisibleProperty Include="MSBuildProjectDirectory" />
+    <CompilerVisibleProperty Include="GSharpGenerateSnapshotTestCases" />
   </ItemGroup>
 
 

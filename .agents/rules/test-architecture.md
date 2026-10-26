@@ -181,6 +181,16 @@ public abstract class StateMachineTestBase
     - **No Inline `exec`/`eval` Wrappers**: Do **NOT** use `python3 -c 'exec("...")'` to wrap multi-line scripts in `justfile`. Write clean, native POSIX shell (`sh` / `bash`) for `[unix]` and PowerShell for `[windows]`.
     - **WSL Non-Interactive Login Shell `PATH`**: When invoking WSL from Windows via `wsl -- bash -lc "..."`, note that Ubuntu's default `~/.bashrc` exits early for non-interactive shells (`case $- in *i*) ;; *) return;; esac`). User-scoped tool paths (`~/.dotnet`, `~/.cargo/bin`) must be configured in `~/.profile` or explicitly exported.
 
+### 3.8. Test Convention Analyzers (`HNT*`)
+
+`tests/Directory.Build.props` loads the analyzers of `tests/Shared/Kassyi.GSharp.Tests.Generators` into every test project. `tests/**` is generated code in `.editorconfig`, so each rule has its own severity there; an Error stops the build. A test method is a method with an attribute that derives from `Xunit.FactAttribute` (`[Fact]`, `[Theory]`, `[SkippableFact]`, `[SkippableTheory]`).
+
+| ID | Severity | Reports |
+| ----- | ----- | ----- |
+| HNT0002 | Error | A test method without `[Category]`, `[TestTarget]`, `[Scenario]` or `[Trait("Category", ...)]` on the method or its class |
+
+HNT0001 (a required test base class) was removed (#597). HNT0003 is the compiler-side `TypeNameCheckAnalyzer`. What a strong test needs beyond these checks: [property-test-design](../skills/property-test-design/SKILL.md) §8.
+
 ---
 
 ## 4. DEVELOPMENT METHODOLOGY (Test-Driven AI Vibe Coding)

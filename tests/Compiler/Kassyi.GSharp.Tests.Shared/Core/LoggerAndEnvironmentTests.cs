@@ -276,6 +276,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
+    [Category(TestCategory.Runtime)]
     public void Test_CudaEnvironment_Windows_FallbackPaths()
     {
         var mock = new MockCudaPathResolver { MockIsWindows = true };
@@ -300,6 +301,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
+    [Category(TestCategory.Runtime)]
     public void Test_CudaEnvironment_Linux_FallbackPath()
     {
         var mock = new MockCudaPathResolver { MockIsLinux = true };
@@ -324,6 +326,7 @@ public class LoggerAndEnvironmentTests
     }
 
     [Fact]
+    [Category(TestCategory.Runtime)]
     public void Test_CudaEnvironment_Windows_BinPath()
     {
         var mock = new MockCudaPathResolver { MockIsWindows = true };

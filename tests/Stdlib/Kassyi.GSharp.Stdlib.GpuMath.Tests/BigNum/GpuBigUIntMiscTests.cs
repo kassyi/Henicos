@@ -1,6 +1,7 @@
 
 namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 
+[Category(TestCategory.Stdlib)]
 public class GpuBigUIntMiscTests
 {
     [SkippableFact]

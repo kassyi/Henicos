@@ -1,1 +1,1 @@
-﻿HNT0002 at (5,16)-(5,26): Test method 'TestMethod' is missing [Trait("Category", "...")]. All tests must be categorized (e.g., Compiler, SadPath, GpuExecution).
+﻿HNT0002 at (5,16)-(5,26): Test method 'TestMethod' has no category. Add [Category(TestCategory.X)], [TestTarget(ExecutionTarget.X)], [Scenario(TestScenario.X)] or [Trait("Category", "...")] to the method or its class.

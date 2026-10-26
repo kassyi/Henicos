@@ -62,6 +62,7 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
     }
 
     [SkippableFact]
+    [Category(TestCategory.Stdlib)]
     public void Test_Arithmetic_Reciprocal_Sqrt_Rsqrt()
     {
         var execContext = CreateExecContext();
@@ -90,6 +91,7 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
     }
 
     [SkippableFact]
+    [Category(TestCategory.Stdlib)]
     public void Test_Arithmetic_Exp_Log_Pow()
     {
         var execContext = CreateExecContext();
@@ -120,6 +122,7 @@ public class CSharpCpuBigFloatArithmeticTests : IDisposable
     }
 
     [SkippableFact]
+    [Category(TestCategory.Stdlib)]
     public void Test_Arithmetic_Normalize_DivideByUInt32()
     {
         var execContext = CreateExecContext();
