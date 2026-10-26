@@ -130,4 +130,246 @@ public class GpuBigUIntGenericTests
         int leading = a.CountLeadingZeros();
         Assert.Equal(127, leading); // 4 * 32 - 1
     }
+
+    // ---- BigInteger reference properties (#598 stage 2b) ----
+
+    private static readonly BigInteger s_modulus = BigInteger.One << 128;
+
+    private static readonly int[] s_shiftRightAmounts = [0, 1, 2, 31, 32, 34, 40, 63, 64, 66, 96, 127, 128, 130, 160];
+
+    private static readonly int[] s_shiftLeftAmounts = [0, 1, 31, 32, 33, 40, 64, 100, 127, 128, 200];
+
+    /// <summary>
+    /// 128-bit values (limb 0 first) that reach the limb-boundary and bit-boundary branches of the shifts:
+    /// top bit of a limb, the bit below it, words that are only 1, all four limbs set, and seeded random values.
+    /// </summary>
+    public static TheoryData<uint, uint, uint, uint> ShiftValues()
+    {
+        var data = new TheoryData<uint, uint, uint, uint>
+        {
+            { 0xC000_0001u, 0u, 0u, 0u },
+            { 0x4000_0000u, 0u, 0u, 0u },
+            { 0x8000_0000u, 0u, 0u, 0u },
+            { 1u, 1u, 0u, 0u },
+            { 1u, 1u, 1u, 0u },
+            { 0x1234_5678u, 0x9ABC_DEF0u, 0x0FED_CBA9u, 0x8765_4321u },
+            // Low limb equal to the bits that the 40-bit shift moves out of limb 1 below the round bit: sticky must OR them.
+            { 0x0100_0000u, 1u, 0u, 0u },
+        };
+
+        // Seed 598 (the issue number) keeps the values stable across runs.
+        var random = new Random(598);
+        for (var i = 0; i < 4; i++)
+        {
+            data.Add(NextUInt(random), NextUInt(random), NextUInt(random), NextUInt(random));
+        }
+
+        return data;
+    }
+
+    /// <summary>
+    /// Operands for addition, subtraction and comparison: 0, 1, small values, single-limb and limb-boundary values,
+    /// the maximum 128-bit value and values whose borrow crosses a limb.
+    /// </summary>
+    public static TheoryData<int, int> OperandPairs()
+    {
+        var data = new TheoryData<int, int>();
+        for (var a = 0; a < s_operands.Length; a++)
+        {
+            for (var b = 0; b < s_operands.Length; b++)
+            {
+                data.Add(a, b);
+            }
+        }
+
+        return data;
+    }
+
+    private static readonly uint[][] s_operands =
+    [
+        [0u, 0u, 0u, 0u],
+        [1u, 0u, 0u, 0u],
+        [5u, 0u, 0u, 0u],
+        [uint.MaxValue, 0u, 0u, 0u],
+        [0u, 1u, 0u, 0u],
+        [0u, 0u, 1u, 0u],
+        [uint.MaxValue, uint.MaxValue, uint.MaxValue, uint.MaxValue],
+        [0u, 5u, 0u, 0u],
+        [1u, 1u, 0u, 0u],
+        [0x8000_0000u, 0u, 0u, 0x8000_0000u],
+    ];
+
+    [Theory]
+    [MemberData(nameof(ShiftValues))]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void ShiftRight_MatchesBigIntegerReference(uint l0, uint l1, uint l2, uint l3)
+    {
+        uint[] limbs = [l0, l1, l2, l3];
+        var value = ToBigInteger(limbs);
+        var source = FromLimbs(limbs);
+
+        foreach (var shift in s_shiftRightAmounts)
+        {
+            var result = source.ShiftRight(shift, out var guard, out var round, out var sticky);
+
+            // The quotient is floor(v / 2^s); guard is bit s-1, round is bit s-2 and sticky is any bit below s-2.
+            // Positions below 0 are false. Shifts with s % 32 == 1 and s >= 33 are left out: the round bit there is #639.
+            // mutant: GpuBigUIntGeneric.cs:215 `sticky |=` -> `sticky ^=` (value [1, 1, 0, 0], s = 64)
+            // mutant: GpuBigUIntGeneric.cs:219 `sticky |= src[i]` -> `sticky ^= src[i]` (value [1, 1, 1, 0], s = 96)
+            // mutant: GpuBigUIntGeneric.cs:211 `&&` -> `||` (value [0x8000_0000, 0, 0, 0], s = 64)
+            // mutant: GpuBigUIntGeneric.cs:243 `val << (32 - bitShift)` -> `val >> (32 - bitShift)` (value [0xC000_0001, ...], s = 1)
+            // mutant: GpuBigUIntGeneric.cs:248 `sticky |=` -> `sticky ^=` (value [0x0100_0000, 1, 0, 0], s = 40)
+            var expected = (shift, value >> shift, Bit(value, shift - 1), Bit(value, shift - 2), shift > 2 && !(value % (BigInteger.One << (shift - 2))).IsZero);
+            Assert.Equal(expected, (shift, ToBigInteger(result), guard, round, sticky));
+
+            // The sticky-only overload returns the same quotient (its sticky bit is #639 and not checked here).
+            var quotientOnly = source.ShiftRight(shift, out bool _);
+            Assert.Equal((shift, value >> shift), (shift, ToBigInteger(quotientOnly)));
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(ShiftValues))]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void ShiftLeft_MatchesBigIntegerReference(uint l0, uint l1, uint l2, uint l3)
+    {
+        uint[] limbs = [l0, l1, l2, l3];
+        var value = ToBigInteger(limbs);
+        var source = FromLimbs(limbs);
+
+        foreach (var shift in s_shiftLeftAmounts)
+        {
+            // The result is (v << s) mod 2^128.
+            // mutant: GpuBigUIntGeneric.cs:293 `val >> (32 - bitShift)` -> `val << (32 - bitShift)` (value [0x8000_0000, 0, 0, 0], s = 1)
+            // mutant: GpuBigUIntGeneric.cs:289 `src.Length - limbShift` -> `src.Length + limbShift` (s = 40, index out of range)
+            var expected = (value << shift) % s_modulus;
+            Assert.Equal((shift, expected), (shift, ToBigInteger(source.ShiftLeft(shift))));
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(OperandPairs))]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void AddSubtract_MatchBigIntegerModulo(int leftIndex, int rightIndex)
+    {
+        var left = ToBigInteger(s_operands[leftIndex]);
+        var right = ToBigInteger(s_operands[rightIndex]);
+        var a = FromLimbs(s_operands[leftIndex]);
+        var b = FromLimbs(s_operands[rightIndex]);
+
+        // The sum is (a + b) mod 2^128, and the carry is set exactly when a + b overflows 128 bits.
+        // mutant: GpuBigUIntGeneric.cs:136 `c != 0` -> `c == 0`
+        var sum = a.Add(b, out var carry);
+        Assert.Equal(((left + right) % s_modulus, left + right >= s_modulus), (ToBigInteger(sum), carry));
+        Assert.Equal((left + right) % s_modulus, ToBigInteger(a + b));
+
+        // The difference is (a - b) mod 2^128, and the borrow is set exactly when a < b.
+        // mutant: GpuBigUIntGeneric.cs:157 `diff < 0` -> `diff <= 0` ([0, 1, 0, 0] - [0, 1, 0, 0])
+        // mutant: GpuBigUIntGeneric.cs:163 else block removed ([0, 5, 0, 0] - [1, 1, 0, 0])
+        var difference = a.Subtract(b, out var borrow);
+        var expectedDifference = ((left - right) % s_modulus + s_modulus) % s_modulus;
+        Assert.Equal((expectedDifference, left < right), (ToBigInteger(difference), borrow));
+        Assert.Equal(expectedDifference, ToBigInteger(a - b));
+    }
+
+    [Theory]
+    [MemberData(nameof(OperandPairs))]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void Comparison_MatchesBigInteger(int leftIndex, int rightIndex)
+    {
+        var left = ToBigInteger(s_operands[leftIndex]);
+        var right = ToBigInteger(s_operands[rightIndex]);
+        var a = FromLimbs(s_operands[leftIndex]);
+        var b = FromLimbs(s_operands[rightIndex]);
+
+        // Each operator agrees with BigInteger; the pairs include a == b, where > and < must be false.
+        // mutant: GpuBigUIntGeneric.cs:86 `> 0` -> `>= 0` (a == b)
+        // mutant: GpuBigUIntGeneric.cs:95 `< 0` -> `<= 0` (a == b)
+        Assert.Equal(
+            (left > right, left < right, left >= right, left <= right, left == right, left != right, left.CompareTo(right)),
+            (a > b, a < b, a >= b, a <= b, a == b, a != b, Math.Sign(a.CompareTo(b)))
+        );
+    }
+
+    [Theory]
+    [MemberData(nameof(ShiftValues))]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Scenario(TestScenario.HappyPath)]
+    public void SetMsb_IsIdempotent_AndFlagsAreUnsigned(uint l0, uint l1, uint l2, uint l3)
+    {
+        uint[] limbs = [l0, l1, l2, l3];
+        var value = ToBigInteger(limbs);
+        var source = FromLimbs(limbs);
+
+        // SetMsb ORs bit 127 in and keeps every other bit; applying it twice changes nothing.
+        // mutant: GpuBigUIntGeneric.cs:310 `|=` -> `^=` (values whose bit 127 is already set)
+        var once = source.SetMsb();
+        Assert.Equal(value | (BigInteger.One << 127), ToBigInteger(once));
+        Assert.Equal(ToBigInteger(once), ToBigInteger(once.SetMsb()));
+
+        // An unsigned value is never negative.
+        // mutant: GpuBigUIntGeneric.cs:21 / :24 `false` -> `true`
+        Assert.False(source.IsNegative);
+        Assert.False(source.CanBeNegative);
+    }
+
+    [Fact]
+    [TestTarget(ExecutionTarget.CpuExecution)]
+    [Scenario(TestScenario.Boundary)]
+    public void Builder_FillsUpToCapacity_AndRejectsMore()
+    {
+        // Up to four limbs fit into LimbBuffer4; the missing high limbs are zero.
+        var full = GpuBigUIntBuilder.Create<LimbBuffer4>([1u, 2u, 3u, 4u]);
+        Assert.Equal(ToBigInteger(new uint[] { 1u, 2u, 3u, 4u }), ToBigInteger(full));
+        var partial = GpuBigUIntBuilder.Create<LimbBuffer4>([7u]);
+        Assert.Equal(new BigInteger(7), ToBigInteger(partial));
+
+        // A fifth limb does not fit and is rejected by the builder's own check, which names the capacity.
+        // Without that check Span.CopyTo also throws ArgumentException ("Destination is too short"), so the
+        // message tells the two apart.
+        // mutant: GpuBigUIntBuilder.cs:23 `>` -> `>=` (four limbs) / throw removed (five limbs)
+        var ex = Assert.Throws<ArgumentException>(() => GpuBigUIntBuilder.Create<LimbBuffer4>([1u, 2u, 3u, 4u, 5u]));
+        Assert.Contains("hold 4 elements", ex.Message);
+    }
+
+    private static uint NextUInt(Random random) => (uint)random.NextInt64(0, 1L << 32);
+
+    private static bool Bit(BigInteger value, int position) => position >= 0 && !((value >> position) & BigInteger.One).IsZero;
+
+    private static GpuBigUInt<LimbBuffer4> FromLimbs(uint[] limbs)
+    {
+        var buffer = new LimbBuffer4();
+        for (var i = 0; i < 4; i++)
+        {
+            buffer[i] = limbs[i];
+        }
+
+        return new GpuBigUInt<LimbBuffer4>(buffer);
+    }
+
+    private static BigInteger ToBigInteger(uint[] limbs)
+    {
+        var value = BigInteger.Zero;
+        for (var i = limbs.Length - 1; i >= 0; i--)
+        {
+            value = (value << 32) | limbs[i];
+        }
+
+        return value;
+    }
+
+    private static BigInteger ToBigInteger(GpuBigUInt<LimbBuffer4> value)
+    {
+        var limbs = new uint[4];
+        for (var i = 0; i < 4; i++)
+        {
+            limbs[i] = value.Limbs[i];
+        }
+
+        return ToBigInteger(limbs);
+    }
 }
