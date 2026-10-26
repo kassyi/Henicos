@@ -68,6 +68,26 @@ internal static class EvaluationOrderScenarios
         Assert.Equal(1, result[1]);
     }
 
+    public static void OperatorMacro(Action<Action> run)
+    {
+        var result = new int[1];
+
+        run(() => EvaluationOrderKernels.LaunchOperatorMacroKernel(result, blockDimX: 1));
+
+        // c = Take(ref i) - Take(ref i) calls CombineInto(ref c, 0, 1)
+        Assert.Equal(1, result[0]);
+    }
+
+    public static void NoSpillOperatorMacro(Action<Action> run)
+    {
+        int[] input = [4, 9];
+        var result = new int[1];
+
+        run(() => EvaluationOrderKernels.LaunchNoSpillOperatorMacroKernel(input, result, blockDimX: 1));
+
+        Assert.Equal(49, result[0]);
+    }
+
     public static void Assignment(Action<Action> run)
     {
         var a = new int[4];

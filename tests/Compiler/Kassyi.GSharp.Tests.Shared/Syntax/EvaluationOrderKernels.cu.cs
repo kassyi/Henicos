@@ -6,6 +6,16 @@ namespace Kassyi.GSharp.Tests.Shared.Syntax;
 // A record struct is built by a factory function, whose arguments C++ evaluates in an unspecified order (#608)
 public record struct EoPair(int X, int Y);
 
+// A [GpuOperatorMacro] operator: c = a - b becomes CombineInto(&c, a, b), a call whose arguments C++ evaluates in an
+// unspecified order
+public struct EoScalar
+{
+    public int Value;
+
+    [GpuOperatorMacro(typeof(EvaluationOrderKernels), nameof(EvaluationOrderKernels.CombineInto))]
+    public static EoScalar operator -(EoScalar a, EoScalar b) => throw new GpuOnlyException();
+}
+
 /// <summary>
 /// Expressions whose operands have side effects that another operand observes. C# evaluates the operands from left to
 /// right (C# spec §12.4.1); C++ leaves the order of function arguments and of binary operands unspecified and evaluates
@@ -72,6 +82,16 @@ public static partial class EvaluationOrderKernels
         total += 10;
         return 1;
     }
+
+    // The target of the EoScalar operator macro
+    [GpuDeviceFunction]
+    public static void CombineInto(ref EoScalar result, EoScalar left, EoScalar right)
+    {
+        result.Value = left.Value * 10 + right.Value;
+    }
+
+    [GpuDeviceFunction]
+    public static EoScalar Take(ref int counter) => new EoScalar { Value = counter++ };
 
     // Suspends on the CPU dialects, so the state machine lowering spills its arguments
     [GpuDeviceFunction]
@@ -149,6 +169,30 @@ public static partial class EvaluationOrderKernels
         int a = 0;
         result[0] = CombineAcrossBarrier(a, Next(ref a));
         result[1] = a;
+    }
+
+    // --- Operator macros (the operands of the operator, from left to right) ---
+
+    [GpuKernel]
+    public static void OperatorMacroKernel(int[] result)
+    {
+        int i = 0;
+        EoScalar c = default;
+        c = Take(ref i) - Take(ref i);
+        result[0] = c.Value;
+    }
+
+    // The operands are locals that nothing changes: the call stays as written
+    [GpuKernel]
+    public static void NoSpillOperatorMacroKernel(int[] input, int[] result)
+    {
+        EoScalar a = default;
+        EoScalar b = default;
+        EoScalar c = default;
+        a.Value = input[0];
+        b.Value = input[1];
+        c = a - b;
+        result[0] = c.Value;
     }
 
     // --- Assignment (C# spec §12.21.2: the location of x first, then y) ---

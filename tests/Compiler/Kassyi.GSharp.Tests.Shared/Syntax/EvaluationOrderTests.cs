@@ -36,6 +36,16 @@ public class EvaluationOrderTests : TranspilerTestBase
 
     [SkippableFact]
     [Scenario(TestScenario.HappyPath)]
+    public void Test_OperatorMacroOperands_AreEvaluatedFromLeftToRight() =>
+        EvaluationOrderScenarios.OperatorMacro(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.Boundary)]
+    public void Test_OperatorMacroOperandsWithoutInterference_KeepTheirValues() =>
+        EvaluationOrderScenarios.NoSpillOperatorMacro(s_runNative);
+
+    [SkippableFact]
+    [Scenario(TestScenario.HappyPath)]
     public void Test_Assignment_EvaluatesTheTargetBeforeTheValue() =>
         EvaluationOrderScenarios.Assignment(s_runNative);
 
