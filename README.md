@@ -13,6 +13,10 @@
 - **10.7x Speedup vs CPU:** Outperforms standard `System.Numerics` + PLINQ by over 10.7x in vectorized data processing, achieving 109+ Million elements/sec on a single GPU.
 - **World-Class Compute:** Achieves over 1,000,000 Digits/s (Chudnovsky algorithm) in multi-precision arithmetic.
 
+📉 **Open bugs** (milestones M1–M3, redrawn daily by [bug-curve.yml](.github/workflows/bug-curve.yml)):
+
+![Open bugs by milestone](../../blob/metrics/bug-curve.svg?raw=true)
+
 ---
 
 ## What is G#?
