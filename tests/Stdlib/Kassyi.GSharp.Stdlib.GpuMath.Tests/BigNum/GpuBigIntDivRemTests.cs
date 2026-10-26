@@ -422,7 +422,15 @@ public class GpuBigIntDivRemTests : IDisposable
         "OversizedSingleWordDivisor",
         "OversizedPowerOfTwoDivisor",
         "LeadingZeroDivisorExactQuotient",
-        "SmallDivisorInWideBufferExactQuotient"
+        "SmallDivisorInWideBufferExactQuotient",
+        // Divisor 1 and 2^5 with a quotient buffer longer than the dividend (the divisor-one copy and the
+        // single-word power-of-two shift through a temporary quotient), and 2^5 with a quotient shorter than nA.
+        // mutant: GpuBigIntDivRem.cs:196 `quotientBuffer.Clear()` removed (OversizedDivisorOne)
+        // mutant: GpuBigIntDivRem.cs:205 `quotientBuffer.NumWords == nA` -> `!=` (shift into a buffer of another size throws)
+        // mutant: GpuBigIntDivRem.cs:212-214 `quotientBuffer.Clear()` / CopyFrom removed (OversizedSmallPowerOfTwoDivisor, ShortQuotientSmallPowerOfTwoDivisor)
+        "OversizedDivisorOne",
+        "OversizedSmallPowerOfTwoDivisor",
+        "ShortQuotientSmallPowerOfTwoDivisor"
     ];
 
     // Exact sizes: the quotient words that the bit lengths require and n remainder words, so the quotient buffer is shorter than the
@@ -482,6 +490,7 @@ public class GpuBigIntDivRemTests : IDisposable
         var eightWords = FromWords(RandomWords(seed: 231, 8, topBit: true));
         var twoWords = FromWords(RandomWords(seed: 232, 2, topBit: true));
         var normalizedFourWords = FromWords(RandomWords(seed: 233, 4, topBit: true));
+        var sixWords = FromWords(RandomWords(seed: 234, 6, topBit: true));
         var three = new BigInteger(3);
         var twoToThe47 = BigInteger.One << 47;
         var twoToThe40PlusOne = (BigInteger.One << 40) + 1;
@@ -504,6 +513,10 @@ public class GpuBigIntDivRemTests : IDisposable
             "SmallDivisorInWideBufferQuotientShort" => (eightWords, three, 8, 4, 5, 4, 8),
             "LeadingZeroDivisorExactQuotient" => (eightWords, twoToThe40PlusOne, 8, 4, 7, 4, 7),
             "SmallDivisorInWideBufferExactQuotient" => (eightWords, three, 8, 4, 8, 4, 8),
+            "OversizedDivisorOne" => (eightWords, BigInteger.One, 8, 1, 10, 3, 8),
+            "OversizedSmallPowerOfTwoDivisor" => (eightWords, new BigInteger(32), 8, 1, 10, 3, 8),
+            // A 6-word value in an 8-word buffer: 192 - 6 + 1 = 187 quotient bits need 6 words (< nA = 8).
+            "ShortQuotientSmallPowerOfTwoDivisor" => (sixWords, new BigInteger(32), 8, 1, 6, 1, 6),
             _ => throw new ArgumentOutOfRangeException(nameof(input), input, "Unknown buffer size input.")
         };
     }
@@ -618,6 +631,69 @@ public class GpuBigIntDivRemTests : IDisposable
         Assert.True(quotient == expectedQuotient && remainder == expectedRemainder,
             $"q = {quotient} (expected {expectedQuotient}), r = {remainder} (expected {expectedRemainder})");
         AssertQuotientAndRemainder(reduce.Dividend, reduce.Divisor, quotient, remainder);
+    }
+
+    // A one-word quotient buffer: a has 3 words, b has 2 words with the top bit set and a < 2^32 * b. The estimate is
+    // q - 1, so the remainder before correction is R + b >= 2^63. ReduceZeroSync works in qW + n + 1 = 4 words;
+    // with 2 words (qW + n - 1) the top bit of that remainder would read as a negative sign.
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void ReduceZeroSync_SingleWordQuotientBuffer_IsExact()
+    {
+        const int DividendWords = 3;
+        const int DivisorWords = 2;
+        const int TargetBits = DivisorWords * 32 + DividendWords * 32 + 512;
+        var b = FromWords(RandomWords(seed: 311, DivisorWords, topBit: true));
+        var expectedQuotient = new BigInteger(0xDEAD_BEEFu);
+        var expectedRemainder = FromWords(RandomWords(seed: 312, DivisorWords, topBit: false)) % b;
+        var a = expectedQuotient * b + expectedRemainder;
+        var twoToT = BigInteger.One << TargetBits;
+        var x = ((expectedQuotient - 1) * twoToT + a - 1) / a;
+
+        // Witness: the reciprocal gives the estimate q - 1, and R + b needs the top bit of a 64-bit word.
+        Assert.Equal(expectedQuotient - 1, a * x / twoToT);
+        Assert.True(expectedRemainder + b >= BigInteger.One << 63);
+
+        using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        using var gpuA = new GpuBigUInt(workspace, ToWords(a, DividendWords));
+        using var gpuB = new GpuBigUInt(workspace, ToWords(b, DivisorWords));
+        using var gpuX = new GpuBigUInt(workspace, ToWords(x, TargetBits / 32 + 2));
+        using var gpuQ = new GpuBigUInt(workspace, 1);
+        using var gpuR = new GpuBigUInt(workspace, DivisorWords);
+
+        GpuBigIntDivRem.ReduceZeroSync(gpuA, gpuB, gpuX, TargetBits, DividendWords, gpuQ, gpuR);
+
+        // q * b + r == a and 0 <= r < b.
+        // mutant: GpuBigIntDivRem.cs:415 `quotientBuffer.NumWords + n + 1` -> `quotientBuffer.NumWords + n - 1`
+        // mutant: GpuBigIntDivRem.cs:415 `quotientBuffer.NumWords + n + 1` -> `quotientBuffer.NumWords - n + 1` (evalWords 0 throws)
+        AssertQuotientAndRemainder(a, b, gpuQ.ToBigInteger(), gpuR.ToBigInteger());
+    }
+
+    // A remainder buffer longer than the working width (12 words > qW + n + 1 = 7), filled with 0xFFFFFFFF first: the
+    // words above the remainder must be cleared.
+    [SkippableFact]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    public void ReduceZeroSync_OversizedRemainderBuffer_IsZeroFilled()
+    {
+        const int RemainderWords = 12;
+        var reduce = BuildReduceInput("ExactReciprocal");
+        using var workspace = new GpuWorkspace(reduce.ReciprocalWords * 4, GpuExecutionEngine.GSharpAot);
+
+        using var gpuA = new GpuBigUInt(workspace, ToWords(reduce.Dividend, ReduceDividendWords));
+        using var gpuB = new GpuBigUInt(workspace, ToWords(reduce.Divisor, ReduceDivisorWords));
+        using var gpuX = new GpuBigUInt(workspace, ToWords(reduce.Reciprocal, reduce.ReciprocalWords));
+        using var gpuQ = new GpuBigUInt(workspace, ReduceDividendWords);
+        using var gpuR = new GpuBigUInt(workspace, Enumerable.Repeat(uint.MaxValue, RemainderWords).ToArray());
+
+        GpuBigIntDivRem.ReduceZeroSync(gpuA, gpuB, gpuX, reduce.TargetBits, ReduceDividendWords, gpuQ, gpuR);
+
+        // The whole remainder buffer is read back, so a word left at 0xFFFFFFFF breaks the identity.
+        // mutant: GpuBigIntDivRem.cs:439 `remainderBuffer.Clear()` removed
+        AssertQuotientAndRemainder(reduce.Dividend, reduce.Divisor, gpuQ.ToBigInteger(), gpuR.ToBigInteger());
     }
 
     private const int ReduceDividendWords = 4;
