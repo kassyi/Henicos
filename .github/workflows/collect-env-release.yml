@@ -1,0 +1,65 @@
+name: collect-env release
+
+# Builds tools/collect-env as a NativeAOT executable on each OS (NativeAOT cannot cross-compile) and attaches
+# collect-env-win-x64.exe and collect-env-linux-x64 to the release. The executables are not committed.
+# A manual run (workflow_dispatch) only stores the executables as workflow artifacts.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish (${{ matrix.rid }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, rid: win-x64, asset: collect-env-win-x64.exe, built: collect-env.exe }
+          - { os: ubuntu-latest, rid: linux-x64, asset: collect-env-linux-x64, built: collect-env }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # Cone mode takes the whole directory, including its Directory.Build.props / Directory.Build.targets, which keep
+          # the repository-root props out of the build.
+          sparse-checkout: tools/collect-env
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install NativeAOT prerequisites (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Publish
+        run: dotnet publish tools/collect-env/collect-env.cs -r ${{ matrix.rid }} -o out
+
+      - name: Smoke test
+        shell: bash
+        run: ./out/${{ matrix.built }} --json > /dev/null
+
+      - name: Name the executable
+        shell: bash
+        run: cp out/${{ matrix.built }} ${{ matrix.asset }}
+
+      - name: Store as workflow artifact (manual run)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+          if-no-files-found: error
+
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "${{ matrix.asset }}" --clobber
