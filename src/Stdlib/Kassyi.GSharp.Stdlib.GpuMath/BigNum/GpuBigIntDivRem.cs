@@ -41,6 +41,27 @@ public static partial class GpuBigIntDivRem
         }
     }
 
+    // [WHY] DivRem writes the whole quotient and remainder; a shorter buffer would silently drop their high words.
+    // The quotient of an aBits-bit dividend by a bBits-bit divisor (bBits >= 1) has at most aBits - bBits + 1 bits.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void ThrowIfDivRemBufferTooSmall(GpuBigUInt rightOperand, int aActualBits, int bActualBits,
+        GpuBigUInt quotientBuffer, GpuBigUInt remainderBuffer)
+    {
+        var divisorWords = rightOperand.NumWords;
+        var requiredQuotientWords = Math.Max((aActualBits - bActualBits + 1 + 31) / 32, 1);
+        if (quotientBuffer.NumWords < requiredQuotientWords)
+        {
+            throw new ArgumentException(
+                $"The quotient buffer must hold at least {requiredQuotientWords} words. a: {aActualBits} bits, b: {bActualBits} bits, quotient: {quotientBuffer.NumWords} words.");
+        }
+
+        if (remainderBuffer.NumWords < divisorWords)
+        {
+            throw new ArgumentException(
+                $"The remainder buffer must hold at least {divisorWords} words. b: {divisorWords}, remainder: {remainderBuffer.NumWords} words.");
+        }
+    }
+
     /// <summary>
     /// Computes the reciprocal approximation of the operand using Newton-Raphson iterations on the GPU.
     /// </summary>
@@ -84,8 +105,13 @@ public static partial class GpuBigIntDivRem
     /// </summary>
     /// <param name="leftOperand">The dividend operand ($A$).</param>
     /// <param name="rightOperand">The divisor operand ($B$).</param>
-    /// <param name="quotientBuffer">The destination buffer receiving the quotient ($\lfloor A / B \rfloor$).</param>
-    /// <param name="remainderBuffer">The destination buffer receiving the remainder ($A \bmod B$).</param>
+    /// <param name="quotientBuffer">The destination buffer receiving the quotient ($\lfloor A / B \rfloor$). It must hold
+    /// at least as many words as the quotient of these values may need, <c>max(ceil((aBits - bBits + 1) / 32), 1)</c>
+    /// for the bit lengths <c>aBits</c> and <c>bBits</c> of the values; a buffer as long as
+    /// <paramref name="leftOperand"/> is always enough. Words above the quotient are set to zero.</param>
+    /// <param name="remainderBuffer">The destination buffer receiving the remainder ($A \bmod B$). It must hold at least
+    /// <c>n</c> words; words above the remainder are set to zero.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="quotientBuffer"/> or <paramref name="remainderBuffer"/> is shorter than stated above.</exception>
     /// <exception cref="DivideByZeroException">Thrown when <paramref name="rightOperand"/> is zero.</exception>
     /// <remarks>
     /// <para><b>Algorithm:</b> Evaluates division via normalized reciprocal multiplication on GPU followed by quotient-remainder correction.</para>
@@ -102,9 +128,16 @@ public static partial class GpuBigIntDivRem
         }
 
         var aActualBits = GetActualBits(leftOperand);
+        ThrowIfDivRemBufferTooSmall(rightOperand, aActualBits, bActualBits, quotientBuffer, remainderBuffer);
+
         if (aActualBits < bActualBits)
         {
             quotientBuffer.Clear();
+            if (remainderBuffer.NumWords > nA)
+            {
+                remainderBuffer.Clear();
+            }
+
             remainderBuffer.CopyFrom(leftOperand, numWords: Math.Min(remainderBuffer.NumWords, nA));
             return;
         }
@@ -271,6 +304,12 @@ public static partial class GpuBigIntDivRem
 
         using var productWithReciprocal = new GpuBigUInt(rightOperand.Workspace, nA + targetWords);
         GpuBigIntMath.Mul(leftOperand, reciprocalOfB, productWithReciprocal);
+
+        // The estimate fills at most nA words; the words above it take part in q * b and must be zero.
+        if (quotientBuffer.NumWords > nA)
+        {
+            quotientBuffer.Clear();
+        }
 
         quotientBuffer.CopyFrom(productWithReciprocal, destOffsetWords: 0, srcOffsetWords: targetBits / 32,
             numWords: Math.Min(quotientBuffer.NumWords, nA));

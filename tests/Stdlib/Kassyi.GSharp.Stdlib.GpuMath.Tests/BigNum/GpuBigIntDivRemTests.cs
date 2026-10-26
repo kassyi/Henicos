@@ -6,6 +6,7 @@ namespace Kassyi.GSharp.Stdlib.GpuMath.Tests.BigNum;
 // - DivRem / Div / Mod: q * b + r == a and 0 <= r < b (this pair fixes q and r), and agreement with BigInteger.DivRem.
 // - Reduce / ReduceZeroSync: the same identity, starting from a reciprocal built on the host so that the correction
 //   branches (quotient too small, too large, zero) are reached on purpose.
+// - DivRem buffers: a buffer shorter than the result throws ArgumentException; a longer one is zero-filled.
 // - Sqrt: s * s <= a < (s + 1) * (s + 1).
 // - Reciprocal / InverseSqrt: the Newton result is floor(exact) or one less (bounds derived above each check).
 // - Gcd: the result divides both operands and agrees with BigInteger.GreatestCommonDivisor.
@@ -213,15 +214,15 @@ public class GpuBigIntDivRemTests : IDisposable
 
     // Each named input reaches one branch of GpuBigIntDivRem.DivRem / TryDivRemSmallOrPowerOfTwo (lines of
     // src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs):
-    // - ZeroDividend, DividendShorterThanDivisor: a has fewer bits than b (line 105, q = 0 and r = a).
+    // - ZeroDividend, DividendShorterThanDivisor: a has fewer bits than b (line 133, q = 0 and r = a).
     // - DividendJustBelowDivisor: a = b - 1 has as many bits as b, so it runs the reciprocal path with q = 0.
-    // - DivisorOne (line 148), DivisorPowerOfTwoBelowWord (line 156), DivisorThree / DivisorMaxWord (DivideByUInt32,
-    //   line 181): divisors of 32 bits or less.
+    // - DivisorOne (line 181), DivisorPowerOfTwoBelowWord (line 189), DivisorThree / DivisorMaxWord (DivideByUInt32,
+    //   line 214): divisors of 32 bits or less.
     // - DivisorPowerOfTwoWordAligned (2^64, remBits == 0), DivisorPowerOfTwoUnaligned (2^47, remBits != 0),
-    //   DivisorPowerOfTwoInTopWord (2^229): the multi-word power-of-two path (line 205).
-    // - DivisorTopWordPowerOfTwoWithLowBits (2^64 + 1): passes the top-word check (line 207) and is rejected by the
-    //   mask check (line 216), then runs the reciprocal path.
-    // - NormalizationShiftZero: the divisor fills its buffer with the top bit set, so lz == 0 (line 117).
+    //   DivisorPowerOfTwoInTopWord (2^229): the multi-word power-of-two path (line 238).
+    // - DivisorTopWordPowerOfTwoWithLowBits (2^64 + 1): passes the top-word check (line 240) and is rejected by the
+    //   mask check (line 249), then runs the reciprocal path.
+    // - NormalizationShiftZero: the divisor fills its buffer with the top bit set, so lz == 0 (line 150).
     // - AllOnesDividend, ExactMultiple (r == 0), RemainderIsDivisorMinusOne (r == b - 1): the reciprocal path at the
     //   carries and at both ends of the remainder range.
     [SkippableTheory]
@@ -294,7 +295,7 @@ public class GpuBigIntDivRemTests : IDisposable
         using var gpuR = new GpuBigUInt(workspace, numWords);
 
         // A zero divisor is rejected before any kernel runs.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:101 `throw new DivideByZeroException();` -> `return;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:127 `throw new DivideByZeroException();` -> `return;`
         // input: numWords 1, 33, 1025
         Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR));
     }
@@ -320,7 +321,7 @@ public class GpuBigIntDivRemTests : IDisposable
         using var gpuR = new GpuBigUInt(workspace, NumWords);
 
         // Div returns the quotient and Mod the remainder of the same division.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:476 `DivRem(leftOperand, rightOperand, resultBuffer, tempR)` -> `DivRem(leftOperand, rightOperand, tempR, resultBuffer)`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:515 `DivRem(leftOperand, rightOperand, resultBuffer, tempR)` -> `DivRem(leftOperand, rightOperand, tempR, resultBuffer)`
         GpuBigIntDivRem.Div(gpuA, gpuB, gpuQ);
         GpuBigIntDivRem.Mod(gpuA, gpuB, gpuR);
         AssertQuotientAndRemainder(a, b, gpuQ.ToBigInteger(), gpuR.ToBigInteger());
@@ -339,9 +340,9 @@ public class GpuBigIntDivRemTests : IDisposable
         // A result buffer one word longer than the operands: Div and Mod require equal sizes.
         using var widerResult = new GpuBigUInt(workspace, 5);
 
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:474 `ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);` -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:513 `ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);` -> removed
         Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Div(gpuA, gpuB, widerResult));
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:490 `ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);` -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:529 `ThrowIfSizeMismatch(leftOperand, rightOperand, resultBuffer);` -> removed
         Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.Mod(gpuA, gpuB, widerResult));
     }
 
@@ -358,9 +359,152 @@ public class GpuBigIntDivRemTests : IDisposable
         using var result = new GpuBigUInt(workspace, 4);
 
         // Div and Mod pass the zero divisor on to DivRem, which rejects it.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:101 `throw new DivideByZeroException();` -> `return;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:127 `throw new DivideByZeroException();` -> `return;`
         Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.Div(gpuA, gpuZero, result));
         Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.Mod(gpuA, gpuZero, result));
+    }
+
+    public static TheoryData<string> DivRemShortBufferInputs() =>
+    [
+        "QuotientOneWordShort",
+        "RemainderOneWordShort",
+        "DividendShorterThanDivisorRemainderShort",
+        "SingleWordDivisorQuotientOneWordShort",
+        "LeadingZeroDivisorQuotientShort",
+        "SmallDivisorInWideBufferQuotientShort"
+    ];
+
+    // DivRem needs max(ceil((aBits - bBits + 1) / 32), 1) quotient words (aBits, bBits: bit lengths of the values) and
+    // n remainder words (n: word count of the divisor buffer). The first four inputs are one word short on one side, on
+    // the reciprocal path (normalized 4-word divisor), the a < b path and the single-word divisor path. The last two put
+    // a small divisor in a 4-word buffer (2^40 + 1 on the reciprocal path, 3 on TryDivRemSmallOrPowerOfTwo): a quotient
+    // buffer of nA - n + 1 = 5 words is too short for their 7- and 8-word quotients.
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.SadPath)]
+    [MemberData(nameof(DivRemShortBufferInputs))]
+    public void DivRem_BufferShorterThanResult_ThrowsArgumentException(string input)
+    {
+        var sizes = BuildBufferSizeInput(input);
+        using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        using var gpuA = new GpuBigUInt(workspace, ToWords(sizes.Dividend, sizes.DividendWords));
+        using var gpuB = new GpuBigUInt(workspace, ToWords(sizes.Divisor, sizes.DivisorWords));
+        using var gpuQ = new GpuBigUInt(workspace, sizes.QuotientWords);
+        using var gpuR = new GpuBigUInt(workspace, sizes.RemainderWords);
+
+        // A buffer shorter than the result is rejected instead of truncating the quotient or the remainder, and the
+        // message names the required and the given word counts.
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:52 `if (quotientBuffer.NumWords < requiredQuotientWords)` -> `if (quotientBuffer.NumWords < requiredQuotientWords - 1)`
+        // input: QuotientOneWordShort, SingleWordDivisorQuotientOneWordShort, LeadingZeroDivisorQuotientShort,
+        // SmallDivisorInWideBufferQuotientShort
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:51 `aActualBits - bActualBits + 1` -> `aActualBits - divisorWords * 32 + 1` (the word-count formula)
+        // input: LeadingZeroDivisorQuotientShort, SmallDivisorInWideBufferQuotientShort
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:58 `if (remainderBuffer.NumWords < divisorWords)` -> `if (remainderBuffer.NumWords < divisorWords - 1)`
+        // input: RemainderOneWordShort, DividendShorterThanDivisorRemainderShort
+        var exception = Assert.Throws<ArgumentException>(() => GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR));
+        var (side, required, given) = sizes.QuotientWords < sizes.RequiredQuotientWords
+            ? ("quotient", sizes.RequiredQuotientWords, sizes.QuotientWords)
+            : ("remainder", sizes.DivisorWords, sizes.RemainderWords);
+        Assert.Contains($"{side} buffer must hold at least {required} words", exception.Message);
+        Assert.Contains($"{side}: {given} words", exception.Message);
+    }
+
+    public static TheoryData<string> DivRemFittingBufferInputs() =>
+    [
+        "ExactSizesNormalizedDivisor",
+        "ExactSizesDividendShorterThanDivisor",
+        "ExactSizesSingleWordDivisor",
+        "ExactSizesPowerOfTwoDivisor",
+        "OversizedNormalizedDivisor",
+        "OversizedDividendShorterThanDivisor",
+        "OversizedSingleWordDivisor",
+        "OversizedPowerOfTwoDivisor",
+        "LeadingZeroDivisorExactQuotient",
+        "SmallDivisorInWideBufferExactQuotient"
+    ];
+
+    // Exact sizes: the quotient words that the bit lengths require and n remainder words, so the quotient buffer is shorter than the
+    // dividend on the reciprocal path (Reduce copies fewer words than nA) and on the multi-word power-of-two path
+    // (the temporary-quotient branch of TryDivRemSmallOrPowerOfTwo). Oversized buffers are filled with 0xFFFFFFFF
+    // first, so every word above the result must be cleared by DivRem: the a < b path (remainder longer than the
+    // dividend), the reciprocal path (quotient longer than the dividend) and the small-divisor paths.
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(DivRemFittingBufferInputs))]
+    public void DivRem_ExactAndOversizedBuffers_SatisfyDivisionIdentity(string input)
+    {
+        var sizes = BuildBufferSizeInput(input);
+        using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        using var gpuA = new GpuBigUInt(workspace, ToWords(sizes.Dividend, sizes.DividendWords));
+        using var gpuB = new GpuBigUInt(workspace, ToWords(sizes.Divisor, sizes.DivisorWords));
+        using var gpuQ = new GpuBigUInt(workspace, Enumerable.Repeat(uint.MaxValue, sizes.QuotientWords).ToArray());
+        using var gpuR = new GpuBigUInt(workspace, Enumerable.Repeat(uint.MaxValue, sizes.RemainderWords).ToArray());
+
+        GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+
+        // The whole buffers are read back, so a word left at 0xFFFFFFFF above the result breaks the identity.
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:138 `remainderBuffer.Clear();` -> removed
+        // input: OversizedDividendShorterThanDivisor
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:311 `quotientBuffer.Clear();` -> removed
+        // input: OversizedNormalizedDivisor
+        AssertQuotientAndRemainder(sizes.Dividend, sizes.Divisor, gpuQ.ToBigInteger(), gpuR.ToBigInteger());
+    }
+
+    // A quotient buffer as long as the dividend is never too short: the quotient has at most aBits - bBits + 1 bits and
+    // aBits <= 32 * nA, bBits >= 1. Every buffer-size input runs with nA quotient words and n remainder words.
+    [SkippableTheory]
+    [TestTarget(ExecutionTarget.GpuExecution)]
+    [Category(TestCategory.Stdlib)]
+    [Scenario(TestScenario.Boundary)]
+    [MemberData(nameof(DivRemShortBufferInputs))]
+    [MemberData(nameof(DivRemFittingBufferInputs))]
+    public void DivRem_DividendSizedQuotientBuffer_IsAlwaysAccepted(string input)
+    {
+        var sizes = BuildBufferSizeInput(input);
+        using var workspace = new GpuWorkspace(64, GpuExecutionEngine.GSharpAot);
+        using var gpuA = new GpuBigUInt(workspace, ToWords(sizes.Dividend, sizes.DividendWords));
+        using var gpuB = new GpuBigUInt(workspace, ToWords(sizes.Divisor, sizes.DivisorWords));
+        using var gpuQ = new GpuBigUInt(workspace, sizes.DividendWords);
+        using var gpuR = new GpuBigUInt(workspace, sizes.DivisorWords);
+
+        GpuBigIntDivRem.DivRem(gpuA, gpuB, gpuQ, gpuR);
+
+        AssertQuotientAndRemainder(sizes.Dividend, sizes.Divisor, gpuQ.ToBigInteger(), gpuR.ToBigInteger());
+    }
+
+    private static (BigInteger Dividend, BigInteger Divisor, int DividendWords, int DivisorWords, int QuotientWords,
+        int RemainderWords, int RequiredQuotientWords) BuildBufferSizeInput(string input)
+    {
+        var eightWords = FromWords(RandomWords(seed: 231, 8, topBit: true));
+        var twoWords = FromWords(RandomWords(seed: 232, 2, topBit: true));
+        var normalizedFourWords = FromWords(RandomWords(seed: 233, 4, topBit: true));
+        var three = new BigInteger(3);
+        var twoToThe47 = BigInteger.One << 47;
+        var twoToThe40PlusOne = (BigInteger.One << 40) + 1;
+        return input switch
+        {
+            "QuotientOneWordShort" => (eightWords, normalizedFourWords, 8, 4, 4, 4, 5),
+            "RemainderOneWordShort" => (eightWords, normalizedFourWords, 8, 4, 5, 3, 5),
+            "DividendShorterThanDivisorRemainderShort" => (twoWords, normalizedFourWords, 2, 4, 1, 3, 1),
+            "SingleWordDivisorQuotientOneWordShort" => (eightWords, three, 8, 1, 7, 1, 8),
+            "ExactSizesNormalizedDivisor" => (eightWords, normalizedFourWords, 8, 4, 5, 4, 5),
+            "ExactSizesDividendShorterThanDivisor" => (twoWords, normalizedFourWords, 2, 4, 1, 4, 1),
+            "ExactSizesSingleWordDivisor" => (eightWords, three, 8, 1, 8, 1, 8),
+            "ExactSizesPowerOfTwoDivisor" => (eightWords, twoToThe47, 8, 2, 7, 2, 7),
+            "OversizedNormalizedDivisor" => (eightWords, normalizedFourWords, 8, 4, 10, 6, 5),
+            "OversizedDividendShorterThanDivisor" => (twoWords, normalizedFourWords, 2, 4, 3, 6, 1),
+            "OversizedSingleWordDivisor" => (eightWords, three, 8, 1, 10, 3, 8),
+            "OversizedPowerOfTwoDivisor" => (eightWords, twoToThe47, 8, 2, 10, 4, 7),
+            // 256 - 41 + 1 = 216 quotient bits need 7 words; 256 - 2 + 1 = 255 bits need 8 words.
+            "LeadingZeroDivisorQuotientShort" => (eightWords, twoToThe40PlusOne, 8, 4, 5, 4, 7),
+            "SmallDivisorInWideBufferQuotientShort" => (eightWords, three, 8, 4, 5, 4, 8),
+            "LeadingZeroDivisorExactQuotient" => (eightWords, twoToThe40PlusOne, 8, 4, 7, 4, 7),
+            "SmallDivisorInWideBufferExactQuotient" => (eightWords, three, 8, 4, 8, 4, 8),
+            _ => throw new ArgumentOutOfRangeException(nameof(input), input, "Unknown buffer size input.")
+        };
     }
 
     public static TheoryData<string> ReduceReciprocalInputs() =>
@@ -376,10 +520,10 @@ public class GpuBigIntDivRemTests : IDisposable
     // so that the estimate is known (CorrectUnderflow / CorrectRemainder in GpuBigIntDivRem.cs are excluded from
     // coverage, so the estimate is the witness):
     // - ExactReciprocal: x = floor(2^T / b), the estimate is q or q - 1.
-    // - QuotientOneTooSmall: estimate q - 1, so r = R + b < 2b and CorrectRemainder subtracts b once (line 447).
-    // - QuotientZero: x = 0, so r = a has more bits than b + 1 and CorrectRemainder takes the shifted branch (line 426).
+    // - QuotientOneTooSmall: estimate q - 1, so r = R + b < 2b and CorrectRemainder subtracts b once (line 486).
+    // - QuotientZero: x = 0, so r = a has more bits than b + 1 and CorrectRemainder takes the shifted branch (line 465).
     // - QuotientOneTooLarge / QuotientThreeTooLarge: the estimate overshoots, a - q * b is negative and CorrectUnderflow
-    //   adds b back once / three times (line 297; the add-back step of the division).
+    //   adds b back once / three times (line 336; the add-back step of the division).
     [SkippableTheory]
     [TestTarget(ExecutionTarget.GpuExecution)]
     [Category(TestCategory.Stdlib)]
@@ -431,7 +575,7 @@ public class GpuBigIntDivRemTests : IDisposable
         GpuBigIntDivRem.ReduceZeroSync(gpuA, gpuB, gpuX, reduce.TargetBits, ReduceDividendWords, gpuQ, gpuR);
 
         // r == a mod b, computed on the host from the words the test holds.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:365 `Math.Min(n, evalWords)` -> `Math.Min(n - 1, evalWords)`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:404 `Math.Min(n, evalWords)` -> `Math.Min(n - 1, evalWords)`
         // input: ExactReciprocal, QuotientOneTooSmall, QuotientOneTooLarge
         Assert.Equal(reduce.Dividend % reduce.Divisor, gpuR.ToBigInteger());
     }
@@ -613,7 +757,7 @@ public class GpuBigIntDivRemTests : IDisposable
         using var oneWordTooLong = new GpuBigUInt(workspace, 5);
 
         // The reciprocal of zero does not exist.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:502 `throw new DivideByZeroException();` -> `return BigInteger.One;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:541 `throw new DivideByZeroException();` -> `return BigInteger.One;`
         Assert.Throws<DivideByZeroException>(() => GpuBigIntDivRem.Reciprocal(zero, reciprocal, 256));
 
         // Nor does the inverse square root of zero.
@@ -777,28 +921,28 @@ public class GpuBigIntDivRemTests : IDisposable
         BigInteger remainder)
     {
         // q * b + r == a: the quotient and the remainder recombine to the dividend.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:451 `ctx.QuotientBuffer.CopyFrom(tempQuot, numWords: ctx.QuotientBuffer.NumWords);` -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:490 `ctx.QuotientBuffer.CopyFrom(tempQuot, numWords: ctx.QuotientBuffer.NumWords);` -> removed
         // input: Reduce QuotientOneTooSmall
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:395 `GpuBigIntMath.Sub(ctx.QuotientBuffer, one, tempQuot);` -> `GpuBigIntMath.Add(ctx.QuotientBuffer, one, tempQuot);`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:434 `GpuBigIntMath.Sub(ctx.QuotientBuffer, one, tempQuot);` -> `GpuBigIntMath.Add(ctx.QuotientBuffer, one, tempQuot);`
         // input: Reduce QuotientOneTooLarge, QuotientThreeTooLarge
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:440 `CreatePowerOfTwo(ctx.Workspace, ctx.QuotientBuffer.NumWords, shift)` -> `CreatePowerOfTwo(ctx.Workspace, ctx.QuotientBuffer.NumWords, shift + 1)`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:479 `CreatePowerOfTwo(ctx.Workspace, ctx.QuotientBuffer.NumWords, shift)` -> `CreatePowerOfTwo(ctx.Workspace, ctx.QuotientBuffer.NumWords, shift + 1)`
         // input: Reduce QuotientZero
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:108 `remainderBuffer.CopyFrom(leftOperand, ...)` -> `remainderBuffer.Clear()`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:141 `remainderBuffer.CopyFrom(leftOperand, ...)` -> `remainderBuffer.Clear()`
         // input: DivRem DividendShorterThanDivisor
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:151 `quotientBuffer.CopyFrom(leftOperand, ...)` -> removed
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:184 `quotientBuffer.CopyFrom(leftOperand, ...)` -> removed
         // input: DivRem DivisorOne
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:158 `var shift = bActualBits - 1;` -> `var shift = bActualBits;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:191 `var shift = bActualBits - 1;` -> `var shift = bActualBits;`
         // input: DivRem DivisorPowerOfTwoBelowWord
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:197 `WriteWord(remainderBuffer.DevicePointer, 0, rem, ...)` -> `WriteWord(remainderBuffer.DevicePointer, 0, 0u, ...)`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:230 `WriteWord(remainderBuffer.DevicePointer, 0, rem, ...)` -> `WriteWord(remainderBuffer.DevicePointer, 0, 0u, ...)`
         // input: DivRem DivisorThree
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:236 `Math.Min(nA, fullWords)` -> `Math.Min(nA, fullWords - 1)`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:269 `Math.Min(nA, fullWords)` -> `Math.Min(nA, fullWords - 1)`
         // input: DivRem DivisorPowerOfTwoWordAligned, DivisorPowerOfTwoUnaligned, DivisorPowerOfTwoInTopWord
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:216 `if (!bAndMask.IsZero())` -> `if (bAndMask.NumWords < 0 && !bAndMask.IsZero())`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:249 `if (!bAndMask.IsZero())` -> `if (bAndMask.NumWords < 0 && !bAndMask.IsZero())`
         // input: DivRem DivisorTopWordPowerOfTwoWithLowBits
         Assert.Equal(dividend, quotient * divisor + remainder);
 
         // 0 <= r < b: with the identity above this fixes q and r uniquely.
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:415 `while (!GpuBigIntMath.IsLessThan(...))` -> `while (loopCount < 0 && !GpuBigIntMath.IsLessThan(...))`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:454 `while (!GpuBigIntMath.IsLessThan(...))` -> `while (loopCount < 0 && !GpuBigIntMath.IsLessThan(...))`
         // input: Reduce QuotientOneTooSmall, QuotientZero (the identity still holds, the remainder is too large)
         Assert.True(remainder.Sign >= 0 && remainder < divisor, $"remainder {remainder} is not in [0, {divisor})");
 
@@ -826,7 +970,7 @@ public class GpuBigIntDivRemTests : IDisposable
         // So x' <= floor(y) always, and once |y - x| < sqrt(y) (2^T >= 4b and the iterations converged), x' >= floor(y) - 1.
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:319 `var bitTarget = targetBits + 1;` -> `var bitTarget = targetBits;`
         // input: all Reciprocal inputs
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:79 `return iterations + 1;` -> `return iterations - 1;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:100 `return iterations + 1;` -> `return iterations - 1;`
         // input: Random16WordsDivRemPrecision (the other inputs still converge with two fewer iterations)
         var floorY = (BigInteger.One << targetBits) / divisor;
         Assert.True(reciprocal <= floorY && reciprocal >= floorY - 1,
@@ -841,7 +985,7 @@ public class GpuBigIntDivRemTests : IDisposable
         // floor(y) = floor(sqrt(floor(2^(2B) / a))), the value the CPU provider returns.
         // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/Providers/Handlers/KernelAdvancedMathHandler.cs:190 `hostConstant3[(bit2B + 1) / 32] |= 1u << ((bit2B + 1) % 32);` -> removed
         // input: all InverseSqrt inputs and Test_DivRem_Reduce_InverseSqrt_Heron
-        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:79 `return iterations + 1;` -> `return iterations - 1;`
+        // mutant: src/Stdlib/Kassyi.GSharp.Stdlib.GpuMath/BigNum/GpuBigIntDivRem.cs:100 `return iterations + 1;` -> `return iterations - 1;`
         // input: SecondBitTop33WordsMargin16
         var floorY = FloorSqrt((BigInteger.One << (2 * precisionBits)) / value);
         Assert.True(inverseRoot <= floorY && inverseRoot >= floorY - 1,
