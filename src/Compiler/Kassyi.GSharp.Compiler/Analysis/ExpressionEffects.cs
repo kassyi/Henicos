@@ -322,6 +322,12 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
 
         private void AddMemberAccess(MemberAccessExpressionSyntax access)
         {
+            if (IsFrameAccess(access))
+            {
+                AddRead(AddLocation(access));
+                return;
+            }
+
             if (access.IsKind(SyntaxKind.PointerMemberAccessExpression))
             {
                 AddValue(access.Expression);
@@ -361,6 +367,11 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
                     return;
             }
         }
+
+        // __gsharp_ctx-><local>: ContextHoister moves a local (or a lowering temporary) of a state machine into its frame,
+        // and the member keeps the span of the local
+        private static bool IsFrameAccess(MemberAccessExpressionSyntax access) =>
+            access.Expression is IdentifierNameSyntax { Identifier.ValueText: GSharpInternalNames.StateMachine.Context };
 
         // ThreadIndex.X, BlockDim.Y ...: a value that no expression of the thread changes
         private static bool IsIntrinsicProperty(IPropertySymbol property) =>
@@ -406,6 +417,9 @@ internal readonly struct ExpressionEffects(VariableSet reads, VariableSet writes
             {
                 case ParenthesizedExpressionSyntax parenthesized:
                     return AddLocation(parenthesized.Expression);
+                case MemberAccessExpressionSyntax frame when IsFrameAccess(frame):
+                    // A local of the state machine that lives in its frame: the local itself
+                    return AddLocation(frame.Name);
                 case DeclarationExpressionSyntax { Designation: SingleVariableDesignationSyntax designation }:
                     return new Root(model.GetDeclaredSymbol<ILocalSymbol>(designation) ??
                                     (object)designation.Identifier.ValueText);

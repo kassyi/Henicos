@@ -1015,7 +1015,11 @@ static_assert(offsetof(__gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingP
 #ifndef __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder__
 #define __GSHARP_DISPOSE___gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder__
 __device__ inline void __gsharp_ty_Kassyi__GSharp__Tests__Shared__Syntax__UsingPatternRecorder::__gsharp_dispose() {
-__gsharp_mb_Log[++__gsharp_mb_Log[0]]=__gsharp_mb_Id;
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_mb_Log[++__gsharp_mb_Log[0]];
+int __gsharp_seq_1 = __gsharp_mb_Id;
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 }
 #endif
 extern ""C"" __global__ void __gsharp_k_Kassyi__GSharp__Tests__Shared__Syntax__UsingDisposalKernels__PatternDisposeKernel(GSharpArray<int> __gsharp_id_0_log){

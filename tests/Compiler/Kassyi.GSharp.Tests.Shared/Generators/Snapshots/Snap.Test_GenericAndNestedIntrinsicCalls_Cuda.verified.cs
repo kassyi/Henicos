@@ -24,7 +24,12 @@ int __gsharp_id_2_tid = threadIdx.x;
 test_copy_async<int>(&__gsharp_id_0_dst[__gsharp_id_2_tid],&__gsharp_id_1_src[__gsharp_id_2_tid]);
 test_copy_async<int>(&__gsharp_id_0_dst[__gsharp_id_2_tid],&__gsharp_id_1_src[__gsharp_id_2_tid]);
 test_release(__gsharp_id_2_tid);
-__gsharp_id_0_dst[__gsharp_id_2_tid]+=test_count();
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_id_0_dst[__gsharp_id_2_tid];
+auto __gsharp_seq_1 = __gsharp_seq_0;
+auto __gsharp_seq_2 = test_count();
+return __gsharp_seq_0 = (int)(__gsharp_seq_1+__gsharp_seq_2);
+}());
 }
 ";
 public static readonly string CopyAndReleaseKernel_FullSource=global::Kassyi.GSharp.Generated.GSharpSharedCudaPrelude.Source +global::Kassyi.GSharp.Generated.GSharpSharedCudaDeviceCode.Source +CopyAndReleaseKernel_Source;

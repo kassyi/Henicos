@@ -50,11 +50,23 @@ internal static class EvaluationOrder
 
     /// <summary>
     /// Writes <c>auto __gsharp_seq_&lt;n&gt; = &lt;expression&gt;;</c>, or <c>auto&amp;&amp;</c> for a
-    /// <paramref name="reference"/> to the location (an assignment target), and returns <c>n</c>.
+    /// <paramref name="reference"/> to the location (an assignment target), and returns <c>n</c>. A value is declared
+    /// with <paramref name="type"/> when one is given (it is converted when it is evaluated, as in C#, and a brace
+    /// initializer such as <c>{}</c> needs a type), except a type parameter or an enum, which keep <c>auto</c>.
     /// </summary>
-    public static int DeclareTemp(ref TranspileContext context, ExpressionSyntax expression, bool reference)
+    public static int DeclareTemp(ref TranspileContext context, ExpressionSyntax expression, bool reference,
+        ITypeSymbol? type = null)
     {
-        context.Emitter.Writer.Append(reference ? "auto&&" : "auto");
+        if (!reference && type is not (null or ITypeParameterSymbol or { TypeKind: TypeKind.Enum or TypeKind.Error }) &&
+            !IsOrContainsTypeParameter(type))
+        {
+            context.Emitter.Dialect.AppendType(ref context, type);
+        }
+        else
+        {
+            context.Emitter.Writer.Append(reference ? "auto&&" : "auto");
+        }
+
         var temp = AppendDeclaredName(ref context);
         context.Visitor.Visit(expression);
         context.Emitter.Writer.AppendLine(";");

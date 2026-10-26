@@ -1127,11 +1127,23 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_3_i = 1;
-__gsharp_id_0_a[__gsharp_id_3_i]=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_i);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_id_0_a[__gsharp_id_3_i];
+int __gsharp_seq_1 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_3_i);
+return __gsharp_seq_0 = __gsharp_seq_1;
+}());
 int __gsharp_id_4_c = 0;
-__gsharp_id_1_b[__gsharp_id_4_c++]=__gsharp_id_4_c;
+([&]() {
+auto&& __gsharp_seq_2 = __gsharp_id_1_b[__gsharp_id_4_c++];
+int __gsharp_seq_3 = __gsharp_id_4_c;
+return __gsharp_seq_2 = __gsharp_seq_3;
+}());
 int __gsharp_id_5_n = 0;
-__gsharp_id_2_e[++__gsharp_id_5_n]=__gsharp_id_5_n;
+([&]() {
+auto&& __gsharp_seq_4 = __gsharp_id_2_e[++__gsharp_id_5_n];
+int __gsharp_seq_5 = __gsharp_id_5_n;
+return __gsharp_seq_4 = __gsharp_seq_5;
+}());
 __gsharp_state=-1;
 return;
 }
@@ -1337,9 +1349,19 @@ case 0:
 __gsharp_switch_1_state_0:
 {
 int __gsharp_id_2_i = 0;
-__gsharp_id_0_d[__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i)]+=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
+([&]() {
+auto&& __gsharp_seq_0 = __gsharp_id_0_d[__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i)];
+auto __gsharp_seq_1 = __gsharp_seq_0;
+auto __gsharp_seq_2 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Next(&__gsharp_id_2_i);
+return __gsharp_seq_0 = (int)(__gsharp_seq_1+__gsharp_seq_2);
+}());
 int __gsharp_id_3_sum = 5;
-__gsharp_id_3_sum+=__gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Accumulate(&__gsharp_id_3_sum);
+([&]() {
+auto&& __gsharp_seq_3 = __gsharp_id_3_sum;
+auto __gsharp_seq_4 = __gsharp_seq_3;
+auto __gsharp_seq_5 = __gsharp_fn_Kassyi__GSharp__Tests__Shared__Syntax__EvaluationOrderKernels__Accumulate(&__gsharp_id_3_sum);
+return __gsharp_seq_3 = (int)(__gsharp_seq_4+__gsharp_seq_5);
+}());
 __gsharp_id_1_result[0]=__gsharp_id_3_sum;
 __gsharp_state=-1;
 return;
